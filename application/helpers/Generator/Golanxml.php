@@ -546,6 +546,28 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 				}
 				$this->writer->endElement(); // end BREAKDOWN_TOPIC
+			
+				$this->writer->startElement('BREAKDOWN_TOPIC');
+				$this->writer->writeAttribute('name', 'CHARGED_SERVICES');
+				foreach ($servicesCost as $chargedService => $serviceCost) {
+					if (isset($subscriber['breakdown'][$planToCharge]['service']['base']) && is_array($subscriber['breakdown'][$planToCharge]['service']['base'])) {
+						if (isset($subscriber['breakdown'][$planToCharge]['service']['base'][$chargedService])) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $chargedService);
+							$this->writer->writeElement('UNITS', 1);
+							$service_entry_COST_WITHOUTVAT = $serviceCost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $service_entry_COST_WITHOUTVAT);
+							$service_entry_VAT = $subscriber['breakdown'][$planToCharge]['service']['base'][$chargedService]['vat'] * 100;
+							$this->writer->writeElement('VAT', $service_entry_VAT);
+							$service_entry_VAT_COST = $service_entry_COST_WITHOUTVAT * $service_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $service_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $service_entry_COST_WITHOUTVAT + $service_entry_VAT_COST);
+							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper('service'));
+							$this->writer->endElement();
+						}
+					}
+				}
+				$this->writer->endElement(); // end BREAKDOWN_TOPIC
 
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'INTERNATIONAL');
