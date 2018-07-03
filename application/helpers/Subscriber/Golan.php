@@ -547,6 +547,23 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->plans;
 	}
 	
+	public function getLastOffer() {
+		$offers = $this->plans;
+		if (empty($offers)) {
+			return array();
+		}
+		$lastOffer = array();
+		foreach ($offers as $offer) {
+			if (empty($lastOffer)) {
+				$lastOffer = $offer;
+			}
+			if ($offer['end_date'] > $lastOffer['end_date']) {
+				$lastOffer = $offer;
+			}
+		}
+		return $lastOffer;
+	}
+	
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
 		$arr = @json_decode($json, true);
