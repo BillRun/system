@@ -466,6 +466,14 @@ class RatesModel extends TabledateModel {
 		$unwind = array(
 			'$unwind' => '$kt_prefixes',
 		);
+               $match2 = array(
+                       '$match' => array(
+                               'kt_prefixes' => array(
+                                       '$in' => $prefixes,
+                               ),
+                       ),
+               );
+
 		$sort = array(
 			'$sort' => array(
 				'kt_prefixes' => -1,
@@ -474,7 +482,7 @@ class RatesModel extends TabledateModel {
 		$limit = array(
 			'$limit' => 1,
 		);
-		$rate = $this->collection->aggregate(array($match, $unwind, $match, $sort, $limit));
+		$rate = $this->collection->aggregate(array($match, $unwind, $match2, $sort, $limit));
 		if ($rate) {
 			return $rate[0];
 		} else {
