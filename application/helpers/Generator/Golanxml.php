@@ -462,6 +462,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$servicesDetails = $subscriber['breakdown'][$planName]['service']['base'];
 				} else {
 					$servicesDetails = array();
+					$servicesCost = array();
 				}
 				foreach ($servicesDetails as $serviceName => $details) {
 					$servicesCost = array_merge($servicesCost, array($serviceName => floatval((isset($details['cost']) ? $details['cost'] : 0))));
