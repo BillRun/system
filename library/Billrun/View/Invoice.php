@@ -106,7 +106,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 					$subscriptionList[$key]['desc'] = $name;	
 					$subscriptionList[$key]['type'] = $typeNames[$line['type']];
 					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData,$line));
+					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData, $line));
 					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
 					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
 					$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
@@ -127,6 +127,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		if(isset($rate['price'][0]['price'])) {
 			$priceByCycle = Billrun_Util::mapArrayToStructuredHash($rate['price'], array('from'));
 			$pricePerUsage = $priceByCycle[empty($line['cycle']) ? 0 : $line['cycle']]['price'];
+		} else if( isset($rate['rates'][$line['usaget']]['BASE']['rate'][0]['price']) ) {
+			$pricePerUsage = $rate['rates'][$line['usaget']]['BASE']['rate'][0]['price'];
 		} else {
 			$pricePerUsage = $rate['price'];
 		}
@@ -221,5 +223,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		
 		return $retNumber;
+	}
+	
+	public function shouldRatebeDisplayed($usageData,$section='all') {
+		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.'.$section.'.hide_rates',array('/PREPRICED.*CALL.*TO_ABROAD/')),$usageData['rate']);
 	}
 }
