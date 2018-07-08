@@ -118,7 +118,6 @@ class Generator_Golancsv extends Billrun_Generator {
 			'TotalCharge',
 			'isAccountActive',
 			'curPackage',
-			'nextPackage',
 			'TotalChargeVatData',
 			'CountOfKb',
 			'isKosher',
@@ -239,7 +238,6 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['CountActiveCli'] += $sub_row['isAccountActive'] = $this->getIsAccountActive($subscriber);
 				$acc_row['kosherCount'] += $sub_row['isKosher'] = $this->is_kosher($subscriber);
 				$sub_row['curPackage'] = $this->getCurPackage($subscriber);
-				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
 				$this->addSubscriberRow($sub_row);
@@ -318,7 +316,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @todo use plans cache
 	 */
 	protected function getCurPackage($subscriber) {
-		$current_plan_ref = $subscriber['current_plan'];
+		$lastOffer = $this->getLastOffer($subscriber['plans']);
+		$current_plan_ref = !empty($lastOffer) ? $lastOffer['current_plan'] : null;
 		if (MongoDBRef::isRef($current_plan_ref)) {
 			$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
 			$current_plan_name = $current_plan['name'];
@@ -326,17 +325,6 @@ class Generator_Golancsv extends Billrun_Generator {
 			$current_plan_name = 'NO_GIFT';
 		}
 		return $current_plan_name;
-	}
-
-	protected function getNextPackage($subscriber) {
-		$next_plan_ref = $subscriber['next_plan'];
-		if (MongoDBRef::isRef($next_plan_ref)) {
-			$next_plan = $this->getPlanById(strval($next_plan_ref['$id']));
-			$next_plan_name = $next_plan['name'];
-		} else {
-			$next_plan_name = 'NO_GIFT';
-		}
-		return $next_plan_name;
 	}
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
@@ -443,6 +431,22 @@ class Generator_Golancsv extends Billrun_Generator {
 	protected function getFileNameDate() {
 		$billrun_day = Billrun_Factory::config()->getConfigValue('billrun.charging_day',25);
 		return date('Ym').$billrun_day;
+	}
+	
+	protected function getLastOffer($offers) {
+		if (empty($offers)) {
+			return array();
+		}
+		$lastOffer = array();
+		foreach ($offers as $offer) {
+			if (empty($lastOffer)) {
+				$lastOffer = $offer;
+			}
+			if ($offer['end_date'] > $lastOffer['end_date']) {
+				$lastOffer = $offer;
+			}
+		}
+		return $lastOffer;
 	}
 
 }

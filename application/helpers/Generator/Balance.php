@@ -80,7 +80,7 @@ class Generator_Balance extends Generator_Golanxml {
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		$manual_lines = array();
 		$deactivated_subscribers = array();
-		foreach ($this->account_data as $subscriber) {
+		foreach ($this->account_data as $subscriber) {	
 			if (!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
 					->cursor()->current()->isEmpty()) {
 				$subscriber_status = "REBALANCE";
@@ -92,21 +92,25 @@ class Generator_Balance extends Generator_Golanxml {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
 			}
-			$next_plan_name = $subscriber->getNextPlanName();
-			if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+			$offers = $subscriber->getPlans();
+			$lastOffer = $subscriber->getLastOffer();
+			if (!empty($lastOffer) && strtotime($lastOffer['end_date']) < Billrun_Util::getEndTime($this->stamp)) {
 				$subscriber_status = "closed";
-				$current_plan_name = $subscriber->getCurrentPlanName();
-				if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-
-					$deactivated_subscribers[] = array("sid" => $subscriber->sid);
-				}
+			}
+			
+			if (is_null($offers)) {
+				$subscriber_status = "closed";
+				$deactivated_subscribers[] = array("sid" => $subscriber->sid);
 			} 
-			$plan_to_charge = $subscriber->chargeByPlan();
-			if (!is_null($plan_to_charge) && $plan_to_charge != "NULL") {
+			if (!empty($offers)) {
 				$subscriber_status = "open";
 				$subscriber->setBillrunKey($this->stamp);
-				$flat_entry = $subscriber->getFlatEntry($this->stamp, true);
-				$manual_lines = array_merge($manual_lines, array($flat_entry['stamp'] => $flat_entry));
+				foreach ($offers as $offer) {
+					$subscriber->setPlanName($offer['plan']);
+					$subscriber->setPlanId($offer['id']);
+					$flat_entry = $subscriber->getFlatEntry($this->stamp, true, $offer);
+					$manual_lines = array_merge($manual_lines, array($flat_entry['stamp'] => $flat_entry));
+				}
 			}
 			$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true), $subscriber->getServices($this->stamp, true));
 			$billrun->addSubscriber($subscriber, $subscriber_status);

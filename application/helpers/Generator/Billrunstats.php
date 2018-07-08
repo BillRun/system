@@ -62,64 +62,66 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 				Billrun_Factory::log()->log('Flattening billrun ' . $flat_breakdown_record['billrun_key'] . ' of account ' . $flat_breakdown_record['aid'], Zend_Log::DEBUG);
 				foreach ($billrun_doc['subs'] as $sub_entry) {
 					$flat_data_record['sid'] = $flat_breakdown_record['sid'] = $sub_entry['sid'];
-					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
-					$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = is_null($sub_entry['current_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['current_plan']['$id']))->getName();
-					$flat_data_record['next_plan'] = $flat_breakdown_record['next_plan'] = is_null($sub_entry['next_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['next_plan']['$id']))->getName();
+					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];	
+					$plansNames = is_null($sub_entry['plans']) ? null : array_column($sub_entry['plans'], 'plan');
 					$flat_data_record['kosher'] = $flat_breakdown_record['kosher'] = ((isset($sub_entry['kosher']) && ($sub_entry['kosher'] == "true" || (is_bool($sub_entry['kosher']) && $sub_entry['kosher']))) ? 1 : 0);
-//					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
-					if (isset($sub_entry['breakdown'])) {
-						foreach ($sub_entry['breakdown'] as $flat_breakdown_record['plan'] => $categories) {
-							foreach ($categories as $flat_breakdown_record['category'] => $zones) {
-								foreach ($zones as $flat_breakdown_record['zone'] => $zone_totals) {
-									if ($flat_breakdown_record['zone'] == $this->ggsn_zone) {
-										continue; // it's taken from lines->data->counters
-									}
-									if ($flat_breakdown_record['plan'] != 'credit') {
-										if (isset($zone_totals['totals'])) {
-											$flat_breakdown_record['vat'] = $this->getFieldVal($zone_totals['vat'], $default_vat);
-											foreach ($zone_totals['totals'] as $flat_breakdown_record['usaget'] => $usage_totals) {
-												$flat_breakdown_record['usagev'] = $usage_totals['usagev'];
-												$flat_breakdown_record['cost'] = $this->getFieldVal($usage_totals['cost'], 0);
-												$flat_breakdown_record['count'] = $this->getFieldVal($usage_totals['count'], 1);
+					foreach ($plansNames as $key => $planName) {
+						$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = $planName;
+	//					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
+						if (isset($sub_entry['breakdown'][$planName])) {
+							foreach ($sub_entry['breakdown'][$planName] as $flat_breakdown_record['plan'] => $categories) {
+								foreach ($categories as $flat_breakdown_record['category'] => $zones) {
+									foreach ($zones as $flat_breakdown_record['zone'] => $zone_totals) {
+										if ($flat_breakdown_record['zone'] == $this->ggsn_zone) {
+											continue; // it's taken from lines->data->counters
+										}
+										if ($flat_breakdown_record['plan'] != 'credit') {
+											if (isset($zone_totals['totals'])) {
+												$flat_breakdown_record['vat'] = $this->getFieldVal($zone_totals['vat'], $default_vat);
+												foreach ($zone_totals['totals'] as $flat_breakdown_record['usaget'] => $usage_totals) {
+													$flat_breakdown_record['usagev'] = $usage_totals['usagev'];
+													$flat_breakdown_record['cost'] = $this->getFieldVal($usage_totals['cost'], 0);
+													$flat_breakdown_record['count'] = $this->getFieldVal($usage_totals['count'], 1);
+													$this->addFlatRecord($flat_breakdown_record);
+													unset($flat_breakdown_record['_id']);
+												}
+											} else {
+												$flat_breakdown_record['vat'] = $zone_totals['vat'];
+												$flat_breakdown_record['cost'] = $zone_totals['cost'];
+												$flat_breakdown_record['usaget'] = 'flat';
+												$flat_breakdown_record['usagev'] = 1;
+												$flat_breakdown_record['count'] = 1;
 												$this->addFlatRecord($flat_breakdown_record);
 												unset($flat_breakdown_record['_id']);
 											}
 										} else {
-											$flat_breakdown_record['vat'] = $zone_totals['vat'];
-											$flat_breakdown_record['cost'] = $zone_totals['cost'];
-											$flat_breakdown_record['usaget'] = 'flat';
+											$flat_breakdown_record['vat'] = in_array($flat_breakdown_record['category'], array('refund_vat_free', 'charge_vat_free')) ? 0 : $default_vat; // remove this hack
+											$flat_breakdown_record['cost'] = $zone_totals;
+											$flat_breakdown_record['usaget'] = strpos($flat_breakdown_record['category'], 'charge') === 0 ? 'charge' : 'refund';
 											$flat_breakdown_record['usagev'] = 1;
-											$flat_breakdown_record['count'] = 1;
+											$flat_breakdown_record['count'] = isset($flat_breakdown_record['count']) ? $flat_breakdown_record['count'] : 1;
 											$this->addFlatRecord($flat_breakdown_record);
 											unset($flat_breakdown_record['_id']);
 										}
-									} else {
-										$flat_breakdown_record['vat'] = in_array($flat_breakdown_record['category'], array('refund_vat_free', 'charge_vat_free')) ? 0 : $default_vat; // remove this hack
-										$flat_breakdown_record['cost'] = $zone_totals;
-										$flat_breakdown_record['usaget'] = strpos($flat_breakdown_record['category'], 'charge') === 0 ? 'charge' : 'refund';
-										$flat_breakdown_record['usagev'] = 1;
-										$flat_breakdown_record['count'] = 1;
-										$this->addFlatRecord($flat_breakdown_record);
-										unset($flat_breakdown_record['_id']);
 									}
 								}
 							}
 						}
-					}
-					if (isset($sub_entry['lines']['data']['counters'])) {
-						foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
-							foreach(array('usage_3g','usage_4g') as $data_generation) {
-								if(isset($counters[$data_generation])) {
-									$flat_data_record['plan'] = $counters[$data_generation]['plan_flag'] . '_plan';
-									$flat_data_record['category'] = str_replace('usage_', '', $data_generation);
-									$flat_data_record['zone'] = $this->ggsn_zone;
-									$flat_data_record['vat'] = $default_vat;
-									$flat_data_record['usagev'] = $counters[$data_generation]['usagev'];
-									$flat_data_record['usaget'] = 'data';
-									$flat_data_record['count'] = 1;
-									$flat_data_record['cost'] = $counters[$data_generation]['aprice'];
-									$this->addFlatRecord($flat_data_record);
-									unset($flat_data_record['_id']);
+						if (isset($sub_entry['lines']['data']['counters'])) {
+							foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
+								foreach(array('usage_3g','usage_4g') as $data_generation) {
+									if(isset($counters[$data_generation])) {
+										$flat_data_record['plan'] = $counters[$data_generation]['plan_flag'] . '_plan';
+										$flat_data_record['category'] = str_replace('usage_', '', $data_generation);
+										$flat_data_record['zone'] = $this->ggsn_zone;
+										$flat_data_record['vat'] = $default_vat;
+										$flat_data_record['usagev'] = $counters[$data_generation]['usagev'];
+										$flat_data_record['usaget'] = 'data';
+										$flat_data_record['count'] = 1;
+										$flat_data_record['cost'] = $counters[$data_generation]['aprice'];
+										$this->addFlatRecord($flat_data_record);
+										unset($flat_data_record['_id']);
+									}
 								}
 							}
 						}

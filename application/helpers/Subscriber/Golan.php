@@ -20,11 +20,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
-	protected $billrunExtraFields = array('kosher' => 1, 'credits' => 1, 'sub_services' => 0); //true to save in billrun, false not to save
+	protected $billrunExtraFields = array('kosher' => 1, 'credits' => 1, 'sub_services' => 0, 'plans' => 1); //true to save in billrun, false not to save
 	protected $billrun_key;
 	protected $freeze_start = null;
 	protected $freeze_end = null;
 	protected $services = array();
+	protected $refundCredit = array(
+		'credit_type' => 'refund',
+		'promotion' => true,
+		'reason' => 'eXSWI_CREDIT_REASON_OPERATOR_GIFT',
+		'service_name' => 'CRM-REFUND_OFFER_id-BILLRUN_stamp',
+		'vatable' => 1,
+	);
 
 
 
@@ -304,14 +311,61 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							}
 							$this->freeze_end = $concat['data']['freeze_end_date'];
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end'], $sid);
+				
+							$subscriberOffers = !is_null($subscriber['offers']) ? $subscriber['offers'] : array();
+							if (!empty($subscriberOffers)) {
+								$offers = array();
+								$offerCredits = array();
+								foreach ($subscriberOffers as $subscriberOffer) {
+									$offer = array();
+									$offer['id'] = $subscriberOffer['offer_id'];
+									$offer['plan'] = $subscriberOffer['plan'];
+									$offer['start_date'] = $subscriberOffer['start_date'];
+									$offer['end_date'] = $subscriberOffer['end_date'];
+									$offer['fraction'] = $this->calcServiceFraction($offer['start_date'], $offer['end_date'], $sid);	
+									$offer['count'] = 1;
+									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
+										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
+										$offerCredit = $this->refundCredit;
+										$replacedStampOfferService = preg_replace('/stamp/', Billrun_Util::getBillrunKey(time()), $offerCredit['service_name']);
+										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
+										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
+										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
+										$offerCredit['activation'] = $offer['start_date'];
+										$offerCredit['deactivation'] = $offer['end_date'];
+										$offerCredit['fraction'] = $offer['fraction'];
+										$offerCredit['credit_time'] = Billrun_Util::getEndTime($this->billrun_key);
+										if ($sid) {
+											$offerCredit['plan'] = $subscriberOffer['plan'];
+										} else {
+											$offerCredit['subscriber_id'] = $sid;
+											$offerCredit['plan'] = 'ACCOUNT';
+										}
+										$offerCredit['amount_without_vat'] = $offer['amount_without_vat'];
+										$offerCredit['source_amount_without_vat'] = $offer['amount_without_vat'];
+										$offerCredit['amount_without_vat'] = $this->isFractionNeeded($offerCredit) ? ($offerCredit['amount_without_vat'] * $offerCredit['fraction']) : $offerCredit['amount_without_vat'];
+										$offerCredits[] = $offerCredit;									
+									}
+									if ((!is_null($concat['data']['activation_end'])) && ($concat['data']['activation_end'] < $offer['end_date'])){
+										$offer['end_date'] = $concat['data']['activation_end'];
+									}
+
+									$offer['aid'] = $concat['data']['aid'];
+									$offer['sid'] = $concat['data']['sid'];
+									$stamp = Billrun_Util::generateArrayStamp($offer);
+									if (isset($offers[$stamp])) {
+										$offers[$stamp]['count'] ++;
+										continue;
+									}
+									$offers[$stamp] = $offer;
+								}
+								$offers = array_values($offers);
+								$concat['data']['plans'] = $offers;
+							}											
 							if ($sid) {
-								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
-								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
-								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
-								$concat['data']['offer_id_curr'] = isset($subscriber['offer_id_curr']) ? $subscriber['offer_id_curr'] : null;
+								$concat['data']['plan'] = !is_null($subscriber['offers']) ? end($this->getPlanNames($concat['data']['plans'])) : null;
 							} else {
 								$concat['data']['plan'] = 'ACCOUNT';
-								$concat['data']['next_plan'] = 'ACCOUNT';
 							}
 
 							if (isset($subscriber['occ']) && is_array($subscriber['occ'])) {
@@ -340,7 +394,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$credit['amount_without_vat'] = $this->isFractionNeeded($credit) ? ($credit['amount_without_vat'] * $concat['data']['fraction']) : $credit['amount_without_vat'];
 									$credits[] = $credit;
 								}
+								if (!empty($offerCredits)) {
+									$credits = array_merge($credits, $offerCredits);
+								}
 								$concat['data']['credits'] = $credits;
+							} else {
+								if (!empty($offerCredits)) {
+									$concat['data']['credits'] = $offerCredits;
+								}
 							}
 							
 							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
@@ -481,6 +542,27 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $ret;
 	}
+
+	public function getPlans() {
+		return $this->plans;
+	}
+	
+	public function getLastOffer() {
+		$offers = $this->plans;
+		if (empty($offers)) {
+			return array();
+		}
+		$lastOffer = array();
+		foreach ($offers as $offer) {
+			if (empty($lastOffer)) {
+				$lastOffer = $offer;
+			}
+			if ($offer['end_date'] > $lastOffer['end_date']) {
+				$lastOffer = $offer;
+			}
+		}
+		return $lastOffer;
+	}
 	
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
@@ -492,7 +574,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	public function getPlan() {
-		if (is_null($this->plan)) {
+		if (is_null($this->plan) || (!is_null($this->plan) && ($this->data['plan'] != $this->plan->getName()))) {
 			$params = array(
 				'name' => $this->data['plan'],
 				'time' => $this->time,
@@ -500,6 +582,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$this->plan = new Billrun_Plan($params);
 		}
 		return $this->plan;
+	}
+	
+	public function setPlanName($planName) {
+		$this->data['plan'] = $planName;
+	}
+
+	public function setPlanId($id) {
+		$this->data['offer_id'] = $id;
 	}
 
 	public function getNextPlan() {
@@ -650,9 +740,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @param string $billrun_key
 	 * @return array
 	 */
-	public function getFlatEntry($billrun_key, $retEntity = false) {
+	public function getFlatEntry($billrun_key, $retEntity = false, $offer = false) { // TODO: take all flat properties from offer if offer not empty.
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-		$fraction = $this->calcFractionOfMonth($this->getActivationStartDay(), $this->getActivationEndDay(), $this->sid);
+		if (empty($offer) || !isset($offer['fraction'])) {
+			$fraction = $this->calcFractionOfMonth($this->getActivationStartDay(), $this->getActivationEndDay(), $this->sid);
+		} else {
+			$fraction = $offer['fraction'];
+		}
 		if ($this->billing_method == 'prepaid'){
 			$plan = $this->getNextPlan();
 		}
@@ -675,10 +769,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'plan' => $plan->getName(),
 			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
-			'offer_id_curr' => $this->offer_id_curr,
-			'offer_id_next' => $this->offer_id_next,
+			'offer_id' => $this->offer_id,
 		);
-		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time);
+		if (!empty($offer) && isset($offer['start_date']) && isset($offer['end_date'])) {
+			$flat_entry['start_date'] = $offer['start_date'];
+			$flat_entry['end_date'] = $offer['end_date'];
+		}
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction']);
 		$flat_entry['stamp'] = $stamp;
 		if ($retEntity) {
 			return new Mongodloid_Entity($flat_entry);
@@ -800,6 +897,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	
 	public function isPrepaidAccount() {
 		return (isset($this->data['prepaid']) && $this->data['prepaid']); 
+	}
+
+	protected function getPlanNames($plans) {
+		foreach ($plans as $plan) {
+			$planNames[] = $plan['plan'];
+		}
+		return $planNames;
 	}
 
 }
