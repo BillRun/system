@@ -1742,4 +1742,21 @@ class Billrun_Util {
 		}
 		return $str;
 	}
+	
+	/**
+	 * Check if a given string/strings array has one item that matches a given regex array
+	 * @param type $regexs An array of regexes
+	 * @param type $strings A string or an array of strings to check the regexes against
+	 * @return TRUE if there was at leat one match FALSE otherwise
+	 */
+	public static function regexArrMatch($regexs, $strings) {
+		$strings = is_array($strings) ? $strings : array($strings);
+		foreach ($regexs as $regex) {
+			if (!empty(preg_grep($regex, $strings))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

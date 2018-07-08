@@ -245,6 +245,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					if (Billrun_Util::isValidRegex($condition['pattern'])) {
 						$condition['op'] = '$regex';
 					}
+					if (empty($condition['op'])) {
+						$condition['op'] = '$eq';
+					}
 					$query = array($condition['src_field'] => array($condition['op'] => $condition['pattern']));
 					$matchedConditions = $matchedConditions && Billrun_Utils_Arrayquery_Query::exists($userFields, $query);
 					if (!$matchedConditions) {
