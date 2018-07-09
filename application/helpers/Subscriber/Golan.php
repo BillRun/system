@@ -322,7 +322,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$offer['plan'] = $subscriberOffer['plan'];
 									$offer['start_date'] = $subscriberOffer['start_date'];
 									$offer['end_date'] = $subscriberOffer['end_date'];
-									$offer['fraction'] = $this->calcServiceFraction($offer['start_date'], $offer['end_date'], $sid);	
+									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
 										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
@@ -904,6 +904,37 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$planNames[] = $plan['plan'];
 		}
 		return $planNames;
+	}
+	
+	protected function calcServiceFractionIncludingFreeze($offer, $sid) {
+		$billingStartDate = Billrun_Util::getStartTime($this->billrun_key);
+		$daysInMonth = (int) date('t', $billingStartDate);
+		if ($this->isFreezeExists()) {
+			$offerStartDate = (new DateTime())->setTimestamp(strtotime($offer['start_date']));
+			$offerEndDate = (new DateTime())->setTimestamp(strtotime($offer['end_date']));
+			$freezeStartDate = (new DateTime())->setTimestamp(strtotime($this->getFreezeStartDay()));
+			$freezeEndDate = (new DateTime())->setTimestamp(strtotime($this->getFreezeEndDay()));
+			$overlappingFreezeDays = $this->getNumberOfOverlappingDays($offerStartDate, $offerEndDate, $freezeStartDate, $freezeEndDate);
+		} else {
+			$overlappingFreezeDays = 0;
+		}
+		$serviceDays = $this->getNumberOfDays($offer['start_date'], $offer['end_date']);
+		$serviceActiveDays = $serviceDays - $overlappingFreezeDays;
+		$fraction = $serviceActiveDays / $daysInMonth;
+		if ($this->isIllegalFraction($fraction)){
+			Billrun_Log::getInstance()->log("Fraction " . $fraction . " is illegal value for fraction, subscriber_id: " . $sid , Zend_log::ALERT);
+			$fraction = 0;
+		}
+		
+		return $fraction;
+	}
+	
+	protected function getNumberOfOverlappingDays($startOne, $endOne, $startTwo, $endTwo) {
+		if($startOne <= $endTwo && $endOne >= $startTwo) {
+			return min($endOne, $endTwo)->diff(max($startTwo, $startOne))->days + 1;
+		}
+		
+		return 0;
 	}
 
 }
