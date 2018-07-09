@@ -63,7 +63,7 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 				foreach ($billrun_doc['subs'] as $sub_entry) {
 					$flat_data_record['sid'] = $flat_breakdown_record['sid'] = $sub_entry['sid'];
 					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];	
-					$plansNames = is_null($sub_entry['plans']) ? null : array_column($sub_entry['plans'], 'plan');
+					$plansNames = is_null($sub_entry['plans']) ? null : $this->getPlanNames($sub_entry['plans']);
 					$flat_data_record['kosher'] = $flat_breakdown_record['kosher'] = ((isset($sub_entry['kosher']) && ($sub_entry['kosher'] == "true" || (is_bool($sub_entry['kosher']) && $sub_entry['kosher']))) ? 1 : 0);
 					foreach ($plansNames as $key => $planName) {
 						$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = $planName;
@@ -161,6 +161,13 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 
 	protected function resetBuffer() {
 		$this->buffer = array();
+	}
+	
+	protected function getPlanNames($plans) {
+		foreach ($plans as $plan) {
+			$planNames[] = $plan['plan'];
+		}
+		return $planNames;
 	}
 
 }
