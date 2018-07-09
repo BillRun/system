@@ -40,6 +40,7 @@ class Generator_BillrunstatsCsv extends Generator_Billrunstats {
 			'kosher' => 'kosher',
 			'day' => 'day',
 			'plan' => 'plan',
+			'next_plan' => 'next_plan',
 			'category' => 'category',
 			'zone' => 'zone',
 			'vat' => 'vat',

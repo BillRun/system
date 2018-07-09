@@ -313,9 +313,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end'], $sid);
 				
 							$subscriberOffers = !is_null($subscriber['offers']) ? $subscriber['offers'] : array();
+							$offers = array();
+							$offerCredits = array();
 							if (!empty($subscriberOffers)) {
-								$offers = array();
-								$offerCredits = array();
 								foreach ($subscriberOffers as $subscriberOffer) {
 									$offer = array();
 									$offer['id'] = $subscriberOffer['offer_id'];

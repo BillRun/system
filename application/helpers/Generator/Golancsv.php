@@ -117,6 +117,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'TotalVat',
 			'TotalCharge',
 			'isAccountActive',
+			'nextPackage',
 			'curPackage',
 			'TotalChargeVatData',
 			'CountOfKb',
@@ -238,6 +239,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['CountActiveCli'] += $sub_row['isAccountActive'] = $this->getIsAccountActive($subscriber);
 				$acc_row['kosherCount'] += $sub_row['isKosher'] = $this->is_kosher($subscriber);
 				$sub_row['curPackage'] = $this->getCurPackage($subscriber);
+				$sub_row['nextPackage'] = '';
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
 				$this->addSubscriberRow($sub_row);
