@@ -580,7 +580,7 @@ abstract class Billrun_Bill {
 							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
 						}
 						try {
-							$paymentStatus = $gateway->transferCash($gatewayDetails);
+							$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
 						} catch (Exception $e) {
 							$payment->setGatewayChargeFailure($e->getMessage());
 							$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");

@@ -755,7 +755,7 @@ abstract class Billrun_PaymentGateway {
 		return array();
 	}
 	
-	public function transferCash($gatewayDetails) {
+	public function makeOnlineTransaction($gatewayDetails) {
 		$amountToPay = $gatewayDetails['amount'];
 		if ($amountToPay > 0) {
 			return $this->pay($gatewayDetails);
