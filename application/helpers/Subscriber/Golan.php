@@ -327,12 +327,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
 										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
 										$offerCredit = $this->refundCredit;
-										$replacedStampOfferService = preg_replace('/stamp/', Billrun_Util::getBillrunKey(time()), $offerCredit['service_name']);
+										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
 										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
 										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
 										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
-										$offerCredit['activation'] = $offer['start_date'];
-										$offerCredit['deactivation'] = $offer['end_date'];
+										$offerCredit['activation'] = $concat['data']['activation_start'];
+										$offerCredit['deactivation'] = $concat['data']['activation_end'];
 										$offerCredit['fraction'] = $offer['fraction'];
 										$offerCredit['credit_time'] = Billrun_Util::getEndTime($this->billrun_key);
 										if ($sid) {

@@ -107,21 +107,21 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 								}
 							}
 						}
-						if (isset($sub_entry['lines']['data']['counters'])) {
-							foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
-								foreach(array('usage_3g','usage_4g') as $data_generation) {
-									if(isset($counters[$data_generation])) {
-										$flat_data_record['plan'] = $counters[$data_generation]['plan_flag'] . '_plan';
-										$flat_data_record['category'] = str_replace('usage_', '', $data_generation);
-										$flat_data_record['zone'] = $this->ggsn_zone;
-										$flat_data_record['vat'] = $default_vat;
-										$flat_data_record['usagev'] = $counters[$data_generation]['usagev'];
-										$flat_data_record['usaget'] = 'data';
-										$flat_data_record['count'] = 1;
-										$flat_data_record['cost'] = $counters[$data_generation]['aprice'];
-										$this->addFlatRecord($flat_data_record);
-										unset($flat_data_record['_id']);
-									}
+					}
+					if (isset($sub_entry['lines']['data']['counters'])) {
+						foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
+							foreach(array('usage_3g','usage_4g') as $data_generation) {
+								if(isset($counters[$data_generation])) {
+									$flat_data_record['plan'] = $counters[$data_generation]['plan_flag'] . '_plan';
+									$flat_data_record['category'] = str_replace('usage_', '', $data_generation);
+									$flat_data_record['zone'] = $this->ggsn_zone;
+									$flat_data_record['vat'] = $default_vat;
+									$flat_data_record['usagev'] = $counters[$data_generation]['usagev'];
+									$flat_data_record['usaget'] = 'data';
+									$flat_data_record['count'] = 1;
+									$flat_data_record['cost'] = $counters[$data_generation]['aprice'];
+									$this->addFlatRecord($flat_data_record);
+									unset($flat_data_record['_id']);
 								}
 							}
 						}
