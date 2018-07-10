@@ -522,7 +522,7 @@ abstract class Billrun_Bill {
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
-				if ($dir == 'fc' || is_null($dir)) { // attach invoices to payments and vice versa
+				if (in_array($dir, array('fc','tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays']['inv'])) {
 						$paidInvoices = $rawPayment['pays']['inv']; // currently it is only possible to specifically pay invoices only and not payments
 						$invoices = Billrun_Bill_Invoice::getInvoices(array('aid' => $aid, 'invoice_id' => array('$in' => Billrun_Util::verify_array(array_keys($paidInvoices), 'int'))));

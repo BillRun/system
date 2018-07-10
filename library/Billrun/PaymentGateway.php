@@ -618,6 +618,10 @@ abstract class Billrun_PaymentGateway {
 		);
 		$pipelines[] = array(
 			'$match' => array(
+				'$or' => array(
+					array('due' => array('$gt' => Billrun_Bill::precision)),
+					array('due' => array('$lt' => -Billrun_Bill::precision)),
+				),
 				'payment_method' => array(
 					'$in' => array('automatic'),
 				),
