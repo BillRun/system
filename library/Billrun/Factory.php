@@ -484,11 +484,11 @@ class Billrun_Factory {
 		return Billrun_EmailSenderManager::getInstance($params);
 	}
 	
-	static public function clearInstance($instanceName, array $options = array(),$clearAll = FALSE) {
+	public static function clearInstance($instanceName, array $options = array(),$clearAll = FALSE) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
 		
 		if($clearAll) {
-			self::${$instanceName} = array();
+			self::${$instanceName} = is_array(self::${$instanceName})  ? array() : null;
 		}
 		if (!isset(self::${$instanceName}[$stamp])) {
 			return;
