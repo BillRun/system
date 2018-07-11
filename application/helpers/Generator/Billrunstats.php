@@ -64,7 +64,7 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 					$flat_data_record['sid'] = $flat_breakdown_record['sid'] = $sub_entry['sid'];
 					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
 					if (isset($sub_entry['breakdown'])) {
-						$planNames = array_keys($sub_entry['breakdown']);
+						$plansNames = array_keys($sub_entry['breakdown']);
 					} else {
 						$plansNames = is_null($sub_entry['plans']) ? ($sub_entry['sid'] == 0 ? array('ACCOUNT') : array()) : $this->getPlanNames($sub_entry['plans']);
 					}
