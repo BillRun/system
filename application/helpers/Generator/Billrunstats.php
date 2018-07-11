@@ -62,8 +62,12 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 				Billrun_Factory::log()->log('Flattening billrun ' . $flat_breakdown_record['billrun_key'] . ' of account ' . $flat_breakdown_record['aid'], Zend_Log::DEBUG);
 				foreach ($billrun_doc['subs'] as $sub_entry) {
 					$flat_data_record['sid'] = $flat_breakdown_record['sid'] = $sub_entry['sid'];
-					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];	
-					$plansNames = is_null($sub_entry['plans']) ? null : $this->getPlanNames($sub_entry['plans']);
+					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
+					if (isset($sub_entry['breakdown'])) {
+						$planNames = array_keys($sub_entry['breakdown']);
+					} else {
+						$plansNames = is_null($sub_entry['plans']) ? ($sub_entry['sid'] == 0 ? array('ACCOUNT') : array()) : $this->getPlanNames($sub_entry['plans']);
+					}
 					$flat_data_record['kosher'] = $flat_breakdown_record['kosher'] = ((isset($sub_entry['kosher']) && ($sub_entry['kosher'] == "true" || (is_bool($sub_entry['kosher']) && $sub_entry['kosher']))) ? 1 : 0);
 					foreach ($plansNames as $key => $planName) {
 						$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = $planName;

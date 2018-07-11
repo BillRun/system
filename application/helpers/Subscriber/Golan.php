@@ -425,12 +425,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									} else {
 										$service['plan'] = 'ACCOUNT';
 									}
+									if (is_null($service['plan'])) {
+										continue;
+									}
 									$stamp = Billrun_Util::generateArrayStamp($service);
 									if (isset($services[$stamp])) {
 										$services[$stamp]['count'] ++;
 										continue;
 									}
-									$services[$stamp] = $service;	
+									$services[$stamp] = $service;
 								}
 								$services = array_values($services);
 								$concat['data']['sub_services'] = $services;

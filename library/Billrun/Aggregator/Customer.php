@@ -255,13 +255,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				if ($account_billrun->subscriberExists($sid)) {
 					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
 					continue;
-				}	
+				}
 				$offers = $subscriber->getPlans();
 				$lastOffer = $this->getLastOffer($offers);
 				if (!empty($lastOffer) && strtotime($lastOffer['end_date']) < Billrun_Util::getEndTime($billrun_key)) {
 					$subscriber_status = "closed";
 				}
-				
+				if ($sid == 0) {
+					$subscriber->setBillrunKey($billrun_key);
+					$offers = $this->getAccountPlan($subscriber);
+				}
 				if (is_null($offers)) {
 					Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
 					$subscriber_status = "closed";
@@ -566,6 +569,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 		}
 		return $lastOffer;
+	}
+	
+	protected function getAccountPlan($subscriber) {
+		return array(
+			array(
+				'plan' => 'ACCOUNT',
+				'id' => 0,
+				'fraction' => $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay(), $subscriber->sid),
+			)
+		);
 	}
 
 }
