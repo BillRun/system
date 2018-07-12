@@ -132,6 +132,8 @@ class CycleAction extends Action_Base {
 	 * @return type
 	 */
 	protected function executeChildProcess($options) {
+		Billrun_Factory::clearInstance('db',array(),true);
+		Mongodloid_Connection::clearInstances();
 		$aggregator = $this->getAggregator($options);
 		if($aggregator == false) {
 			return;
