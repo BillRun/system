@@ -298,5 +298,6 @@ for (var i in propertyTypes) {
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
 db.config.insert(lastConfig);
