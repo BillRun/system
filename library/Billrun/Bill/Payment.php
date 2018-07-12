@@ -495,6 +495,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
 
+			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
 			if (!empty($chargeOptions['invoices'])) {
 				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
 			}
