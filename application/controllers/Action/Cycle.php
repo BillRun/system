@@ -121,7 +121,7 @@ class CycleAction extends Action_Base {
 	}
 	
 	protected function executeParentProcess($processInterval) {
-		$this->_controller->addOutput("Going to sleep for " . $processInterval);
+		$this->_controller->addOutput("Going to sleep for " . $processInterval . " seconds");
 		sleep($processInterval);
 		pcntl_signal(SIGCHLD, SIG_IGN);
 	}
