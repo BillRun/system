@@ -313,26 +313,26 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end'], $sid);
 				
 							$subscriberOffers = !is_null($subscriber['offers']) ? $subscriber['offers'] : array();
+							$offers = array();
+							$offerCredits = array();
 							if (!empty($subscriberOffers)) {
-								$offers = array();
-								$offerCredits = array();
 								foreach ($subscriberOffers as $subscriberOffer) {
 									$offer = array();
 									$offer['id'] = $subscriberOffer['offer_id'];
 									$offer['plan'] = $subscriberOffer['plan'];
 									$offer['start_date'] = $subscriberOffer['start_date'];
 									$offer['end_date'] = $subscriberOffer['end_date'];
-									$offer['fraction'] = $this->calcServiceFraction($offer['start_date'], $offer['end_date'], $sid);	
+									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
 										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
 										$offerCredit = $this->refundCredit;
-										$replacedStampOfferService = preg_replace('/stamp/', Billrun_Util::getBillrunKey(time()), $offerCredit['service_name']);
+										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
 										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
 										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
 										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
-										$offerCredit['activation'] = $offer['start_date'];
-										$offerCredit['deactivation'] = $offer['end_date'];
+										$offerCredit['activation'] = $concat['data']['activation_start'];
+										$offerCredit['deactivation'] = $concat['data']['activation_end'];
 										$offerCredit['fraction'] = $offer['fraction'];
 										$offerCredit['credit_time'] = Billrun_Util::getEndTime($this->billrun_key);
 										if ($sid) {
@@ -425,12 +425,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									} else {
 										$service['plan'] = 'ACCOUNT';
 									}
+									if (is_null($service['plan'])) {
+										continue;
+									}
 									$stamp = Billrun_Util::generateArrayStamp($service);
 									if (isset($services[$stamp])) {
 										$services[$stamp]['count'] ++;
 										continue;
 									}
-									$services[$stamp] = $service;	
+									$services[$stamp] = $service;
 								}
 								$services = array_values($services);
 								$concat['data']['sub_services'] = $services;
@@ -904,6 +907,37 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$planNames[] = $plan['plan'];
 		}
 		return $planNames;
+	}
+	
+	protected function calcServiceFractionIncludingFreeze($offer, $sid) {
+		$billingStartDate = Billrun_Util::getStartTime($this->billrun_key);
+		$daysInMonth = (int) date('t', $billingStartDate);
+		if ($this->isFreezeExists()) {
+			$offerStartDate = (new DateTime())->setTimestamp(strtotime($offer['start_date']));
+			$offerEndDate = (new DateTime())->setTimestamp(strtotime($offer['end_date']));
+			$freezeStartDate = (new DateTime())->setTimestamp(strtotime($this->getFreezeStartDay()));
+			$freezeEndDate = (new DateTime())->setTimestamp(strtotime($this->getFreezeEndDay()));
+			$overlappingFreezeDays = $this->getNumberOfOverlappingDays($offerStartDate, $offerEndDate, $freezeStartDate, $freezeEndDate);
+		} else {
+			$overlappingFreezeDays = 0;
+		}
+		$serviceDays = $this->getNumberOfDays($offer['start_date'], $offer['end_date']);
+		$serviceActiveDays = $serviceDays - $overlappingFreezeDays;
+		$fraction = $serviceActiveDays / $daysInMonth;
+		if ($this->isIllegalFraction($fraction)){
+			Billrun_Log::getInstance()->log("Fraction " . $fraction . " is illegal value for fraction, subscriber_id: " . $sid , Zend_log::ALERT);
+			$fraction = 0;
+		}
+		
+		return $fraction;
+	}
+	
+	protected function getNumberOfOverlappingDays($startOne, $endOne, $startTwo, $endTwo) {
+		if($startOne <= $endTwo && $endOne >= $startTwo) {
+			return min($endOne, $endTwo)->diff(max($startTwo, $startOne))->days + 1;
+		}
+		
+		return 0;
 	}
 
 }

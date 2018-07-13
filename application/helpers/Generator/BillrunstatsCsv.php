@@ -37,6 +37,7 @@ class Generator_BillrunstatsCsv extends Generator_Billrunstats {
 			'sid' => 'sid',
 			'subscriber_status' => 'subscriber_status',
 			'current_plan' => 'current_plan',
+			'next_plan' => 'next_plan',			
 			'kosher' => 'kosher',
 			'day' => 'day',
 			'plan' => 'plan',
