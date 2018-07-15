@@ -300,7 +300,7 @@ db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$re
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1457 - Fix creation_time field in subscriber services
-db.subscribers.find({type: 'subscriber', services:{$exists:1}, 'services.creation_time.sec': {$exists:1}}).forEach(
+db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
 		var services = obj.services;
 		for (var service in services) {
