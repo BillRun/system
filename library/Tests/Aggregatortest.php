@@ -198,9 +198,11 @@ class Tests_Aggregatore extends UnitTestCase {
 			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201807', 'aid' => 56, 'after_vat' => array("57" => 159.9), 'total' => 159.9, 'vatable' => 136.666666667, 'vat' => 17),
 				'line' => array('types' => array('flat'))),
 		),
-		/* Service Include in plan should be zero if configured to be free */
+		/* Service Include in plan should be zero if configured to be free + 
+		  Verify that expected invoice does not generate a billrun object
+		 */
 		array(
-			'preRun' => ('charge_included_service'),
+			'preRun' => array('charge_included_service'),
 			'test' => array('test_number' => 27, "aid" => 58, 'sid' => 59, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(58))),
 			'expected' => array('billrun' => array('invoice_id' => 124, 'billrun_key' => '201807', 'aid' => 58, 'after_vat' => array("59" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat'))),
@@ -257,11 +259,16 @@ class Tests_Aggregatore extends UnitTestCase {
 //			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
 //			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
 //				'line' => array('types' => array('flat')),
-//			)),
+//			)),'exepted_invoice'
+		array(
+			'preRun' => ('exepted_invoice'),
+			'test' => array('test_number' => 33,),
+			'expected' => array(),
+		),
 //		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 33, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 34, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 		)
 	);
@@ -305,7 +312,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		foreach ($this->tests as $key => $row) {
 
 			$aid = $row['test']['aid'];
-			$this->message.='test number : '.$row['test']['test_number'];
+			$this->message .= 'test number : ' . $row['test']['test_number'];
 			/* run fenctions before the test begin */
 			if (isset($row['preRun']) && !empty($row['preRun'])) {
 				$preRun = $row['preRun'];
@@ -317,8 +324,9 @@ class Tests_Aggregatore extends UnitTestCase {
 				}
 			}
 			/* run aggregator */
+			if(array_key_exists('aid', $row['test'])){
 			$returnBillrun = $this->runT($row);
-
+			}
 			/* run tests functios */
 			if (isset($row['test']['function'])) {
 				$function = $row['test']['function'];
@@ -503,9 +511,9 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->lineExists($key, $returnBillrun = null, $row);
 		if ($this->numOffLines > 0) {
 			$passed = false;
-			$this->message .= "lines was created for account {$row['test']['aid']} but this account isn't exsit" . $this->fail;
+			$this->message .= "lines was created for account {$row['test']['aid']} But they should not have been formed" . $this->fail;
 		} else {
-			$this->message .= "lines wasn't created for account {$row['test']['aid']} becouse of this account isn't exsit" . $this->pass;
+			$this->message .= "lines wasn't created for account {$row['test']['aid']} Because they should not have been created" . $this->pass;
 		}
 		return $passed;
 	}
@@ -661,7 +669,8 @@ class Tests_Aggregatore extends UnitTestCase {
 	public function charge_not_included_service($key, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_not_included_service.ini');
 	}
-
+	
+    /*check if invoice was created*/
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
@@ -727,6 +736,28 @@ class Tests_Aggregatore extends UnitTestCase {
 			} else {
 				$this->message .= "force account with 10 accounts work well and override the invoices id" . $this->pass;
 			}
+		}
+		return $passed;
+	}
+
+	public function exepted_invoice($key, $row) {
+		$this->message .= "<b> exepted_invoice :</b> <br>";
+		$passed = true;
+		$billrunsBefore = $this->getBillruns()->count();
+		$options = array(
+			'type' => (string) 'expectedinvoice',
+			'aid' => (string) 3,
+			'stamp' => (string) '201808'
+		);
+		$generator = Billrun_Generator::getInstance($options);
+		$generator->load();
+		$generator->generate();
+		$billrunsAfter = $this->getBillruns()->count();
+		if($billrunsAfter > $billrunsBefore){
+			$passed = false;
+			$this->message .="exepted invoice created billrun object".$this->fail;
+		}else{
+			$this->message .="exepted invoice wasn't created billrun object".$this->pass;
 		}
 		return $passed;
 	}
