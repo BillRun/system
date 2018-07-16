@@ -73,18 +73,19 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			$options = array('collect' => false, 'file_based_charge' => true);
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = $customer['due'];
+			$paymentParams['amount'] = abs($customer['due']);
 			$paymentParams['source'] = $customer['source'];
 			$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			$amount = $this->convertAmountToSend($paymentParams['amount']);
+			$dealType = $customer['due'] < 0 ? '51' : '01'; // credit or debit
 			$line = array(
 				0 => '001',
 				1 => $this->gatewayCredentials['charging_terminal'],
 				2 => $amount,
-				3 => 1,
+				3 => 'ILS',
 				4 => $account['payment_gateway']['active']['card_token'],
 				5 => $account['payment_gateway']['active']['card_expiration'],
-				6 => '01',
+				6 => $dealType,
 				7 => 1,
 				8 => '',
 				9 => $payment[0]->getId(),
@@ -95,6 +96,20 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 				14 => '',
 				15 => '',
 				16 => '',
+				17 => '',
+				18 => '',
+				19 => '',
+				20 => '',
+				21 => '',
+				22 => '',
+				23 => '',
+				24 => '',
+				25 => '',
+				26 => '',
+				27 => '',
+				28 => '',
+				29 => '',
+				30 => '',
 			);
 			$this->data[] = $line;
 		}
@@ -102,7 +117,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	}
 
 	protected function setFilename() {
-		$this->filename = 'c' . $this->extractionDateFormat . '.' . $this->gatewayCredentials['charging_terminal'];
+		$this->filename = 'billing_SYSTEM_' . $this->extractionDateFormat . '.in';
 	}
 
 	protected function writeHeaders() {
