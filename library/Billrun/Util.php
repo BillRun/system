@@ -1730,27 +1730,19 @@ class Billrun_Util {
 	}
 	
 	/**
-	 * Deeply unsets an array value.
-	 * 
-	 * @param type $arr - reference to the array
-	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
-	 * @param mixed $value - new value to unset
+	 * Check if a given string/strings array has one item that matches a given regex array
+	 * @param type $regexs An array of regexes
+	 * @param type $strings A string or an array of strings to check the regexes against
+	 * @return TRUE if there was at leat one match FALSE otherwise
 	 */
-	public static function unsetIn(&$arr, $keys, $value) {
-		if (!is_array($arr)) {
-			return;
-		}
-		if (!is_array($keys)) {
-			$keys = explode('.', $keys);
-		}
-		$current = &$arr;
-		foreach($keys as $key) {
-			if (!is_null($current[$key])) {
-			$current = &$current[$key];
+	public static function regexArrMatch($regexs, $strings) {
+		$strings = is_array($strings) ? $strings : array($strings);
+		foreach ($regexs as $regex) {
+			if (!empty(preg_grep($regex, $strings))) {
+				return true;
 			}
 		}
-		if (!is_null($current[$value])) {
-			unset($current[$value]);
-		}
+		return false;
 	}
+
 }
