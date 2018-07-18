@@ -49,5 +49,15 @@ class Models_Lines extends Models_Entity {
 			),
 		);
 	}
+	
+	/**
+	 * Performs a delete from the DB by a query
+	 * we are overriding to protect vertical remove
+	 * 
+	 * @param array $query
+	 */
+	protected function remove($query) {
+		return $this->collection->remove($query, array('w' => 1, 'justOne' => true));
+	}
 
 }

@@ -699,7 +699,9 @@ class Models_Entity {
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
-		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
+		
+		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
 

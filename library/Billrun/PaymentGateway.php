@@ -621,8 +621,9 @@ abstract class Billrun_PaymentGateway {
 		);
 		$pipelines[] = array(
 			'$match' => array(
-				'due' => array(
-					'$gt' => Billrun_Bill::precision,
+				'$or' => array(
+					array('due' => array('$gt' => Billrun_Bill::precision)),
+					array('due' => array('$lt' => -Billrun_Bill::precision)),
 				),
 				'payment_method' => array(
 					'$in' => array('automatic'),
@@ -755,6 +756,19 @@ abstract class Billrun_PaymentGateway {
 
 	public function getExportParameters() {
 		return array();
+	}
+	
+	public function makeOnlineTransaction($gatewayDetails) {
+		$amountToPay = $gatewayDetails['amount'];
+		if ($amountToPay > 0) {
+			return $this->pay($gatewayDetails);
+		} else {
+			return $this->credit($gatewayDetails);
+		}
+	}
+	
+	protected function credit($gatewayDetails) {
+		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
 }
