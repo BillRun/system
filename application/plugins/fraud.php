@@ -311,7 +311,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		if ($rule['threshold'] == 'from_plan') {
-			$rule['sumFields'][] = 'groups.' . $row['plan'] . '.data.usagev';
+			$rule['sumFields'][] = 'groups.' . $row['plan'] . '.' . $row['usaget'] . '.usagev';
 		}
 
 		// calculate before and after usage
