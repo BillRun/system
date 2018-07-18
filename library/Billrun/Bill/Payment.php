@@ -502,8 +502,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 			if (!empty($chargeOptions['invoices'])) {
 				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
+				Billrun_Factory::log("Starting to pay bills by invoice ids: " . implode(',', $chargeOptions['invoices']), Zend_Log::INFO);
 			}
-			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);			
+			if (!empty($chargeOptions['aids'])) {
+				Billrun_Factory::log("Starting to pay bills by aids: " . implode(',', self::$aids), Zend_Log::INFO);
+			}
 			self::payAndUpdateStatus($customer['payment_method'], $paymentParams, $gatewayDetails, $options);
 		}
 		
@@ -639,10 +642,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $gatewayDetails, $options = array()) {
 		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
-		if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+		$gatewayName = $gatewayDetails['name'];
+		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+		if (isset($paymentResponse['response']['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response']['status'])) {
 			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
 		}
-		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayDetails['name']);
+		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 	}
 
 }

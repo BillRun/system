@@ -589,11 +589,10 @@ abstract class Billrun_Bill {
 								continue;
 							}
 						} else {
-							$singlePaymentStatus = $payment->getSinglePaymentStatus();
-							if (empty($singlePaymentStatus)) {
+							$paymentStatus = $payment->getSinglePaymentStatus();
+							if (empty($paymentStatus)) {
 								throw new Exception("Missing status from gateway for single payment");
 							}
-							$paymentStatus = $singlePaymentStatus;
 						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
 						$txId = $gateway->getTransactionId();

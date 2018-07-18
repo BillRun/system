@@ -33,64 +33,19 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
-		$this->conf['aid'] = $aid;
-		$this->conf['ok_page'] = $okPage;
-		$this->conf['return_url'] = $returnUrl;
+		$xmlParams['version'] = '1000';
+		$xmlParams['mpiValidation'] = 'Verify';
+		$xmlParams['userData2'] = '';
+		$xmlParams['aid'] = $aid;
+		$xmlParams['ok_page'] = $okPage;
+		$xmlParams['return_url'] = $returnUrl;
+		$xmlParams['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
 		$today = new MongoDate();
-		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
-		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
-		$addFailPage = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
+		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
-		return $post_array = array(
-			'user' => $credentials['user'],
-			'password' => $credentials['password'],
-			/* Build Ashrait XML to post */
-			'int_in' => '<ashrait>                                      
-							<request>
-								 <version>1000</version>
-								 <language>' . $this->conf['language'] . '</language>
-								 <dateTime></dateTime>
-								 <command>doDeal</command>
-								 <doDeal>
-										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
-										  '. $addFailPage  .'
-										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
-										  <mainTerminalNumber/>
-										  <cardNo>CGMPI</cardNo>
-										  <total>' . $this->conf['amount'] . '</total>
-										  <transactionType>Debit</transactionType>
-										  <creditType>RegularCredit</creditType>
-										  <currency>ILS</currency>
-										  <transactionCode>Phone</transactionCode>
-										  <authNumber/>
-										  <numberOfPayments/>
-										  <firstPayment/>
-										  <periodicalPayment/>
-										  <validation>TxnSetup</validation>
-										  <dealerNumber/>
-										  <user>something</user>
-										  <mid>' . (int) $credentials['mid'] . '</mid>
-										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>Verify</mpiValidation>
-										  <email>someone@creditguard.co.il</email>
-										  <clientIP/>
-										  <customerData>
-										   <userData1>' . $this->conf['aid'] . '</userData1>
-										   <userData2/>
-										   <userData3/>
-										   <userData4/>
-										   <userData5/>
-										   <userData6/>
-										   <userData7/>
-										   <userData8/>
-										   <userData9/>
-										   <userData10/>
-										  </customerData>
-								 </doDeal>
-							</request>
-						   </ashrait>'
-		);
+		return $this->getXmlStructureByParams($credentials, $xmlParams);
 	}
 
 	protected function updateRedirectUrl($result) {
@@ -331,32 +286,39 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function buildSinglePaymentArray($params) {
 		$credentials = $this->getGatewayCredentials();
-		$this->conf['amount'] = (int) $this->convertAmountToSend($params['amount']);
-		$this->conf['aid'] = $params['aid'];
-		$this->conf['ok_page'] = $params['ok_page'];
-		$this->conf['return_url'] = $params['return_url'];
+		$xmlParams['version'] = '1001';
+		$xmlParams['mpiValidation'] = 'AutoComm';
+		$xmlParams['userData2'] = 'SinglePayment';
+		$xmlParams['aid'] = $params['aid'];
+		$xmlParams['ok_page'] = $params['ok_page'];
+		$xmlParams['return_url'] = $params['return_url'];
+		$xmlParams['amount'] = (int) $this->convertAmountToSend($params['amount']);
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
-		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
-		$addFailPage = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
-
-		return $post_array = array(
+		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
+		
+		return $this->getXmlStructureByParams($credentials, $xmlParams);
+	}
+	
+	protected function getXmlStructureByParams($credentials, $xmlParams) {
+		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
 			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>                                      
 							<request>
-								 <version>1001</version>
-								 <language>' . $this->conf['language'] . '</language>
+								 <version>' . $xmlParams['version'] . '</version>
+								 <language>' . $xmlParams['language'] . '</language>
 								 <dateTime/>
 								 <command>doDeal</command>
 								 <doDeal>
-										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
-										  '. $addFailPage  .'
+										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
+										  '. $xmlParams['addFailPage']  .'
 										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
-										  <total>' . $this->conf['amount'] . '</total>
+										  <total>' . $xmlParams['amount'] . '</total>
 										  <transactionType>Debit</transactionType>
 										  <creditType>RegularCredit</creditType>
 										  <currency>ILS</currency>
@@ -370,10 +332,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <user>something</user>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>AutoComm</mpiValidation>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
 										  <customerData>
-										   <userData1>' . $this->conf['aid'] . '</userData1>
-										   <userData2>SinglePayment</userData2>
+										   <userData1>' . $xmlParams['aid'] . '</userData1>
+										   <userData2>' . $xmlParams['userData2'] . '</userData2>
 										   <userData3/>
 										   <userData4/>
 										   <userData5/>
