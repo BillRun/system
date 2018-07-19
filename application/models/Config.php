@@ -1578,7 +1578,7 @@ class ConfigModel {
 	
 	protected function getCustomKeys($parserStructure) {
 		 array_column(array_filter($parserStructure, function($field) {
-				return $field['checked'] === true;
+				return isset($field['checked']) && $field['checked'] === true;
 			}),'name');
 	}
 

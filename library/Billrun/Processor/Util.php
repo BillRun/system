@@ -26,6 +26,7 @@ class Billrun_Processor_Util {
 	 */
 	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
 		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
+		$timezoneValue = null;
 		if (is_null($dateValue)) {
 			return null;
 		}
