@@ -15,11 +15,13 @@ function rebuildBillsLinks($accounts) {
 			);
 			$res = $billsColl->query($query)->cursor();
 			foreach ($res as $bill) {
+				$bill->collection($billsColl);
 				unset($bill['pays']);
 				unset($bill['left']);
 				unset($bill['paid_by']);
 				unset($bill['paid']);
 				unset($bill['total_paid']);
+				unset($bill['waiting_payments']);
 				if ($bill['due'] < 0) {
 					$bill['left'] = $bill['amount'];
 				} else {
@@ -36,7 +38,7 @@ function rebuildBillsLinks($accounts) {
 					echo 'Error resetting bill ' . ($bill['type'] == 'inv' ? $bill['invoice_id'] : $bill['txid']) . PHP_EOL;
 				}
 			}
-			Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($aid, false);
 		}
 	}
 }
