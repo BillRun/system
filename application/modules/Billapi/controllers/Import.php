@@ -17,11 +17,6 @@ class ImportController extends BillapiController {
 	
 	protected $action;
 
-	public function init() {
-		parent::init();
-		$request = $this->getRequest();
-	}
-
 	protected function runOperation() {
 		$this->action = Models_Action::getInstance($this->params);
 		if (!$this->action) {
@@ -40,7 +35,6 @@ class ImportController extends BillapiController {
 				}
 			}
 			$this->output->details = $results;
-			return $res;
 		} catch (Exception $ex) {
 			$this->output->status = 0;
 			$this->output->errorCode = $ex->getCode();

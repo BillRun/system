@@ -35,13 +35,11 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	protected function runQuery() {
 		$rates = array();
 		foreach ($this->update as $rate) {
-			// TODO: in update key not exist
-			if (empty($rates[$rate['key']])) {
-				$rates[$rate['key']] = array();
-			}
+			$keyField = !empty($rate['__UPDATER__']['value']) ? $rate['__UPDATER__']['value'] : 'key';
+			$rates[$keyField] = array();
 			if(!empty($rate['rates'])) {
 				foreach ($rate['rates'] as $usaget => $pricing) {
-					$rates[$rate['key']] = array_merge($rates[$rate['key']], array_keys($pricing));
+					$rates[$keyField] = array_merge($rates[$keyField], array_keys($pricing));
 				}
 			}
 		}
@@ -65,19 +63,50 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			if (empty($entity['__UPDATER__'])) {
 				throw new Exception('Missing mandatory update parameter updater');
 			}
-			$rateQuery = array(
-				$entity['__UPDATER__']['field'] => $entity['__UPDATER__']['value'],
-			);			
+			$from = empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'];
+			$rateQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+			$rateQuery[$entity['__UPDATER__']['field']] = $entity['__UPDATER__']['value'];
 			$existingRate = Billrun_Factory::db()->ratesCollection()->query($rateQuery)->cursor()->current();
 			if(!$existingRate || $existingRate->isEmpty()) {
 				throw new Exception("Product {$entity['__UPDATER__']['value']} does not exist");
 			}
 			$key = $existingRate['key'];
+			
+			if(!empty($entity['__MULTI_FIELD_ACTION__'])) {
+				foreach ($entity['__MULTI_FIELD_ACTION__'] as $fieldName => $action) {
+					$path = explode(".", $fieldName);
+					switch ($action) {
+						case 'append':
+							$oldValues = Billrun_Util::getIn($existingRate, $path, []);
+							$newValues = $entity[$fieldName];
+							$entity[$fieldName] = array_unique(array_merge($oldValues, $newValues));
+							break;
+						case 'remove':
+							$entity[$fieldName] = [];
+							break;
+						case 'replace':
+						default:
+							break;
+					}
+				}
+			}
+			
 			if (!empty($entity['rates'])) {
 				$usagetype = reset(array_keys($existingRate['rates']));
 				foreach ($entity['rates'] as $usaget => $rates) {
 					if($usaget == "_KEEP_SOURCE_USAGE_TYPE_") {
+						$uom_display = $existingRate['rates'][$usagetype]['BASE']['rate'][0]['uom_display'];
 						$entity['rates'][$usagetype] = $rates;
+						foreach ($entity['rates'][$usagetype] as $plan_name => $plan_rates) {
+							foreach ($plan_rates['rate'] as $key => $rate) {
+								if ($rate['uom_display']['interval'] === '_KEEP_SOURCE_USAGE_TYPE_UNIT_') {
+									$rate['uom_display']['interval'] = $uom_display['interval'];
+								}
+								if ($rate['uom_display']['range'] === '_KEEP_SOURCE_USAGE_TYPE_UNIT_') {
+									$rate['uom_display']['range'] = $uom_display['range'];
+								}
+							}
+						}
 						unset($entity['rates']["_KEEP_SOURCE_USAGE_TYPE_"]);
 					}
 				}

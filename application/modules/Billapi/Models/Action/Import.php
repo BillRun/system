@@ -34,10 +34,40 @@ class Models_Action_Import extends Models_Action {
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $entity) {
+			$errors = $entity['__ERRORS__'];
+			$csv_rows = $entity['__CSVROW__'];
+			
 			if($this->request['operation'] !== $this->getImportOperation()) {
 				$this->setImportOperation($this->request['operation']);
 			}
-			$output[$key] = $this->importEntity($entity);
+			
+			if(!empty($errors)) {
+				if(!empty($csv_rows)) {
+					foreach ($csv_rows as $csv_row) {
+						if(!array_key_exists($csv_row,$errors)) {
+							$errors[$csv_row] = false;
+						}
+					}
+				}
+				foreach ($errors as $row_index => $row_errors) {
+					if(is_array($row_errors)) {
+						foreach ($row_errors as $error) {
+							$output[$row_index][] = $error;
+						}
+					} else {
+						$output[$row_index] = $row_errors;
+					}
+				}
+			} else {
+				$result = $this->importEntity($entity);
+				if(!empty($csv_rows)) {
+					foreach ($csv_rows as $row_index) {
+						$output[$row_index] = $result;
+					}
+				} else {
+					$output[$key] = $result;
+				}
+			}
 		}
 		return $output;
 	}
@@ -89,6 +119,11 @@ class Models_Action_Import extends Models_Action {
 		if (empty($entity['from']) && !empty($entity['effective_date'])) {
 			$entity['from'] = $entity['effective_date'];
 		}
+		unset($entity['__UPDATER__']);
+		unset($entity['__LINKER__']);
+		unset($entity['__MULTI_FIELD_ACTION__']);
+		unset($entity['__ERRORS__']);
+		unset($entity['__CSVROW__']);
 		return json_encode($entity);
 	}
 

@@ -36,8 +36,7 @@ class Models_Action_Import_Subscribers extends Models_Action_Import {
 		if(!$account || $account->isEmpty()) {
 			throw new Exception('Customer for subscriber does not exist');
 		}
-		unset($entity['__LINKER__']);
 		$entity['aid'] = $account->get('aid');
-		return json_encode($entity);
+		return parent::getEntityData($entity);
 	}
 }
