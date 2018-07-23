@@ -77,7 +77,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type string
 	 */
 	protected $timeZone = null;
-	
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -152,9 +151,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
-		$usagev = $this->getLineUsageVolume($row['uf']);
+		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
+		if ($usagev === false) {
+			return false;
+		}
 		$row['usagev_unit'] = $this->usagevUnit;
-		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
+		$row['usagev'] = $usagev;
 		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
 		}
@@ -243,6 +245,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					if (Billrun_Util::isValidRegex($condition['pattern'])) {
 						$condition['op'] = '$regex';
 					}
+					if (empty($condition['op'])) {
+						$condition['op'] = '$eq';
+					}
 					$query = array($condition['src_field'] => array($condition['op'] => $condition['pattern']));
 					$matchedConditions = $matchedConditions && Billrun_Utils_Arrayquery_Query::exists($userFields, $query);
 					if (!$matchedConditions) {
@@ -261,7 +266,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $this->defaultUsaget;
 	}
 
-	protected function getLineUsageVolume($userFields, $falseOnError = false) {
+	protected function getLineUsageVolume($userFields, $usaget = null, $falseOnError = false) {
 		$volume = 0;
 		if ($this->volumeType === 'value') {
 			if (!is_numeric($this->volumeSrc)) {
@@ -274,6 +279,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($usagevFields)) {
 			foreach ($usagevFields as $usagevField) {
 				$usagev = Billrun_util::getIn($userFields, $usagevField);
+				if (!is_null($usagev) && !is_null($usaget)) {
+					$usagev = Billrun_Utils_Units::convertVolumeUnits($usagev, $usaget, $this->usagevUnit, true);
+				}
 				if (!is_null($usagev) && is_numeric($usagev)) {
 					$volume += floatval($usagev);
 				}
@@ -296,4 +304,5 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function isLinePrepriced($usaget) {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
+	
 }

@@ -205,20 +205,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function pay($gatewayDetails) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
-		$paymentString = http_build_query($paymentArray);
-		if (function_exists("curl_init")) {
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		}
-		if (strpos(strtoupper($result), 'HEB')) {
-			$result = iconv("utf-8", "iso-8859-8", $result);
-		}
-		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string) $xmlObj->response->result;
-		return $codeResult;
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit');
+		return $this->sendPaymentRequest($paymentArray);
 	}
 
-	protected function buildPaymentRequset($gatewayDetails) {
+	protected function buildPaymentRequset($gatewayDetails, $transactionType) {
 		$credentials = $this->getGatewayCredentials();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 
@@ -240,8 +231,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<creditType>RegularCredit</creditType>
 										<currency>' . $gatewayDetails['currency'] . '</currency>
 										<transactionCode>Phone</transactionCode>
-										<transactionType>Debit</transactionType>
-										<total>' . $gatewayDetails['amount'] . '</total>
+										<transactionType>' . $transactionType . '</transactionType>
+										<total>' . abs($gatewayDetails['amount']) . '</total>
 										<validation>AutoComm</validation>
 									</doDeal>
 								</request>
@@ -320,4 +311,24 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
+	
+	protected function credit($gatewayDetails) {
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit');
+		return $this->sendPaymentRequest($paymentArray);
+	}
+	
+	protected function sendPaymentRequest($paymentArray) {
+		$paymentString = http_build_query($paymentArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (strpos(strtoupper($result), 'HEB')) {
+			$result = iconv("utf-8", "iso-8859-8", $result);
+		}
+		$xmlObj = simplexml_load_string($result);
+		$codeResult = (string) $xmlObj->response->result;
+		$this->transactionId = (string) $xmlObj->response->tranId;
+		return $codeResult;
+	}
+
 }

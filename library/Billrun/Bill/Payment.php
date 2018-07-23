@@ -46,6 +46,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function __construct($options) {
 		$this->billsColl = Billrun_Factory::db()->billsCollection();
+		$direction = 'fc';
 		if (isset($options['_id'])) {
 			$this->data = new Mongodloid_Entity($options, $this->billsColl);
 		} elseif (isset($options['aid'], $options['amount'])) {
@@ -53,7 +54,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				throw new Exception('Billrun_Bill_Payment: Wrong input. Was: Customer: ' . $options['aid'] . ', amount: ' . $options['amount'] . '.');
 			}
 			$this->data = new Mongodloid_Entity($this->billsColl);
-			$this->setDir();
+			if (isset($options['dir'])) {
+				$direction = $options['dir'];
+			}
+			$this->setDir($direction);
 			$this->data['method'] = $this->method;
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
@@ -220,9 +224,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Set the direction of the payment (fc / tc)
 	 * @param string $dir
 	 */
-	protected function setDir() {
-		if (in_array($this->dir, array('fc', 'tc'))) {
-			$this->data['dir'] = $this->dir;
+	protected function setDir($direction = 'fc') {
+		if (in_array($direction, array('fc', 'tc'))) {
+			$this->data['dir'] = $direction;
 		} else {
 			throw new Exception('direction could be either \'fc\' or \'tc\'');
 		}
@@ -457,6 +461,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		if (!empty($chargeOptions['invoices'])) {
+			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
+		}
 		if (!static::lock()) {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
@@ -486,13 +493,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = $customer['due'];
+			$paymentParams['amount'] = abs($customer['due']);
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
+			if ($customer['due'] < 0) {
+				$paymentParams['dir'] = 'tc';
+			}
+
+			if (!empty($chargeOptions['invoices'])) {
+				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
+			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
+			}
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
 		

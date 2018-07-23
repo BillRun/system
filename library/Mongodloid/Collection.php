@@ -478,11 +478,19 @@ class Mongodloid_Collection {
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1) {
+	public function createAutoInc($oid, $init_id = 1, $collName = FALSE, $params = array()) {
 
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
-
+		$collection_name = !empty($collName) ? $collName : $this->getName();
+		//check for existing seq
+		if (!empty($params)) {
+			$key = serialize($params);
+			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->limit(1)->current()->get('seq');
+			if (!is_null($existingSec)) {
+				return $existingSec;
+			}
+		}
+			
 		// try to set last seq
 		while (1) {
 			// get last seq
@@ -502,7 +510,11 @@ class Mongodloid_Collection {
 				'oid' => $oid,
 				'seq' => $lastSeq
 			);
-
+			
+			if (!empty($params)) {
+				$insert['key'] = $key;
+			}
+			
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
