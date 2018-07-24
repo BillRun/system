@@ -487,23 +487,44 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$gatewayDetails = $subscriber['payment_gateway']['active'];
-			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {			
+			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
+				continue;
+			}
+			if (!empty($chargeOptions['invoices'])){
+				if (is_null($customer['left_to_pay']) && is_null($customer['left'])) {
+					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['due'];
+				} else if (!is_null($customer['left_to_pay'])) {
+					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left_to_pay'];
+				} else if (!is_null($customer['left'])) {
+					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left'];
+				}
+				$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+			} else {
+				$paymentParams['amount'] = abs($customer['due']);
+				$gatewayDetails['amount'] = $customer['due'];
+			}
+			if ($paymentParams['amount'] < Billrun_Bill::precision && $paymentParams['amount'] > -Billrun_Bill::precision) {
+				$waitingPaymentsQuery = array(
+					array('paid_by.inv.' . $customer['invoice_id'] => array('$exists' => true)),
+				);
+				
+				$waitingPaymentsUpdate = array(
+					'$pull' => array(
+						'waiting_payments' => $customer['invoice_id'],
+					),
+				);
+				Billrun_Factory::db()->billsCollection()->update($waitingPaymentsQuery, $waitingPaymentsUpdate, array('multiple' => true));
+				Billrun_Factory::db()->billsCollection()->update(array('paid_by.rec' => array('$exists' => true)), array('$set' => array('waiting_payments' => array())), array('multiple' => true));
 				continue;
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = abs($customer['due']);
-			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
 			if ($customer['due'] < 0) {
 				$paymentParams['dir'] = 'tc';
-			}
-
-			if (!empty($chargeOptions['invoices'])) {
-				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);

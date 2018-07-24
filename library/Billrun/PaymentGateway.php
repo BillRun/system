@@ -573,48 +573,7 @@ abstract class Billrun_PaymentGateway {
 			),
 		);
 		$pipelines[] = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$payment_method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			),
+			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
 		);
 		$pipelines[] = array(
 			'$match' => array(
@@ -768,4 +727,101 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
+	protected function getGroupByMode($mode = false) {
+		if ($mode == 'byInvoiceId') {
+			return array(
+				'_id' => '$invoice_id',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$payment_method',
+				),
+				'due' => array(
+					'$sum' => '$due',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+				'left_to_pay' => array(
+					'$first' => '$left_to_pay',
+				),
+				'left' => array(
+					'$first' => '$left',
+				),
+				'invoice_id' => array(
+					'$first' => '$invoice_id',
+				)
+			);
+		}
+		return array(
+				'_id' => '$aid',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$payment_method',
+				),
+				'due' => array(
+					'$sum' => '$due',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+			);
+	}
 }
