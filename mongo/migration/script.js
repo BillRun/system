@@ -279,7 +279,7 @@ if(!found) {
 lastConfig['subscribers']['account']['fields'] = fields;
 
 
-// BRCD-1458 - Add support for hh:mm:ss, mm:ss "units" in input processor volume stage.
+// BRCD-1458 - Add support for hh:mm:ss, mm:ss "units" in inp	ut processor volume stage.
 var propertyTypes = lastConfig['property_types'];
 for (var i in propertyTypes) {
 	if (propertyTypes[i]['type'] === 'time') {
@@ -317,5 +317,7 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
+
+db.counters.dropIndex("coll_1_oid_1");
 
 db.config.insert(lastConfig);
