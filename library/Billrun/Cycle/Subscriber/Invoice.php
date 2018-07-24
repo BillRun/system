@@ -23,6 +23,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $rates = array();
 	
 	protected $invoicedLines = array();
+	
+	protected $shouldKeepLinesinMemory = false;
         
 	/**
 	 * 
@@ -30,7 +32,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param integer $sid
 	 * @param integer $aid
 	 */
-	public function __construct($rates, $data, $sid = 0, $aid = 0) {
+	public function __construct(&$rates, $data, $sid = 0, $aid = 0) {
 		$this->rates = &$rates;
 		if(!$data) {
 			$this->data = $this->createClosedSubscriber($sid, $aid);
@@ -57,6 +59,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		return $subscriber;
 	}
 
+	public function setShouldKeepLinesinMemory($newValue) {
+        $this->shouldKeepLinesinMemory = $newValue;
+	}
+	
 	/**
 	 * Set data
 	 * @param type $key
@@ -251,7 +257,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals'][$breakdownKey]['before_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['before_vat'], 0) + $pricingData['aprice'];
 		$this->data['totals'][$breakdownKey]['after_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['after_vat'], 0) + $priceAfterVat;
 		
-		$this->invoicedLines[$row['stamp']] = $row;
+		if ($this->shouldKeepLinesinMemory) {
+			$this->invoicedLines[$row['stamp']] = $row;
+		}
 	}
 
 	/**
@@ -332,7 +340,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$sid = $this->data['sid'];
 		$aid = $this->data['aid'];
 		
-		Billrun_Factory::log("Querying subscriber " . $aid . ":" . $sid . " for lines...", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $aid:$sid" . " lines: " . count($lines), Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
@@ -366,9 +373,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-		
+
 		$this->aggregateLinesToBreakdown($subLines);
-		
+
 		return $updatedLines;
 	}
 	

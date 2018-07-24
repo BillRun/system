@@ -235,7 +235,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->plansCache;
 	}
 
-	public function getServices() {
+	public function &getServices() {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
@@ -245,7 +245,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->servicesCache;
 	}
 
-	public function getRates() {
+	public function &getRates() {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();

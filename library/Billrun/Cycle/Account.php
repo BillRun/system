@@ -76,7 +76,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$aggregatableRecords = array();
 		foreach ($subscribers as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
-			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData);;
+			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData);
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -95,7 +95,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function constructSubscriber($sorted, $invoiceData) {
 
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
-		
+
+		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory());
 		$subConstratorData['history'] = $sorted;
 		$subConstratorData['subscriber_info'] = reset($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;

@@ -243,6 +243,10 @@ class Billrun_Cycle_Account_Invoice {
 		return $invoiceRawData;
 	}
 	
+	public function shouldKeepLinesinMemory() {
+		return count($this->subscribers) > Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_keep_lines',50);
+	}
+	
 	/**
 	 * Sets the id to the raw data
 	 * @param array $invoiceRawData - Raw data to calculate id by
@@ -376,6 +380,9 @@ class Billrun_Cycle_Account_Invoice {
 	}
 	
 	public function getInvoicedLines() {
+	if(!$this->shouldKeepLinesinMemory()) {
+		return FALSE;
+	}
 		$invoicedLines =  $this->invoicedLines;
 		foreach($this->subscribers as $subscriber) {
 			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
