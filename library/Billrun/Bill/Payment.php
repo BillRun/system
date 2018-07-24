@@ -506,7 +506,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if ($paymentParams['amount'] < Billrun_Bill::precision && $paymentParams['amount'] > -Billrun_Bill::precision) {
 				$waitingPaymentsQuery = array(
-					array('paid_by.inv.' . $customer['invoice_id'] => array('$exists' => true)),
+					'paid_by.inv.' . $customer['invoice_id'] => array('$exists' => true),
 				);
 				
 				$waitingPaymentsUpdate = array(
