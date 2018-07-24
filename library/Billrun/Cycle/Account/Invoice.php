@@ -252,7 +252,7 @@ class Billrun_Cycle_Account_Invoice {
 	protected function setInvoiceID(array $invoiceRawData, $invoiceId, $customCollName = FALSE) {
 		if( !$this->overrideMode || !isset($invoiceRawData['invoice_id'])  ) {
 			$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-			$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId, $customCollName, array('aid' => $invoiceRawData['aid'], 'billrun_key' => $invoiceRawData['billrun_key']));
+			$currentId = $this->billrun_coll->createAutoInc(array('aid' => $invoiceRawData['aid'], 'billrun_key' => $invoiceRawData['billrun_key']), $invoiceId, $customCollName);
 			$invoiceRawData['invoice_id'] = $currentId;
 		}
 		return $invoiceRawData;

@@ -463,7 +463,7 @@ class Mongodloid_Collection {
 			return;
 		}
 
-		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
+		$inc = $this->createAutoInc(array($id->getMongoID()), $min_id);
 		
 		// Set the values to the entity.
 		$entity->set($field, $inc);
@@ -478,7 +478,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1, $collName = FALSE, $params = array()) {
+	public function createAutoInc($params = array(), $init_id = 1, $collName = FALSE) {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
@@ -500,14 +500,8 @@ class Mongodloid_Collection {
 			} else {
 				$lastSeq++;
 			}
-			if (is_string($oid)) {
-				$oidDelimiter = '#bk#';
-				$splitted = preg_split('/' . $oidDelimiter . '\d+$/', $oid);
-				$oid = $splitted[0] . $oidDelimiter . $lastSeq;
-			}
 			$insert = array(
 				'coll' => $collection_name,
-				'oid' => $oid,
 				'seq' => $lastSeq
 			);
 			
@@ -519,15 +513,8 @@ class Mongodloid_Collection {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
 				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					// duplicate - need to check if oid already exists
-					$ret = $this->getAutoInc($oid);
-					if (empty($ret) || !is_numeric($ret)) {
-						// if oid not exists - probably someone insert same seq at the same time
-						// let's try to insert same oid with next seq
-						continue;
-					}
-					$lastSeq = $ret;
-					break;
+					// try again with the next seq
+					continue;
 				}
 			}
 			break;
@@ -535,12 +522,12 @@ class Mongodloid_Collection {
 		return $lastSeq;
 	}
 	
-	public function getAutoInc($oid) {
+	public function getAutoInc($key) {
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
 		$query = array(
 			'coll' => $collection_name,
-			'oid' => $oid,
+			'key' => $key,
 		);
 		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
 	}
