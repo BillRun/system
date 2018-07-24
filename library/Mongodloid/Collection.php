@@ -485,7 +485,7 @@ class Mongodloid_Collection {
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);
-			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->limit(1)->current()->get('seq');
+			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current()->get('seq');
 			if (!is_null($existingSec)) {
 				return $existingSec;
 			}
@@ -494,7 +494,7 @@ class Mongodloid_Collection {
 		// try to set last seq
 		while (1) {
 			// get last seq
-			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->setReadPreference('RP_PRIMARY')->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
 				$lastSeq = $init_id;
 			} else {
@@ -529,7 +529,7 @@ class Mongodloid_Collection {
 			'coll' => $collection_name,
 			'key' => $key,
 		);
-		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
+		return $countersColl->query($query)->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current()->get('seq');
 	}
 	
 	/**
