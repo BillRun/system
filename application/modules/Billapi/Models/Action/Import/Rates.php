@@ -113,7 +113,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			}
 		}
 		
-		
+		$plan_updates = true;
 		foreach ($entity['rates'] as $usaget => $rates) {
 			if($rates) {
 				$plans = array_keys($rates);
@@ -140,20 +140,30 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								)
 							);
 							$entityModel = $this->getEntityModel($params);
-							$entityModel->permanentchange();
+							try {
+								$result = $entityModel->permanentchange();
+								if($result !== true) {
+									$plan_updates = $result;
+								}	
+							} catch (Exception $exc) {
+								$plan_updates = $exc->getMessage();
+							}
+
+							
 							
 							// Remove plan rates
 							unset($entity['rates'][$usaget][$plan_name]);
 							if (empty($entity['rates'][$usaget])) {
 								unset($entity['rates'][$usaget]);
 							}
-							if(empty($entity['rates'])) {
-								unset($entity['rates']);
-							}
 						}
 					}
 				}
 			}
+		}
+		// case when request include only plan rates update
+		if(isset($entity['rates']) && empty($entity['rates']) && !in_array('BASE',$plans)) {
+			return $plan_updates;
 		}
 		return parent::importEntity($entity);
 	}
