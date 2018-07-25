@@ -504,7 +504,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentParams['amount'] = abs($customer['due']);
 				$gatewayDetails['amount'] = $customer['due'];
 			}
-			if ($paymentParams['amount'] < Billrun_Bill::precision && $paymentParams['amount'] > -Billrun_Bill::precision) {
+			if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
 				continue;
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
