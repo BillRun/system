@@ -409,12 +409,12 @@ abstract class Billrun_Bill {
 	}
 
 	public function attachPayingBill($bill, $amount, $status = null) {
-		$billId = $payment->getId();
-		$billType = $payment->getType();
+		$billId = $bill->getId();
+		$billType = $bill->getType();
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
 			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
-			if ($payment->isPendingPayment()) {
+			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId);
 			}
 			$this->updatePaidBy($paidBy, $billId, $status);
