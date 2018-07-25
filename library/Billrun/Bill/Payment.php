@@ -493,11 +493,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (!empty($chargeOptions['invoices'])){
 				if (is_null($customer['left_to_pay']) && is_null($customer['left'])) {
-					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['due'];
+					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'] . ", Invoice_id: " . $customer['invoice_id'], Zend_Log::ALERT);
+					continue;
 				} else if (!is_null($customer['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left_to_pay'];
 				} else if (!is_null($customer['left'])) {
-					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left'];
+					$paymentParams['amount'] = $customer['left'];
+					$gatewayDetails['amount'] = -$customer['left'];
 				}
 				$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
 			} else {
