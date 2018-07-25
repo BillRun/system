@@ -1240,6 +1240,9 @@ class ConfigModel {
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
+		if (array_column($parserSettings['structure'], 'name') != array_unique(array_column($parserSettings['structure'], 'name'))) {
+			 throw new Exception('Duplicate field names found');
+		}
 		if ($parserSettings['type'] == 'json') {
 			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 		} else if ($parserSettings['type'] == 'separator') {
@@ -1577,7 +1580,7 @@ class ConfigModel {
 	}
 	
 	protected function getCustomKeys($parserStructure) {
-		 array_column(array_filter($parserStructure, function($field) {
+		return array_column(array_filter($parserStructure, function($field) {
 				return isset($field['checked']) && $field['checked'] === true;
 			}),'name');
 	}
