@@ -365,7 +365,7 @@ class Mongodloid_Entity implements ArrayAccess {
 			return;
 		}
 
-		$inc = $this->collection()->createAutoInc(array($id->getMongoID()), $min_id);
+		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
 		$this->set($field, $inc);
 		return $inc;
 	}

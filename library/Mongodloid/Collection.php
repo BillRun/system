@@ -463,7 +463,7 @@ class Mongodloid_Collection {
 			return;
 		}
 
-		$inc = $this->createAutoInc(array($id->getMongoID()), $min_id);
+		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
 		
 		// Set the values to the entity.
 		$entity->set($field, $inc);
@@ -473,12 +473,12 @@ class Mongodloid_Collection {
 	 * Method to create auto increment of document
 	 * To use this method require counters collection (see create.ini)
 	 * 
-	 * @param string $id the id of the document to auto increment
+	 * @param mixed $params the id of the document to auto increment
 	 * @param int $init_id the first value if no value exists
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($params = array(), $init_id = 1, $collName = FALSE) {
+	public function createAutoInc($params = null, $init_id = 1, $collName = FALSE) {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = !empty($collName) ? $collName : $this->getName();
