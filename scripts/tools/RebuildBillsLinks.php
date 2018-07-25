@@ -43,7 +43,7 @@ function rebuildBillsLinks($accounts) {
 						}
 					}
 				}
-				if (!$bill->save($billsColl, 1)) {
+				if (!$bill->save(1)) {
 					echo 'Error resetting bill ' . ($bill['type'] == 'inv' ? $bill['invoice_id'] : $bill['txid']) . PHP_EOL;
 				}
 			}
