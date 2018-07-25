@@ -641,10 +641,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function setPendingStatusById($pending) {
 		$this->data['pending'] = $pending;
-		$this->save();
 	}
-	
-	public function isPendingPayment() {
-		return (!isset($this->data['pending']) || (isset($this->data['pending']) && $this->data['pending']));
-	}
+
 }

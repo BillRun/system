@@ -26,6 +26,7 @@ function rebuildBillsLinks($accounts) {
 					$bill['left'] = $bill['amount'];
 				} else {
 					$bill['total_paid'] = 0;
+					$bill['left_to_pay'] = $bill['due'];
 					if (isset($bill['vatable_left_to_pay'])) {
 						if (isset($bill['due_before_vat'])) {
 							$bill['vatable_left_to_pay'] = $bill['due_before_vat'];
