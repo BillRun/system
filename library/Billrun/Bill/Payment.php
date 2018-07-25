@@ -505,17 +505,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$gatewayDetails['amount'] = $customer['due'];
 			}
 			if ($paymentParams['amount'] < Billrun_Bill::precision && $paymentParams['amount'] > -Billrun_Bill::precision) {
-				$waitingPaymentsQuery = array(
-					'paid_by.inv.' . $customer['invoice_id'] => array('$exists' => true),
-				);
-				
-				$waitingPaymentsUpdate = array(
-					'$pull' => array(
-						'waiting_payments' => $customer['invoice_id'],
-					),
-				);
-				Billrun_Factory::db()->billsCollection()->update($waitingPaymentsQuery, $waitingPaymentsUpdate, array('multiple' => true));
-				Billrun_Factory::db()->billsCollection()->update(array('paid_by.rec' => array('$exists' => true)), array('$set' => array('waiting_payments' => array())), array('multiple' => true));
 				continue;
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];

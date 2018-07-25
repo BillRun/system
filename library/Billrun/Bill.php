@@ -399,7 +399,7 @@ abstract class Billrun_Bill {
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
 			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;		
-			$this->addToWaitingPayments($billId);
+			$this->addToWaitingPayments($billId, $billType);
 			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
@@ -658,7 +658,10 @@ abstract class Billrun_Bill {
 		return $result;
 	}
 	
-	protected function addToWaitingPayments($billId) {
+	protected function addToWaitingPayments($billId, $billType) {
+		if ($billType == 'inv') {
+			return;
+		}
 		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
 		array_push($waiting_payments, $billId);
 		$this->data['waiting_payments'] = $waiting_payments;
