@@ -252,7 +252,7 @@ abstract class Billrun_Bill {
 			$unpaidBillLeft = $unpaidBill->getLeftToPay();
 			foreach ($overPayingBills as $key2 => $overPayingBill) {
 				$payingBillAmountLeft = $overPayingBill->getLeft();
-				if ($payingBillAmountLeft && ($unpaidBillLeft == $payingBillAmountLeft)) {
+				if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
 					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft)->save();
 					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 					unset($unpaidBills[$key1]);
@@ -265,7 +265,7 @@ abstract class Billrun_Bill {
 			$unpaidBillLeft = $unpaidBill->getLeftToPay();
 			foreach ($overPayingBills as $overPayingBill) {
 				$payingBillAmountLeft = $overPayingBill->getLeft();
-				if ($payingBillAmountLeft && ($unpaidBillLeft == $payingBillAmountLeft)) {
+				if ($payingBillAmountLeft) {
 					$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
 					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid)->save();
 					$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
@@ -408,7 +408,7 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($payment, $amount, $status = null) {
+	public function attachPayingBill($bill, $amount, $status = null) {
 		$billId = $payment->getId();
 		$billType = $payment->getType();
 		if ($amount) {
@@ -597,7 +597,7 @@ abstract class Billrun_Bill {
 							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
 						}
 						try {
-							$payment->setPendingStatusById(true);
+							$payment->setPending(true);
 							$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
 						} catch (Exception $e) {
 							$payment->setGatewayChargeFailure($e->getMessage());
@@ -621,7 +621,7 @@ abstract class Billrun_Bill {
 										$responseFromGateway['stage'] = 'Pending';
 									}
 									if ($responseFromGateway['stage'] != 'Pending') {
-										$payment->setPendingStatusById(false);
+										$payment->setPending(false);
 									}
 									$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
 								}
@@ -702,16 +702,6 @@ abstract class Billrun_Bill {
 	
 	public function isPendingPayment() {
 		return (isset($this->data['pending']) && $this->data['pending']);
-	}
-	
-	protected function getClosest($search, $arr) {
-		$closest = null;
-		foreach ($arr as $item) {
-			if ($closest === null || abs($search - $closest) > abs($item - $search)) {
-				$closest = $item;
-			}
-		}
-		return $item;
 	}
 
 }

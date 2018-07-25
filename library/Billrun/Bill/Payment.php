@@ -639,7 +639,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 
-	public function setPendingStatusById($pending) {
+	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
 	}
 
