@@ -24,7 +24,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	
 	protected $invoicedLines = array();
 	
-	protected $shouldKeepLinesinMemory = false;
+	protected $shouldKeepLinesinMemory = true;
         
 	/**
 	 * 
