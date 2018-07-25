@@ -106,7 +106,7 @@ class CliController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		// add log to stdout when we are on cli
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
-		$this->addOutput("Running Billrun from CLI!");
+		$this->addOutput("Running BillRun from CLI!");
 		$this->addOutput("Running under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
 
 

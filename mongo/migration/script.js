@@ -318,4 +318,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 	}
 );
 
+db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
+
 db.config.insert(lastConfig);

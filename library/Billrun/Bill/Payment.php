@@ -502,6 +502,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentParams['dir'] = 'tc';
 			}
 
+			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
 			if (!empty($chargeOptions['invoices'])) {
 				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
 			}
@@ -536,7 +537,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$payment->setPaymentStatus($response['status'], $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
+				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response['status']);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
