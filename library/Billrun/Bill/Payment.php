@@ -650,4 +650,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 		}
 	}
+
+	public function setPending($pending = true) {
+		$this->data['pending'] = $pending;
+	}
+
 }
