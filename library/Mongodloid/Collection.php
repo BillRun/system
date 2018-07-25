@@ -522,16 +522,6 @@ class Mongodloid_Collection {
 		return $lastSeq;
 	}
 	
-	public function getAutoInc($key) {
-		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
-		$query = array(
-			'coll' => $collection_name,
-			'key' => $key,
-		);
-		return $countersColl->query($query)->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current()->get('seq');
-	}
-	
 	/**
 	 * 
 	 * @return MongoCollection
