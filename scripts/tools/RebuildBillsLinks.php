@@ -1,5 +1,13 @@
 <?php
 
+
+//$dir = 'billrun project directory';
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
+require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
+$app = new Yaf_Application(BILLRUN_CONFIG_PATH);
+$app->bootstrap();
+Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+
 /**
  * Reset and update linking fields between bills (invoices, payments)
  * @param array $accounts Account ids
@@ -43,3 +51,7 @@ function rebuildBillsLinks($accounts) {
 		}
 	}
 }
+
+$aids = getopt(null, ["accounts:"]);
+$accounts = Billrun_Util::verify_array(explode(',', $aids['accounts']), 'int');
+rebuildBillsLinks($accounts);
