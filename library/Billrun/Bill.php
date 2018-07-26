@@ -257,6 +257,7 @@ abstract class Billrun_Bill {
 					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 					unset($unpaidBills[$key1]);
 					unset($overPayingBills[$key2]);
+					break;
 				}
 			}
 		}
@@ -564,7 +565,28 @@ abstract class Billrun_Bill {
 							}
 							$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
 						}
-					} else {
+					} else if (!empty($rawPayment['paid_by']['inv'])) {
+						$paidBy = $rawPayment['paid_by']['inv'];
+						$invoices = Billrun_Bill_Invoice::getInvoices(array('aid' => $aid, 'invoice_id' => array('$in' => Billrun_Util::verify_array(array_keys($paidBy), 'int'))));
+						if (count($invoices) != count($paidBy)) {
+							throw new Exception('Unknown invoices for account ' . $aid);
+						}
+						if (($rawPayment['amount'] - array_sum($paidBy)) <= -Billrun_Bill::precision) {
+							throw new Exception($aid . ': Total to pay is less than the subtotals');
+						}
+						foreach ($invoices as $invoice) {
+							$invoiceObj = Billrun_Bill_Invoice::getInstanceByData($invoice);
+							if (!is_numeric($rawPayment['paid_by']['inv'][$invoiceObj->getId()])) {
+								throw new Exception('Illegal amount ' . $rawPayment['paid_by']['inv'][$invoiceObj->getId()] . ' for invoice ' . $invoiceObj->getId());
+							} else {
+								$invoiceAmountToPay = floatval($paidBy[$invoiceObj->getId()]);
+							}
+							if ((($left = $invoiceObj->getLeft()) < $invoiceAmountToPay) && (number_format($left, 2) != number_format($invoiceAmountToPay, 2))) {
+								throw new Exception('Invoice ' . $invoiceObj->getId() . 'Credit was exhausted when paying bills');
+							}
+							$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
+						}	
+					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
 						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
 						foreach ($unpaidBills as $rawUnpaidBill) {
@@ -575,6 +597,18 @@ abstract class Billrun_Bill {
 								$billId = $unpaidBill->getId();
 								$leftToSpare -= $rawPayment['pays'][$billType][$billId] = $invoiceAmountToPay;
 								$updateBills[$billType][$billId] = $unpaidBill;
+							}
+						}
+					} else if ($rawPayment['dir'] == 'tc') {
+						$leftToSpare = floatval($rawPayment['amount']);
+						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid));
+						foreach ($overPayingBills as $overPayingBill) {
+							$credit = min($overPayingBill->getLeft(), $leftToSpare);
+							if ($credit) {
+								$billType = $overPayingBill->getType();
+								$billId = $overPayingBill->getId();
+								$leftToSpare -= $rawPayment['pays'][$billType][$billId] = $credit;
+								$updateBills[$billType][$billId] = $overPayingBill;
 							}
 						}
 					}
@@ -624,6 +658,18 @@ abstract class Billrun_Bill {
 										$payment->setPending(false);
 									}
 									$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
+								}
+							}
+						} else if ($payment->getDir() == 'tc') {
+							foreach ($payment->getPaidByBills() as $billType => $bills) {
+								foreach ($bills as $billId => $amountPaid) {
+									if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+										$responseFromGateway['stage'] = 'Pending';
+									}
+									if ($responseFromGateway['stage'] != 'Pending') {
+										$payment->setPending(false);
+									}
+									$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
 								}
 							}
 						} else {

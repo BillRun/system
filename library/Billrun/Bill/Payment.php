@@ -37,7 +37,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Optional fields to be saved to the payment. For some payment methods they are mandatory.
 	 * @var array
 	 */
-	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country');
+	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by');
 
 	protected static $aids;
 	/**
@@ -75,6 +75,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
 				}
 			}
+			if (isset($options['paid_by']['inv'])) {
+				foreach ($options['paid_by']['inv'] as $invId => $credit) {
+					$options['paid_by']['inv'][$invId] = floatval($credit);
+				}
+			}
+			
 			$this->data['urt'] = new MongoDate();
 
 			foreach ($this->optionalFields as $optionalField) {
@@ -501,7 +507,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$paymentParams['amount'] = $customer['left'];
 					$gatewayDetails['amount'] = -$customer['left'];
 				}
-				$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				if ($customer['due'] > 0) {
+					$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				} else {
+					$paymentParams['paid_by']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				}
 			} else {
 				$paymentParams['amount'] = abs($customer['due']);
 				$gatewayDetails['amount'] = $customer['due'];
