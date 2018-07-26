@@ -257,6 +257,7 @@ abstract class Billrun_Bill {
 					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
 					unset($unpaidBills[$key1]);
 					unset($overPayingBills[$key2]);
+					break;
 				}
 			}
 		}
