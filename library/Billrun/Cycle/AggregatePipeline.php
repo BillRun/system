@@ -109,6 +109,12 @@ class Billrun_Cycle_AggregatePipeline {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
+		
+		// If the accounts should not be overriden, filter the existing ones before.
+		if ($this->exclusionQuery) {
+			$pipelines[] = ['$match' => ['aid' => $this->exclusionQuery ] ];
+		}
+		
 		$pipelines[] = array(
 			'$unwind' => '$sub_plans',
 		);
@@ -211,11 +217,6 @@ class Billrun_Cycle_AggregatePipeline {
 				)
 			)
 		);
-
-		// If the accounts should not be overriden, filter the existing ones before.
-		if ($this->exclusionQuery) {
-			$match['$match']['aid'] = $this->exclusionQuery;
-		}
 
 		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
 		if ($confirmedAids) {
