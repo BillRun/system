@@ -299,4 +299,15 @@ db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$re
 
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
 
+
+// BRCD-1521 - Add service description to service lfat lines.
+var serviceDescField = {
+	field_name : "foreign.service.description",
+	foreign : { 
+		entity : "service",
+		field  :"invoice_description"
+	}
+};
+addFieldToConfig(lastConfig,serviceDescField,'lines');
+
 db.config.insert(lastConfig);
