@@ -47,7 +47,47 @@ function rebuildBillsLinks($accounts) {
 					echo 'Error resetting bill ' . ($bill['type'] == 'inv' ? $bill['invoice_id'] : $bill['txid']) . PHP_EOL;
 				}
 			}
+
+			rebuildRejectionsLinks($aid);
 			Billrun_Bill::payUnpaidBillsByOverPayingBills($aid, false);
+		}
+	}
+}
+
+function rebuildRejectionsLinks($aid) {
+	$matchedRejectedPayments = array();
+	$rejectedPayments = array();
+	$rejections = Billrun_Bill_Payment::getRejectionPayments();
+	foreach ($rejections as $rejection) {
+		if (isset($rejection['rejection']) && $rejection['rejection'] == true) {
+			$rejectionPayments[$rejection['original_txid']] = $rejection;
+		}
+		if (isset($rejection['rejected']) && $rejection['rejected'] == true) {
+			$rejectedPayments[$rejection['txid']] = $rejection;
+		}
+	}
+	foreach ($rejectedPayments as $txId => $rejectedObj) {
+		foreach ($rejectionPayments as $originalTxId => $rejectionObj) {
+			if ($txId == $originalTxId) {
+				$matchedRejectedPayments[] = array('rejected' => $rejectedObj, 'rejection' => $rejectionObj);
+			}
+		}
+	}
+	foreach ($matchedRejectedPayments as $matchedRejectedPayment) {
+		if (isset($matchedRejectedPayment['rejected']['pays']) || isset($matchedRejectedPayment['rejected']['paid_by'])) {
+			continue;
+		}
+		$rejectedPay = Billrun_Bill::getInstanceByData($matchedRejectedPayment['rejected']);
+		$rejectionPay = Billrun_Bill::getInstanceByData($matchedRejectedPayment['rejection']);
+		if ($matchedRejectedPayment['rejected']['due'] < 0) {
+			$unpaidBillRaw = current(Billrun_Bill::getUnpaidBills(array('aid' => $aid, 'due' => $matchedRejectedPayment['rejection']['due'])));
+			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
+			$rejectedPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedRejectedPayment['rejection']['due'])->save();
+			$rejectionPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedRejectedPayment['rejection']['due'])->save();
+		} else {
+			$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedRejectedPayment['rejection']['due'])));
+			$rejectedPay->attachPayingBill($overPayingBill, $matchedRejectedPayment['rejected']['due'])->save();
+			$rejectionPay->attachPayingBill($overPayingBill, $matchedRejectedPayment['rejected']['due'], null, true)->save();
 		}
 	}
 }

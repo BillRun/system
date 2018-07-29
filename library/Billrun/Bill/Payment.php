@@ -666,5 +666,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
 	}
+	
+	public function getRejectionPayments() {
+		$query = array(
+			'$or' => array(
+				array('rejected' => array('$exists' => true)),
+				array('rejection' => array('$exists' => true)),
+			),
+		);
+		return static::getBills($query);
+	}
 
 }
