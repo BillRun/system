@@ -346,6 +346,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
+			$balanceUpdateQuery = array();
 			$balances_coll = Billrun_Factory::db()->balancesCollection();
 			$balance = $balances_coll->getRef($balanceRef);
 			if (is_array($balance['tx']) && empty($balance['tx'])) {
@@ -364,12 +365,21 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 					}
 				}
 				if (!$this->isFreeLine($lineToRebalance)) { // volume balance should only update if the line is not free
+					$balanceUpdateQuery['$inc'] = array(
+						'balance.totals.' . $balanceTotalKeys . '.usagev' => $rebalanceUsagev,
+					);
 					$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
 				}
 			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
+				$balanceUpdateQuery['$inc'] = array(
+					'balance.totals.' . $balanceTotalKeys . '.cost' => $rebalanceCost,
+				);
 				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
+				$balanceUpdateQuery['$inc'] = array(
+					'balance.cost' => $rebalanceCost,
+				);
 			}
 
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery, $realUsagevAfterCeiling);
@@ -379,7 +389,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
 
 		if ($balance) {
-			$balance->save();
+//			$balance->save();
+			$balances_coll->update(array('_id' => $balanceObj->getId()->getMongoId()), $balanceUpdateQuery);
 		} else {
 			$rebalanceCost = 0;
 		}

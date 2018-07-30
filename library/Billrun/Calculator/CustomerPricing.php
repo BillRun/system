@@ -720,7 +720,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$tx = $this->balance->get('tx');
 		if (is_array($tx) && empty($tx)) {
 			$this->balance->set('tx', new stdClass());
-			$this->balance->save();
+//			$this->balance->save();
+			$resetTxQuery = array(
+				'_id' => $this->balance->getId()->getMongoID(),
+			);
+			$resetTxUpdate = array(
+				'$set' => array(
+					'tx' => new stdClass(),
+				),
+			);
+			$this->balances->update($resetTxQuery, $resetTxUpdate);
 		}
 		if (!empty($tx) && array_key_exists($row['stamp'], $tx)) { // we're after a crash
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
