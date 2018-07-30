@@ -121,6 +121,12 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				if (count($plans) > 1 || !$withBase) {
 					foreach ($plans as $plan_name) {
 						if($plan_name !== 'BASE'){
+							// Check if update Plan or Service by serching for plan if not exist update service
+							$planQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+							$planQuery['name'] = $plan_name;
+							$existingPlan = Billrun_Factory::db()->ratesCollection()->query($planQuery)->cursor()->current();
+							$collection = (!$existingPlan || $existingPlan->isEmpty()) ? 'services' : 'plans' ;
+							
 							$query = array(
 								'effective_date' => $from,
 								'name' => $plan_name
@@ -132,7 +138,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								'from' => $from
 							);
 							$params = array(
-								'collection' => 'plans',
+								'collection' => $collection,
 								'request' => array(
 									'action' => 'permanentchange',
 									'update' => json_encode($update),
