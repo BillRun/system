@@ -526,6 +526,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentParams['gateway_details'] = $gatewayDetails;
 			if ($customer['due'] < 0) {
 				$paymentParams['dir'] = 'tc';
+			} else {
+				$paymentParams['dir'] = 'fc';
 			}
 
 			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
