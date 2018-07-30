@@ -48,46 +48,63 @@ function rebuildBillsLinks($accounts) {
 				}
 			}
 
-			rebuildRejectionsLinks($aid);
+			rebuildRejectionsAndCancelledLinks($aid);	
 			Billrun_Bill::payUnpaidBillsByOverPayingBills($aid, false);
 		}
 	}
 }
 
-function rebuildRejectionsLinks($aid) {
-	$matchedRejectedPayments = array();
-	$rejectedPayments = array();
-	$rejections = Billrun_Bill_Payment::getRejectionPayments();
-	foreach ($rejections as $rejection) {
-		if (isset($rejection['rejection']) && $rejection['rejection'] == true) {
-			$rejectionPayments[$rejection['original_txid']] = $rejection;
+function rebuildRejectionsAndCancelledLinks($aid) {
+	$rejections = Billrun_Bill_Payment::getRejectionPayments($aid);
+	$cancellations = Billrun_Bill_Payment::getCancellationPayments($aid);
+	$matchedPayments = array();
+	$complementaryPayments = array();
+	$originalPayments = array();
+	
+	foreach (array('rej' => $rejections, 'can' => $cancellations) as $key => $payments) {
+		foreach ($payments as $payment) {
+			$linkField = ($key == 'rej') ?  'original_txid' : 'cancel';
+			$originalPaymentField = ($key == 'rej') ?  'rejected' : 'cancelled';
+			$complementaryPaymentField = ($key == 'rej') ?  'rejection' : 'cancel';
+			if (isset($payment[$complementaryPaymentField]) && $payment[$complementaryPaymentField] == true) {
+				$complementaryPayments[$key][$payment[$linkField]] = $payment;
+			}
+			if (isset($payment[$originalPaymentField]) && $payment[$originalPaymentField] == true) {
+				$originalPayments[$key][$payment['txid']] = $payment;
+			}	
 		}
-		if (isset($rejection['rejected']) && $rejection['rejected'] == true) {
-			$rejectedPayments[$rejection['txid']] = $rejection;
-		}
-	}
-	foreach ($rejectedPayments as $txId => $rejectedObj) {
-		foreach ($rejectionPayments as $originalTxId => $rejectionObj) {
-			if ($txId == $originalTxId) {
-				$matchedRejectedPayments[] = array('rejected' => $rejectedObj, 'rejection' => $rejectionObj);
+	
+		$originalPayments = isset($originalPayments[$key]) ? $originalPayments[$key] : array();
+		$complementaryPayments = isset($complementaryPayments[$key]) ? $complementaryPayments[$key] : array();
+		foreach ($originalPayments as $txId => $originalObj) {
+			foreach ($complementaryPayments as $originalTxId => $complementaryObj) {
+				if ($txId == $originalTxId) {
+					$matchedPayments[] = array($originalPaymentField => $originalObj, $complementaryPaymentField => $complementaryObj);
+				}
 			}
 		}
-	}
-	foreach ($matchedRejectedPayments as $matchedRejectedPayment) {
-		if (isset($matchedRejectedPayment['rejected']['pays']) || isset($matchedRejectedPayment['rejected']['paid_by'])) {
-			continue;
-		}
-		$rejectedPay = Billrun_Bill::getInstanceByData($matchedRejectedPayment['rejected']);
-		$rejectionPay = Billrun_Bill::getInstanceByData($matchedRejectedPayment['rejection']);
-		if ($matchedRejectedPayment['rejected']['due'] < 0) {
-			$unpaidBillRaw = current(Billrun_Bill::getUnpaidBills(array('aid' => $aid, 'due' => $matchedRejectedPayment['rejection']['due'])));
-			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
-			$rejectedPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedRejectedPayment['rejection']['due'])->save();
-			$rejectionPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedRejectedPayment['rejection']['due'])->save();
-		} else {
-			$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedRejectedPayment['rejection']['due'])));
-			$rejectedPay->attachPayingBill($overPayingBill, $matchedRejectedPayment['rejected']['due'])->save();
-			$rejectionPay->attachPayingBill($overPayingBill, $matchedRejectedPayment['rejected']['due'], null, true)->save();
+		foreach ($matchedPayments as $matchedPayment) {
+			if (isset($matchedPayment[$originalPaymentField]['pays']) || isset($matchedPayment[$originalPaymentField]['paid_by'])) {
+				continue;
+			}
+			$origPay = Billrun_Bill::getInstanceByData($matchedPayment[$originalPaymentField]);
+			$complPay = Billrun_Bill::getInstanceByData($matchedPayment[$complementaryPaymentField]);
+			if ($matchedPayment[$originalPaymentField]['due'] < 0) {
+				$unpaidBillRaw = current(Billrun_Bill::getUnpaidBills(array('aid' => $aid, '$and' => array(array('due' => $matchedPayment[$complementaryPaymentField]['due'])))));
+				if ($unpaidBillRaw == false) {
+					continue;
+				}
+				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
+				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
+				$complPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
+			} else {
+				$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedPayment[$complementaryPaymentField]['due'])));
+				if ($overPayingBill == false) {
+					continue;
+				}
+				$origPay->attachPayingBill($overPayingBill, $matchedPayment[$originalPaymentField]['due'])->save();
+				$complPay->attachPayingBill($overPayingBill, $matchedPayment[$originalPaymentField]['due'], null, true)->save();
+			}
 		}
 	}
 }
