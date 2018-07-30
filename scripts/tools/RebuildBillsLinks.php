@@ -92,7 +92,10 @@ function rebuildRejectionsAndCancelledLinks($aid) {
 			if ($matchedPayment[$originalPaymentField]['due'] < 0) {
 				$unpaidBillRaw = current(Billrun_Bill::getUnpaidBills(array('aid' => $aid, '$and' => array(array('due' => $matchedPayment[$complementaryPaymentField]['due'])))));
 				if ($unpaidBillRaw == false) {
-					continue;
+					$unpaidBillRaw = current(Billrun_Bill::getUnpaidBills(array('aid' => $aid, '$and' => array(array('due' => array('$gt' => $matchedPayment[$complementaryPaymentField]['due']))))));
+					if ($unpaidBillRaw == false) {
+						continue;
+					}
 				}
 				$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 				$origPay->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $matchedPayment[$complementaryPaymentField]['due'])->save();
@@ -100,10 +103,13 @@ function rebuildRejectionsAndCancelledLinks($aid) {
 			} else {
 				$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => $matchedPayment[$complementaryPaymentField]['due'])));
 				if ($overPayingBill == false) {
-					continue;
+					$overPayingBill = current(Billrun_Bill::getOverPayingBills(array('aid' => $aid, 'due' => array('$lt' => $matchedPayment[$complementaryPaymentField]['due']))));
+					if ($overPayingBill == false) {
+						continue;
+					}
 				}
 				$origPay->attachPayingBill($overPayingBill, $matchedPayment[$originalPaymentField]['due'])->save();
-				$complPay->attachPayingBill($overPayingBill, $matchedPayment[$originalPaymentField]['due'], null, true)->save();
+				$complPay->attachPayingBill($overPayingBill, $matchedPayment[$originalPaymentField]['due'])->save();
 			}
 		}
 	}

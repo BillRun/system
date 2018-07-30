@@ -409,7 +409,7 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($bill, $amount, $status = null, $rejection = false) {
+	public function attachPayingBill($bill, $amount, $status = null) {
 		$billId = $bill->getId();
 		$billType = $bill->getType();
 		if ($amount) {
@@ -418,7 +418,7 @@ abstract class Billrun_Bill {
 			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId, $billType);
 			}
-			$this->updatePaidBy($paidBy, $billId, $status, $rejection);
+			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
 	}
@@ -430,8 +430,8 @@ abstract class Billrun_Bill {
 		return $this;
 	}
 
-	protected function updatePaidBy($paidBy, $billId = null, $status = null, $rejection = false) {
-		if ($this->getDue() > 0 || $rejection) {
+	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
+		if ($this->getDue() > 0 || $this->isRejection() || $this->isCancellation()) {
 			$this->data['paid_by'] = $paidBy;
 			$this->recalculatePaymentFields($billId, $status);
 		}
