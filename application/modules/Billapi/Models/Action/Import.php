@@ -17,7 +17,7 @@
 class Models_Action_Import extends Models_Action {
 
 	/**
-	 * Import opperation type
+	 * Import operation type
 	 */
 	protected $operation = 'create';
 
@@ -40,8 +40,9 @@ class Models_Action_Import extends Models_Action {
 			if($this->request['operation'] !== $this->getImportOperation()) {
 				$this->setImportOperation($this->request['operation']);
 			}
-			
+			// If error from FE exist, skip import and return error details for csv_rows
 			if(!empty($errors)) {
+				// set errro = false for csv_rows without error
 				if(!empty($csv_rows)) {
 					foreach ($csv_rows as $csv_row) {
 						if(!array_key_exists($csv_row,$errors)) {
@@ -49,6 +50,7 @@ class Models_Action_Import extends Models_Action {
 						}
 					}
 				}
+				// Create Error responce array
 				foreach ($errors as $row_index => $row_errors) {
 					if(is_array($row_errors)) {
 						foreach ($row_errors as $error) {
@@ -60,6 +62,7 @@ class Models_Action_Import extends Models_Action {
 				}
 			} else {
 				$result = $this->importEntity($entity);
+				// set import status for all csv_rows that build this entity
 				if(!empty($csv_rows)) {
 					foreach ($csv_rows as $row_index) {
 						$output[$row_index] = $result;
