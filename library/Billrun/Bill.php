@@ -607,7 +607,7 @@ abstract class Billrun_Bill {
 							if ($credit) {
 								$billType = $overPayingBill->getType();
 								$billId = $overPayingBill->getId();
-								$leftToSpare -= $rawPayment['pays'][$billType][$billId] = $credit;
+								$leftToSpare -= $rawPayment['paid_by'][$billType][$billId] = $credit;
 								$updateBills[$billType][$billId] = $overPayingBill;
 							}
 						}
@@ -704,9 +704,9 @@ abstract class Billrun_Bill {
 				break;
 
 			case 'Completed':
-				$this->removeFromWaitingPayments($billId);
 				$pending = $this->data['waiting_payments'];
-				if (count($pending)) { 
+				if (count($pending)) {
+					$this->removeFromWaitingPayments($billId);
 					$result = '2';
 				}
 				else {
