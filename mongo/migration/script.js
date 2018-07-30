@@ -321,3 +321,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
 db.config.insert(lastConfig);
+
+// BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
+db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
