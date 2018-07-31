@@ -238,7 +238,7 @@ abstract class Billrun_Bill {
 		return array('total' => $total, 'without_waiting' => $totalWaiting);
 	}
 
-	public static function payUnpaidBillsByOverPayingBills($aid) {
+	public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true) {
 		$query = array(
 			'aid' => $aid,
 		);
@@ -247,6 +247,20 @@ abstract class Billrun_Bill {
 		);
 		$unpaidBills = Billrun_Bill::getUnpaidBills($query, $sort);
 		$overPayingBills = Billrun_Bill::getOverPayingBills($query, $sort);
+		foreach ($unpaidBills as $key1 => $unpaidBillRaw) {
+			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
+			$unpaidBillLeft = $unpaidBill->getLeftToPay();
+			foreach ($overPayingBills as $key2 => $overPayingBill) {
+				$payingBillAmountLeft = $overPayingBill->getLeft();
+				if ($payingBillAmountLeft && (Billrun_Util::isEqual($unpaidBillLeft, $payingBillAmountLeft, static::precision))) {
+					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $payingBillAmountLeft)->save();
+					$unpaidBill->attachPayingBill($overPayingBill, $payingBillAmountLeft)->save();
+					unset($unpaidBills[$key1]);
+					unset($overPayingBills[$key2]);
+					break;
+				}
+			}
+		}
 		foreach ($unpaidBills as $unpaidBillRaw) {
 			$unpaidBill = Billrun_Bill::getInstanceByData($unpaidBillRaw);
 			$unpaidBillLeft = $unpaidBill->getLeftToPay();
@@ -255,7 +269,7 @@ abstract class Billrun_Bill {
 				if ($payingBillAmountLeft) {
 					$amountPaid = min(array($unpaidBillLeft, $payingBillAmountLeft));
 					$overPayingBill->attachPaidBill($unpaidBill->getType(), $unpaidBill->getId(), $amountPaid)->save();
-					$unpaidBill->attachPayingBill($overPayingBill->getType(), $overPayingBill->getId(), $amountPaid)->save();
+					$unpaidBill->attachPayingBill($overPayingBill, $amountPaid)->save();
 					$unpaidBillLeft -= $amountPaid;
 				}
 				if (abs($unpaidBillLeft) < static::precision) {
@@ -395,11 +409,15 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($billType, $billId, $amount, $status = null) {
+	public function attachPayingBill($bill, $amount, $status = null) {
+		$billId = $bill->getId();
+		$billType = $bill->getType();
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
-			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;		
-			$this->addToWaitingPayments($billId);
+			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
+			if ($bill->isPendingPayment()) {
+				$this->addToWaitingPayments($billId);
+			}
 			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
@@ -580,6 +598,7 @@ abstract class Billrun_Bill {
 							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
 						}
 						try {
+							$payment->setPending(true);
 							$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
 						} catch (Exception $e) {
 							$payment->setGatewayChargeFailure($e->getMessage());
@@ -602,7 +621,10 @@ abstract class Billrun_Bill {
 									if (isset($options['file_based_charge']) && $options['file_based_charge']) {
 										$responseFromGateway['stage'] = 'Pending';
 									}
-									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
+									if ($responseFromGateway['stage'] != 'Pending') {
+										$payment->setPending(false);
+									}
+									$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
 								}
 							}
 						} else {
@@ -678,4 +700,9 @@ abstract class Billrun_Bill {
 		$this->updatePaidBy($paidBy, $billId, $status);
 		return $this;
 	}
+	
+	public function isPendingPayment() {
+		return (isset($this->data['pending']) && $this->data['pending']);
+	}
+
 }
