@@ -37,7 +37,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Optional fields to be saved to the payment. For some payment methods they are mandatory.
 	 * @var array
 	 */
-	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country');
+	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by');
 
 	protected static $aids;
 	/**
@@ -75,6 +75,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
 				}
 			}
+			if (isset($options['paid_by']['inv'])) {
+				foreach ($options['paid_by']['inv'] as $invId => $credit) {
+					$options['paid_by']['inv'][$invId] = floatval($credit);
+				}
+			}
+			
 			$this->data['urt'] = new MongoDate();
 
 			foreach ($this->optionalFields as $optionalField) {
@@ -487,14 +493,34 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$gatewayDetails = $subscriber['payment_gateway']['active'];
-			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {			
+			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
+				continue;
+			}
+			if (!empty($chargeOptions['invoices'])){
+				if (is_null($customer['left_to_pay']) && is_null($customer['left'])) {
+					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'] . ", Invoice_id: " . $customer['invoice_id'], Zend_Log::ALERT);
+					continue;
+				} else if (!is_null($customer['left_to_pay'])) {
+					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left_to_pay'];
+				} else if (!is_null($customer['left'])) {
+					$paymentParams['amount'] = $customer['left'];
+					$gatewayDetails['amount'] = -$customer['left'];
+				}
+				if ($customer['due'] > 0) {
+					$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				} else {
+					$paymentParams['paid_by']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				}
+			} else {
+				$paymentParams['amount'] = abs($customer['due']);
+				$gatewayDetails['amount'] = $customer['due'];
+			}
+			if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
 				continue;
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = abs($customer['due']);
-			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
@@ -503,9 +529,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 
 			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
-			if (!empty($chargeOptions['invoices'])) {
-				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
-			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
