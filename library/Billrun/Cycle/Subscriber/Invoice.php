@@ -397,7 +397,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 		}
 		Billrun_Factory::log('Finished aggreating into billrun object for SID : ' . $this->data['sid']);
-		
 	}
 
 	/**
