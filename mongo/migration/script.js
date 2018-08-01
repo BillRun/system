@@ -305,7 +305,7 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		var services = obj.services;
 		for (var service in services) {
 			if (obj['services'][service]['creation_time'] === undefined) {
-				obj['services'][service]['creation_time'] = obj.from;
+				obj['services'][service]['creation_time'] = obj['services'][service]['from'];
 			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
 				var sec = obj['services'][service]['creation_time']['sec'];
 				var usec = obj['services'][service]['creation_time']['usec'];
