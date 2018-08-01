@@ -380,6 +380,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines',array());
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		Billrun_Factory::log('Updating billrun object with aggregated lines for SID : ' . $this->data['sid']);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs as $breakdownConfig) {
@@ -395,6 +396,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 				}
 			}
 		}
+		Billrun_Factory::log('Finished aggreating into billrun object for SID : ' . $this->data['sid']);
+		
 	}
 
 	/**
