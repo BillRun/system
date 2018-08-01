@@ -243,8 +243,8 @@ class Billrun_Cycle_Account_Invoice {
 		return $invoiceRawData;
 	}
 	
-	public function shouldKeepLinesinMemory() {
-		return count($this->subscribers) > Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_keep_lines',50);
+	public function shouldKeepLinesinMemory($recordCount = 0) {
+		return max($recordCount,count($this->subscribers)) < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_keep_lines',50);
 	}
 	
 	/**
