@@ -526,6 +526,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentParams['gateway_details'] = $gatewayDetails;
 			if ($customer['due'] < 0) {
 				$paymentParams['dir'] = 'tc';
+			} else {
+				$paymentParams['dir'] = 'fc';
 			}
 
 			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
@@ -665,6 +667,28 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function setPending($pending = true) {
 		$this->data['pending'] = $pending;
+	}
+	
+	public function getRejectionPayments($aid) {
+		$query = array(
+			'aid' => $aid,
+			'$or' => array(
+				array('rejected' => array('$eq' => true)),
+				array('rejection' => array('$eq' => true)),
+			),
+		);
+		return static::getBills($query);
+	}
+	
+	public function getCancellationPayments($aid) {
+		$query = array(
+			'aid' => $aid,
+			'$or' => array(
+				array('cancelled' => array('$eq' => true)),
+				array('cancel' => array('$exists' => true)),
+			),
+		);
+		return static::getBills($query);
 	}
 
 }

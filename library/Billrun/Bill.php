@@ -431,7 +431,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
-		if ($this->getDue() > 0) {
+		if ($this->getDue() > 0 || $this->isRejection() || $this->isCancellation()) {
 			$this->data['paid_by'] = $paidBy;
 			$this->recalculatePaymentFields($billId, $status);
 		}
@@ -607,7 +607,7 @@ abstract class Billrun_Bill {
 							if ($credit) {
 								$billType = $overPayingBill->getType();
 								$billId = $overPayingBill->getId();
-								$leftToSpare -= $rawPayment['pays'][$billType][$billId] = $credit;
+								$leftToSpare -= $rawPayment['paid_by'][$billType][$billId] = $credit;
 								$updateBills[$billType][$billId] = $overPayingBill;
 							}
 						}
@@ -704,9 +704,9 @@ abstract class Billrun_Bill {
 				break;
 
 			case 'Completed':
-				$this->removeFromWaitingPayments($billId);
 				$pending = $this->data['waiting_payments'];
-				if (count($pending)) { 
+				if (count($pending)) {
+					$this->removeFromWaitingPayments($billId);
 					$result = '2';
 				}
 				else {
