@@ -75,7 +75,8 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * loads configuration files for exporter internal use
 	 */
 	protected function loadConfig() {
-		$this->config = Billrun_Factory::config()->getConfigValue(static::$type . ".exporter", array());
+		$configPath = Billrun_Factory::config()->getConfigValue(static::$type . '.exporter.config_path', '');
+		$this->config = (new Yaf_Config_Ini($configPath))->toArray();
 	}
 	
 	/**
