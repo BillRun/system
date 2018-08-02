@@ -486,7 +486,7 @@ class Mongodloid_Collection {
 		// try to set last seq
 		while (1) {
 			// get last seq
-			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->setReadPreference('RP_PRIMARY')->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
 				$lastSeq = $init_id;
 			} else {
