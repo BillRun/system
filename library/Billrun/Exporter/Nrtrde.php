@@ -16,6 +16,7 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	
 	static protected $type = 'nrtrde';
 	
+	protected $tadigs = array();
 	protected $periodStartTime = null;
 	protected $periodEndTime = null;
 	
@@ -77,9 +78,14 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	protected function getLinesToExport() {
 		$ret = array();
 		$this->loadRows();
+		$this->loadTadigs();
 		
 		foreach ($this->rowsToExport as $row) {
 			$tadig = $this->getTadig($row);
+			if ($tadig === false) {
+				Billrun_Log::getInstance()->log('NRTRDE exporter: Cannot get TADIG for row. stamp: ' . $row['stamp'], Zend_log::WARN);
+				continue;
+			}
 			if (!isset($ret[$tadig])) {
 				$ret[$tadig] = array();
 			}
@@ -90,15 +96,55 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	}
 	
 	/**
+	 * load the TADIGs relevant for the lines received
+	 */
+	protected function loadTadigs() {
+		$mccMncs = array();
+		foreach ($this->rowsToExport as $row) {
+			$mccMnc = $this->getMccMnc($row);
+			$mccMncs[] = $mccMnc;
+		}
+		
+		$collection = Billrun_Factory::db()->tadigsCollection();
+		$query = array(
+			'mcc_mnc' => array(
+				'$in' => array_values(array_unique($mccMncs)),
+			),
+		);
+		$mappings = $collection->query($query)->cursor();
+		foreach ($mappings as $mapping) {
+			foreach ($mapping['mcc_mnc'] as $mccMnc) {
+				if (isset($this->tadigs[$mccMnc]) && $this->tadigs[$mccMnc] != $mapping['tadig']) {
+					Billrun_Log::getInstance()->log('NRTRDE exporter: duplicate definition for MCC-MNC. TADIG: ' . $mapping['tadig'] . ' and TADIG ' . $this->tadigs[$mccMnc], Zend_log::NOTICE);
+					continue;
+				}
+				$this->tadigs[$mccMnc] = $mapping['tadig'];
+			}
+		}
+	}
+
+
+	/**
 	 * gets the relevant TADIG for the row
 	 * 
 	 * @param array $row
 	 * @return string
-	 * @todo currently, returns MCC-MNC TADIGs should be taken from DB (BTGT-227) 
 	 */
 	protected function getTadig($row) {
-		$mcc = substr($row['imsi'], 0, 3);
-		$mnc = substr($row['imsi'], 3, 3);
+		$mccMnc = $this->getMccMnc($row);
+		return isset($this->tadigs[$mccMnc]) ? $this->tadigs[$mccMnc] : false;
+	}
+	
+	/**
+	 * extract MCC-MNC from the row
+	 * 
+	 * @param array $row
+	 * @return string
+	 */
+	protected function getMccMnc($row) {
+		$imsi = $row['imsi'];
+		$mcc = substr($imsi, 0, 3);
+		$mnc = substr($imsi, 3, 3);
 		return $mcc . $mnc;
 	}
 
