@@ -175,4 +175,8 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		$this->headerStructure = $structure;
 		return $this;
 	}
+	
+	public function getStructure() {
+		return $this->structure;
+	}
 }
