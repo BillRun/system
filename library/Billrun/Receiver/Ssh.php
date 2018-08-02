@@ -90,7 +90,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
-						Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::INFO);
+						Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::DEBUG);
 						continue;
 					}
 
