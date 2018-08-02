@@ -172,7 +172,7 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 * 
 	 * @param array $row
 	 * @return one of: MOC, MTC, GPRS
-	 * @todo currently, only supports GPRS
+	 * @todo currently, only supports MOC
 	 */
 	protected function getCallEvent($row) {
 		switch ($row['type']) {
