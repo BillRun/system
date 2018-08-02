@@ -654,6 +654,8 @@ class ReportModel {
 				return 'events';
 			case 'logFile':
 				return 'log';
+			case 'bills':
+				return 'bills';
 			default:
 				throw new Exception("Invalid entity type");
 		}
