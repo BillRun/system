@@ -36,7 +36,7 @@ class ConfigModel {
 	public function __construct() {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db()->configCollection();
-		$this->options = array('receive', 'process', 'calculate');
+		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
 	}
 	

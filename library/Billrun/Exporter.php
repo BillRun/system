@@ -1,0 +1,154 @@
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2018 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+/**
+ * Billing abstract exporter class
+ *
+ * @package  Billing
+ * @since    2.8
+ */
+abstract class Billrun_Exporter extends Billrun_Base {
+
+	/**
+	 * Type of exporter
+	 *
+	 * @var string
+	 */
+	static protected $type = 'exporter';
+	
+	/**
+	 * configuration for internal use of the exporter
+	 * 
+	 * @var array
+	 */
+	protected $config = array();
+	
+	/**
+	 * additional options
+	 * @var array 
+	 */
+	protected $options = array();
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->options = $options;
+		$this->loadConfig();
+	}
+
+	/**
+	 * general function to handle the export
+	 *
+	 * @return array list of lines exported
+	 */
+	abstract function handleExport();
+	
+	/**
+	 * optional actions to perform before export begins
+	 */
+	function beforeExport() {
+	}
+	
+	/**
+	 * optional actions to perform after export ends
+	 */
+	function afterExport() {
+	}
+	
+	/**
+	 * general function to handle the export
+	 *
+	 * @return array list of lines exported
+	 */
+	function export() {
+		$this->beforeExport();
+		$exportedData = $this->handleExport();
+		$this->afterExport();
+		return $exportedData;
+	}
+	
+	/**
+	 * loads configuration files for exporter internal use
+	 */
+	protected function loadConfig() {
+		$this->config = Billrun_Factory::config()->getConfigValue(static::$type . ".exporter", array());
+	}
+	
+	/**
+	 * get value from exporter configuration
+	 * 
+	 * @param mixed $keys - array of keys or dot (".") separated keys
+	 * @param mixed $defaultValue
+	 * @return mixed
+	 */
+	protected function getConfig($keys, $defaultValue = null) {
+		if (!$this->config) {
+			return $defaultValue;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$ret = $this->config;
+		foreach ($keys as $key) {
+			if (!isset($ret[$key])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$key];
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * get fields mapping for 1 line of the exporter
+	 * 
+	 * @param array $row
+	 * @return type
+	 */
+	protected function getFieldsMapping($row) {
+		return $this->getConfig('fields_mapping', array());
+	}
+	
+	/**
+	 * translate row to the format it should be exported
+	 * 
+	 * @param array $row
+	 * @return array
+	 */
+	protected function getRecordData($row) {
+		$fieldsMapping = $this->getFieldsMapping($row);
+		return $this->mapFields($fieldsMapping, $row);
+	}
+	
+	protected function mapFields($fieldsMapping, $row = array()) {
+		$data = array();
+		foreach ($fieldsMapping as $field => $fieldMapping) {
+			if (!is_array($fieldMapping)) {
+				$val = isset($row[$fieldMapping]) ? $row[$fieldMapping] : '';
+			} else if (isset($fieldMapping['func'])) {
+				$functionName = $fieldMapping['func'];
+				if (!method_exists($this, $functionName)) {
+					Billrun_Log::getInstance()->log('Bulk exporter: mapping function "' . $functionName . '" does not exist', Zend_log::WARN);
+					break;
+				}
+				$val = $this->{$functionName}($row, $fieldMapping);
+			} else if(isset ($fieldMapping['value'])) {
+				$val = $fieldMapping['value'];
+			} else {
+				Billrun_Log::getInstance()->log('Bulk exporter: invalid mapping: ' . print_R($fieldMapping, 1), Zend_log::NOTICE);
+				$val = '';
+			}
+			
+			$data[$field] = $val;
+		}
+		
+		return $data;
+	}
+
+}
