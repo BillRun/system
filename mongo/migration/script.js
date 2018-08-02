@@ -294,8 +294,11 @@ for (var i in propertyTypes) {
 	}
 }
 
-db.config.insert(lastConfig);
 
+db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+db.counters.dropIndex("coll_1_oid_1");
+
+db.config.insert(lastConfig);
