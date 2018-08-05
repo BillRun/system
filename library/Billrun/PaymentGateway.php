@@ -496,13 +496,13 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway) {
+	public function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed");
+			return array('status' => $status, 'stage' => "Completed", 'extra_params' => $params);
 		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending");
+			return array('status' => $status, 'stage' => "Pending", 'extra_params' => $params);
 		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected");
+			return array('status' => $status, 'stage' => "Rejected", 'extra_params' => $params);
 		} else {
 			throw new Exception("Unknown status");
 		}
