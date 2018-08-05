@@ -360,6 +360,22 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 100 u1
 		array('row' => array('stamp' => 'u1', 'aid' => 27, 'sid' => 31, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'prepriced' => "true", 'type' => 'Preprice_Dynamic', 'uf' => array('preprice' => 100), 'usaget' => 'call', 'usagev' => 15, 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 15, 'aprice' => 100, 'charge' => array('retail' => 100,))),
+//Test num 101 v1
+// Service price overriding
+		array('row' => array('stamp' => 'v1', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 21, 'aprice' => 3.22222, 'charge' => array('retail' => 3.22222,))),
+//Test num 102 v2
+// Service price overriding
+		array('row' => array('stamp' => 'v2', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_INCLUDE_PLUS_OVERRIDE_PRICE', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 10, 'over_group' => 11, 'aprice' => 3.555555, 'charge' => array('retail' => 3.555555,))),
+//Test num 103 v3
+// Service price overriding
+		array('row' => array('stamp' => 'v3', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 80, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 30, 'aprice' => 12.22222, 'charge' => array('retail' => 12.22222,))),
+//Test num 104 v4
+// Service price overriding - service wins if both service and plan override the same product
+		array('row' => array('stamp' => 'v4', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW_PLAN_OVERRIDE_USA', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 10, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 10, 'aprice' => 1.11111, 'charge' => array('retail' => 1.11111,))),
 	];
 
 	public function __construct($label = false) {
