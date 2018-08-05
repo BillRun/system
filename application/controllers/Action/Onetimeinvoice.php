@@ -191,7 +191,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function parseCreditByUsagev(&$row, $rate) {
 		//$row['usagev'] = 1;
-		$row['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], null, 0, $row['urt']->sec);
+		$row['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], null, array(), 0, $row['urt']->sec);
 		$row['prepriced'] = true;
 	}
 	
