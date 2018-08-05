@@ -68,5 +68,21 @@ abstract class Billrun_Exporter_Csv extends Billrun_Exporter_Bulk {
 		return $dataToExport;
 	}
 	
+	/**
+	 * gets data to update log in DB
+	 * 
+	 * @return type
+	 */
+	protected function getLogData() {
+		$fileName = $this->getFileName();
+		$filePath = rtrim($this->getFilePath(), '/') . '/' . $fileName;
+		
+		return array(
+			'exported_time' => date(self::base_dateformat),
+			'file_name' => $fileName,
+			'path' => $filePath,
+		);
+	}
+	
 }
 

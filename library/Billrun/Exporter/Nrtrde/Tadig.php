@@ -20,17 +20,20 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	const CALL_EVENT_MTC = 'MTC';
 	const CALL_EVENT_GPRS = 'GPRS';
 	
+	const SEQUENCE_NUM_INIT = 1;
+	
 	protected $vpmnTadig = '';
 	protected $stamps = '';
-	protected $sequenceNum = '';
+	protected $lastLogSequenceNum = null;
+	protected $sequenceNum = null;
 	protected $time = null;
+	protected $logStamp = null;
 
 
 	public function __construct($options = array()) {
 		$this->vpmnTadig = $options['tadig'];
 		$this->stamps = isset($options['stamps']) ? $options['stamps'] : array();
 		$this->time = isset($options['time']) ? $options['time'] : time();
-		$this->sequenceNum = $this->getNextSequenceNumber();
 		
 		parent::__construct($options);
 	}
@@ -56,6 +59,7 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 * NRTRDE should handle locking
 	 */
 	function beforeExport() {
+		$this->createLogDB($this->getLogStamp());
 	}
 	
 	/**
@@ -63,6 +67,37 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 * NRTRDE should handle locking
 	 */
 	function afterExport() {
+		$this->logDB($this->getLogStamp(), $this->getLogData());
+	}
+	
+	/**
+	 * gets stamp in use for the log
+	 * 
+	 * @return type
+	 */
+	protected function getLogStamp() {
+		if (empty($this->logStamp)) {
+			$stampArr = array(
+				'export_stamp' => $this->exportStamp,
+				'vpmn' => $this->getVpmnTadig(),
+				'sequence_num' => $this->getNextLogSequenceNumber(),
+			);
+			$this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
+		}
+		return $this->logStamp;
+	}
+	
+	/**
+	 * gets data to log after export is done
+	 * 
+	 * @return array
+	 */
+	protected function getLogData() {
+		$logData = parent::getLogData();
+		$logData['tadig'] = $this->getVpmnTadig();
+		$logData['sequence_num'] = $this->getNextLogSequenceNumber();
+		
+		return $logData;
 	}
 	
 	/**
@@ -89,9 +124,37 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 * @return string - number in the range of 00001-99999
 	 */
 	protected function getSequenceNumber() {
+		if (is_null($this->sequenceNum)) {
+			$nextSequenceNum = $this->getNextLogSequenceNumber();
+			$this->sequenceNum = sprintf('%05d', $nextSequenceNum % 100000);
+		}
 		return $this->sequenceNum;
 	}
 	
+	/**
+	 * gets the next sequence number of the VPMN from log collection
+	 */
+	protected function getNextLogSequenceNumber() {
+		if (is_null($this->lastLogSequenceNum)) {
+			$query = array(
+				'source' => 'export',
+				'type' => static::$type,
+				'tadig' => $this->getVpmnTadig(),
+			);
+			$sort = array(
+				'export_time' => -1,
+			);
+			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
+			if (is_null($lastSeq)) {
+				$this->lastLogSequenceNum = self::SEQUENCE_NUM_INIT;
+			} else {
+				$this->lastLogSequenceNum = $lastSeq + 1;
+			}
+		}
+		return $this->lastLogSequenceNum;
+	}
+
+
 	/**
 	 * gets file available timestamp
 	 * 
@@ -126,16 +189,6 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 */
 	protected function getCallEventStartTimeStamp($row) {
 		return $this->formatDate($row['urt']);
-	}
-
-	/**
-	 * gets next sequence number for the file
-	 * 
-	 * @return string - number in the range of 00001-99999
-	 * @todo implement using counters table
-	 */
-	protected function getNextSequenceNumber() {
-		return '00001';
 	}
 	
 	/**

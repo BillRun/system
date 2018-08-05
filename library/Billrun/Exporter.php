@@ -33,10 +33,13 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * @var array 
 	 */
 	protected $options = array();
+	
+	protected $logCollection = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->options = $options;
+		$this->logCollection = Billrun_Factory::db()->logCollection();
 		$this->loadConfig();
 	}
 
@@ -150,6 +153,65 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		}
 		
 		return $data;
+	}
+	
+	/**
+	 * method to log the export process
+	 */
+	protected function logDB($stamp, $data) {
+		if (empty($stamp)) {
+			Billrun_Factory::log()->log("Billrun_Exporter::logDB - got export with empty stamp. data: " . print_R($data, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		$log = Billrun_Factory::db()->logCollection();
+		Billrun_Factory::dispatcher()->trigger('beforeLogExport', array(&$data, $stamp, $this));
+		
+		$query = array(
+			'stamp' =>  $stamp,
+			'source' => 'export',
+			'type' => static::$type,
+		);
+
+		$update = array(
+			'$set' => $data,
+		);
+
+		$result = $this->logCollection->update($query, $update, array('w' => 1));
+		$success = $result == true || ($result['n'] == 1 && $result['ok'] == 1);
+
+		if (!$success) {
+			Billrun_Factory::log()->log("Billrun_Exporter::logDB - Failed when trying to update an export log record with stamp of : {$stamp}. data: " . print_R($data, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * creates basic log in DB
+	 * 
+	 * @param string $stamp
+	 * @return type
+	 */
+	protected function createLogDB($stamp, $data = array()) {		
+		$basicLogData = array(
+			'stamp' =>  $stamp,
+			'source' => 'export',
+			'type' => static::$type,
+			'export_hostname' => Billrun_Util::getHostName(),
+			'export_time' => date(self::base_dateformat),
+		);
+		$logData = array_merge($basicLogData, $data);
+
+		$result = $this->logCollection->insert($logData);
+		$success = $result == true || ($result['n'] == 1 && $result['ok'] == 1);
+
+		if (!$success) {
+			Billrun_Factory::log()->log("Billrun_Exporter::createLogDB - Failed when trying to insert an export log record" . print_r($logData, 1) . " with stamp of : {$stamp}", Zend_Log::NOTICE);
+			return false;
+		}
+		
+		return true;
 	}
 
 }
