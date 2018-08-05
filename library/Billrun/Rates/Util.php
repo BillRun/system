@@ -62,6 +62,12 @@ class Billrun_Rates_Util {
 	}
 
 	public static function getTariff($rate, $usage_type, $planName = null, $services = array(), $time = null) {
+		foreach ($services as $service) {
+			$rates = $service->get('rates');
+			if (isset($rates[$rate['key']], $rates[$rate['key']][$usage_type])) {
+				return $rates[$rate['key']][$usage_type];
+			}
+		}
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -74,12 +80,6 @@ class Billrun_Rates_Util {
 		}
 		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
 			return $rate['rates'][$usage_type][$planName];
-		}
-		foreach ($services as $service) {
-			$rates = $service->get('rates');
-			if (isset($rates[$rate['key']], $rates[$rate['key']][$usage_type])) {
-				return $rates[$rate['key']][$usage_type];
-			}
 		}
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
 			return $rate['rates'][$usage_type]['BASE'];
