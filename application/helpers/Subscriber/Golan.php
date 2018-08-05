@@ -363,7 +363,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								$concat['data']['plans'] = $offers;
 							}											
 							if ($sid) {
-								$concat['data']['plan'] = !is_null($subscriber['offers']) ? end($this->getPlanNames($concat['data']['plans'])) : null;
+								$concat['data']['plan'] = !is_null($subscriber['offers']) ? @end($this->getPlanNames($concat['data']['plans'])) : null;
 							} else {
 								$concat['data']['plan'] = 'ACCOUNT';
 							}
@@ -385,7 +385,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$credit['deactivation'] = $concat['data']['activation_end'];
 									$credit['fraction'] = $concat['data']['fraction'];
 									if ($sid) {
-										$credit['plan'] = $concat['data']['plan'];
+										$credit['plan'] = empty($concat['data']['plan']) ? "ACCOUNT" : $concat['data']['plan'];
 									} else {
 										$credit['subscriber_id'] = $sid;
 										$credit['plan'] = 'ACCOUNT';

@@ -103,7 +103,7 @@ class Billrun_Billrun {
 	public function save() {
 		if (isset($this->data)) {
 			try {
-                                $this->data['creation_time'] = new MongoDate();
+                $this->data['creation_time'] = new MongoDate();
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
@@ -895,7 +895,7 @@ class Billrun_Billrun {
 	 * @return true if account is deactivated (causes no xml to be produced for this account)
 	 */
 	public function is_deactivated() {
-		$deactivated = true;
+		$deactivated = $this->data['totals']['after_vat'] === 0;
 		foreach ($this->data['subs'] as $subscriber) {
 			$its_empty = $this->empty_subscriber($subscriber);
 			if (!$its_empty) {
