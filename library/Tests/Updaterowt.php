@@ -422,6 +422,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$passed = True;
 		$epsilon = 0.000001;
 		$inGroupE = $row["expected"]['in_group'];
+		$out_group = isset($row["expected"]['out_group'])?$row["expected"]['out_group']:null;
 		$overGroupE = $row["expected"]['over_group'];
 		$aprice = round(10 * ($row["expected"]['aprice']), (1 / $epsilon)) / 10;
 		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br>';
@@ -492,11 +493,8 @@ class Tests_Updaterowt extends UnitTestCase {
 				if (isset($returnRow['over_group'])) {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->fail;
 					$passed = False;
-				} else {
-					$message .= '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
-					$passed = False;
 				}
-				$passed = False;
+				
 			}
 		} else {
 			if ((!isset($returnRow['over_group'])) && (!isset($returnRow['out_plan']))) {
@@ -509,15 +507,18 @@ class Tests_Updaterowt extends UnitTestCase {
 				} else {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->pass;
 				}
-			} else if (isset($returnRow['out_plan'])) {
-				if (!Billrun_Util::isEqual($returnRow['out_plan'], $overGroupE, $epsilon)) {
-					$message .= '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
-					$passed = False;
-				} else {
-					$message .= '— out_plan: ' . $returnRow['out_plan'] . $this->pass;
-				}
 			}
 		}
+		if (isset($out_group)) {
+
+			if (Billrun_Util::isEqual($returnRow['out_group'], $out_group, $epsilon)) {
+				$message .= '— out_group: ' . $returnRow['out_group'] . $this->pass;
+			} else {
+				$message .= '— out_group: ' . $returnRow['out_group'] . $this->fail;
+				$passed = False;
+			}
+		}
+
 		$message .= ' </p>';
 		return [$passed, $message];
 	}
