@@ -38,7 +38,21 @@ class ReceiveAction extends Action_Base {
 
 		// If not type all process normaly.
 		if(!$this->handleTypeAll($options)) {
-			$this->loadReceiver($options);	
+			$connectionsPerReceiverType = array();
+			$fileTypes = Billrun_Factory::config()->getConfigValue('file_types');
+			$inputProcessor = current(array_filter($fileTypes, function($fileType) use ($options) {
+				return $fileType['file_type'] == $options['type'];
+			}));
+			$connections = isset($inputProcessor['receiver']['connections']) ? $inputProcessor['receiver']['connections'] : [];
+			foreach ($connections as $connection) {
+				$connectionsPerReceiverType[$connection['receiver_type']][] = $connection;
+			}
+			
+			foreach ($connectionsPerReceiverType as $receiverType => $receiverTypeConnections) {
+				$options['receiver_type'] = $receiverType;
+				$options['connections'] = $receiverTypeConnections;
+				$this->loadReceiver($options);
+			}
 		}
 	}
 
