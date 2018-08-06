@@ -321,6 +321,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
+		$this->detachPayingBills();
 		$this->save();
 	}
 
@@ -536,11 +537,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentParams['dir'] = 'fc';
 			}
 
-			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
+			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
+				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
 			}
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
