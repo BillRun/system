@@ -536,12 +536,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			} else {
 				$paymentParams['dir'] = 'fc';
 			}
-
-			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
+			if ($gatewayDetails['amount'] > 0) {
+				Billrun_Factory::log("Charging account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+			} else {
+				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
+				if ($gatewayDetails['amount'] > 0) {
+					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+				} else {
+					Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+				}
 			}
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
