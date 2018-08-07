@@ -867,7 +867,8 @@ class ReportModel {
 		if ($size === -1 && $page === -1) {
 			return 0;
 		}
-		return intval($page) * intval($size);
+		// Size has addition 1 item to check if next page exists 
+		return intval($page) * intval($size - 1);
 	}
 	
 	protected function getLimit($size = -1) {
