@@ -49,8 +49,9 @@ class ReceiveAction extends Action_Base {
 			}
 			
 			foreach ($connectionsPerReceiverType as $receiverType => $receiverTypeConnections) {
-				$options['receiver_type'] = $receiverType;
-				$options['connections'] = $receiverTypeConnections;
+				$inputProcessor['receiver']['connections'] = $receiverTypeConnections;
+				$inputProcessor['receiver']['receiver_type'] = $receiverType;
+				$options = $inputProcessor;
 				$this->loadReceiver($options);
 			}
 		}
