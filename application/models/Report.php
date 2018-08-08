@@ -751,7 +751,6 @@ class ReportModel {
 		$field = $this->formatInputMatchField($condition, $condition_entity);
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
-		$a = json_encode($value);
 		switch ($op) {
 			case 'like':
 				$formatedExpression = array(
