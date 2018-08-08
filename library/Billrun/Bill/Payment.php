@@ -497,6 +497,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}
 		foreach ($customers as $customer) {
+			$paymentParams = array();
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
@@ -538,7 +539,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 			Billrun_Factory::log("charging account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			try {
+				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+				continue;
+			}
 			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
 				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
 			}
