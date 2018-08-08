@@ -37,7 +37,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Optional fields to be saved to the payment. For some payment methods they are mandatory.
 	 * @var array
 	 */
-	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by');
+	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
 	protected static $aids;
 	/**
@@ -190,14 +190,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param array $rejection
 	 * @return Billrun_Bill_Payment
 	 */
-	public function getRejectionPayment($rejectionCode) {
+	public function getRejectionPayment($response) {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
-		$rawData['rejection_code'] = $rejectionCode;
+		$rawData['rejection_code'] = $response['status'];
+		if (isset($response['extra_params'])) {
+			$rawData['vendor_response'] = $response['extra_params'];
+		}
 		return new $className($rawData);
 	}
 
@@ -419,9 +422,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Saves the response from the gateway about the status of the payment.
 	 * 
 	 */
-	public function setPaymentStatus($status, $gatewayName) {
-		$this->data['vendor_response'] = array('name' => $gatewayName, 'status' => $status);
+	public function setPaymentStatus($response, $gatewayName) {
+		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
 		$this->data['last_checked_pending'] = new MongoDate();
+		$extraParams = isset($response['extra_params']) ? $response['extra_params'] : array();	
+		$vendorResponse = array_merge($vendorResponse, $extraParams);
+		$this->data['vendor_response'] = $vendorResponse;
 		$this->save();
 	}
 
@@ -557,13 +563,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public static function updateAccordingToStatus($response, $payment, $gatewayName) {
 		if ($response['stage'] == "Completed") { // payment succeeded 
 			$payment->updateConfirmation();
-			$payment->setPaymentStatus($response['status'], $gatewayName);
+			$payment->setPaymentStatus($response, $gatewayName);
 		} else if ($response['stage'] == "Pending") { // handle pending
-			$payment->setPaymentStatus($response['status'], $gatewayName);
+			$payment->setPaymentStatus($response, $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
-				$rejection = $payment->getRejectionPayment($response['status']);
+				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
