@@ -364,6 +364,15 @@ abstract class Billrun_Bill {
 			}
 		}
 	}
+	
+	public function detachPayingBills() {
+		foreach ($this->getPaidByBills() as $billType => $bills) {
+			foreach (array_keys($bills) as $billId) {
+				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
+				$billObj->detachPaidBill($this->getType(), $this->getId())->save();
+			}
+		}
+	}
 
 	public function getType() {
 		return $this->type;
@@ -391,6 +400,15 @@ abstract class Billrun_Bill {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
 				
+		} else if ($this->getDue() < 0){
+			$amount = 0;
+			if (isset($this->data['pays']['inv'])) {
+				$amount += array_sum($this->data['pays']['inv']);
+			}
+			if (isset($this->data['pays']['rec'])) {
+				$amount += array_sum($this->data['pays']['rec']);
+			}
+			$this->data['left'] = $this->data['amount'] - $amount;				
 		}
 		return $this;
 	}
@@ -429,11 +447,25 @@ abstract class Billrun_Bill {
 		$this->updatePaidBy($paidBy);
 		return $this;
 	}
+	
+	public function detachPaidBill($billType, $id) {
+		$pays = $this->getPaidBills();
+		unset($pays[$billType][$id]);
+		$this->updatePays($pays);
+		return $this;
+	}
 
 	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
 		if ($this->getDue() > 0 || $this->isRejection() || $this->isCancellation()) {
 			$this->data['paid_by'] = $paidBy;
 			$this->recalculatePaymentFields($billId, $status);
+		}
+	}
+	
+	protected function updatePays($pays, $billId = null) {
+		if ($this->getDue() < 0) {
+			$this->data['pays'] = $pays;
+			$this->recalculatePaymentFields();
 		}
 	}
 
