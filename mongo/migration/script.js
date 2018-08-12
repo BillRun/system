@@ -228,7 +228,7 @@ for (var fileType in fileTypes) {
 				};
 				conditions.push(condition);
 				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
-				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];	
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
 				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
 			}
 		}
@@ -294,10 +294,12 @@ for (var i in propertyTypes) {
 	}
 }
 
-// BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+
+// BRCD-1443 - Wrong billrun field after a rebalance
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+db.counters.dropIndex("coll_1_oid_1");
 
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
@@ -305,7 +307,7 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		var services = obj.services;
 		for (var service in services) {
 			if (obj['services'][service]['creation_time'] === undefined) {
-				obj['services'][service]['creation_time'] = obj.from;
+				obj['services'][service]['creation_time'] = obj['services'][service]['from'];
 			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
 				var sec = obj['services'][service]['creation_time']['sec'];
 				var usec = obj['services'][service]['creation_time']['usec'];
@@ -318,6 +320,10 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 	}
 );
 
+db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
 db.config.insert(lastConfig);
+
+// BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
+db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});

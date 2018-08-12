@@ -148,7 +148,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for account ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
+		Billrun_Factory::log('Finished querying for subscriber ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
 
 		return $ret;
 	}

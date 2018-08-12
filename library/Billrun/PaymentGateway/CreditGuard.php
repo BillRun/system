@@ -318,6 +318,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function sendPaymentRequest($paymentArray) {
+		$additionalParams = array();
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -328,7 +329,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlObj = simplexml_load_string($result);
 		$codeResult = (string) $xmlObj->response->result;
 		$this->transactionId = (string) $xmlObj->response->tranId;
-		return $codeResult;
+		$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
+		$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
+		$voucherNumber = $slaveNumber . $slaveSequence;
+		if (!empty($voucherNumber)) {
+			$additionalParams['payment_identifier'] = $voucherNumber;
+		}
+		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
 
 }

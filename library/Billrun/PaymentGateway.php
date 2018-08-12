@@ -496,13 +496,13 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway) {
+	public function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed");
+			return array('status' => $status, 'stage' => "Completed", 'extra_params' => $params);
 		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending");
+			return array('status' => $status, 'stage' => "Pending", 'extra_params' => $params);
 		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected");
+			return array('status' => $status, 'stage' => "Rejected", 'extra_params' => $params);
 		} else {
 			throw new Exception("Unknown status");
 		}
@@ -573,48 +573,7 @@ abstract class Billrun_PaymentGateway {
 			),
 		);
 		$pipelines[] = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$payment_method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			),
+			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
 		);
 		$pipelines[] = array(
 			'$match' => array(
@@ -768,4 +727,56 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
+	protected function getGroupByMode($mode = false) {
+		$group = array(
+				'_id' => '$aid',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$payment_method',
+				),
+				'due' => array(
+					'$sum' => '$due',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+			);	
+		if ($mode == 'byInvoiceId') {
+			$group['_id'] = '$invoice_id';
+			$group['left_to_pay'] = array('$first' => '$left_to_pay');
+			$group['left'] = array('$first' => '$left');
+			$group['invoice_id'] = array('$first' => '$invoice_id');
+		}	
+			
+		return $group;
+	}
 }
