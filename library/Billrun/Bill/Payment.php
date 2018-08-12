@@ -471,17 +471,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 */
 	public static function makePayment($chargeOptions) {
-		if (!empty($chargeOptions['aids'])) {
-			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
+		$filtersQuery = self::buildFilterQuery($chargeOptions);
+		if (empty($filtersQuery) && !empty($chargeOptions)) {
+			throw new Exception("Can't Charge, wrong input");
 		}
-		if (!empty($chargeOptions['invoices'])) {
-			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
-		}
+		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'total_debt';
 		if (!static::lock()) {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, $chargeOptions['invoices'] ?: FALSE));
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($filtersQuery, $payMode));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
@@ -535,6 +534,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentParams['dir'] = 'tc';
 			} else {
 				$paymentParams['dir'] = 'fc';
+			}
+			if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
+				continue;
 			}
 			if ($gatewayDetails['amount'] > 0) {
 				Billrun_Factory::log("Charging account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
@@ -703,6 +705,100 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			),
 		);
 		return static::getBills($query);
+	}
+	
+	protected function buildFilterQuery($chargeFilters) {
+		$filtersQuery = array();
+		$errorMessage = self::validateChargeFilters($chargeFilters);
+		if ($errorMessage) {
+			throw new Exception($errorMessage);
+		}
+		if (!empty($chargeFilters['aids'])) {
+			self::$aids = Billrun_Util::verify_array($chargeFilters['aids'], 'int');
+			$aidsQuery = array('aid' => array('$in' => self::$aids));
+			$filtersQuery = array_merge($filtersQuery, $aidsQuery);
+		}
+		
+		if (!empty($chargeFilters['invoices'])) {
+			$invoices = Billrun_Util::verify_array($chargeFilters['invoices'], 'int');
+			$invoicesQuery = array('invoice_id' => array('$in' => $invoices));
+			$filtersQuery = array_merge($filtersQuery, $invoicesQuery);
+		}
+		
+		if (isset($chargeFilters['exclude_accounts'])) {
+			$excludeAids = Billrun_Util::verify_array($chargeFilters['exclude_accounts'], 'int');
+			$excludeAidsQuery = array('aid' => array('$nin' => $excludeAids));
+			$filtersQuery = array_merge($filtersQuery, $excludeAidsQuery);
+		}
+
+		if (isset($chargeFilters['billrun_key'])) {
+			$stampQuery = array('billrun_key' => $chargeFilters['billrun_key']);
+			$filtersQuery = array_merge($filtersQuery, $stampQuery);
+		}
+
+		if (isset($chargeFilters['min_invoice_date'])) {
+			$minInvoiceDateQuery = array('invoice_date' => array('$gte' => new MongoDate(strtotime($chargeFilters['min_invoice_date']))));
+			$filtersQuery = array_merge($filtersQuery, $minInvoiceDateQuery);
+		}
+
+		return $filtersQuery;
+	}
+
+	protected function isRefundMode($options) {
+		return isset($options['mode']) && $options['mode'] == 'refund';
+	}
+
+	protected function isChargeMode($options) {
+		return isset($options['mode']) && $options['mode'] == 'charge';
+	}
+	
+	protected function validateChargeFilters($filters) {
+		$errorMessage = false;
+		if (isset($filters['aids']) && isset($filters['exclude_accounts'])) {
+			$errorMessage = "Wrong input! please choose between aids filter to exclude_accounts filter";
+		}
+		if (isset($filters['min_invoice_date']) && strtotime($filters['min_invoice_date']) === false) {
+			$errorMessage = "Wrong input! min_invoice_date filter is invalid";
+		}
+		if (isset($filters['pay_mode']) && !in_array($filters['pay_mode'], array('total_debt','per_bill'))) {
+			$errorMessage = "Wrong input! pay_mode can be total_debt or per_bill";
+		}
+		if (isset($filters['mode']) && !in_array($filters['mode'], array('charge','refund'))) {
+			$errorMessage = "Wrong input! mode can be charge or refund";
+		}
+		if (isset($filters['pay_mode']) && ($filters['pay_mode'] == 'total_debt') && isset($filters['invoices'])) {
+			$errorMessage = "Wrong input! when paying by invoices, pay mode must be per_bill";
+		}
+		if (!$errorMessage) {
+			return self::validateArrayNumericValues($filters);
+		}
+
+		return $errorMessage;
+	}
+	
+	protected function validateArrayNumericValues($filters) {
+		$filtersPossibleArray = array();
+		if (isset($filters['aids'])) {
+			$filtersPossibleArray['aids'] = $filters['aids'];
+		}
+		if (isset($filters['exclude_accounts'])) {
+			$filtersPossibleArray['exclude_accounts'] = $filters['exclude_accounts'];
+		}
+		if (isset($filters['invoices'])) {
+			$filtersPossibleArray['invoices'] = $filters['invoices'];
+		}
+		foreach ($filtersPossibleArray as $filterName => $inputArray) {
+			if (!is_array($inputArray)) {
+				$inputArray = array($inputArray);
+			}
+			foreach ($inputArray as $value) {
+				if (!Billrun_Util::IsIntegerValue($value)) {
+					return 'Wrong input! non numeric values in ' . $filterName . ' filter';
+				}
+			}
+		}
+		
+		return false;
 	}
 
 }

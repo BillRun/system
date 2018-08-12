@@ -553,17 +553,15 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['receiver'];
 	}
 	
-	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
+	public static function getCustomers($filters = array(), $payMode = 'total_debt') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		if (!empty($aids)) {
+		if (!empty($filters['invoice_id'])) {
+			$payMode = 'per_bill';
+		}
+		if (!empty($filters)) {
 			$match = array(
-				'$match' => array(
-					'aid' => array('$in' => $aids),
-				),
+				'$match' => $filters
 			);
-			if (!empty($specificInvoices)) {
-				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
-			}
 			$pipelines[] = $match;
 		}
 		$pipelines[] = array(
@@ -573,7 +571,7 @@ abstract class Billrun_PaymentGateway {
 			),
 		);
 		$pipelines[] = array(
-			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
+			'$group' => self::getGroupByMode($payMode),
 		);
 		$pipelines[] = array(
 			'$match' => array(
@@ -770,7 +768,7 @@ abstract class Billrun_PaymentGateway {
 					'$first' => '$currency',
 				),
 			);	
-		if ($mode == 'byInvoiceId') {
+		if ($mode == 'per_bill') {
 			$group['_id'] = '$invoice_id';
 			$group['left_to_pay'] = array('$first' => '$left_to_pay');
 			$group['left'] = array('$first' => '$left');
