@@ -562,8 +562,9 @@ abstract class Billrun_PaymentGateway {
 			$match = array(
 				'$match' => $filters
 			);
-			$pipelines[] = $match;
 		}
+		$match['$match']['due_date'] = array('$lt' => new MongoDate());
+		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
