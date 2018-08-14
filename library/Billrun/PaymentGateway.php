@@ -553,7 +553,7 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['receiver'];
 	}
 	
-	public static function getCustomers($filters = array(), $payMode = 'total_debt') {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'total_debt') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		if (!empty($filters['invoice_id'])) {
 			$payMode = 'per_bill';
@@ -563,7 +563,10 @@ abstract class Billrun_PaymentGateway {
 				'$match' => $filters
 			);
 		}
-		$match['$match']['due_date'] = array('$lt' => new MongoDate());
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(

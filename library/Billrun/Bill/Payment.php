@@ -471,6 +471,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 */
 	public static function makePayment($chargeOptions) {
+		if (!empty($chargeOptions['aids'])) {
+			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
+		}
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		if (empty($filtersQuery) && !empty($chargeOptions)) {
 			throw new Exception("Can't Charge, wrong input");
@@ -480,85 +483,87 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($filtersQuery, $payMode));
+		$customersAids = self::getCustomersAidsByFilters($filtersQuery);
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
-		$customers_aid = array_map(function($ele) {
-			return $ele['aid'];
-		}, $customers);
 		
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
-			'$in' => $customers_aid
+			'$in' => $customersAids
 		);
 		$query['type'] = "account";
 		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
 		foreach ($subscribers as $subscriber) {
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}
-		foreach ($customers as $customer) {
-			$paymentParams = array();
-			$subscriber = $subscribers_in_array[$customer['aid']];
-			$gatewayDetails = $subscriber['payment_gateway']['active'];
-			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
-				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
-				continue;
-			}
-			if (!empty($chargeOptions['invoices'])){
-				if (is_null($customer['left_to_pay']) && is_null($customer['left'])) {
-					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'] . ", Invoice_id: " . $customer['invoice_id'], Zend_Log::ALERT);
+		foreach ($customersAids as $customerAid) {
+			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
+			$filtersQuery = array_merge($filtersQuery, $accountIdQuery);
+			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode));
+			foreach ($billsDetails as $billDetails) {
+				$paymentParams = array();
+				$subscriber = $subscribers_in_array[$billDetails['aid']];
+				$gatewayDetails = $subscriber['payment_gateway']['active'];
+				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
+					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
-				} else if (!is_null($customer['left_to_pay'])) {
-					$paymentParams['amount'] = $gatewayDetails['amount'] = $customer['left_to_pay'];
-				} else if (!is_null($customer['left'])) {
-					$paymentParams['amount'] = $customer['left'];
-					$gatewayDetails['amount'] = -$customer['left'];
 				}
-				if ($customer['due'] > 0) {
-					$paymentParams['pays']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+				if (!empty($chargeOptions['invoices'])){
+					if (is_null($billDetails['left_to_pay']) && is_null($billDetails['left'])) {
+						Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", Invoice_id: " . $billDetails['invoice_id'], Zend_Log::ALERT);
+						continue;
+					} else if (!is_null($billDetails['left_to_pay'])) {
+						$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
+					} else if (!is_null($billDetails['left'])) {
+						$paymentParams['amount'] = $billDetails['left'];
+						$gatewayDetails['amount'] = -$billDetails['left'];
+					}
+					if ($billDetails['due'] > 0) {
+						$paymentParams['pays']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
+					} else {
+						$paymentParams['paid_by']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
+					}
 				} else {
-					$paymentParams['paid_by']['inv'][$customer['invoice_id']] = $paymentParams['amount'];
+					$paymentParams['amount'] = abs($billDetails['due']);
+					$gatewayDetails['amount'] = $billDetails['due'];
 				}
-			} else {
-				$paymentParams['amount'] = abs($customer['due']);
-				$gatewayDetails['amount'] = $customer['due'];
-			}
-			if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
-				continue;
-			}
-			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
-			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
-			$gatewayName = $gatewayDetails['name'];
-			$paymentParams['gateway_details'] = $gatewayDetails;
-			if ($customer['due'] < 0) {
-				$paymentParams['dir'] = 'tc';
-			} else {
-				$paymentParams['dir'] = 'fc';
-			}
-			if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
-				continue;
-			}
-			if ($gatewayDetails['amount'] > 0) {
-				Billrun_Factory::log("Charging account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-			}
-			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			try {
-				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
-			} catch (Exception $e) {
-				Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
-				continue;
-			}
-			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
+					continue;
+				}
+				$involvedAccounts[] = $paymentParams['aid'] = $billDetails['aid'];
+				$paymentParams['billrun_key'] = $billDetails['billrun_key'];
+				$gatewayDetails['currency'] = !empty($billDetails['currency']) ? $billDetails['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
+				$gatewayName = $gatewayDetails['name'];
+				$paymentParams['gateway_details'] = $gatewayDetails;
+				if ($billDetails['due'] < 0) {
+					$paymentParams['dir'] = 'tc';
+				} else {
+					$paymentParams['dir'] = 'fc';
+				}
+				if ((self::isChargeMode($chargeOptions) && $gatewayDetails['amount'] < 0) || (self::isRefundMode($chargeOptions) && $gatewayDetails['amount'] > 0)) {
+					continue;
+				}
 				if ($gatewayDetails['amount'] > 0) {
-					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					Billrun_Factory::log("Charging account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 				} else {
-					Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					Billrun_Factory::log("Refunding account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 				}
+				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
+				try {
+					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options);
+				} catch (Exception $e) {
+					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+					continue;
+				}
+				if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+					if ($gatewayDetails['amount'] > 0) {
+						Billrun_Factory::log("Successful charging of account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					} else {
+						Billrun_Factory::log("Successful refunding of account " . $billDetails['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					}
+				}
+				self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);		
 			}
-			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
 		
 		if (!static::release()) {
@@ -720,8 +725,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			throw new Exception($errorMessage);
 		}
 		if (!empty($chargeFilters['aids'])) {
-			self::$aids = Billrun_Util::verify_array($chargeFilters['aids'], 'int');
-			$aidsQuery = array('aid' => array('$in' => self::$aids));
+			$aids = Billrun_Util::verify_array($chargeFilters['aids'], 'int');
+			$aidsQuery = array('aid' => array('$in' => $aids));
 			$filtersQuery = array_merge($filtersQuery, $aidsQuery);
 		}
 		
@@ -805,6 +810,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		
 		return false;
+	}
+	
+	protected function getCustomersAidsByFilters($filtersQuery) {
+		$aids = array();
+		$bills = Billrun_Factory::db()->billsCollection()->query($filtersQuery)->cursor();
+		foreach ($bills as $bill) {
+			$aids[] = $bill['aid'];
+		}
+		
+		return array_unique($aids);
 	}
 
 }
