@@ -111,7 +111,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	}
 
 	/**
-	 * method to update subsbscriber collection status
+	 * method to update subscriber collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged) {
 		$collectionSteps = Billrun_Factory::collectionSteps();
@@ -146,10 +146,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 			}
 		}
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
 		return $result;
 	}
 
 	/**
+	 * TODO: Update to Entity API
+	 * 
 	 * Method to Save as 'Close And New' item
 	 * @param Array $set_values Key value array with values to set
 	 * @param Array $remove_values Array with keys to unset
