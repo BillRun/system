@@ -26,13 +26,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	 * get and set lines of the account
 	 */
 	public function setLines($accountLines) {
-		foreach ($accountLines as $line) {
-			$sid = (string)$line['sid'];
-			if (empty($this->lines[$sid])) {
-				$this->lines[$sid] = array();
-			}
-			array_push($this->lines[$sid], $line instanceof Mongodloid_Entity ? $line : new Mongodloid_Entity($line));
-		}
+		$this->lines = $accountLines;
 	}
 	
 	public function loadLines() {

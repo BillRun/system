@@ -373,6 +373,7 @@ class Billrun_Factory {
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);
 		}
+		self::$plan[$stamp]->init();
 		return self::$plan[$stamp];
 	}
 
@@ -482,6 +483,18 @@ class Billrun_Factory {
 	 */
 	public static function emailSenderManager($params = array()) {
 		return Billrun_EmailSenderManager::getInstance($params);
+	}
+	
+	public static function clearInstance($instanceName, array $options = array(),$clearAll = FALSE) {
+		$stamp = md5(serialize($options)); // unique stamp per db connection
+		
+		if($clearAll) {
+			self::${$instanceName} = is_array(self::${$instanceName})  ? array() : null;
+		}
+		if (!isset(self::${$instanceName}[$stamp])) {
+			return;
+		}
+		unset(self::${$instanceName}[$stamp]);
 	}
 
 }
