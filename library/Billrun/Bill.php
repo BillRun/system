@@ -710,7 +710,7 @@ abstract class Billrun_Bill {
 					}
 				if (!isset($options['collect']) || $options['collect']) {
 					$involvedAccounts = array_unique($involvedAccounts);
-					CollectAction::collect($involvedAccounts);
+					Billrun_Factory::dispatcher()->trigger('collectionAfterTransaction', array($involvedAccounts));
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
