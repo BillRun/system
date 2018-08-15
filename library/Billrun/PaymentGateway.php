@@ -555,6 +555,11 @@ abstract class Billrun_PaymentGateway {
 	
 	public static function getCustomers($aids = array(), $specificInvoices = FALSE, $date = FALSE) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
+		if ($date === FALSE) {
+			$time = time();
+		} else {
+			$time = strtotime($date);
+		}
 		if (!empty($aids)) {
 			$match = array(
 				'$match' => array(
@@ -565,7 +570,7 @@ abstract class Billrun_PaymentGateway {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
 			if (!empty($date)) {
-				$match['$match']['due_date'] = ['$lte' => new MongoDate(strtotime($date))];
+				$match['$match']['due_date'] = ['$lte' => new MongoDate($time)];
 			}
 			$pipelines[] = $match;
 		}
