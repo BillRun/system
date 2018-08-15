@@ -560,20 +560,18 @@ abstract class Billrun_PaymentGateway {
 		} else {
 			$time = strtotime($date);
 		}
+		$match = array(
+			'$match' => array(
+				'due_date' => ['$lte' => new MongoDate($time)],
+			),
+		);
 		if (!empty($aids)) {
-			$match = array(
-				'$match' => array(
-					'aid' => array('$in' => $aids),
-				),
-			);
+			$match['$match']['aid'] = array('$in' => $aids);
 			if (!empty($specificInvoices)) {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
-			if (!empty($date)) {
-				$match['$match']['due_date'] = ['$lte' => new MongoDate($time)];
-			}
-			$pipelines[] = $match;
 		}
+		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
