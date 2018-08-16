@@ -708,14 +708,12 @@ abstract class Billrun_Bill {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					}
 				}
-				if (!isset($options['collect']) || $options['collect']) {
-					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responseFromGateway['stage'] == 'Rejected' || ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision)))) {
-						Billrun_Factory::dispatcher()->trigger('collectionAfterRefundSuccessOrRejection', array($involvedAccounts));
-					}
-					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
-						Billrun_Factory::dispatcher()->trigger('collectionAfterChargeSuccess', array($involvedAccounts));
-					}
+				$involvedAccounts = array_unique($involvedAccounts);
+				if ($responseFromGateway['stage'] == 'Rejected' || ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision)))) {
+					Billrun_Factory::dispatcher()->trigger('afterRefundSuccessOrRejection', array($involvedAccounts));
+				}
+				if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($involvedAccounts));
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
