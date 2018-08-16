@@ -21,24 +21,32 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $name = 'debtCollection';
-	protected $mode = 'daily';
-
-	public function collectionAfterTransaction($aids) {
-		if ($this->mode == 'immediate') {
+	protected $immediateEnter = false;
+	protected $immediateExit = false;
+	protected $cronFrequency = 'daily';
+	
+	public function collectionAfterChargeSuccess($aids) {
+		if ($this->immediateExit) {
 			CollectAction::collect($aids);
 		}
 	}
 
+	public function collectionAfterRefundSuccessOrRejection($aids) {
+		if ($this->immediateEnter) {
+			CollectAction::collect($aids);
+		}
+	}
+	
 	public function cronHour() {
-		if ($this->mode == 'hourly') {
+		if ($this->cronFrequency == 'hourly') {
 			CollectAction::collect();
 		}
 	}
 
 	public function cronDay() {
-		if ($this->mode == 'daily') {
+		if ($this->cronFrequency == 'daily') {
 			CollectAction::collect();
 		}
 	}
-
+	
 }
