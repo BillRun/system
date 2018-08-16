@@ -20,6 +20,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^000$/";
 
 	protected function __construct() {
+		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
@@ -336,6 +337,32 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$additionalParams['payment_identifier'] = $voucherNumber;
 		}
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		if ($responseFromGateway['stage'] != 'Rejected') {
+			return $responseFromGateway;
+		}
+		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'])) {
+			$chargeType = $gatewayDetails['amount'] > 0 ? 'Debit' : 'Credit';
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid' => $aid));
+			$gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
+			$accountGateway = $account->__get('payment_gateway');
+			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
+		//	$account->permanentChange(array('payment_gateway' => $accountGateway));
+			$account->closeAndNew(array('payment_gateway' => $accountGateway));
+			$paymentArray = $this->buildPaymentRequset($gatewayDetails, $chargeType);
+			return $this->sendPaymentRequest($paymentArray);
+		}
+		
+		return $responseFromGateway;
+	}
+	
+	protected function isCreditCardExpired($expiration) {
+		$expires = \DateTime::createFromFormat('my', $expiration);
+		return $expires < new DateTime();
 	}
 
 }

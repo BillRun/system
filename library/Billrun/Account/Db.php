@@ -222,4 +222,30 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 	}
 
+	public function permanentChange($set_values, $remove_values = array()) {
+		$time = new mongoDate();
+
+		$query = array(
+			'aid' => 163719,
+			'type' => 'account',
+			'effective_date' => $time,
+		);
+
+		$update = array(
+			'from' => $time,
+			'payment_gateway' => $set_values['payment_gateway'],
+		);
+
+
+		$params = array(
+			'collection' => 'subscribers',
+			'request' => array(
+				'action' => 'permanentchange',
+				'update' => json_encode($update),
+				'query' => json_encode($query),
+			)
+		);
+		$entityModel = new Models_Entity($params);
+		$entityModel->permanentchange();
+	}
 }
