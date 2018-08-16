@@ -67,8 +67,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	public function removeCollectionSteps($aid) {
 		$query = array(
-			'aid' => $aid,
-			'done' => false
+			'extra_params.aid' => $aid,
+			'notify_time' => array('$exists' => false)
 		);
 		$this->collection->remove($query);
 	}
@@ -98,7 +98,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			'notify_time' => array('$exists' => false),
 		);
 		if (!empty($aids)) {
-			$query['aid']['$in'] = $aids;
+			$query['extra_params.aid']['$in'] = $aids;
 		}
 		$cursor = $this->collection->query($query)->cursor();
 		foreach ($cursor as $row) {
