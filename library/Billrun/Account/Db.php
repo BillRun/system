@@ -111,7 +111,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	}
 
 	/**
-	 * method to update subscriber collection status
+	 * method to update account collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged) {
 		$collectionSteps = Billrun_Factory::collectionSteps();
