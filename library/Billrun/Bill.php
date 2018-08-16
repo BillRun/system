@@ -436,6 +436,9 @@ abstract class Billrun_Bill {
 			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId, $billType);
 			}
+			if ($status == 'Rejected') {
+				$this->addToRejectedPayments($billId, $billType);
+			}
 			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
@@ -766,6 +769,15 @@ abstract class Billrun_Bill {
 		$this->data['waiting_payments'] = $waiting_payments;
 	}
 	
+	protected function addToRejectedPayments($billId, $billType) {
+		if ($billType == 'inv') {
+			return;
+		}
+		$rejectedPayments = isset($this->data['past_rejections']) ? $this->data['past_rejections'] : array();
+		array_push($rejectedPayments, $billId);
+		$this->data['past_rejections'] = $rejectedPayments;
+	}
+
 	protected function removeFromWaitingPayments($billId) {
 		$pending = $this->data['waiting_payments'];
 		$key = array_search($billId, $pending);
