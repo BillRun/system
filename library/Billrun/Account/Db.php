@@ -222,30 +222,31 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 	}
 
-	public function permanentChange($set_values, $remove_values = array()) {
+	public function permanentChange($params) {
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$time = new mongoDate();
 
 		$query = array(
-			'aid' => 163719,
+			'aid' => $params['aid'],
 			'type' => 'account',
 			'effective_date' => $time,
 		);
 
 		$update = array(
 			'from' => $time,
-			'payment_gateway' => $set_values['payment_gateway'],
+			'payment_gateway' => $params['payment_gateway'],
 		);
 
 
 		$params = array(
-			'collection' => 'subscribers',
+			'collection' => 'accounts',
 			'request' => array(
 				'action' => 'permanentchange',
 				'update' => json_encode($update),
 				'query' => json_encode($query),
 			)
 		);
-		$entityModel = new Models_Entity($params);
+		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
 	}
 }
