@@ -379,6 +379,28 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->balances->update($query, $update);
 	}
 	
+	protected function buildUpdateBalance($balance, $volumeToSubstract) {
+		$update = array();
+		foreach ($volumeToSubstract as $usaget => $usagev) {
+			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
+				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
+				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
+			}
+			if (isset($balance['balance']['totals'][$usaget]['exhausted']) && ($usagev['usage'] > 0)) {
+				$update['$unset']['balance.totals.' . $usaget . '.exhausted'] = 1;
+			}
+		}
+		return $update;
+	}
+	
+	protected function getRelevantBalance($balances, $packageId) {
+		foreach ($balances as $balance) {
+			$rawData = $balance->getRawData();
+			if (isset($rawData['service_id'] ) && $rawData['service_id'] == $packageId) {
+				return $rawData;
+			}
+		}
+	}
 	
 	/**
 	 * method to update roaming balances once the regular balance was removed.
@@ -428,13 +450,13 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$packageId = $addonBalance['package_id'];
 			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] : 0;
 			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];
-			@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['count'] += 1; 
-			if (!is_null($addonBalance['added_joined_usage'])) {
+			@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount']; 
+			if (!empty($addonBalance['added_joined_usage'])) {
 				$joinedField = $addonBalance['added_joined_usage']['joined_field'];
 				$joinedUsage = $addonBalance['added_joined_usage']['usage'];
 				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] : 0;
 				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
-				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] += 1;
+				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount'];
 			}
 		}
 	}
