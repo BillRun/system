@@ -10,6 +10,8 @@
 	"collection" : {
 		"steps": [],
 		"settings": {
+			"step_ttl": 90,
+			"step_ttl": "days",
 			"min_debt": 10,
 			"change_state_url" : "",
 			"change_state_method": ""
