@@ -106,10 +106,10 @@ class AdjustPaymentsAction extends ApiAction {
 					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					$involvedAccounts = array($payment->getAccountNo());
 					if ($payment->getLeftToPay() < (0 - Billrun_Bill::precision)) {
-						Billrun_Factory::dispatcher()->trigger('afterRefundSuccessOrRejection', array($involvedAccounts));
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
 					if ($payment->getLeftToPay() > (0 + Billrun_Bill::precision)) {
-						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($involvedAccounts));
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}
 				$this->getController()->setOutput(array(array(

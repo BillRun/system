@@ -22,19 +22,59 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'debtCollection';
 	protected $immediateEnter = false;
-	protected $immediateExit = false;
+	protected $immediateExit = true;
 	protected $cronFrequency = 'daily';
 	protected $stepsPeriodicity = 'daily';
 	
-	public function afterChargeSuccess($aids) {
+	public function afterChargeSuccess($bill) {
+		$id = '';
+		if (isset($bill['invoice_id'])) {
+			$id = $bill['invoice_id'];
+		} else if (isset($bill['txid'])) {
+			$id = $bill['txid'];
+		}
+		Billrun_Factory::log("Invoice " . $id . " charged successfully with due " . $bill['due'], Zend_Log::INFO);
 		if ($this->immediateExit) {
-			CollectAction::collect($aids);
+			CollectAction::collect(array($bill['aid']));
+		}
+	}
+	
+	public function afterOfflineCharge($bill) {
+		$id = '';
+		if (isset($bill['invoice_id'])) {
+			$id = $bill['invoice_id'];
+		} else if (isset($bill['txid'])) {
+			$id = $bill['txid'];
+		}
+		Billrun_Factory::log("Invoice " . $id . " charged successfully with due " . $bill['due'], Zend_Log::INFO);
+		if ($this->immediateExit) {
+			CollectAction::collect(array($bill['aid']));
 		}
 	}
 
-	public function afterRefundSuccessOrRejection($aids) {
+	public function afterRefundSuccess($bill) {
+		$id = '';
+		if (isset($bill['invoice_id'])) {
+			$id = $bill['invoice_id'];
+		} else if (isset($bill['txid'])) {
+			$id = $bill['txid'];
+		}
+		Billrun_Factory::log("Invoice " . $id . " refunded successfully with due " . $bill['due'], Zend_Log::INFO);
 		if ($this->immediateEnter) {
-			CollectAction::collect($aids);
+			CollectAction::collect(array($bill['aid']));
+		}
+	}
+	
+	public function afterRejection($bill) {
+		$id = '';
+		if (isset($bill['invoice_id'])) {
+			$id = $bill['invoice_id'];
+		} else if (isset($bill['txid'])) {
+			$id = $bill['txid'];
+		}
+		Billrun_Factory::log("Invoice" . $bill['invoice_id'] . "charged successfully with due " . $bill['due'], Zend_Log::INFO);
+		if ($this->immediateEnter) {
+			CollectAction::collect(array($bill['aid']));
 		}
 	}
 	

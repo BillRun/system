@@ -707,13 +707,19 @@ abstract class Billrun_Bill {
 					} else {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					}
-				}
-				$involvedAccounts = array_unique($involvedAccounts);
-				if ($responseFromGateway['stage'] == 'Rejected' || ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision)))) {
-					Billrun_Factory::dispatcher()->trigger('afterRefundSuccessOrRejection', array($involvedAccounts));
-				}
-				if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
-					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($involvedAccounts));
+					$involvedAccounts = array_unique($involvedAccounts);
+					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
+					}
+					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+					}
+					if ($responseFromGateway['stage'] == 'Rejected') {
+						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
+					}
+					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
+						Billrun_Factory::dispatcher()->trigger('afterOfflineCharge', array($payment->getRawData()));
+					}
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
