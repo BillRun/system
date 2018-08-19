@@ -39,6 +39,14 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
+	public function afterPaymentAdjusted($oldAmount, $newAmount, $aid) {
+		if (($oldAmount - $newAmount < 0) && $this->immediateExit) {
+			CollectAction::collect(array($aid));
+		} else if (($oldAmount - $newAmount) > 0 && $this->immediateEnter) {
+			CollectAction::collect(array($aid));
+		}
+	}
+	
 	public function afterOfflineCharge($bill) {
 		$id = '';
 		if (isset($bill['invoice_id'])) {
