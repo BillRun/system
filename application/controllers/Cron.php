@@ -65,6 +65,13 @@ class CronController extends Yaf_Controller_Abstract {
 	/**
 	 * dispatcher to run cron each month
 	 */
+	public function weeklyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronWeek');
+	}
+
+	/**
+	 * dispatcher to run cron each month
+	 */
 	public function monthlyAction() {
 		Billrun_Factory::dispatcher()->trigger('cronMonth');
 	}
