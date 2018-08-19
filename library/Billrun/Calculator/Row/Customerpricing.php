@@ -410,7 +410,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$ret = array();
 		$balanceId = (string) $this->balance->getId();
 		$valueToCharge = $volume;
-		if (!isset($this->row['retail_rate']) || $this->row['retail_rate']) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
+		$isRetailRate = !isset($this->row['retail_rate']) || $this->row['retail_rate'];
+		if ($isRetailRate) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
 			if ($plan->isRateInEntityGroup($rate, $usageType)) {
 				$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
 
@@ -472,7 +473,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		
-		if ($this->isPrepriced()) {
+		if ($isRetailRate && $this->isPrepriced()) {
 			$prepriced = $this->getLineAprice();
 			if ($prepriced === false) {
 				return false;
