@@ -228,4 +228,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function shouldRatebeDisplayed($usageData,$section='all') {
 		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$usageData['rate']);
 	}
+	
+	public function getSubscriberMessages($sid) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($this->data['invoice_date']->sec);
+		$query['sid'] = $sid;
+		$query['type'] = 'subscriber';
+		$sub = Billrun_Factory::db()->subscribersCollection()->query($query);
+		return !$sub->isEmpty() && !empty($sub['invoice_messages']) ? $sub['invoice_messages'] : [];
+	}
+	
 }
