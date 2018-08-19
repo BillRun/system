@@ -91,9 +91,13 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	protected function getReadySteps($aids = array()) {
 		$results = array();
+		$ttl_value = intval(Billrun_Factory::config()->getConfigValue('collection.settings.step_ttl', 90));
+		$ttl_type = Billrun_Factory::config()->getConfigValue('collection.settings.step_ttl', 'days');
+		$step_ttl = "-{$ttl_value} {$ttl_type}";
 		$query = array(
 			'trigger_date' => array(
 				'$lte' => new MongoDate(),
+				'$gte' => new MongoDate(strtotime($step_ttl)),
 			),
 			'notify_time' => array('$exists' => false),
 		);
