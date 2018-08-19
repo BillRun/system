@@ -447,7 +447,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
                 foreach($fieldMapping['values'] as $fkey => $fields) {
                     foreach($fields as $field) {
                         if (isset($arrItem[$field])) {
-                            $update[$fkey][$fieldMapping['field'].'.'.$key] = $arrItem[$field];
+                            $update[$fkey][$fieldMapping['field'].'.'.$key.'.'.$field] = $arrItem[$field];
                         }
                     }
                 }
