@@ -16,7 +16,7 @@ class Models_Rates extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		
-		if ($this->update['tariff_category'] == 'retail') {
+		if (isset($this->update['tariff_category']) && $this->update['tariff_category'] == 'retail') {
 			$this->update['add_to_retail'] = true;
 		}
 	}
