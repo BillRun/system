@@ -169,9 +169,10 @@ abstract class Billrun_Bill {
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
 				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
-
+				'left_to_pay' => 1
 			),
 		);
+		
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
@@ -181,15 +182,19 @@ abstract class Billrun_Bill {
 				'total2' => array(
 					'$sum' => '$total2',
 				),
+				'total_left_to_pay' => array(
+					'$sum' => '$left_to_pay',
+				),
 			),
 		);
-		
+	
 		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
 				'aid' => '$_id',
 				'total' => 1,
 				'total2' =>  1,
+				'total_left_to_pay' => 1
 			),
 		);
 
@@ -501,7 +506,7 @@ abstract class Billrun_Bill {
 	public static function getContractorsInCollection($aids = array()) {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
-		$query = array(
+		$queryNonValidGateway = array(
 			'$or' => array(
 				array(
 					'type' => 'inv',
@@ -516,7 +521,29 @@ abstract class Billrun_Bill {
 					),
 				),
 			),
+			'paid' => array('$in' => array(false, '0', 0)),
+			'payment_gateway.active' => array('$exists' => false)
 		);
+		
+		$queryValidGateway = array(
+			'$or' => array(
+				array(
+					'type' => 'inv',
+					'due_date' => array(
+						'$lt' => new MongoDate(),
+					)
+				),
+				array(
+					'type' => 'rec',
+					'waiting_for_confirmation' => array(
+						'$ne' => true,
+					),
+				),
+			),
+			'paid' => array('$in' => array(false, '0', 0)),
+			'payment_gateway.active' => array('$exists' => false)
+		);
+				
 		if ($aids) {
 			$query['aid']['$in'] = $aids;
 		}
@@ -524,7 +551,11 @@ abstract class Billrun_Bill {
 			$query['aid']['$nin'] = array_keys($exempted);
 		}
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
-		return static::getTotalDue($query, $minBalance, TRUE);
+		
+		$validGatewayForCollection = static::getTotalDue($queryValidGateway, $minBalance, TRUE);
+		$invalidGatewayForCollection = static::getTotalDue($queryNonValidGateway, $minBalance, TRUE);
+		
+		return array_merge($validGatewayForCollection, $invalidGatewayForCollection);
 	}
 
 	public function getDueBeforeVat() {
