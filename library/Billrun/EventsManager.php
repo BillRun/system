@@ -23,6 +23,7 @@ class Billrun_EventsManager {
 	const CONDITION_IS_GREATER_THAN_OR_EQUAL = 'is_greater_than_or_equal';
 	const CONDITION_REACHED_CONSTANT = 'reached_constant';
 	const CONDITION_REACHED_CONSTANT_RECURRING = 'reached_constant_recurring';
+	const CONDITION_REACHED_PERCENTAGE = 'reached_percentage';
 	const CONDITION_HAS_CHANGED = 'has_changed';
 	const CONDITION_HAS_CHANGED_TO = 'has_changed_to';
 	const CONDITION_HAS_CHANGED_FROM = 'has_changed_from';
@@ -61,21 +62,34 @@ class Billrun_EventsManager {
 		if (empty($this->eventsSettings[$eventType])) {
 			return;
 		}
+		$conditionSettings = array();
 		foreach ($this->eventsSettings[$eventType] as $event) {
-			foreach ($event['conditions'] as $rawEventSettings) {
-				if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
-					$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
-				} else {
-					$conditionEntityAfter = $entityAfter;
-					$conditionEntityBefore = $entityBefore;
+			foreach ($event['conditions'] as $rawsEventSettings) {
+				$additionalEventData = array(
+					'unit' => $rawsEventSettings['unit'],
+					'usaget' => $rawsEventSettings['usaget'],
+					'property_type' => $rawsEventSettings['property_type'],
+					'type' => $rawsEventSettings['type'],
+					'value' => $rawsEventSettings['value'],
+				);
+				foreach($rawsEventSettings['paths'] as $rawEventSettings) {
+					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
+					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
+						$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
+					} else {
+						$conditionEntityAfter = $entityAfter;
+						$conditionEntityBefore = $entityBefore;
+					}
+					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
+					if ($extraValues === false) {
+						continue 3;
+					}
+					$conditionSettings[] = $rawEventSettings;
 				}
-				$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
-				if ($extraValues === false) {
-					continue 2;
-				}
-				$conditionSettings = $rawEventSettings;
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams, $extraValues);
+			foreach ($conditionSettings as $conditionSetting) {
+				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
+			}
 		}
 	}
 
@@ -167,6 +181,35 @@ class Billrun_EventsManager {
 				$extraValues['reached_constant'] = ($rawValueBefore < $rawValueAfter) ? $thresholdIncreasing : $thresholdIncreasing + $eventValue;
 				
 				return $extraValues;
+			case self::CONDITION_REACHED_PERCENTAGE:
+				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
+				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case after is empty (new balance)
+				if (preg_match('/\d+,\d+/', $eventTotalValue)) {
+					$eventPercentageValues = explode(',', $eventTotalValue);
+					$eventValues = array();
+					foreach ($eventPercentageValues as $percentageValue) {
+						$eventValues[] = $percentageValue * $eventTotalValue / 100;
+					}
+				} else {
+					$eventValues = array($percentageValue * $eventTotalValue / 100);
+				}
+				if ($valueBefore < $valueAfter) {
+					rsort($eventValues);
+					rsort($eventPercentageValues);
+				} else {
+					sort($eventValues);
+					sort($eventPercentageValues);
+				}			
+				foreach ($eventValues as $key => $eventVal) {
+					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
+						$extraValues['reached_constant'] = $eventVal;
+						$extraValues['reached_constant_percentage'] = $eventPercentageValues[$key];
+
+						return $extraValues;
+					}
+				}
+				return false;
 			default:
 				return FALSE;
 		}
