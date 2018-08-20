@@ -1,4 +1,6 @@
-<?php foreach ($data->get('subs') as $index => $sub) { ?>
+<?php foreach ($data->get('subs') as $index => $sub) { 
+	if(empty($sub['sid']) && empty($sub['totals']['after_vat'])) { continue; }
+?>
 	<div class="break"></div>
 	<div class="container">
 		<div class="section section-invoice-head">
@@ -78,8 +80,9 @@
 
 			<div class="section-body">
 				<?php 
-					if(!empty($this->lines[$sub['sid']])) {
-						echo $this->render($this->details_table_template,array('lines'=> $this->lines[$sub['sid']],'lines_detail_types' => $flat_line_types) ); 
+					$sidLines = array_filter($this->lines,function ($l) use ($sub) {return $l['sid'] == $sub['sid'];});
+					if(!empty($sidLines)) {
+						echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $flat_line_types) ); 
 					}
 				?>
 			</div><!-- /.section-body -->
@@ -92,8 +95,8 @@
 
 			<div class="section-body">
 				<?php 
-						if(!empty($this->lines[$sub['sid']])) {
-							echo $this->render($this->details_table_template,array('lines'=> $this->lines[$sub['sid']],'lines_detail_types' => $usage_line_types) ); 
+						if(!empty($sidLines)) {
+							echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $usage_line_types) ); 
 						}
 				?>
 			</div><!-- /.section-body -->
