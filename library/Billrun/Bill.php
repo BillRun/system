@@ -507,41 +507,20 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$queryNonValidGateway = array(
-			'$or' => array(
-				array(
-					'type' => 'inv',
-					'due_date' => array(
-						'$lt' => new MongoDate(),
-					)
-				),
-				array(
-					'type' => 'rec',
-					'waiting_for_confirmation' => array(
-						'$ne' => true,
-					),
-				),
+			'type' => 'inv',
+			'due_date' => array(
+				'$lt' => new MongoDate(),
 			),
-			'paid' => array('$in' => array(false, '0', 0)),
-			'payment_gateway.active' => array('$exists' => false)
+			'paid' => array('$in' => array(false, '0', 0, 'false')),
 		);
 		
 		$queryValidGateway = array(
-			'$or' => array(
-				array(
-					'type' => 'inv',
-					'due_date' => array(
-						'$lt' => new MongoDate(),
-					)
-				),
-				array(
-					'type' => 'rec',
-					'waiting_for_confirmation' => array(
-						'$ne' => true,
-					),
-				),
+			'type' => 'inv',
+			'due_date' => array(
+				'$lt' => new MongoDate(),
 			),
-			'paid' => array('$in' => array(false, '0', 0)),
-			'payment_gateway.active' => array('$exists' => false)
+			'past_rejections' => array('$exists' => true, '$ne' => []),
+			'paid' => array('$in' => array(false, '0', 0, 'false')),
 		);
 				
 		if ($aids) {
@@ -551,9 +530,12 @@ abstract class Billrun_Bill {
 			$query['aid']['$nin'] = array_keys($exempted);
 		}
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
-		
-		$validGatewayForCollection = static::getTotalDue($queryValidGateway, $minBalance, TRUE);
-		$invalidGatewayForCollection = static::getTotalDue($queryNonValidGateway, $minBalance, TRUE);
+		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountCurrentRevisionQuery['type'] = 'account';
+		$validGatewayAccountQuery = array_merge($accountCurrentRevisionQuery, array('valid_gateway' => true));
+		$invalidGatewayAccountQuery = array_merge($accountCurrentRevisionQuery, array('valid_gateway' => false));
+		$validGatewayForCollection = static::isInCollection($queryValidGateway, $minBalance, $validGatewayAccountQuery);
+		$invalidGatewayForCollection = static::isInCollection($queryNonValidGateway, $minBalance, $invalidGatewayAccountQuery);
 		
 		return array_merge($validGatewayForCollection, $invalidGatewayForCollection);
 	}
@@ -814,6 +796,76 @@ abstract class Billrun_Bill {
 	
 	public function isPendingPayment() {
 		return (isset($this->data['pending']) && $this->data['pending']);
+	}
+	
+	public static function isInCollection($query = array(), $minBalance = false, $restrict) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		if (isset($restrict['valid_gateway'])) {
+			$match2 = array(
+				'$match' => array(
+					'account.payment_gateway.active' => array(
+						'$exists' => $restrict['valid_gateway'],
+					)
+				)
+			);
+			unset($restrict['valid_gateway']);
+		}
+		$query = array(
+			'$match' => $query,
+		);
+
+		$lookup = array(
+			'$graphLookup' => array(
+				'from' => 'subscribers',
+				'connectFromField' => 'aid',
+				'connectToField' => 'aid',
+				'startWith' =>'$aid',
+				'maxDepth' => 0,
+				'restrictSearchWithMatch' => $restrict,
+				'as' => 'account'
+			)
+		);
+		
+		$project1 = array(
+			'$project' => array(
+				'aid' => 1,
+				'left_to_pay' => 1
+			),
+		);
+		
+		$group = array(
+			'$group' => array(
+				'_id' => '$aid',
+				'total_left_to_pay' => array(
+					'$sum' => '$left_to_pay',
+				),
+			),
+		);
+	
+		$project2 = array(
+			'$project' => array(
+				'_id' => 0,
+				'aid' => '$_id',
+				'total_left_to_pay' => 1
+			),
+		);
+
+		$having = array('$match' => array());
+		if ($minBalance !== FALSE) {
+			$having['$match']['total_left_to_pay'] = array(
+				'$gte' => $minBalance,
+			);
+		}
+		if ($having['$match']) {
+			$results = $billsColl->aggregate($query, $lookup, $match2, $project1, $group, $project2, $having);
+		} else {
+			$results = $billsColl->aggregate($query, $lookup, $match2, $project1, $group, $project2);
+		}
+		
+		$results = iterator_to_array($results);
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
 	}
 
 }
