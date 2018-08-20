@@ -24,7 +24,7 @@ class  Run_collect_stepAction extends ApiAction {
 		$request = $this->getRequest();
 
 		try {
-			$jsonAids = $request->getPost('aids', '[]');
+			$jsonAids = $request->getRequest('aids', '[]');
 			$aids = json_decode($jsonAids, TRUE);
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());

@@ -169,10 +169,9 @@ abstract class Billrun_Bill {
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
 				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
-				'left_to_pay' => 1
+
 			),
 		);
-		
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
@@ -184,7 +183,7 @@ abstract class Billrun_Bill {
 				),
 			),
 		);
-	
+		
 		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
@@ -436,6 +435,9 @@ abstract class Billrun_Bill {
 			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
 			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId, $billType);
+			}
+			if ($status == 'Rejected') {
+				$this->addToRejectedPayments($billId, $billType);
 			}
 			$this->updatePaidBy($paidBy, $billId, $status);
 		}
@@ -821,6 +823,15 @@ abstract class Billrun_Bill {
 		$this->data['waiting_payments'] = $waiting_payments;
 	}
 	
+	protected function addToRejectedPayments($billId, $billType) {
+		if ($billType == 'inv') {
+			return;
+		}
+		$rejectedPayments = isset($this->data['past_rejections']) ? $this->data['past_rejections'] : array();
+		array_push($rejectedPayments, $billId);
+		$this->data['past_rejections'] = $rejectedPayments;
+	}
+
 	protected function removeFromWaitingPayments($billId) {
 		$pending = $this->data['waiting_payments'];
 		$key = array_search($billId, $pending);
