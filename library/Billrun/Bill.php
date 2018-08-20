@@ -182,9 +182,6 @@ abstract class Billrun_Bill {
 				'total2' => array(
 					'$sum' => '$total2',
 				),
-				'total_left_to_pay' => array(
-					'$sum' => '$left_to_pay',
-				),
 			),
 		);
 	
@@ -194,7 +191,6 @@ abstract class Billrun_Bill {
 				'aid' => '$_id',
 				'total' => 1,
 				'total2' =>  1,
-				'total_left_to_pay' => 1
 			),
 		);
 
@@ -504,40 +500,86 @@ abstract class Billrun_Bill {
 	}
 
 	public static function getContractorsInCollection($aids = array()) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
-		$queryNonValidGateway = array(
-			'type' => 'inv',
-			'due_date' => array(
-				'$lt' => new MongoDate(),
-			),
-			'paid' => array('$in' => array(false, '0', 0, 'false')),
-		);
-		
-		$queryValidGateway = array(
-			'type' => 'inv',
-			'due_date' => array(
-				'$lt' => new MongoDate(),
-			),
-			'past_rejections' => array('$exists' => true, '$ne' => []),
-			'paid' => array('$in' => array(false, '0', 0, 'false')),
-		);
-				
-		if ($aids) {
-			$query['aid']['$in'] = $aids;
-		}
-		if ($exempted) {
-			$query['aid']['$nin'] = array_keys($exempted);
-		}
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
-		$validGatewayAccountQuery = array_merge($accountCurrentRevisionQuery, array('valid_gateway' => true));
-		$invalidGatewayAccountQuery = array_merge($accountCurrentRevisionQuery, array('valid_gateway' => false));
-		$validGatewayForCollection = static::isInCollection($queryValidGateway, $minBalance, $validGatewayAccountQuery);
-		$invalidGatewayForCollection = static::isInCollection($queryNonValidGateway, $minBalance, $invalidGatewayAccountQuery);
-		
-		return array_merge($validGatewayForCollection, $invalidGatewayForCollection);
+		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
+
+		$match = array(
+			'$match' => array(
+				'type' => 'inv',
+				'due_date' => array(
+					'$lt' => new MongoDate(),
+				),
+				'paid' => array('$in' => array(false, '0', 0, 'false')),
+			)
+		);
+
+		if ($aids) {
+			$match['$match']['aid']['$in'] = $aids;
+		}
+		if ($exempted) {
+			$match['$match']['aid']['$nin'] = array_keys($exempted);
+		}
+
+		$lookup = array(
+			'$graphLookup' => array(
+				'from' => 'subscribers',
+				'connectFromField' => 'aid',
+				'connectToField' => 'aid',
+				'startWith' =>'$aid',
+				'maxDepth' => 0,
+				'restrictSearchWithMatch' => $accountCurrentRevisionQuery,
+				'as' => 'account'
+			)
+		);
+
+		$project = array(
+			'$project' => array(
+				'valid_gateway' => array('$cond' => array(array('$not' => array('$account.payment_gateway.active')), false, true)),
+				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
+				'aid' => 1,
+				'left_to_pay' => 1
+			)
+		);
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$aid',
+				'total_valid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+					),
+				),
+				'total_invalid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
+					),
+				),
+			),
+		);
+
+		$project2 = array(
+			'$project' => array(
+				'_id' => 0,
+				'aid' => '$_id',
+				'total' => array('$add' => array('$total_valid', '$total_invalid')),
+			),
+		);
+
+		$match2 = array(
+			'$match' => array(
+				'total' => array(
+					'$gte' => $minBalance
+				)
+			)
+		);
+		$results = iterator_to_array($billsColl->aggregate($match, $lookup, $project, $group, $project2, $match2));
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
 	}
 
 	public function getDueBeforeVat() {
@@ -805,7 +847,7 @@ abstract class Billrun_Bill {
 				'$match' => array(
 					'account.payment_gateway.active' => array(
 						'$exists' => $restrict['valid_gateway'],
-					)
+					),
 				)
 			);
 			unset($restrict['valid_gateway']);
