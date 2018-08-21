@@ -23,9 +23,15 @@ class CollectAction extends ApiAction {
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams) && isset($extraParams['aids'])) {
+			$aids = $extraParams['aids'];
+		}
+
+		$aids = !empty($extraParams) && isset($extraParams['aids']) ? Billrun_Util::verify_array($extraParams['aids'], 'int') : array();
 		try {
 			$jsonAids = $request->getPost('aids', '[]');
-			$aids = json_decode($jsonAids, TRUE);
+			$aids = array_merge($aids, json_decode($jsonAids, TRUE));
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
