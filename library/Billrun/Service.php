@@ -60,6 +60,15 @@ class Billrun_Service {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
 	}
+	
+	/**
+	 * initialize internal variables
+	 */
+	public function init() {
+		$this->groups = null;
+		$this->groupSelected = null;
+		$this->strongestGroup = null;
+	}
 
 	/**
 	 * load the service from DB

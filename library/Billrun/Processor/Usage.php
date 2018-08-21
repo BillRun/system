@@ -182,7 +182,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
 	protected function filterFields($rawRow) {
-		$parserFields = $this->getParser()->getStructure();
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
 		foreach ($parserFields as $field) {
 			if (isset($field['checked']) && $field['checked'] === false) {
 				unset($rawRow[$field['name']]); 

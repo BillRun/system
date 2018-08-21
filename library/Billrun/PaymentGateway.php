@@ -583,9 +583,6 @@ abstract class Billrun_PaymentGateway {
 					array('due' => array('$gt' => Billrun_Bill::precision)),
 					array('due' => array('$lt' => -Billrun_Bill::precision)),
 				),
-				'payment_method' => array(
-					'$in' => array('automatic'),
-				),
 				'suspend_debit' => NULL,
 			),
 		);
@@ -739,7 +736,7 @@ abstract class Billrun_PaymentGateway {
 					'$first' => '$type',
 				),
 				'payment_method' => array(
-					'$first' => '$payment_method',
+					'$first' => '$method',
 				),
 				'due' => array(
 					'$sum' => '$due',

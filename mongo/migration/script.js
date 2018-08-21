@@ -228,7 +228,7 @@ for (var fileType in fileTypes) {
 				};
 				conditions.push(condition);
 				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
-				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];	
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
 				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
 			}
 		}
@@ -294,10 +294,11 @@ for (var i in propertyTypes) {
 	}
 }
 
-// BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+
+// BRCD-1443 - Wrong billrun field after a rebalance
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
