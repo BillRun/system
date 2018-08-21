@@ -20,6 +20,7 @@ function restoreVoucherNumberCG($filePath) {
 		echo 'Missing File, please check path' . PHP_EOL;
 	}
 	if ($csvFile) {
+		echo 'Starting parsing file' . PHP_EOL;
 		while (($row = fgetcsv($csvFile, 4096)) !== false) {
 			if (empty($fields)) {
 				$fields = $row;
@@ -36,13 +37,15 @@ function restoreVoucherNumberCG($filePath) {
 			}
 			$i++;
 		}
+		echo 'Parsing ended, starting to add Voucher Number to all missing bills' . PHP_EOL;
 		if (!feof($csvFile)) {
 			echo "Error: unexpected fgets() fail\n";
 		}
 		fclose($csvFile);
 	}
 	foreach ($transactions as $transaction) {
-		$billsColl->update(array('payment_gateway.transactionId' => $transaction['ID']), array('$set' => array('vendor_response.payment_identifier' => str_pad($transaction['Shovar'], 6, '0', STR_PAD_LEFT))));
+		echo 'Adding to ' . $transaction['ID'] . ' Voucher Number = ' . str_pad($transaction['Shovar'], 6, '0', STR_PAD_LEFT) . PHP_EOL;
+		$billsColl->update(array('payment_gateway.transactionId' => $transaction['ID'], 'vendor_response.payment_identifier' => array('$exists' => false)), array('$set' => array('vendor_response.payment_identifier' => str_pad($transaction['Shovar'], 6, '0', STR_PAD_LEFT))));
 	}
 }
 
