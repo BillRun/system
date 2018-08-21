@@ -565,8 +565,12 @@ abstract class Billrun_PaymentGateway {
 			if (!empty($specificInvoices)) {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
-			$pipelines[] = $match;
 		}
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
+		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
