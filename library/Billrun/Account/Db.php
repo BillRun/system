@@ -235,8 +235,4 @@ class Billrun_Account_Db extends Billrun_Account {
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
 	}
-	
-	public function getAccountData() {
-		return $this->data;
-	}
 }

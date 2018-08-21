@@ -350,8 +350,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$chargeType = $gatewayDetails['amount'] > 0 ? 'Debit' : 'Credit';
 			$this->account->load(array('aid' => $aid));
 			$gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
-			$accountData = $this->account->getAccountData();
-			$accountGateway = $accountData['payment_gateway'];
+			$accountGateway = $this->account->payment_gateway;
 			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
 			$time = date(Billrun_Base::base_datetimeformat);
 			$query = array(
