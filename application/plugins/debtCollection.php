@@ -27,12 +27,6 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $stepsPeriodicity = 'daily';
 	
 	public function afterChargeSuccess($bill) {
-		$id = '';
-		if (isset($bill['invoice_id'])) {
-			$id = $bill['invoice_id'];
-		} else if (isset($bill['txid'])) {
-			$id = $bill['txid'];
-		}
 		if ($this->immediateExit) {
 			CollectAction::collect(array($bill['aid']));
 		}
@@ -47,24 +41,12 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterRefundSuccess($bill) {
-		$id = '';
-		if (isset($bill['invoice_id'])) {
-			$id = $bill['invoice_id'];
-		} else if (isset($bill['txid'])) {
-			$id = $bill['txid'];
-		}
 		if ($this->immediateEnter) {
 			CollectAction::collect(array($bill['aid']));
 		}
 	}
 	
 	public function afterRejection($bill) {
-		$id = '';
-		if (isset($bill['invoice_id'])) {
-			$id = $bill['invoice_id'];
-		} else if (isset($bill['txid'])) {
-			$id = $bill['txid'];
-		}
 		if ($this->immediateEnter) {
 			CollectAction::collect(array($bill['aid']));
 		}
