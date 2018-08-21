@@ -109,7 +109,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/' . $this->billrunName . '/' . $this->billrunName .'.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
