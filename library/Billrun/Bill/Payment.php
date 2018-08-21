@@ -483,7 +483,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
-		$customersAids = self::getCustomersAidsByFilters($filtersQuery);
+		$customersAids = Billrun_Factory::db()->billsCollection()->distinct('aid', $filtersQuery);
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		
@@ -498,7 +498,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
-			$filtersQuery = array_merge($filtersQuery, $accountIdQuery);
+			$filtersQuery['$and'] = array($accountIdQuery);
 			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
@@ -810,16 +810,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		
 		return false;
-	}
-	
-	protected function getCustomersAidsByFilters($filtersQuery) {
-		$aids = array();
-		$bills = Billrun_Factory::db()->billsCollection()->query($filtersQuery)->cursor();
-		foreach ($bills as $bill) {
-			$aids[] = $bill['aid'];
-		}
-		
-		return array_unique($aids);
 	}
 
 }

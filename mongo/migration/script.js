@@ -325,3 +325,7 @@ db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
