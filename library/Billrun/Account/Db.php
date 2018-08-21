@@ -32,6 +32,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
 
 	public function getList($page, $size, $time, $acc_id = null) {
@@ -226,4 +227,16 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 	}
 
+	public function permanentChange($query, $update) {
+		$params = array(
+			'collection' => 'accounts',
+			'request' => array(
+				'action' => 'permanentchange',
+				'update' => json_encode($update),
+				'query' => json_encode($query),
+			)
+		);
+		$entityModel = Models_Entity::getInstance($params);
+		$entityModel->permanentchange();
+	}
 }

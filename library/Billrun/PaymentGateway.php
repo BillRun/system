@@ -100,7 +100,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 
-	private function __construct() {
+	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -109,6 +109,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
@@ -775,5 +776,9 @@ abstract class Billrun_PaymentGateway {
 		}	
 			
 		return $group;
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		return $responseFromGateway;
 	}
 }
