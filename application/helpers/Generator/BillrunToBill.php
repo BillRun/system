@@ -105,10 +105,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		$involvedAccounts = array($invoice['aid']);
 		if ($bill['due'] < (0 - Billrun_Bill::precision)) {
-			Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($involvedAccounts, $bill));
+			Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($bill->getRawData()));
 		}
 		if ($bill['due'] > (0 + Billrun_Bill::precision)) {
-			Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($involvedAccounts, $bill));
+			Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($bill->getRawData()));
 		}
  	}
 	

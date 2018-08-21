@@ -33,7 +33,6 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else if (isset($bill['txid'])) {
 			$id = $bill['txid'];
 		}
-		Billrun_Factory::log("Invoice " . $id . " charged successfully with due " . $bill['due'], Zend_Log::INFO);
 		if ($this->immediateExit) {
 			CollectAction::collect(array($bill['aid']));
 		}
@@ -46,19 +45,6 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			CollectAction::collect(array($aid));
 		}
 	}
-	
-	public function afterOfflineCharge($bill) {
-		$id = '';
-		if (isset($bill['invoice_id'])) {
-			$id = $bill['invoice_id'];
-		} else if (isset($bill['txid'])) {
-			$id = $bill['txid'];
-		}
-		Billrun_Factory::log("Invoice " . $id . " charged successfully with due " . $bill['due'], Zend_Log::INFO);
-		if ($this->immediateExit) {
-			CollectAction::collect(array($bill['aid']));
-		}
-	}
 
 	public function afterRefundSuccess($bill) {
 		$id = '';
@@ -67,7 +53,6 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else if (isset($bill['txid'])) {
 			$id = $bill['txid'];
 		}
-		Billrun_Factory::log("Invoice " . $id . " refunded successfully with due " . $bill['due'], Zend_Log::INFO);
 		if ($this->immediateEnter) {
 			CollectAction::collect(array($bill['aid']));
 		}
@@ -80,7 +65,6 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else if (isset($bill['txid'])) {
 			$id = $bill['txid'];
 		}
-		Billrun_Factory::log("Invoice" . $bill['invoice_id'] . "charged successfully with due " . $bill['due'], Zend_Log::INFO);
 		if ($this->immediateEnter) {
 			CollectAction::collect(array($bill['aid']));
 		}

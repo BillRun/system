@@ -718,7 +718,7 @@ abstract class Billrun_Bill {
 						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 					}
 					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
-						Billrun_Factory::dispatcher()->trigger('afterOfflineCharge', array($payment->getRawData()));
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}
 			} else {
