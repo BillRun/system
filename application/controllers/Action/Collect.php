@@ -35,7 +35,8 @@ class CollectAction extends ApiAction {
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
-			$result = static::collect($aids);
+			$collection = Billrun_Factory::collection();
+			$result = $collection->collect($aids);
 			if (RUNNING_FROM_CLI) {
 				foreach ($result as $colection_state => $aids) {
 					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
@@ -51,16 +52,6 @@ class CollectAction extends ApiAction {
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request->getRequest());
 		}
-	}
-
-	public static function collect($aids = array()) {
-		$account = Billrun_Factory::account();
-		$markedAsInCollection = $account->getInCollection($aids);
-		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
-		$updateCollectionStateChanged = array('in_collection' => array_diff_key($reallyInCollection, $markedAsInCollection), 'out_of_collection' => array_diff_key($markedAsInCollection, $reallyInCollection));
-		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
-//		$subscriber->markCollectionStepsCompleted($aids);
-		return $result;
 	}
 	
 	protected function getPermissionLevel() {

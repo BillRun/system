@@ -86,7 +86,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => $invoice['invoice_file'],
+				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
@@ -103,13 +103,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
-		$involvedAccounts = array($invoice['aid']);
-		if ($bill['due'] < (0 - Billrun_Bill::precision)) {
-			Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($bill->getRawData()));
-		}
-		if ($bill['due'] > (0 + Billrun_Bill::precision)) {
-			Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($bill->getRawData()));
-		}
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
  	}
 	
 	/**

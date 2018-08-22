@@ -25,36 +25,49 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $immediateExit = true;
 	protected $cronFrequency = 'daily';
 	protected $stepsPeriodicity = 'daily';
+	protected $collection;
+
+	public function __construct($options = array()) {
+		$this->collection = Billrun_Factory::collection();
+	}
 	
 	public function afterChargeSuccess($bill) {
 		if ($this->immediateExit) {
-			CollectAction::collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']));
 		}
 	}
 	
 	public function afterPaymentAdjusted($oldAmount, $newAmount, $aid) {
 		if (($oldAmount - $newAmount < 0) && $this->immediateExit) {
-			CollectAction::collect(array($aid));
+			$this->collection->collect(array($aid));
 		} else if (($oldAmount - $newAmount) > 0 && $this->immediateEnter) {
-			CollectAction::collect(array($aid));
+			$this->collection->collect(array($aid));
 		}
 	}
 
 	public function afterRefundSuccess($bill) {
 		if ($this->immediateEnter) {
-			CollectAction::collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']));
 		}
 	}
 	
+	public function afterInvoiceConfirmed($bill) {
+		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->immediateExit) {
+			$this->collection->collect();
+		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->immediateEnter) {
+			$this->collection->collect();
+		}
+	}	
+
 	public function afterRejection($bill) {
 		if ($this->immediateEnter) {
-			CollectAction::collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']));
 		}
 	}
 	
 	public function cronHour() {
 		if ($this->cronFrequency == 'hourly') {
-			CollectAction::collect();
+			$this->collection->collect();
 		}
 		if ($this->stepsPeriodicity == 'daily') {
 			Run_collect_stepAction::runCollectStep();
@@ -63,7 +76,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function cronDay() {
 		if ($this->cronFrequency == 'daily') {
-			CollectAction::collect();
+			$this->collection->collect();
 		}
 		if ($this->stepsPeriodicity == 'daily') {
 			Run_collect_stepAction::runCollectStep();
