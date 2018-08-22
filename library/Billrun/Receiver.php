@@ -124,6 +124,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		$type = $args[0]['receiver']['receiver_type'];
 		unset($args[0]['receiver']['receiver_type']);
 		$args = $args[0];
+		$args['type'] = $args['file_type'];
 		$class = 'Billrun_Receiver_' . ucfirst($type);
 		if (!@class_exists($class, true)) {
 			Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
