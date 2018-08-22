@@ -14,13 +14,6 @@
  */
 class Billrun_Collection extends Billrun_Base {
 
-	/**
-	 * Type of object
-	 *
-	 * @var string
-	 */
-	protected static $type = 'collection';
-	
 	public function collect($aids = array()) {
 		$account = Billrun_Factory::account();
 		$markedAsInCollection = $account->getInCollection($aids);
