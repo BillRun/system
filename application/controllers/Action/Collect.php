@@ -22,10 +22,11 @@ class CollectAction extends ApiAction {
 		$this->allowed();
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
-
-		$extraParams = $this->_controller->getParameters();
-		if (!empty($extraParams) && isset($extraParams['aids'])) {
-			$aids = $extraParams['aids'];
+		if (RUNNING_FROM_CLI) {
+			$extraParams = $this->_controller->getParameters();
+			if (!empty($extraParams) && isset($extraParams['aids'])) {
+				$aids = $extraParams['aids'];
+			}
 		}
 
 		$aids = !empty($extraParams) && isset($extraParams['aids']) ? Billrun_Util::verify_array($extraParams['aids'], 'int') : array();
