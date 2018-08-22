@@ -433,7 +433,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$this->rebalanceUsageSubtract = array();
 		$linesColl = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
-		$linesColl->update(array('stamp' => array('$in' => $rebalanceStamps)), array('$unset' => array('addon_balances' => 1)), array('multiple' => true));
+		$linesColl->update(array('stamp' => array('$in' => $rebalanceStamps)), array('$unset' => array('addon_balances' => 1, 'unified_addon_balances' => 1)), array('multiple' => true));
 	}
 	
 	/**
@@ -443,10 +443,11 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function beforeResetLines($line) {
-		if (!isset($line['addon_balances'])) {
+		if (!isset($line['addon_balances']) && !isset($line['unified_addon_balances']) ) {
 			return;
 		}
-		foreach ($line['addon_balances'] as $addonBalance) {
+		$addonBalances= array_merge(@Billrun_Util::getFieldVal($line['addon_balances'],[]),@Billrun_Util::getFieldVal($line['unified_addon_balances'],[]));
+		foreach ($addonBalances as $addonBalance) {
 			$packageId = $addonBalance['package_id'];
 			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] : 0;
 			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];

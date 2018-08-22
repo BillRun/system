@@ -57,10 +57,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 						'_array_map'=> [
                             [
                                 'field' => 'addon_balances',
+                                'to_field' => 'unified_addon_balances',
                                 'keys' => ['package_id','service_name'],
                                 'values' => [
                                     '$inc' => ['added_usage'],
-                                    '$setOnInsert' => ['billrun_month','service_name','service_id']
+                                    '$setOnInsert' => ['billrun_month','service_name','package_id']
                                 ]
                             ]
 						],
@@ -447,7 +448,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
                 foreach($fieldMapping['values'] as $fkey => $fields) {
                     foreach($fields as $field) {
                         if (isset($arrItem[$field])) {
-                            $update[$fkey][$fieldMapping['field'].'.'.$key.'.'.$field] = $arrItem[$field];
+							$toField = empty($fieldMapping['to_field']) ? $fieldMapping['field'] : $fieldMapping['to_field'];
+                            $update[$fkey][$toField.'.'.$key.'.'.$field] = $arrItem[$field];
                         }
                     }
                 }
