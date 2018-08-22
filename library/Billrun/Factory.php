@@ -127,6 +127,13 @@ class Billrun_Factory {
 	protected static $auth = null;
 	
 	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $collection;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -495,6 +502,19 @@ class Billrun_Factory {
 			return;
 		}
 		unset(self::${$instanceName}[$stamp]);
+	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function collection() {
+		if (!self::$collection) {
+			self::$collection = Billrun_Collection::getInstance();
+		}
+
+		return self::$collection;
 	}
 
 }
