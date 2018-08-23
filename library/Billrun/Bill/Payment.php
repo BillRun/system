@@ -625,6 +625,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $this->data['gateway_details'];
 	}
 	
+	public function getAid(){
+		return $this->data['aid'];
+	}
+	
 	protected function getPaymentGatewayTransactionId(){
 		return $this->data['payment_gateway']['transactionId'];
 	}

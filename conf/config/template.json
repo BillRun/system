@@ -9,7 +9,13 @@
 	},
 	"collection" : {
 		"steps": [],
-		"min_debt": 10
+		"settings": {
+			"step_ttl": 90,
+			"step_ttl": "days",
+			"min_debt": 10,
+			"change_state_url" : "",
+			"change_state_method": ""
+		}
 	},
 	"invoice_export" : {
 		"export"  : "files/invoices/",

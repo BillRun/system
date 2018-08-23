@@ -100,7 +100,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 
-	private function __construct() {
+	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -109,6 +109,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
@@ -553,24 +554,22 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['receiver'];
 	}
 	
-	public static function getCustomers($aids = array(), $specificInvoices = FALSE, $date = FALSE) {
+	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		if ($date === FALSE) {
-			$time = time();
-		} else {
-			$time = strtotime($date);
-		}
-		$match = array(
-			'$match' => array(
-				'due_date' => ['$lte' => new MongoDate($time)],
-			),
-		);
 		if (!empty($aids)) {
-			$match['$match']['aid'] = array('$in' => $aids);
+			$match = array(
+				'$match' => array(
+					'aid' => array('$in' => $aids),
+				),
+			);
 			if (!empty($specificInvoices)) {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
 		}
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
@@ -586,9 +585,6 @@ abstract class Billrun_PaymentGateway {
 				'$or' => array(
 					array('due' => array('$gt' => Billrun_Bill::precision)),
 					array('due' => array('$lt' => -Billrun_Bill::precision)),
-				),
-				'payment_method' => array(
-					'$in' => array('automatic'),
 				),
 				'suspend_debit' => NULL,
 			),
@@ -743,7 +739,7 @@ abstract class Billrun_PaymentGateway {
 					'$first' => '$type',
 				),
 				'payment_method' => array(
-					'$first' => '$payment_method',
+					'$first' => '$method',
 				),
 				'due' => array(
 					'$sum' => '$due',
@@ -784,5 +780,9 @@ abstract class Billrun_PaymentGateway {
 		}	
 			
 		return $group;
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		return $responseFromGateway;
 	}
 }

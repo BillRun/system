@@ -63,12 +63,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function getAllDiscount($lines) {
 		$discounts = array('lines' => array(), 'total'=> 0);
-		foreach($lines as $subLines) {
-			foreach($subLines as $line) {
-				if($line['usaget'] == 'discount') {
-					@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
-					@$discounts['total'] +=$line['aprice'];
-				}
+		foreach($lines as $line) {
+			if($line['usaget'] == 'discount') {
+				@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
+				@$discounts['total'] +=$line['aprice'];
 			}
 		}
 		return $discounts;
@@ -85,28 +83,23 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function buildSubscriptionListFromLines($lines) {
 		$subscriptionList = array();
 		$typeNames = array_flip($this->details_keys);
-		foreach($lines as $subLines) {
-			foreach($subLines as $line) {
-				if($line['usaget'] == 'discount') {
-					
-				}
-				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
-					$rate = $this->getRateForLine($line);
-					$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
-					
-					$line->collection(Billrun_Factory::db()->linesCollection());
-					$name = $this->getLineUsageName($line);
-					$key = $this->getLineAggregationKey($line, $rate, $name);
-					$subscriptionList[$key]['desc'] = $name;	
-					$subscriptionList[$key]['type'] = $typeNames[$line['type']];
-					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData, $line));
-					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
-					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
-					$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
-					$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
-					$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
-				}
+		foreach($lines as $line) {
+			if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
+				$rate = $this->getRateForLine($line);
+				$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
+				
+				$line->collection(Billrun_Factory::db()->linesCollection());
+				$name = $this->getLineUsageName($line);
+				$key = $this->getLineAggregationKey($line, $rate, $name);
+				$subscriptionList[$key]['desc'] = $name;	
+				$subscriptionList[$key]['type'] = $typeNames[$line['type']];
+				//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
+				$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData, $line));
+				@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
+				$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
+				$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
+				$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
+				$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
 			}
 		}
 		return $subscriptionList;

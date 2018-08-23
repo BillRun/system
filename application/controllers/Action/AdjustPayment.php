@@ -101,9 +101,11 @@ class AdjustPaymentsAction extends ApiAction {
 					Billrun_Bill_Payment::savePayments($newPayments);
 				}
 				foreach ($payments as $payment) {
+					$id = $payment->getId();
 					$payment->markCancelled()->save();
 					$payment->detachPaidBills();
 					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+					Billrun_Factory::dispatcher()->trigger('afterPaymentAdjusted', array($payment->getAmount(), $adjustments[$id]['amount'], $payment->getAccountNo()));
 				}
 				$this->getController()->setOutput(array(array(
 						'status' => 1,

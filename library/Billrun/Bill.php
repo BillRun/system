@@ -441,6 +441,9 @@ abstract class Billrun_Bill {
 			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId, $billType);
 			}
+			if ($status == 'Rejected') {
+				$this->addToRejectedPayments($billId, $billType);
+			}
 			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
@@ -504,32 +507,86 @@ abstract class Billrun_Bill {
 	}
 
 	public static function getContractorsInCollection($aids = array()) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
-		$query = array(
-			'$or' => array(
-				array(
-					'type' => 'inv',
-					'due_date' => array(
-						'$lt' => new MongoDate(),
-					)
+		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountCurrentRevisionQuery['type'] = 'account';
+		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
+
+		$match = array(
+			'$match' => array(
+				'type' => 'inv',
+				'due_date' => array(
+					'$lt' => new MongoDate(),
 				),
-				array(
-					'type' => 'rec',
-					'waiting_for_confirmation' => array(
-						'$ne' => true,
+				'paid' => array('$in' => array(false, '0', 0, 'false')),
+			)
+		);
+
+		if ($aids) {
+			$match['$match']['aid']['$in'] = $aids;
+		}
+		if ($exempted) {
+			$match['$match']['aid']['$nin'] = array_keys($exempted);
+		}
+
+		$lookup = array(
+			'$graphLookup' => array(
+				'from' => 'subscribers',
+				'connectFromField' => 'aid',
+				'connectToField' => 'aid',
+				'startWith' =>'$aid',
+				'maxDepth' => 0,
+				'restrictSearchWithMatch' => $accountCurrentRevisionQuery,
+				'as' => 'account'
+			)
+		);
+
+		$project = array(
+			'$project' => array(
+				'valid_gateway' => array('$cond' => array(array('$not' => array('$account.payment_gateway.active')), false, true)),
+				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
+				'aid' => 1,
+				'left_to_pay' => 1
+			)
+		);
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$aid',
+				'total_valid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+					),
+				),
+				'total_invalid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
 					),
 				),
 			),
 		);
-		if ($aids) {
-			$query['aid']['$in'] = $aids;
-		}
-		if ($exempted) {
-			$query['aid']['$nin'] = array_keys($exempted);
-		}
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
-		return static::getTotalDue($query, $minBalance, TRUE);
+
+		$project2 = array(
+			'$project' => array(
+				'_id' => 0,
+				'aid' => '$_id',
+				'total' => array('$add' => array('$total_valid', '$total_invalid')),
+			),
+		);
+
+		$match2 = array(
+			'$match' => array(
+				'total' => array(
+					'$gte' => $minBalance
+				)
+			)
+		);
+		$results = iterator_to_array($billsColl->aggregate($match, $lookup, $project, $group, $project2, $match2));
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
 	}
 
 	public function getDueBeforeVat() {
@@ -677,6 +734,11 @@ abstract class Billrun_Bill {
 							continue;
 						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+						if ($responseFromGateway['stage'] == 'Rejected') {
+							$gatewayResponse = $gateway->handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $payment->getAid());
+							$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($gatewayResponse['status'], $gateway, $gatewayResponse['additional_params']);
+						}
+
 						$txId = $gateway->getTransactionId();
 						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 						$paymentSuccess[] = $payment;
@@ -685,37 +747,46 @@ abstract class Billrun_Bill {
 					$paymentSuccess = $payments;
 				}
 				foreach ($paymentSuccess as $payment) {
-						if ($payment->getDir() == 'fc') {
-							foreach ($payment->getPaidBills() as $billType => $bills) {
-								foreach ($bills as $billId => $amountPaid) {
-									if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-										$responseFromGateway['stage'] = 'Pending';
-									}
-									if ($responseFromGateway['stage'] != 'Pending') {
-										$payment->setPending(false);
-									}
-									$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
+					if ($payment->getDir() == 'fc') {
+						foreach ($payment->getPaidBills() as $billType => $bills) {
+							foreach ($bills as $billId => $amountPaid) {
+								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+									$responseFromGateway['stage'] = 'Pending';
 								}
-							}
-						} else if ($payment->getDir() == 'tc') {
-							foreach ($payment->getPaidByBills() as $billType => $bills) {
-								foreach ($bills as $billId => $amountPaid) {
-									if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-										$responseFromGateway['stage'] = 'Pending';
-									}
-									if ($responseFromGateway['stage'] != 'Pending') {
-										$payment->setPending(false);
-									}
-									$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+								if ($responseFromGateway['stage'] != 'Pending') {
+									$payment->setPending(false);
 								}
+								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage']) ? 'Completed' : $responseFromGateway['stage'])->save();
 							}
-						} else {
-							Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 						}
+					} else if ($payment->getDir() == 'tc') {
+						foreach ($payment->getPaidByBills() as $billType => $bills) {
+							foreach ($bills as $billId => $amountPaid) {
+								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+									$responseFromGateway['stage'] = 'Pending';
+								}
+								if ($responseFromGateway['stage'] != 'Pending') {
+									$payment->setPending(false);
+								}
+								$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+							}
+						}
+					} else {
+						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					}
-				if (!isset($options['collect']) || $options['collect']) {
 					$involvedAccounts = array_unique($involvedAccounts);
-					CollectAction::collect($involvedAccounts);
+					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
+					}
+					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+					}
+					if ($responseFromGateway['stage'] == 'Rejected') {
+						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
+					}
+					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+					}
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
@@ -771,8 +842,17 @@ abstract class Billrun_Bill {
 		$this->data['waiting_payments'] = $waiting_payments;
 	}
 	
+	protected function addToRejectedPayments($billId, $billType) {
+		if ($billType == 'inv') {
+			return;
+		}
+		$rejectedPayments = isset($this->data['past_rejections']) ? $this->data['past_rejections'] : array();
+		array_push($rejectedPayments, $billId);
+		$this->data['past_rejections'] = $rejectedPayments;
+	}
+
 	protected function removeFromWaitingPayments($billId) {
-		$pending = $this->data['waiting_payments'];
+		$pending = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
 		$key = array_search($billId, $pending);
 		if($key !== false) {
 			unset($pending[$key]);
