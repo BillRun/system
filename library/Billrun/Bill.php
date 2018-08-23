@@ -224,8 +224,13 @@ abstract class Billrun_Bill {
 	 * @param boolean $notFormatted
 	 * @return array
 	 */
-	public static function getTotalDueForAccount($aid, $notFormatted = false) {
+	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
+		if (!empty($date)) {
+			$query['due_date'] = array(
+				'$lte' => new MongoDate(strtotime($date)),
+			);
+		}
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
