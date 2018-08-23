@@ -542,17 +542,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
-			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				if ($gatewayDetails['amount'] > 0) {
-					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-				} else {
-					Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);	
+			foreach ($paymentResponse['payment'] as $payment) {
+				$paymentData = $payment->getRawData();
+				$transactionId = $paymentData['payment_gateway']['transactionId'];
+				if (isset($paymentResponse['response'][$transactionId]['status']) && $paymentResponse['response'][$transactionId]['status'] === '000') {
+					if ($gatewayDetails['amount'] > 0) {
+						Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					} else {
+						Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					}
 				}
-			}
-			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
+				self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
+			}		
 		}
-		
+
 		if (!static::release()) {
 			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 			return;
