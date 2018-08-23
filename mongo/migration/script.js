@@ -322,6 +322,16 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
+// BRCD-1475 - Choose CDR fields that will be saved under 'uf'
+for (var i in lastConfig['file_types']) {
+	var fileType = lastConfig['file_types'][i];
+	for (var j in fileType['parser']['structure']) {
+		if (fileType['parser']['structure'][j]['checked'] === undefined) {
+			lastConfig['file_types'][i]['parser']['structure'][j]['checked'] = true;
+		}
+	}
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
