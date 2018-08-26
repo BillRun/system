@@ -745,7 +745,7 @@ abstract class Billrun_Bill {
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 						if ($responseFromGateway['stage'] == 'Rejected') {
 							$gatewayResponse = $gateway->handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $payment->getAid());
-							$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($gatewayResponse['status'], $gateway, $gatewayResponse['extra_params']);
+							$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($gatewayResponse['status'], $gateway, $gatewayResponse['additional_params']);
 						}
 
 						$txId = $gateway->getTransactionId();
