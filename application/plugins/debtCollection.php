@@ -24,8 +24,9 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $immediateEnter = false;
 	protected $immediateExit = true;
 	protected $cronFrequency = 'daily';
-	protected $stepsPeriodicity = 'daily';
+	protected $stepsPeriodicity = 'hourly'; // shouldn't be configurable
 	protected $collection;
+	protected $nonWorkingDays = array(0, 6);
 
 	public function __construct($options = array()) {
 		$this->collection = Billrun_Factory::collection();
