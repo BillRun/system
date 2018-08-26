@@ -121,23 +121,16 @@ class ReportModel {
 				throw new Exception("No support to join {$report_entity} with those entities: {$report_entities}");
 			}
 			foreach ($join_entities as $join_entity) {
-				$lookup = $this->getLookup($join_entity);
-				if(!empty($lookup)) {
-					$aggregate[] = array('$lookup' => $lookup);
-				}
-				// filter by account type beacuse subscribers collection is mixed 
+				$lookupRestriction = FALSE;
 				if($join_entity === 'customer' ) {
-					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
-					if(!empty($filterByType)) {
-						$aggregate[] = array('$addFields' => $filterByType);
-					}
+					$lookupRestriction = ['type' => 'account'];
 				}
-				// filter by subscriber type beacuse subscribers collection is mixed 
 				if($join_entity === 'subscription' ) {
-					$filterByType = $this->getFilterByType($join_entity, 'type', 'subscriber');
-					if(!empty($filterByType)) {
-						$aggregate[] = array('$addFields' => $filterByType);
-					}
+					$lookupRestriction = ['type' => 'subscriber'];
+				}
+				$lookup = $this->getGraphLookup($join_entity,$lookupRestriction);
+				if(!empty($lookup)) {
+					$aggregate[] = array('$graphLookup' => $lookup);
 				}
 				if(in_array($join_entity, $this->entityWithRevisions)) {
 					$filterByRevision = $this->getFilterByRevision($join_entity);
@@ -181,7 +174,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-		
+
 		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -558,6 +551,23 @@ class ReportModel {
 		return $lookup;
 	}
 	
+	protected function getGraphLookup($entity,$restrict = FALSE) {
+		$report_entity = $this->getReportEntity();
+		$join_entity = $this->entityMapper($entity);
+		$lookup = array(
+			'from' => $join_entity,
+			'connectFromField' => $this->mapJoin[$report_entity][$entity]['source_field'],
+			'connectToField' => $this->mapJoin[$report_entity][$entity]['target_field'],
+			'startWith' =>'$'.$this->mapJoin[$report_entity][$entity]['source_field'],
+			'maxDepth' => 0,
+			'as' => $entity
+		);
+		if(!empty($restrict)) {
+			$lookup['restrictSearchWithMatch'] = $restrict;
+		}
+		return $lookup;
+	}
+	
 	protected function getUnwind($entity) {
 		return array(
 			'path' => "\$$entity",
@@ -867,7 +877,8 @@ class ReportModel {
 		if ($size === -1 && $page === -1) {
 			return 0;
 		}
-		return intval($page) * intval($size);
+		// Size has addition 1 item to check if next page exists 
+		return intval($page) * intval($size - 1);
 	}
 	
 	protected function getLimit($size = -1) {
