@@ -224,8 +224,13 @@ abstract class Billrun_Bill {
 	 * @param boolean $notFormatted
 	 * @return array
 	 */
-	public static function getTotalDueForAccount($aid, $notFormatted = false) {
+	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
+		if (!empty($date)) {
+			$query['due_date'] = array(
+				'$lte' => new MongoDate(strtotime($date)),
+			);
+		}
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
@@ -540,13 +545,22 @@ abstract class Billrun_Bill {
 
 		$project = array(
 			'$project' => array(
-				'valid_gateway' => array('$cond' => array(array('$not' => array('$account.payment_gateway.active')), false, true)),
+				'account_gateway' => array('$ifNull' => array('$account.payment_gateway.active', array())),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1
 			)
 		);
 
+		$project2 = array(
+			'$project' => array(
+				'valid_gateway' => array('$cond' => array(array('$ne' => array('$account_gateway', [])), true, false)),
+				'past_rejections' => 1,
+				'aid' => 1,
+				'left_to_pay' => 1
+			)
+		);
+		
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
@@ -563,7 +577,7 @@ abstract class Billrun_Bill {
 			),
 		);
 
-		$project2 = array(
+		$project3 = array(
 			'$project' => array(
 				'_id' => 0,
 				'aid' => '$_id',
@@ -578,7 +592,7 @@ abstract class Billrun_Bill {
 				)
 			)
 		);
-		$results = iterator_to_array($billsColl->aggregate($match, $lookup, $project, $group, $project2, $match2));
+		$results = iterator_to_array($billsColl->aggregate($match, $lookup, $project, $project2, $group, $project3, $match2));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
