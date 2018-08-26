@@ -19,7 +19,6 @@ class CollectAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->allowed();
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		if (RUNNING_FROM_CLI) {
@@ -27,6 +26,8 @@ class CollectAction extends ApiAction {
 			if (!empty($extraParams) && isset($extraParams['aids'])) {
 				$aids = $extraParams['aids'];
 			}
+		} else {
+			$this->allowed();
 		}
 
 		$aids = !empty($extraParams) && isset($extraParams['aids']) ? Billrun_Util::verify_array($extraParams['aids'], 'int') : array();

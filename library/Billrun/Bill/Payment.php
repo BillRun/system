@@ -581,6 +581,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
 				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
 			}
