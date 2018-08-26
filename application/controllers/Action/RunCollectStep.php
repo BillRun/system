@@ -19,7 +19,9 @@ class  Run_collect_stepAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->allowed();
+		if(!RUNNING_FROM_CLI) {
+			$this->allowed();
+		}
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
