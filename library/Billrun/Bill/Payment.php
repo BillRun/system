@@ -198,8 +198,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
 		$rawData['rejection_code'] = $response['status'];
-		if (isset($response['extra_params'])) {
-			$rawData['vendor_response'] = $response['extra_params'];
+		if (isset($response['additional_params'])) {
+			$rawData['vendor_response'] = $response['additional_params'];
 		}
 		return new $className($rawData);
 	}
@@ -426,7 +426,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setPaymentStatus($response, $gatewayName) {
 		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
 		$this->data['last_checked_pending'] = new MongoDate();
-		$extraParams = isset($response['extra_params']) ? $response['extra_params'] : array();	
+		$extraParams = isset($response['additional_params']) ? $response['additional_params'] : array();
 		$vendorResponse = array_merge($vendorResponse, $extraParams);
 		$this->data['vendor_response'] = $vendorResponse;
 		$this->save();
