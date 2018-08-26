@@ -373,6 +373,7 @@ class Billrun_Factory {
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);
 		}
+		self::$plan[$stamp]->init();
 		return self::$plan[$stamp];
 	}
 
