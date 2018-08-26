@@ -745,7 +745,7 @@ abstract class Billrun_Bill {
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 						if ($responseFromGateway['stage'] == 'Rejected') {
 							$gatewayResponse = $gateway->handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $payment->getAid());
-							$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($gatewayResponse['status'], $gateway, $gatewayResponse['additional_params']);
+							$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($gatewayResponse['status'], $gateway, $gatewayResponse['extra_params']);
 						}
 
 						$txId = $gateway->getTransactionId();
@@ -789,9 +789,6 @@ abstract class Billrun_Bill {
 					}
 					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
-					}
-					if ($responseFromGateway['stage'] == 'Rejected') {
-						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 					}
 					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
