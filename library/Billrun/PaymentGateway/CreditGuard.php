@@ -352,6 +352,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
 			$accountGateway = $this->account->payment_gateway;
 			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
+			if (isset($accountGateway['active']['generate_token_time']->sec)) {
+				$accountGateway['active']['generate_token_time'] = date("Y-m-d H:i:s", $accountGateway['active']['generate_token_time']->sec);
+			}
 			$time = date(Billrun_Base::base_datetimeformat);
 			$query = array(
 				'aid' => $aid,
