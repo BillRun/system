@@ -70,7 +70,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->cronFrequency == 'hourly') {
 			$this->collection->collect();
 		}
-		if ($this->stepsPeriodicity == 'daily') {
+		if ($this->stepsPeriodicity == 'hourly') {
 			Run_collect_stepAction::runCollectStep();
 		}
 	}
