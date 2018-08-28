@@ -790,9 +790,6 @@ abstract class Billrun_Bill {
 					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
-					if ($responseFromGateway['stage'] == 'Rejected') {
-						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
-					}
 					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
