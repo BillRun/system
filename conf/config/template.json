@@ -10,6 +10,9 @@
 	"collection" : {
 		"steps": [],
 		"settings": {
+			"run_on_holidays": true,
+			"run_on_days": [true,true,true,true,true,true,true],
+			"run_on_hours": [],
 			"step_ttl": 90,
 			"step_ttl": "days",
 			"min_debt": 10,
