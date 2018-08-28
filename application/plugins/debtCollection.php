@@ -27,9 +27,11 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $stepsPeriodicity = 'hourly'; // shouldn't be configurable
 	protected $collection;
 	protected $nonWorkingDays = array(0, 6);
+	protected $collectionSteps;
 
 	public function __construct($options = array()) {
 		$this->collection = Billrun_Factory::collection();
+		$this->collectionSteps = Billrun_Factory::collectionSteps();
 	}
 	
 	public function afterChargeSuccess($bill) {
@@ -71,7 +73,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->collection->collect();
 		}
 		if ($this->stepsPeriodicity == 'hourly') {
-			Run_collect_stepAction::runCollectStep();
+			$this->collectionSteps->runCollectStep();
 		}
 	}
 
@@ -80,7 +82,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->collection->collect();
 		}
 		if ($this->stepsPeriodicity == 'daily') {
-			Run_collect_stepAction::runCollectStep();
+			$this->collectionSteps->runCollectStep();
 		}
 	}
 	
