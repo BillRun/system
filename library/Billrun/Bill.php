@@ -227,8 +227,9 @@ abstract class Billrun_Bill {
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
-			$query['due_date'] = array(
-				'$lte' => new MongoDate(strtotime($date)),
+			$query['$or'] = array(
+				array('due_date' => array('$lte' => new MongoDate(strtotime($date)))),
+				array('due_date' => array('$exists' => false)),
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
@@ -789,9 +790,6 @@ abstract class Billrun_Bill {
 					}
 					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
-					}
-					if ($responseFromGateway['stage'] == 'Rejected') {
-						Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 					}
 					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));

@@ -1511,7 +1511,7 @@ class Billrun_Util {
 	}
 	
 	public static function getCmdCommand($options, $params = array()) {
-		$cmd = 'php -t ' . APPLICATION_PATH . ' public/index.php ' . Billrun_Util::getCmdEnvParams();
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
 		if (!is_array($options)) {
 			$options = array($options);
 		}
