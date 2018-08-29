@@ -36,13 +36,13 @@ abstract class Billrun_CollectionSteps_Notifiers_Abstract implements Billrun_Col
 		try {
 			$response = $this->parseResponse($this->run());
 			if ($this->isResponseValid($response)) {
-				Billrun_Factory::log('Notify run successfully with response: ' . print_r($response, 1), Zend_Log::DEBUG);
+				Billrun_Factory::log('Collection steps notifier finished successfully with response: ' . print_r($response, 1), Zend_Log::DEBUG);
 				return $this->getSuccessResponse($response);
 			}
 		} catch (Exception $exc) {
-			Billrun_Factory::log('Notify crashed with error: ' . $exc->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log('Collection steps notifier crashed with error: ' . $exc->getMessage(), Zend_Log::ERR);
 		}
-		Billrun_Factory::log('Notify run faild for task: ' . print_r($this->task, 1), Zend_Log::WARN);
+		Billrun_Factory::log('Collection steps notifier run failed for task: ' . print_r($this->task, 1), Zend_Log::WARN);
 		return $this->getFailureResponse();
 	}
 	
