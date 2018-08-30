@@ -19,6 +19,16 @@ if (empty($filePath)) {
 }
 
 $mapping = array();
+$applicationIds = array();
+$baseTokenTypes = array(
+	'OCTET STRING' => 'octetstring',
+	'INTEGER' => 'integer',
+	'VisibleString' => 'visible_string',
+	'NumericString' => 'numeric_string',
+	'SEQUENCE' => 'sequence',
+	'CHOICE' => 'choice',
+	'SEQUENCE OF' => 'sequence_of',
+);
 $output = convert($filePath);
 
 foreach ($output as $outputLine) {
@@ -26,7 +36,7 @@ foreach ($output as $outputLine) {
 }
 
 function convert($filePath) {
-	global $mapping;
+	global $mapping, $applicationIds, $baseTokenTypes;
 	$fp = fopen($filePath, 'r');
 	if (!$fp) {
 		print ('unable to open "' . $filePath . '"' . PHP_EOL);
@@ -40,8 +50,11 @@ function convert($filePath) {
 		if (shouldIgnoreLine($line)) {
 			continue;
 		}
-		parseLine($line);
-		if (!isMappingLine($line)) {
+		$matches = array();
+		preg_match('/\[APPLICATION (.*?)\]/', $line, $matches);
+		$appId = isset($matches[1]) ? $matches[1] : '';
+		parseLine($line, $appId);
+		if (!isMappingLine($line, $appId)) {
 			$linesToConvert[] = $line;
 		}
 	}
@@ -64,7 +77,6 @@ function convert($filePath) {
 						$i++;
 					}
 					$i++;
-					$j = 0;
 					$c = 1000; // to avoid infinite loop
 					while ($linesToConvert[$i] !== '}' && $c-- > 0) {
 						$sequenceLineArr = explode(' ', $linesToConvert[$i]);
@@ -72,13 +84,13 @@ function convert($filePath) {
 							print ("Cannot convert line '{$linesToConvert[$i]}'" . PHP_EOL);
 						} else {
 							$sequenceVar = $sequenceLineArr[0];
-							$sequenceType = getBaseType($sequenceLineArr[1]);
+							$sequenceType = $sequenceLineArr[1];
 							if ($sequenceType) {
-								$output[] = "{$varible}.{$type}.{$j}.{$sequenceVar}={$sequenceType}";
+								$output[] = "{$varible}.{$type}.{$sequenceVar}={$sequenceType}";
+								$mapping[$sequenceVar] = $sequenceType;
 							} else {
 								print ("Cannot find type for line '{$linesToConvert[$i]}'" . PHP_EOL);
 							}
-							$j++;
 						}
 						$i++;
 					}
@@ -101,8 +113,16 @@ function convert($filePath) {
 		if (in_array($type, array('SEQUENCE OF', 'SEQUENCE', 'CHOICE'))) {
 			continue;
 		}
-		$baseType = getBaseType($type);
+		$baseType = $type;
 		$output[] = "{$token}={$baseType}";
+	}
+	
+	foreach ($baseTokenTypes as $token => $type) {
+		$output[] = "{$token}={$type}";
+	}
+	
+	foreach ($applicationIds as $token => $appId) {
+		$output[] = "application_id.{$token}={$appId}";
 	}
 	
 	return $output;
@@ -152,8 +172,8 @@ function parseLine(&$line) {
 	$line = str_replace($searches, $replaces, $line); // removes unused text from line
 }
 
-function isMappingLine($line) {
-	global $mapping;
+function isMappingLine($line, $appId) {
+	global $mapping, $applicationIds;
 	if (strpos($line, '::=')) {
 		$isSequenceOf = strpos($line, 'SEQUENCE OF') !== false;
 		$isSequence = !$isSequenceOf &&  strpos($line, 'SEQUENCE') !== false;
@@ -171,43 +191,19 @@ function isMappingLine($line) {
 				$type = 'UNKNOWN';
 			}
 			$mapping[$token] = $type;
+			if (!empty($appId)) {
+				$applicationIds[$token] = $appId;
+			}
 			return false;
 		}
 		$lineArr = explode(' ::= ', $line);
 		$token = $lineArr[0];
 		$type = $lineArr[1];
 		$mapping[$token] = $type;
+		if (!empty($appId)) {
+			$applicationIds[$token] = $appId;
+		}
 		return true;
-	}
-	return false;
-}
-
-function getBaseType($type) {
-	global $mapping;
-	$baseTokenTypes = array(
-		'OCTET STRING' => 'octetstring',
-		'INTEGER' => 'integer',
-		'VisibleString' => 'visible_string',
-		'NumericString' => 'numeric_string',
-		'SEQUENCE' => 'sequence',
-		'CHOICE' => 'choice',
-		'SEQUENCE OF' => 'sequence_of',
-	);
-	
-	for ($i = 0; $i < 10; $i++) { // to avoid infinite loop
-		if (in_array($type, array_values($baseTokenTypes))) {
-			return $type;
-		}
-		if (isset($baseTokenTypes[$type])) {
-			return $baseTokenTypes[$type];
-		}
-		if (!isset($mapping[$type])) {
-			return false;
-		}
-		if (in_array($mapping[$type], array('SEQUENCE OF', 'SEQUENCE', 'CHOICE'))) {
-			return $type;
-		}
-		$type = $mapping[$type];
 	}
 	return false;
 }

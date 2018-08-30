@@ -12,21 +12,20 @@
  * @package  Billing
  * @since    2.8
  */
-abstract class Billrun_Exporter_Csv extends Billrun_Exporter_Bulk {
+abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	
 	static protected $type = 'csv';
 	
 	/**
-	 * get CSV file name
+	 * CSV delimiter
+	 * 
+	 * @var string
 	 */
-	abstract protected function getFileName();
+	protected $delimiter = '';
 	
-	/**
-	 * get CSV file path
-	 */
-	protected function getFilePath() {
-		$defaultExportPath = Billrun_Factory::config()->getConfigValue(static::$type . '.export'. '');
-		return $this->getConfig('file_path', $defaultExportPath);
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->delimiter = $this->getDelimiter();
 	}
 	
 	/**
@@ -45,43 +44,12 @@ abstract class Billrun_Exporter_Csv extends Billrun_Exporter_Bulk {
 		$includeHeader = $this->getConfig('include_header', true);
 		return $includeHeader ? array_keys($this->getFieldsMapping()) : array();
 	}
-
-	/**
-	 * exports data to CSV file
-	 * 
-	 * @return exported lines on success, false on failure
-	 */
-	function handleExport() {
-		$filePath = rtrim($this->getFilePath(), '/') . '/' . $this->getFileName();
-		$fp = fopen($filePath, 'w');
-		if (!$fp) {
-			Billrun_Log::getInstance()->log('CSV bulk export: Cannot open file', Zend_log::ERR);
-			return false;
-		}
-		$dataToExport = $this->getDataToExport();
-		$delimiter = $this->getDelimiter();
-		foreach ($dataToExport as $row) {
-			fputcsv($fp, $row, $delimiter);
-		}
-		fclose($fp);
-		$this->afterExport();
-		return $dataToExport;
-	}
 	
 	/**
-	 * gets data to update log in DB
-	 * 
-	 * @return type
+	 * see parent::exportRowToFile
 	 */
-	protected function getLogData() {
-		$fileName = $this->getFileName();
-		$filePath = rtrim($this->getFilePath(), '/') . '/' . $fileName;
-		
-		return array(
-			'exported_time' => date(self::base_dateformat),
-			'file_name' => $fileName,
-			'path' => $filePath,
-		);
+	protected function exportRowToFile($fp, $row) {
+		fputcsv($fp, $row, $this->delimiter);
 	}
 	
 }
