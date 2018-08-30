@@ -591,8 +591,11 @@ abstract class Billrun_PaymentGateway {
 				'due_date' => 1,
 				'suspend_debit' => 1,
 				'source' => 1,
-				'currency' => 1,	
-			),
+				'currency' => 1,
+				'invoice_id' => 1,
+				'left_to_pay' => 1,
+				'left' => 1,
+			),	
 		);
 		
 		$pipelines[] = array(
