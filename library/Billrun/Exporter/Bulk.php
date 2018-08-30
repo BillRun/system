@@ -20,6 +20,7 @@ abstract class Billrun_Exporter_Bulk extends Billrun_Exporter {
 	protected $collection = null;
 	protected $query = array();
 	protected $rowsToExport = array();
+	protected $rawRows = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -74,7 +75,9 @@ abstract class Billrun_Exporter_Bulk extends Billrun_Exporter {
 	protected function loadRows() {
 		$rows = $this->collection->query($this->query)->cursor();
 		foreach ($rows as $row) {
-			$this->rowsToExport[] = $this->getRecordData($row->getRawData());
+			$rawRow = $row->getRawData();
+			$this->rawRows[] = $rawRow;
+			$this->rowsToExport[] = $this->getRecordData($rawRow);
 		}
 	}
 	

@@ -15,6 +15,19 @@
 class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 
 	static protected $type = 'tap3';
+	
+	protected $startTime = null;
+	protected $timeZoneOffset = '';
+	protected $startTimeStamp = '';
+	protected $numOfDecPlaces;
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->startTime = time();
+		$this->timeZoneOffset = date($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
+		$this->startTimeStamp = date($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
+		$this->numOfDecPlaces = intval($this->getConfig('header.num_of_decimal_places'));
+	}
 
 	protected function getFileName() {
 		return '/home/yonatan/Downloads/TDINDATISRGT00003_4';
@@ -30,45 +43,45 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	protected function getHeader() {
 		return array(
 			'BatchControlInfo' => array(
-				'Sender' => 'INDAT',
+				'Sender' => $this->getConfig('header.sender'),
 				'Recipient' => 'ISRGT',
 				'FileSequenceNumber' => '00003',
 				'FileCreationTimeStamp' => array(
-					'LocalTimeStamp' => '20160917193749',
-					'UtcTimeOffset' => '+0530',
+					'LocalTimeStamp' => $this->startTimeStamp,
+					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'TransferCutOffTimeStamp' => array(
-					'LocalTimeStamp' => '20160917193749',
-					'UtcTimeOffset' => '+0530',
+					'LocalTimeStamp' => $this->startTimeStamp,
+					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'FileAvailableTimeStamp' => array(
-					'LocalTimeStamp' => '20160917193749',
-					'UtcTimeOffset' => '+0530',
+					'LocalTimeStamp' => $this->startTimeStamp,
+					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
-				'SpecificationVersionNumber' => 3,
-				'ReleaseVersionNumber' => 12,
-				'FileTypeIndicator' => 'T',
+				'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
+				'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
+				'FileTypeIndicator' => $this->getConfig('header.file_type_indicator'),
 			),
 			'AccountingInfo' => array(
-				'LocalCurrency' => 'INR',
-				'TapCurrency' => 'SDR',
+				'LocalCurrency' => $this->getConfig('header.local_currency'),
+				'TapCurrency' => $this->getConfig('header.tap_currency'),
 				'CurrencyConversionList' => array(
 					array(
 						'CurrencyConversion' => array(
-							'ExchangeRateCode' => 0,
-							'NumberOfDecimalPlaces' => 4,
-							'ExchangeRate' => 943574,
+							'ExchangeRateCode' => intval($this->getConfig('header.currency_conversion.exchange_rate_code')),
+							'NumberOfDecimalPlaces' => intval($this->getConfig('header.currency_conversion.num_of_decimal_places')),
+							'ExchangeRate' => intval($this->getConfig('header.currency_conversion.exchange_rate')),
 						),
 					),
 				),
-				'TapDecimalPlaces' => 5,
+				'TapDecimalPlaces' => $this->numOfDecPlaces,
 			),
 			'NetworkInfo' => array(
 				'UtcTimeOffsetInfoList' => array(
 					array(
 						'UtcTimeOffsetInfo' => array(
 							'UtcTimeOffsetCode' => 0,
-							'UtcTimeOffset' => '+0530',
+							'UtcTimeOffset' => $this->timeZoneOffset,
 						),
 					),
 				),
@@ -110,20 +123,27 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	 * see parent::getFooter
 	 */
 	protected function getFooter() {
+		$totalCharge = 0;
+		$totalTax = 0;
+		$totalDiscount = 0;
+		foreach ($this->rawRows as $row) {
+			$totalCharge += isset($row['aprice']) ? floatval($row['aprice']) * pow(10, $this->numOfDecPlaces) : 0;
+			$totalTax += isset($row['tax']) ? floatval($row['tax']) * pow(10, $this->numOfDecPlaces) : 0;
+		}
 		return array(
 			'AuditControlInfo' => array(
 				'EarliestCallTimeStamp' => array(
 					'LocalTimeStamp' => '20160916170645',
-					'UtcTimeOffset' => '+0530',
+					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'LatestCallTimeStamp' => array(
 					'LocalTimeStamp' => '20160916180052',
-					'UtcTimeOffset' => '+0530',
+					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
-				'TotalCharge' => 244603,
-				'TotalTaxValue' => 0,
-				'TotalDiscountValue' => 0,
-				'CallEventDetailsCount' => 7,
+				'TotalCharge' => $totalCharge,
+				'TotalTaxValue' => $totalTax,
+				'TotalDiscountValue' => $totalDiscount,
+				'CallEventDetailsCount' => count($this->rowsToExport),
 			),
 		);
 	}
