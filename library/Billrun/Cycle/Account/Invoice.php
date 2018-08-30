@@ -352,7 +352,9 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData['due_date'] =  (@$initData['attributes']['invoice_type'] == 'immediate') ? 
+										$initData['creation_time'] :
+										new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
         
