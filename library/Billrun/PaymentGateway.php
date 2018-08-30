@@ -578,6 +578,24 @@ abstract class Billrun_PaymentGateway {
 			),
 		);
 		$pipelines[] = array(
+			'$project' => array(
+				'method' => array('$ifNull' => array('$method', '$payment_method')),
+				'due' => 1,
+				'type' => 1,
+				'aid' => 1,
+				'billrun_key' => 1,
+				'lastname' => 1,
+				'firstname' => 1,
+				'bill_unit' => 1,
+				'bank_name' => 1,
+				'due_date' => 1,
+				'suspend_debit' => 1,
+				'source' => 1,
+				'currency' => 1,	
+			),
+		);
+		
+		$pipelines[] = array(
 			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
 		);
 		$pipelines[] = array(
