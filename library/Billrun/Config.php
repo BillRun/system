@@ -451,4 +451,11 @@ class Billrun_Config {
 		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
 	}
 
+	public static function getParserStructure($fileTypeName) {
+		$fileType = Billrun_Factory::config()->getFileTypeSettings($fileTypeName);
+		if (!empty($fileType)) {
+			return $fileType['parser']['structure'];
+		}
+		return array();
+	}
 }

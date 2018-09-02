@@ -63,7 +63,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			}
 			
 			$ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
-			$this->filenameRegex = isset($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
+			$this->filenameRegex = !empty($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->ssh->getHost() , Zend_Log::INFO);
 			$this->ssh->connect($config['user']);
@@ -87,10 +87,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 				foreach ($files as $file) {
 					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, $file));
-					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::INFO);
+					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
-						Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::INFO);
+						Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::DEBUG);
 						continue;
 					}
 
