@@ -336,3 +336,9 @@ db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1552 collection
+db.collection_steps.dropIndex("aid_1");
+db.collection_steps.dropIndex("trigger_date_1_done_1");
+db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
+db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
