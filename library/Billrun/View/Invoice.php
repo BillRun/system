@@ -169,12 +169,21 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$volume = Billrun_Utils_Units::convertVolumeUnits( $usage , $usaget,  $unit);
 		return (preg_match('/^[\d.]+$/', $volume) && $volume ?  number_format($volume,$precision) : $volume )." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '');
 	}
-
-	public function getRateTariff($rateName, $usaget,$addTax = FALSE ) {
+	/**
+	*
+	*/
+	public function getRateTariff($rateName, $usaget,$planName = FALSE, $services = [], $addTax = FALSE ) {
 		if(!empty($rateName)) {
 			$rate = Billrun_Rates_Util::getRateByName($rateName, $this->data['end_date']->sec);
 			if(!empty($rate)) {
-				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget);
+				$serviceInstances = [];
+				if(is_array($services)) {
+					foreach( $services as $service ) {
+						$serviceInstances[] = Billrun_Factory::service($service);
+					}
+				}
+				
+				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget, $planName, $serviceInstances);
 			
 			}
 		}
