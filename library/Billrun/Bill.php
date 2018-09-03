@@ -513,7 +513,7 @@ abstract class Billrun_Bill {
 		$exempted = $account->getExcludedFromCollection($aids);
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
+		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		$match = array(
 			'$match' => array(
