@@ -15,6 +15,7 @@
 class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public $lines = array();
+	protected $subServices = [];
 	protected $tariffMultiplier = array(
 		'call' => 60,
 		'incoming_call' => 60,
@@ -27,6 +28,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	 */
 	public function setLines($accountLines) {
 		$this->lines = $accountLines;
+		$this->subServices = [];
 	}
 	
 	public function loadLines() {
@@ -170,7 +172,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return (preg_match('/^[\d.]+$/', $volume) && $volume ?  number_format($volume,$precision) : $volume )." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '');
 	}
 	/**
-	*
+	* Get usage traiff based on the usage type  , rate ,plan, services  the subscriber had.
 	*/
 	public function getRateTariff($rateName, $usaget,$planName = FALSE, $services = [], $addTax = FALSE ) {
 		if(!empty($rateName)) {
@@ -224,4 +226,18 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function shouldRatebeDisplayed($usageData,$section='all') {
 		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$usageData['rate']);
 	}
+	
+	public function getSubscriberServices($sid) {
+		if(!isset($this->subServices[$sid])) {
+			$query = Billrun_Utils_Mongo::getOverlappingDatesQuery(['from'=> $this->data['start_date'],'to'=>$this->data['end_date']]);
+			$query['sid'] = $sid;
+			$subservs = Billrun_Factory::db()->subscribersCollection([['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]]);
+			foreach($subservs as  $service) {
+				$this->subServices[$sid][] = Billrun_Factory::service($service);
+			}
+		}
+		return $this->subServices[$sid];
+	}
+	
+	
 }
