@@ -664,6 +664,8 @@ class ReportModel {
 				return 'events';
 			case 'logFile':
 				return 'log';
+			case 'bills':
+				return 'bills';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -785,6 +787,9 @@ class ReportModel {
 					$values = array_map('floatval', explode(',', $value));
 				} else {
 					$values = explode(',', $value);
+				}
+				if ($field == 'paid' && in_array('0', $values)) {
+					$values[] = false;
 				}
 				$formatedExpression = array(
 					"\${$op}" => $values

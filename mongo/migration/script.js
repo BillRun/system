@@ -352,3 +352,6 @@ db.collection_steps.dropIndex("aid_1");
 db.collection_steps.dropIndex("trigger_date_1_done_1");
 db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
 db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
+
+//BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
+db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
