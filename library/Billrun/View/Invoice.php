@@ -181,7 +181,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				$serviceInstances = [];
 				if(is_array($services)) {
 					foreach( $services as $service ) {
-						$serviceInstances[] = Billrun_Factory::service($service);
+						$serviceInstances[] = Billrun_Factory::service(['name' => $service['name'],'time' => $service['to']->sec-1]);
 					}
 				}
 				
@@ -229,11 +229,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function getSubscriberServices($sid) {
 		if(!isset($this->subServices[$sid])) {
-			$query = Billrun_Utils_Mongo::getOverlappingDatesQuery(['from'=> $this->data['start_date'],'to'=>$this->data['end_date']]);
+			$this->subServices[$sid] = [];
+			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $this->data['start_date']->sec,$this->data['end_date']->sec);
 			$query['sid'] = $sid;
-			$subservs = Billrun_Factory::db()->subscribersCollection([['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]]);
-			foreach($subservs as  $service) {
-				$this->subServices[$sid][] = Billrun_Factory::service($service);
+			$aggrgatePipeline = [['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
+			$subservs = Billrun_Factory::db()->subscribersCollection()->aggregate($aggrgatePipeline)->current();
+			foreach($subservs['services'] as $service) {
+				$this->subServices[$sid][] = $service;
 			}
 		}
 		return $this->subServices[$sid];
