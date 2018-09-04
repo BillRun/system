@@ -28,12 +28,19 @@ abstract class Billrun_Exporter_Asn1 extends Billrun_Exporter_File {
 		$this->fileStruct = $this->getConfig('file_structure', array());
 	}
 	
+	/**
+	 * in case of ASN1 we will export the entire file in 1 batch, and not per line
+	 * 
+	 * @param FileStream $fp
+	 * @param array $row
+	 */
 	protected function exportRowToFile($fp, $row) {
 		
 	}
 	
 	/**
 	 * see parent::handleExport
+	 * will export complete file
 	 */
 	function handleExport() {
 		$filePath = $this->getExportFilePath();

@@ -18,6 +18,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	
 	protected $startTime = null;
 	protected $timeZoneOffset = '';
+	protected $timeZoneOffsetCode = '';
 	protected $startTimeStamp = '';
 	protected $numOfDecPlaces;
 	
@@ -25,16 +26,44 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 		parent::__construct($options);
 		$this->startTime = time();
 		$this->timeZoneOffset = date($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
+		$this->timeZoneOffsetCode = intval($this->getConfig('datetime_offset_code', 0));
 		$this->startTimeStamp = date($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
 		$this->numOfDecPlaces = intval($this->getConfig('header.num_of_decimal_places'));
 	}
+	
+	/**
+	 * see parent::getFieldsMapping
+	 */
+	protected function getFieldsMapping($row) {
+		$callEventDetail = $this->getCallEventDetail($row);
+		return $this->getConfig(array('fields_mapping', $callEventDetail), array());
+	}
+	
+	/**
+	 * gets call event details to get correct mapping according to usage type
+	 * 
+	 * @param array $row
+	 * @return string one of: MobileOriginatedCall/MobileTerminatedCall/SupplServiceEvent/ServiceCentreUsage/GprsCall/ContentTransaction/LocationService/MessagingEvent/MobileSession
+	 * @todo implement for all types
+	 */
+	protected function getCallEventDetail($row) {
+		switch ($row['type']) {
+			case 'ggsn':
+				return 'GprsCall';
+			default:
+				return '';
+		}
+	}
 
-	protected function getFileName() {
+	protected function getFileName() { // TODO: implement
 		return '/home/yonatan/Downloads/TDINDATISRGT00003_4';
 	}
 
-	protected function getQuery() {
-		return array();
+	protected function getQuery() { // TODO: fix query
+		return array(
+			'type' => 'ggsn',
+			'imsi' => ['$exists' => 1],
+		);
 	}
 	
 	/**
@@ -80,41 +109,12 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 				'UtcTimeOffsetInfoList' => array(
 					array(
 						'UtcTimeOffsetInfo' => array(
-							'UtcTimeOffsetCode' => 0,
+							'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
 							'UtcTimeOffset' => $this->timeZoneOffset,
 						),
 					),
 				),
-				'RecEntityInfoList' => array(
-					array(
-						'RecEntityInformation' => array(
-							'RecEntityCode' => 0,
-							'RecEntityType' => 4,
-							'RecEntityId' => '223.224.40.4',
-						),
-					),
-					array(
-						'RecEntityInformation' => array(
-							'RecEntityCode' => 1,
-							'RecEntityType' => 3,
-							'RecEntityId' => '37.26.145.17',
-						),
-					),
-					array(
-						'RecEntityInformation' => array(
-							'RecEntityCode' => 2,
-							'RecEntityType' => 3,
-							'RecEntityId' => '37.26.144.17',
-						),
-					),
-					array(
-						'RecEntityInformation' => array(
-							'RecEntityCode' => 3,
-							'RecEntityType' => 3,
-							'RecEntityId' => '37.26.145.18',
-						),
-					),
-				),
+				'RecEntityInfoList' => $this->getRecEntityInfoList(),
 			),
 		);
 	}
@@ -126,97 +126,40 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 		$totalCharge = 0;
 		$totalTax = 0;
 		$totalDiscount = 0;
+		$earliestUrt = null;
+		$latestUrt = null;
+		$dateFormat = $this->getConfig('datetime_format', 'YmdHis');
 		foreach ($this->rawRows as $row) {
 			$totalCharge += isset($row['aprice']) ? floatval($row['aprice']) * pow(10, $this->numOfDecPlaces) : 0;
 			$totalTax += isset($row['tax']) ? floatval($row['tax']) * pow(10, $this->numOfDecPlaces) : 0;
+			$urt = $row['urt']->sec;
+			if (is_null($earliestUrt) || $urt < $earliestUrt) {
+				$earliestUrt = $urt;
+			}
+			if (is_null($latestUrt) || $urt > $latestUrt) {
+				$latestUrt = $urt;
+			}
 		}
 		return array(
 			'AuditControlInfo' => array(
 				'EarliestCallTimeStamp' => array(
-					'LocalTimeStamp' => '20160916170645',
+					'LocalTimeStamp' => date($dateFormat, $earliestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'LatestCallTimeStamp' => array(
-					'LocalTimeStamp' => '20160916180052',
+					'LocalTimeStamp' => date($dateFormat, $latestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'TotalCharge' => $totalCharge,
 				'TotalTaxValue' => $totalTax,
 				'TotalDiscountValue' => $totalDiscount,
-				'CallEventDetailsCount' => count($this->rowsToExport),
+				'CallEventDetailsCount' => count($this->rawRows),
 			),
 		);
 	}
 	
-	protected function loadRows() {// TODO: REMOVE!
-		$json = '{"GprsCall" : {
-	"GprsBasicCallInformation" : {
-		"GprsChargeableSubscriber" : {
-			"ChargeableSubscriber" : {
-				"SimChargeableSubscriber" : {
-					"Imsi" : "BP"
-				}
-			},
-			"PdpAddress" : "10.138.11.82"
-		},
-		"GprsDestination" : {
-			"AccessPointNameNI" : "internet.golantelecom.net.il"
-		},
-		"CallEventStartTimeStamp" : {
-			"LocalTimeStamp" : "20160916175521",
-			"UtcTimeOffsetCode" : "00"
-		},
-		"TotalCallEventDuration" : 93,
-		"ChargingId" : 1274051057
-	},
-	"GprsLocationInformation" : {
-		"GprsNetworkLocation" : {
-			"RecEntityCodeList" : [
-				{"RecEntityCode" : "00"},
-				{"RecEntityCode" : "01"}
-			],
-			"LocationArea" : 113,
-			"CellId" : 10657
-		}
-	},
-	"GprsServiceUsed" : {
-		"DataVolumeIncoming" : 1004471,
-		"DataVolumeOutgoing" : 137101,
-		"ChargeInformationList" : [{
-			"ChargeInformation" : {
-				"ChargedItem" : "X",
-				"ExchangeRateCode" : "00",
-				"CallTypeGroup" : {
-					"CallTypeLevel1" : 10,
-					"CallTypeLevel2" : 0,
-					"CallTypeLevel3" : 0
-				},
-				"ChargeDetailList" : [{
-					"ChargeDetail" : {
-						"ChargeType" : "00",
-						"Charge" : 23740,
-						"ChargeableUnits" : 1141572,
-						"ChargedUnits" : 1146880,
-						"ChargeDetailTimeStamp" : {
-							"LocalTimeStamp" : "20160916175521",
-							"UtcTimeOffsetCode" : "00"
-						}
-					}
-				}]
-			}
-		}]
-	}
-}
-}
-';
-
-		$line = json_decode($json, JSON_OBJECT_AS_ARRAY);
-		$line2 = $line;
-		$this->rowsToExport[] = $line;
-		$this->rowsToExport[] = $line2;
-		
-		// from here this is the real function
-//		parent::loadRows();
+	protected function loadRows() {
+		parent::loadRows();
 		$this->rowsToExport = array(
 			'CallEventDetailList' => $this->rowsToExport,
 		);
@@ -229,6 +172,75 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 		$dataToExport = parent::getDataToExport();
 		return array(
 			'TransferBatch' => $dataToExport,
+		);
+	}
+	
+	protected function getRecEntityInfoList() {
+		$ret = array();
+		foreach ($this->rawRows as $row) {
+			$recEntityCode = 0; //TODO: get correct code
+			$recEntityType = 4; //TODO: get correct type
+			$recEntityId = '223.224.40.4'; //TODO: get correct ID
+			$found = !empty(array_filter($ret, function($ele) use($recEntityCode, $recEntityType, $recEntityId) {
+				return $ele['RecEntityInformation']['RecEntityCode'] === $recEntityCode &&
+					$ele['RecEntityInformation']['RecEntityType'] === $recEntityType && 
+					$ele['RecEntityInformation']['RecEntityId'] === $recEntityId;
+			}));
+			if (!$found) {
+				$ret[] = array(
+					'RecEntityInformation' => array(
+							'RecEntityCode' => $recEntityCode,
+							'RecEntityType' => $recEntityType,
+							'RecEntityId' => $recEntityId,
+						),
+				);
+			}
+		}
+		return $ret;
+	}
+	
+	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
+		return $this->timeZoneOffsetCode;
+	}
+	
+	protected function getRecEntityCodeList($row, $fieldMapping) {
+		return array(
+			array(
+				'RecEntityCode' => 0, // TODO: get correct value from row
+			),
+			array(
+				'RecEntityCode' => 1, // TODO: get correct value from row
+			),
+		);
+	}
+	
+	protected function getChargeInformationList($row, $fieldMapping) {
+		return array(
+			array(
+				'ChargeInformation' => array(
+					'ChargedItem' => 'X', // TODO: get correct value from row
+					'ExchangeRateCode' => 0, // TODO: get correct value from row
+					'CallTypeGroup' => array(
+						'CallTypeLevel1' => 10, // TODO: get correct value from row
+						'CallTypeLevel2' => 0, // TODO: get correct value from row
+						'CallTypeLevel3' => 0, // TODO: get correct value from row
+					),
+					'ChargeDetailList' => array(
+						array(
+							'ChargeDetail' => array(
+								'ChargeType' => '00', // TODO: get correct value from row
+								'Charge' => 23740, // TODO: get correct value from row
+								'ChargeableUnits' => 1141572, // TODO: get correct value from row
+								'ChargedUnits' => 1146880, // TODO: get correct value from row
+								'ChargeDetailTimeStamp' => array(
+									'LocalTimeStamp' => date($this->getConfig('datetime_format', 'YmdHis'), $row['urt']->sec), // TODO: get correct value from row
+									'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
+								),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 

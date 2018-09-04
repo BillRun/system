@@ -134,7 +134,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$data = array();
 		foreach ($fieldsMapping as $field => $fieldMapping) {
 			if (!is_array($fieldMapping)) {
-				$val = isset($row[$fieldMapping]) ? $row[$fieldMapping] : '';
+				$val = Billrun_Util::getIn($row, $fieldMapping, '');
 			} else if (isset($fieldMapping['func'])) {
 				$functionName = $fieldMapping['func'];
 				if (!method_exists($this, $functionName)) {
@@ -149,7 +149,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 				$val = '';
 			}
 			
-			$data[$field] = $val;
+			Billrun_Util::setIn($data, explode('>', $field), $val);
 		}
 		
 		return $data;

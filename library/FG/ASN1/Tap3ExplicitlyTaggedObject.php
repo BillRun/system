@@ -72,7 +72,8 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
 		}
 		switch ($type) {
 			case 'integer':
-			case 'BCDString':
+				$object = is_numeric($object) == false ? 0 : $object;
+			case 'BCDString': // TODO: should create unique handler for BCD string
 				return new Universal\Integer($object);
 			default:
 				return new Universal\IA5String($object);
