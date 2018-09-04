@@ -29,7 +29,7 @@ use FG\ASN1\Exception\ParserException;
  *
  * @see http://luca.ntop.org/Teaching/Appunti/asn1.html
  */
-class ExplicitlyTaggedObject extends Object
+class ExplicitlyTaggedObject extends BaseObject
 {
     /** @var \FG\ASN1\Object[] */
     private $decoratedObjects;

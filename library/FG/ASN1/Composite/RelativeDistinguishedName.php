@@ -11,7 +11,7 @@
 namespace FG\ASN1\Composite;
 
 use FG\ASN1\Exception\NotImplementedException;
-use FG\ASN1\Object;
+use FG\ASN1\BaseObject;
 use FG\ASN1\Universal\Set;
 
 class RelativeDistinguishedName extends Set

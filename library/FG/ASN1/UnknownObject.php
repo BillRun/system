@@ -10,7 +10,7 @@
 
 namespace FG\ASN1;
 
-class UnknownObject extends Object
+class UnknownObject extends BaseObject
 {
     /** @var string */
     private $value;

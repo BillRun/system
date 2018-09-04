@@ -15,7 +15,7 @@ use ArrayIterator;
 use Countable;
 use Iterator;
 
-abstract class Construct extends Object implements Countable, ArrayAccess, Iterator, Parsable
+abstract class Construct extends BaseObject implements Countable, ArrayAccess, Iterator, Parsable
 {
     /** @var \FG\ASN1\Object[] */
     protected $children;

@@ -11,11 +11,11 @@
 namespace FG\ASN1\Universal;
 
 use Exception;
-use FG\ASN1\Object;
+use FG\ASN1\BaseObject;
 use FG\ASN1\Parsable;
 use FG\ASN1\Identifier;
 
-class Integer extends Object implements Parsable
+class Integer extends BaseObject implements Parsable
 {
     /** @var int */
     private $value;

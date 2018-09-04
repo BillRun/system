@@ -40,7 +40,7 @@ use LogicException;
 /**
  * Class Object is the base class for all concrete ASN.1 objects.
  */
-abstract class Object implements Parsable
+abstract class BaseObject implements Parsable
 {
     private $contentLength;
     private $nrOfLengthOctets;

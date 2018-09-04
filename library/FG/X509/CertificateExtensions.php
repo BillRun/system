@@ -12,7 +12,7 @@ namespace FG\X509;
 
 use FG\ASN1\Exception\ParserException;
 use FG\ASN1\OID;
-use FG\ASN1\Object;
+use FG\ASN1\BaseObject;
 use FG\ASN1\Parsable;
 use FG\ASN1\Identifier;
 use FG\ASN1\Universal\OctetString;

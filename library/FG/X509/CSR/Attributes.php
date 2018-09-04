@@ -10,7 +10,7 @@
 
 namespace FG\X509\CSR;
 
-use FG\ASN1\Object;
+use FG\ASN1\BaseObject;
 use FG\X509\CertificateExtensions;
 use FG\ASN1\OID;
 use FG\ASN1\Parsable;

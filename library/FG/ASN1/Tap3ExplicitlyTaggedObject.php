@@ -25,7 +25,7 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
 			$obj = $object['object'];
 			$type = $object['type'];
 			$this->decoratedObjects[] = $obj;
-			$isConstructed = $obj instanceof Object;
+			$isConstructed = $obj instanceof BaseObject;
 			$this->objects[] = array(
 				'object' => $this->getObjectByType($obj, $type),
 				'isConstructed' => $isConstructed,
@@ -67,11 +67,12 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
     }
 	
 	public function getObjectByType($object, $type) {
-		if ($object instanceof Object) {
+		if ($object instanceof BaseObject) {
 			return $object;
 		}
 		switch ($type) {
 			case 'integer':
+			case 'BCDString':
 				return new Universal\Integer($object);
 			default:
 				return new Universal\IA5String($object);
