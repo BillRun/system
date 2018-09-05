@@ -61,7 +61,6 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		$this->allowed();
 		try {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
