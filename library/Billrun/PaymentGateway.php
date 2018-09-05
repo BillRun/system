@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
-require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * This class represents a payment gateway
