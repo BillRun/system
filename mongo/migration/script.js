@@ -322,6 +322,26 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
+// BRCD-1475 - Choose CDR fields that will be saved under 'uf'
+for (var i in lastConfig['file_types']) {
+	var fileType = lastConfig['file_types'][i];
+	for (var j in fileType['parser']['structure']) {
+		if (fileType['parser']['structure'][j]['checked'] === undefined) {
+			lastConfig['file_types'][i]['parser']['structure'][j]['checked'] = true;
+		}
+	}
+}
+
+// BRCD-1521 - Add service description to service lfat lines.
+var serviceDescField = {
+	field_name : "foreign.service.description",
+	foreign : { 
+		entity : "service",
+		field  :"invoice_description"
+	}
+};
+addFieldToConfig(lastConfig,serviceDescField,'lines');
+
 db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
@@ -330,3 +350,12 @@ db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
 // BRCD-1516 - Charge command filtration
 db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
+
+// BRCD-1552 collection
+db.collection_steps.dropIndex("aid_1");
+db.collection_steps.dropIndex("trigger_date_1_done_1");
+db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
+db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
+
+//BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
+db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});

@@ -100,7 +100,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 
-	private function __construct() {
+	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -109,6 +109,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
@@ -562,6 +563,10 @@ abstract class Billrun_PaymentGateway {
 			$match = array(
 				'$match' => $filters
 			);
+			if (!empty($specificInvoices)) {
+				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
+			}
+			$pipelines[] = $match;
 		}
 		$match['$match']['$or'] = array(
 				array('due_date' => array('$exists' => false)),
@@ -574,6 +579,12 @@ abstract class Billrun_PaymentGateway {
 				'due_date' => -1,
 			),
 		);
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => array('$ifNull' => array('$method', '$payment_method')),
+			),	
+		);
+		
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
@@ -777,5 +788,9 @@ abstract class Billrun_PaymentGateway {
 		}	
 			
 		return $group;
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		return $responseFromGateway;
 	}
 }
