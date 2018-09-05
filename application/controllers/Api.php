@@ -61,7 +61,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		if (!Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1)) {
+		if (Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1)) {
 			$this->allowed();
 		}
 		try {
