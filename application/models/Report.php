@@ -807,6 +807,14 @@ class ReportModel {
 						'$gte' => new MongoDate($gteDate),
 						'$lt' => new MongoDate($ltDate),
 					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$gteDate = ($op === 'eq') ? $date : $date + 59;
+					$ltDate = ($op === 'eq') ? $date + 59 : $date;
+					$formatedExpression = array(
+						'$gte' => new MongoDate($gteDate),
+						'$lt' => new MongoDate($ltDate),
+					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
 						"\${$op}" => floatval($value)
@@ -846,6 +854,12 @@ class ReportModel {
 				if ($type === 'date') {
 					$date = strtotime($value);
 					$queryDate = ($op === 'gt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
+					$formatedExpression = array(
+						"\${$op}" => new MongoDate($queryDate),
+					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$queryDate = ($op === 'gt' || $op === 'lte') ? $date + 59 : $date;
 					$formatedExpression = array(
 						"\${$op}" => new MongoDate($queryDate),
 					);
