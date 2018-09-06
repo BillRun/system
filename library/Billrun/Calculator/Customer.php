@@ -149,7 +149,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					}
 				}
 			}
-		}		
+		}
 		foreach (array_keys($subscriber->getCustomerOpionalData()) as $key) {
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;

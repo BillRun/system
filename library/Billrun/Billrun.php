@@ -479,13 +479,22 @@ class Billrun_Billrun {
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-		$zone = &$sraw['breakdown'][$row['plan']][$plan_key][$category_key][$zone_key];
+		if (isset($row['offer_id']) && isset($row['start_date'])) {
+			$uniquePlanId = $row['offer_id'] . strtotime($row['start_date']);
+			$zone = &$sraw['breakdown'][$row['plan']][$uniquePlanId][$plan_key][$category_key][$zone_key];
+		} else {
+			$zone = &$sraw['breakdown'][$row['plan']][$plan_key][$category_key][$zone_key];
+		}
 
 		if ($plan_key != 'credit') {
 			if (!empty($counters)) {
 				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
-					$planZone = &$sraw['breakdown'][$row['plan']]['in_plan'][$category_key][$zone_key];
+					if (!is_null($uniquePlanId)) {
+						$planZone = &$sraw['breakdown'][$row['plan']][$uniquePlanId]['in_plan'][$category_key][$zone_key];
+					} else {
+						$planZone = &$sraw['breakdown'][$row['plan']]['in_plan'][$category_key][$zone_key];
+					}
 					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
 					$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
 					$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;

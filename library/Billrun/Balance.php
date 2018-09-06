@@ -36,8 +36,8 @@ class Billrun_Balance implements ArrayAccess {
 
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
-		} else if (isset($options['sid']) && isset($options['billrun_key'])) {
-			$this->load($options['sid'], $options['billrun_key']);
+		} else if (isset($options['sid']) && isset($options['billrun_key']) && isset($options['unique_plan_id'])) {
+			$this->load($options['sid'], $options['billrun_key'], $options['unique_plan_id']);
 		}
 
 	}
@@ -78,13 +78,14 @@ class Billrun_Balance implements ArrayAccess {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	public function load($subscriberId, $billrunKey = NULL) {
-		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
+	public function load($subscriberId, $billrunKey = NULL, $uniquePlanId) {
+		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId . ', unique_plan_id=' . $uniquePlanId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = $this->collection->query(array(
 				'sid' => $subscriberId,
-				'billrun_month' => $billrunKey
+				'billrun_month' => $billrunKey,
+				'unique_plan_id' => $uniquePlanId
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
 			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
@@ -130,7 +131,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $to end date of this package - if package exists.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null ,$to = null, $serviceId = null, $serviceName = null, $joinedField = null) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $uniquePlanId = null, $from = null ,$to = null, $serviceId = null, $serviceName = null, $joinedField = null) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		
@@ -138,7 +139,10 @@ class Billrun_Balance implements ArrayAccess {
 			'sid' => $sid,
 			'billrun_month' => $billrun_key,
 		);
-		$data = self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref);
+		if (!is_null($uniquePlanId)) {
+			$query['unique_plan_id'] = $uniquePlanId;
+		}
+		$data = self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref, $uniquePlanId);
 		if (!is_null($from)) {
 			$data['from'] = new MongoDate($from);
 		}
@@ -186,7 +190,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $current_plan
 	 * @return type
 	 */
-	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
+	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref, $uniquePlanId) {
 		return array(
 			'billrun_month' => $billrun_month,
 			'aid' => $aid,
@@ -194,6 +198,7 @@ class Billrun_Balance implements ArrayAccess {
 			'current_plan' => $plan_ref,
 			'balance' => self::getEmptyBalance("out_plan_"),
 			'tx' => new stdclass,
+			'unique_plan_id' => $uniquePlanId,
 		);
 	}
 

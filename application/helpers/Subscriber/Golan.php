@@ -329,6 +329,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										$offerCredit = $this->refundCredit;
 										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
 										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
+										$offerCredit['offer_id'] = $subscriberOffer['offer_id'];
 										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
 										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
 										$offerCredit['activation'] = $concat['data']['activation_start'];
@@ -850,6 +851,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			return false;
 		}
 		
+		foreach ($arr as $key => $line) {
+			if (isset($line['offer_id']) && isset($line['offer_start_date'])) {
+				$arr[$key]['unique_plan_id'] = $line['offer_id'] . strtotime($line['offer_start_date']);
+			}
+		}
 
 		return $arr;
 	}
