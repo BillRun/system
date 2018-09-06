@@ -416,15 +416,15 @@ class ReportModel {
 		switch ($op) {
 			case 'last_hours':
 				$hours = -1 * intval($value);
-				return strtotime("{$hours} hours");
+				return date("c", strtotime("{$hours} hours"));
 			case 'last_days_include_today':
 				$days = -1 * intval($value);
-				return strtotime("{$days} day midnight");
+				return date("c", strtotime("{$days} day midnight"));
 			case 'last_days':
 				$days = -1 * (intval($value) + 1);
 				return array(
-					'from' => strtotime("{$days} day midnight"),
-					'to' => strtotime("today") - 1	
+					'from' => date("c", strtotime("{$days} day midnight")),
+					'to' => date("c", strtotime("today") - 1)
 				);
 		}
 		// search by field_name
@@ -830,10 +830,10 @@ class ReportModel {
 				}
 				break;
 			case 'between':
-				if ($type === 'date') {
+				if (in_array($type, ['date', 'datetime'])) {
 					$formatedExpression = array(
-						'$gte' => new MongoDate($value['from']),
-						'$lte' => new MongoDate($value['to']),
+						'$gte' => new MongoDate(strtotime($value['from'])),
+						'$lte' => new MongoDate(strtotime($value['to'] + 59)), // to last minute second
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
