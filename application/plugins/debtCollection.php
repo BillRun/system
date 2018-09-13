@@ -56,9 +56,9 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function afterInvoiceConfirmed($bill) {
 		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->immediateEnter) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']]);
 		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->immediateExit) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']]);
 		}
 	}	
 
