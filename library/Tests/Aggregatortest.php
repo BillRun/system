@@ -251,6 +251,12 @@ class Tests_Aggregatore extends UnitTestCase {
 			'expected' => array('billrun' => array('invoice_id' => 128, 'billrun_key' => '201807', 'aid' => 1, 'after_vat' => array("2" => 307), 'total' => 307, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat', 'non', 'credit', 'service'))),
 		),
+		//attributes
+		/* Take last account_name for billrun */
+		array(
+			'test' => array('test_number' => 33, "aid" => 66, 'sid' => 67, 'function' => array( 'takeLastRevision'), 'options' => array("stamp" => "201810", "force_accounts" => array(66))),
+			'expected' => array('billrun' => array('firstname' => 'yossiB'),)
+		),
 		/* 	vat 0 
 		 * Currently vat change is not supported
 		 *  */
@@ -262,13 +268,13 @@ class Tests_Aggregatore extends UnitTestCase {
 //			)),'exepted_invoice'
 		array(
 			'preRun' => ('exepted_invoice'),
-			'test' => array('test_number' => 33,),
+			'test' => array('test_number' => 34,),
 			'expected' => array(),
 		),
 //		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 34, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 35, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 		)
 	);
@@ -324,8 +330,8 @@ class Tests_Aggregatore extends UnitTestCase {
 				}
 			}
 			/* run aggregator */
-			if(array_key_exists('aid', $row['test'])){
-			$returnBillrun = $this->runT($row);
+			if (array_key_exists('aid', $row['test'])) {
+				$returnBillrun = $this->runT($row);
 			}
 			/* run tests functios */
 			if (isset($row['test']['function'])) {
@@ -669,8 +675,9 @@ class Tests_Aggregatore extends UnitTestCase {
 	public function charge_not_included_service($key, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_not_included_service.ini');
 	}
-	
-    /*check if invoice was created*/
+
+	/* check if invoice was created */
+
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
@@ -753,11 +760,30 @@ class Tests_Aggregatore extends UnitTestCase {
 		$generator->load();
 		$generator->generate();
 		$billrunsAfter = $this->getBillruns()->count();
-		if($billrunsAfter > $billrunsBefore){
+		if ($billrunsAfter > $billrunsBefore) {
 			$passed = false;
-			$this->message .="exepted invoice created billrun object".$this->fail;
+			$this->message .= "exepted invoice created billrun object" . $this->fail;
+		} else {
+			$this->message .= "exepted invoice wasn't created billrun object" . $this->pass;
+		}
+		return $passed;
+	}
+
+	/*When an account has multiple revisions in a specific billing cycle, take the last one when generating the billrun object
+	 *  (check subs.attributes.account_name field)*/
+	public function takeLastRevision($key, $returnBillrun, $row) {
+		$this->message .= "<b> Take last account_name for billrun with many revisions  at a cycle:</b> <br>";
+		$passed = true;
+		$query  = array('aid' => 66, "billrun_key" => '201810');
+		$lastRvision = $this->getBillruns($query);
+		foreach ($lastRvision as $last) {
+			$lastR[] = $last->getRawData();
+		}
+		if($lastR[0]['attributes']['firstname'] === $row['expected']['billrun']['firstname']){
+			$this->message .= "The latest revision of the subscriber was taken" . $this->pass; 
 		}else{
-			$this->message .="exepted invoice wasn't created billrun object".$this->pass;
+			$passed = false;
+				$this->message .= "The version taken is not the last" . $this->fail; 
 		}
 		return $passed;
 	}
