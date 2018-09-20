@@ -46,6 +46,8 @@ abstract class Billrun_Bill {
 	 */
 	public function __construct($options) {
 		$this->updateLeft();
+		$this->updateLeftToPay();
+		$this->recalculatePaymentFields();
 	}
 
 	public function getRawData() {
@@ -299,6 +301,18 @@ abstract class Billrun_Bill {
 			}
 			if (abs($this->data['left']) < Billrun_Bill::precision) {
 				$this->data['left'] = 0;
+			}
+		}
+	}
+		
+	protected function updateLeftToPay() {
+		if ($this->getDue() > 0) {
+			$this->data['left_to_pay'] = $this->getAmount();
+			foreach ($this->getPaidByBills() as $paidByBills) {
+				$this->data['left_to_pay'] -= array_sum($paidByBills);
+			}
+			if ($this->data['left_to_pay'] < Billrun_Bill::precision) {
+				$this->data['left_to_pay'] = 0;
 			}
 		}
 	}
