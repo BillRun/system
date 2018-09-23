@@ -35,6 +35,10 @@ class Mongodloid_Connection {
 	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
+		// casting int values that are passed from config (string)
+		$options['socketTimeoutMS'] = intval($options['socketTimeoutMS']);
+		$options['wTimeoutMS'] = intval($options['wTimeoutMS']);
+		$options['connectTimeoutMS'] = intval($options['connectTimeoutMS']);
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;
