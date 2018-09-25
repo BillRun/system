@@ -58,7 +58,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
                             [
                                 'field' => 'addon_balances',
                                 'to_field' => 'unified_addon_balances',
-                                'keys' => ['package_id','service_name'],
+                                'keys' => ['package_id','billrun_month'],
                                 'values' => [
                                     '$inc' => ['added_usage'],
                                     '$setOnInsert' => ['billrun_month','service_name','package_id']
