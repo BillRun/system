@@ -19,12 +19,14 @@ class  Run_collect_stepAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->allowed();
+		if(!RUNNING_FROM_CLI) {
+			$this->allowed();
+		}
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		try {
-			$jsonAids = $request->getPost('aids', '[]');
+			$jsonAids = $request->getRequest('aids', '[]');
 			$aids = json_decode($jsonAids, TRUE);
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());

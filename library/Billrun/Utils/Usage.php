@@ -55,7 +55,7 @@ class Billrun_Utils_Usage {
 				break;
 
 			default:
-				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::ERR);
+				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;
 		}
 		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);

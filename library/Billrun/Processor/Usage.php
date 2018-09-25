@@ -126,7 +126,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 		foreach ($parsedData as $parsedRow) {
+			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 			$row = $this->getBillRunLine($parsedRow);
+			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
 				return false;
 			}

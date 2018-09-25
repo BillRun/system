@@ -106,6 +106,12 @@ class Billrun_Factory {
 	protected static $plan = array();
 
 	/**
+	 * Service instances
+	 *
+	 * @var Billrun_Billrun Service
+	 */
+	protected static $service = array();
+	/**
 	 * Smser instance
 	 * 
 	 * @var Billrun_Billrun Smser
@@ -126,6 +132,13 @@ class Billrun_Factory {
 	 */
 	protected static $auth = null;
 	
+	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $collection;
+
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -378,6 +391,25 @@ class Billrun_Factory {
 	}
 
 	/**
+	 * method to retrieve the service instance
+	 *
+	 * @return Billrun_Plan
+	 */
+	static public function service($params) {
+
+		if (isset($params['disableCache']) && $params['disableCache']) {
+			return new Billrun_Service($params);
+		}
+		// unique stamp per plan
+		$stamp = Billrun_Util::generateArrayStamp($params);
+
+		if (!isset(self::$service[$stamp])) {
+			self::$service[$stamp] = new Billrun_Service($params);
+		}
+		return self::$service[$stamp];
+	}
+
+	/**
 	 * method to retrieve a billrun instance
 	 * 
 	 * @return Billrun_Billrun
@@ -495,6 +527,19 @@ class Billrun_Factory {
 			return;
 		}
 		unset(self::${$instanceName}[$stamp]);
+	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function collection() {
+		if (!self::$collection) {
+			self::$collection = Billrun_Collection::getInstance();
+		}
+
+		return self::$collection;
 	}
 
 }

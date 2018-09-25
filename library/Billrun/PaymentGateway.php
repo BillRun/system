@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
-require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * This class represents a payment gateway
@@ -100,7 +98,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 
-	private function __construct() {
+	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -109,6 +107,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
@@ -498,11 +497,11 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Completed", 'additional_params' => $params);
 		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Pending", 'additional_params' => $params);
 		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Rejected", 'additional_params' => $params);
 		} else {
 			throw new Exception("Unknown status");
 		}
@@ -564,14 +563,24 @@ abstract class Billrun_PaymentGateway {
 			if (!empty($specificInvoices)) {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
-			$pipelines[] = $match;
 		}
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
+		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
 				'due_date' => -1,
 			),
 		);
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => array('$ifNull' => array('$method', '$payment_method')),
+			),	
+		);
+		
 		$pipelines[] = array(
 			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
 		);
@@ -775,5 +784,9 @@ abstract class Billrun_PaymentGateway {
 		}	
 			
 		return $group;
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		return $responseFromGateway;
 	}
 }
