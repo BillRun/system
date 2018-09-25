@@ -474,6 +474,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		$size = !empty($chargeOptions['size']) ? $chargeOptions['size'] : 100;
+		$page = !empty($chargeOptions['page']) ? $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		if (empty($filtersQuery) && !empty($chargeOptions)) {
 			throw new Exception("Can't Charge, wrong input");
@@ -499,7 +501,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
 			$filtersQuery['$and'] = array($accountIdQuery);
-			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode));
+			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode, $page, $size));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
 				$subscriber = $subscribers_in_array[$billDetails['aid']];
