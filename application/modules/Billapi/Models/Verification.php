@@ -109,6 +109,25 @@ trait Models_Verification {
 				$translated[$type] = array_merge($translated[$type], $params);
 			}
 		}
+		if(isset($requestOptions['push_fields']) || isset($requestOptions['pull_fields'])){
+			$ops = array('push_fields' => 'push', 'pull_fields' => 'pull');
+			$fields_settings = $config['fields'];
+			$fields_names = array_column($fields_settings, 'field_name');
+			foreach ($ops as $op => $op_name) {
+				if (isset($requestOptions[$op])) {
+					foreach ($requestOptions[$op] as $op_field) {
+						$index = array_search($op_field['field_name'], $fields_names);
+						if($index !== FALSE && $fields_settings[$index]['multiple']) {
+							$translated['query_options'][$op][] = $op_field;
+						} else {
+							throw new Billrun_Exceptions_Api($error, array(), "Can not run {$op_name} on non multiple field '{$op_field['field_name']}'");
+
+						}
+					}
+				}
+				
+			}
+		}
 		if ($forceNotEmpty) {
 			$this->verifyTranslated($translated);
 		}
@@ -119,7 +138,7 @@ trait Models_Verification {
 			$translated['query_parameters'] = $this->transformQueryById($translated['query_parameters']);
 		}
 		
-		return array($translated['query_parameters'], $translated['update_parameters']);
+		return array($translated['query_parameters'], $translated['update_parameters'], $translated['query_options']);
 	}
 
 	/**
