@@ -1510,6 +1510,20 @@ class Billrun_Util {
 		return $ret;
 	}
 	
+	public static function getCmdCommand($options, $params = array()) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		if (!is_array($options)) {
+			$options = array($options);
+		}
+		foreach ($options as $option) {
+			$cmd .= ' ' . $option;
+		}
+		foreach ($params as $paramKey => $paramVal) {
+			$cmd .= ' ' . $paramKey . '="' . $paramVal . '"';
+		}
+		return $cmd;
+	}
+	
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
@@ -1623,6 +1637,28 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+	/**
+	 * Deeply unsets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param mixed $value - value to unset
+	 */
+	public static function unsetIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		unset($current[$value]);
+	}
+
+
 	/**
 	 * Gets the value from an array.
 	 * Also supports deep fetch (for nested arrays)

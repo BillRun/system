@@ -176,6 +176,7 @@ class BillrunController extends ApiController {
 		$request = $this->getRequest();
 		$params = array();
 		$mode = $request->get('mode');
+		$params['date'] = $request->get('date');
 		$params['aids'] = $request->get('aids');
 		$params['invoices'] = $request->get('invoices');
 		$params['billrun_key'] = $request->get('billrun_key');

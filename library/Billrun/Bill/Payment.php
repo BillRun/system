@@ -198,8 +198,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
 		$rawData['rejection_code'] = $response['status'];
-		if (isset($response['extra_params'])) {
-			$rawData['vendor_response'] = $response['extra_params'];
+		if (isset($response['additional_params'])) {
+			$rawData['vendor_response'] = $response['additional_params'];
 		}
 		return new $className($rawData);
 	}
@@ -426,7 +426,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setPaymentStatus($response, $gatewayName) {
 		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
 		$this->data['last_checked_pending'] = new MongoDate();
-		$extraParams = isset($response['extra_params']) ? $response['extra_params'] : array();	
+		$extraParams = isset($response['additional_params']) ? $response['additional_params'] : array();
 		$vendorResponse = array_merge($vendorResponse, $extraParams);
 		$this->data['vendor_response'] = $vendorResponse;
 		$this->save();
@@ -471,6 +471,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 */
 	public static function makePayment($chargeOptions) {
+		if (!empty($chargeOptions['aids'])) {
+			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
+		}
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		if (empty($filtersQuery) && !empty($chargeOptions)) {
 			throw new Exception("Can't Charge, wrong input");
@@ -497,6 +500,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}
 		foreach ($customers as $customer) {
+			$paymentParams = array();
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
@@ -544,7 +548,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			try {
+				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+				continue;
+			}
 			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
 				if ($gatewayDetails['amount'] > 0) {
 					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
@@ -583,6 +592,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
 				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
 			}
@@ -625,6 +635,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public function getPaymentGatewayDetails(){
 		return $this->data['gateway_details'];
+	}
+	
+	public function getAid(){
+		return $this->data['aid'];
 	}
 	
 	protected function getPaymentGatewayTransactionId(){
