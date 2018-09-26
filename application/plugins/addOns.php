@@ -393,10 +393,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $update;
 	}
 	
-	protected function getRelevantBalance($balances, $packageId) {
+	protected function getRelevantBalance($balances, $billrunId) {
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
-			if (isset($rawData['service_id'] ) && $rawData['service_id'] == $packageId) {
+			if (isset($rawData['billrun_month'] ) && $rawData['billrun_month'] == $billrunId) {
 				return $rawData;
 			}
 		}
@@ -418,13 +418,13 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $sid => $packageUsage) {
-			foreach ($packageUsage as $packageId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $packageId);
+			foreach ($packageUsage as $billrunId => $usageByUsaget) {
+				$balanceToUpdate = $this->getRelevantBalance($balances, $billrunId);
 				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
 
 				$query = array(
 					'sid' => $sid,
-					'service_id' => $packageId,
+					'billrun_month' => $billrunId,
 				);
 
 				$balancesColl->update($query, $updateData);
@@ -448,16 +448,16 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$addonBalances= array_merge(@Billrun_Util::getFieldVal($line['addon_balances'],[]),@Billrun_Util::getFieldVal($line['unified_addon_balances'],[]));
 		foreach ($addonBalances as $addonBalance) {
-			$packageId = $addonBalance['package_id'];
-			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] : 0;
-			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];
-			@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount']; 
+			$billrunId = $addonBalance['billrun_month'];
+			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] : 0;
+			$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];
+			@$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount']; 
 			if (!empty($addonBalance['added_joined_usage'])) {
 				$joinedField = $addonBalance['added_joined_usage']['joined_field'];
 				$joinedUsage = $addonBalance['added_joined_usage']['usage'];
-				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] : 0;
-				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
-				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount'];
+				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage'] : 0;
+				$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
+				@$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount'];
 			}
 		}
 	}
