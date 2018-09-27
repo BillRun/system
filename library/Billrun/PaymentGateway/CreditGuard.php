@@ -366,12 +366,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'from' => $time,
 				'payment_gateway' => $accountGateway,
 			);
-			Billrun_Factory::log("Updating expiration date", Zend_Log::DEBUG);
+			Billrun_Factory::log("Updating expiration date for aid=" . $paymentParams['aid'] . " to date " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
 			try {
 				$this->account->permanentChange($query, $update);
-				Billrun_Factory::log("Expiration date was updated to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+				Billrun_Factory::log("Expiration date was updated for aid=" . $paymentParams['aid'] . " to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
 			} catch (Exception $ex) {
-				Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::DEBUG);
+				Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::ALERT);
 				return false;
 			}
 			
