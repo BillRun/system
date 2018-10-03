@@ -752,7 +752,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$filters = $this->getFilters($row);
 			foreach ($filters as $filter) {
 				if ($this->isFilterConditionsMet($row, $filter)) {
-					$row['skip_calc'] = $this->getCalcsToSkip($filter);
+                                        if(isset($row['skip_calc'])) {
+                                                $row['skip_calc'] = array_unique(array_merge($row['skip_calc'],$this->getCalcsToSkip($filter)));
+                                        } else {
+                                                $row['skip_calc'] = $this->getCalcsToSkip($filter);
+                                        }
 					continue 2;
 				}
 			}
