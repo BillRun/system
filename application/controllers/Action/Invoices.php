@@ -72,17 +72,22 @@ class AccountInvoicesAction extends ApiAction {
 		$aid = $request->get('aid');
 		$billrun_key = $request->get('billrun_key');
 		$invoiceId = $request->get('iid');
-		if (is_null($invoiceId)) {
-			$query = array(
-				'aid' => (int) $aid,
-				'billrun_key' => $billrun_key
-			);
-			$invoice = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->current();
-			if ($invoice->isEmpty()) {
-				return 'Invoice was not found';
-			}
-			$invoiceId = $invoice['invoice_id'];
+		
+		$query = array(
+			'aid' => (int) $aid,
+			'billrun_key' => $billrun_key
+		);
+		if (!empty($invoiceId)) {
+			$query['invoice_id'] = (int) $invoiceId;
 		}
+		$invoice = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->current();
+		if ($invoice->isEmpty()) {
+			return 'Invoice was not found';
+		}
+		if (empty($invoice->get('billed')) || $invoice->get('billed') !== 1) {
+			return 'Invoice not confirmed';
+		}
+		$invoiceId = $invoice['invoice_id'];
 		
 		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
 		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
