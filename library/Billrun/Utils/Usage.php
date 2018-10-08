@@ -12,17 +12,18 @@
  */
 class Billrun_Utils_Usage {
 
-	static public function retriveEntityFromUsage($row, $entityType) {
+	static public function retriveEntityFromUsage($row, $entityType, $foreignFieldConfig = array()) {
 		$entityQueryData = array();
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
+		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['foreign']['time_fields'],[]), $row['urt']->sec))
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), $timeBoundingQuery );
 				$entityQueryData['sort'] = array('from' => -1);
 				break;
 			case 'account' :
@@ -30,7 +31,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), $timeBoundingQuery);
 				$entityQueryData['sort'] = array('from' => -1);
 				break;			
 			
@@ -39,7 +40,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'plans';
-				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), $timeBoundingQuery);
 				$entityQueryData['sort'] = array('from' => -1);
 
 				break;
@@ -51,7 +52,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'rates';
-				$entityQueryData['query'] = array_merge(array('_id' => $row['arate']['$id']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array_merge(array('_id' => $row['arate']['$id']), $timeBoundingQuery);
 				break;
 
 			default:
