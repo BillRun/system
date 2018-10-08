@@ -246,7 +246,6 @@ class Generator_Golanxml extends Billrun_Generator {
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
-			$planById = array();
 			$this->writer->startElement('SUBSCRIBER_INF');
 			$this->writer->startElement('SUBSCRIBER_DETAILS');
 			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
@@ -260,7 +259,6 @@ class Generator_Golanxml extends Billrun_Generator {
 				if (empty($plansInCycle)) {
 					$plansInCycle = null;
 				}
-				$planById[$plan['plan']] = $plan['id'];
 				$this->writer->writeElement('OFFER_ID_' . $key, $plan['id']);		
 			}
 			$this->writer->endElement();
@@ -273,6 +271,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('SUBSCRIBER_GIFT_USAGE');
 				$this->writer->writeElement('GIFTID_GIFTCLASSNAME', "GC_GOLAN");
 				$planCurrentPlan = $plan['current_plan'];
+				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planPrice = $plan['fraction'] * $planObj['price'];
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
@@ -297,8 +296,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				$subscriber_gift_usage_MMS_FREEUSAGE = 0;
 				$subscriber_gift_usage_MMS_ABOVEFREECOST = 0;
 				$subscriber_gift_usage_MMS_ABOVEFREEUSAGE = 0;
-				if (isset($subscriber['breakdown'][$plan['plan']]['over_plan']) && is_array($subscriber['breakdown'][$plan['plan']]['over_plan'])) {
-					foreach ($subscriber['breakdown'][$plan['plan']]['over_plan'] as $category_key => $category) {
+				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'])) {
+					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'] as $category_key => $category) {
 						if (!in_array($category_key, array('intl', 'roaming'))) { // Sefi's request from 2014-03-06 + do not count VF over_plan
 							foreach ($category as $zone) {
 								$subscriber_gift_usage_VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
@@ -313,8 +312,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 					}
 				}
-				if (isset($subscriber['breakdown'][$plan['plan']]['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']]['in_plan'])) {
-					foreach ($subscriber['breakdown'][$plan['plan']]['in_plan'] as $category_key => $category) {
+				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'])) {
+					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'] as $category_key => $category) {
 						if ($category_key != 'roaming') { // Do not count VF in_plan
 							foreach ($category as $zone) {
 								$subscriber_gift_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
@@ -327,8 +326,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 
 				$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION = 0;
-				if (isset($subscriber['breakdown'][$plan['plan']]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$plan['plan']]['credit']['refund_vatable'])) {
-					foreach ($subscriber['breakdown'][$plan['plan']]['credit']['refund_vatable'] as $key => $credit) {
+				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['credit']['refund_vatable'])) {
+					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['credit']['refund_vatable'] as $key => $credit) {
 						if (strpos($key, 'CRM-REFUND_PROMOTION') !== FALSE) {
 							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION += floatval($credit);
 						}
@@ -366,12 +365,16 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_gift_usage_MMS_ABOVEFREEUSAGE);
 				$this->writer->endElement(); // end SUBSCRIBER_GIFT_USAGE
 			}
-
-			foreach ($plansInCycle as $key => $planInCycle) {
+			$planInCycle = null;
+			foreach ($plans as $key => $planOffer) {
+				$current_plan_ref = $planOffer['current_plan'];
+				if (MongoDBRef::isRef($current_plan_ref)) {
+					$planInCycle = $this->getPlanById(strval($current_plan_ref['$id']));
+				}
 				if (isset($planInCycle['include']['groups'])) {
 					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE_BY_PLAN');
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
-					$this->writer->writeElement('OFFER_ID', $planById[$planInCycle['name']]);
+					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
@@ -457,9 +460,9 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
 				
 			foreach ($this->plansToCharge as $planName) {
-				if(isset($subscriber['breakdown'][$planName]['service']['base']) ) {// the if is here to prevent possible regesssion
+				if(isset($subscriber['breakdown'][$planName][$uniquePlanId]['service']['base']) ) {// the if is here to prevent possible regesssion
 					$servicesCost = array();
-					$servicesDetails = $subscriber['breakdown'][$planName]['service']['base'];
+					$servicesDetails = $subscriber['breakdown'][$planName][$uniquePlanId]['service']['base'];
 				} else {
 					$servicesDetails = array();
 					$servicesCost = array();
@@ -503,16 +506,46 @@ class Generator_Golanxml extends Billrun_Generator {
 					$servicesTotalCost[$name] = 0;
 				}
 				$servicesTotalCost[$name] += $serviceCost;
-			}
+			}			
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
-			foreach ($this->plansToCharge as $planToCharge) {
+
+			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
+			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
+			$servicesTotalSum = 0;
+			foreach ($servicesTotalCost as $serviceSum) {
+				$servicesTotalSum += $serviceSum;
+			}
+			$fixedCharges = $servicesTotalSum + $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+			$this->writer->writeElement('FIXED_CHARGES', $fixedCharges);
+			$additionalCharges = $subscriber_sumup_TOTAL_ABOVE_GIFT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
+			$this->writer->writeElement('ADDITIONAL_CHARGES', $additionalCharges);
+			$subscriberManualCorrections = $subscriber_sumup_TOTAL_MANUAL_CORRECTION - $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+			$this->writer->writeElement('SUBSCRIBER_MANUAL_CORRECTIONS', $subscriberManualCorrections);
+			$subscriber_charge_summary_vatable = isset($subscriber['totals']['vatable']) ? $subscriber['totals']['vatable'] : 0;
+			$subscriber_charge_summary_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
+			$subscriber_charge_summary_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
+			$subscriber_charge_summary_vat_free = $subscriber_charge_summary_before_vat - $subscriber_charge_summary_vatable;
+			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
+			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_charge_summary_vatable);
+			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_charge_summary_after_vat);
+			$this->writer->writeElement('TOTAL_CHARGE_EXEMPT_VAT', $subscriber_charge_summary_vat_free);
+			$this->writer->endElement(); // end SUBSCRIBER_CHARGE_SUMMARY
+
+			foreach ($plans as $planToCharge) {
+				$planUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
 				$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 				$this->writer->startElement('BREAKDOWN_ENTRY');
-				$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge);
+				$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 				$this->writer->writeElement('UNITS', 1);
-				$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge]['in_plan']['base']['service']['cost'] : 0;
+				$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost'] : 0;
 				$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
 				$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
 				$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
@@ -521,8 +554,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
 				$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
 				$this->writer->endElement();			
-				$over_plan_base = isset($subscriber['breakdown'][$planToCharge]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge]['over_plan']['base'] : array();
-				$out_plan_base = isset($subscriber['breakdown'][$planToCharge]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge]['out_plan']['base'] : array();
+				$over_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base'] : array();
+				$out_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base'] : array();
 				$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
 				foreach ($over_out_plan_base as $zone_name => $zone) {
 					if ($zone_name != 'service') {
@@ -551,14 +584,14 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'CHARGED_SERVICES');
 				foreach ($servicesCost as $chargedService => $serviceCost) {
-					if (isset($subscriber['breakdown'][$planToCharge]['service']['base']) && is_array($subscriber['breakdown'][$planToCharge]['service']['base'])) {
-						if (isset($subscriber['breakdown'][$planToCharge]['service']['base'][$chargedService])) {
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'])) {
+						if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService])) {
 							$this->writer->startElement('BREAKDOWN_ENTRY');
 							$this->writer->writeElement('TITLE', $chargedService);
 							$this->writer->writeElement('UNITS', 1);
 							$service_entry_COST_WITHOUTVAT = $serviceCost;
 							$this->writer->writeElement('COST_WITHOUTVAT', $service_entry_COST_WITHOUTVAT);
-							$service_entry_VAT = $subscriber['breakdown'][$planToCharge]['service']['base'][$chargedService]['vat'] * 100;
+							$service_entry_VAT = $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService]['vat'] * 100;
 							$this->writer->writeElement('VAT', $service_entry_VAT);
 							$service_entry_VAT_COST = $service_entry_COST_WITHOUTVAT * $service_entry_VAT / 100;
 							$this->writer->writeElement('VAT_COST', $service_entry_VAT_COST);
@@ -573,8 +606,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'INTERNATIONAL');
 				$subscriber_intl = array();
-				if (isset($subscriber['breakdown'][$planToCharge]) && is_array($subscriber['breakdown'][$planToCharge])) {
-					foreach ($subscriber['breakdown'][$planToCharge] as $plan) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
 						if (isset($plan['intl'])) {
 							foreach ($plan['intl'] as $zone_name => $zone) {
 								foreach ($zone['totals'] as $usage_type => $usage_totals) {
@@ -614,8 +647,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'SPECIAL_SERVICES');
 				$subscriber_special = array();
-				if (isset($subscriber['breakdown'][$planToCharge]) && is_array($subscriber['breakdown'][$planToCharge])) {
-					foreach ($subscriber['breakdown'][$planToCharge] as $plan) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
 						if (isset($plan['special'])) {
 							foreach ($plan['special'] as $zone_name => $zone) {
 								foreach ($zone['totals'] as $usage_type => $usage_totals) {
@@ -655,8 +688,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'ROAMING');
 				$subscriber_roaming = array();
-				if (isset($subscriber['breakdown'][$planToCharge]) && is_array($subscriber['breakdown'][$planToCharge])) {
-					foreach ($subscriber['breakdown'][$planToCharge] as $plan) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
 						if (isset($plan['roaming'])) {
 							foreach ($plan['roaming'] as $zone_name => $zone) {
 								foreach ($zone['totals'] as $usage_type => $usage_totals) {
@@ -710,8 +743,8 @@ class Generator_Golanxml extends Billrun_Generator {
 
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'CHARGE_PER_CLI');
-				if (isset($subscriber['breakdown'][$planToCharge]['credit']['charge_vatable']) && is_array($subscriber['breakdown'][$planToCharge]['credit']['charge_vatable'])) {
-					foreach ($subscriber['breakdown'][$planToCharge]['credit']['charge_vatable'] as $reason => $cost) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'] as $reason => $cost) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 						$this->writer->writeElement('UNITS', 1);
@@ -725,8 +758,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->endElement();
 					}
 				}
-				if (isset($subscriber['breakdown'][$planToCharge]['credit']['charge_vat_free']) && is_array($subscriber['breakdown'][$planToCharge]['credit']['charge_vat_free'])) {
-					foreach ($subscriber['breakdown'][$planToCharge]['credit']['charge_vat_free'] as $reason => $cost) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'] as $reason => $cost) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 						$this->writer->writeElement('UNITS', 1);
@@ -744,8 +777,8 @@ class Generator_Golanxml extends Billrun_Generator {
 
 				$this->writer->startElement('BREAKDOWN_TOPIC');
 				$this->writer->writeAttribute('name', 'REFUND_PER_CLI');
-				if (isset($subscriber['breakdown'][$planToCharge]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$planToCharge]['credit']['refund_vatable'])) {
-					foreach ($subscriber['breakdown'][$planToCharge]['credit']['refund_vatable'] as $reason => $cost) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'] as $reason => $cost) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 						$this->writer->writeElement('UNITS', 1);
@@ -759,8 +792,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->endElement();
 					}
 				}
-				if (isset($subscriber['breakdown'][$planToCharge]['credit']['refund_vat_free']) && is_array($subscriber['breakdown'][$planToCharge]['credit']['refund_vat_free'])) {
-					foreach ($subscriber['breakdown'][$planToCharge]['credit']['refund_vat_free'] as $reason => $cost) {
+				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'])) {
+					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'] as $reason => $cost) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 						$this->writer->writeElement('UNITS', 1);

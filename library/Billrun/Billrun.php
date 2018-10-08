@@ -477,10 +477,11 @@ class Billrun_Billrun {
 	 * @todo remove billrun_key parameter
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
+		$uniquePlanId = null;
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-		if (isset($row['offer_id']) && isset($row['start_date'])) {
-			$uniquePlanId = $row['offer_id'] . strtotime($row['start_date']);
+		if (isset($row['unique_plan_id'])) {
+			$uniquePlanId = $row['unique_plan_id'];
 			$zone = &$sraw['breakdown'][$row['plan']][$uniquePlanId][$plan_key][$category_key][$zone_key];
 		} else {
 			$zone = &$sraw['breakdown'][$row['plan']][$plan_key][$category_key][$zone_key];
@@ -490,7 +491,7 @@ class Billrun_Billrun {
 			if (!empty($counters)) {
 				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
-					if (!is_null($uniquePlanId)) {
+					if (!empty($uniquePlanId)) {
 						$planZone = &$sraw['breakdown'][$row['plan']][$uniquePlanId]['in_plan'][$category_key][$zone_key];
 					} else {
 						$planZone = &$sraw['breakdown'][$row['plan']]['in_plan'][$category_key][$zone_key];

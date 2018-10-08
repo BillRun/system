@@ -285,6 +285,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
 							$sid = intval($subscriber['subscriber_id']);
+							$uniquePlanId = null;
 							$concat = array(
 								'time' => $time,
 								'data' => array(
@@ -318,10 +319,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							if (!empty($subscriberOffers)) {
 								foreach ($subscriberOffers as $subscriberOffer) {
 									$offer = array();
+									if (empty($uniquePlanId)) {
+										$uniquePlanId = $subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']);
+									}
 									$offer['id'] = $subscriberOffer['offer_id'];
 									$offer['plan'] = $subscriberOffer['plan'];
 									$offer['start_date'] = $subscriberOffer['start_date'];
 									$offer['end_date'] = $subscriberOffer['end_date'];
+									$offer['unique_plan_id'] = $subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']);
 									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
@@ -330,6 +335,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
 										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
 										$offerCredit['offer_id'] = $subscriberOffer['offer_id'];
+										$offerCredit['unique_plan_id'] = $subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']);
 										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
 										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
 										$offerCredit['activation'] = $concat['data']['activation_start'];
@@ -385,6 +391,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$credit['activation'] = $concat['data']['activation_start'];
 									$credit['deactivation'] = $concat['data']['activation_end'];
 									$credit['fraction'] = $concat['data']['fraction'];
+									if (!empty($uniquePlanId)) {
+										$credit['unique_plan_id'] = $uniquePlanId;
+									} else {
+										Billrun_Factory::log("Credit for sid " . $sid . " is missing unique_plan_id field", Zend_log::WARN);
+									}
 									if ($sid) {
 										$credit['plan'] = empty($concat['data']['plan']) ? "ACCOUNT" : $concat['data']['plan'];
 									} else {
@@ -418,6 +429,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										$service['to_date'] = $concat['data']['activation_end'];
 									}
 									$service['fraction'] = $this->calcServiceFraction($service['from_date'], $service['to_date'], $sid);
+									if (!empty($uniquePlanId)) {
+										$service['unique_plan_id'] = $uniquePlanId;
+									} else {
+										Billrun_Factory::log("Service for sid " . $sid . " is missing unique_plan_id field", Zend_log::WARN);
+									}
 									$service['count'] = 1;
 									$service['aid'] = $concat['data']['aid'];
 									$service['sid'] = $concat['data']['sid'];
@@ -778,6 +794,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (!empty($offer) && isset($offer['start_date']) && isset($offer['end_date'])) {
 			$flat_entry['start_date'] = $offer['start_date'];
 			$flat_entry['end_date'] = $offer['end_date'];
+		}
+		if (!empty($offer) && isset($offer['start_date']) && isset($offer['id'])) {
+			$flat_entry['unique_plan_id'] = $offer['id'] . strtotime($offer['start_date']);
 		}
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction']);
 		$flat_entry['stamp'] = $stamp;

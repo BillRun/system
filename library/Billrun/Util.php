@@ -534,6 +534,7 @@ class Billrun_Util {
 			'source_amount_without_vat' => array(),
 			'additional' => array(),
 			'id' => array(),
+			'unique_plan_id' => array(),
 		);
 		$filtered_request = array();
 
