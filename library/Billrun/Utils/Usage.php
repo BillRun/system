@@ -16,7 +16,7 @@ class Billrun_Utils_Usage {
 		$entityQueryData = array();
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
-		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['foreign']['time_fields'],[]), $row['urt']->sec))
+		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['time_fields'],[]), $row['urt'])->sec);
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
