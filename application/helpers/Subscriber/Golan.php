@@ -872,7 +872,16 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		
 		foreach ($arr as $key => $line) {
 			if (isset($line['offer_id']) && isset($line['offer_start_date'])) {
-				$arr[$key]['unique_plan_id'] = $line['offer_id'] . strtotime($line['offer_start_date']);
+				$billrunKey = Billrun_Util::getBillrunKey(strtotime($line['time']));
+				$billrunStart = Billrun_Util::getStartTime($billrunKey);
+				$billrunEnd = Billrun_Util::getEndTime($billrunKey);
+				if (strtotime($line['offer_start_date']) < $billrunStart) {
+					$arr[$key]['offer_start_date'] = date(Billrun_Base::base_dateformat, $billrunStart);
+				}
+				if (strtotime($line['offer_end_date']) > $billrunEnd) {
+					$arr[$key]['offer_end_date'] = date(Billrun_Base::base_dateformat, $billrunEnd);
+				}
+				$arr[$key]['unique_plan_id'] = $line['offer_id'] . strtotime($arr[$key]['offer_start_date']);
 			}
 		}
 
