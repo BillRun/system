@@ -320,13 +320,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								foreach ($subscriberOffers as $subscriberOffer) {
 									$offer = array();
 									if (empty($uniquePlanId)) {
-										$uniquePlanId = (int)($subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']));
+										$uniquePlanId = $this->generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
 									}
 									$offer['id'] = $subscriberOffer['offer_id'];
 									$offer['plan'] = $subscriberOffer['plan'];
 									$offer['start_date'] = $subscriberOffer['start_date'];
 									$offer['end_date'] = $subscriberOffer['end_date'];
-									$offer['unique_plan_id'] = (int)($subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']));
+									$offer['unique_plan_id'] = $this->generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
 									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
@@ -335,7 +335,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
 										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
 										$offerCredit['offer_id'] = $subscriberOffer['offer_id'];
-										$offerCredit['unique_plan_id'] = (int)($subscriberOffer['offer_id'] . strtotime($subscriberOffer['start_date']));
+										$offerCredit['unique_plan_id'] = $this->generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
 										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
 										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
 										$offerCredit['activation'] = $concat['data']['activation_start'];
@@ -796,7 +796,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$flat_entry['end_date'] = $offer['end_date'];
 		}
 		if (!empty($offer) && isset($offer['start_date']) && isset($offer['id'])) {
-			$flat_entry['unique_plan_id'] = (int)($offer['id'] . strtotime($offer['start_date']));
+			$flat_entry['unique_plan_id'] = $this->generatePlanUniqueId($offer['id'], $offer['start_date']);
 		}
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction']);
 		$flat_entry['stamp'] = $stamp;
@@ -881,7 +881,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				if (strtotime($line['offer_end_date']) > $billrunEnd) {
 					$arr[$key]['offer_end_date'] = date(Billrun_Base::base_dateformat, $billrunEnd);
 				}
-				$arr[$key]['unique_plan_id'] = (int)($line['offer_id'] . strtotime($arr[$key]['offer_start_date']));
+				$arr[$key]['unique_plan_id'] = self::generatePlanUniqueId($line['offer_id'], $arr[$key]['offer_start_date']);
 			}
 		}
 
@@ -972,6 +972,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		
 		return 0;
+	}
+	
+	protected function generatePlanUniqueId($offerId, $offerStartDate) {
+		return (int)($offerId . strtotime($offerStartDate));
 	}
 
 }
