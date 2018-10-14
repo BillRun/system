@@ -8,7 +8,6 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
     private $tag;
 	
 	protected $objects = array();
-	protected $isConstructed;
 
 	/**
      * @param int $tag
@@ -60,7 +59,7 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
     }
 
     public function getIdentifier() {
-		$isConstructed = $this->objects[0]['isConstructed'];
+		$isConstructed = isset($this->objects[0]) ? $this->objects[0]['isConstructed'] : false;
 		$identifier = Identifier::create(Identifier::CLASS_APPLICATION, $isConstructed, $this->tag);
 
         return is_int($identifier) ? chr($identifier) : $identifier;

@@ -18,16 +18,20 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	static protected $type = 'tap3';
 	
 	protected $vpmnTadig = '';
+	protected $stamps = '';
 	protected $startTime = null;
 	protected $timeZoneOffset = '';
 	protected $timeZoneOffsetCode = '';
 	protected $startTimeStamp = '';
 	protected $numOfDecPlaces;
+	protected $logStamp = null;
 	
 	public function __construct($options = array()) {
-		parent::__construct($options);
 		$this->vpmnTadig = $options['tadig'];
+		$this->stamps = isset($options['stamps']) ? $options['stamps'] : array();
 		$this->startTime = time();
+		
+		parent::__construct($options);
 		$this->timeZoneOffset = date($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
 		$this->timeZoneOffsetCode = intval($this->getConfig('datetime_offset_code', 0));
 		$this->startTimeStamp = date($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
@@ -40,6 +44,38 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getFieldsMapping($row) {
 		$callEventDetail = $this->getCallEventDetail($row);
 		return $this->getConfig(array('fields_mapping', $callEventDetail), array());
+	}
+	
+	/**
+	 * see parent::beforeExport
+	 * TAP3 should handle locking
+	 */
+	function beforeExport() {
+		$this->createLogDB($this->getLogStamp());
+	}
+	
+	/**
+	 * see parent::afterExport
+	 * TAP3 should handle locking
+	 */
+	function afterExport() {
+		$this->logDB($this->getLogStamp(), $this->getLogData());
+	}
+	
+	/**
+	 * gets stamp in use for the log
+	 * 
+	 * @return type
+	 */
+	protected function getLogStamp() {
+		if (empty($this->logStamp)) {
+			$stampArr = array(
+				'export_stamp' => $this->exportStamp,
+				'vpmn' => $this->getVpmnTadig(),
+			);
+			$this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
+		}
+		return $this->logStamp;
 	}
 	
 	/**
@@ -57,15 +93,43 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				return '';
 		}
 	}
-
-	protected function getFileName() { // TODO: implement
-		return '/home/yonatan/Downloads/TDINDATISRGT00003_4';
+		
+	/**
+	 * gets the current receiver (VPMN) TADIG
+	 * 
+	 * @return string
+	 */
+	protected function getVpmnTadig() {
+		return $this->vpmnTadig;
+	}
+	
+	/**
+	 * gets the sender (HPMN) TADIG
+	 * 
+	 * @return string
+	 */
+	protected function getHpmnTadig() {
+		return $this->getConfig('hmpn_tadig', '');
+	}
+	
+	/**
+	 * see parent::getFileName
+	 */
+	protected function getFileName() {
+		$pref = $this->getConfig('file_name.prefix', '');
+		$hpmnTadig = $this->getHpmnTadig();
+		$vpmnTadig = $this->getVpmnTadig();
+		return (empty($pref) ? '' : "{$pref}_") . "{$hpmnTadig}_{$vpmnTadig}.tap3";
 	}
 
-	protected function getQuery() { // TODO: fix query
+	/**
+	 * see parent::getQuery
+	 */
+	protected function getQuery() {
 		return array(
-			'type' => 'ggsn',
-			'imsi' => ['$exists' => 1],
+			'stamp' => array(
+				'$in' => $this->stamps,
+			),
 		);
 	}
 	

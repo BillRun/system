@@ -24,7 +24,13 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	protected function getQuery() { // TODO: fix query
 		return array(
 			'type' => 'ggsn',
-			'imsi' => ['$exists' => 1],
+			'imsi' => array(
+				'$exists' => 1
+			),
+			'urt' => array(
+				'$gte' => new MongoDate($this->getPeriodStartTime()),
+				'$lte' => new MongoDate($this->getPeriodEndTime()),
+			),
 		);
 	}
 	
@@ -49,8 +55,11 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 		return $this->getConfig('query_period', '1 minutes');
 	}
 
+	/**
+	 * TAP3 file name is on TADIG level
+	 */
 	protected function getFileName() {
-		
+		return '';
 	}
 
 }
