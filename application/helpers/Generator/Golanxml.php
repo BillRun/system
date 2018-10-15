@@ -263,7 +263,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 			$this->writer->endElement();
 
-			$this->writeBillingLines($subscriber, $lines);
+			$this->writeBillingLines($subscriber, $lines, $billrun['vat']);
 
 			//$planNames = $this->getPlanNames($plans);
 			//if (!empty($plans)) {
@@ -279,6 +279,11 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('GIFTID_START_DATE',  date("Y/m/d H:i:s", strtotime($plan['start_date'])));
 				$this->writer->writeElement('GIFTID_END_DATE', date("Y/m/d H:i:s", strtotime($plan['end_date'])));
 				$this->writer->writeElement('GIFTID_PRICE', $planPrice);
+				$this->writer->writeElement('VAT', $this->displayVAT($billrun['vat']));
+				$vatCost = $planPrice * $billrun['vat'];
+				$this->writer->writeElement('VAT_COST', $vatCost);
+				$CostWithVat = $planPrice + $vatCost;
+				$this->writer->writeElement('TOTAL_COST', $CostWithVat);	
 				$subscriber_gift_usage_TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
 				$this->writer->writeElement('TOTAL_FREE_COUNTER_COST', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
 				//$this->writer->writeElement('VOICE_COUNTERVALUEBEFBILL', ???);
@@ -1203,7 +1208,7 @@ EOI;
 		return $this->writer->writeRaw($xml);
 	}
 
-	protected function writeBillingLines($subscriber, $lines) {
+	protected function writeBillingLines($subscriber, $lines, $vat) {
 		$sid = $subscriber['sid'];
 		$this->writer->startElement('BILLING_LINES');
 
@@ -1240,7 +1245,7 @@ EOI;
 					$servingNetwork = $this->getServingNetwork($line);
 					$lineTypeBilling = $this->getLineTypeOfBillingChar($line);
 					$planDates = $this->getPlanDates($line, $subscriber);
-					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3, $planDates);
+					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3, $planDates, $vat);
 					if ($lines_counter % $this->flush_size == 0) {
 						$this->flush();
 					}
@@ -1248,7 +1253,7 @@ EOI;
 			}
 			$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 			foreach ($subscriber_aggregated_data as $line) {
-				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D', '');
+				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D', '', $vat);
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
@@ -1482,7 +1487,7 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function writeBillingRecord($golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char, $alpha3, $planDates = array()) {
+	protected function writeBillingRecord($golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char, $alpha3, $planDates = array(), $vat) {
 		$this->writer->startElement('BILLING_RECORD');
 		$this->writer->writeElement('TIMEOFBILLING', $golan_date);
 		if (!empty($planDates) && (preg_match('/GIFT-GC_GOLAN-/', $tariff_item) || preg_match('/CRM-REFUND_OFFER/', $tariff_item))){
@@ -1505,6 +1510,12 @@ EOI;
 		$this->writer->writeElement('SERVINGPLMN', $serving_network);
 		$this->writer->writeElement('TYPE_OF_BILLING_CHAR', $type_of_billing_char);
 		$this->writer->writeElement('ALPHA3', $alpha3);
+		$this->writer->writeElement('VAT', $this->displayVAT($vat));
+		$cost = ($charge == 0) ? $credit : $charge;
+		$vatCost = $cost * $vat;
+		$this->writer->writeElement('VAT_COST', $vatCost);
+		$totalCost = $cost + $vatCost;
+		$this->writer->writeElement('TOTAL_COST', $totalCost);
 		$this->writer->endElement();
 	}
 
