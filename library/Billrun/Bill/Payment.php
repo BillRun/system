@@ -550,7 +550,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 				try {
-					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options);
+					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options, $filtersQuery);
 				} catch (Exception $e) {
 					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 					continue;

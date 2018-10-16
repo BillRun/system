@@ -637,12 +637,13 @@ abstract class Billrun_Bill {
 		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
 	}
 	
-	public static function pay($method, $paymentsArr, $options = array()) {
+	public static function pay($method, $paymentsArr, $options = array(), $filtersQuery = array()) {
 		$involvedAccounts = $payments = array();
 		if (in_array($method, array('automatic','cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
+				$billsQuery = array_merge($filtersQuery, array('aid' => $aid));
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
 				if (in_array($dir, array('fc','tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays']['inv'])) {
@@ -692,7 +693,7 @@ abstract class Billrun_Bill {
 						}	
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
+						$unpaidBills = Billrun_Bill::getUnpaidBills($billsQuery);
 						foreach ($unpaidBills as $rawUnpaidBill) {
 							$unpaidBill = Billrun_Bill::getInstanceByData($rawUnpaidBill);
 							$invoiceAmountToPay = min($unpaidBill->getLeftToPay(), $leftToSpare);
@@ -705,7 +706,7 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'tc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid));
+						$overPayingBills = Billrun_Bill::getOverPayingBills($billsQuery);
 						foreach ($overPayingBills as $overPayingBill) {
 							$credit = min($overPayingBill->getLeft(), $leftToSpare);
 							if ($credit) {
