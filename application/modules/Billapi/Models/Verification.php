@@ -137,6 +137,9 @@ trait Models_Verification {
 		if (!empty($config['unique_query_parameters']) && !isset($translated['query_parameters']['_id']) && !empty($this->collection)) {
 			$translated['query_parameters'] = $this->transformQueryById($translated['query_parameters']);
 		}
+		if(!isset($translated['query_options'])) {
+			$translated['query_options'] = array();
+		}
 		
 		return array($translated['query_parameters'], $translated['update_parameters'], $translated['query_options']);
 	}
