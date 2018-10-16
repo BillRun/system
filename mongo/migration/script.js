@@ -137,6 +137,17 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
+//BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
+db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
+		function(obj) {
+			var activeGateway = obj.payment_gateway.active;
+			var token = activeGateway.card_token;
+			var fourDigits = token.substring(token.length - 4, token.length);
+			activeGateway.four_digits = fourDigits;
+			db.subscribers.save(obj)
+		}
+)
+
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -335,6 +346,10 @@ db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");
