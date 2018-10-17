@@ -30,7 +30,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 				),
 			),
 			'imsi' => array(
-				'$exists' => 1
+				'$regex' => '^(?!42508)',
 			),
 			'urt' => array(
 				'$gte' => new MongoDate($this->getPeriodStartTime()),
