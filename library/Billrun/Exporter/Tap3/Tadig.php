@@ -17,6 +17,13 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 
 	static protected $type = 'tap3';
 	
+	static protected $LINE_TYPE_DATA = 'data';
+	static protected $LINE_TYPE_CALL = 'call';
+	static protected $LINE_TYPE_INCOMING_CALL = 'incoiming_call';
+	static protected $LINE_TYPE_SMS = 'sms';
+	static protected $LINE_TYPE_INCOMING_SMS = 'incoming_sms';
+
+
 	protected $vpmnTadig = '';
 	protected $stamps = '';
 	protected $startTime = null;
@@ -86,9 +93,14 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	 * @todo implement for all types
 	 */
 	protected function getCallEventDetail($row) {
-		switch ($row['type']) {
-			case 'ggsn':
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
 				return 'GprsCall';
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_SMS:
+				return 'MobileOriginatedCall';
+			case self::$LINE_TYPE_INCOMING_CALL:
+				return 'MobileTerminatedCall';
 			default:
 				return '';
 		}
@@ -264,16 +276,24 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityInformation($row) {
-		switch ($row['type']) {
-			case 'ggsn':
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
 				$recEntityCode = 0; // TODO: get correct value
 				$recEntityType = $this->getConfig('rec_entity_type.GGSN');
 				$recEntityId = $row['ggsn_address'];
+				break;
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+			case self::$LINE_TYPE_SMS:
+				$recEntityCode = 0; // TODO: get correct value
+				$recEntityType = $this->getConfig('rec_entity_type.MSC');
+				$recEntityId = $row['msisdn'];
 				break;
 			default:
 				$recEntityCode = $recEntityType = 0;
 				$recEntityId = '';
 		}
+
 		return array(
 			'RecEntityCode' => intval($recEntityCode),
 			'RecEntityType' => intval($recEntityType),
@@ -286,13 +306,17 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityCodeList($row, $fieldMapping) {
-		switch ($row['type']) {
-			case 'ggsn':
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
 				$recEntityCode = 0; // TODO: get correct value
 				break;
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+			case self::$LINE_TYPE_SMS:
 			default:
 				$recEntityCode = 0;
 		}
+
 		return array(
 			array(
 				'RecEntityCode' => $recEntityCode,
@@ -301,24 +325,33 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getChargeInformationList($row, $fieldMapping) {
-		switch ($row['type']) {
-			case 'ggsn':
-				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+		
+		$chargeType = $this->getConfig('charge_type.total_charge');
+		$charge = isset($row['aprice']) ? $row['aprice'] : 0;
+		$chargeableUnits = isset($row['usagev']) ? $row['usagev'] : 0;
+		$chargedUnits = ceil($chargeableUnits / 1024) * 1024; // TODO: currentlty, no "rounded" volume field
+		$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
+		$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
+				
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.GGSN');
-				$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
-				$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
-				$chargeType = $this->getConfig('charge_type.total_charge');
-				$charge = $row['aprice'];
-				$chargeableUnits = $row['usagev'];
-				$chargedUnits = ceil($chargeableUnits / 1024) * 1024; // TODO: currentlty, no "rounded" volume field
+				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+				break;
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
+				$chargedItem = $this->getConfig('charged_item.duration_based_charge');
+				break;
+			case self::$LINE_TYPE_SMS:
+				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
+				$chargedItem = $this->getConfig('charged_item.event_based_charge');
 				break;
 			default:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
-				$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
-				$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
-				$chargeType = $this->getConfig('charge_type.total_charge');
-				$charge = $chargeableUnits = $chargedUnits = 0;
+				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
 		}
+
 		return array(
 			array(
 				'ChargeInformation' => array(
@@ -346,6 +379,33 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				),
 			),
 		);
+	}
+	
+	protected function getOperatorSpecInfoList($row, $fieldMapping) { // TODO: implement
+		return array(
+			['OperatorSpecInformation' => "SVR: Record modified by tfri"],
+			['OperatorSpecInformation' => "tfri: RPID DEFLT"],
+			['OperatorSpecInformation' => "tfri: CI D"],
+			['OperatorSpecInformation' => "tfri: CBR 2.101565"],
+			['OperatorSpecInformation' => "tfri: CUBR 145"],
+		);
+	}
+	
+	protected function getLineType($row) {
+		switch ($row['type']) {
+			case 'ggsn':
+				return self::$LINE_TYPE_DATA;
+			case 'nsn':
+				if ($row['usaget'] == 'incoming_call') {
+					return self::$LINE_TYPE_INCOMING_CALL;
+				}
+				if ($row['usaget'] == 'sms') {
+					return self::$LINE_TYPE_SMS;
+				}
+				return self::$LINE_TYPE_CALL;
+			default:
+				return false;
+		}
 	}
 
 }

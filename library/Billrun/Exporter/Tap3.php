@@ -23,7 +23,12 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	 */
 	protected function getQuery() { // TODO: fix query
 		return array(
-			'type' => 'ggsn',
+			'type' => array(
+				'$in' => array(
+					'ggsn',
+					'nsn',
+				),
+			),
 			'imsi' => array(
 				'$exists' => 1
 			),

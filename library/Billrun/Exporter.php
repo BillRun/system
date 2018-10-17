@@ -149,7 +149,9 @@ abstract class Billrun_Exporter extends Billrun_Base {
 				$val = '';
 			}
 			
-			Billrun_Util::setIn($data, explode('>', $field), $val);
+			if (!is_null($val)) {
+				Billrun_Util::setIn($data, explode('>', $field), $val);
+			}
 		}
 		
 		return $data;
