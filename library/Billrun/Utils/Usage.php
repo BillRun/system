@@ -16,14 +16,14 @@ class Billrun_Utils_Usage {
 		$entityQueryData = array();
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
-		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['query_time_fields'],["end", "urt"]), $row['urt'])->sec);
+		
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), $timeBoundingQuery );
+				$entityQueryData['query'] = array('sid' => $row['sid'], 'aid'=> $row['aid']);
 				$entityQueryData['sort'] = array('from' => -1);
 				break;
 			case 'account' :
@@ -31,7 +31,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), $timeBoundingQuery);
+				$entityQueryData['query'] = array('aid' => $row['aid'],'type' => 'account' );
 				$entityQueryData['sort'] = array('from' => -1);
 				break;			
 			
@@ -40,7 +40,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'plans';
-				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), $timeBoundingQuery);
+				$entityQueryData['query'] = array('name' => $row['plan']);
 				$entityQueryData['sort'] = array('from' => -1);
 
 				break;
@@ -52,7 +52,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'rates';
-				$entityQueryData['query'] = array_merge(array('_id' => $row['arate']['$id']), $timeBoundingQuery);
+				$entityQueryData['query'] = array('_id' => $row['arate']['$id']);
 				break;
 
 			default:
@@ -65,16 +65,27 @@ class Billrun_Utils_Usage {
 //			return $cachedValue;
 //		}
 
-		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['query_time_fields'],["end", "urt"]), $row['urt'])->sec);
+		
+		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'],$timeBoundingQuery))->cursor()->limit(1);
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
 		}
 		$entity = $cursor->current();
+		//fall back to none time bounded query if no entity found.
+		if( (empty($entity) || $entity->isEmpty()) 
+			&& !empty($foreignFieldConfig['no_time_bounding'])) {
+				$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+			if (!empty($entityQueryData['sort'])) {
+				$cursor->sort($entityQueryData['sort']);
+			}
+			$entity = $cursor->current();
+		}
 //		if ($entity && !empty($cache)) {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
 //		}
 
-		return $entity;
+		return (empty($entity) || $entity->isEmpty()) ? null : $entity;
 	}
 
 }
