@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
-require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * This class represents a payment gateway
@@ -100,7 +98,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected $htmlForm;
 
-	private function __construct() {
+	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
@@ -109,6 +107,7 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
 	}
 
 
@@ -525,13 +524,13 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway) {
+	public function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed");
+			return array('status' => $status, 'stage' => "Completed", 'additional_params' => $params);
 		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending");
+			return array('status' => $status, 'stage' => "Pending", 'additional_params' => $params);
 		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected");
+			return array('status' => $status, 'stage' => "Rejected", 'additional_params' => $params);
 		} else {
 			throw new Exception("Unknown status");
 		}
@@ -593,8 +592,12 @@ abstract class Billrun_PaymentGateway {
 			if (!empty($specificInvoices)) {
 				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
 			}
-			$pipelines[] = $match;
 		}
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
+		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
@@ -602,56 +605,19 @@ abstract class Billrun_PaymentGateway {
 			),
 		);
 		$pipelines[] = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$payment_method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			),
+			'$addFields' => array(
+				'method' => array('$ifNull' => array('$method', '$payment_method')),
+			),	
+		);
+		
+		$pipelines[] = array(
+			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
 		);
 		$pipelines[] = array(
 			'$match' => array(
-				'due' => array(
-					'$gt' => Billrun_Bill::precision,
-				),
-				'payment_method' => array(
-					'$in' => array('automatic'),
+				'$or' => array(
+					array('due' => array('$gt' => Billrun_Bill::precision)),
+					array('due' => array('$lt' => -Billrun_Bill::precision)),
 				),
 				'suspend_debit' => NULL,
 			),
@@ -781,6 +747,76 @@ abstract class Billrun_PaymentGateway {
 
 	public function getExportParameters() {
 		return array();
+	}
+
+	public function makeOnlineTransaction($gatewayDetails) {
+		$amountToPay = $gatewayDetails['amount'];
+		if ($amountToPay > 0) {
+			return $this->pay($gatewayDetails);
+		} else {
+			return $this->credit($gatewayDetails);
+		}
+	}
+	
+	protected function credit($gatewayDetails) {
+		throw new Exception("Negative amount is not supported in " . $this->billrunName);
+	}
+	
+	protected function getGroupByMode($mode = false) {
+		$group = array(
+				'_id' => '$aid',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$method',
+				),
+				'due' => array(
+					'$sum' => '$due',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+			);	
+		if ($mode == 'byInvoiceId') {
+			$group['_id'] = '$invoice_id';
+			$group['left_to_pay'] = array('$first' => '$left_to_pay');
+			$group['left'] = array('$first' => '$left');
+			$group['invoice_id'] = array('$first' => '$invoice_id');
+		}	
+			
+		return $group;
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+		return $responseFromGateway;
 	}
 	
 	protected function paySinglePayment($retParams) {

@@ -139,7 +139,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			);
 		}
 		$pipelines[] = $match;
-		$res = call_user_func_array(array($this->collectionHandler, 'aggregate'), $pipelines);
+		$res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));

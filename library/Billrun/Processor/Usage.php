@@ -126,7 +126,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 		foreach ($parsedData as $parsedRow) {
+			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 			$row = $this->getBillRunLine($parsedRow);
+			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
 				return false;
 			}
@@ -182,6 +184,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
 	protected function filterFields($rawRow) {
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
+		foreach ($parserFields as $field) {
+			if (isset($field['checked']) && $field['checked'] === false) {
+				unset($rawRow[$field['name']]); 
+			}
+		}
 		$row = array();
 		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
 		if (!empty($requiredFields)) {

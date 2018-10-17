@@ -137,17 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-//BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
-db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
-		function(obj) {
-			var activeGateway = obj.payment_gateway.active;
-			var token = activeGateway.card_token;
-			var fourDigits = token.substring(token.length - 4, token.length);
-			activeGateway.four_digits = fourDigits;
-			db.subscribers.save(obj)
-		}
-)
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -228,7 +217,7 @@ for (var fileType in fileTypes) {
 				};
 				conditions.push(condition);
 				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
-				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];	
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
 				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
 			}
 		}
@@ -294,9 +283,64 @@ for (var i in propertyTypes) {
 	}
 }
 
-// BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
 
+// BRCD-1443 - Wrong billrun field after a rebalance
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+
+// BRCD-1457 - Fix creation_time field in subscriber services
+db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
+	function(obj) {
+		var services = obj.services;
+		for (var service in services) {
+			if (obj['services'][service]['creation_time'] === undefined) {
+				obj['services'][service]['creation_time'] = obj['services'][service]['from'];
+			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
+				var sec = obj['services'][service]['creation_time']['sec'];
+				var usec = obj['services'][service]['creation_time']['usec'];
+				var milliseconds = sec * 1000 + usec;
+				obj['services'][service]['creation_time'] = new Date(milliseconds);
+			}
+		}
+		
+		db.subscribers.save(obj);
+	}
+);
+
+db.counters.dropIndex("coll_1_oid_1");
+db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
+
+// BRCD-1475 - Choose CDR fields that will be saved under 'uf'
+for (var i in lastConfig['file_types']) {
+	var fileType = lastConfig['file_types'][i];
+	for (var j in fileType['parser']['structure']) {
+		if (fileType['parser']['structure'][j]['checked'] === undefined) {
+			lastConfig['file_types'][i]['parser']['structure'][j]['checked'] = true;
+		}
+	}
+}
+
+// BRCD-1521 - Add service description to service lfat lines.
+var serviceDescField = {
+	field_name : "foreign.service.description",
+	foreign : { 
+		entity : "service",
+		field  :"invoice_description"
+	}
+};
+addFieldToConfig(lastConfig,serviceDescField,'lines');
+
 db.config.insert(lastConfig);
+
+// BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
+db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1552 collection
+db.collection_steps.dropIndex("aid_1");
+db.collection_steps.dropIndex("trigger_date_1_done_1");
+db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
+db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
+
+//BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
+db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});

@@ -142,6 +142,10 @@ class Mongodloid_Connection {
 
 		return self::$instances[$server_port];
 	}
+	
+	public static function clearInstances() {
+		self::$instances = array();
+	}
 
 	protected function __construct($server = '', $persistent = false) {
 		$this->_persistent = (bool) $persistent;

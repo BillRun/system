@@ -1240,10 +1240,13 @@ class ConfigModel {
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
+		if (array_column($parserSettings['structure'], 'name') != array_unique(array_column($parserSettings['structure'], 'name'))) {
+			 throw new Exception('Duplicate field names found');
+		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 		} else if ($parserSettings['type'] == 'separator') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
 			}
@@ -1251,7 +1254,7 @@ class ConfigModel {
 				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
 			}
 		} else {
-			$customKeys = array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			$customLengths = array_column($parserSettings['structure'], 'width');
 			if ($customLengths != array_filter($customLengths, function($length) {
 					return Billrun_Util::IsIntegerValue($length);
@@ -1574,6 +1577,12 @@ class ConfigModel {
 			$query['$or'][] = array($mandatoryField => array('$exists' => false));
 		}
 		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
+	}
+	
+	protected function getCustomKeys($parserStructure) {
+		return array_column(array_filter($parserStructure, function($field) {
+				return isset($field['checked']) && $field['checked'] === true;
+			}),'name');
 	}
 
 }

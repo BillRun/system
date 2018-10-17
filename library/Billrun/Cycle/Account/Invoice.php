@@ -85,7 +85,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aid = $options['aid'];
 		$this->key = $options['billrun_key'];
 		$force = (isset($options['autoload']) && $options['autoload']);
-		$this->load($force);
+		$this->load($force, $options);
 	}
 	
 	/**
@@ -100,7 +100,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Load the billrun object, if already exists change the internal indication.
 	 * @param boolean $force - If true, force the load.
 	 */
-	protected function load($force) {
+	protected function load($force, $options = FALSE) {
 		$this->loadData();
 		if (!$this->data->isEmpty() && !$this->overrideMode) {
 			$this->exists = !$force;
@@ -110,7 +110,7 @@ class Billrun_Cycle_Account_Invoice {
 		if ($this->overrideMode && !$this->data->isEmpty()) {
 			$invoiceId = isset($this->data['invoice_id']) ? $this->data['invoice_id'] : null;
 		}
-		$this->reset($invoiceId);
+		$this->reset($invoiceId, $options);
 	}
 	
 	/**
@@ -243,6 +243,10 @@ class Billrun_Cycle_Account_Invoice {
 		return $invoiceRawData;
 	}
 	
+	public function shouldKeepLinesinMemory($recordCount = 0) {
+		return max($recordCount,count($this->subscribers)) < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_keep_lines',50);
+	}
+	
 	/**
 	 * Sets the id to the raw data
 	 * @param array $invoiceRawData - Raw data to calculate id by
@@ -252,7 +256,7 @@ class Billrun_Cycle_Account_Invoice {
 	protected function setInvoiceID(array $invoiceRawData, $invoiceId, $customCollName = FALSE) {
 		if( !$this->overrideMode || !isset($invoiceRawData['invoice_id'])  ) {
 			$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-			$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId, $customCollName);
+			$currentId = $this->billrun_coll->createAutoInc(array('aid' => $invoiceRawData['aid'], 'billrun_key' => $invoiceRawData['billrun_key']), $invoiceId, $customCollName);
 			$invoiceRawData['invoice_id'] = $currentId;
 		}
 		return $invoiceRawData;
@@ -300,7 +304,7 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Resets the billrun data. If an invoice id exists, it will be kept.
 	 */
-	public function reset($invoiceId) {
+	public function reset($invoiceId, $options) {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
@@ -310,7 +314,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
-		$this->initInvoiceDates();
+		$this->initInvoiceDates($options);
 	}
 	
 	/**
@@ -341,14 +345,16 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Init the date values of the invoice.
 	 */
-	protected function initInvoiceDates() {
+	protected function initInvoiceDates($options) {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
 		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 
+										strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1) :
+										strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
         
@@ -376,6 +382,9 @@ class Billrun_Cycle_Account_Invoice {
 	}
 	
 	public function getInvoicedLines() {
+	if(!$this->shouldKeepLinesinMemory()) {
+		return FALSE;
+	}
 		$invoicedLines =  $this->invoicedLines;
 		foreach($this->subscribers as $subscriber) {
 			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
