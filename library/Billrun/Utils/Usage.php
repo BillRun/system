@@ -85,7 +85,7 @@ class Billrun_Utils_Usage {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
 //		}
 
-		return $entity;
+		return (empty($entity) || $entity->isEmpty()) ? null : $entity;
 	}
 
 }
