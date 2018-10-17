@@ -329,7 +329,6 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$chargeType = $this->getConfig('charge_type.total_charge');
 		$charge = isset($row['aprice']) ? $row['aprice'] : 0;
 		$chargeableUnits = isset($row['usagev']) ? $row['usagev'] : 0;
-		$chargedUnits = ceil($chargeableUnits / 1024) * 1024; // TODO: currentlty, no "rounded" volume field
 		$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
 		$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
 				
@@ -337,19 +336,23 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_DATA:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.GGSN');
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+				$chargedUnits = ceil($chargeableUnits / 1024) * 1024; // TODO: currentlty, no "rounded" volume field
 				break;
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				$chargedItem = $this->getConfig('charged_item.duration_based_charge');
+				$chargedUnits = ceil($chargeableUnits / 60) * 60; // TODO: currentlty, no "rounded" volume field
 				break;
 			case self::$LINE_TYPE_SMS:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
+				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
 				break;
 			default:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+				$chargedUnits = $chargeableUnits;
 		}
 
 		return array(
