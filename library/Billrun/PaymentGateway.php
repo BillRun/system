@@ -384,7 +384,7 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
-				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $maxTries - 1);
+				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $maxTries - 1);
 			} else {
 				$response = $result;
 			}
@@ -824,7 +824,7 @@ abstract class Billrun_PaymentGateway {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = $this->saveDetails['aid'];
 		$query['type'] = "account";
-		$account = new Billrun_Account_Db();
+		$account = Billrun_Factory::account();
 		$account->load(array('aid' => $this->saveDetails['aid']));
 		$gatewayDetails = $account->payment_gateway['active'];
 		$accountId = $account->aid;

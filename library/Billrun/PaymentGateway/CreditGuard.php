@@ -43,9 +43,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['ok_page'] = $okPage;
 		$xmlParams['return_url'] = $returnUrl;
 		$xmlParams['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
-		$today = new MongoDate();
-		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
-		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$account = Billrun_Factory::account();
+		$account->load(array('aid' => (int)$aid));
+		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
 		return $this->getXmlStructureByParams($credentials, $xmlParams);
