@@ -17,11 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class OnetimeinvoiceAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	use Billrun_Traits_Api_OperationsLock;
-	
-	/**
-	 * operationsLock step - [BillrunToBill, makePayment]
-	 * @var step
-	 */
+
 	protected $aid;
 	protected $invoice;
 	
@@ -63,7 +59,6 @@ class OnetimeinvoiceAction extends ApiAction {
         //run charge
 		
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()]]);
-		$this->step = 'BillrunToBill';
 		if (!$billrunToBill->lock()) {
 			Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
 			return;
@@ -75,7 +70,6 @@ class OnetimeinvoiceAction extends ApiAction {
 			return;
 		}
 		
-		$this->step = 'makePayment';
 		if (!$this->lock()) {
 			Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
 			return;
