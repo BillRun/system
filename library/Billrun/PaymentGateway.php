@@ -786,7 +786,7 @@ abstract class Billrun_PaymentGateway {
 		return $group;
 	}
 	
-	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
-		return $responseFromGateway;
+	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
+		return false;
 	}
 }

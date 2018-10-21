@@ -341,15 +341,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
 	
-	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
+	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
 		if ($responseFromGateway['stage'] != 'Rejected') {
-			return $responseFromGateway;
+			return false;
 		}
 		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
-		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'])) {
-			$chargeType = $gatewayDetails['amount'] > 0 ? 'Debit' : 'Credit';
-			$this->account->load(array('aid' => $aid));
-			$gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
+		$gatewayDetails = $paymentParams['gateway_details'];
+		$updatedPaymentParams = $paymentParams;
+		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'], $cgConfig['oldest_card_expiration'])) {
+			$this->account->load(array('aid' => $paymentParams['aid']));
+			$updatedPaymentParams['gateway_details']['card_expiration'] = $gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
 			$accountGateway = $this->account->payment_gateway;
 			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
 			if (isset($accountGateway['active']['generate_token_time']->sec)) {
@@ -357,7 +358,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			}
 			$time = date(Billrun_Base::base_datetimeformat);
 			$query = array(
-				'aid' => $aid,
+				'aid' => $paymentParams['aid'],
 				'type' => 'account',
 				'effective_date' => $time,
 			);
@@ -365,17 +366,29 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'from' => $time,
 				'payment_gateway' => $accountGateway,
 			);
-
-			$this->account->permanentChange($query, $update);
-			$paymentArray = $this->buildPaymentRequset($gatewayDetails, $chargeType);
-			return $this->sendPaymentRequest($paymentArray);
+			Billrun_Factory::log("Updating expiration date for aid=" . $paymentParams['aid'] . " to date " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+			try {
+				$this->account->permanentChange($query, $update);
+				Billrun_Factory::log("Expiration date was updated for aid=" . $paymentParams['aid'] . " to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::ALERT);
+				return false;
+			}
+			
+			return $updatedPaymentParams;
 		}
 		
-		return $responseFromGateway;
+		return false;
 	}
 	
-	protected function isCreditCardExpired($expiration) {
+	protected function isCreditCardExpired($expiration, $oldestCardExpiration) {
 		$expires = \DateTime::createFromFormat('my', $expiration);
+		$dateTooOld = new DateTime($oldestCardExpiration);
+		if ($expires < $dateTooOld) {
+			Billrun_Factory::log("Expiration date " . $expires->date . " is too old", Zend_Log::DEBUG);
+			return false;
+		}
+		
 		return $expires < new DateTime();
 	}
 

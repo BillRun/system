@@ -552,6 +552,24 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 			}
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
+			if ($paymentResponse['response']['stage'] == 'Rejected') {
+				$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+				$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'], $paymentParams);
+				try{
+					if ($updatedPaymentParams) {
+						$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($updatedPaymentParams), $options);
+						if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+							if ($gatewayDetails['amount'] > 0) {
+								Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+							} else {
+								Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+							}
+						}
+					}
+				} catch (Exception $ex) {
+					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+				}
+			}
 		}
 	}
 	
