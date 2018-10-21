@@ -16,6 +16,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 */
 class OnetimeinvoiceAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
+	use Billrun_Traits_Api_OperationsLock;
+
+	protected $aid;
+	protected $invoice;
 	
     public function execute($arg = null) {
         $this->allowed();
@@ -29,11 +33,11 @@ class OnetimeinvoiceAction extends ApiAction {
         $oneTimeStamp = date('YmdHis', Billrun_Util::getFieldVal($request['invoice_unixtime'],time()));
 		$inputCdrs = json_decode($request['cdrs'],JSON_OBJECT_AS_ARRAY);
         $cdrs = [];
-        $aid = intval($request['aid']);
+        $this->aid = intval($request['aid']);
         
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
-            if($aid != $cdr['aid']) {
+            if($this->aid != $cdr['aid']) {
                 $this->setError("One of the CDRs AID doesn't match the account AID");
                 return;
             }
@@ -46,18 +50,36 @@ class OnetimeinvoiceAction extends ApiAction {
         }
         
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular') ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular') ]);
         $aggregator->aggregate();
 
 
-        $invoice = Billrun_Factory::billrun(['aid' => $aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
-        $pdfPath = $invoice->getInvoicePath();
+        $this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
+        $pdfPath = $this->invoice->getInvoicePath();
         //run charge
-		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$invoice->getInvoiceID()]]);
+		
+		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()]]);
+		if (!$billrunToBill->lock()) {
+			Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
+			return;
+		}
 		$billrunToBill->load();
 		$billrunToBill->generate();
-        Billrun_Bill_Payment::makePayment([ 'aids' => [$aid], 'invoices' => [$invoice->getInvoiceID()] ]);
-        
+		if (!$billrunToBill->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return;
+		}
+		
+		if (!$this->lock()) {
+			Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
+			return;
+		}
+        Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
+       	if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return;
+		}
+		
 		if(empty($request['send_back_invoices'])) {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
@@ -69,6 +91,32 @@ class OnetimeinvoiceAction extends ApiAction {
 		} // else 
         return  $this->sendBackInvoice($pdfPath);
     }
+	
+	protected function getInsertData() {
+	return array(
+			'action' => 'charge_account',
+			'filtration' => (empty($this->aid) ? 'all' : $this->invoice->getInvoiceID()),
+		);
+	}
+	
+	protected function getConflictingQuery() {
+		if (!empty($this->aid)) {
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => array($this->aid))),
+				),
+			);
+		}
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => (empty($this->invoice) ? 'all' : $this->invoice->getInvoiceID()),
+			'end_time' => array('$exists' => false)
+		);
+	}
 
     /**
     * Validate the API inputs 

@@ -733,7 +733,7 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
-	protected function getGroupByMode($mode = false) {
+	protected static function getGroupByMode($mode = false) {
 		$group = array(
 				'_id' => '$aid',
 				'suspend_debit' => array(

@@ -14,7 +14,6 @@
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
-	use Billrun_Traits_Api_OperationsLock;
 	/**
 	 *
 	 * @var string
@@ -477,10 +476,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['invoices'])) {
 			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
 		}
-		if (!static::lock()) {
-			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
-			return;
-		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, @$chargeOptions['invoices'] ?: FALSE));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
@@ -576,12 +571,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 			}
 		}
-		
-		if (!static::release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-			return;
-		}
-		
 	}
 	
 	/**
@@ -664,34 +653,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public function setGatewayChargeFailure($message){
 		return $this->data['failure_message'] = $message;
-	}
-	
-	protected function getConflictingQuery() {
-		if (!empty(self::$aids)){
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => self::$aids)),
-				),
-			);
-		}
-		
-		return array();
-	}
-	
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-		);
-	}
-	
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-			'end_time' => array('$exists' => false)
-		);
 	}
 	
 	public function getInvoicesIdFromReceipt() {
