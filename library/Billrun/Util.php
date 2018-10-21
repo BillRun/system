@@ -984,5 +984,18 @@ class Billrun_Util {
 		return $zend_date;
 	}
 	
+	/**
+	 * extract MCC-MNC from IMSI
+	 * 
+	 * @param string $imsi
+	 * @return string MCC-MNC
+	 */
+	public static function getMccMnc($imsi) {
+		$mcc = substr($imsi, 0, 3);
+		$mnc = substr($imsi, 3, 3);
+		return $mcc . $mnc;
+	}
+
+	
 }
 
