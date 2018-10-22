@@ -482,7 +482,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @todo change this one to be abstract
 	 */
 	public function getPossiblyUpdatedFields() {
-		return $this->getAddedFoerignFields();
+		$updatedForeignFields = $this->getAddedFoerignFields();
+		$this->clearAddedForeignFields();
+		return $updatedForeignFields;
 	}
 	
 
