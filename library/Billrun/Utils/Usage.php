@@ -104,7 +104,7 @@ class Billrun_Utils_Usage {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
 //		}
 
-		return (empty($entity) || $entity->isEmpty()) ? null : $entity;
+		return (empty($entity)) ? null : $entity;
 	}
 	
 	public static function conditionsMet($fieldConf, $rowData) {
