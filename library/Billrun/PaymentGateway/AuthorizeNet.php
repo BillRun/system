@@ -496,4 +496,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 		return false;
 	}
+	
+	protected function buildSinglePaymentArray($params) {
+		throw new Exception("Single payment not supported in " . $this->billrunName);
+	}
 }
