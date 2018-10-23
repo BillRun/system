@@ -786,7 +786,7 @@ abstract class Billrun_Bill {
 					} else {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					}
-				}
+
 					$involvedAccounts = array_unique($involvedAccounts);
 					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
@@ -806,7 +806,7 @@ abstract class Billrun_Bill {
 		}
 		if (isset($options['payment_gateway'])){
 			return array('payment' => $payments, 'response' => $responsesFromGateway);
-		} else { 
+		} else {
 			return $payments;
 		}		
 	}
