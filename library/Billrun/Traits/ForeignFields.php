@@ -46,7 +46,7 @@ trait Billrun_Traits_ForeignFields  {
 			}
 			if( $autoLoadEntities && empty($foreignEntities[$fieldConf['foreign']['entity']]) && empty(Billrun_Util::getIn($foreignFieldsData,$fieldConf['field_name']))
 				&& (!is_array($autoLoadEntities) || in_array($fieldConf['foreign']['entity'],$autoLoadEntities)) ) {
-				$entityValue = Billrun_Utils_Usage::retriveEntityFromUsage(array_merge($foreignFieldsData,$fullData), $fieldConf['foreign']['entity']);
+				$entityValue = Billrun_Utils_Usage::retriveEntityFromUsage(array_merge($foreignFieldsData,$fullData), $fieldConf['foreign']['entity'],$fieldConf);
 				if($entityValue != null) {
 					$foreignEntities[$fieldConf['foreign']['entity']] = $entityValue;
 				}
