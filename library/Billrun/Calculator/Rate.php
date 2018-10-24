@@ -30,6 +30,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected $rateMapping = array();
 	protected static $calcs = array();
+	protected $tadigs = array();
 
 	/**
 	 * The rating field to update in the CDR line.
@@ -218,6 +219,64 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	
 	protected function getAdditionalProperties() {
 		return array();
+	}
+	
+	protected function loadTadigs() {
+		$tadigs_coll = Billrun_Factory::db()->tadigsCollection();
+		$tadigs = $tadigs_coll->query()->cursor();
+		foreach ($tadigs as $tadig) {
+			foreach ($tadig['mcc_mnc'] as $mccMnc) {
+				$this->tadigs[$mccMnc] = $tadig['tadig'];
+			}
+		}
+	}
+	
+	protected function isRoamingLine($row) {
+		return !empty($row['imsi']) && preg_match('/^(?!42508)/', $row['imsi']);
+	}
+	
+	protected function getRoamingRateQuery($row, $usage_type) {
+		$mccMnc = Billrun_Util::getMccMnc($row['imsi']);
+		$tadig = isset($this->tadigs[$mccMnc]) ? $this->tadigs[$mccMnc] : false;
+		if (!$tadig) {
+			return false;
+		}
+		return array(
+			'from' => array(
+				'$lte' => new MongoDate($row['urt']->sec),
+			),
+			'to' => array(
+				'$gte' => new MongoDate($row['urt']->sec),
+			),
+			"rates.{$usage_type}" => array(
+				'$exists' => true,
+			),
+			'params.roaming_tadig' => array(
+				'$in' => array($tadig),
+			),
+		);
+	}
+	
+	protected function getRoamingRateSort($row, $usage_type) {
+		return array();
+	}
+
+	protected function getRoamingLineRate($row, $usage_type) {
+		if (!$this->isRoamingLine($row)) {
+			return false;
+		}
+		$query = $this->getRoamingRateQuery($row, $usage_type);
+		if (!$query) {
+			return false;
+		}
+		$sort = $this->getRoamingRateSort($row, $usage_type);
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rate = $rates_coll->query($query)->cursor()->sort($sort)->current();
+		if ($rate->isEmpty()) {
+			return false;
+		}
+		$rate->collection($rates_coll);
+		return $rate;
 	}
 
 }

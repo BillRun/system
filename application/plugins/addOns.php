@@ -379,21 +379,89 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->balances->update($query, $update);
 	}
 	
+	protected function buildUpdateBalance($balance, $volumeToSubstract) {
+		$update = array();
+		foreach ($volumeToSubstract as $usaget => $usagev) {
+			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
+				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
+				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
+			}
+			if (isset($balance['balance']['totals'][$usaget]['exhausted']) && ($usagev['usage'] > 0)) {
+				$update['$unset']['balance.totals.' . $usaget . '.exhausted'] = 1;
+			}
+		}
+		return $update;
+	}
+	
+	protected function getRelevantBalance($balances, $billrunId) {
+		foreach ($balances as $balance) {
+			$rawData = $balance->getRawData();
+			if (isset($rawData['billrun_month'] ) && $rawData['billrun_month'] == $billrunId) {
+				return $rawData;
+			}
+		}
+	}
 	
 	/**
-	 * method to update addon balances once the regular balance was removed.
+	 * method to update roaming balances once the regular balance was removed.
 	 * 
 	 */
 	public function afterResetBalances($rebalanceSids, $rebalanceStamps, $billrunKey) {
+		if (empty($this->rebalanceUsageSubtract)) {
+			return;
+		}
 		$balancesColl = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		$sidsAsKeys = array_flip($rebalanceSids);
+		$balancesToUpdate = array_intersect_key($this->rebalanceUsageSubtract, $sidsAsKeys);
 		$queryBalances = array(
-			'sid' => array('$in' => $rebalanceSids),
-			'from' =>  array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrunKey))),
-			'to' => array('$lte' => new MongoDate(Billrun_Util::getEndTime($billrunKey))),
-			'national' => true,
+			'sid' => array('$in' => array_keys($balancesToUpdate)),
 		);
-		$balancesColl->remove($queryBalances, array('w' => 1));
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		foreach ($balancesToUpdate as $sid => $packageUsage) {
+			foreach ($packageUsage as $billrunId => $usageByUsaget) {
+				$balanceToUpdate = $this->getRelevantBalance($balances, $billrunId);
+				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+
+				$query = array(
+					'sid' => $sid,
+					'billrun_month' => $billrunId,
+				);
+
+				$balancesColl->update($query, $updateData);
+			}
+		}
+
+		$this->rebalanceUsageSubtract = array();
+		$linesColl = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
+		$linesColl->update(array('stamp' => array('$in' => $rebalanceStamps)), array('$unset' => array('addon_balances' => 1, 'unified_addon_balances' => 1)), array('multiple' => true));
 	}
+	
+	/**
+	 * method to calculate the usage need to be subtracted from the roaming balance.
+	 * 
+	 * @param type $line
+	 * 
+	 */
+	public function beforeResetLines($line) {
+		if (!isset($line['addon_balances']) && !isset($line['unified_addon_balances']) ) {
+			return;
+		}
+		$addonBalances= array_merge(@Billrun_Util::getFieldVal($line['addon_balances'],[]),@Billrun_Util::getFieldVal($line['unified_addon_balances'],[]));
+		foreach ($addonBalances as $addonBalance) {
+			$billrunId = $addonBalance['billrun_month'];
+			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] : 0;
+			$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];
+			@$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$line['usaget']]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount']; 
+			if (!empty($addonBalance['added_joined_usage'])) {
+				$joinedField = $addonBalance['added_joined_usage']['joined_field'];
+				$joinedUsage = $addonBalance['added_joined_usage']['usage'];
+				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage'] : 0;
+				$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
+				@$this->rebalanceUsageSubtract[$line['sid']][$billrunId][$joinedField]['count'] += (empty($addonBalance['lcount'])) ? 1 :$addonBalance['lcount'];
+			}
+		}
+	}
+
 
 	public function handleExtraBalancesOnCrash(&$pricingData, $row) {
 		$stamp = strval($row['stamp']);
