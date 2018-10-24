@@ -232,7 +232,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 	
 	protected function isRoamingLine($row) {
-		return !empty($row['imsi']) && preg_match('/^(?!42508)/', $row['imsi']);
+		return isset($row['incoming_roaming']) && $row['incoming_roaming'];
 	}
 	
 	protected function getRoamingRateQuery($row, $usage_type) {

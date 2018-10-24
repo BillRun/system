@@ -183,6 +183,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	
 	protected function getRoamingRateQuery($row, $usage_type) {
 		$query = parent::getRoamingRateQuery($row, $usage_type);
+		if (!$query) {
+			return false;
+		}
 		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
 		$query['params.roaming_prefix'] = array(
 			'$in' => $prefixes,
