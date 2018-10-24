@@ -473,9 +473,13 @@ class LinesModel extends TableModel {
 				'usagev' => !empty($row['usagev']) ? $row['usagev'] : $row['duration'],
 				'usaget' => $row['usaget'],
 				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
-				'called_subs_first_ci' => $row['called_subs_first_ci'],
 				'calling_subs_first_lac' => hexdec($row['calling_subs_first_lac']),
+				'calling_subs_last_ci' => $row['calling_subs_last_ci'],
+				'calling_subs_last_lac' => hexdec($row['calling_subs_last_lac']),
+				'called_subs_first_ci' => $row['called_subs_first_ci'],
 				'called_subs_first_lac' => hexdec($row['called_subs_first_lac']),
+				'called_subs_last_ci' => $row['called_subs_last_ci'],
+				'called_subs_last_lac' => hexdec($row['called_subs_last_lac']),
 			);
 		}
 		
