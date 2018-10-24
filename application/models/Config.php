@@ -1224,7 +1224,7 @@ class ConfigModel {
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
-			}
+		}
 		}
 		return true;
 	}
@@ -1402,7 +1402,7 @@ class ConfigModel {
 		}
 		if (in_array($receiverSettings['type'], array('ftp', 'ssh'))) {
 			foreach ($receiverSettings['connections'] as $index => $connection) {
-				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
+				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['remote_directory'], $connection['passive'], $connection['delete_received']) || (!isset($connection['password']) && !isset($connection['key']))) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
 				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
