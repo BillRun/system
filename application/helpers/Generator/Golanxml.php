@@ -32,6 +32,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $flat_start_date;
 	protected $flat_end_date;
 	protected $rates;
+	protected $ratesByKey;
 	protected $plans;
 	protected $data_rate;
 	protected $lines_coll;
@@ -262,7 +263,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('OFFER_ID_' . $key, $plan['id']);		
 			}
 			$this->writer->endElement();
-
+			
 			$this->writeBillingLines($subscriber, $lines, $billrun['vat']);
 
 			//$planNames = $this->getPlanNames($plans);
@@ -289,30 +290,21 @@ class Generator_Golanxml extends Billrun_Generator {
 				//$this->writer->writeElement('VOICE_COUNTERVALUEBEFBILL', ???);
 				//$this->writer->writeElement('VOICE_FREECOUNTER', ???);
 				//$this->writer->writeElement('VOICE_FREECOUNTERCOST', ???);
-				$subscriber_gift_usage_VOICE_FREEUSAGE = 0;
-				$subscriber_gift_usage_VOICE_ABOVEFREECOST = 0;
-				$subscriber_gift_usage_VOICE_ABOVEFREEUSAGE = 0;
-				$subscriber_gift_usage_SMS_FREEUSAGE = 0;
-				$subscriber_gift_usage_SMS_ABOVEFREECOST = 0;
-				$subscriber_gift_usage_SMS_ABOVEFREEUSAGE = 0;
-				$subscriber_gift_usage_DATA_FREEUSAGE = 0;
-				$subscriber_gift_usage_DATA_ABOVEFREECOST = 0;
-				$subscriber_gift_usage_DATA_ABOVEFREEUSAGE = 0;
-				$subscriber_gift_usage_MMS_FREEUSAGE = 0;
-				$subscriber_gift_usage_MMS_ABOVEFREECOST = 0;
-				$subscriber_gift_usage_MMS_ABOVEFREEUSAGE = 0;
+
+				$usagesArray = array();	
 				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'])) {
 					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'] as $category_key => $category) {
 						if (!in_array($category_key, array('intl', 'roaming'))) { // Sefi's request from 2014-03-06 + do not count VF over_plan
-							foreach ($category as $zone) {
-								$subscriber_gift_usage_VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
-								$subscriber_gift_usage_SMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
-								$subscriber_gift_usage_DATA_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'data');
-								$subscriber_gift_usage_MMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'mms');
-								$subscriber_gift_usage_VOICE_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-								$subscriber_gift_usage_SMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-								$subscriber_gift_usage_DATA_ABOVEFREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-								$subscriber_gift_usage_MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+							foreach ($category as $rateKey => $zone) {	
+								$subType = $this->getSubTypeOfUsage($rateKey);
+								$usagesArray['call'][$subType]['above_cost'] = (isset($usagesArray['call'][$subType]['cost']) ? $usagesArray['call'][$subType]['cost'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
+								$usagesArray['call'][$subType]['above_usage'] = (isset($usagesArray['call'][$subType]['usagev']) ? $usagesArray['call'][$subType]['usagev'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');							
+								$usagesArray['sms'][$subType]['above_cost'] = (isset($usagesArray['sms'][$subType]['cost'] ) ? $usagesArray['sms'][$subType]['cost'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
+								$usagesArray['sms'][$subType]['above_usage'] = (isset($usagesArray['sms'][$subType]['usagev']) ? $usagesArray['sms'][$subType]['usagev'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');								
+								$usagesArray['data'][$subType]['above_cost'] = (isset($usagesArray['data'][$subType]['cost']) ? $usagesArray['data'][$subType]['cost'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'cost', 'data');
+								$usagesArray['data'][$subType]['above_usage'] = (isset($usagesArray['data'][$subType]['usagev']) ? $usagesArray['data'][$subType]['usagev'] : 0) + $this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));								
+								$usagesArray['mms'][$subType]['above_cost'] = (isset($usagesArray['mms'][$subType]['cost']) ? $usagesArray['mms'][$subType]['cost'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'cost', 'mms');
+								$usagesArray['mms'][$subType]['above_usage'] = (isset($usagesArray['mms'][$subType]['usagev']) ? $usagesArray['mms'][$subType]['usagev'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');	
 							}
 						}
 					}
@@ -320,11 +312,12 @@ class Generator_Golanxml extends Billrun_Generator {
 				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'])) {
 					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'] as $category_key => $category) {
 						if ($category_key != 'roaming') { // Do not count VF in_plan
-							foreach ($category as $zone) {
-								$subscriber_gift_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-								$subscriber_gift_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-								$subscriber_gift_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-								$subscriber_gift_usage_MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+							foreach ($category as $rateKey => $zone) {
+								$subType = $this->getSubTypeOfUsage($rateKey);
+								$usagesArray['call'][$subType]['usage'] = (isset($usagesArray['call'][$subType]['usage']) ? $usagesArray['call'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+								$usagesArray['sms'][$subType]['usage'] = (isset($usagesArray['sms'][$subType]['usage']) ? $usagesArray['sms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+								$usagesArray['data'][$subType]['usage'] = (isset($usagesArray['data'][$subType]['usage']) ? $usagesArray['data'][$subType]['usage'] : 0) + $this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+								$usagesArray['mms'][$subType]['usage'] = (isset($usagesArray['mms'][$subType]['usage']) ? $usagesArray['mms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
 							}
 						}
 					}
@@ -356,18 +349,22 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 				}
 
-				$this->writer->writeElement('VOICE_FREEUSAGE', $subscriber_gift_usage_VOICE_FREEUSAGE);
-				$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_gift_usage_VOICE_ABOVEFREECOST);
-				$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_gift_usage_VOICE_ABOVEFREEUSAGE);
-				$this->writer->writeElement('SMS_FREEUSAGE', $subscriber_gift_usage_SMS_FREEUSAGE);
-				$this->writer->writeElement('SMS_ABOVEFREECOST', $subscriber_gift_usage_SMS_ABOVEFREECOST);
-				$this->writer->writeElement('SMS_ABOVEFREEUSAGE', $subscriber_gift_usage_SMS_ABOVEFREEUSAGE);
-				$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_gift_usage_DATA_FREEUSAGE);
-				$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_gift_usage_DATA_ABOVEFREECOST);
-				$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_gift_usage_DATA_ABOVEFREEUSAGE);
-				$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_gift_usage_MMS_FREEUSAGE);
-				$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_gift_usage_MMS_ABOVEFREECOST);
-				$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_gift_usage_MMS_ABOVEFREEUSAGE);
+				foreach ($usagesArray as $typeUsage => $usageDetails) {
+					foreach ($usageDetails as $subType => $details) {
+						$this->writer->startElement('USAGE');
+						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
+						$this->writer->writeElement('SUB_TYPE', $subType);
+						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
+					//	$this->writer->writeElement('FREE_CAPACITY', $planIncludes[$typeUsage]);
+						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
+						$this->writer->writeElement('ABOVE_FREE_USAGE', (isset($details['above_usage']) ? $details['above_usage'] : 0));
+						$this->writer->writeElement('ABOVE_FREE_COST', (isset($details['above_cost']) ? $details['above_cost'] : 0));
+	//					$this->writer->writeElement('ABOVE_FREE_VAT_COST', );
+	//					$this->writer->writeElement('ABOVE_FREE_TOTAL_COST', );
+						
+						$this->writer->endElement(); // end USAGE
+					}
+				}
 				$this->writer->endElement(); // end SUBSCRIBER_GIFT_USAGE
 			}
 			$planInCycle = null;
@@ -569,7 +566,9 @@ class Generator_Golanxml extends Billrun_Generator {
 							if ($usagev > 0) {
 								$this->writer->startElement('BREAKDOWN_ENTRY');
 								$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
-								$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));
+								$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));		
+								$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($type));
+								$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $type));
 								$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
 								$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
 								$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
@@ -635,6 +634,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $usage_type));
 						$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
 						$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);
 						$international_entry_VAT = $this->displayVAT($zone['vat']);
@@ -676,6 +677,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $usage_type));
 						$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
 						$this->writer->writeElement('COST_WITHOUTVAT', $special_entry_COST_WITHOUTVAT);
 						$special_entry_VAT = $this->displayVAT($zone['vat']);
@@ -731,6 +734,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
 						$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
+						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_key, $usage_type));
 						$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
 						$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);
 						$roaming_entry_VAT = $this->displayVAT($zone['vat']);
@@ -1253,7 +1258,7 @@ EOI;
 			}
 			$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 			foreach ($subscriber_aggregated_data as $line) {
-				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D', '', $vat);
+				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D', '', array(), $vat);
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
@@ -1542,6 +1547,9 @@ EOI;
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
+			if (isset($rate['to']) && $rate['to']->sec > time()){
+				$this->ratesByKey[strval($rate->get('key'))] = $rate;
+			}
 		}
 		$this->data_rate = $this->getDataRate();
 	}
@@ -1642,5 +1650,69 @@ EOI;
 		}
 		
 		return array('start' => $line['start_date'], 'end' => $line['end_date']);
+	}
+	
+	protected function getUnitTypeByUsage($usaget) {
+		switch ($usaget) {
+			case 'call':
+			case 'incoming_call':
+				return 'MINUTE';
+			case 'sms':
+			case 'mms':
+			case 'incoming_sms':
+				return 'UNIT';
+			case 'data':
+				return 'MB';
+			default:
+				return 'UNIT';
+			}
+	}
+	
+	protected function getRateByKey($key, $usaget) {
+		if (!isset($this->ratesByKey[$key])) {
+			$rates = Billrun_Factory::db()->ratesCollection();
+			$this->ratesByKey[$key] = $rates->query(array('key' => $key, 'to' => array('$gte' => new MongoDate())))->cursor()->current();
+		}
+		$rate = $this->ratesByKey[$key]->getRawData();
+		$price = $this->getPriceByRate($rate, $usaget);
+		return $price;
+	}
+
+	protected function getSubTypeOfUsage($rateKey) {
+		if (preg_match('/^FIX_/', $rateKey) || preg_match('/_FIX_/', $rateKey) || preg_match('/_FIX$/', $rateKey)) {
+			return 'FIX';
+		} else if (preg_match('/^MOBILE_/', $rateKey) || preg_match('/_MOBILE_/', $rateKey) || preg_match('/_MOBILE$/', $rateKey)) {
+			return 'MOBILE';
+		}
+		return 'SPECIAL';
+	}
+	
+	protected function getLabelTypeByUsaget($usaget) {
+		switch ($usaget) {
+			case 'call':
+				return 'VOICE';
+			case 'sms':
+				return 'SMS';
+			case 'mms':
+				return 'MMS';
+			case 'data':
+				return 'DATA';
+			default:
+				return 'FALSE';
+			}
+	}
+	
+	protected function getUsageUnit($usaget) {
+		switch ($usaget) {
+			case 'call':
+				return 'SECOND';
+			case 'sms':
+			case 'mms':
+				return 'UNIT';
+			case 'data':
+				return 'KB';
+			default:
+				return 'FALSE';
+			}
 	}
 }
