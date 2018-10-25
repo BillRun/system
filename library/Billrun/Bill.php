@@ -723,6 +723,7 @@ abstract class Billrun_Bill {
 			$res = Billrun_Bill_Payment::savePayments($payments);
 			if ($res && isset($res['ok']) && $res['ok']) {
 				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
+					$responsesFromGateway = array();
 					$paymentSuccess = array();
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
@@ -747,30 +748,36 @@ abstract class Billrun_Bill {
 						$txId = $gateway->getTransactionId();
 						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 						$paymentSuccess[] = $payment;
+						$responsesFromGateway[$txId] = $responseFromGateway;
 					}
 				} else {
 					$paymentSuccess = $payments;
 				}
 				foreach ($paymentSuccess as $payment) {
+					$paymantData = $payment->getRawData();
+					$transactionId = isset($paymantData['payment_gateway']['transactionId']) ? $paymantData['payment_gateway']['transactionId'] : null;
+					if (empty($transactionId)) {
+						throw new Exception('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $gatewayName);
+					}
 					if ($payment->getDir() == 'fc') {
 						foreach ($payment->getPaidBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responseFromGateway['stage'] = 'Pending';
+									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
 								}
-								if ($responseFromGateway['stage'] != 'Pending') {
+								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
-								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responseFromGateway['stage']) ? 'Completed' : $responseFromGateway['stage'])->save();
+								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage'])? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
 							}
 						}
 					} else if ($payment->getDir() == 'tc') {
 						foreach ($payment->getPaidByBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responseFromGateway['stage'] = 'Pending';
+									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
 								}
-								if ($responseFromGateway['stage'] != 'Pending') {
+								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
 								$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
@@ -779,6 +786,7 @@ abstract class Billrun_Bill {
 					} else {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 					}
+
 					$involvedAccounts = array_unique($involvedAccounts);
 					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
@@ -797,8 +805,8 @@ abstract class Billrun_Bill {
 			throw new Exception('Unknown payment method');
 		}
 		if (isset($options['payment_gateway'])){
-			return array('payment' => $payments, 'response' => $responseFromGateway);
-		} else { 
+			return array('payment' => $payments, 'response' => $responsesFromGateway);
+		} else {
 			return $payments;
 		}		
 	}
