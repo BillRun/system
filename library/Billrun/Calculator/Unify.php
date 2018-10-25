@@ -328,7 +328,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]);
+		$isIncomingRoaming = !empty($line['incoming_roaming']);
+		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]) && !$isIncomingRoaming;
 
 		if ($matched) {
 			$requirements = $this->unificationFields[$line['type']]['required'];
