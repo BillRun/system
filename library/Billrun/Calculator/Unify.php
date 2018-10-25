@@ -54,6 +54,17 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 						'$set' => array('process_time'),
 						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun', 'rat_type', 'served_imeisv'),
 						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
+						'_array_map'=> [
+                            [
+                                'field' => 'addon_balances',
+                                'to_field' => 'unified_addon_balances',
+                                'keys' => ['package_id','billrun_month'],
+                                'values' => [
+                                    '$inc' => ['added_usage'],
+                                    '$setOnInsert' => ['billrun_month','service_name','package_id']
+                                ]
+                            ]
+						],
 					),
 				),
 				'nsn' => array(
@@ -123,12 +134,16 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow);
 		foreach ($this->unificationFields[$newRow['type']]['fields'] as $key => $fields) {
-			foreach ($fields as $field) {
-				if ($key == '$inc' && isset($newRow[$field])) {
-					$updatedRow[$field] += $newRow[$field];
-				} else if ($key == '$set' && isset($newRow[$field])) {
-					$updatedRow[$field] = $newRow[$field];
-				}
+            if(method_exists($this, $key) ) {
+                    $updatedRow = $this->{$key.'_new'}($newRow,$fields,$updatedRow);
+            } else {
+                foreach ($fields as $field) {
+                    if ($key == '$inc' && isset($newRow[$field])) {
+                        $updatedRow[$field] += $newRow[$field];
+                    } else if ($key == '$set' && isset($newRow[$field])) {
+                        $updatedRow[$field] = $newRow[$field];
+                    }
+                }
 			}
 		}
 		$updatedRow['lcount'] += 1;
@@ -201,11 +216,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
-				foreach ($fields as $field) {
-					if (isset($row[$field])) {
-						$update[$fkey][$field] = $row[$field];
-					}
-				}
+                if(method_exists($this, $fkey) ) {
+                    $this->{$fkey}($row,$fields,$update);
+                } else {
+                    foreach ($fields as $field) {
+                        if (isset($row[$field])) {
+                            $update[$fkey][$field] = $row[$field];
+                        }
+                    }
+                }
 			}
 			$update['$inc']['lcount'] = $row['lcount'];
 
@@ -267,15 +286,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
 			$existingRow = array('lcount' => 0, 'type' => $type);
 			foreach ($this->unificationFields[$type]['fields'] as $key => $fields) {
-				foreach ($fields as $field) {
-					if ($key == '$inc' && isset($newRow[$field])) {
-						$existingRow[$field] = 0;
-					} else if (isset($newRow[$field])) {
-						$existingRow[$field] = $newRow[$field];
-					} else {
-						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::DEBUG);
-					}
-				}
+                if(method_exists($this, $key) ) {
+                    continue;
+                } else {
+                    foreach ($fields as $field) {
+                        if ($key == '$inc' && isset($newRow[$field])) {
+                            $existingRow[$field] = 0;
+                        } else if (isset($newRow[$field])) {
+                            $existingRow[$field] = $newRow[$field];
+                        } else {
+                            //Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::DEBUG);
+                        }
+                    }
+                }
 			}
 		}
 
@@ -408,6 +431,41 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function removeFromQueue() {
 		parent::removeFromQueue();
 		$this->releaseAllLines();
+	}
+	
+	///////////////////////  Helper functions //////////////////
+	
+	protected function _array_map($row,$mappings,&$update) {
+        foreach($mappings as $fieldMapping) {
+            if( empty($row[$fieldMapping['field']]) ) {
+                continue;
+            }
+            foreach($row[$fieldMapping['field']] as $arrItem) {
+                $key='';
+                foreach($fieldMapping['keys'] as $idKeyField) {
+                    $key .= $arrItem[$idKeyField]; 
+                }
+                foreach($fieldMapping['values'] as $fkey => $fields) {
+                    foreach($fields as $field) {
+                        if (isset($arrItem[$field])) {
+							$toField = empty($fieldMapping['to_field']) ? $fieldMapping['field'] : $fieldMapping['to_field'];
+                            $update[$fkey][$toField.'.'.$key.'.'.$field] = $arrItem[$field];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $update;
+	}
+	
+	protected function _array_map_new($row,$mappings,$updateRow) {
+        foreach($mappings as $fieldMapping) {
+            if( isset($row[$fieldMapping['field']]) ) {
+                $updateRow[$fieldMapping['field']] = $row[$fieldMapping['field']];
+            }
+        }
+        return $updateRow;
 	}
 
 }

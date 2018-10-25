@@ -985,6 +985,18 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * extract MCC-MNC from IMSI
+	 * 
+	 * @param string $imsi
+	 * @return string MCC-MNC
+	 */
+	public static function getMccMnc($imsi) {
+		$mcc = substr($imsi, 0, 3);
+		$mnc = substr($imsi, 3, 3);
+		return $mcc . $mnc;
+	}
+
+		/**
 	 * Deeply sets an array value.
 	 * 
 	 * @param type $arr - reference to the array (will be changed)
@@ -1042,6 +1054,5 @@ class Billrun_Util {
 		
 		return $ret;
 	}
-	
 }
 

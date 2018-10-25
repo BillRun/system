@@ -38,6 +38,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
+		$this->loadTadigs();
 	}
 
 	/**
@@ -71,6 +72,10 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
+		$roamingRate = $this->getRoamingLineRate($row, $usage_type);
+		if ($roamingRate) {
+			return $roamingRate;
+		}
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
 			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {

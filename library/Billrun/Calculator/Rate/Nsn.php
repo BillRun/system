@@ -24,6 +24,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
+		$this->loadTadigs();
 	}
 
 	/**
@@ -74,6 +75,10 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
+		$roamingRate = $this->getRoamingLineRate($row, $usage_type);
+		if ($roamingRate) {
+			return $roamingRate;
+		}
 		$record_type = $row->get('record_type');
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
@@ -174,6 +179,86 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				}
 			}
 			return FALSE;
+	}
+	
+	protected function getRoamingRateQuery($row, $usage_type) {
+		$query = parent::getRoamingRateQuery($row, $usage_type);
+		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
+		$query['params.roaming_prefix'] = array(
+			'$in' => $prefixes,
+		);
+
+		return $query;
+	}
+	
+	protected function getRoamingRateUnwind($row, $usage_type) {
+		return '$params.roaming_prefix';
+	}
+	
+	protected function getRoamingRateGroup($row, $usage_type) {
+		return array(
+			'_id' => array(
+				'_id' => '$_id',
+				'pref' => '$params.roaming_prefix',
+			),
+			'params_roaming_prefix' => array(
+				'$first' => '$params.roaming_prefix',
+			),
+			'key' => array(
+				'$first' => '$key',
+			),
+		);
+	}
+	
+	protected function getRoamingRateMatch2($row, $usage_type) {
+		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
+		return array(
+			'params_roaming_prefix' => array(
+				'$in' => $prefixes,
+			),
+		);
+	}
+	
+	protected function getRoamingRateSort($row, $usage_type) {
+		return array(
+			'params_roaming_prefix' => -1,
+		);
+	}
+	
+	protected function getRoamingLineRate($row, $usage_type) {
+		if (!$this->isRoamingLine($row)) {
+			return false;
+		}
+
+		$match = $this->getRoamingRateQuery($row, $usage_type);
+		$unwind = $this->getRoamingRateUnwind($row, $usage_type);
+		$group = $this->getRoamingRateGroup($row, $usage_type);
+		$match2 = $this->getRoamingRateMatch2($row, $usage_type);
+		$sort = $this->getRoamingRateSort($row, $usage_type);
+		if (!$match || !$unwind || !$group || !$match2 || !$sort) {
+			return false;
+		}
+		$aggregateQuery = array(
+			array('$match' => $match),
+			array('$unwind' => $unwind),
+			array('$group' => $group),
+			array('$match' => $match2),
+			array('$sort' => $sort),
+			array('$limit' => 1),
+		);
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rate = $rates_coll->aggregate($aggregateQuery);
+		if (empty($rate) || !isset($rate[0]['_id']['_id'])) {
+			return false;
+		}
+		$rateId = $rate[0]['_id']['_id'];
+		$query = array('_id' => $rateId);
+		$rate = $rates_coll->query($query)->cursor()->current();
+		if ($rate->isEmpty()) {
+			return false;
+		}
+		$rate->collection($rates_coll);
+		return $rate;
 	}
 		
 }
