@@ -839,13 +839,13 @@ abstract class Billrun_PaymentGateway {
 		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$paymentParams['amount'] = abs($cashAmount);
 		$gatewayDetails['amount'] = $cashAmount;
-		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
-		$paymentParams['gateway_details'] = $gatewayDetails;
+		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
+		$paymentParams['gateway_details'] = $retParams;
+		$paymentParams['gateway_details']['name'] = $gatewayDetails['name'];
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
-		$paymentParams['transaction_type'] = $retParams['action'];
 		$paymentParams['dir'] = 'fc';
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
-		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $gatewayDetails, $options);
+		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
 	}
 	
 	public function getCompletionCodes() {

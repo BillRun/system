@@ -72,9 +72,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['transaction_status'])) {
 				$this->data['transaction_status'] = $options['transaction_status'];
 			}
-			if (isset($options['transaction_type'])) {
-				$this->data['transaction_type'] = $options['transaction_type'];
-			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
@@ -706,12 +703,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return !empty($this->data['transaction_status']) ? $this->data['transaction_status'] : null;
 	}
 	
-	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $gatewayDetails, $options = array()) {
+	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
 		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
-		$gatewayName = $gatewayDetails['name'];
+		$gatewayName = $paymentParams['gateway_details']['name'];
 		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
 		if (isset($paymentResponse['response']['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response']['status'])) {
-			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
+			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $paymentParams['gateway_details']['transferred_amount'], Zend_Log::INFO);
 		}
 		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 	}
