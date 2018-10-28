@@ -653,13 +653,13 @@ abstract class Billrun_Bill {
 	
 	public static function pay($method, $paymentsArr, $options = array(), $filtersQuery = array()) {
 		$involvedAccounts = $payments = array();
-		if (in_array($method, array('automatic','cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
+		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
 				$billsQuery = array_merge($filtersQuery, array('aid' => $aid));
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
-				if (in_array($dir, array('fc','tc')) || is_null($dir)) { // attach invoices to payments and vice versa
+				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays']['inv'])) {
 						$paidInvoices = $rawPayment['pays']['inv']; // currently it is only possible to specifically pay invoices only and not payments
 						$invoices = Billrun_Bill_Invoice::getInvoices(array('aid' => $aid, 'invoice_id' => array('$in' => Billrun_Util::verify_array(array_keys($paidInvoices), 'int'))));
@@ -704,7 +704,7 @@ abstract class Billrun_Bill {
 								throw new Exception('Invoice ' . $invoiceObj->getId() . 'Credit was exhausted when paying bills');
 							}
 							$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
-						}	
+						}
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
 						$unpaidBills = Billrun_Bill::getUnpaidBills($billsQuery);
@@ -750,22 +750,22 @@ abstract class Billrun_Bill {
 							Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
 							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
 						}
-			if (empty($options['single_payment_gateway'])) {			
-						try {
-							$payment->setPending(true);
-							$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
-						} catch (Exception $e) {
-							$payment->setGatewayChargeFailure($e->getMessage());
-							$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
-							Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
-							continue;
+						if (empty($options['single_payment_gateway'])) {
+							try {
+								$payment->setPending(true);
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+							} catch (Exception $e) {
+								$payment->setGatewayChargeFailure($e->getMessage());
+								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
+								Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
+								continue;
+							}
+						} else {
+							$paymentStatus = $payment->getSinglePaymentStatus();
+							if (empty($paymentStatus)) {
+								throw new Exception("Missing status from gateway for single payment");
+							}
 						}
-			} else {
-				$paymentStatus = $payment->getSinglePaymentStatus();
-				if (empty($paymentStatus)) {
-					throw new Exception("Missing status from gateway for single payment");
-				}
-			}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 						$txId = $gateway->getTransactionId();
 						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
@@ -790,7 +790,7 @@ abstract class Billrun_Bill {
 								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
-								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage'])? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
+								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
 							}
 						}
 					} else if ($payment->getDir() == 'tc') {
@@ -810,13 +810,13 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
-					if ($responseFromGateway['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
-					if (is_null($responseFromGateway) && $payment->getDue() > 0) { // offline payment
+					if (is_null($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}
@@ -826,11 +826,11 @@ abstract class Billrun_Bill {
 		} else {
 			throw new Exception('Unknown payment method');
 		}
-		if (isset($options['payment_gateway'])){
+		if (isset($options['payment_gateway'])) {
 			return array('payment' => $payments, 'response' => $responsesFromGateway);
 		} else {
 			return $payments;
-		}		
+		}
 	}
 
 	protected function calcPaidStatus($billId = null, $status = null) {
