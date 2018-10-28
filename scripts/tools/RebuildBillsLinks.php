@@ -1,7 +1,7 @@
 <?php
 
 
-//$dir = 'billrun project directory';
+$dir = '/var/www/billrun/';
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);

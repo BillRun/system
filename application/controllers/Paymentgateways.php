@@ -113,7 +113,7 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $data);
+			$result = $paymentGateway->redirectToGateway($aid, $accountQuery, $timestamp, $request, $data);
 		} catch (Exception $e) {
 			if ($iframe) {
 				$output = array(
