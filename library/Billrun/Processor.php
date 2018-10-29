@@ -789,29 +789,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 		foreach ($filter['conditions'] as $condition) {
-			if (!$this->isConditionMet($row, $condition)) {
+			if (!Billrun_Util::isConditionMet($row, $condition)) {
 				return false;
 			}
 		}
 		return true;
-	}
-	
-	/**
-	 * check if a specific condition is met
-	 * 
-	 * @param array $row
-	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
-	 * @return boolean
-	 */
-	protected function isConditionMet($row, $condition) {
-		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
-		$query = array(
-			'first_val' => array(
-				$condition['op'] => $condition['value'],
-			),
-		);
-		
-		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
 	
 	/**
