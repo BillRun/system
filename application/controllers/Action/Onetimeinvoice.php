@@ -19,7 +19,6 @@ class OnetimeinvoiceAction extends ApiAction {
 	use Billrun_Traits_Api_OperationsLock;
 
 	protected $aid;
-	protected $invoice;
 	
     public function execute($arg = null) {
         $this->allowed();
@@ -95,7 +94,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	protected function getInsertData() {
 	return array(
 			'action' => 'charge_account',
-			'filtration' => (empty($this->aid) ? 'all' : $this->invoice->getInvoiceID()),
+			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
 		);
 	}
 	
@@ -113,7 +112,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	protected function getReleaseQuery() {
 		return array(
 			'action' => 'charge_account',
-			'filtration' => (empty($this->invoice) ? 'all' : $this->invoice->getInvoiceID()),
+			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
 			'end_time' => array('$exists' => false)
 		);
 	}
