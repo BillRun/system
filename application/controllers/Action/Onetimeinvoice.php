@@ -69,15 +69,15 @@ class OnetimeinvoiceAction extends ApiAction {
 			return;
 		}
 		
-//		if (!$this->lock()) {
-//			Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
-//			return;
-//		}
-//        Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
-//       	if (!$this->release()) {
-//			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-//			return;
-//		}
+		if (!$this->lock()) {
+			Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
+			return;
+		}
+        Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
+       	if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return;
+		}
 		
 		if(empty($request['send_back_invoices'])) {
 			$this->getController()->setOutput(array(array(
