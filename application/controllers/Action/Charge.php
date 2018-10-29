@@ -39,7 +39,7 @@ class ChargeAction extends Action_Base {
 		Billrun_Bill_Payment::checkPendingStatus($options);
 		if (!isset($options['pending'])) {
 			$this->getController()->addOutput("Starting to charge unpaid payments...");
-			$this->aids = $options['aids'];
+			$this->aids = Billrun_Util::verify_array($options['aids'], 'int');
 			if (!$this->lock()) {
 				Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 				return;
