@@ -95,6 +95,10 @@ class PaymentGatewaysController extends ApiController {
 		if (!isset($data['name'])) {
 			return $this->setError("need to pass payment gateway name", $request);
 		}
+		
+		if (isset($data['action']) && ($data['action'] == 'single_payment') && (isset($data['amount']) && $data['amount'] <= 0)) {
+			return $this->setError("In single payment mode amount must be positive value", $request);
+		}
 
 		$name = $data['name'];
 		$aid = $data['aid'];
