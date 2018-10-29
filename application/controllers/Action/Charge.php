@@ -15,6 +15,8 @@
 class ChargeAction extends Action_Base {
 
 	use Billrun_Traits_Api_OperationsLock;
+	
+	protected $aids = array();
 
 	/**
 	 * method to execute the pay process for payment gateways.
@@ -37,6 +39,7 @@ class ChargeAction extends Action_Base {
 		Billrun_Bill_Payment::checkPendingStatus($options);
 		if (!isset($options['pending'])) {
 			$this->getController()->addOutput("Starting to charge unpaid payments...");
+			$this->aids = $options['aids'];
 			if (!$this->lock()) {
 				Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 				return;
@@ -55,7 +58,7 @@ class ChargeAction extends Action_Base {
 			return array(
 				'$or' => array(
 					array('filtration' => 'all'),
-					array('filtration' => array('$in' => $options['aids'])),
+					array('filtration' => array('$in' => $this->aids)),
 				),
 			);
 		}
@@ -66,14 +69,14 @@ class ChargeAction extends Action_Base {
 	protected function getInsertData() {
 		return array(
 			'action' => 'charge_account',
-			'filtration' => (empty($options['aids']) ? 'all' : $options['aids']),
+			'filtration' => (empty($this->aids) ? 'all' : $this->aids),
 		);
 	}
 
 	protected function getReleaseQuery() {
 		return array(
 			'action' => 'charge_account',
-			'filtration' => (empty($options['aids']) ? 'all' : $options['aids']),
+			'filtration' => (empty($this->aids) ? 'all' : $this->aids),
 			'end_time' => array('$exists' => false)
 		);
 	}
