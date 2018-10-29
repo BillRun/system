@@ -297,7 +297,7 @@ abstract class Billrun_Discount {
 	protected function adjustDiscountDuration($invoice, &$multiplier, $subscriber = FALSE) {
 		$billrunStartDate = Billrun_Billingcycle::getStartTime($invoice['billrun_key']);
 		$receivedCount = empty($subscriber) ? static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $invoice['aid']) : static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $subscriber['sid'], 'sid');
-		$cycleLimited = !empty($this->discountData['cycles']) && $receivedCount > $this->discountData['cycles'] && ( $receivedCount > 0 );
+		$cycleLimited = !empty($this->discountData['cycles']) && $receivedCount >= $this->discountData['cycles'] && ( $receivedCount > 0 );
 		$followingBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($invoice['billrun_key']);
 		$end_date = Billrun_Billingcycle::getEndTime($followingBillrunKey);
 		if ($cycleLimited && $receivedCount >= $this->discountData['cycles']) {
