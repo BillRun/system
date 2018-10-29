@@ -651,13 +651,12 @@ abstract class Billrun_Bill {
 		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
 	}
 	
-	public static function pay($method, $paymentsArr, $options = array(), $filtersQuery = array()) {
+	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
 		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
-				$billsQuery = array_merge($filtersQuery, array('aid' => $aid));
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays']['inv'])) {
@@ -705,9 +704,54 @@ abstract class Billrun_Bill {
 							}
 							$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
 						}
+					} else if (!empty($rawPayment['pays']['rec'])) {
+						$paidInvoices = $rawPayment['pays']['rec'];
+						$invoices = Billrun_Bill_Payment::queryPayments(array('aid' => $aid, 'txid' => array('$in' => array_keys($paidInvoices))));
+						if (count($invoices) != count($paidInvoices)) {
+							throw new Exception('Unknown payments for account ' . $aid);
+						}
+						if (($rawPayment['amount'] - array_sum($paidInvoices)) <= -Billrun_Bill::precision) {
+							throw new Exception($aid . ': Total to pay is less than the subtotals');
+						}
+						foreach ($invoices as $invoice) {
+							$invoiceObj = Billrun_Bill_Payment::getInstanceByData($invoice);
+							if ($invoiceObj->isPaid()) {
+								throw new Exception('Payment ' . $invoiceObj->getId() . ' already paid');
+							}
+							if (!is_numeric($rawPayment['pays']['rec'][$invoiceObj->getId()])) {
+								throw new Exception('Illegal amount ' . $rawPayment['pays']['rec'][$invoiceObj->getId()] . ' for payment ' . $invoiceObj->getId());
+							} else {
+								$invoiceAmountToPay = floatval($paidInvoices[$invoiceObj->getId()]);
+							}
+							if ((($leftToPay = $invoiceObj->getLeftToPay()) < $invoiceAmountToPay) && (number_format($leftToPay, 2) != number_format($invoiceAmountToPay, 2))) {
+								throw new Exception('Payment ' . $invoiceObj->getId() . ' cannot be overpaid');
+							}
+							$updateBills['rec'][$invoiceObj->getId()] = $invoiceObj;
+						}
+					} else if (!empty($rawPayment['paid_by']['rec'])) {
+						$paidBy = $rawPayment['paid_by']['rec'];
+						$invoices =  Billrun_Bill_Payment::queryPayments(array('aid' => $aid, 'txid' => array('$in' => array_keys($paidBy))));
+						if (count($invoices) != count($paidBy)) {
+							throw new Exception('Unknown payments for account ' . $aid);
+						}
+						if (($rawPayment['amount'] - array_sum($paidBy)) <= -Billrun_Bill::precision) {
+							throw new Exception($aid . ': Total to pay is less than the subtotals');
+						}
+						foreach ($invoices as $invoice) {
+							$invoiceObj = Billrun_Bill_Payment::getInstanceByData($invoice);
+							if (!is_numeric($rawPayment['paid_by']['rec'][$invoiceObj->getId()])) {
+								throw new Exception('Illegal amount ' . $rawPayment['paid_by']['rec'][$invoiceObj->getId()] . ' for payment ' . $invoiceObj->getId());
+							} else {
+								$invoiceAmountToPay = floatval($paidBy[$invoiceObj->getId()]);
+							}
+							if ((($left = $invoiceObj->getLeft()) < $invoiceAmountToPay) && (number_format($left, 2) != number_format($invoiceAmountToPay, 2))) {
+								throw new Exception('Payment ' . $invoiceObj->getId() . 'Credit was exhausted when paying bills');
+							}
+							$updateBills['rec'][$invoiceObj->getId()] = $invoiceObj;
+						}
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$unpaidBills = Billrun_Bill::getUnpaidBills($billsQuery);
+						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
 						foreach ($unpaidBills as $rawUnpaidBill) {
 							$unpaidBill = Billrun_Bill::getInstanceByData($rawUnpaidBill);
 							$invoiceAmountToPay = min($unpaidBill->getLeftToPay(), $leftToSpare);
@@ -720,7 +764,7 @@ abstract class Billrun_Bill {
 						}
 					} else if ($rawPayment['dir'] == 'tc') {
 						$leftToSpare = floatval($rawPayment['amount']);
-						$overPayingBills = Billrun_Bill::getOverPayingBills($billsQuery);
+						$overPayingBills = Billrun_Bill::getOverPayingBills(array('aid' => $aid));
 						foreach ($overPayingBills as $overPayingBill) {
 							$credit = min($overPayingBill->getLeft(), $leftToSpare);
 							if ($credit) {

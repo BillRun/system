@@ -611,6 +611,7 @@ abstract class Billrun_PaymentGateway {
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
+
 		$pipelines[] = array(
 			'$match' => array(
 				'$or' => array(
@@ -810,6 +811,16 @@ abstract class Billrun_PaymentGateway {
 				),
 				'currency' => array(
 					'$first' => '$currency',
+				),
+				'invoices' => array(
+					'$push' => array(
+						'invoice_id' => '$invoice_id',
+						'amount' => '$amount',
+						'left' => '$left',
+						'left_to_pay' => '$left_to_pay',
+						'txid' => '$txid',
+						'type' => '$type',
+					)
 				),
 			);	
 		if ($mode == 'per_bill') {

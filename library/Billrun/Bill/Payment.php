@@ -527,6 +527,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						$paymentParams['paid_by']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
 					}
 				} else {
+					if (!empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
+						foreach ($billDetails['invoices'] as $invoice) {
+							$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
+							$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
+							$payDir = isset($invoice['left']) ? 'paid_by' : 'pays';
+							$paymentParams[$payDir][$invoice['type']][$id] = $amount;
+						}
+					}
 					$paymentParams['amount'] = abs($billDetails['due']);
 					$gatewayDetails['amount'] = $billDetails['due'];
 				}
@@ -553,7 +561,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 				try {
-					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options, $filtersQuery);
+					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options);
 				} catch (Exception $e) {
 					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 					continue;
@@ -562,7 +570,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$paymentData = $payment->getRawData();
 					$transactionId = $paymentData['payment_gateway']['transactionId'];
 					if (isset($paymentResponse['response'][$transactionId]['status']) && $paymentResponse['response'][$transactionId]['status'] === '000') {
-						if ($paymentData['amount'] > 0) {
+						if ($paymentData['gateway_details']['amount'] > 0) {
 							Billrun_Factory::log("Successful charging of account " . $billDetails['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
 						} else {
 							Billrun_Factory::log("Successful refunding of account " . $billDetails['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
