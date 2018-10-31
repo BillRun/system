@@ -37,6 +37,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $data_rate;
 	protected $lines_coll;
 	protected $invoice_version = "1.1";
+	protected $balances;
 
 	/**
 	 * Flush XMLWriter every $flush_size billing lines
@@ -104,6 +105,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
+		$this->balances = Billrun_Factory::db()->balancesCollection();
 		$this->loadRates();
 		$this->loadPlans();
 		
@@ -216,6 +218,14 @@ class Generator_Golanxml extends Billrun_Generator {
 		$servicesCost = array();
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
+		$serviceBalancesQuery = array(
+			'aid' => $aid,
+			'$or' => array(
+				array('from' => array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrun_key)), '$lte' => new MongoDate(Billrun_Util::getEndTime($billrun_key)))),
+				array('to' => array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrun_key)), '$lte' => new MongoDate(Billrun_Util::getEndTime($billrun_key)))),
+			),
+		);
+		$serviceBalances = $this->balances->query($serviceBalancesQuery)->cursor();
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
 
@@ -274,6 +284,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$planCurrentPlan = $plan['current_plan'];
 				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
+				$planIncludes = $planObj['include']['groups'][$planObj['name']];
 				$planPrice = $plan['fraction'] * $planObj['price'];
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
 				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
@@ -355,13 +366,10 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
 						$this->writer->writeElement('SUB_TYPE', $subType);
 						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
-					//	$this->writer->writeElement('FREE_CAPACITY', $planIncludes[$typeUsage]);
+						$this->writer->writeElement('FREE_CAPACITY', $planIncludes[$typeUsage]);
 						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
 						$this->writer->writeElement('ABOVE_FREE_USAGE', (isset($details['above_usage']) ? $details['above_usage'] : 0));
 						$this->writer->writeElement('ABOVE_FREE_COST', (isset($details['above_cost']) ? $details['above_cost'] : 0));
-	//					$this->writer->writeElement('ABOVE_FREE_VAT_COST', );
-	//					$this->writer->writeElement('ABOVE_FREE_TOTAL_COST', );
-						
 						$this->writer->endElement(); // end USAGE
 					}
 				}
@@ -377,6 +385,62 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE_BY_PLAN');
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
+					foreach ($serviceBalances as $serviceBalance) {
+						$callUsage = 0;
+						$smsUsage = 0;
+						$mmsUsage = 0;
+						$dataUsage = 0;
+						$balanceUsages = $serviceBalance['balance']['totals'];
+						$this->writer->startElement('SUBSCRIBER_SERVICE_USAGE');
+						$this->writer->writeElement('GROUP_NAME', $serviceBalance['service_name']);
+						$this->writer->writeElement('GROUP_TYPE', $serviceBalance['service_name']);
+						$this->writer->writeElement('GROUP_ID', $serviceBalance['service_id']);	
+						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec));
+						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['to']->sec));
+						$usageInGroup = $planInCycle['include']['groups'][$serviceBalance['service_name']];
+						
+						if (isset($usageInGroup['call'])) {
+							$callUsage += $balanceUsages['call']['usagev'];
+							$callCapacity = $usageInGroup['call'];
+						}
+						if (isset($usageInGroup['incoming_call'])) {
+							$callUsage += $balanceUsages['incoming_call']['usagev'];
+						}
+						if (isset($usageInGroup['sms'])) {
+							$smsUsage = $balanceUsages['sms']['usagev'];
+							$smsCapacity = $usageInGroup['sms'];
+						}
+						if (isset($usageInGroup['data'])) {
+							$dataUsage = $balanceUsages['data']['usagev'];
+							$dataCapacity = $usageInGroup['data'];
+						}
+						if (isset($usageInGroup['mms'])) {
+							$mmsUsage = $balanceUsages['mms']['usagev'];
+							$mmsCapacity = $usageInGroup['mms'];
+						}
+						
+						if ($callUsage) {
+							$this->writer->writeElement('VOICE_USAGE', $callUsage);
+							$this->writer->writeElement('VOICE_CAPACITY', $callCapacity);
+						}
+						
+						if ($smsUsage) {
+							$this->writer->writeElement('SMS_USAGE', $smsUsage);
+							$this->writer->writeElement('SMS_CAPACITY', $smsCapacity);
+						}
+					
+						if ($dataUsage) {
+							$this->writer->writeElement('DATA_USAGE', $dataUsage);
+							$this->writer->writeElement('DATA_CAPACITY', $dataCapacity);
+						}
+						
+						if ($mmsUsage) {
+							$this->writer->writeElement('MMS_USAGE', $mmsUsage);
+							$this->writer->writeElement('MMS_CAPACITY', $mmsCapacity);
+						}
+						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
+					}
+					
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
@@ -511,23 +575,27 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
-			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
-			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE);
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED);
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED);
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
-			$servicesTotalSum = 0;
-			foreach ($servicesTotalCost as $serviceSum) {
-				$servicesTotalSum += $serviceSum;
-			}
-			$fixedCharges = $servicesTotalSum + $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
-			$this->writer->writeElement('FIXED_CHARGES', $fixedCharges);
-			$additionalCharges = $subscriber_sumup_TOTAL_ABOVE_GIFT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
-			$this->writer->writeElement('ADDITIONAL_CHARGES', $additionalCharges);
-			$subscriberManualCorrections = $subscriber_sumup_TOTAL_MANUAL_CORRECTION - $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
-			$this->writer->writeElement('SUBSCRIBER_MANUAL_CORRECTIONS', $subscriberManualCorrections);
+			$subscriber_gift_usage_TOTAL_COST_WITH_VAT = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) * (1 + $billrun['vat']) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_COST_WITH_VAT);
+			$subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) * (1 + $billrun['vat']));
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT); // vatable overplan cost		
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT = floatval((isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT = floatval((isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED * (1 + $billrun['vat']));
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED * (1 + $billrun['vat']));
+//			$servicesTotalSum = 0;
+//			foreach ($servicesTotalCost as $serviceSum) {
+//				$servicesTotalSum += $serviceSum;
+//			}
+//			$fixedCharges = $servicesTotalSum + $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+//			$this->writer->writeElement('FIXED_CHARGES', $fixedCharges);
+//			$additionalCharges = $subscriber_sumup_TOTAL_ABOVE_GIFT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
+//			$this->writer->writeElement('ADDITIONAL_CHARGES', $additionalCharges);
+//			$subscriberManualCorrections = $subscriber_sumup_TOTAL_MANUAL_CORRECTION - $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+//			$this->writer->writeElement('SUBSCRIBER_MANUAL_CORRECTIONS', $subscriberManualCorrections);
 			$subscriber_charge_summary_vatable = isset($subscriber['totals']['vatable']) ? $subscriber['totals']['vatable'] : 0;
 			$subscriber_charge_summary_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_charge_summary_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
