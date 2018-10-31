@@ -35,6 +35,14 @@ class Mongodloid_Connection {
 	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
+		// casting int values that are passed from config (string)
+		if (PHP_MAJOR_VERSION >= 7) {
+			foreach ($options as $key => &$option) {
+				if (is_int($option) && stripos($key, 'timeout') !== FALSE) {
+					settype($option, 'int');
+				}
+			}
+		}
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;
