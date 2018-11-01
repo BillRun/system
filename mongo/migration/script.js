@@ -331,8 +331,6 @@ var serviceDescField = {
 };
 addFieldToConfig(lastConfig,serviceDescField,'lines');
 
-db.config.insert(lastConfig);
-
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
 
@@ -344,3 +342,12 @@ db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , spars
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+
+// BRCD-1624: add default Plays to config
+if (typeof lastConfig.plays == 'undefined') {
+	lastConfig.plays = [
+		{"name": "Default", "enabled": true, "default": true }
+	];
+}
+
+db.config.insert(lastConfig);
