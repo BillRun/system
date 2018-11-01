@@ -339,11 +339,7 @@ class Billrun_Billrun {
 			switch ($category) {
 				case "roaming":
 					$category_key = "roaming";
-					if ($row['type'] == 'tap3'){
-						$zone_key = $row['serving_network'];
-					} else {
 						$zone_key = $rate['key'];
-					}
 					break;
 				case "special":
 					$category_key = "special";

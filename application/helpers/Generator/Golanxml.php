@@ -786,17 +786,17 @@ class Generator_Golanxml extends Billrun_Generator {
 				foreach ($subscriber_roaming as $zone_key => $zone) {
 					$this->writer->startElement('BREAKDOWN_SUBTOPIC');
 					$this->writer->writeAttribute('name', '');
-					unset($roaming_sms);
+					unset($currentRate);
 					foreach ($this->rates as $rate){
 						if ($rate['key'] == $zone_key){
-							$roaming_sms = $rate;
+							$currentRate = $rate;
 							break;
 						}
 					}
-					if (empty($roaming_sms)){
-						$this->writer->writeAttribute('plmn', $zone_key);
+					if (empty($currentRate)){
+						$this->writer->writeAttribute('alpha3', '');
 					} else {
-						$this->writer->writeAttribute('alpha3', $roaming_sms['alpha3']);
+						$this->writer->writeAttribute('alpha3', $currentRate['alpha3']);
 					}
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
