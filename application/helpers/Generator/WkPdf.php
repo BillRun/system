@@ -48,7 +48,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				'final_charge' => 'final_charge'
 			),
 			'local_calls' => array(
-				'called_number' => 'uf.called_party_number',
+				'called_number' => ['uf.called_party_number','uf.called_number','uf.Destination'],
 				'title' => 'שיחות טלפון בישראל'
 			),
 			'local_sms' => array(
