@@ -227,6 +227,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return static::shouldRatebeDisplayedByKey($usageData['rate'],$section);
 	}
         
+        public function shouldRatebeDisplayedForLine($line,$section='all') {
+		return static::shouldRatebeDisplayedByKey($line['arate_key'],$section) && !in_array($line['type'],Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates_by_type.'.$section,[]));
+	}
+        
         public function shouldRatebeDisplayedByKey($rateKey,$section='all') {
 		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$rateKey);
 	}
