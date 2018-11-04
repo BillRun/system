@@ -224,7 +224,11 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function shouldRatebeDisplayed($usageData,$section='all') {
-		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$usageData['rate']);
+		return static::shouldRatebeDisplayedByKey($usageData['rate'],$section);
+	}
+        
+        public function shouldRatebeDisplayedByKey($rateKey,$section='all') {
+		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$rateKey);
 	}
 	
 	public function getSubscriberServices($sid) {
