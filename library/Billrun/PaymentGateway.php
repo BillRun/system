@@ -495,7 +495,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway, $params = array()) {
+	public static function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
 			return array('status' => $status, 'stage' => "Completed", 'additional_params' => $params);
 		} else if ($gateway->isPending($status)) {
@@ -733,7 +733,7 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
-	protected function getGroupByMode($mode = false) {
+	protected static function getGroupByMode($mode = false) {
 		$group = array(
 				'_id' => '$aid',
 				'suspend_debit' => array(
@@ -786,7 +786,7 @@ abstract class Billrun_PaymentGateway {
 		return $group;
 	}
 	
-	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
-		return $responseFromGateway;
+	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
+		return false;
 	}
 }

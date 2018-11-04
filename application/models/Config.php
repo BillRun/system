@@ -614,7 +614,7 @@ class ConfigModel {
 		}
 		
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
-		if (Billrun_Util::isAssoc($data)) {
+		if (Billrun_Util::isAssoc($data) && !empty($data)) {
 			foreach ($data as $key => $value) {
 				if (!$this->_updateConfig($currentConfig, $category . "." . $key, $value)) {
 					return 0;

@@ -14,7 +14,6 @@
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
-	use Billrun_Traits_Api_OperationsLock;
 	/**
 	 *
 	 * @var string
@@ -477,10 +476,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['invoices'])) {
 			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
 		}
-		if (!static::lock()) {
-			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
-			return;
-		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, @$chargeOptions['invoices'] ?: FALSE));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
@@ -544,26 +539,42 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			try {
-				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);	
 			} catch (Exception $e) {
 				Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 				continue;
 			}
-			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				if ($gatewayDetails['amount'] > 0) {
-					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-				} else {
-					Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+			foreach ($paymentResponse['payment'] as $payment) {
+				$paymentData = $payment->getRawData();
+				$transactionId = $paymentData['payment_gateway']['transactionId'];
+				if (isset($paymentResponse['response'][$transactionId]['status']) && $paymentResponse['response'][$transactionId]['status'] === '000') {
+					if ($gatewayDetails['amount'] > 0) {
+						Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					} else {
+						Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					}
+				}
+				self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
+			}		
+			if ($paymentResponse['response']['stage'] == 'Rejected') {
+				$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+				$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'], $paymentParams);
+				try{
+					if ($updatedPaymentParams) {
+						$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($updatedPaymentParams), $options);
+						if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+							if ($gatewayDetails['amount'] > 0) {
+								Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+							} else {
+								Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+							}
+						}
+					}
+				} catch (Exception $ex) {
+					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 				}
 			}
-			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
-		}
-		
-		if (!static::release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-			return;
-		}
-		
+		}	
 	}
 	
 	/**
@@ -646,34 +657,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public function setGatewayChargeFailure($message){
 		return $this->data['failure_message'] = $message;
-	}
-	
-	protected function getConflictingQuery() {
-		if (!empty(self::$aids)){
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => self::$aids)),
-				),
-			);
-		}
-		
-		return array();
-	}
-	
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-		);
-	}
-	
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-			'end_time' => array('$exists' => false)
-		);
 	}
 	
 	public function getInvoicesIdFromReceipt() {

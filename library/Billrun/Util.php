@@ -1692,6 +1692,21 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * Retrive the first field (field path supported) that has value 
+	 * 	(mostly should be used to get )
+	 */
+	 public static function getFirstValueIn($src, $keys, $defaultValue = null) {
+		foreach($keys as $keyPath) {
+			$ret = static::getIn($src,$keyPath,$defaultValue);
+			if($ret !=  $defaultValue) {
+				return $ret;
+			}
+		}
+		
+		return $defaultValue;
+	 }
+	
+	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
 	 * (used to  convert querable objects from the DB to a faster structure in PHP (keyed hash))
 	 * @param type $arrayData the  nested
@@ -1779,6 +1794,24 @@ class Billrun_Util {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * check if a specific condition is met
+	 * 
+	 * @param array $row
+	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function isConditionMet($row, $condition) {
+		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
+		$query = array(
+			'first_val' => array(
+				$condition['op'] => $condition['value'],
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
 
 }

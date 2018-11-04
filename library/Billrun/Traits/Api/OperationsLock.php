@@ -78,7 +78,7 @@ trait Billrun_Traits_Api_OperationsLock {
 	 */
 	public function release() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
-		$query = static::getReleaseQuery();	
+		$query = static::getReleaseQuery();
 		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
 		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new MongoDate())));
 		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
