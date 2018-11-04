@@ -70,6 +70,7 @@ class AccountInvoicesAction extends ApiAction {
 
 	protected function downloadPDF($request) {
 		$aid = $request->get('aid');
+		$confirmedOnly = $request->get('confirmed_only');
 		$billrun_key = $request->get('billrun_key');
 		$invoiceId = $request->get('iid');
 		
@@ -84,8 +85,10 @@ class AccountInvoicesAction extends ApiAction {
 		if ($invoice->isEmpty()) {
 			return 'Invoice was not found';
 		}
-		if (empty($invoice->get('billed')) || $invoice->get('billed') !== 1) {
-			return 'Invoice not confirmed';
+		if (!is_null($confirmedOnly && $confirmedOnly == '1')) {
+			if (empty($invoice->get('billed')) || $invoice->get('billed') !== 1) {
+				return 'Invoice not found';
+			}
 		}
 		$invoiceId = $invoice['invoice_id'];
 		
