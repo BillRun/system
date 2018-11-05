@@ -321,16 +321,6 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
-// BRCD-1521 - Add service description to service lfat lines.
-var serviceDescField = {
-	field_name : "foreign.service.description",
-	foreign : { 
-		entity : "service",
-		field  :"invoice_description"
-	}
-};
-addFieldToConfig(lastConfig,serviceDescField,'lines');
-
 db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
