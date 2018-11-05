@@ -722,7 +722,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 	
-	protected function buildFilterQuery($chargeFilters) {
+	protected static function buildFilterQuery($chargeFilters) {
 		$filtersQuery = array();
 		$errorMessage = self::validateChargeFilters($chargeFilters);
 		if ($errorMessage) {
@@ -759,15 +759,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $filtersQuery;
 	}
 
-	protected function isRefundMode($options) {
+	protected static function isRefundMode($options) {
 		return isset($options['mode']) && $options['mode'] == 'refund';
 	}
 
-	protected function isChargeMode($options) {
+	protected static function isChargeMode($options) {
 		return isset($options['mode']) && $options['mode'] == 'charge';
 	}
 	
-	protected function validateChargeFilters($filters) {
+	protected static function validateChargeFilters($filters) {
 		$errorMessage = false;
 		if (isset($filters['aids']) && isset($filters['exclude_accounts'])) {
 			$errorMessage = "Wrong input! please choose between aids filter to exclude_accounts filter";
@@ -791,7 +791,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $errorMessage;
 	}
 	
-	protected function validateArrayNumericValues($filters) {
+	protected static function validateArrayNumericValues($filters) {
 		$filtersPossibleArray = array();
 		if (isset($filters['aids'])) {
 			$filtersPossibleArray['aids'] = $filters['aids'];
