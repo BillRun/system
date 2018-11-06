@@ -521,4 +521,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return array_merge($planIncludedServices, $retServices);
 	}
 	
+	/**
+	 * Used for enriching lines data with subscriber's play
+	 * 
+	 * @param array $services
+	 * @param array $translationRules
+	 * @param array $subscriber
+	 * @param array $row
+	 * @return services array
+	 */
+	public function getPlayFromRow($play, $translationRules, $subscriber, $row) {
+		if (!Billrun_Utils_Plays::isPlaysInUse()) {
+			return null;
+		}
+		return $play;
+	}
+	
 }
