@@ -69,6 +69,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['gateway_details'])){
 				$this->data['gateway_details'] = $options['gateway_details'];
 			}
+			if (isset($options['transaction_status'])) {
+				$this->data['transaction_status'] = $options['transaction_status'];
+			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
@@ -536,6 +539,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				Billrun_Factory::log("Charging account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+				Billrun_Factory::log("Starting to pay bills by invoice ids: " . implode(',', $chargeOptions['invoices']), Zend_Log::INFO);
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			try {
@@ -699,4 +703,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 
+	public function getSinglePaymentStatus() {
+		return !empty($this->data['transaction_status']) ? $this->data['transaction_status'] : null;
+	}
+	
+	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
+		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
+		$gatewayName = $paymentParams['gateway_details']['name'];
+		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+		if (isset($paymentResponse['response']['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response']['status'])) {
+			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $paymentParams['gateway_details']['transferred_amount'], Zend_Log::INFO);
+		}
+		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
+	}
 }
