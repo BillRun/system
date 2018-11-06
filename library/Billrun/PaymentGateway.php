@@ -165,7 +165,7 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
-			$singlePaymentParams['amount'] = $data['amount'];
+			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
 		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
