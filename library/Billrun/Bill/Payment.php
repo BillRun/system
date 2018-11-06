@@ -717,9 +717,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
 		$gatewayName = $paymentParams['gateway_details']['name'];
 		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
-		if (isset($paymentResponse['response']['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response']['status'])) {
-			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $paymentParams['gateway_details']['transferred_amount'], Zend_Log::INFO);
+		foreach ($paymentResponse['payment'] as $payment) {
+			$paymentData = $payment->getRawData();
+			$transactionId = $paymentData['payment_gateway']['transactionId'];
+			if (isset($paymentResponse['response'][$transactionId]['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response'][$transactionId]['status'])) {
+				Billrun_Factory::log("Received payment for account " . $paymentData['aid'] . ". Amount: " . $paymentData['gateway_details']['transferred_amount'], Zend_Log::INFO);
+			}
+			self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
 		}
-		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 	}
 }
