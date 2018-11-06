@@ -131,7 +131,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $to end date of this package - if package exists.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $uniquePlanId = null, $from = null ,$to = null, $serviceId = null, $serviceName = null, $joinedField = null) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $uniquePlanId = '', $from = null ,$to = null, $serviceId = null, $serviceName = null, $joinedField = null) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		
@@ -139,10 +139,10 @@ class Billrun_Balance implements ArrayAccess {
 			'sid' => $sid,
 			'billrun_month' => $billrun_key,
 		);
-		if (!is_null($uniquePlanId)) {
-			$query['unique_plan_id'] = $uniquePlanId;
+		$data = self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref);
+		if (!empty($uniquePlanId)) {
+			$query['unique_plan_id'] = $data['unique_plan_id'] = $uniquePlanId;
 		}
-		$data = self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref, $uniquePlanId);
 		if (!is_null($from)) {
 			$data['from'] = new MongoDate($from);
 		}
@@ -190,7 +190,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $current_plan
 	 * @return type
 	 */
-	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref, $uniquePlanId) {
+	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
 		return array(
 			'billrun_month' => $billrun_month,
 			'aid' => $aid,
@@ -198,7 +198,6 @@ class Billrun_Balance implements ArrayAccess {
 			'current_plan' => $plan_ref,
 			'balance' => self::getEmptyBalance("out_plan_"),
 			'tx' => new stdclass,
-			'unique_plan_id' => $uniquePlanId,
 		);
 	}
 

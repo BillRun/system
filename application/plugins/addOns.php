@@ -348,7 +348,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function createAddonBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName) {
 		$planRef = $plan->createRef();
-		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
+		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, '', $from, $to, $serviceId, $serviceName);
 	}
 
 	/**
