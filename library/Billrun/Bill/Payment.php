@@ -548,30 +548,36 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$paymentData = $payment->getRawData();
 				$transactionId = $paymentData['payment_gateway']['transactionId'];
 				if (isset($paymentResponse['response'][$transactionId]['status']) && $paymentResponse['response'][$transactionId]['status'] === '000') {
-					if ($gatewayDetails['amount'] > 0) {
-						Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+					if ($paymentData['gateway_details']['amount'] > 0) {
+						Billrun_Factory::log("Successful charging of account " . $paymentData['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
 					} else {
-						Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+						Billrun_Factory::log("Successful refunding of account " . $paymentData['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
 					}
 				}
 				self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
-			}		
-			if ($paymentResponse['response']['stage'] == 'Rejected') {
-				$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
-				$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'], $paymentParams);
-				try{
-					if ($updatedPaymentParams) {
-						$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($updatedPaymentParams), $options);
-						if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-							if ($gatewayDetails['amount'] > 0) {
-								Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-							} else {
-								Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+				if ($paymentResponse['response'][$transactionId]['stage'] == 'Rejected') {
+					$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+					$newPaymentParams['amount'] = $paymentData['amount'];
+					$newPaymentParams['aid'] = $paymentData['aid'];
+					$newPaymentParams['gateway_details'] = $paymentData['gateway_details'];
+					$newPaymentParams['dir'] = $paymentData['dir'];
+					$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'][$transactionId], $newPaymentParams);
+					try {
+						if ($updatedPaymentParams) {
+							$paymentResponse = Billrun_Bill::pay($paymentData['method'], array($updatedPaymentParams), $options);
+							$newPaymentData = $paymentResponse['payment'][0]->getRawData();
+							$newTransactionId = $newPaymentData['payment_gateway']['transactionId'];
+							if (isset($paymentResponse['response'][$newTransactionId]['status']) && $paymentResponse['response'][$newTransactionId]['status'] === '000') {
+								if ($newPaymentData['gateway_details']['amount'] > 0) {
+									Billrun_Factory::log("Successful charging of account " . $newPaymentData['aid'] . ". Amount: " . $newPaymentData['amount'], Zend_Log::INFO);
+								} else {
+									Billrun_Factory::log("Successful refunding of account " . $newPaymentData['aid'] . ". Amount: " . $newPaymentData['amount'], Zend_Log::INFO);
+								}
 							}
 						}
+					} catch (Exception $ex) {
+						Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
 					}
-				} catch (Exception $ex) {
-					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 				}
 			}
 		}	
