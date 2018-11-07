@@ -749,14 +749,24 @@ abstract class Billrun_Bill {
 							Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
 							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
 						}
-						try {
-							$payment->setPending(true);
-							$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
-						} catch (Exception $e) {
-							$payment->setGatewayChargeFailure($e->getMessage());
-							$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
-							Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
-							continue;
+						if (empty($options['single_payment_gateway'])) {
+							try {
+								$payment->setPending(true);
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+							} catch (Exception $e) {
+								$payment->setGatewayChargeFailure($e->getMessage());
+								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
+								Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
+								continue;
+							}
+						} else {
+							$paymentStatus = array(
+								'status' => $payment->getSinglePaymentStatus(),
+								'additional_params' => array()
+							);
+							if (empty($paymentStatus['status'])) {
+								throw new Exception("Missing status from gateway for single payment");
+							}
 						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 						$txId = $gateway->getTransactionId();
