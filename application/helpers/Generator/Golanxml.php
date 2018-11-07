@@ -220,9 +220,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$aid = $billrun['aid'];
 		$serviceBalancesQuery = array(
 			'aid' => $aid,
-			'$or' => array(
-				array('from' => array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrun_key)), '$lte' => new MongoDate(Billrun_Util::getEndTime($billrun_key)))),
-				array('to' => array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrun_key)), '$lte' => new MongoDate(Billrun_Util::getEndTime($billrun_key)))),
+			'$and' => array(
+				array('from' => array('$lte' => new MongoDate(Billrun_Util::getEndTime($billrun_key)))),
+				array('to' => array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrun_key)))),
 			),
 		);
 		$serviceBalances = $this->balances->query($serviceBalancesQuery)->cursor();
