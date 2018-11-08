@@ -479,7 +479,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$size = !empty($chargeOptions['size']) ? $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
-		if (empty($filtersQuery) && !empty($chargeOptions)) {
+		if (empty($filtersQuery) && !empty($chargeOptions['pay_mode'])) {
 			throw new Exception("Can't Charge, wrong input");
 		}
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'total_debt';
@@ -527,7 +527,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					if (!empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
 						foreach ($billDetails['invoices'] as $invoice) {
 							$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
-							$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
+							$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];					
+							if (Billrun_Util::isEqual($amount, 0, Billrun_Bill::precision)) {
+								continue;
+							}
 							$payDir = isset($invoice['left']) ? 'paid_by' : 'pays';
 							$paymentParams[$payDir][$invoice['type']][$id] = $amount;
 						}
