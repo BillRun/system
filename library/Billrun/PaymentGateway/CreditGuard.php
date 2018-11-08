@@ -106,6 +106,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
+			if ($retParams['action'] == 'SinglePayment') {
+				$this->transactionId = (string) $xmlObj->response->tranId;
+			}
 
 			return $retParams;
 		} else {

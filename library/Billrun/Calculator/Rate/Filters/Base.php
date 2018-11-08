@@ -48,6 +48,15 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (isset($row['uf.' .$field])) {
 			return $this->regexValue($row['uf.' .$field], $regex);
 		}
+		
+		if (isset($row['foreign'][$field])) {
+			if (is_array($row['foreign'][$field])) {
+				return array_map(function ($element) {
+					return $this->regexValue($element, $regex);
+				}, $row['foreign'][$field]) ;
+			}
+			return $this->regexValue($row['foreign'][$field], $regex);
+		}
 
 		if (isset($row[$field])) {
 			return $this->regexValue($row[$field], $regex);

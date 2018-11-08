@@ -165,7 +165,7 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
-			$singlePaymentParams['amount'] = $data['amount'];
+			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
 		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
@@ -524,7 +524,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway, $params = array()) {
+	public static function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
 			return array('status' => $status, 'stage' => "Completed", 'additional_params' => $params);
 		} else if ($gateway->isPending($status)) {
@@ -857,12 +857,13 @@ abstract class Billrun_PaymentGateway {
 		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$paymentParams['amount'] = abs($cashAmount);
 		$gatewayDetails['amount'] = $cashAmount;
-		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
-		$paymentParams['gateway_details'] = $gatewayDetails;
+		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
+		$paymentParams['gateway_details'] = $retParams;
+		$paymentParams['gateway_details']['name'] = $gatewayDetails['name'];
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
-		$paymentParams['transaction_type'] = $retParams['action'];
+		$paymentParams['dir'] = 'fc';
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
-		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $gatewayDetails, $options);
+		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
 	}
 	
 	public function getCompletionCodes() {
