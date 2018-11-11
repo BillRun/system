@@ -475,15 +475,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public static function makePayment($chargeOptions) {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
-		}
-		$size = !empty($chargeOptions['size']) ? $chargeOptions['size'] : 100;
-		$page = !empty($chargeOptions['page']) ? $chargeOptions['page'] : 0;
+		}		
+		$size = !empty($chargeOptions['size']) ? (int)$chargeOptions['size'] : 100;
+		$page = !empty($chargeOptions['page']) ? (int)$chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		if (empty($filtersQuery) && !empty($chargeOptions['pay_mode'])) {
 			throw new Exception("Can't Charge, wrong input");
 		}
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'total_debt';
-		$customersAids = Billrun_Factory::db()->billsCollection()->distinct('aid', $filtersQuery);
+		$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
+		$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
+		foreach ($paginationAids as $paginationResult) {
+			$customersAids[] = $paginationResult->getRawData()['_id'];
+		}
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 
@@ -499,7 +503,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
 			$filtersQuery['$and'] = array($accountIdQuery);
-			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode, $page, $size));
+			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
 				$subscriber = $subscribers_in_array[$billDetails['aid']];
@@ -837,5 +841,32 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
 		}
+	}
+	
+	protected static function getPaginationQuery($filtersQuery, $page, $size) {		
+		if (!empty($filtersQuery)) {
+			$pipelines[] = array(
+				'$match' => $filtersQuery,
+			);
+		}
+		$pipelines[] = array(
+			'$sort' => array(
+				'type' => 1,
+				'due_date' => -1,
+			),
+		);		
+		$pipelines[] = array(
+			'$group' => array(
+				'_id' => '$aid',
+			),
+		);
+		$pipelines[] = array(
+			'$skip' => intval($page) * intval($size)
+		);	
+		$pipelines[] = array(
+			'$limit' => intval($size),
+		);
+		
+		return $pipelines;
 	}
 }

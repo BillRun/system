@@ -581,7 +581,7 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['receiver'];
 	}
 	
-	public static function getBillsAggregateValues($filters = array(), $payMode = 'total_debt', $page = 0, $size = 100) {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'total_debt') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		if (!empty($filters['invoice_id'])) {
 			$payMode = 'per_bill';
@@ -620,14 +620,6 @@ abstract class Billrun_PaymentGateway {
 				),
 				'suspend_debit' => NULL,
 			),
-		);
-
-		$pipelines[] = array(
-			'$skip' => intval($page) * intval($size)
-		);
-		
-		$pipelines[] = array(
-			'$limit' => intval($size),
 		);
 		
 		$res = $billsColl->aggregate($pipelines);
