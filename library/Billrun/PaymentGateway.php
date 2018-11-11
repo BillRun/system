@@ -583,6 +583,8 @@ abstract class Billrun_PaymentGateway {
 	
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'total_debt') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
+		$nonRejectedOrCanceled = billrun_bill::getNotRejectedOrCancelledQuery();
+		$filters = array_merge($filters, $nonRejectedOrCanceled);
 		if (!empty($filters['invoice_id'])) {
 			$payMode = 'per_bill';
 		}
