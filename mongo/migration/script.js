@@ -321,6 +321,30 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
+// add detailed invoice flag to accounts
+fields = lastConfig.subscribers.account.fields;
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "invoice_detailed") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push ({
+		"display":true,
+		"editable":true,
+		"generated":false,
+		"system":true,
+		"field_name":"invoice_detailed",
+		"unique":false,
+		"show_in_list":false,
+		"title":"Detailed invoice",
+		"type":"boolean",
+		"mandatory":false
+	});
+	lastConfig.subscribers.account.fields = fields;
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
