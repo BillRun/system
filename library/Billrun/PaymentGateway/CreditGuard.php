@@ -372,12 +372,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		if (isset($options['installments'])) {
 			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
 			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
-			if (!empty($options['installments']['first_payment'])) {
-				$installmentParams['first_payment'] = $this->convertAmountToSend($options['installments']['first_payment']);
-				$installmentParams['periodical_payments'] = ($installmentParams['amount'] - $installmentParams['first_payment']) / $installmentParams['number_of_payments'];
-			} else {
-				$installmentParams['first_payment'] = $installmentParams['periodical_payments'] = $installmentParams['amount'] / $options['installments']['number_of_payments']; 
-			}	
+			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
+			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
 			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams);
 		}
 		return $this->getXmlStructureByParams($credentials, $xmlParams);
