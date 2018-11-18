@@ -321,6 +321,31 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
+// add detailed invoice flag to accounts
+fields = lastConfig.subscribers.account.fields;
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "detailed_invoice") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push ({
+		"display":true,
+		"editable":true,
+		"generated":false,
+		"system":true,
+		"field_name":"detailed_invoice",
+		"unique":false,
+		"show_in_list":false,
+		"title":"Detailed invoice",
+		"type":"boolean",
+		"mandatory":false
+	});
+	lastConfig.subscribers.account.fields = fields;
+}
+
+
 // BRCD-1636 Add new custom 'play' field to Subscribers.
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
