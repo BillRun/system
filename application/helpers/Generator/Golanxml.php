@@ -105,7 +105,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
+		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		$this->loadRates();
 		$this->loadPlans();
 		
@@ -226,6 +226,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			),
 		);
 		$serviceBalances = $this->balances->query($serviceBalancesQuery)->cursor();
+		$servicesNameWithBalance = array();
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
 
@@ -386,6 +387,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
 					foreach ($serviceBalances as $serviceBalance) {
+						$servicesNameWithBalance[] = $serviceBalance['service_name'];
 						$callUsage = 0;
 						$smsUsage = 0;
 						$mmsUsage = 0;
@@ -442,6 +444,9 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 					
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
+						if (in_array($group_name, $servicesNameWithBalance)) {
+							continue;
+						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
 						$subscriber_group_usage_VOICE_FREEUSAGE = 0;
@@ -480,24 +485,32 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_group_usage_VOICE_ABOVEFREECOST);
 							$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_group_usage_VOICE_ABOVEFREEUSAGE);
 							$this->writer->writeElement('VOICE_CAPACITY', $group['call']);
+							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
+							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));		
 						}
 						if (isset($group['sms'])) {
 							$this->writer->writeElement('SMS_FREEUSAGE', $subscriber_group_usage_SMS_FREEUSAGE);
 							$this->writer->writeElement('SMS_ABOVEFREECOST', $subscriber_group_usage_SMS_ABOVEFREECOST);
 							$this->writer->writeElement('SMS_ABOVEFREEUSAGE', $subscriber_group_usage_SMS_ABOVEFREEUSAGE);
 							$this->writer->writeElement('SMS_CAPACITY', $group['sms']);
+							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
+							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						if (isset($group['data'])) {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
 							$this->writer->writeElement('DATA_CAPACITY', $group['data']);
+							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
+							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						if (isset($group['mms'])) {
 							$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);
 							$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_group_usage_MMS_ABOVEFREECOST);
 							$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_group_usage_MMS_ABOVEFREEUSAGE);
 							$this->writer->writeElement('MMS_CAPACITY', $group['mms']);
+							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
+							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						$this->writer->endElement(); // end SUBSCRIBER_GROUP_USAGE
 					}
