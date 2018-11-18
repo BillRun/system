@@ -46,10 +46,12 @@ class Models_Subscribers extends Models_Entity {
 	 * 
 	 * @param array $fields array of field settings
 	 */
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
-		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		return array_merge($accountFields, $customFields);
+		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
+		return array_merge($subscriberFields, $customFields);
 	}
 	
 	public function getCustomFieldsPath() {
