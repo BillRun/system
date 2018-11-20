@@ -238,6 +238,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
+			$vfCountDays = $this->queryVFDaysApi($sid, date(Billrun_Base::base_dateformat, time()));
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
 			$this->plansToCharge = !empty($plans) ? $this->getPlanNames($plans): array();
@@ -367,7 +368,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
 						$this->writer->writeElement('SUB_TYPE', $subType);
 						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
-						$this->writer->writeElement('FREE_CAPACITY', $planIncludes[$typeUsage]);
+						$this->writer->writeElement('FREE_CAPACITY', isset($planIncludes[$typeUsage]) ? $planIncludes[$typeUsage] : 0);
 						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
 						$this->writer->writeElement('ABOVE_FREE_USAGE', (isset($details['above_usage']) ? $details['above_usage'] : 0));
 						$this->writer->writeElement('ABOVE_FREE_COST', (isset($details['above_cost']) ? $details['above_cost'] : 0));
@@ -449,6 +450,11 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
+						if ($group_name == 'VF') {
+							$this->writer->writeElement('VF_DAYS', $vfCountDays);
+						}
+						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
+						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						$subscriber_group_usage_VOICE_FREEUSAGE = 0;
 						$subscriber_group_usage_VOICE_ABOVEFREECOST = 0;
 						$subscriber_group_usage_VOICE_ABOVEFREEUSAGE = 0;
@@ -484,33 +490,25 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('VOICE_FREEUSAGE', $subscriber_group_usage_VOICE_FREEUSAGE);
 							$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_group_usage_VOICE_ABOVEFREECOST);
 							$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_group_usage_VOICE_ABOVEFREEUSAGE);
-							$this->writer->writeElement('VOICE_CAPACITY', $group['call']);
-							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
-							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));		
+							$this->writer->writeElement('VOICE_CAPACITY', $group['call']);		
 						}
 						if (isset($group['sms'])) {
 							$this->writer->writeElement('SMS_FREEUSAGE', $subscriber_group_usage_SMS_FREEUSAGE);
 							$this->writer->writeElement('SMS_ABOVEFREECOST', $subscriber_group_usage_SMS_ABOVEFREECOST);
 							$this->writer->writeElement('SMS_ABOVEFREEUSAGE', $subscriber_group_usage_SMS_ABOVEFREEUSAGE);
 							$this->writer->writeElement('SMS_CAPACITY', $group['sms']);
-							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
-							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						if (isset($group['data'])) {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
 							$this->writer->writeElement('DATA_CAPACITY', $group['data']);
-							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
-							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						if (isset($group['mms'])) {
 							$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);
 							$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_group_usage_MMS_ABOVEFREECOST);
 							$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_group_usage_MMS_ABOVEFREEUSAGE);
 							$this->writer->writeElement('MMS_CAPACITY', $group['mms']);
-							$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
-							$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						}
 						$this->writer->endElement(); // end SUBSCRIBER_GROUP_USAGE
 					}
@@ -1795,5 +1793,21 @@ EOI;
 			default:
 				return 'FALSE';
 			}
+	}
+
+	protected function queryVFDaysApi($sid, $lineTime) {
+		$url = Billrun_Factory::config()->getConfigValue('fraud.vfdays.url');
+		try {
+			Billrun_Factory::log('Quering Fraud server for ' . $sid . ' vfdays count', Zend_Log::DEBUG);
+			$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
+		} catch (Exception $e) {
+			Billrun_Factory::log('Fraud server not responding, ' . $e->getMessage(), Zend_Log::WARN);
+			return 0;
+		}
+		$resultArray = json_decode($result, true);
+		if (!$resultArray['status']) {
+			return 0;
+		}
+		return $resultArray['details']['days'];
 	}
 }
