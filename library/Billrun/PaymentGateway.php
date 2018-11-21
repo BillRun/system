@@ -355,7 +355,8 @@ abstract class Billrun_PaymentGateway {
 	/**
 	 * Build request for start a transaction of making single payment.
 	 * 
-	 * @param Int $params - Relevant parameters
+	 * @param array $params - parameteres that transferred in the request.
+	 * @param array $options - options to decide on the pg request (installment for example)
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
@@ -850,6 +851,9 @@ abstract class Billrun_PaymentGateway {
 		$paymentParams['gateway_details'] = $retParams;
 		$paymentParams['gateway_details']['name'] = $gatewayDetails['name'];
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
+		if (isset($retParams['installments'])) {
+			$paymentParams['installments'] = $retParams['installments'];
+		}
 		$paymentParams['dir'] = 'fc';
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
 		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
