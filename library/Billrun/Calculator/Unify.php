@@ -388,10 +388,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($lineStamps as $value) {
 			$txarr[$value] = true;
 		}
-		$update = array('$pushAll' => array('tx' => $lineStamps));
+		$update = array('$push' => array('tx' => array('$each' => $lineStamps)));
 		return $update;
 	}
-
+	
 	/**
 	 * Release lock for given lines in a unified line in the DB.
 	 * @param type $unifiedStamp the unified line stamp to release the single line on.
@@ -408,7 +408,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * 
 	 */
 	public function releaseAllLines() {
-		Billrun_Factory::log('Removing locks from  ' . count($this->unifiedToRawLines) . ' unified lines...', Zend_Log::INFO);
+		Billrun_Factory::log('Removing locks from  ' . count($this->unifiedToRawLines) . ' unified lines...', Zend_Log::DEBUG);
 		foreach ($this->unifiedToRawLines as $key => $value) {
 			$this->releaseLines($key, $value['remove']);
 		}

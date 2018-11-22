@@ -106,6 +106,12 @@ class Billrun_Factory {
 	protected static $plan = array();
 
 	/**
+	 * Service instances
+	 *
+	 * @var Billrun_Billrun Service
+	 */
+	protected static $service = array();
+	/**
 	 * Smser instance
 	 * 
 	 * @var Billrun_Billrun Smser
@@ -126,6 +132,13 @@ class Billrun_Factory {
 	 */
 	protected static $auth = null;
 	
+	/**
+	 * Collection instance
+	 * 
+	 * @var Billrun_Billrun Collection
+	 */
+	protected static $collection;
+
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -222,14 +235,16 @@ class Billrun_Factory {
 				$transport = new $className($mailerTransport['host'], $mailerTransport);
 				Zend_Mail::setDefaultTransport($transport);
 			}
-
-			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run'));
+			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', '');
+			if (empty($fromAddress)) {
+				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run');
+			}
 			$fromName = Billrun_Factory::config()->getConfigValue('tenant.name', Billrun_Factory::config()->getConfigValue('mailer.from.name', 'BillRun'));
 			$mailer->setFrom($fromAddress, $fromName);
 			return $mailer;
 			//$mail->setDefaultTransport($transport);
 		} catch (Exception $e) {
-			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+			self::log("Can't instantiate mail object. Please check your settings", Zend_Log::ALERT);
 			return false;
 		}
 	}
@@ -371,7 +386,27 @@ class Billrun_Factory {
 		if (!isset(self::$plan[$stamp])) {
 			self::$plan[$stamp] = new Billrun_Plan($params);
 		}
+		self::$plan[$stamp]->init();
 		return self::$plan[$stamp];
+	}
+
+	/**
+	 * method to retrieve the service instance
+	 *
+	 * @return Billrun_Plan
+	 */
+	static public function service($params) {
+
+		if (isset($params['disableCache']) && $params['disableCache']) {
+			return new Billrun_Service($params);
+		}
+		// unique stamp per plan
+		$stamp = Billrun_Util::generateArrayStamp($params);
+
+		if (!isset(self::$service[$stamp])) {
+			self::$service[$stamp] = new Billrun_Service($params);
+		}
+		return self::$service[$stamp];
 	}
 
 	/**
@@ -480,6 +515,31 @@ class Billrun_Factory {
 	 */
 	public static function emailSenderManager($params = array()) {
 		return Billrun_EmailSenderManager::getInstance($params);
+	}
+	
+	public static function clearInstance($instanceName, array $options = array(),$clearAll = FALSE) {
+		$stamp = md5(serialize($options)); // unique stamp per db connection
+		
+		if($clearAll) {
+			self::${$instanceName} = is_array(self::${$instanceName})  ? array() : null;
+		}
+		if (!isset(self::${$instanceName}[$stamp])) {
+			return;
+		}
+		unset(self::${$instanceName}[$stamp]);
+	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function collection() {
+		if (!self::$collection) {
+			self::$collection = Billrun_Collection::getInstance();
+		}
+
+		return self::$collection;
 	}
 
 }

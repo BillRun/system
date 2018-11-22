@@ -96,12 +96,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->months_limit = $options['months_limit'];
 		}
 
-		if (!isset($options['autoload']) || $options['autoload']) {
-			$this->load();
-		}
-
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
+		}
+
+		if (!isset($options['autoload']) || $options['autoload']) {
+			$this->load();
 		}
 
 		if (Billrun_Util::getFieldVal($options['calculator']['rates_query'], false)) {
@@ -185,6 +185,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
+		$this->clearAddedForeignFields();
 		Billrun_Factory::log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));

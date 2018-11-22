@@ -235,7 +235,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->plansCache;
 	}
 
-	public function getServices() {
+	public function &getServices() {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
@@ -245,7 +245,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->servicesCache;
 	}
 
-	public function getRates() {
+	public function &getRates() {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
@@ -309,7 +309,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		} else if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
 			$this->stamp = $options['aggregator']['stamp'];
 		} else {
-			$next_billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+			$next_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 			$current_billrun_key = Billrun_Billrun::getPreviousBillrunKey($next_billrun_key);
   			$this->stamp = $current_billrun_key;
 		}
@@ -345,7 +345,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->handleInvoices($data);
 		}
 
-		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
+		Billrun_Factory::log("Account entities loaded: " . count($data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => $data));
 
@@ -414,6 +414,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
+				$raw = $subscriberPlan['id'];
+				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.account.passthrough_data',array()) as $dstField => $srcField) {
+					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
+						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
+						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
+					}
+				}
+				$raw['sid']=0;
+				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
 				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
@@ -544,7 +554,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
-		}
+	}
 
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
@@ -568,7 +578,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function afterAggregate($results) {
 
 
-		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
+		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n";
 		$end_msg .="Processed " . (count($results)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
@@ -587,7 +597,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
 		if ($recipients) {
-			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
+			Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
 		}
 	}
 

@@ -21,7 +21,9 @@ class CronController extends Yaf_Controller_Abstract {
 	protected $smser;
 
 	public function init() {
-		$this->allowed();
+		if (!RUNNING_FROM_CLI) {
+			$this->allowed();
+		}
 		$this->getView()->message = "BillRun cron is running with " . $this->getRequest()->action . " action";
 		Billrun_Factory::log($this->getView()->message, Zend_Log::INFO);
 		set_time_limit(9999);
@@ -58,6 +60,13 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	public function dailyAction() {
 		Billrun_Factory::dispatcher()->trigger('cronDay');
+	}
+
+	/**
+	 * dispatcher to run cron each month
+	 */
+	public function weeklyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronWeek');
 	}
 
 	/**

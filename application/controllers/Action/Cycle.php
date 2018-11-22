@@ -39,7 +39,7 @@ class CycleAction extends Action_Base {
 		}
 
 		if (empty($options['stamp'])) {
-			$nextBillrunKey = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+			$nextBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 			$currentBillrunKey = Billrun_Billrun::getPreviousBillrunKey($nextBillrunKey);
 			$options['stamp'] = $currentBillrunKey;
 		}
@@ -121,7 +121,7 @@ class CycleAction extends Action_Base {
 	}
 	
 	protected function executeParentProcess($processInterval) {
-		$this->_controller->addOutput("Going to sleep for " . $processInterval);
+		$this->_controller->addOutput("Going to sleep for " . $processInterval . " seconds");
 		sleep($processInterval);
 		pcntl_signal(SIGCHLD, SIG_IGN);
 	}
@@ -132,6 +132,8 @@ class CycleAction extends Action_Base {
 	 * @return type
 	 */
 	protected function executeChildProcess($options) {
+		Billrun_Factory::clearInstance('db',array(),true);
+		Mongodloid_Connection::clearInstances();
 		$aggregator = $this->getAggregator($options);
 		if($aggregator == false) {
 			return;

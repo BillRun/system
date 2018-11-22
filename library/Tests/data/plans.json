@@ -583,7 +583,55 @@
 	"prorated" : true,
 	"to" : "time*2166-10-30T08:51:56Z",
 	"creation_time" : "time*2017-04-01T00:00:00Z"
-}
+},
+{
+    "name" : "NEW_PLAN_OVERRIDE_USA",
+    "code" : "NEW_PLAN_OVERRIDE_USA",
+    "description" : "NEW_PLAN_OVERRIDE_USA",
+    "recurrence" : {
+        "unit" :1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "10",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+	"rates": {
+		"NEW-CALL-USA": {
+			"call": {
+					"rate":
+					 [
+				
+						{
+							"from" : 0,
+							"to" : 20,
+							"interval" : 1,
+							"price" : 0.2
+						},
+						{
+							"from" : 21,
+							"to" : 999999999,
+							"interval" : 1,
+							"price" : 0.5
+						}
+						
+				]
+			}
+		}
+	},
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z"
+  }
 
 		
 

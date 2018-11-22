@@ -32,6 +32,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
 
 	public function getList($page, $size, $time, $acc_id = null) {
@@ -111,7 +112,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	}
 
 	/**
-	 * method to update subsbscriber collection status
+	 * method to update account collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged) {
 		$collectionSteps = Billrun_Factory::collectionSteps();
@@ -146,10 +147,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 			}
 		}
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
 		return $result;
 	}
 
 	/**
+	 * TODO: Update to Entity API
+	 * 
 	 * Method to Save as 'Close And New' item
 	 * @param Array $set_values Key value array with values to set
 	 * @param Array $remove_values Array with keys to unset
@@ -193,9 +198,11 @@ class Billrun_Account_Db extends Billrun_Account {
 
 	public function getInCollection($aids = array()) {
 		$results = array();
-		$params = array(
-			'in_collection' => true
-		);
+		$params = Billrun_Utils_Mongo::getDateBoundQuery();
+		$params['in_collection'] = true;
+		if (!empty($aids)) {
+			$params['aid'] = array('$in' => $aids);
+		}
 		$query = $this->buildQuery($params);
 		$cursor = $this->collection->query($query)->cursor();
 		foreach ($cursor as $row) {
@@ -222,4 +229,16 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 	}
 
+	public function permanentChange($query, $update) {
+		$params = array(
+			'collection' => 'accounts',
+			'request' => array(
+				'action' => 'permanentchange',
+				'update' => json_encode($update),
+				'query' => json_encode($query),
+			)
+		);
+		$entityModel = Models_Entity::getInstance($params);
+		$entityModel->permanentchange();
+	}
 }
