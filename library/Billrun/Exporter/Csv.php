@@ -7,12 +7,12 @@
  */
 
 /**
- * Billing abstract exporter bulk (multiple rows at once) to CSV
+ * Billing exporter to CSV
  *
  * @package  Billing
- * @since    2.8
+ * @since    5.8
  */
-abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
+class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	
 	static protected $type = 'csv';
 	
@@ -27,7 +27,7 @@ abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->fixedWidth = $this->getConfig('fixed_width', false);
+		$this->fixedWidth = Billrun_Util::getIn($this->config, 'exporter.format.type', 'delimiter') === 'fixed_width';
 		$this->delimiter = $this->getDelimiter();
 	}
 	
@@ -40,37 +40,43 @@ abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 		if ($this->fixedWidth) {
 			return '';
 		}
-		return $this->getConfig('delimiter', ',');
-	}
-	
-	/**
-	 * see parent::getHeader()
-	 */
-	protected function getHeader() {
-		$includeHeader = $this->getConfig('include_header', true);
-		return $includeHeader ? array_keys($this->getFieldsMapping()) : array();
+		return Billrun_Util::getIn($this->config, 'format.delimiter', ',');
 	}
 	
 	/**
 	 * see parent::formatValue
 	 */
-	protected function formatValue($value, $field, $fieldMapping) {
+	protected function formatData($row, $type = 'data') {
 		if (!$this->fixedWidth) {
-			return parent::formatValue($value, $field, $fieldMapping);
+			return $row;
 		}
-		
-		$padding = Billrun_Util::getIn($fieldMapping, 'padding', ' ');
-		$width = Billrun_Util::getIn($fieldMapping, 'width', strlen($value));
-		$padDirection = Billrun_Util::getIn($fieldMapping, 'pad_direction', 'left') == 'right' ? STR_PAD_RIGHT : STR_PAD_LEFT;
-		return str_pad($value, $width, $padding, $padDirection);
+
+		switch ($type) {
+			case 'header':
+				$widthMappingField = 'header_mapping';
+				break;
+			case 'footer':
+				$widthMappingField = 'footer_mapping';
+				break;
+			case 'data':
+			default:
+				$widthMappingField = 'fields_mapping';
+				break;
+		}
+		foreach ($row as $field => $value) {
+			$width = Billrun_Util::getIn($this->config, array('exporter', 'format', 'widths', $widthMappingField, $field), strlen($value));
+			$row[$field] = str_pad($value, $width, ' ', STR_PAD_LEFT);
+		}
+		return $row;
 	}
 
 	/**
 	 * see parent::exportRowToFile
 	 */
-	protected function exportRowToFile($fp, $row) {
-		fputs($fp, implode($row, $this->delimiter)."\n");
+	protected function exportRowToFile($fp, $row, $type = 'data') {
+		$rowToExport = $this->formatData($row, $type);
+		fputs($fp, implode($rowToExport, $this->delimiter) . PHP_EOL);
 	}
-	
+
 }
 

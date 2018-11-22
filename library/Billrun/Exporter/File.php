@@ -12,26 +12,38 @@
  * @package  Billing
  * @since    2.8
  */
-abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
+abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	
 	static protected $type = 'file';
 	
 	/**
 	 * get file name
 	 */
-	abstract protected function getFileName();
+	protected function getFileName() {
+		$fileName = $this->config['file_name'];
+		$searchesAndReplaces = $this->getSearchesAndReplaces();
+		return str_replace(array_keys($searchesAndReplaces), array_values($searchesAndReplaces), $fileName);
+	}
+	
+	protected function getSearchesAndReplaces() {
+		return array(
+			'{$sequence_num}' => $this->getSequenceNumber(),
+			'{$date_YYYYMMDDHHMMSS}' => $this->getTimeStamp(),
+			'{$date}' => $this->getTimeStamp(),
+		);
+	}
 	
 	/**
 	 * export 1 line to a file
 	 */
-	protected abstract function exportRowToFile($fp, $row);
+	protected abstract function exportRowToFile($fp, $row, $type = 'data');
 	
 	/**
 	 * get file path
 	 */
 	protected function getFilePath() {
-		$defaultExportPath = Billrun_Factory::config()->getConfigValue(static::$type . '.export'. '');
-		return $this->getConfig('file_path', $defaultExportPath);
+		$sharedPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($this->config, 'workspace', 'workspace'));
+		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7) . DIRECTORY_SEPARATOR;
 	}
 	
 	/**
@@ -40,7 +52,11 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 	 * @return string
 	 */
 	protected function getExportFilePath() {
-		return rtrim($this->getFilePath(), '/') . '/' . $this->getFileName();
+		$filePath = $this->getFilePath();
+		if (!file_exists($filePath)) {
+			mkdir($filePath, 0777, true);
+		}
+		return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
 	}
 
 	/**
@@ -55,29 +71,55 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 			Billrun_Log::getInstance()->log('File bulk export: Cannot open file "' . $filePath . '"', Zend_log::ERR);
 			return false;
 		}
-		$dataToExport = $this->getDataToExport();
-		foreach ($dataToExport as $row) {
+		$exportedData = array();
+		if (!empty($this->headerToExport)) {
+			$this->exportRowToFile($fp, $this->headerToExport, 'header');
+			$exportedData[] = $this->headerToExport;
+		}
+
+		foreach ($this->rowsToExport as $row) {
 			$this->exportRowToFile($fp, $row);
+			$exportedData[] = $row;
+		}
+		if (!empty($this->footerToExport)) {
+			$this->exportRowToFile($fp, $this->footerToExport, 'footer');
+			$exportedData[] = $this->footerToExport;
 		}
 		fclose($fp);
-		$this->afterExport();
-		return $dataToExport;
+		return $exportedData;
 	}
 	
+	/**
+	 * see parent::afterExport
+	 */
+	public function afterExport() {
+		$this->sendFile();
+		parent::afterExport();
+	}
+	
+	/**
+	 * sends the exported file to the location/server configured
+	 * 
+	 * @todo implement
+	 */
+	protected function sendFile() {
+		
+	}
+
+
 	/**
 	 * gets data to update log in DB
 	 * 
 	 * @return type
 	 */
 	protected function getLogData() {
+		$logData = parent::getLogData();
 		$fileName = $this->getFileName();
 		$filePath = rtrim($this->getFilePath(), '/') . '/' . $fileName;
+		$logData['file_name'] = $fileName;
+		$logData['path'] = $filePath;
 		
-		return array(
-			'exported_time' => date(self::base_dateformat),
-			'file_name' => $fileName,
-			'path' => $filePath,
-		);
+		return $logData;
 	}
 	
 }
