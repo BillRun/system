@@ -238,7 +238,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
-			$vfCountDays = $this->queryVFDaysApi($sid, date(Billrun_Base::base_dateformat, time()));
+			$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
 			$this->plansToCharge = !empty($plans) ? $this->getPlanNames($plans): array();
@@ -453,6 +453,8 @@ class Generator_Golanxml extends Billrun_Generator {
 						if ($group_name == 'VF') {
 							$this->writer->writeElement('VF_DAYS', $vfCountDays);
 						}
+						
+						$this->writer->writeElement('TYPE', ($planInCycle['name'] == $group_name) ? 'plan' : 'group');
 						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
 						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						$subscriber_group_usage_VOICE_FREEUSAGE = 0;
@@ -1795,19 +1797,103 @@ EOI;
 			}
 	}
 
-	protected function queryVFDaysApi($sid, $lineTime) {
-		$url = Billrun_Factory::config()->getConfigValue('fraud.vfdays.url');
+	public function queryVFDaysApi($sid, $year = null, $max_datetime = null) {
 		try {
-			Billrun_Factory::log('Quering Fraud server for ' . $sid . ' vfdays count', Zend_Log::DEBUG);
-			$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
-		} catch (Exception $e) {
-			Billrun_Factory::log('Fraud server not responding, ' . $e->getMessage(), Zend_Log::WARN);
-			return 0;
+			$from = strtotime($year . '-01-01' . ' 00:00:00');
+			if (is_null($max_datetime)) {
+				$to = strtotime($year . '-12-31' . ' 23:59:59');
+			} else {
+				$to = !is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime;
+			}
+
+			$start_of_year = new MongoDate($from);
+			$end_date = new MongoDate($to);
+			$isr_transitions = Billrun_Util::getIsraelTransitions();
+			if (Billrun_Util::isWrongIsrTransitions($isr_transitions)) {
+				Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+			}
+			$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+			$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+			$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+			$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+			$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
+
+
+			$match = array(
+				'$match' => array(
+					'sid' => $sid,
+					'$or' => array(
+						array('type' => 'tap3'),
+						array('type' => 'smsc'),
+					),
+				//	'plan' => array('$in' => $this->plans),
+					'arategroup' => "VF",
+					'billrun' => array(
+						'$exists' => true,
+					),
+				),
+			);
+
+			$project = array(
+				'$project' => array(
+					'sid' => 1,
+					'urt' => 1,
+					'type' => 1,
+					'plan' => 1,
+					'arategroup' => 1,
+					'billrun' => 1,
+					'isr_time' => array(
+						'$cond' => array(
+							'if' => array(
+								'$and' => array(
+									array('$gte' => array('$urt', $transition_date_summer)),
+									array('$lt' => array('$urt', $transition_date_winter)),
+								),
+							),
+							'then' => array(
+								'$add' => array('$urt', $summer_offset * 1000)
+							),
+							'else' => array(
+								'$add' => array('$urt', $winter_offset * 1000)
+							),
+						),
+					),
+				),
+			);
+
+			$match2 = array(
+				'$match' => array(
+					'urt' => array(
+						'$gte' => $start_of_year,
+						'$lte' => $end_date,
+					),
+				),
+			);
+			$group = array(
+				'$group' => array(
+					'_id' => array(
+						'day_key' => array(
+							'$dayOfMonth' => array('$isr_time'),
+						),
+						'month_key' => array(
+							'$month' => array('$isr_time'),
+						),
+					),
+				),
+			);
+			$group2 = array(
+				'$group' => array(
+					'_id' => 'null',
+					'day_sum' => array(
+						'$sum' => 1,
+					),
+				),
+			);
+			$lines_coll = Billrun_Factory::db()->linesCollection();
+			$results = $lines_coll->aggregate($match, $project, $match2, $group, $group2);
+		} catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 		}
-		$resultArray = json_decode($result, true);
-		if (!$resultArray['status']) {
-			return 0;
-		}
-		return $resultArray['details']['days'];
+		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 }
