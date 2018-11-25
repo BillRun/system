@@ -111,7 +111,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			$startTime = strtotime($timeRange, $endTime);
 			$query['urt'] = array(
 				'$gte' => new MongoDate($startTime),
-				'$lte' => new MongoDate($endTime),
+				'$lt' => new MongoDate($endTime),
 			);
 		}
 		return $query;
