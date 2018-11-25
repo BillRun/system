@@ -13,6 +13,13 @@
  */
 class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'customeronetime';
+
 	protected $subInvoiceType = 'regular';
 	protected $invoicingConfig = array();
 	
