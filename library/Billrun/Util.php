@@ -1510,6 +1510,20 @@ class Billrun_Util {
 		return $ret;
 	}
 	
+	public static function getCmdCommand($options, $params = array()) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		if (!is_array($options)) {
+			$options = array($options);
+		}
+		foreach ($options as $option) {
+			$cmd .= ' ' . $option;
+		}
+		foreach ($params as $paramKey => $paramVal) {
+			$cmd .= ' ' . $paramKey . '="' . $paramVal . '"';
+		}
+		return $cmd;
+	}
+	
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
@@ -1624,6 +1638,28 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * Deeply unsets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param mixed $value - value to unset
+	 */
+	public static function unsetIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		unset($current[$value]);
+	}
+
+
+	/**
 	 * Gets the value from an array.
 	 * Also supports deep fetch (for nested arrays)
 	 * 
@@ -1654,6 +1690,21 @@ class Billrun_Util {
 		
 		return $ret;
 	}
+	
+	/**
+	 * Retrive the first field (field path supported) that has value 
+	 * 	(mostly should be used to get )
+	 */
+	 public static function getFirstValueIn($src, $keys, $defaultValue = null) {
+		foreach($keys as $keyPath) {
+			$ret = static::getIn($src,$keyPath,$defaultValue);
+			if($ret !=  $defaultValue) {
+				return $ret;
+			}
+		}
+		
+		return $defaultValue;
+	 }
 	
 	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
@@ -1743,6 +1794,24 @@ class Billrun_Util {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * check if a specific condition is met
+	 * 
+	 * @param array $row
+	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function isConditionMet($row, $condition) {
+		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
+		$query = array(
+			'first_val' => array(
+				$condition['op'] => $condition['value'],
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
 
 }

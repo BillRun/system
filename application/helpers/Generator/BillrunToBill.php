@@ -79,14 +79,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'lastname' => $invoice['attributes']['lastname'],
 				'firstname' => $invoice['attributes']['firstname'],
 				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'payment_method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
+				'method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
 				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => $invoice['invoice_file'],
+				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
@@ -95,6 +95,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
+			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
@@ -103,6 +104,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
  	}
 	
 	/**

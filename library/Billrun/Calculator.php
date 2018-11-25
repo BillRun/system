@@ -185,6 +185,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
+		$this->clearAddedForeignFields();
 		Billrun_Factory::log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));

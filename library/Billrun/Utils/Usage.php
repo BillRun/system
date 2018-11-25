@@ -12,17 +12,22 @@
  */
 class Billrun_Utils_Usage {
 
-	static public function retriveEntityFromUsage($row, $entityType) {
+	static public function retriveEntityFromUsage($row, $entityType, $foreignFieldConfig = array()) {
 		$entityQueryData = array();
+		$isSingleEntity = true;
+		if (!self::conditionsMet($foreignFieldConfig, $row)) {
+			return null;
+		}
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
+		
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array('sid' => $row['sid'], 'aid'=> $row['aid']);
 				$entityQueryData['sort'] = array('from' => -1);
 				break;
 			case 'account' :
@@ -30,7 +35,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array('aid' => $row['aid'],'type' => 'account' );
 				$entityQueryData['sort'] = array('from' => -1);
 				break;			
 			
@@ -39,7 +44,7 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'plans';
-				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array('name' => $row['plan']);
 				$entityQueryData['sort'] = array('from' => -1);
 
 				break;
@@ -51,11 +56,18 @@ class Billrun_Utils_Usage {
 					return null;
 				}
 				$entityQueryData['collection'] = 'rates';
-				$entityQueryData['query'] = array_merge(array('_id' => $row['arate']['$id']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['query'] = array('_id' => $row['arate']['$id']);
+				break;
+				
+			case 'account_subscribers':
+				$entityQueryData['collection'] = 'subscribers';
+				$entityQueryData['query'] = array('type' => 'subscriber', 'aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
+											'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
+				$isSingleEntity = false;
 				break;
 
 			default:
-				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::ERR);
+				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;
 		}
 		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
@@ -64,16 +76,45 @@ class Billrun_Utils_Usage {
 //			return $cachedValue;
 //		}
 
-		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['query_time_fields'],["end", "urt"]), $row['urt'])->sec);
+		
+		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'],$timeBoundingQuery))->cursor();
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
 		}
-		$entity = $cursor->current();
+		if ($isSingleEntity) {
+			$cursor = $cursor->limit(1);
+			$entity = $cursor->current();
+			//fall back to none time bounded query if no entity found.
+			if( (empty($entity) || $entity->isEmpty()) 
+				&& !empty($foreignFieldConfig['no_time_bounding'])) {
+					$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+				if (!empty($entityQueryData['sort'])) {
+					$cursor->sort($entityQueryData['sort']);
+				}
+				$entity = $cursor->current();
+			}
+		}
+		else {
+			foreach (iterator_to_array($cursor) as $document) {
+				$entity[] = $document;
+			}
+		}
 //		if ($entity && !empty($cache)) {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
 //		}
 
-		return $entity;
+		return (empty($entity)) || (($entity instanceof Mongodloid_Entity) && !$entity->isEmpty())? null : $entity;
+	}
+	
+	public static function conditionsMet($fieldConf, $rowData) {
+		$conditionsMet = true;
+		if (!empty($conditions = @$fieldConf['conditions'])) {
+			foreach($conditions as $condition) {
+				$conditionsMet &= Billrun_Util::isConditionMet($rowData, $condition);
+			}
+		}
+		return $conditionsMet;
 	}
 
 }

@@ -55,6 +55,7 @@ class BillAction extends ApiAction {
 	protected function getBalanceFor($request) {
 		$aid = $request->get('aid');
 		$id = $request->get('id');
+		$date = $request->get('date');
 		$unpaidInvoices = filter_var($request->get('unpaid_invoices', FALSE), FILTER_VALIDATE_BOOLEAN);
 
 		if (!is_numeric($aid) || $aid != (int) $aid) {
@@ -75,7 +76,7 @@ class BillAction extends ApiAction {
 			$bill = new Mongodloid_Entity;
 		}
 		$ret = array(
-			'balance' => Billrun_Bill::getTotalDueForAccount($aid),
+			'balance' => Billrun_Bill::getTotalDueForAccount($aid, $date),
 			'bill' => $bill->getRawData(),
 		);
 		if ($unpaidInvoices) {

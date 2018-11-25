@@ -123,7 +123,7 @@ class QueryAction extends ApiAction {
 		if (isset($request['to'])) {
 			if (!isset($query['urt'])) {
 				$query['urt'] = array(
-					'$lte' => new MongoDate(strtotime($request['to'])),
+					'$lt' => new MongoDate(strtotime($request['to'])),
 				);
 			} else {
 				$query['urt']['$lte'] = new MongoDate(strtotime($request['to']));
