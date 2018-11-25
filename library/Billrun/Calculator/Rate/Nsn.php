@@ -186,61 +186,66 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if (!$query) {
 			return false;
 		}
-		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
-		$query['params.roaming_prefix'] = array(
-			'$in' => $prefixes,
+		$alpha3 = $this->getAlpha3($row, $usage_type);
+		if (!$alpha3) {
+			return false;
+		}
+		$query['params.roaming_alpha3'] = array(
+			'$in' => array($alpha3, null), // null is for default rate where alpha3 field does not exist
 		);
 
 		return $query;
 	}
 	
-	protected function getRoamingRateUnwind($row, $usage_type) {
-		return '$params.roaming_prefix';
+	protected function getRoamingRateSort($row, $usage_type) {
+		return array(
+			'params.roaming_alpha3' => -1,
+		);
 	}
 	
-	protected function getRoamingRateGroup($row, $usage_type) {
-		return array(
+	protected function getAlpha3($row, $usage_type) {
+		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
+		$match = array(
+			'from' => array(
+				'$lte' => new MongoDate($row['urt']->sec),
+			),
+			'to' => array(
+				'$gte' => new MongoDate($row['urt']->sec),
+			),
+			"rates.{$usage_type}" => array(
+				'$exists' => true,
+			),
+			'alpha3' => array(
+				'$exists' => true,
+			),
+			'kt_prefixes' => array(
+				'$in' => $prefixes,
+			),
+		);
+		$unwind = '$kt_prefixes';
+		$group = array(
 			'_id' => array(
 				'_id' => '$_id',
-				'pref' => '$params.roaming_prefix',
+				'pref' => '$kt_prefixes',
 			),
-			'params_roaming_prefix' => array(
-				'$first' => '$params.roaming_prefix',
+			'kt_prefixes' => array(
+				'$first' => '$kt_prefixes',
 			),
 			'key' => array(
 				'$first' => '$key',
 			),
+			'alpha3' => array(
+				'$first' => '$alpha3',
+			),
 		);
-	}
-	
-	protected function getRoamingRateMatch2($row, $usage_type) {
-		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
-		return array(
-			'params_roaming_prefix' => array(
+		$match2 = array(
+			'kt_prefixes' => array(
 				'$in' => $prefixes,
 			),
 		);
-	}
-	
-	protected function getRoamingRateSort($row, $usage_type) {
-		return array(
-			'params_roaming_prefix' => -1,
+		$sort = array(
+			'kt_prefixes' => -1,
 		);
-	}
-	
-	protected function getRoamingLineRate($row, $usage_type) {
-		if (!$this->isRoamingLine($row)) {
-			return false;
-		}
-
-		$match = $this->getRoamingRateQuery($row, $usage_type);
-		$unwind = $this->getRoamingRateUnwind($row, $usage_type);
-		$group = $this->getRoamingRateGroup($row, $usage_type);
-		$match2 = $this->getRoamingRateMatch2($row, $usage_type);
-		$sort = $this->getRoamingRateSort($row, $usage_type);
-		if (!$match || !$unwind || !$group || !$match2 || !$sort) {
-			return false;
-		}
 		$aggregateQuery = array(
 			array('$match' => $match),
 			array('$unwind' => $unwind),
@@ -251,17 +256,10 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$rate = $rates_coll->aggregate($aggregateQuery);
-		if (empty($rate) || !isset($rate[0]['_id']['_id'])) {
-			return false;
+		if (empty($rate) || !isset($rate[0]['alpha3'])) {
+			return '';
 		}
-		$rateId = $rate[0]['_id']['_id'];
-		$query = array('_id' => $rateId);
-		$rate = $rates_coll->query($query)->cursor()->current();
-		if ($rate->isEmpty()) {
-			return false;
-		}
-		$rate->collection($rates_coll);
-		return $rate;
+		return $rate[0]['alpha3'];
 	}
 		
 }
