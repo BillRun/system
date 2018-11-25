@@ -208,6 +208,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$options = array(
 			'type' => 'Credit',
 			'parser' => 'none',
+			'rand' => $cdr['rand']
 		);
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($cdr);
