@@ -33,6 +33,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$inputCdrs = json_decode($request['cdrs'],JSON_OBJECT_AS_ARRAY);
         $cdrs = [];
         $this->aid = intval($request['aid']);
+        $affectedSids = [];
         
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
@@ -40,6 +41,7 @@ class OnetimeinvoiceAction extends ApiAction {
                 $this->setError("One of the CDRs AID doesn't match the account AID");
                 return;
             }
+            $affectedSids[] = $cdr['sid'] ?: 0;
             $cdr['billrun'] = $oneTimeStamp;
 			$cdr = $this->parseCDR($cdr);
 			$cdr['onettime_invoice'] = $oneTimeStamp;
@@ -47,9 +49,9 @@ class OnetimeinvoiceAction extends ApiAction {
                 return FALSE;
 			}
         }
-        
+
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular') ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),'affected_sids' => $affectedSids ]);
         $aggregator->aggregate();
 
 

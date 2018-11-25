@@ -34,6 +34,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
 		$this->aggregationLogic = new Billrun_Cycle_Onetime_AggregatePipeline($aggregateOptions);
+		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -93,6 +94,10 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$raw['sid']=0;
 				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
+				if( !empty($this->affectedSids) && !in_array($subscriberPlan['id']['sid'],$this->affectedSids) ) { 
+					continue;
+				}
+
 				$raw = $subscriberPlan['id'];
 				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
