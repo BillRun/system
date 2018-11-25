@@ -325,9 +325,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getChargeInformationList($row, $fieldMapping) {
-		
 		$chargeType = $this->getConfig('charge_type.total_charge');
-		$charge = isset($row['aprice']) ? $row['aprice'] : 0;
+		$charge = $this->getSdrPrice($row);
 		$chargeableUnits = isset($row['usagev']) ? $row['usagev'] : 0;
 		$callTypeLevel2 = $this->getConfig('call_type_level_2.unknown');
 		$callTypeLevel3 = $this->getConfig('call_type_level_3.unknown');
@@ -382,6 +381,36 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				),
 			),
 		);
+	}
+	
+	protected function getSdrPrice($row) {
+		if (!isset($row['apr'])) {
+			return 0;
+		}
+		$price = $row['apr'];
+		$fromCurrency = $this->getCurrency($row);
+		$toCurrency = 'SDR';
+		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
+		$urt = $row['urt']->sec;
+		$sdrPrice = Billrun_Utils_Currency_Converter::convertCurrency($price, $fromCurrency, $toCurrency, $urt);
+		return number_format($sdrPrice, $decimalPlaces);
+	}
+	
+	protected function getCurrency($row) {
+		$defaultCurrency = 'NIS';
+		$currentDate = new MongoDate();
+		if (!isset($row['arate'])) {
+			return $defaultCurrency;
+		}
+		
+		$rate = Billrun_DBRef::getEntity($row['arate']);
+		if ($rate->isEmpty()) {
+			return $defaultCurrency;
+		}
+
+		return isset($rate['rates'][$row['usaget']]['currency'])
+			? $rate['rates'][$row['usaget']]['currency']
+			: $defaultCurrency;
 	}
 	
 	protected function getOperatorSpecInfoList($row, $fieldMapping) { // TODO: implement
