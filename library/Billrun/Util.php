@@ -996,6 +996,7 @@ class Billrun_Util {
 		return $mcc . $mnc;
 	}
 
+
 		/**
 	 * Deeply sets an array value.
 	 * 
@@ -1054,5 +1055,18 @@ class Billrun_Util {
 		
 		return $ret;
 	}
+
+	public static function isIncomingRoaming($row) {
+		switch ($row['type']) {
+			case 'nsn':
+			case 'ggsn':
+				return !empty($row['imsi']) && preg_match('/^(?!42508)/', $row['imsi']);
+			default:
+				return false;
+				
+		}
+	}
+
+
 }
 

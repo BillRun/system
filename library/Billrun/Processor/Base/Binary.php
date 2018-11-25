@@ -56,6 +56,9 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$row['log_stamp'] = $this->getFileStamp();
 			$row['process_time'] = date(self::base_dateformat);
 		}
+		if (Billrun_Util::isIncomingRoaming($row)) {
+			$row['incoming_roaming'] = 1;
+		}
 		return $row;
 	}
 
