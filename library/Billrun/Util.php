@@ -996,6 +996,66 @@ class Billrun_Util {
 		return $mcc . $mnc;
 	}
 
+
+		/**
+	 * Deeply sets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to set
+	 * @param mixed $value - new value to set
+	 */
+	public static function setIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$current = &$arr;
+		foreach($keys as $key) {
+			if (!isset($current[$key])) {
+				$current[$key] = null;
+			}
+			$current = &$current[$key];
+		}
+		
+		$current = $value;
+	}
+	
+	/**
+	 * Gets the value from an array.
+	 * Also supports deep fetch (for nested arrays)
+	 * 
+	 * @param array $arr
+	 * @param array/string $keys  - array of keys, or string of keys separated by "."
+	 * @param any $defaultValue - returns in case one the fields is not found
+	 * @return the value in the array, default value if one of the keys is not found
+	 */
+	public static function getIn($arr, $keys, $defaultValue = null) {
+		if (!$arr) {
+			return $defaultValue;
+		}
+		
+		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return $arr[$keys];
+			}
+			$keys = explode('.', $keys);
+		}
+		
+		$ret = $arr;
+		foreach ($keys as $key) {
+			if (!isset($ret[$key])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$key];
+		}
+		
+		return $ret;
+	}
+
 	public static function isIncomingRoaming($row) {
 		switch ($row['type']) {
 			case 'nsn':
@@ -1006,6 +1066,7 @@ class Billrun_Util {
 				
 		}
 	}
+
 
 }
 

@@ -7,22 +7,28 @@
  */
 
 /**
- * Billing NRTRDE exporter
+ * Billing TAP3 exporter
+ * According to Specification Version Number 3, Release Version Number 12 (3.12)
  *
  * @package  Billing
  * @since    2.8
  */
-class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
+class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	use Billrun_Exporter_Tadigs;
-	
-	static protected $type = 'nrtrde';
-	
+
+	static protected $type = 'tap3';
+
 	/**
 	 * see parent::getQuery
 	 */
-	protected function getQuery() {
+	protected function getQuery() { // TODO: fix query
 		return array(
-			'type' => 'nsn',
+			'type' => array(
+				'$in' => array(
+					'ggsn',
+					'nsn',
+				),
+			),
 			'imsi' => array(
 				'$regex' => '^(?!42508)',
 			),
@@ -32,12 +38,12 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 			),
 		);
 	}
-
+	
 	/**
 	 * see parent::getTadigExporter
 	 */
 	protected function getTadigExporter($options) {
-		return new Billrun_Exporter_Nrtrde_Tadig($options);
+		return new Billrun_Exporter_Tap3_Tadig($options);
 	}
 
 	/**
@@ -54,5 +60,11 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 		return $this->getConfig('query_period', '1 minutes');
 	}
 
-}
+	/**
+	 * TAP3 file name is on TADIG level
+	 */
+	protected function getFileName() {
+		return '';
+	}
 
+}
