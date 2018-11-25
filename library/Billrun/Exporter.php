@@ -46,7 +46,6 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		parent::__construct($options);
 		$this->config = $options;
 		$this->exportTime = time();
-		$this->exportTime = strtotime('2018-11-18 10:29:04');//TODO: REMOVE!
 		$this->exportStamp = $this->getExportStamp();
 		$this->query = $this->getQuery();
 		$this->logCollection = Billrun_Factory::db()->logCollection();

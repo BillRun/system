@@ -99,8 +99,6 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	
 	/**
 	 * sends the exported file to the location/server configured
-	 * 
-	 * @todo implement
 	 */
 	protected function sendFile() {
 		foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $senderConfig) {
