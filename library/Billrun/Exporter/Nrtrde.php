@@ -101,7 +101,7 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	protected function loadTadigs() {
 		$mccMncs = array();
 		foreach ($this->rowsToExport as $row) {
-			$mccMnc = $this->getMccMnc($row);
+			$mccMnc = Billrun_Util::getMccMnc($row['imsi']);
 			$mccMncs[] = $mccMnc;
 		}
 		
@@ -131,21 +131,8 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	 * @return string
 	 */
 	protected function getTadig($row) {
-		$mccMnc = $this->getMccMnc($row);
+		$mccMnc = Billrun_Util::getMccMnc($row['imsi']);
 		return isset($this->tadigs[$mccMnc]) ? $this->tadigs[$mccMnc] : false;
-	}
-	
-	/**
-	 * extract MCC-MNC from the row
-	 * 
-	 * @param array $row
-	 * @return string
-	 */
-	protected function getMccMnc($row) {
-		$imsi = $row['imsi'];
-		$mcc = substr($imsi, 0, 3);
-		$mnc = substr($imsi, 3, 3);
-		return $mcc . $mnc;
 	}
 
 }
