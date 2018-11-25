@@ -103,7 +103,14 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	 * @todo implement
 	 */
 	protected function sendFile() {
-		
+		foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $senderConfig) {
+			$sender = Billrun_Sender::getInstance($senderConfig);
+			if (!$sender) {
+				Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($senderConfig, 1), Zend_Log::ERR);
+				continue;
+			}
+			$sender->send($this->getExportFilePath());
+		}
 	}
 
 

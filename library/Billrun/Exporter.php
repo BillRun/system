@@ -110,10 +110,10 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			$timeRange = $querySettings['time_range'];
 			$endTime = $this->exportTime;
 			$startTime = strtotime($timeRange, $endTime);
-//			$query['urt'] = array(
-//				'$gte' => new MongoDate($startTime),
-//				'$lte' => new MongoDate($endTime),
-//			);
+			$query['urt'] = array(
+				'$gte' => new MongoDate($startTime),
+				'$lte' => new MongoDate($endTime),
+			);
 		}
 		return $query;
 	}
