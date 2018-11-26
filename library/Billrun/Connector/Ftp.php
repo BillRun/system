@@ -7,10 +7,10 @@
  */
 
 /**
- * Billing receiver for ftp
+ * Billing connector for ftp
  *
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 class Billrun_Connector_Ftp extends Billrun_Connector_Base {
 

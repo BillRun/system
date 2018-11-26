@@ -8,9 +8,14 @@
 
 /**
  * Billing abstract exporter class
- *
+ * Exporter class should handle:
+ *   1. fetching data (from DB) according to configured query
+ *   2. mapping the data according to configuration
+ *   3. export the data (to a file or any other export option)
+ *   4. send the exported data to a configured location (FTP, SFTP, etc...)
+ * 
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 abstract class Billrun_Exporter extends Billrun_Base {
 
@@ -30,16 +35,70 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 */
 	protected $config = array();
 	
+	/**
+	 * the name of the log collection in the DB
+	 * @var string
+	 */
 	protected $logCollection = null;
+	
+	/**
+	 * sequence number unique for the specific export
+	 * @var string
+	 */
 	protected $sequenceNum = null;
+	
+	/**
+	 * datetime the export has started
+	 * @var unixtimestamp 
+	 */
 	protected $exportTime = null;
+	
+	/**
+	 * unique stamp for the export
+	 * @var string
+	 */
 	protected $exportStamp = null;
+	
+	/**
+	 * unique stamp for log collection
+	 * @var string
+	 */
 	protected $logStamp = array();
+	
+	/**
+	 * collection name (DB) from which data should be fetched
+	 * @var string
+	 */
 	protected $collection = null;
+	
+	/**
+	 * query by which data should be fetched from DB
+	 * @var array
+	 */
 	protected $query = array();
+	
+	/**
+	 * data to export (after translation)
+	 * @var array
+	 */
 	protected $rowsToExport = array();
+	
+	/**
+	 * header to export (after translation)
+	 * @var type 
+	 */
 	protected $headerToExport = null;
+	
+	/**
+	 * footer to export (after translation)
+	 * @var type 
+	 */
 	protected $footerToExport = null;
+	
+	/**
+	 * raw lines from DB that should be exported (before translation)
+	 * @var type 
+	 */
 	protected $rawRows = array();
 
 	public function __construct($options = array()) {

@@ -10,7 +10,7 @@
  * Billing exporter to CSV
  *
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	

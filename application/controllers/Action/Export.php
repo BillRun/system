@@ -11,7 +11,7 @@
  *
  * @package     Controllers
  * @subpackage  Action
- * @since       2.8
+ * @since       5.9
  */
 class ExportAction extends Action_Base {
 

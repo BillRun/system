@@ -8,9 +8,10 @@
 
 /**
  * Billing abstract sender class
+ * The class should handle moving/putting/sending file/s to a new location
  *
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 abstract class Billrun_Sender extends Billrun_Base {
 

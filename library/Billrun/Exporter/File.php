@@ -10,7 +10,7 @@
  * Billing abstract exporter bulk (multiple rows at once) to a file
  *
  * @package  Billing
- * @since    2.8
+ * @since    5.9
  */
 abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	

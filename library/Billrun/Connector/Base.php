@@ -8,9 +8,10 @@
 
 /**
  * Prototype of connector
+ * Should handle connection to a server/location (for example: FTP, SFTP, local file system, etc...)
  *
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 abstract class Billrun_Connector_Base {
 	

@@ -10,7 +10,7 @@
  * Billing sender for ftp
  *
  * @package  Billing
- * @since    5.8
+ * @since    5.9
  */
 class Billrun_Sender_Ftp extends Billrun_Sender {
 
