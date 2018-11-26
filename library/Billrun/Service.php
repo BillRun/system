@@ -253,7 +253,7 @@ class Billrun_Service {
 	 * 
 	 * @return int usage left in the group
 	 */
-	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null) {
+	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null, $serviceQuantity = 1) {
 		if (is_null($staticGroup)) {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
@@ -282,7 +282,7 @@ class Billrun_Service {
 				return array('usagev' => 0);
 			}
 			
-			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time);
+			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
 				return array(
@@ -300,7 +300,7 @@ class Billrun_Service {
 				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
 			);
 		} else {
-			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time);
+			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
 			if ($rateUsageIncluded === 'UNLIMITED') {
 				return array(
 					'usagev' => PHP_INT_MAX,
@@ -394,13 +394,17 @@ class Billrun_Service {
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
 
-	public function getGroupVolume($usageType, $aid, $group = null, $time = null) {
+	public function getGroupVolume($usageType, $aid, $group = null, $time = null, $serviceQuantity = 1) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
+		$isShared = isset($this->data['include']['groups'][$group]['account_shared']) ? $this->data['include']['groups'][$group]['account_shared'] : false;
 		$groupValue = $this->getGroupValue($group, $usageType);
 		if ($groupValue === FALSE) {
 			return 0;
+		}
+		if (!$isShared) {
+			return $groupValue * $serviceQuantity;
 		}
 		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
 			return $groupValue * $pool;
@@ -457,7 +461,15 @@ class Billrun_Service {
 			'$match' => $query,
 		);
 		
-		$aggregateGroup = array(
+		$unwindServices = array('$unwind' => '$services');
+		
+		$aggregateServices = array(
+			'$match' => array(
+				'services.name' => $this->data['name']
+			)
+		);
+		
+		$aggregateGroupPlans = array(
 			'$group' => array(
 				'_id' => null,
 				's' => array(
@@ -465,7 +477,27 @@ class Billrun_Service {
 				)
 			)
 		);
-		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregateMatch, $aggregateGroup)->current();
+		
+		$aggregateGroupServices = array(
+			'$group' => array(
+				'_id' => null,
+				's' => array(
+					'$sum' => array(
+						'$ifNull' => array(
+							'$services.quantity', 1))
+				)
+			)
+		);
+		
+		$aggreagateArray = array($aggregateMatch);
+		
+		if ($this instanceof Billrun_Plan) {
+			array_push($aggreagateArray, $aggregateGroupPlans);
+		} else if ($this instanceof Billrun_Service) {
+			array_push($aggreagateArray, $unwindServices, $aggregateServices, $aggregateGroupServices);
+		} 
+				
+		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggreagateArray)->current();
 		if (!isset($results['s'])) {
 			return 0;
 		}
