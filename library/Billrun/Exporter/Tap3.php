@@ -29,6 +29,7 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 					'nsn',
 				),
 			),
+			'record_type' => '01',
 			'imsi' => array(
 				'$regex' => '^(?!42508)',
 			),

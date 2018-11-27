@@ -69,12 +69,14 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
 		if ($object instanceof BaseObject) {
 			return $object;
 		}
-		switch ($type) {
+		switch (strtolower($type)) {
 			case 'integer':
+				$object = is_numeric($object) == false ? 0 : intval($object);
+			case 'bcdstring': // TODO: should create unique handler for BCD string
 				$object = is_numeric($object) == false ? 0 : $object;
-			case 'BCDString': // TODO: should create unique handler for BCD string
 				return new Universal\Integer($object);
 			default:
+				$object = empty($object) ? ' ' : $object;
 				return new Universal\IA5String($object);
 		}
 	}

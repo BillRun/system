@@ -287,7 +287,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_SMS:
 				$recEntityCode = 0; // TODO: get correct value
 				$recEntityType = $this->getConfig('rec_entity_type.MSC');
-				$recEntityId = $row['msisdn'];
+				$recEntityId = Billrun_Util::getIn($row, 'msisdn', '');
 				break;
 			default:
 				$recEntityCode = $recEntityType = 0;
@@ -393,7 +393,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$urt = $row['urt']->sec;
 		$sdrPrice = Billrun_Utils_Currency_Converter::convertCurrency($price, $fromCurrency, $toCurrency, $urt);
-		return number_format($sdrPrice, $decimalPlaces);
+		return $sdrPrice * pow(10, $decimalPlaces);
 	}
 	
 	protected function getCurrency($row) {
@@ -438,6 +438,31 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			default:
 				return false;
 		}
+	}
+	
+	/**
+	 * gets urt
+	 * 
+	 * @return string
+	 */
+	protected function getCallEventStartTimeStamp($row) {
+		return $this->formatDate($row['urt']);
+	}
+	
+	/**
+	 * format date to file format
+	 * 
+	 * @param mixed $datetime
+	 * @return string
+	 */
+	protected function formatDate($datetime) {
+		if ($datetime instanceof MongoDate) {
+			$datetime = $datetime->sec;
+		} else if (is_string($datetime)) {
+			$datetime = strtotime($datetime);
+		}
+		$dateFormat = $this->getConfig('date_format', 'YmdHis');
+		return date($dateFormat, $datetime);
 	}
 
 }
