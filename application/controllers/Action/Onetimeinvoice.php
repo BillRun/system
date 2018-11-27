@@ -35,6 +35,7 @@ class OnetimeinvoiceAction extends ApiAction {
         $this->aid = intval($request['aid']);
         $affectedSids = [];
         
+		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
             if($this->aid != $cdr['aid']) {
@@ -59,6 +60,7 @@ class OnetimeinvoiceAction extends ApiAction {
         $pdfPath = $this->invoice->getInvoicePath();
         //run charge
 		
+		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()]]);
 		if (!$billrunToBill->lock()) {
 			Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
@@ -75,6 +77,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
 			return;
 		}
+		Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
         Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
        	if (!$this->release()) {
 			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
