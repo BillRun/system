@@ -358,3 +358,17 @@ db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , spars
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+
+//BRCD-1621 - Service quantity based quota
+var subscribers = db.subscribers.find({type: 'subscriber'});
+subscribers.forEach(function (sub) {
+		var services = sub.services;
+		if (services) {
+			services.forEach(function (service) {
+				if (service.quantity) {
+					service.quantity = Number(service.quantity);
+					db.subscribers.save(sub);
+				}
+			});
+		}
+});
