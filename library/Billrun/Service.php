@@ -399,14 +399,15 @@ class Billrun_Service {
 			$group = $this->getEntityGroup();
 		}
 		$isShared = isset($this->data['include']['groups'][$group]['account_shared']) ? $this->data['include']['groups'][$group]['account_shared'] : false;
+		$isQuantityEffected = isset($this->data['include']['groups'][$group]['quantity_effected']) ? $this->data['include']['groups'][$group]['quantity_effected'] : false;
 		$groupValue = $this->getGroupValue($group, $usageType);
 		if ($groupValue === FALSE) {
 			return 0;
 		}
-		if (!$isShared) {
+		if (!$isShared && $isQuantityEffected) {
 			return $groupValue * $serviceQuantity;
 		}
-		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
+		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time, $isQuantityEffected)) {
 			return $groupValue * $pool;
 		}
 		return $groupValue;
@@ -437,9 +438,10 @@ class Billrun_Service {
 	 * method to calculate how much usage there is in pool sharing usage/cost
 	 * @param int $aid the account
 	 * @param string $group the group
+	 * @param boolean $quantityEffected flag whether to multiply by subscriber service quantity 
 	 * @return int
 	 */
-	protected function getPoolSharingUsageCount($aid, $time = null) {
+	protected function getPoolSharingUsageCount($aid, $time = null, $quantityEffected = false) {
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -449,9 +451,11 @@ class Billrun_Service {
 			'to' => array('$gt' => new MongoDate($time)),
 			'from' => array('$lt' => new MongoDate($time)),
 		);
-		if ($this instanceof Billrun_Plan) {
+		$isPlan = $this instanceof Billrun_Plan;
+		$isService = $this instanceof Billrun_Service;
+		if ($isPlan) {
 			$query['plan'] = $this->data['name'];
-		} else if ($this instanceof Billrun_Service) {
+		} else if ($isService) {
 			$query['services.name'] = $this->data['name'];
 		} else {
 			return 0;
@@ -469,32 +473,36 @@ class Billrun_Service {
 			)
 		);
 		
-		$aggregateGroupPlans = array(
-			'$group' => array(
-				'_id' => null,
-				's' => array(
-					'$sum' => 1,
+		if ($isPlan || ($isService && !$quantityEffected)) {
+			$aggregateGroup = array(
+				'$group' => array(
+					'_id' => null,
+					's' => array(
+						'$sum' => 1
+						)
+					)
+				);				
+		} else if ($isService && $quantityEffected) {
+			$aggregateGroup = array(
+				'$group' => array(
+					'_id' => null,
+					's' => array(
+						'$sum' => array(
+							'$ifNull' => array(
+								'$services.quantity', 1
+							)
+						)
+					)
 				)
-			)
-		);
-		
-		$aggregateGroupServices = array(
-			'$group' => array(
-				'_id' => null,
-				's' => array(
-					'$sum' => array(
-						'$ifNull' => array(
-							'$services.quantity', 1))
-				)
-			)
-		);
+			);
+		}
 		
 		$aggreagateArray = array($aggregateMatch);
 		
-		if ($this instanceof Billrun_Plan) {
-			array_push($aggreagateArray, $aggregateGroupPlans);
+		if ($isPlan) {
+			array_push($aggreagateArray, $aggregateGroup);
 		} else if ($this instanceof Billrun_Service) {
-			array_push($aggreagateArray, $unwindServices, $aggregateServices, $aggregateGroupServices);
+			array_push($aggreagateArray, $unwindServices, $aggregateServices, $aggregateGroup);
 		} 
 				
 		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggreagateArray)->current();
