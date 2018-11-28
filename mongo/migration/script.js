@@ -360,9 +360,8 @@ db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , spars
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
 
 //BRCD-1621 - Service quantity based quota
-var subscribers = db.subscribers.find({type:'subscriber', $where: function() {
+var subscribers = db.subscribers.find({type:'subscriber', services:{$exists:1,$ne:[]}, $where: function() {
 	var services = this.services; 
-	if(services) {
 		var hasStringQuantity = false; 
 		services.forEach(function (service) {
 			if (typeof service.quantity === "string") {
@@ -370,7 +369,6 @@ var subscribers = db.subscribers.find({type:'subscriber', $where: function() {
 			}
 		});
 		return hasStringQuantity;
-	} else return false;
 }});
 subscribers.forEach(function (sub) {
 		var services = sub.services;
