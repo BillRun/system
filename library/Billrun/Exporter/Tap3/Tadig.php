@@ -19,7 +19,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	static protected $LINE_TYPE_DATA = 'data';
 	static protected $LINE_TYPE_CALL = 'call';
-	static protected $LINE_TYPE_INCOMING_CALL = 'incoiming_call';
+	static protected $LINE_TYPE_INCOMING_CALL = 'incoming_call';
 	static protected $LINE_TYPE_SMS = 'sms';
 	static protected $LINE_TYPE_INCOMING_SMS = 'incoming_sms';
 
@@ -32,6 +32,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected $startTimeStamp = '';
 	protected $numOfDecPlaces;
 	protected $logStamp = null;
+	protected $recEntities = array();
 	
 	public function __construct($options = array()) {
 		$this->vpmnTadig = $options['tadig'];
@@ -277,18 +278,20 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getRecEntityInformation($row) {
 		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:
-				$recEntityCode = 0; // TODO: get correct value
+			case self::$LINE_TYPE_DATA:	
 				$recEntityType = $this->getConfig('rec_entity_type.GGSN');
 				$recEntityId = $row['ggsn_address'];
+				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
+			
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
 			case self::$LINE_TYPE_SMS:
-				$recEntityCode = 0; // TODO: get correct value
 				$recEntityType = $this->getConfig('rec_entity_type.MSC');
-				$recEntityId = Billrun_Util::getIn($row, 'msisdn', '');
+				$recEntityId = Billrun_Util::getIn($row, 'exchange_id', '');
+				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
+			
 			default:
 				$recEntityCode = $recEntityType = 0;
 				$recEntityId = '';
@@ -299,6 +302,37 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'RecEntityType' => intval($recEntityType),
 			'RecEntityId' => $recEntityId,
 		);
+	}
+	
+	protected function getRecEntityCodeByRecEntityId($recEntityId) {
+		if (!isset($this->recEntities[$recEntityId])) {
+			$this->recEntities[$recEntityId] = count($this->recEntities);
+		}
+		return $this->recEntities[$recEntityId];
+	}
+
+
+	protected function getRecEntityCode($row) {
+		return $this->getRecEntityInformation($row)['RecEntityCode'];
+	}
+	
+	protected function getTeleServiceCode($row) {
+		switch ($this->getLineType($row)) {
+				
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+				return $this->getConfig('tele_service_codes.telephony', '');
+				
+			case self::$LINE_TYPE_SMS:
+				return $this->getConfig('tele_service_codes.short_message_MT_PP', '');
+
+			case self::$LINE_TYPE_INCOMING_SMS:
+				return $this->getConfig('tele_service_codes.short_message_MO_PP', '');
+			
+			case self::$LINE_TYPE_DATA:	
+			default:
+				return '';
+		}
 	}
 	
 	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
