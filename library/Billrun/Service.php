@@ -399,15 +399,15 @@ class Billrun_Service {
 			$group = $this->getEntityGroup();
 		}
 		$isShared = isset($this->data['include']['groups'][$group]['account_shared']) ? $this->data['include']['groups'][$group]['account_shared'] : false;
-		$isQuantityEffected = isset($this->data['include']['groups'][$group]['quantity_effected']) ? $this->data['include']['groups'][$group]['quantity_effected'] : false;
+		$isquantityAffected = isset($this->data['include']['groups'][$group]['quantity_affected']) ? $this->data['include']['groups'][$group]['quantity_affected'] : false;
 		$groupValue = $this->getGroupValue($group, $usageType);
 		if ($groupValue === FALSE) {
 			return 0;
 		}
-		if (!$isShared && $isQuantityEffected) {
+		if (!$isShared && $isquantityAffected) {
 			return $groupValue * $serviceQuantity;
 		}
-		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time, $isQuantityEffected)) {
+		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time, $isquantityAffected)) {
 			return $groupValue * $pool;
 		}
 		return $groupValue;
@@ -438,10 +438,10 @@ class Billrun_Service {
 	 * method to calculate how much usage there is in pool sharing usage/cost
 	 * @param int $aid the account
 	 * @param string $group the group
-	 * @param boolean $quantityEffected flag whether to multiply by subscriber service quantity 
+	 * @param boolean $quantityAffected flag whether to multiply by subscriber service quantity 
 	 * @return int
 	 */
-	protected function getPoolSharingUsageCount($aid, $time = null, $quantityEffected = false) {
+	protected function getPoolSharingUsageCount($aid, $time = null, $quantityAffected = false) {
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -473,7 +473,7 @@ class Billrun_Service {
 			)
 		);
 		
-		if ($isPlan || ($isService && !$quantityEffected)) {
+		if ($isPlan || ($isService && !$quantityAffected)) {
 			$aggregateGroup = array(
 				'$group' => array(
 					'_id' => null,
@@ -482,7 +482,7 @@ class Billrun_Service {
 						)
 					)
 				);				
-		} else if ($isService && $quantityEffected) {
+		} else if ($isService && $quantityAffected) {
 			$aggregateGroup = array(
 				'$group' => array(
 					'_id' => null,
