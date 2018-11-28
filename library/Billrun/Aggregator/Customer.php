@@ -715,9 +715,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function getAggregatorConfig($var, $defaultValue) {
 		// there is no parent -> return variable without checking parent
 		if (get_class($this) == 'Billrun_Aggregator_Customer') {
-			return Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $defaultValue);
+			return Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
 		}
-		$retDefaultVal = Billrun_Factory::config()->getConfigValue(parent::$type . '.aggregator.' . $var, $defaultValue);
+		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
 		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
 		return $ret;
 	}
