@@ -137,10 +137,8 @@ trait Billrun_Exporter_Tadigs {
 	 * @return string
 	 */
 	protected function getMccMnc($row) {
-		$imsi = $row['imsi'];
-		$mcc = substr($imsi, 0, 3);
-		$mnc = substr($imsi, 3, 3);
-		return $mcc . $mnc;
+		$imsi = Billrun_Util::getImsi($row);
+		return Billrun_Util::getMccMnc($imsi);
 	}
 	
 	/**

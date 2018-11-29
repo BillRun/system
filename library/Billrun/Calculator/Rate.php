@@ -236,7 +236,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 	
 	protected function getRoamingRateQuery($row, $usage_type) {
-		$mccMnc = Billrun_Util::getMccMnc($row['imsi']);
+		$imsi = Billrun_Util::getImsi($row);
+		$mccMnc = Billrun_Util::getMccMnc($imsi);
 		$tadig = isset($this->tadigs[$mccMnc]) ? $this->tadigs[$mccMnc] : false;
 		if (!$tadig) {
 			return false;

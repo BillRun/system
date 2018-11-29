@@ -19,7 +19,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	static protected $LINE_TYPE_DATA = 'data';
 	static protected $LINE_TYPE_CALL = 'call';
-	static protected $LINE_TYPE_INCOMING_CALL = 'incoiming_call';
+	static protected $LINE_TYPE_INCOMING_CALL = 'incoming_call';
 	static protected $LINE_TYPE_SMS = 'sms';
 	static protected $LINE_TYPE_INCOMING_SMS = 'incoming_sms';
 
@@ -32,6 +32,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected $startTimeStamp = '';
 	protected $numOfDecPlaces;
 	protected $logStamp = null;
+	protected $recEntities = array();
 	
 	public function __construct($options = array()) {
 		$this->vpmnTadig = $options['tadig'];
@@ -39,9 +40,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$this->startTime = time();
 		
 		parent::__construct($options);
-		$this->timeZoneOffset = date($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
+		$this->timeZoneOffset = gmdate($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
 		$this->timeZoneOffsetCode = intval($this->getConfig('datetime_offset_code', 0));
-		$this->startTimeStamp = date($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
+		$this->startTimeStamp = gmdate($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
 		$this->numOfDecPlaces = intval($this->getConfig('header.num_of_decimal_places'));
 	}
 	
@@ -222,11 +223,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return array(
 			'AuditControlInfo' => array(
 				'EarliestCallTimeStamp' => array(
-					'LocalTimeStamp' => date($dateFormat, $earliestUrt),
+					'LocalTimeStamp' => gmdate($dateFormat, $earliestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'LatestCallTimeStamp' => array(
-					'LocalTimeStamp' => date($dateFormat, $latestUrt),
+					'LocalTimeStamp' => gmdate($dateFormat, $latestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'TotalCharge' => $totalCharge,
@@ -277,18 +278,20 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getRecEntityInformation($row) {
 		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:
-				$recEntityCode = 0; // TODO: get correct value
+			case self::$LINE_TYPE_DATA:	
 				$recEntityType = $this->getConfig('rec_entity_type.GGSN');
 				$recEntityId = $row['ggsn_address'];
+				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
+			
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
 			case self::$LINE_TYPE_SMS:
-				$recEntityCode = 0; // TODO: get correct value
 				$recEntityType = $this->getConfig('rec_entity_type.MSC');
-				$recEntityId = $row['msisdn'];
+				$recEntityId = Billrun_Util::getIn($row, 'exchange_id', '');
+				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
+			
 			default:
 				$recEntityCode = $recEntityType = 0;
 				$recEntityId = '';
@@ -299,6 +302,36 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'RecEntityType' => intval($recEntityType),
 			'RecEntityId' => $recEntityId,
 		);
+	}
+	
+	protected function getRecEntityCodeByRecEntityId($recEntityId) {
+		if (!isset($this->recEntities[$recEntityId])) {
+			$this->recEntities[$recEntityId] = count($this->recEntities);
+		}
+		return $this->recEntities[$recEntityId];
+	}
+
+
+	protected function getRecEntityCode($row) {
+		return $this->getRecEntityInformation($row)['RecEntityCode'];
+	}
+	
+	protected function getTeleServiceCode($row) {
+		switch ($this->getLineType($row)) {
+				
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+				return $this->getConfig('tele_service_codes.telephony', '');
+				
+			case self::$LINE_TYPE_SMS:
+				return Billrun_Util::getIn($row, 'record_type', '08') == '08'
+					? $this->getConfig('tele_service_codes.short_message_MO_PP', '')
+					: $this->getConfig('tele_service_codes.short_message_MT_PP', '');;
+			
+			case self::$LINE_TYPE_DATA:	
+			default:
+				return '';
+		}
 	}
 	
 	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
@@ -372,7 +405,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 								'ChargeableUnits' => $chargeableUnits,
 								'ChargedUnits' => $chargedUnits,
 								'ChargeDetailTimeStamp' => array(
-									'LocalTimeStamp' => date($this->getConfig('datetime_format', 'YmdHis'), $row['urt']->sec),
+									'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
 									'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
 								),
 							),
@@ -393,7 +426,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
 		$urt = $row['urt']->sec;
 		$sdrPrice = Billrun_Utils_Currency_Converter::convertCurrency($price, $fromCurrency, $toCurrency, $urt);
-		return number_format($sdrPrice, $decimalPlaces);
+		return $sdrPrice * pow(10, $decimalPlaces);
 	}
 	
 	protected function getCurrency($row) {
@@ -438,6 +471,31 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			default:
 				return false;
 		}
+	}
+	
+	/**
+	 * gets urt
+	 * 
+	 * @return string
+	 */
+	protected function getCallEventStartTimeStamp($row) {
+		return $this->formatDate($row['urt']);
+	}
+	
+	/**
+	 * format date to file format
+	 * 
+	 * @param mixed $datetime
+	 * @return string
+	 */
+	protected function formatDate($datetime) {
+		if ($datetime instanceof MongoDate) {
+			$datetime = $datetime->sec;
+		} else if (is_string($datetime)) {
+			$datetime = strtotime($datetime);
+		}
+		$dateFormat = $this->getConfig('date_format', 'YmdHis');
+		return gmdate($dateFormat, $datetime);
 	}
 
 }

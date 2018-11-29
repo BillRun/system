@@ -134,7 +134,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$data = array();
 		foreach ($fieldsMapping as $field => $fieldMapping) {
 			if (!is_array($fieldMapping)) {
-				$val = Billrun_Util::getIn($row, $fieldMapping, '');
+				$val = Billrun_Util::getIn($row, $fieldMapping, null);
 			} else if (isset($fieldMapping['func'])) {
 				$functionName = $fieldMapping['func'];
 				if (!method_exists($this, $functionName)) {
@@ -144,6 +144,15 @@ abstract class Billrun_Exporter extends Billrun_Base {
 				$val = $this->{$functionName}($row, $fieldMapping);
 			} else if(isset ($fieldMapping['value'])) {
 				$val = $fieldMapping['value'];
+			} else if (isset($fieldMapping['fields'])) {
+				foreach ($fieldMapping['fields'] as $fieldOption) {
+					$val = Billrun_Util::getIn($row, $fieldOption, null);
+					if (empty($val)) {
+						$val = null;
+					} else {
+						break;
+					}
+				}
 			} else {
 				Billrun_Log::getInstance()->log('Bulk exporter: invalid mapping: ' . print_R($fieldMapping, 1), Zend_log::NOTICE);
 				$val = '';

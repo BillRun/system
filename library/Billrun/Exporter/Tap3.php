@@ -29,9 +29,16 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 					'nsn',
 				),
 			),
-			'imsi' => array(
-				'$regex' => '^(?!42508)',
+			'record_type' => array(
+				'$in' => array(
+					'01',
+					'02',
+					'08',
+					'09',
+				),
 			),
+			'incoming_roaming' => true,
+			'usagev' => ['$gt' => 0], //TODO: check if it's possible that we will want to charge line with usagev 0
 			'urt' => array(
 				'$gte' => new MongoDate($this->getPeriodStartTime()),
 				'$lte' => new MongoDate($this->getPeriodEndTime()),
