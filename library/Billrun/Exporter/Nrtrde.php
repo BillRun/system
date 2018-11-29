@@ -23,9 +23,7 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	protected function getQuery() {
 		return array(
 			'type' => 'nsn',
-			'imsi' => array(
-				'$regex' => '^(?!42508)',
-			),
+			'incoming_roaming' => true,
 			'urt' => array(
 				'$gte' => new MongoDate($this->getPeriodStartTime()),
 				'$lte' => new MongoDate($this->getPeriodEndTime()),

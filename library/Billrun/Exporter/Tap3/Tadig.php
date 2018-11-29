@@ -40,9 +40,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$this->startTime = time();
 		
 		parent::__construct($options);
-		$this->timeZoneOffset = date($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
+		$this->timeZoneOffset = gmdate($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
 		$this->timeZoneOffsetCode = intval($this->getConfig('datetime_offset_code', 0));
-		$this->startTimeStamp = date($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
+		$this->startTimeStamp = gmdate($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
 		$this->numOfDecPlaces = intval($this->getConfig('header.num_of_decimal_places'));
 	}
 	
@@ -223,11 +223,11 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return array(
 			'AuditControlInfo' => array(
 				'EarliestCallTimeStamp' => array(
-					'LocalTimeStamp' => date($dateFormat, $earliestUrt),
+					'LocalTimeStamp' => gmdate($dateFormat, $earliestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'LatestCallTimeStamp' => array(
-					'LocalTimeStamp' => date($dateFormat, $latestUrt),
+					'LocalTimeStamp' => gmdate($dateFormat, $latestUrt),
 					'UtcTimeOffset' => $this->timeZoneOffset,
 				),
 				'TotalCharge' => $totalCharge,
@@ -324,10 +324,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				return $this->getConfig('tele_service_codes.telephony', '');
 				
 			case self::$LINE_TYPE_SMS:
-				return $this->getConfig('tele_service_codes.short_message_MT_PP', '');
-
-			case self::$LINE_TYPE_INCOMING_SMS:
-				return $this->getConfig('tele_service_codes.short_message_MO_PP', '');
+				return Billrun_Util::getIn($row, 'record_type', '08') == '08'
+					? $this->getConfig('tele_service_codes.short_message_MO_PP', '')
+					: $this->getConfig('tele_service_codes.short_message_MT_PP', '');;
 			
 			case self::$LINE_TYPE_DATA:	
 			default:
@@ -406,7 +405,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 								'ChargeableUnits' => $chargeableUnits,
 								'ChargedUnits' => $chargedUnits,
 								'ChargeDetailTimeStamp' => array(
-									'LocalTimeStamp' => date($this->getConfig('datetime_format', 'YmdHis'), $row['urt']->sec),
+									'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
 									'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
 								),
 							),
@@ -496,7 +495,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			$datetime = strtotime($datetime);
 		}
 		$dateFormat = $this->getConfig('date_format', 'YmdHis');
-		return date($dateFormat, $datetime);
+		return gmdate($dateFormat, $datetime);
 	}
 
 }

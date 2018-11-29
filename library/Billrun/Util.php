@@ -985,6 +985,27 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * extract IMSI from line
+	 * 
+	 * @param array $row
+	 */
+	public static function getImsi($row) {
+		if (!empty($row['imsi'])) {
+			return $row['imsi'];
+		}
+		
+		if (!empty($row['called_imsi'])) {
+			return $row['called_imsi'];
+		}
+		
+		if (!empty($row['calling_imsi'])) {
+			return $row['calling_imsi'];
+		}
+
+		return '';
+	}
+	
+	/**
 	 * extract MCC-MNC from IMSI
 	 * 
 	 * @param string $imsi
@@ -1059,6 +1080,8 @@ class Billrun_Util {
 	public static function isIncomingRoaming($row) {
 		switch ($row['type']) {
 			case 'nsn':
+				$imsi = self::getImsi($row);
+				return !empty($imsi) && preg_match('/^(?!42508)/', $imsi);
 			case 'ggsn':
 				return !empty($row['imsi']) && preg_match('/^(?!42508)/', $row['imsi']);
 			default:
