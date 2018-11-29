@@ -376,6 +376,11 @@ class Tests_Updaterowt extends UnitTestCase {
 // Service price overriding - service wins if both service and plan override the same product
 		array('row' => array('stamp' => 'v4', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW_PLAN_OVERRIDE_USA', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 10, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-07-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 10, 'aprice' => 1.11111, 'charge' => array('retail' => 1.11111,))),
+		//Test num 105 w1
+//
+		array('row' => array('stamp' => 'w1', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 150, 'services_data' => [['name' => 'MUL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00'],], 'urt' => '2018-11-14 23:11:45+03:00',),
+			'expected' => array('in_group' => 150, 'over_group' => 0, 'out_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+	
 	];
 
 	public function __construct($label = false) {
