@@ -599,7 +599,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
-		if ($recipients) {
+		$sendMailConfig = Billrun_Factory::config()->getConfigValue($this->getType() . '.aggregator.sendendmail', true);
+		if ($recipients && $sendMailConfig) {
 			Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
 		}
 	}

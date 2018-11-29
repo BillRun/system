@@ -362,6 +362,14 @@ class ResetLinesModel {
 					@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['count'] += 1;
 				}
 			}
+			if (!empty(($line['over_group']))) {
+				$overGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] : 0;
+				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] = $overGroupUsage + $line['over_group'];
+			}
+			if (!empty($line['out_group'])) {
+				$outGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] : 0;
+				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] = $outGroupUsage + $line['out_group'];
+			}
 			$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
 			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
 			$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
@@ -406,11 +414,23 @@ class ResetLinesModel {
 		}
 
 		foreach ($totalsUsage as $usageType => $usage) {
-			if (isset($balance['balance']['totals'])) {
-				$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
-				$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
-				$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
-				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;
+			if (isset($balance['balance']['totals'])) {			
+				if (isset($usage['usage'])) {
+					$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
+				}
+				if (isset($usage['cost'])) {
+					$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
+				}
+				if (isset($usage['count'])) {
+					$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
+				}
+				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;	
+				if (isset($usage['out_group'])) {
+					$update['$set']['balance.totals.' . $usageType . '.out_group.usagev'] = $balance['balance']['totals'][$usageType]['out_group']['usagev'] - $usage['out_group']['usage'];
+				}
+				if (isset($usage['over_group'])) {
+					$update['$set']['balance.totals.' . $usageType . '.over_group.usagev'] = $balance['balance']['totals'][$usageType]['over_group']['usagev'] - $usage['over_group']['usage'];
+				}
 			}
 		}
 
