@@ -345,7 +345,28 @@ if(!found) {
 	lastConfig.subscribers.account.fields = fields;
 }
 
-db.config.insert(lastConfig);
+
+// BRCD-1636 Add new custom 'play' field to Subscribers.
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fields = lastConfig['subscribers']['subscriber']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "play") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"display":true,
+		"editable":true,
+		"field_name":"play",
+		"show_in_list":true,
+		"title":"Play",
+	});
+}
+lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
@@ -358,3 +379,33 @@ db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , spars
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+
+//BRCD-1621 - Service quantity based quota
+var subscribers = db.subscribers.find({type:'subscriber', services:{$exists:1,$ne:[]}, $where: function() {
+	var services = this.services; 
+		var hasStringQuantity = false; 
+		services.forEach(function (service) {
+			if (typeof service.quantity === "string") {
+				hasStringQuantity = true;
+			}
+		});
+		return hasStringQuantity;
+}});
+subscribers.forEach(function (sub) {
+		var services = sub.services;
+		services.forEach(function (service) {
+			if (service.quantity) {
+				service.quantity = Number(service.quantity);
+				db.subscribers.save(sub);
+			}
+		});
+});
+
+// BRCD-1624: add default Plays to config
+if (typeof lastConfig.plays == 'undefined') {
+	lastConfig.plays = [
+		{"name": "Default", "enabled": true, "default": true }
+	];
+}
+
+db.config.insert(lastConfig);
