@@ -514,6 +514,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'from' => $service['from'],
 					'to' => $service['to'],
 					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
+					'quantity' => isset($service['quantity']) ? $service['quantity'] : 1,
 				);
 			}
 		}
