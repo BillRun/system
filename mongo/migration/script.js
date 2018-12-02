@@ -345,7 +345,28 @@ if(!found) {
 	lastConfig.subscribers.account.fields = fields;
 }
 
-db.config.insert(lastConfig);
+
+// BRCD-1636 Add new custom 'play' field to Subscribers.
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fields = lastConfig['subscribers']['subscriber']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "play") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"display":true,
+		"editable":true,
+		"field_name":"play",
+		"show_in_list":true,
+		"title":"Play",
+	});
+}
+lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
@@ -379,3 +400,12 @@ subscribers.forEach(function (sub) {
 			}
 		});
 });
+
+// BRCD-1624: add default Plays to config
+if (typeof lastConfig.plays == 'undefined') {
+	lastConfig.plays = [
+		{"name": "Default", "enabled": true, "default": true }
+	];
+}
+
+db.config.insert(lastConfig);

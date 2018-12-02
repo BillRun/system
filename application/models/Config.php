@@ -366,6 +366,8 @@ class ConfigModel {
 					throw new Exception('Must select a property type');
 				}
 			}
+		} else if ($category === 'plays') {
+			$this->validatePlays($category, $data, $prevData);
 		}
 		return true;
 	}
@@ -420,6 +422,51 @@ class ConfigModel {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * validates that plays configuration is valid
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on validation success
+	 * @throws Exception on validation failure
+	 */
+	protected function validatePlays($category, &$data, $prevData) {
+		foreach ($data as $play) {
+			$playName = $play['name'];
+			if (empty($playName)) {
+				throw new Exception('Play name cannot be empty');
+			}
+			$playsWithSameName = array_filter($data, function($play) use ($playName) { return $play['name'] == $playName; });
+			if (count($playsWithSameName) > 1) {
+				throw new Exception("Play with name \"{$playName}\" already exists");
+			}
+		}
+		
+		$removedOrDisabled = array();
+		foreach ($prevData as $prevPlay) {
+			$index = array_search($prevPlay['name'], array_column($data, 'name'));
+			if ($index === false || ($prevPlay['enabled'] && !$data[$index]['enabled'])) {
+				$removedOrDisabled[] = $prevPlay['name'];
+			}
+		}
+		
+		if (!empty($removedOrDisabled) && $this->isPlaysInUse($removedOrDisabled)) {
+			throw new Exception("Plays in use cannot be removed/disabled");
+		}
+		
+		return true;
+	}
+	
+	protected function isPlaysInUse($plays) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['play'] = array(
+			'$in' => $plays,
+		);
+		
+		return !Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->isEmpty();
 	}
 	
 	/**
