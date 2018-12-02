@@ -54,7 +54,7 @@ class ChargeAction extends Action_Base {
 	}
 
 	protected function getConflictingQuery() {
-		if (!empty($options['aids'])) {
+		if (!empty($this->aids)) {
 			return array(
 				'$or' => array(
 					array('filtration' => 'all'),
