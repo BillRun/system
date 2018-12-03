@@ -454,7 +454,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('VF_DAYS', $vfCountDays);
 						}
 						
-						$this->writer->writeElement('TYPE', ($planInCycle['name'] == $group_name) ? 'plan' : 'group');
+						$this->writer->writeElement('GROUP_TYPE', ($planInCycle['name'] == $group_name) ? 'PLAN' : 'GROUP');
 						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getStartTime($billrun_key)));
 						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key)));
 						$subscriber_group_usage_VOICE_FREEUSAGE = 0;
