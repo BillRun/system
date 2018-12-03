@@ -709,6 +709,42 @@
 					"vatable": true,
 					"to": "time*2167-11-28T15:18:56Z",
 					"creation_time": "time*2018-01-29T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-12-04T00:00:00Z",
+					"name": "POOLD",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "poold",
+					"include": {
+						"groups": {
+							"POOLD": {
+								"account_shared": true,
+								"account_pool": true,
+								"quantity_affected": true,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"quantitative": true,
+					"vatable": true,
+					"to": "time*2167-12-03T12:56:09Z",
+					"creation_time": "time*2017-12-04T00:00:00Z"
 				}
 			]
 }

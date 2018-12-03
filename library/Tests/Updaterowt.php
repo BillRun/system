@@ -387,6 +387,43 @@ class Tests_Updaterowt extends UnitTestCase {
 		//over use
 		array('row' => array('stamp' => 'w3', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'MUL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50,  'aprice' => 50, 'charge' => array('retail' => 50,))),
+		//1st sub multiple quantity by 1 ,2nd multiple quantity by 2, check : half use ,full use, over use
+		//half use
+		array('row' => array('stamp' => 'w4', 'aid' => 37, 'sid' => 38, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'w5', 'aid' => 37, 'sid' => 39, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//full use
+		array('row' => array('stamp' => 'w6', 'aid' => 37, 'sid' => 38, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 100, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'w7', 'aid' => 37, 'sid' => 39, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 100, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//over use
+		array('row' => array('stamp' => 'w8', 'aid' => 37, 'sid' => 38, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 150, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 150,  'aprice' => 150, 'charge' => array('retail' => 150,))),
+		array('row' => array('stamp' => 'w9', 'aid' => 37, 'sid' => 39, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 150, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 150,  'aprice' => 150, 'charge' => array('retail' => 150,))),
+		//both subs multiple quantity by 1 , check : half use ,full use, over use
+		//half use
+		array('row' => array('stamp' => 'w10', 'aid' => 40, 'sid' => 41, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'w11', 'aid' => 40, 'sid' => 42, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//full use
+		array('row' => array('stamp' => 'w12', 'aid' => 40, 'sid' => 41, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'w13', 'aid' => 40, 'sid' => 42, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//over use
+		array('row' => array('stamp' => 'w14', 'aid' => 40, 'sid' => 41, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50,  'aprice' => 50, 'charge' => array('retail' => 50,))),
+		array('row' => array('stamp' => 'w15', 'aid' => 40, 'sid' => 42, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50,  'aprice' => 50, 'charge' => array('retail' => 50,))),
+		//1st sub multiple quantity by 1 ,2nd not have any group
+		array('row' => array('stamp' => 'w16', 'aid' => 43, 'sid' => 44, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'POOLD', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00',"quantity_affected" => true,"quantity" => 1]], 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 50, 'over_group' => 0,  'aprice' => 0, 'charge' => array('retail' => 0,))),
+		array('row' => array('stamp' => 'w17', 'aid' => 43, 'sid' => 45, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0,'out_group'=>50,  'aprice' => 50, 'charge' => array('retail' => 50,))),
 	
 	];
 
