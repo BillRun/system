@@ -615,6 +615,28 @@ abstract class Billrun_PaymentGateway {
 		);
 
 		$pipelines[] = array(
+			'$project' => array(
+				'_id' => 1,
+				'suspend_debit' => 1,
+				'type' => 1,
+				'payment_method' => 1,
+				'aid' => 1,
+				'billrun_key' => 1,
+				'lastname' => 1,
+				'firstname' => 1,
+				'bill_unit' => 1,
+				'bank_name' => 1,
+				'due_date'=> 1,
+				'source' => 1,
+				'currency' => 1,
+				'invoices' => 1,
+				'left' => 1,
+				'left_to_pay' => 1,
+				'due' => array('$subtract' => array('$left_to_pay', '$left')),
+			),
+		);
+		
+		$pipelines[] = array(
 			'$match' => array(
 				'$or' => array(
 					array('due' => array('$gt' => Billrun_Bill::precision)),
@@ -776,9 +798,6 @@ abstract class Billrun_PaymentGateway {
 				'payment_method' => array(
 					'$first' => '$method',
 				),
-				'due' => array(
-					'$sum' => '$due',
-				),
 				'aid' => array(
 					'$first' => '$aid',
 				),
@@ -806,6 +825,12 @@ abstract class Billrun_PaymentGateway {
 				'currency' => array(
 					'$first' => '$currency',
 				),
+				'left_to_pay' => array(
+					'$sum' => '$left_to_pay',
+				),
+				'left' => array(
+					'$sum' => '$left',
+				),
 				'invoices' => array(
 					'$push' => array(
 						'invoice_id' => '$invoice_id',
@@ -819,10 +844,8 @@ abstract class Billrun_PaymentGateway {
 			);	
 		if ($mode == 'per_bill') {
 			$group['_id'] = '$invoice_id';
-			$group['left_to_pay'] = array('$first' => '$left_to_pay');
-			$group['left'] = array('$first' => '$left');
 			$group['invoice_id'] = array('$first' => '$invoice_id');
-		}	
+		}
 			
 		return $group;
 	}
