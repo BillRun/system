@@ -187,7 +187,7 @@ class Billrun_EventsManager {
 		return Billrun_Utils_Arrayquery_Query::exists(array($data), $query);
 	}
 
-	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
+	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new MongoDate();
@@ -198,14 +198,17 @@ class Billrun_EventsManager {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
 		}
-		$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
-		$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
-		$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
-		if ($eventType == 'balance' && $this->isConditionOnGroup($conditionSettings['path'])) {
-			$pathArray = explode('.', $conditionSettings['path']);
-			array_pop($pathArray);
-			$path = implode('.', $pathArray) . '.total';
-			$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+
+		if ($eventType == 'balance') {
+			$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
+			$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
+			$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
+			if ($this->isConditionOnGroup($conditionSettings['path'])) {
+				$pathArray = explode('.', $conditionSettings['path']);
+				array_pop($pathArray);
+				$path = implode('.', $pathArray) . '.total';
+				$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+			}
 		}
 		foreach ($extraValues as $key => $value) {
 			$event[$key] = $value;
