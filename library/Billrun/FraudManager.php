@@ -27,6 +27,11 @@ class Billrun_FraudManager {
 	 * @var Mongodloid_Collection
 	 */
 	protected $collection;
+
+	/**
+	 * @var Mongodloid_Collection
+	 */
+	protected $eventsCollection;
 	
 	/**
 	 * @var array
@@ -47,6 +52,7 @@ class Billrun_FraudManager {
 		$this->runTime = time();
 		$this->eventsSettings = Billrun_Factory::config()->getConfigValue('events.fraud', []);
 		$this->collection = Billrun_Factory::db()->linesCollection();
+		$this->eventsCollection = Billrun_Factory::db()->eventsCollection();
 	}
 
 	public static function getInstance($params) {
@@ -114,12 +120,16 @@ class Billrun_FraudManager {
 	}
 	
 	protected function getFraudEventResults($eventSettings) {
-		$match = $this->getFraudEventsQueryMatch($eventSettings);
-		$group = $this->getFraudEventsQueryGroup($eventSettings);
-		$matchThresholds = $this->getFraudEventsQueryThresholds($eventSettings);
-		$project = $this->getFraudEventsQueryProject($eventSettings);
-		$res = $this->collection->aggregate($match, $group, $matchThresholds, $project);
-		return $res;
+		$aggregate = [
+			$this->getFraudEventsQueryMatch($eventSettings),
+		];
+		$excludeSubscribersMatch = $this->getFraudEventsQueryExcludeSubscribers($eventSettings);
+		if (!empty($excludeSubscribersMatch)) {
+			$aggregate[] = $excludeSubscribersMatch;
+		}
+		$aggregate[] = $this->getFraudEventsQueryGroup($eventSettings);
+		$aggregate[] = $this->getFraudEventsQueryThresholds($eventSettings);
+		return $this->collection->aggregate($aggregate);
 	}
 	
 	protected function getFraudEventsQueryMatch($eventSettings) {
@@ -137,12 +147,55 @@ class Billrun_FraudManager {
 		return [ '$match' => $match ];
 	}
 	
+	protected function getFraudEventsQueryExcludeSubscribers($eventSettings) {
+		if (!Billrun_Util::getIn($eventSettings, 'lines_overlap', true)) {
+			return false;
+		}
+		
+		$eventsInTimeRange = $this->getEventsInTimeRange($eventSettings);
+		if (empty($eventsInTimeRange) || $eventsInTimeRange->count() == 0) {
+			return false;
+		}
+		
+		$match = [ '$or' => [] ];
+		$sidsToExclude = [];
+		foreach ($eventsInTimeRange as $eventInTimeRange) {
+			$sid = $eventInTimeRange['extra_params']['sid'];
+			$aid = $eventInTimeRange['extra_params']['aid'];
+			$sidsToExclude[] = $sid;
+			$match['$or'][] = [
+				'sid' => $sid,
+				'aid' => $aid,
+				'urt' => [
+					'$gt' => $eventInTimeRange['max_urt'],
+				],
+			];
+		}
+		$match['$or'][] = [
+			'sid' => [ '$nin' => $sidsToExclude ],
+		];
+		return [ '$match' => $match ];
+	}
+	
+	protected function getEventsInTimeRange($eventSettings) {
+		$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
+		$match = [
+			'max_urt' => [
+				'$gte' => new MongoDate($timeRange['from']),
+				'$lt' => new MongoDate($timeRange['to']),
+			],
+		];
+		return $this->eventsCollection->find($match);
+	}
+	
 	protected function getFraudEventsQueryGroup($eventSettings) {
 		$group = [
 			'_id' => [
 				'sid' => '$sid',
 				'aid' => '$aid',
 			],
+			'aid' => [ '$first' => '$aid' ],
+			'sid' => [ '$first' => '$sid' ],
 			'max_urt' => [ '$max' => '$urt' ],
 		];
 		foreach (self::$availableThresholds as $availableThreshold) {
@@ -150,20 +203,6 @@ class Billrun_FraudManager {
 		}
 		
 		return [ '$group' => $group ];
-	}
-	
-	protected function getFraudEventsQueryProject($eventSettings) {
-		$project = [
-			'_id' => 0,
-			'sid' => '$_id.sid',
-			'aid' => '$_id.aid',
-			'max_urt' => '$max_urt',
-		];
-		foreach (self::$availableThresholds as $availableThreshold) {
-			$project[$availableThreshold] = '$' . $availableThreshold;
-		}
-		
-		return [ '$project' => $project ];
 	}
 	
 	protected function getFraudEventsQueryThresholds($eventSettings) {
@@ -192,7 +231,7 @@ class Billrun_FraudManager {
 			$conditionsSetMatch = [ '$and' => [] ];
 			foreach ($conditionsSet as $conditionConfig) {
 				$condition = [
-					$conditionConfig['field'] => [ $conditionConfig['op'] => $conditionConfig['value'] ],
+					$conditionConfig['field'] => [ '$' . $conditionConfig['op'] => $conditionConfig['value'] ],
 				];
 				$conditionsSetMatch['$and'][] = $condition;
 			}
