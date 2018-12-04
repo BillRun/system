@@ -586,7 +586,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 								$paymentResponse = Billrun_Bill::pay($paymentData['method'], array($updatedPaymentParams), $options);
 								$newPaymentData = $paymentResponse['payment'][0]->getRawData();
 								$newTransactionId = $newPaymentData['payment_gateway']['transactionId'];
-	self::updateAccordingToStatus($paymentResponse['response'][$newTransactionId], $paymentResponse['payment'][0], $gatewayName);
+								self::updateAccordingToStatus($paymentResponse['response'][$newTransactionId], $paymentResponse['payment'][0], $gatewayName);
 								if (isset($paymentResponse['response'][$newTransactionId]['status']) && $paymentResponse['response'][$newTransactionId]['status'] === '000') {
 									if ($newPaymentData['gateway_details']['amount'] > 0) {
 										Billrun_Factory::log("Successful charging of account " . $newPaymentData['aid'] . ". Amount: " . $newPaymentData['amount'], Zend_Log::INFO);
