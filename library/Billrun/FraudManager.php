@@ -36,6 +36,11 @@ class Billrun_FraudManager {
 	/**
 	 * @var array
 	 */
+	protected $eventsInTimeRange = [];
+	
+	/**
+	 * @var array
+	 */
 	protected $eventsSettings;
 	
 	/**
@@ -120,16 +125,23 @@ class Billrun_FraudManager {
 	}
 	
 	protected function getFraudEventResults($eventSettings) {
-		$aggregate = [
-			$this->getFraudEventsQueryMatch($eventSettings),
-		];
-		$excludeSubscribersMatch = $this->getFraudEventsQueryExcludeSubscribers($eventSettings);
-		if (!empty($excludeSubscribersMatch)) {
-			$aggregate[] = $excludeSubscribersMatch;
+		$match = $this->getFraudEventsQueryMatch($eventSettings);
+		$group = $this->getFraudEventsQueryGroup($eventSettings);
+		$thresholdsMatch = $this->getFraudEventsQueryThresholds($eventSettings);
+		$ret = $this->collection->aggregate($match, $group, $thresholdsMatch);
+		foreach($this->eventsInTimeRange as $eventInTimeRange) {
+			$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
+			$match['$match']['sid'] = $eventInTimeRange['extra_params']['sid'];
+			$match['$match']['aid'] = $eventInTimeRange['extra_params']['aid'];
+			$match['$match']['urt'] = [
+				'$gte' => $eventInTimeRange['max_urt'],
+				'$lt' => new MongoDate($timeRange['to']),
+			];
+			$excludedSubRes = $this->collection->aggregate($match, $group, $thresholdsMatch);
+			$res = array_merge($ret, $excludedSubRes);
 		}
-		$aggregate[] = $this->getFraudEventsQueryGroup($eventSettings);
-		$aggregate[] = $this->getFraudEventsQueryThresholds($eventSettings);
-		return $this->collection->aggregate($aggregate);
+		
+		return $ret;
 	}
 	
 	protected function getFraudEventsQueryMatch($eventSettings) {
@@ -144,37 +156,32 @@ class Billrun_FraudManager {
 		];
 		$conditionsMatch = $this->buildConditionsMatchQuery($eventSettings['conditions']);
 		$match = array_merge($basicMatch, $conditionsMatch);
+		$sidsToExclude = $this->getFraudEventsQueryExcludeSubscribers($eventSettings);
+		if (!empty($sidsToExclude)) {
+			$match['sid'] = [
+				'$nin' => $sidsToExclude,
+			];
+		}
 		return [ '$match' => $match ];
 	}
 	
 	protected function getFraudEventsQueryExcludeSubscribers($eventSettings) {
 		if (!Billrun_Util::getIn($eventSettings, 'lines_overlap', true)) {
+			$this->eventsInTimeRange = [];
 			return false;
 		}
 		
-		$eventsInTimeRange = $this->getEventsInTimeRange($eventSettings);
-		if (empty($eventsInTimeRange) || $eventsInTimeRange->count() == 0) {
+		$this->eventsInTimeRange = $this->getEventsInTimeRange($eventSettings);
+		if (empty($this->eventsInTimeRange) || $this->eventsInTimeRange->count() == 0) {
+			$this->eventsInTimeRange = [];
 			return false;
 		}
-		
-		$match = [ '$or' => [] ];
+
 		$sidsToExclude = [];
-		foreach ($eventsInTimeRange as $eventInTimeRange) {
-			$sid = $eventInTimeRange['extra_params']['sid'];
-			$aid = $eventInTimeRange['extra_params']['aid'];
-			$sidsToExclude[] = $sid;
-			$match['$or'][] = [
-				'sid' => $sid,
-				'aid' => $aid,
-				'urt' => [
-					'$gt' => $eventInTimeRange['max_urt'],
-				],
-			];
+		foreach ($this->eventsInTimeRange as $eventInTimeRange) {
+			$sidsToExclude[] = $eventInTimeRange['extra_params']['sid'];
 		}
-		$match['$or'][] = [
-			'sid' => [ '$nin' => $sidsToExclude ],
-		];
-		return [ '$match' => $match ];
+		return $sidsToExclude;
 	}
 	
 	protected function getEventsInTimeRange($eventSettings) {
