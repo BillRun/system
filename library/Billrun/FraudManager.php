@@ -39,11 +39,6 @@ class Billrun_FraudManager {
 	protected $eventsInTimeRange = [];
 	
 	/**
-	 * @var array
-	 */
-	protected $eventsSettings;
-	
-	/**
 	 * @var unixtimestamp
 	 */
 	protected $runTime;
@@ -55,7 +50,6 @@ class Billrun_FraudManager {
 
 	private function __construct($params = []) {
 		$this->runTime = time();
-		$this->eventsSettings = Billrun_Factory::config()->getConfigValue('events.fraud', []);
 		$this->collection = Billrun_Factory::db()->linesCollection();
 		$this->eventsCollection = Billrun_Factory::db()->eventsCollection();
 	}
@@ -75,7 +69,8 @@ class Billrun_FraudManager {
 	
 	protected function getEventsToRun($params = []) {
 		$eventsToRun = [];
-		foreach ($this->eventsSettings as $eventSettings) {
+		$eventsSettings = Billrun_Factory::eventsManager()->getEventsSettings('fraud');
+		foreach ($eventsSettings as $eventSettings) {
 			if ($this->shouldRunEvent($eventSettings, $params)) {
 				$eventsToRun[] = $eventSettings;
 			}

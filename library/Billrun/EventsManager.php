@@ -56,12 +56,23 @@ class Billrun_EventsManager {
 		}
 		return self::$instance;
 	}
+	
+	public function getEventsSettings($type, $activeOnly = true) {
+		$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
+		if (!$activeOnly) {
+			return $events;
+		}
+		return array_filter($events, function ($event) {
+			return Billrun_Util::getIn($event, 'active', true);
+		});
+	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
-		if (empty($this->eventsSettings[$eventType])) {
+		$eventSettings = $this->getEventsSettings($eventType);
+		if (empty($eventSettings)) {
 			return;
 		}
-		foreach ($this->eventsSettings[$eventType] as $event) {
+		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawEventSettings) {
 				if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
 					$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
