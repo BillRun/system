@@ -831,7 +831,7 @@ abstract class Billrun_Bill {
 				foreach ($paymentSuccess as $payment) {
 					$paymantData = $payment->getRawData();
 					$transactionId = isset($paymantData['payment_gateway']['transactionId']) ? $paymantData['payment_gateway']['transactionId'] : null;
-					if (empty($transactionId)) {
+					if (isset($paymantData['payment_gateway']) && empty($transactionId)) {
 						throw new Exception('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $gatewayName);
 					}
 					if ($payment->getDir() == 'fc') {
