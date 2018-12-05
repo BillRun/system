@@ -184,7 +184,7 @@ class Billrun_EventsManager {
 			case self::CONDITION_REACHED_PERCENTAGE:
 				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
-				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case after is empty (new balance)
+				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case before is empty (new balance)
 				if (preg_match('/\d+,\d+/', $eventTotalValue)) {
 					$eventPercentageValues = explode(',', $eventTotalValue);
 					$eventValues = array();
