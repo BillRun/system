@@ -374,7 +374,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
 						$this->writer->writeElement('SUB_TYPE', $subType);
 						$planBaseUsage = isset($basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev']) ? $basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev'] : 0;
-						$this->writer->writeElement('BASE_PLAN_USAGE', $planBaseUsage);
+						$this->writer->writeElement('BASE_PLAN_USAGE', ($typeUsage != 'data' ?  $planBaseUsage : $planBaseUsage / 1024));
 						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
 						$this->writer->writeElement('FREE_CAPACITY', isset($planIncludes[$typeUsage]) ? ($typeUsage != 'data' ? $planIncludes[$typeUsage] : $planIncludes[$typeUsage] / 1024) : 0);
 						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
