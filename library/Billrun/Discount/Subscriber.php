@@ -112,6 +112,8 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                     $usageTotals['after_vat'] += $usage['cost'];
                     $usageTotals['before_vat'] += $usage['cost'];
                     @$usageTotals['rates'][$usage['name']] += $usage['cost'];
+                    @$usageTotals['quantity'][$usage['name']] += $usage['usagev'];
+                    @$usageTotals['quantity']['usagev'] += $usage['usagev'];
                     @$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
 					@$usageTotals['count'][$this->discountableSections[$section]] += $usage['usagev'];
                 }

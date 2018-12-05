@@ -175,8 +175,9 @@ abstract class Billrun_Discount {
 			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$price = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
+			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
+			$price = $this->operationsTemporaryName($price,$val,$discountLimit,$key);
+			$taxationInfo = $this->getTaxationDataForPrice($simplePrice, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
 			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
 		}
@@ -204,6 +205,7 @@ abstract class Billrun_Discount {
 
 			$rateColl = Billrun_Factory::db()->getCollection($mapping['coll']);
 			$query = array_merge(array($mapping['key_field'] => $identifingKey), Billrun_Utils_Mongo::getDateBoundQuery($discount['urt']->sec));
+			//TODO this should use a cache! who programmed this huging function!.
 			$tmpRate = $rateColl->query($query)->cursor()->limit(1)->current();
 			if($tmpRate && !$tmpRate->isEmpty()) {
 				$rate = $tmpRate;
@@ -402,6 +404,20 @@ abstract class Billrun_Discount {
       
 	//=================================== Protected ======================================
 	
+	protected function operationsTemporaryName($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
+		$retPrice= $simpleDiscountPrice;
+		foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
+			switch($operation['name']) {
+				case 'recurring_by_quantity':
+						$quantityMultiplier = $discount[$operation['params']['name']][($this->isApplyToAnySubject() ? 'usagev' : $subjectKey)] % $operation['params']['name'];
+						$retPrice = $retPrice + $retPrice * $quantityMultiplier;
+					break;
+			}
+		}
+
+		return max($retPrice,-$discountLimit);
+	}
+
 	/**
 	 * Get Totals from the billrun object
 	 * @param type $billrun

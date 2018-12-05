@@ -226,8 +226,8 @@ class Billrun_DiscountManager {
 		$beforeVatTotals[$accountEntityId] = $invoiceObj->getTotals();
 		foreach ($discounts as $discountId => &$typeDiscounts) {
 			$instance = $discountInstances[$discountId];
-			foreach ($typeDiscounts as &$discount) {			
-				$entityId = $instance->getEntityId($discount);			
+			foreach ($typeDiscounts as &$discount) {
+				$entityId = $instance->getEntityId($discount);
 				if (!isset($entityTotals[$entityId])) {
 					$beforeVatTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
 					$entityTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
