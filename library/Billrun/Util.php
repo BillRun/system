@@ -1081,9 +1081,9 @@ class Billrun_Util {
 		switch ($row['type']) {
 			case 'nsn':
 				$imsi = self::getImsi($row);
-				return !empty($imsi) && preg_match('/^(?!42508)/', $imsi);
+				return !empty($imsi) && preg_match('/^(?!425)/', $imsi);
 			case 'ggsn':
-				return !empty($row['imsi']) && preg_match('/^(?!42508)/', $row['imsi']);
+				return !empty($row['imsi']) && preg_match('/^(?!425)/', $row['imsi']);
 			default:
 				return false;
 				

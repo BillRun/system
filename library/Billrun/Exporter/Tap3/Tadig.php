@@ -101,6 +101,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_SMS:
 				return 'MobileOriginatedCall';
 			case self::$LINE_TYPE_INCOMING_CALL:
+			case self::$LINE_TYPE_INCOMING_SMS:
 				return 'MobileTerminatedCall';
 			default:
 				return '';
@@ -210,7 +211,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$latestUrt = null;
 		$dateFormat = $this->getConfig('datetime_format', 'YmdHis');
 		foreach ($this->rawRows as $row) {
-			$totalCharge += isset($row['aprice']) ? floatval($row['aprice']) * pow(10, $this->numOfDecPlaces) : 0;
+			$totalCharge += isset($row['apr']) ? floatval($row['apr']) * pow(10, $this->numOfDecPlaces) : 0;
 			$totalTax += isset($row['tax']) ? floatval($row['tax']) * pow(10, $this->numOfDecPlaces) : 0;
 			$urt = $row['urt']->sec;
 			if (is_null($earliestUrt) || $urt < $earliestUrt) {
@@ -287,6 +288,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
 			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
 				$recEntityType = $this->getConfig('rec_entity_type.MSC');
 				$recEntityId = Billrun_Util::getIn($row, 'exchange_id', '');
 				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
@@ -324,9 +326,10 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				return $this->getConfig('tele_service_codes.telephony', '');
 				
 			case self::$LINE_TYPE_SMS:
-				return Billrun_Util::getIn($row, 'record_type', '08') == '08'
-					? $this->getConfig('tele_service_codes.short_message_MO_PP', '')
-					: $this->getConfig('tele_service_codes.short_message_MT_PP', '');;
+				return $this->getConfig('tele_service_codes.short_message_MO_PP', '');
+
+			case self::$LINE_TYPE_INCOMING_SMS:
+				return $this->getConfig('tele_service_codes.short_message_MT_PP', '');
 			
 			case self::$LINE_TYPE_DATA:	
 			default:
@@ -346,6 +349,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			case self::$LINE_TYPE_CALL:
 			case self::$LINE_TYPE_INCOMING_CALL:
 			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
 			default:
 				$recEntityCode = 0;
 		}
@@ -377,6 +381,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				$chargedUnits = ceil($chargeableUnits / 60) * 60; // TODO: currentlty, no "rounded" volume field
 				break;
 			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
@@ -429,6 +434,23 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		return $sdrPrice * pow(10, $decimalPlaces);
 	}
 	
+	protected function getTotalCallEventDuration($row) {
+		switch ($this->getLineType($row)) {
+				
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+				return Billrun_Util::getIn($row, 'duration', 0);
+				
+			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
+				return 0;
+			
+			case self::$LINE_TYPE_DATA:	
+			default:
+				return Billrun_Util::getIn($row, 'duration', 0);
+		}
+	}
+	
 	protected function getCurrency($row) {
 		$defaultCurrency = 'NIS';
 		$currentDate = new MongoDate();
@@ -465,7 +487,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 					return self::$LINE_TYPE_INCOMING_CALL;
 				}
 				if ($row['usaget'] == 'sms') {
-					return self::$LINE_TYPE_SMS;
+					return Billrun_Util::getIn($row, 'record_type', '08') == '08'
+						? self::$LINE_TYPE_SMS
+						: self::$LINE_TYPE_INCOMING_SMS;
 				}
 				return self::$LINE_TYPE_CALL;
 			default:

@@ -71,12 +71,14 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
 		}
 		switch (strtolower($type)) {
 			case 'integer':
-				$object = is_numeric($object) == false ? 0 : intval($object);
-			case 'bcdstring':
+				$object = is_numeric($object) === false ? 0 : intval($object);
+
+			case 'octetstring':
 				return new Universal\OctetString($object);
+
 			default:
 				$object = empty($object) ? ' ' : $object;
-				return new Universal\IA5String($object);
+				return new Universal\CharacterString($object);
 		}
 	}
 }
