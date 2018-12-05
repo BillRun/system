@@ -304,11 +304,17 @@ class Generator_Golanxml extends Billrun_Generator {
 				//$this->writer->writeElement('VOICE_FREECOUNTER', ???);
 				//$this->writer->writeElement('VOICE_FREECOUNTERCOST', ???);
 
-				$usagesArray = array();	
+				$basePlanQuery = array(
+					'sid' => $sid,
+					'billrun_month' => $billrun_key,
+					'unique_plan_id' => (int)$uniquePlanId,
+				);
+				$basePlanBalance = $this->balances->query($basePlanQuery)->cursor()->current();
+				$usagesArray = array();
 				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'])) {
 					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['over_plan'] as $category_key => $category) {
 						if (!in_array($category_key, array('intl', 'roaming'))) { // Sefi's request from 2014-03-06 + do not count VF over_plan
-							foreach ($category as $rateKey => $zone) {	
+							foreach ($category as $rateKey => $zone) {
 								$subType = $this->getSubTypeOfUsage($rateKey);
 								$usagesArray['call'][$subType]['above_cost'] = (isset($usagesArray['call'][$subType]['cost']) ? $usagesArray['call'][$subType]['cost'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
 								$usagesArray['call'][$subType]['above_usage'] = (isset($usagesArray['call'][$subType]['usagev']) ? $usagesArray['call'][$subType]['usagev'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');							
@@ -367,8 +373,10 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('USAGE');
 						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
 						$this->writer->writeElement('SUB_TYPE', $subType);
+						$planBaseUsage = isset($basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev']) ? $basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev'] : 0;
+						$this->writer->writeElement('BASE_PLAN_USAGE', $planBaseUsage);
 						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
-						$this->writer->writeElement('FREE_CAPACITY', isset($planIncludes[$typeUsage]) ? $planIncludes[$typeUsage] : 0);
+						$this->writer->writeElement('FREE_CAPACITY', isset($planIncludes[$typeUsage]) ? ($typeUsage != 'data' ? $planIncludes[$typeUsage] : $planIncludes[$typeUsage] / 1024) : 0);
 						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
 						$this->writer->writeElement('ABOVE_FREE_USAGE', (isset($details['above_usage']) ? $details['above_usage'] : 0));
 						$this->writer->writeElement('ABOVE_FREE_COST', (isset($details['above_cost']) ? $details['above_cost'] : 0));
@@ -404,42 +412,25 @@ class Generator_Golanxml extends Billrun_Generator {
 						
 						if (isset($usageInGroup['call'])) {
 							$callUsage += $balanceUsages['call']['usagev'];
-							$callCapacity = $usageInGroup['call'];
 						}
 						if (isset($usageInGroup['incoming_call'])) {
 							$callUsage += $balanceUsages['incoming_call']['usagev'];
 						}
+						if (isset($usageInGroup['call']) || isset($usageInGroup['incoming_call'])) {
+							$this->writer->writeElement('VOICE_USAGE', $callUsage);
+							$this->writer->writeElement('VOICE_CAPACITY', $usageInGroup['call']);
+						}
 						if (isset($usageInGroup['sms'])) {
-							$smsUsage = $balanceUsages['sms']['usagev'];
-							$smsCapacity = $usageInGroup['sms'];
+							$this->writer->writeElement('SMS_USAGE', $balanceUsages['sms']['usagev']);
+							$this->writer->writeElement('SMS_CAPACITY', $usageInGroup['sms']);
 						}
 						if (isset($usageInGroup['data'])) {
-							$dataUsage = $balanceUsages['data']['usagev'];
-							$dataCapacity = $usageInGroup['data'];
+							$this->writer->writeElement('DATA_USAGE', $balanceUsages['data']['usagev']);
+							$this->writer->writeElement('DATA_CAPACITY',  $usageInGroup['data']);
 						}
 						if (isset($usageInGroup['mms'])) {
-							$mmsUsage = $balanceUsages['mms']['usagev'];
-							$mmsCapacity = $usageInGroup['mms'];
-						}
-						
-						if ($callUsage) {
-							$this->writer->writeElement('VOICE_USAGE', $callUsage);
-							$this->writer->writeElement('VOICE_CAPACITY', $callCapacity);
-						}
-						
-						if ($smsUsage) {
-							$this->writer->writeElement('SMS_USAGE', $smsUsage);
-							$this->writer->writeElement('SMS_CAPACITY', $smsCapacity);
-						}
-					
-						if ($dataUsage) {
-							$this->writer->writeElement('DATA_USAGE', $dataUsage);
-							$this->writer->writeElement('DATA_CAPACITY', $dataCapacity);
-						}
-						
-						if ($mmsUsage) {
-							$this->writer->writeElement('MMS_USAGE', $mmsUsage);
-							$this->writer->writeElement('MMS_CAPACITY', $mmsCapacity);
+							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
+							$this->writer->writeElement('MMS_CAPACITY', $usageInGroup['mms']);
 						}
 						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
 					}
@@ -648,11 +639,12 @@ class Generator_Golanxml extends Billrun_Generator {
 								$this->writer->startElement('BREAKDOWN_ENTRY');
 								$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
 								$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));		
-								$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($type));
-								$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $type));
+								$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($type));	
+								$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
+								$unitCost = $this->getRateByKey($zone_name, $type);
+								$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $out_of_usage_entry_VAT / 100));
 								$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
 								$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
-								$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
 								$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
 								$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
 								$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
@@ -716,10 +708,11 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
 						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $usage_type));
-						$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-						$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);
 						$international_entry_VAT = $this->displayVAT($zone['vat']);
+						$unitCost = $this->getRateByKey($zone_name, $usage_type);
+						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $international_entry_VAT / 100));
+						$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+						$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);		
 						$this->writer->writeElement('VAT', $international_entry_VAT);
 						$international_entry_VAT_COST = $international_entry_COST_WITHOUTVAT * $international_entry_VAT / 100;
 						$this->writer->writeElement('VAT_COST', $international_entry_VAT_COST);
@@ -759,10 +752,11 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
 						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_name, $usage_type));
+						$special_entry_VAT = $this->displayVAT($zone['vat']);
+						$unitCost = $this->getRateByKey($zone_name, $usage_type);
+						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $special_entry_VAT / 100));
 						$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
 						$this->writer->writeElement('COST_WITHOUTVAT', $special_entry_COST_WITHOUTVAT);
-						$special_entry_VAT = $this->displayVAT($zone['vat']);
 						$this->writer->writeElement('VAT', $special_entry_VAT);
 						$special_entry_VAT_COST = $special_entry_COST_WITHOUTVAT * $special_entry_VAT / 100;
 						$this->writer->writeElement('VAT_COST', $special_entry_VAT_COST);
@@ -816,10 +810,11 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
 						$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$this->writer->writeElement('UNIT_TOTAL_COST', $this->getRateByKey($zone_key, $usage_type));
-						$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-						$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);
 						$roaming_entry_VAT = $this->displayVAT($zone['vat']);
+						$unitCost = $this->getRateByKey($zone_key, $usage_type);
+						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $roaming_entry_VAT / 100));
+						$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+						$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);					
 						$this->writer->writeElement('VAT', $roaming_entry_VAT);
 						$roaming_entry_VAT_COST = $roaming_entry_COST_WITHOUTVAT * $roaming_entry_VAT / 100;
 						$this->writer->writeElement('VAT_COST', $roaming_entry_VAT_COST);
