@@ -482,7 +482,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (empty($filtersQuery) && !empty($chargeOptions['pay_mode'])) {
 			throw new Exception("Can't Charge, wrong input");
 		}
-		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'total_debt';
+		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
 		$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
 		$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
 		foreach ($paginationAids as $paginationResult) {
@@ -503,7 +503,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
 			$filtersQuery['$and'] = array($accountIdQuery);
-			$billsDetails = iterator_to_array(Billrun_PaymentGateway::getBillsAggregateValues($filtersQuery, $payMode));
+			$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
 				$subscriber = $subscribers_in_array[$billDetails['aid']];
@@ -512,24 +512,28 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
+				if (!empty($billDetails['left_to_pay']) && empty(!$billDetails['left'])) {
+					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'] . ", Invoice_id: " . $billDetails['invoice_id'], Zend_Log::ALERT);
+					continue;
+				}
 				if (empty($billDetails['left_to_pay']) && empty($billDetails['left'])) {
 					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", Invoice_id: " . $billDetails['invoice_id'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
-					if ($payMode == 'per_bill') {
+					if ($payMode == 'multiple_payments') {
 						$paymentParams['pays']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
-					if ($payMode == 'per_bill') {
+					if ($payMode == 'multiple_payments') {
 						$paymentParams['paid_by']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'tc';
 				}
-				if ($payMode == 'total_debt' && !empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
+				if ($payMode == 'one_payment' && !empty($billDetails['invoices']) && is_array($billDetails['invoices'])) {
 					foreach ($billDetails['invoices'] as $invoice) {
 						$id = isset($invoice['invoice_id']) ? $invoice['invoice_id'] : $invoice['txid'];
 						$amount = isset($invoice['left']) ? $invoice['left'] : $invoice['left_to_pay'];
@@ -779,14 +783,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($filters['min_invoice_date']) && strtotime($filters['min_invoice_date']) === false) {
 			$errorMessage = "Wrong input! min_invoice_date filter is invalid";
 		}
-		if (isset($filters['pay_mode']) && !in_array($filters['pay_mode'], array('total_debt','per_bill'))) {
-			$errorMessage = "Wrong input! pay_mode can be total_debt or per_bill";
+		if (isset($filters['pay_mode']) && !in_array($filters['pay_mode'], array('one_payment','multiple_payments'))) {
+			$errorMessage = "Wrong input! pay_mode can be multiple_payments or one_payment";
 		}
 		if (isset($filters['mode']) && !in_array($filters['mode'], array('charge','refund'))) {
 			$errorMessage = "Wrong input! mode can be charge or refund";
 		}
-		if (isset($filters['pay_mode']) && ($filters['pay_mode'] == 'total_debt') && isset($filters['invoices'])) {
-			$errorMessage = "Wrong input! when paying by invoices, pay mode must be per_bill";
+		if (isset($filters['pay_mode']) && ($filters['pay_mode'] == 'one_payment') && isset($filters['invoices'])) {
+			$errorMessage = "Wrong input! when paying by invoices, pay mode must be multiple_payments";
 		}
 		if (!$errorMessage) {
 			return self::validateArrayNumericValues($filters);
@@ -797,14 +801,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	protected static function validateArrayNumericValues($filters) {
 		$filtersPossibleArray = array();
-		if (isset($filters['aids'])) {
-			$filtersPossibleArray['aids'] = $filters['aids'];
-		}
-		if (isset($filters['exclude_accounts'])) {
-			$filtersPossibleArray['exclude_accounts'] = $filters['exclude_accounts'];
-		}
-		if (isset($filters['invoices'])) {
-			$filtersPossibleArray['invoices'] = $filters['invoices'];
+		$numericFields = array('aids', 'exclude_accounts', 'invoices');
+		foreach ($numericFields as $fieldName) {
+			if (isset($filters[$fieldName])) {
+				$filtersPossibleArray[$fieldName] = $filters[$fieldName];
+			}
 		}
 		foreach ($filtersPossibleArray as $filterName => $inputArray) {
 			if (!is_array($inputArray)) {

@@ -182,7 +182,7 @@ class BillrunController extends ApiController {
 		$params['billrun_key'] = $request->get('billrun_key');
 		$params['pay_mode']= $request->get('pay_mode');
 		$params['mode'] = $request->get('charge_mode');
-		$params['minimum_invoice_date'] = $request->get('minimum_invoice_date');
+		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';

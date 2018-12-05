@@ -660,7 +660,7 @@ abstract class Billrun_Bill {
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays'])) {
-						if (!empty($rawPayment['pays']['inv'])) {				
+						if (!empty($rawPayment['pays']['inv'])) {
 							$paidInvoices = $rawPayment['pays']['inv']; // currently it is only possible to specifically pay invoices only and not payments
 							$invoices = Billrun_Bill_Invoice::getInvoices(array('aid' => $aid, 'invoice_id' => array('$in' => Billrun_Util::verify_array(array_keys($paidInvoices), 'int'))));
 							if (count($invoices) != count($paidInvoices)) {
@@ -728,7 +728,7 @@ abstract class Billrun_Bill {
 									$invoiceAmountToPay = floatval($paidBy[$invoiceObj->getId()]);
 								}
 								if ((($left = $invoiceObj->getLeft()) < $invoiceAmountToPay) && (number_format($left, 2) != number_format($invoiceAmountToPay, 2))) {
-									throw new Exception('Invoice ' . $invoiceObj->getId() . 'Credit was exhausted when paying bills');
+									throw new Exception('Invoice ' . $invoiceObj->getId() . ' Credit was exhausted when paying bills');
 								}
 								$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
 							}
@@ -750,7 +750,7 @@ abstract class Billrun_Bill {
 									$invoiceAmountToPay = floatval($paidBy[$invoiceObj->getId()]);
 								}
 								if ((($left = $invoiceObj->getLeft()) < $invoiceAmountToPay) && (number_format($left, 2) != number_format($invoiceAmountToPay, 2))) {
-									throw new Exception('Payment ' . $invoiceObj->getId() . 'Credit was exhausted when paying bills');
+									throw new Exception('Payment ' . $invoiceObj->getId() . ' Credit was exhausted when paying bills');
 								}
 								$updateBills['rec'][$invoiceObj->getId()] = $invoiceObj;
 							}	
@@ -953,6 +953,75 @@ abstract class Billrun_Bill {
 	
 	public function isPendingPayment() {
 		return (isset($this->data['pending']) && $this->data['pending']);
+	}
+	
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$nonRejectedOrCanceled = billrun_bill::getNotRejectedOrCancelledQuery();
+		$filters = array_merge($filters, $nonRejectedOrCanceled);
+		if (!empty($filters['invoice_id'])) {
+			$payMode = 'multiple_payments';
+		}
+		if (!empty($filters)) {
+			$match = array(
+				'$match' => $filters
+			);
+		}
+		$match['$match']['$or'] = array(
+				array('due_date' => array('$exists' => false)),
+				array('due_date' => array('$lt' => new MongoDate())),
+		);
+		$pipelines[] = $match;
+		$pipelines[] = array(
+			'$sort' => array(
+				'type' => 1,
+				'due_date' => -1,
+			),
+		);
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => array('$ifNull' => array('$method', '$payment_method')),
+			),	
+		);
+		
+		$pipelines[] = array(
+			'$group' => self::getGroupByMode($payMode),
+		);
+
+		$pipelines[] = array(
+			'$project' => array(
+				'_id' => 1,
+				'suspend_debit' => 1,
+				'type' => 1,
+				'payment_method' => 1,
+				'aid' => 1,
+				'billrun_key' => 1,
+				'lastname' => 1,
+				'firstname' => 1,
+				'bill_unit' => 1,
+				'bank_name' => 1,
+				'due_date'=> 1,
+				'source' => 1,
+				'currency' => 1,
+				'invoices' => 1,
+				'left' => 1,
+				'left_to_pay' => 1,
+				'due' => array('$subtract' => array('$left_to_pay', '$left')),
+			),
+		);
+		
+		$pipelines[] = array(
+			'$match' => array(
+				'$or' => array(
+					array('due' => array('$gt' => Billrun_Bill::precision)),
+					array('due' => array('$lt' => -Billrun_Bill::precision)),
+				),
+				'suspend_debit' => NULL,
+			),
+		);
+		
+		$res = $billsColl->aggregate($pipelines);
+		return $res;
 	}
 
 }
