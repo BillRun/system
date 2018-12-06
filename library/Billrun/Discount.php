@@ -111,7 +111,8 @@ abstract class Billrun_Discount {
 		}
 		foreach ($this->discountData['discount_subject'] as $subjects) {
 			foreach ($subjects as $key => $val) {
-							if ($this->isMonetray()) {
+				$val = is_array($val) ? $val['value'] : $val; // Backward compatibility with amount/perecnt only discount subject.
+				if ($this->isMonetray()) {
 					$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;
 				} else {
 					$discountLine['discount'][$key]['value'] = $val;
@@ -176,7 +177,7 @@ abstract class Billrun_Discount {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$price = $this->operationsTemporaryName($price,$val,$discountLimit,$key);
+			$price = $this->priceManipulation($price,$val,$discountLimit,$key);
 			$taxationInfo = $this->getTaxationDataForPrice($simplePrice, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
 			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
@@ -404,18 +405,8 @@ abstract class Billrun_Discount {
       
 	//=================================== Protected ======================================
 	
-	protected function operationsTemporaryName($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
-		$retPrice= $simpleDiscountPrice;
-		foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
-			switch($operation['name']) {
-				case 'recurring_by_quantity':
-						$quantityMultiplier = $discount[$operation['params']['name']][($this->isApplyToAnySubject() ? 'usagev' : $subjectKey)] % $operation['params']['name'];
-						$retPrice = $retPrice + $retPrice * $quantityMultiplier;
-					break;
-			}
-		}
-
-		return max($retPrice,-$discountLimit);
+	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
+		return max($simpleDiscountPrice,-$discountLimit);
 	}
 
 	/**

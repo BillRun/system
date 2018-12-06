@@ -43,6 +43,23 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
+
+    //==================================== Protected ==========================================
+
+	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
+		$retPrice= $simpleDiscountPrice;
+		foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
+			switch($operation['name']) {
+				case 'recurring_by_quantity':
+						$quantityMultiplier = $discount[$operation['params']['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] % $operation['params']['name'];
+						$retPrice = $retPrice + $retPrice * $quantityMultiplier;
+					break;
+			}
+		}
+
+		return max($retPrice,-$discountLimit);
+	}
+
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
         $eligible = !empty(@Billrun_Util::getFieldVal($this->discountData['params'], array()));
         $multiplier = 1;
@@ -113,7 +130,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                     $usageTotals['before_vat'] += $usage['cost'];
                     @$usageTotals['rates'][$usage['name']] += $usage['cost'];
                     @$usageTotals['quantity'][$usage['name']] += $usage['usagev'];
-                    @$usageTotals['quantity']['usagev'] += $usage['usagev'];
+                    @$usageTotals['quantity']['total'] += $usage['usagev'];
                     @$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
 					@$usageTotals['count'][$this->discountableSections[$section]] += $usage['usagev'];
                 }
