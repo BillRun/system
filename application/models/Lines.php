@@ -466,20 +466,17 @@ class LinesModel extends TableModel {
 		$ret = array();
 		
 		foreach($cursor as $row) {
+			$incoming = preg_match('/^incoming_/',$row['usaget']);
 			$ret[] = array(
 				'date' => date(Billrun_Base::base_dateformat, $row['urt']->sec),
 				'called_number' => $row['called_number'],
 				'calling_number' => $row['calling_number'],
 				'usagev' => !empty($row['usagev']) ? $row['usagev'] : $row['duration'],
 				'usaget' => $row['usaget'],
-				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
-				'calling_subs_first_lac' => hexdec($row['calling_subs_first_lac']),
-				'calling_subs_last_ci' => $row['calling_subs_last_ci'],
-				'calling_subs_last_lac' => hexdec($row['calling_subs_last_lac']),
-				'called_subs_first_ci' => $row['called_subs_first_ci'],
-				'called_subs_first_lac' => hexdec($row['called_subs_first_lac']),
-				'called_subs_last_ci' => $row['called_subs_last_ci'],
-				'called_subs_last_lac' => hexdec($row['called_subs_last_lac']),
+				'subs_first_ci' =>  $incoming ? $row['called_subs_first_ci'] : $row['calling_subs_first_ci'],
+				'subs_first_lac' => $incoming ? hexdec($row['called_subs_first_lac']) : hexdec($row['calling_subs_first_lac']),
+				'subs_last_ci' => $incoming ?  $row['called_subs_last_ci'] : $row['calling_subs_last_ci'],
+				'subs_last_lac' => $incoming ? hexdec($row['called_subs_last_lac']) : hexdec($row['calling_subs_last_lac'])  ,
 			);
 		}
 		
