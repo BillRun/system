@@ -479,9 +479,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
-		if (empty($filtersQuery) && !empty($chargeOptions['pay_mode'])) {
-			throw new Exception("Can't Charge, wrong input");
-		}
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
 		$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
 		$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
@@ -522,14 +519,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['pays']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
+						$paymentParams['pays'][$billDetails['type']][$billDetails['invoice_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['paid_by']['inv'][$billDetails['invoice_id']] = $paymentParams['amount'];
+						$paymentParams['paid_by'][$billDetails['type']][$billDetails['invoice_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'tc';
 				}
@@ -788,9 +785,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		if (isset($filters['mode']) && !in_array($filters['mode'], array('charge','refund'))) {
 			$errorMessage = "Wrong input! mode can be charge or refund";
-		}
-		if (isset($filters['pay_mode']) && ($filters['pay_mode'] == 'one_payment') && isset($filters['invoices'])) {
-			$errorMessage = "Wrong input! when paying by invoices, pay mode must be multiple_payments";
 		}
 		if (!$errorMessage) {
 			return self::validateArrayNumericValues($filters);

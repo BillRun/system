@@ -957,11 +957,8 @@ abstract class Billrun_Bill {
 	
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$nonRejectedOrCanceled = billrun_bill::getNotRejectedOrCancelledQuery();
+		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$filters = array_merge($filters, $nonRejectedOrCanceled);
-		if (!empty($filters['invoice_id'])) {
-			$payMode = 'multiple_payments';
-		}
 		if (!empty($filters)) {
 			$match = array(
 				'$match' => $filters
@@ -981,7 +978,8 @@ abstract class Billrun_Bill {
 		$pipelines[] = array(
 			'$addFields' => array(
 				'method' => array('$ifNull' => array('$method', '$payment_method')),
-			),	
+				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
+			),
 		);
 		
 		$pipelines[] = array(
@@ -1007,6 +1005,8 @@ abstract class Billrun_Bill {
 				'left' => 1,
 				'left_to_pay' => 1,
 				'due' => array('$subtract' => array('$left_to_pay', '$left')),
+				'invoice_id' => 1,
+				'txid' => 1,
 			),
 		);
 		
@@ -1024,4 +1024,67 @@ abstract class Billrun_Bill {
 		return $res;
 	}
 
+	protected static function getGroupByMode($mode = false) {
+		$group = array(
+				'_id' => '$aid',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$method',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+				'left_to_pay' => array(
+					'$sum' => '$left_to_pay',
+				),
+				'left' => array(
+					'$sum' => '$left',
+				),
+				'invoices' => array(
+					'$push' => array(
+						'invoice_id' => '$invoice_id',
+						'amount' => '$amount',
+						'left' => '$left',
+						'left_to_pay' => '$left_to_pay',
+						'txid' => '$txid',
+						'type' => '$type',
+					)
+				),
+			);	
+		if ($mode == 'multiple_payments') {
+			$group['_id'] = '$unique_id';
+			$group['invoice_id'] = array('$first' => '$unique_id');
+		}
+			
+		return $group;
+	}
 }
