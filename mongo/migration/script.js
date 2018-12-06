@@ -408,4 +408,12 @@ if (typeof lastConfig.plays == 'undefined') {
 	];
 }
 
+//BRCD-1643: add email template for fraud notification
+if (typeof email_templates.fraud_notification == 'undefined') {
+	lastConfig.email_templates.fraud_notification = {
+		subject: "Event [[event_code]] was triggered",
+		content: "<pre>\n[[fraud_event_details]]</pre>\n",
+	};
+}
+
 db.config.insert(lastConfig);
