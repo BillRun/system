@@ -1083,11 +1083,43 @@ class Billrun_Util {
 				$imsi = self::getImsi($row);
 				return !empty($imsi) && preg_match('/^(?!425)/', $imsi);
 			case 'ggsn':
+			case 'sgsn':
 				return !empty($row['imsi']) && preg_match('/^(?!425)/', $row['imsi']);
 			default:
 				return false;
 				
 		}
+	}
+	
+	/**
+	 * decompressed archived (zipped) file
+	 * 
+	 * @param string $file - file path of the zipped file
+	 * @param string $compressType one of: zip/gz/tar/bz2/lzf/rar
+	 * @param string $target - folder path to locate unzipped file (by default it will be the same folder as the zipped file)
+	 * @return boolean
+	 */
+	public static function decompress($file, $compressType = 'zip', $target = null) {
+		if (is_null($target)) {
+			$target = dirname($file);
+		}
+		$decompressClass = 'Zend_Filter_Compress_' . ucfirst($compressType);
+		//Create filter object
+		$filter = new Zend_Filter_Decompress(
+			array(
+			'adapter' => $decompressClass,
+			'options' => array(
+				'target' => $target,
+			)
+		));
+
+		$ret = $filter->filter($file);
+		if (strtolower($compressType) == 'gz') {
+			$fileName = pathinfo($file)['filename'];
+			$targetPath = $target . '/' . $fileName;
+			file_put_contents($targetPath, $ret);
+		}
+		return true;
 	}
 
 
