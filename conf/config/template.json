@@ -124,5 +124,8 @@
   },
 	"system" : {
 		"closed_cycle_changes": false
-	}
+	},
+	"plays": [
+		{ "name": "Default", "enabled": true, "default": true }
+	]
 }
