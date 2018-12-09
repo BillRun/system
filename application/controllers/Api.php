@@ -241,7 +241,9 @@ class ApiController extends Yaf_Controller_Abstract {
 		if (!is_null($input)) {
 			$output['input'] = $input;
 		}
-
+if ($errorMessage === "Failed to authenticate") {
+	$errorMessage .= '. input was ' . json_encode($input);
+}
 		// Throwing a general exception.
 		// TODO: Debug default code
 		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
