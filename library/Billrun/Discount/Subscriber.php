@@ -48,15 +48,17 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$totals ) {
 		$retPrice= $simpleDiscountPrice;
-		foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
-			switch($operation['name']) {
-				case 'recurring_by_quantity':
-						$quantityMultiplier = 0;
-						foreach($operation['params'] as $param) {
-							$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
-						}
-						$retPrice = $retPrice * $quantityMultiplier;
-					break;
+		if( !empty($this->discountData['discount_subject']['service'][$subjectKey]['operations']) ) {
+			foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
+				switch($operation['name']) {
+					case 'recurring_by_quantity':
+							$quantityMultiplier = 0;
+							foreach($operation['params'] as $param) {
+								$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
+							}
+							$retPrice = $retPrice * $quantityMultiplier;
+						break;
+				}
 			}
 		}
 
