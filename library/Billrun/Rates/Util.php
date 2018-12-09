@@ -154,7 +154,7 @@ class Billrun_Rates_Util {
 	}
 
 	// TODO: This is a temporary function
-	public static function getVat($default = 0.18) {
+	public static function getVat($default = 0.17) {
 		return Billrun_Factory::config()->getConfigValue('taxation.vat', $default);
 	}
 
