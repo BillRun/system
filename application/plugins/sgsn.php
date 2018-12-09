@@ -49,4 +49,15 @@ class sgsnPlugin extends ggsnPlugin {
 		return false;
 	}
 	
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseData
+	 */
+	public function parseData($type, $data, \Billrun_Parser &$parser) {
+		$cdrLine = parent::parseData($type, $data, $parser);
+		if ($cdrLine && !Billrun_Util::isIncomingRoaming($cdrLine, $type)) { // ignores non-roaming SGSN CDRs 
+			return false;
+		}
+		return $cdrLine;
+	}
+	
 }

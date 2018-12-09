@@ -1077,8 +1077,9 @@ class Billrun_Util {
 		return $ret;
 	}
 
-	public static function isIncomingRoaming($row) {
-		switch ($row['type']) {
+	public static function isIncomingRoaming($row, $type = null) {
+		$type = is_null($type) ? $row['type'] : $type;
+		switch ($type) {
 			case 'nsn':
 				$imsi = self::getImsi($row);
 				return !empty($imsi) && preg_match('/^(?!425)/', $imsi);
