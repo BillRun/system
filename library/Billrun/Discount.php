@@ -161,6 +161,7 @@ abstract class Billrun_Discount {
 			return FALSE;
 		}
 		$charge = $totalPrice = 0;
+		$addedPricingData = [];
 		//discount each of the subject  included in the discount
 		foreach ($totals['rates'] as $key => $ratePrice ) {
 			if( empty($discount['discount'][$key]) && !$this->isApplyToAnySubject() ) {
@@ -177,7 +178,9 @@ abstract class Billrun_Discount {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$price = $this->priceManipulation($simplePrice, $val, $key ,$discountLimit, $totals);
+			$pricingData = $this->priceManipulation($simplePrice, $val, $key ,$discountLimit, $totals);
+			$addedPricingData[] = $pricingData;
+			$price = $pricingData['price'];
 			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
 			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
@@ -187,7 +190,7 @@ abstract class Billrun_Discount {
 			$charge = $totalPrice > 0 ? $totalPrice : max($totalPrice, $discountLimit);
 		}
 
-		return array('price' => $charge, 'tax_info' => $taxationInformation);
+		return array('price' => $charge, 'tax_info' => $taxationInformation,'discount_pricing_data'=> $addedPricingData);
 	}
 
 	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
@@ -406,7 +409,10 @@ abstract class Billrun_Discount {
 	//=================================== Protected ======================================
 	
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
-		return max($simpleDiscountPrice,$discountLimit);
+		return [
+				'price' => max($simpleDiscountPrice,$discountLimit) ,
+				'pricing_breakdown' => [$subjectKey => [['base_price' => $simpleDiscountPrice]]]
+				];
 	}
 
 	/**
