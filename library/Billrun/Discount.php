@@ -177,8 +177,8 @@ abstract class Billrun_Discount {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$price = $this->priceManipulation($price,$val,$discountLimit,$key);
-			$taxationInfo = $this->getTaxationDataForPrice($simplePrice, $key, $discount);
+			$price = $this->priceManipulation($simplePrice, $val, $key ,$discountLimit, $totals);
+			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
 			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
 		}
@@ -406,7 +406,7 @@ abstract class Billrun_Discount {
 	//=================================== Protected ======================================
 	
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
-		return max($simpleDiscountPrice,-$discountLimit);
+		return max($simpleDiscountPrice,$discountLimit);
 	}
 
 	/**

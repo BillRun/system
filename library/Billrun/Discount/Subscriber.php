@@ -46,18 +46,21 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 
     //==================================== Protected ==========================================
 
-	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
+	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$totals ) {
 		$retPrice= $simpleDiscountPrice;
 		foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
 			switch($operation['name']) {
 				case 'recurring_by_quantity':
-						$quantityMultiplier = $discount[$operation['params']['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] % $operation['params']['name'];
-						$retPrice = $retPrice + $retPrice * $quantityMultiplier;
+						$quantityMultiplier = 0;
+						foreach($operation['params'] as $param) {
+							$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
+						}
+						$retPrice = $retPrice * $quantityMultiplier;
 					break;
 			}
 		}
 
-		return max($retPrice,-$discountLimit);
+		return max($retPrice,$discountLimit);
 	}
 
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
