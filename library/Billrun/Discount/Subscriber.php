@@ -48,6 +48,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$totals ) {
 		$retPrice= $simpleDiscountPrice;
+		$pricingData = [];
 		if( !empty($this->discountData['discount_subject']['service'][$subjectKey]['operations']) ) {
 			foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
 				switch($operation['name']) {
@@ -56,13 +57,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 							foreach($operation['params'] as $param) {
 								$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
 							}
-							$retPrice = $retPrice * $quantityMultiplier;
+							$pricingData[] = ['name' => 'recurring_by_quantity', 'multiplier' => $quantityMultiplier , 'base_price' => $simpleDiscountPrice ];
+							$retPrice = $simpleDiscountPrice * $quantityMultiplier;
 						break;
 				}
 			}
 		}
 
-		return max($retPrice,$discountLimit);
+		return [ 'price' => max($retPrice,$discountLimit) , 'pricing_breakdown' => [ $subjectKey => $pricingData] ];
 	}
 
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
