@@ -182,9 +182,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 	
     protected function parseCredit($credit_row) {
+		$credit_row['rand'] = rand(1, 1000000);
 		$ret = $this->validateCDRFields($credit_row);
-        $ret['source'] = 'credit';
-		$ret['rand'] = rand(1, 1000000);
+		$ret['source'] = 'credit';
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
 		$ret['process_time'] = new MongoDate();
 		$ret['urt'] = new MongoDate( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
@@ -213,6 +213,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$options = array(
 			'type' => 'Credit',
 			'parser' => 'none',
+			'rand' => $cdr['rand']
 		);
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($cdr);
