@@ -482,6 +482,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
 		$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
 		$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
+		$customersAids = array();
 		foreach ($paginationAids as $paginationResult) {
 			$customersAids[] = $paginationResult->getRawData()['_id'];
 		}
@@ -510,23 +511,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					continue;
 				}
 				if (!empty($billDetails['left_to_pay']) && empty(!$billDetails['left'])) {
-					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'] . ", Invoice_id: " . $billDetails['invoice_id'], Zend_Log::ALERT);
+					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
 					continue;
 				}
 				if (empty($billDetails['left_to_pay']) && empty($billDetails['left'])) {
-					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", Invoice_id: " . $billDetails['invoice_id'], Zend_Log::ALERT);
+					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['pays'][$billDetails['type']][$billDetails['invoice_id']] = $paymentParams['amount'];
+						$paymentParams['pays'][$billDetails['type']][$billDetails['unique_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['paid_by'][$billDetails['type']][$billDetails['invoice_id']] = $paymentParams['amount'];
+						$paymentParams['paid_by'][$billDetails['type']][$billDetails['unique_id']] = $paymentParams['amount'];
 					}
 					$paymentParams['dir'] = 'tc';
 				}

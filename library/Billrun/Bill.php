@@ -1007,6 +1007,7 @@ abstract class Billrun_Bill {
 				'due' => array('$subtract' => array('$left_to_pay', '$left')),
 				'invoice_id' => 1,
 				'txid' => 1,
+				'unique_id' => 1,
 			),
 		);
 		
@@ -1082,7 +1083,7 @@ abstract class Billrun_Bill {
 			);	
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
-			$group['invoice_id'] = array('$first' => '$unique_id');
+			$group['unique_id'] = array('$first' => '$unique_id');
 		}
 			
 		return $group;
