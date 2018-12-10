@@ -645,8 +645,8 @@ class Generator_Golanxml extends Billrun_Generator {
 								$unitCost = $this->getRateByKey($zone_name, $type);							
 								if (isset($this->ratesByKey[$zone_name])) {
 									$rateByKey = $this->ratesByKey[$zone_name];
-									$this->writer->writeElement('ACCESS_PRICE', isset($rateByKey['rates'][$type]['access']) ? $rateByKey['rates'][$type]['access'] : 0);
-								}								
+									$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$type]['access']) ? $rateByKey['rates'][$type]['access'] * (1 + $out_of_usage_entry_VAT / 100) : 0);
+								}
 								$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $out_of_usage_entry_VAT / 100));
 								$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
 								$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
@@ -717,7 +717,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						$unitCost = $this->getRateByKey($zone_name, $usage_type);
 						if (isset($this->ratesByKey[$zone_name])) {
 							$rateByKey = $this->ratesByKey[$zone_name];
-							$this->writer->writeElement('ACCESS_PRICE', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] : 0);
+							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $international_entry_VAT / 100) : 0);
 						}
 						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $international_entry_VAT / 100));
 						$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
@@ -765,7 +765,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						$unitCost = $this->getRateByKey($zone_name, $usage_type);
 						if (isset($this->ratesByKey[$zone_name])) {
 							$rateByKey = $this->ratesByKey[$zone_name];
-							$this->writer->writeElement('ACCESS_PRICE', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] : 0);
+							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $special_entry_VAT / 100) : 0);
 						}
 						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $special_entry_VAT / 100));
 						$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
@@ -819,19 +819,20 @@ class Generator_Golanxml extends Billrun_Generator {
 						if (!empty($currentRate['alpha3'])) {
 							$this->writer->writeAttribute('alpha3', $currentRate['alpha3']);
 						} else {
-							$this->writer->writeAttribute('plmn', $zone_key);
+							$this->writer->writeAttribute('alpha3', '');
 						}
 					}
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
+						$roamingTitle = ($zone_key == 'HOME_NETWORK_CUSTOMER_SERVICE') ? 'HOME_NETWORK_CUSTOMER_SERVICE' : $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
+						$this->writer->writeElement('TITLE', $roamingTitle);
 						$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
 						$roaming_entry_VAT = $this->displayVAT($zone['vat']);
 						$unitCost = $this->getRateByKey($zone_key, $usage_type);					
 						if (isset($this->ratesByKey[$zone_key])) {
 							$rateByKey = $this->ratesByKey[$zone_key];
-							$this->writer->writeElement('ACCESS_PRICE', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] : 0);
+							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $roaming_entry_VAT / 100) : 0);
 						}					
 						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $roaming_entry_VAT / 100));
 						$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
@@ -1347,8 +1348,8 @@ EOI;
 					$servingNetwork = $this->getServingNetwork($line);
 					$lineTypeBilling = $this->getLineTypeOfBillingChar($line);
 					$planDates = $this->getPlanDates($line, $subscriber);
-					$vat = (isset($line['vatable']) && $line['vatable'] == 0) ? 0 : $vat;
-					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3, $planDates, $vat);
+					$calcVat = (isset($line['vatable']) && $line['vatable'] == 0) ? 0 : $vat;
+					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3, $planDates, $calcVat);
 					if ($lines_counter % $this->flush_size == 0) {
 						$this->flush();
 					}
