@@ -518,7 +518,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getLineType($row) {
 		switch ($row['type']) {
-			case 'ggsn':
+			case 'sgsn':
 				return self::$LINE_TYPE_DATA;
 			case 'nsn':
 				if ($row['usaget'] == 'incoming_call') {

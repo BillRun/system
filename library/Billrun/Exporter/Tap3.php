@@ -21,20 +21,28 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 	/**
 	 * see parent::getQuery
 	 */
-	protected function getQuery() { // TODO: fix query
+	protected function getQuery() {
 		return array(
 			'type' => array(
 				'$in' => array(
-					'ggsn',
+					'sgsn',
 					'nsn',
 				),
 			),
-			'record_type' => array(
-				'$in' => array(
-					'01',
-					'02',
-					'08',
-					'09',
+			'$or' => array(
+				array(
+					'type' => 'nsn',
+					'record_type' => array(
+						'$in' => array(
+							'01',
+							'02',
+							'08',
+							'09',
+						),
+					),
+				),
+				array(
+					'type' => 'sgsn',
 				),
 			),
 			'incoming_roaming' => true,
