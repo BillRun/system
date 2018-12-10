@@ -41,7 +41,13 @@ class sgsnPlugin extends ggsnPlugin {
 			return;
 		}
 		if (file_exists($file_path)) {
-			Billrun_Util::decompress($file_path, 'gz');
+			try {
+				Billrun_Util::decompress($file_path, 'gz');
+			} catch (Exception $ex) {
+				Billrun_Factory::log('Error decompressing file "' . $file_path . '". Error code: ' . $ex->getCode() . '. Error message: ' . $ex->getMessage(), Billrun_Log::ERR);
+				$file_path = false;
+				return false;
+			}
 			$file_path = str_replace('.Z', '', $file_path);
 
 			return true;
