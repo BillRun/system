@@ -1049,25 +1049,30 @@ class ConfigModel {
 	}
 	
 	protected function validateEvent($eventType, $event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
 		switch ($eventType) {
 			case 'fraud':
 				return $this->validateFraudEvent($event);
 			case 'balance':
-			default:
 				return $this->validateBalanceEvent($event);
+			case 'settings':
+			default:
+				return true;
 		}
 		return true;
 	}
 
 
 	protected function validateBalanceEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
 		return true;
 	}
 
 	protected function validateFraudEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
 		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
 		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
 		if ($dateRangeBaseUnits > $recurrenceBaseUnits) {
