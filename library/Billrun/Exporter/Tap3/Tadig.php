@@ -33,6 +33,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected $numOfDecPlaces;
 	protected $logStamp = null;
 	protected $recEntities = array();
+	protected $currencyCodes = array();
 	
 	public function __construct($options = array()) {
 		$this->vpmnTadig = $options['tadig'];
@@ -175,15 +176,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			'AccountingInfo' => array(
 				'LocalCurrency' => $this->getConfig('header.local_currency'),
 				'TapCurrency' => $this->getConfig('header.tap_currency'),
-				'CurrencyConversionList' => array(
-					array(
-						'CurrencyConversion' => array(
-							'ExchangeRateCode' => intval($this->getConfig('header.currency_conversion.exchange_rate_code')),
-							'NumberOfDecimalPlaces' => intval($this->getConfig('header.currency_conversion.num_of_decimal_places')),
-							'ExchangeRate' => intval($this->getConfig('header.currency_conversion.exchange_rate')),
-						),
-					),
-				),
+				'CurrencyConversionList' => $this->getCurrencyConversionList(),
 				'TapDecimalPlaces' => $this->numOfDecPlaces,
 			),
 			'NetworkInfo' => array(
@@ -198,6 +191,54 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				'RecEntityInfoList' => $this->getRecEntityInfoList(),
 			),
 		);
+	}
+	
+	protected function getCurrencyConversionList() {
+		$currencyConversionList = array();
+		$numberOfDecimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
+		foreach ($this->rawRows as $row) {
+			$currencyCode = intval($this->getCurrencyCode($row));
+			$found = false;
+			foreach ($currencyConversionList as $currencyConversion) {
+				if ($currencyConversion['CurrencyConversion']['ExchangeRateCode'] == $currencyCode) {
+					$found = true;
+					break;
+				}
+			}
+			if (!$found) {
+				$currencyConversionList[] = array(
+					'CurrencyConversion' => array(
+						'ExchangeRateCode' => $currencyCode,
+						'NumberOfDecimalPlaces' => $numberOfDecimalPlaces,
+						'ExchangeRate' => $this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces),
+					),
+				);
+			}
+		}
+		
+		return $currencyConversionList;
+	}
+	
+	protected function getCurrencyParams($row) {
+		$currency = $this->getCurrency($row);
+		if (!isset($this->currencyCodes[$currency])) {
+			$fromCurrency = 'SDR';
+			$urt = $row['urt']->sec;
+			$exchangeRate = Billrun_Utils_Currency_Converter::convertCurrency(1, $fromCurrency, $currency, $urt);
+			$this->currencyCodes[$currency] = array(
+				'code' => count($this->currencyCodes),
+				'exchange_rate' => $exchangeRate,
+			);
+		}
+		return $this->currencyCodes[$currency];
+	}
+	
+	protected function getExchangeRate($row) {
+		return Billrun_Util::getIn($this->getCurrencyParams($row), 'exchange_rate', 1);
+	}
+	
+	protected function getCurrencyCode($row) {
+		return Billrun_Util::getIn($this->getCurrencyParams($row), 'code', '');
 	}
 
 	/**
@@ -396,7 +437,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			array(
 				'ChargeInformation' => array(
 					'ChargedItem' => $chargedItem,
-					'ExchangeRateCode' => 0, // TODO: get correct value from row
+					'ExchangeRateCode' => $this->getCurrencyCode($row),
 					'CallTypeGroup' => array(
 						'CallTypeLevel1' => intval($callTypeLevel1),
 						'CallTypeLevel2' => intval($callTypeLevel2),
@@ -426,11 +467,8 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 			return 0;
 		}
 		$price = $row['apr'];
-		$fromCurrency = $this->getCurrency($row);
-		$toCurrency = 'SDR';
 		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
-		$urt = $row['urt']->sec;
-		$sdrPrice = Billrun_Utils_Currency_Converter::convertCurrency($price, $fromCurrency, $toCurrency, $urt);
+		$sdrPrice = $price / $this->getExchangeRate($row);
 		return $sdrPrice * pow(10, $decimalPlaces);
 	}
 	
@@ -480,7 +518,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	
 	protected function getLineType($row) {
 		switch ($row['type']) {
-			case 'ggsn':
+			case 'sgsn':
 				return self::$LINE_TYPE_DATA;
 			case 'nsn':
 				if ($row['usaget'] == 'incoming_call') {
