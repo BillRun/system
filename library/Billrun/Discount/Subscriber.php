@@ -64,7 +64,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			}
 		}
 
-		return [ 'price' => max($retPrice,$discountLimit) , 'pricing_breakdown' => [ $subjectKey => $pricingData] ];
+		return [ 'price' => max(min(0,$retPrice),$discountLimit) , 'pricing_breakdown' => [ $subjectKey => $pricingData] ];
 	}
 
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {

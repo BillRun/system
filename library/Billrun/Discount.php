@@ -410,7 +410,7 @@ abstract class Billrun_Discount {
 	
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
 		return [
-				'price' => max($simpleDiscountPrice,$discountLimit) ,
+				'price' => max($min(0,simpleDiscountPrice),$discountLimit) ,
 				'pricing_breakdown' => [$subjectKey => [['base_price' => $simpleDiscountPrice]]]
 				];
 	}
