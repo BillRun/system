@@ -57,8 +57,16 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 							foreach($operation['params'] as $param) {
 								$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
 							}
-							$pricingData[] = ['name' => 'recurring_by_quantity', 'multiplier' => $quantityMultiplier , 'base_price' => $simpleDiscountPrice ];
-							$retPrice = $simpleDiscountPrice * $quantityMultiplier;
+							$pricingData[] = ['name' => 'recurring_by_quantity', 'multiplier' => $quantityMultiplier , 'base_price' => $retPrice ];
+							$retPrice = $retPrice * $quantityMultiplier;
+						break;
+						case 'dequtitive_amount':
+							$quantityMultiplier = 0;
+							foreach($operation['params'] as $param) {
+								$quantityMultiplier +=  $totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)];
+							}
+							$pricingData[] = ['name' => 'dequtitive_amount', 'multiplier' => $quantityMultiplier , 'base_price' => $retPrice ];
+							$retPrice = $retPrice / $quantityMultiplier;
 						break;
 				}
 			}
