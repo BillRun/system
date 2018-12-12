@@ -62,9 +62,11 @@ class Billrun_FraudManager {
 	}
 	
 	public function run($params = []) {
+		Billrun_Factory::log('Fraud manager running', Billrun_Log::INFO);
 		foreach ($this->getEventsToRun($params) as $eventSettings) {
 			$this->runFraudEvent($eventSettings);
 		}
+		Billrun_Factory::log('Fraud manager running done', Billrun_Log::INFO);
 	}
 	
 	protected function getEventsToRun($params = []) {
@@ -85,7 +87,9 @@ class Billrun_FraudManager {
 	}
 	
 	protected function runFraudEvent($eventSettings) {
+		Billrun_Factory::log('Fraud manager running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 		foreach ($this->getFraudEventResults($eventSettings) as $res) {
+			Billrun_Factory::log('Fraud manager running event ' . $eventSettings['event_code'] . ' on subscriber ' . $res['sid'] . ' account ' . $res['aid'], Billrun_Log::INFO);
 			$extraParams = [
 				'aid' => $res['aid'],
 				'sid' => $res['sid'],
@@ -105,6 +109,7 @@ class Billrun_FraudManager {
 			$eventSettingsToSave = $this->getEventSettingsToSave($eventSettings);
 			Billrun_Factory::eventsManager()->saveEvent(self::$eventType, $eventSettingsToSave, [], [], [], $extraParams, $extraValues);
 		}
+		Billrun_Factory::log('Fraud manager done running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 	}
 	
 	protected function getEventSettingsToSave($eventSettings) {
