@@ -67,6 +67,9 @@
 				"num_of_tries": 3,
 				"method": "post",
 				"decoder": "json"
+			},
+			"email": {
+				"global_addresses":[]
 			}
 		}
 	},
