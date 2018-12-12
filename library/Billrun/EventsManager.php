@@ -56,12 +56,23 @@ class Billrun_EventsManager {
 		}
 		return self::$instance;
 	}
+	
+	public function getEventsSettings($type, $activeOnly = true) {
+		$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
+		if (!$activeOnly) {
+			return $events;
+		}
+		return array_filter($events, function ($event) {
+			return Billrun_Util::getIn($event, 'active', true);
+		});
+	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
-		if (empty($this->eventsSettings[$eventType])) {
+		$eventSettings = $this->getEventsSettings($eventType);
+		if (empty($eventSettings)) {
 			return;
 		}
-		foreach ($this->eventsSettings[$eventType] as $event) {
+		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawEventSettings) {
 				if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
 					$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
@@ -187,7 +198,7 @@ class Billrun_EventsManager {
 		return Billrun_Utils_Arrayquery_Query::exists(array($data), $query);
 	}
 
-	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
+	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new MongoDate();
@@ -198,14 +209,17 @@ class Billrun_EventsManager {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
 		}
-		$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
-		$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
-		$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
-		if ($eventType == 'balance' && $this->isConditionOnGroup($conditionSettings['path'])) {
-			$pathArray = explode('.', $conditionSettings['path']);
-			array_pop($pathArray);
-			$path = implode('.', $pathArray) . '.total';
-			$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+
+		if ($eventType == 'balance') {
+			$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
+			$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
+			$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
+			if ($this->isConditionOnGroup($conditionSettings['path'])) {
+				$pathArray = explode('.', $conditionSettings['path']);
+				array_pop($pathArray);
+				$path = implode('.', $pathArray) . '.total';
+				$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+			}
 		}
 		foreach ($extraValues as $key => $value) {
 			$event[$key] = $value;
