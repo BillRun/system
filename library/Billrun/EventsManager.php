@@ -238,7 +238,7 @@ class Billrun_EventsManager {
 			try {
 				$response = Billrun_Events_Notifier::notify($event->getRawData());
 				if ($response === false) {
-					Billrun_Factory::log('Error notify event. Event details: ' . print_R($event, 1), Billrun_Log::NOTICE);
+					Billrun_Factory::log('Error notify event. Event details: ' . print_R($event->getRawData(), 1), Billrun_Log::NOTICE);
 					$this->unlockNotifyEvent($event);
 					continue;
 				}
