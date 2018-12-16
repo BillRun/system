@@ -132,10 +132,10 @@ class Billrun_FraudManager {
 			
 		foreach($this->eventsInTimeRange as $eventInTimeRange) {
 			$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
-			$match['$match']['sid'] = $eventInTimeRange['extra_params']['sid'];
-			$match['$match']['aid'] = $eventInTimeRange['extra_params']['aid'];
+			$match['$match']['sid'] = $eventInTimeRange['sid'];
+			$match['$match']['aid'] = $eventInTimeRange['aid'];
 			$match['$match']['urt'] = [
-				'$gte' => $eventInTimeRange['max_urt'],
+				'$gt' => $eventInTimeRange['max_urt'],
 				'$lt' => new MongoDate($timeRange['to']),
 			];
 			$excludedSubRes = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
@@ -167,20 +167,20 @@ class Billrun_FraudManager {
 	}
 	
 	protected function getFraudEventsQueryExcludeSubscribers($eventSettings) {
-		if (!Billrun_Util::getIn($eventSettings, 'lines_overlap', true)) {
+		if (Billrun_Util::getIn($eventSettings, 'lines_overlap', true)) {
 			$this->eventsInTimeRange = [];
 			return false;
 		}
 		
-		$this->eventsInTimeRange = $this->getEventsInTimeRange($eventSettings);
-		if (empty($this->eventsInTimeRange) || $this->eventsInTimeRange->count() == 0) {
+		$this->eventsInTimeRange = iterator_to_array($this->getEventsInTimeRange($eventSettings));
+		if (empty($this->eventsInTimeRange)) {
 			$this->eventsInTimeRange = [];
 			return false;
 		}
 
 		$sidsToExclude = [];
 		foreach ($this->eventsInTimeRange as $eventInTimeRange) {
-			$sidsToExclude[] = $eventInTimeRange['extra_params']['sid'];
+			$sidsToExclude[] = $eventInTimeRange['sid'];
 		}
 		return $sidsToExclude;
 	}
@@ -188,12 +188,27 @@ class Billrun_FraudManager {
 	protected function getEventsInTimeRange($eventSettings) {
 		$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 		$match = [
-			'max_urt' => [
-				'$gte' => new MongoDate($timeRange['from']),
-				'$lt' => new MongoDate($timeRange['to']),
+			'$match' => [
+				'max_urt' => [
+					'$gte' => new MongoDate($timeRange['from']),
+					'$lt' => new MongoDate($timeRange['to']),
+				],
 			],
 		];
-		return $this->eventsCollection->find($match);
+		$group = [
+			'$group' => [
+				'_id' => [
+					'sid' => '$extra_params.sid',
+					'aid' => '$extra_params.aid',
+				],
+				'aid' => [ '$first' => '$extra_params.aid' ],
+				'sid' => [ '$first' => '$extra_params.sid' ],
+				'max_urt' => [
+					'$max' => '$max_urt',
+				],
+ 			],
+ 		];
+		return $this->eventsCollection->aggregate($match, $group);
 	}
 	
 	protected function getFraudEventsQueryGroup($eventSettings) {
