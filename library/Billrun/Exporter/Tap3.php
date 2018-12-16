@@ -25,24 +25,9 @@ class Billrun_Exporter_Tap3 extends Billrun_Exporter_Asn1 {
 		return array(
 			'type' => array(
 				'$in' => array(
+					'ggsn',
 					'sgsn',
 					'nsn',
-				),
-			),
-			'$or' => array(
-				array(
-					'type' => 'nsn',
-					'record_type' => array(
-						'$in' => array(
-							'01',
-							'02',
-							'08',
-							'09',
-						),
-					),
-				),
-				array(
-					'type' => 'sgsn',
 				),
 			),
 			'incoming_roaming' => true,

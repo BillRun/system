@@ -1081,8 +1081,10 @@ class Billrun_Util {
 		$type = is_null($type) ? $row['type'] : $type;
 		switch ($type) {
 			case 'nsn':
+				$roamingRecordTypes = array('01', '02', '08', '09');
 				$imsi = self::getImsi($row);
-				return !empty($imsi) && preg_match('/^(?!425)/', $imsi);
+				return (!empty($imsi) && preg_match('/^(?!425)/', $imsi)) &&
+					(in_array(Billrun_Util::getIn($row, 'record_type', ''), $roamingRecordTypes));
 			case 'ggsn':
 			case 'sgsn':
 				return !empty($row['imsi']) && preg_match('/^(?!425)/', $row['imsi']);
