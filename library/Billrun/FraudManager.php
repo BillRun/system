@@ -62,9 +62,11 @@ class Billrun_FraudManager {
 	}
 	
 	public function run($params = []) {
+		Billrun_Factory::log('Fraud manager running', Billrun_Log::INFO);
 		foreach ($this->getEventsToRun($params) as $eventSettings) {
 			$this->runFraudEvent($eventSettings);
 		}
+		Billrun_Factory::log('Fraud manager running done', Billrun_Log::INFO);
 	}
 	
 	protected function getEventsToRun($params = []) {
@@ -85,7 +87,9 @@ class Billrun_FraudManager {
 	}
 	
 	protected function runFraudEvent($eventSettings) {
+		Billrun_Factory::log('Fraud manager running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 		foreach ($this->getFraudEventResults($eventSettings) as $res) {
+			Billrun_Factory::log('Fraud manager running event ' . $eventSettings['event_code'] . ' on subscriber ' . $res['sid'] . ' account ' . $res['aid'], Billrun_Log::INFO);
 			$extraParams = [
 				'aid' => $res['aid'],
 				'sid' => $res['sid'],
@@ -105,6 +109,7 @@ class Billrun_FraudManager {
 			$eventSettingsToSave = $this->getEventSettingsToSave($eventSettings);
 			Billrun_Factory::eventsManager()->saveEvent(self::$eventType, $eventSettingsToSave, [], [], [], $extraParams, $extraValues);
 		}
+		Billrun_Factory::log('Fraud manager done running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 	}
 	
 	protected function getEventSettingsToSave($eventSettings) {
@@ -123,7 +128,8 @@ class Billrun_FraudManager {
 		$match = $this->getFraudEventsQueryMatch($eventSettings);
 		$group = $this->getFraudEventsQueryGroup($eventSettings);
 		$thresholdsMatch = $this->getFraudEventsQueryThresholds($eventSettings);
-		$ret = $this->collection->aggregate($match, $group, $thresholdsMatch);
+		$ret = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
+			
 		foreach($this->eventsInTimeRange as $eventInTimeRange) {
 			$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 			$match['$match']['sid'] = $eventInTimeRange['extra_params']['sid'];
@@ -132,8 +138,8 @@ class Billrun_FraudManager {
 				'$gte' => $eventInTimeRange['max_urt'],
 				'$lt' => new MongoDate($timeRange['to']),
 			];
-			$excludedSubRes = $this->collection->aggregate($match, $group, $thresholdsMatch);
-			$res = array_merge($ret, $excludedSubRes);
+			$excludedSubRes = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
+			$ret = array_merge($ret, $excludedSubRes);
 		}
 		
 		return $ret;
