@@ -408,4 +408,10 @@ if (typeof lastConfig.plays == 'undefined') {
 	];
 }
 
+//BRCD-1613 - Configurable VAT label on invoice
+var vatLabel = lastConfig['taxation']['vat_label'];
+if (!vatLabel) {
+	lastConfig['taxation']['vat_label'] = 'VAT';
+}
+
 db.config.insert(lastConfig);
