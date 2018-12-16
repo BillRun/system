@@ -482,7 +482,6 @@ class Billrun_Billrun {
 		} else {
 			$zone = &$sraw['breakdown'][$row['plan']][$plan_key][$category_key][$zone_key];
 		}
-
 		if ($plan_key != 'credit') {
 			if (!empty($counters)) {
 				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
@@ -496,8 +495,16 @@ class Billrun_Billrun {
 					$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
 					$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
 					$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+					if (($row['in_plan'] && (!empty($row['arategroup']) && ($row['plan'] == $row['arategroup']) || !empty($row['plan_usage'])))) {
+						$rowPlanUsage = !empty($row['plan_usage']) ? $row['plan_usage'] : $row['in_plan'];
+						$planZone['totals'][key($counters)]['plan_usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['plan_usagev'], 0) + $rowPlanUsage; 
+					}
 				} else {
 					$volume_priced = current($counters);
+				}
+				if (($row['in_plan'] && !isset($pricingData['over_plan']) && (!empty($row['arategroup']) && ($row['plan'] == $row['arategroup']) || !empty($row['plan_usage'])))) {
+					$rowPlanUsage = !empty($row['plan_usage']) ? $row['plan_usage'] : $row['in_plan'];
+					$zone['totals'][key($counters)]['plan_usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['plan_usagev'], 0) + $rowPlanUsage; 
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];

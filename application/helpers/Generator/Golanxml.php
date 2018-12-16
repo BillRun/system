@@ -333,11 +333,15 @@ class Generator_Golanxml extends Billrun_Generator {
 					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'] as $category_key => $category) {
 						if ($category_key != 'roaming') { // Do not count VF in_plan
 							foreach ($category as $rateKey => $zone) {
-								$subType = $this->getSubTypeOfUsage($rateKey);
-								$usagesArray['call'][$subType]['usage'] = (isset($usagesArray['call'][$subType]['usage']) ? $usagesArray['call'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-								$usagesArray['sms'][$subType]['usage'] = (isset($usagesArray['sms'][$subType]['usage']) ? $usagesArray['sms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-								$usagesArray['data'][$subType]['usage'] = (isset($usagesArray['data'][$subType]['usage']) ? $usagesArray['data'][$subType]['usage'] : 0) + $this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-								$usagesArray['mms'][$subType]['usage'] = (isset($usagesArray['mms'][$subType]['usage']) ? $usagesArray['mms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+								$subType = $this->getSubTypeOfUsage($rateKey);							
+								$callTotalsKey = isset($zone['totals']['calll']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$smsTotalsKey = isset($zone['totals']['sms']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$dataTotalsKey = isset($zone['totals']['data']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$mmsTotalsKey = isset($zone['totals']['mms']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$usagesArray['call'][$subType]['usage'] = (isset($usagesArray['call'][$subType]['usage']) ? $usagesArray['call'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $callTotalsKey, 'call');
+								$usagesArray['sms'][$subType]['usage'] = (isset($usagesArray['sms'][$subType]['usage']) ? $usagesArray['sms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $smsTotalsKey, 'sms');
+								$usagesArray['data'][$subType]['usage'] = (isset($usagesArray['data'][$subType]['usage']) ? $usagesArray['data'][$subType]['usage'] : 0) + $this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, $dataTotalsKey, 'data'));
+								$usagesArray['mms'][$subType]['usage'] = (isset($usagesArray['mms'][$subType]['usage']) ? $usagesArray['mms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $mmsTotalsKey, 'mms');
 							}
 						}
 					}
@@ -374,8 +378,6 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('USAGE');
 						$this->writer->writeElement('TYPE', $this->getLabelTypeByUsaget($typeUsage));
 						$this->writer->writeElement('SUB_TYPE', $subType);
-						$planBaseUsage = isset($basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev']) ? $basePlanBalance['balance']['groups'][$plan['plan']][$typeUsage]['usagev'] : 0;
-						$this->writer->writeElement('BASE_PLAN_USAGE', ($typeUsage != 'data' ?  $planBaseUsage : $planBaseUsage / 1024));
 						$this->writer->writeElement('FREE_USAGE', (isset($details['usage']) ? $details['usage'] : 0));
 						$this->writer->writeElement('FREE_CAPACITY', isset($planIncludes[$typeUsage]) ? ($typeUsage != 'data' ? $planIncludes[$typeUsage] : $planIncludes[$typeUsage] / 1024) : 0);
 						$this->writer->writeElement('USAGE_UNIT', $this->getUsageUnit($typeUsage));
@@ -496,7 +498,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
-							$this->writer->writeElement('DATA_CAPACITY', $group['data']);
+							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6442450944 : $group['data']); // Hard coded 6GB for vf data abroad
 						}
 						if (isset($group['mms'])) {
 							$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);
@@ -822,9 +824,10 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeAttribute('alpha3', '');
 						}
 					}
+					$this->writer->writeAttribute('special', $zone_key);
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$roamingTitle = ($zone_key == 'HOME_NETWORK_CUSTOMER_SERVICE') ? 'HOME_NETWORK_CUSTOMER_SERVICE' : $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
+						$roamingTitle = $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
 						$this->writer->writeElement('TITLE', $roamingTitle);
 						$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
@@ -1348,7 +1351,7 @@ EOI;
 					$servingNetwork = $this->getServingNetwork($line);
 					$lineTypeBilling = $this->getLineTypeOfBillingChar($line);
 					$planDates = $this->getPlanDates($line, $subscriber);
-					$calcVat = (isset($line['vatable']) && $line['vatable'] == 0) ? 0 : $vat;
+					$calcVat = ((isset($line['vatable']) && $line['vatable'] == 0) || $roaming == 1) ? 0 : $vat;
 					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3, $planDates, $calcVat);
 					if ($lines_counter % $this->flush_size == 0) {
 						$this->flush();
