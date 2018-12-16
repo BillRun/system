@@ -1075,7 +1075,7 @@ class ConfigModel {
 		}
 		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
 		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
-		if ($dateRangeBaseUnits > $recurrenceBaseUnits) {
+		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
 			throw new Exception('Event recurrence must be less than or equal to date range');
 		}
 		return true;
