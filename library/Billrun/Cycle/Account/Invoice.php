@@ -289,6 +289,7 @@ class Billrun_Cycle_Account_Invoice {
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
 		);
+		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
 		}
