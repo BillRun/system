@@ -158,7 +158,7 @@ class Tests_Aggregator extends UnitTestCase {
 		 * part 1
 		 *  */
 		array(
-			'test' => array('test_number' => 21, "aid" => 50, 'sid' => 51, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun'), 'options' => array("stamp" => "201806", "force_accounts" => array(50))),
+			'test' => array('test_number' => 21, "aid" => 50, 'sid' => 51, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun'), 'options' => array("stamp" => "201806", "force_accounts" => array(50)),'fake_aid' => 54, 'fake_stamp' => '201806'),
 			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201806', 'aid' => 50),
 				'line' => array('types' => array('flat',))),
 			'postRun' => array('confirm', 'billrunExists', 'saveId'),
@@ -299,7 +299,7 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * 
-	 * @param type $row the current test case 
+	 * @param type $row current test case
 	 */
 	public function aggregator($row) {
 		$options = array_merge($this->defaultOptions, $row['test']['options']);
@@ -373,7 +373,7 @@ class Tests_Aggregator extends UnitTestCase {
 	
 	/**
 	 * 
-	 * @param type $row  the current test case
+	 * @param type $row current test case 
 	 * @return type  billrun object/s 
 	 */
 	protected function runT($row) {
@@ -388,9 +388,9 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * 
 	 * @param type $key number of the test case
-	 * @param type $returnBillrun
-	 * @param type $row current test case
-	 * @return boolean
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case 
+	 * @return boolean true if the test is pass and false if the tast is fail 
 	 */
 	protected function basicCompare($key, $returnBillrun, $row) {
 		$passed = TRUE;
@@ -428,9 +428,9 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * check if all subscribers was calculeted
 	 * @param type $key number of the test case
-	 * @param type $returnBillrun
-	 * @param type $row current test case
-	 * @return boolean
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function sumSids($key, $returnBillrun, $row) {
 		$this->message .= "<b> sum sid's :</b> <br>";
@@ -448,9 +448,9 @@ class Tests_Aggregator extends UnitTestCase {
 	 *  check the price before and after vat
 	 * 
 	 * @param type $key number of the test case
-	 * @param type $returnBillrun
-	 * @param type $row current test case
-	 * @return boolean
+	 *  @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function totalsPrice($key, $returnBillrun, $row) {
 		$passed = TRUE;
@@ -481,7 +481,7 @@ class Tests_Aggregator extends UnitTestCase {
 	 * @param type $beforVat
 	 * @param type $aftetrVat
 	 * @param type $vatable
-	 * @return type 
+	 * @return vat
 	 */
 	public function calcVat($beforVat, $aftetrVat, $vatable = null) {
 		$i = $aftetrVat - $beforVat;
@@ -495,8 +495,8 @@ class Tests_Aggregator extends UnitTestCase {
 	/* save Latest 3 Results  */
 	/**
 	 * 
-	 * @param type $returnBillrun
-	 * @param type $row
+	 * * @param type $returnBillrun is the billrun object of current test after aggregation is the billrun object of current test after aggregation
+	 * @param type $row current test case
 	 */
 	public function saveLatestResults($returnBillrun, $row) {
 		$lest = array($returnBillrun, $row);
@@ -510,12 +510,11 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		$this->LatestResults[0] = $lest;
 	}
-
-	/* return all lines  of aid in specific billrun_key */
+	
 	/**
 	 * 
-	 * @param type $row current test case
-	 * @return type 
+	 * @param type $row current test case current test case
+	 * @return return all lines  of aid in specific billrun_key 
 	 */
 	public function getLines($row) {
 		$stamp = (isset($row['test']['options']['stamp'])) ? $row['test']['options']['stamp'] : $this->defaultOptions['stamp'];
@@ -529,13 +528,13 @@ class Tests_Aggregator extends UnitTestCase {
 		return $allLines;
 	}
 
-	/* check if all the lines was created */
+
 	/**
-	 * 
-	 * @param type $key
-	 * @param type $returnBillrun
-	 * @param type $row
-	 * @return boolean
+	 * check if all the lines was created 
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function lineExists($key, $returnBillrun, $row) {
 		$passed = true;
@@ -569,9 +568,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * 
-	 * @param type $key
-	 * @param type $returnBillrun
-	 * @param type $row
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
 	 * @return boolean return pass if the billrun was not created
 	 */
 	public function billrunNotCreated($key, $returnBillrun = null, $row) {
@@ -587,8 +586,8 @@ class Tests_Aggregator extends UnitTestCase {
 	}
     /**
 	 * change and reload Config 
-	 * @param type $key
-	 * @param type $row
+	 * @param type $key number of the test case
+	 * @param type $row current test case
 	 */
 	public function changeConfig($key, $row) {
 		$key = $row['test']['overrideConfig']['key'];
@@ -598,10 +597,10 @@ class Tests_Aggregator extends UnitTestCase {
 	}
 	/**
 	 * check if created duplicate billruns
-	 * @param type $key
-	 * @param type $returnBillrun
-	 * @param type $row
-	 * @return boolean
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function duplicateAccounts($key, $returnBillrun, $row) {
 		$this->message .= "<b>duplicate billruns: </b> <br>";
@@ -617,11 +616,11 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* confirm specific invoice */
+	 
 	/**
-	 * 
-	 * @param type $returnBillrun
-	 * @param type $row
+	 * confirm specific invoice
+	 * @param type $returnBillrun is the billrun object of current test after aggregation
+	 * @param type $row current test case
 	 */
 	public function confirm($returnBillrun, $row) {
 		$options['type'] = (string) 'billrunToBill';
@@ -632,8 +631,14 @@ class Tests_Aggregator extends UnitTestCase {
 		$generator->generate();
 	}
 
-	/* check after_vat per sid */
-
+	 
+    /**
+	 * check after_vat per sid 
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function subsPrice($key, $returnBillrun, $row) {
 		$passed = true;
 		$this->message .= "<b> price per sid :</b> <br>";
@@ -650,8 +655,15 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* General check for all tests - sum of account lines equals billrun object total (aprice = before_vat, final_charge - after_vat) */
-
+	  
+	/**
+	 * General check for all tests - sum of account lines equals billrun object total
+	 *  (aprice = before_vat, final_charge - after_vat)
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function linesVSbillrun($key, $returnBillrun, $row) {
 		$this->message .= "<b> lines vs billrun :</b> <br>";
 		$passed = true;
@@ -686,8 +698,14 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* 'totals.after_vat_rounded' is rounding of 'totals.after_vat' */
-
+	 
+	/**
+	 * 'totals.after_vat_rounded' is rounding of 'totals.after_vat
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function rounded($key, $returnBillrun, $row) {
 		$this->message .= "<b> rounding :</b> <br>";
 		$passed = true;
@@ -700,24 +718,46 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
+	/**
+	 * remove billrun and lines for aid in speciphic cycle
+	 * @param type $key number of the test case
+	 * @param type $row current test case
+	 */
 	public function removeBillrun($key, $row) {
-		Billrun_Aggregator_Customer::removeBeforeAggregate('201806', [42]);
+		$stamp = $row['test']['options']['stamp'];
+		$account[]= $row['test']['aid'];
+		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp,$account);
 	}
 
-	/* check that billrun not run full cycle by checking if aid 54 is run */
 
+	/**
+	 * check that billrun not run full cycle by checking if aid 54 is run
+	 * @param type $key  
+	 * @param type $row 
+	 * 
+	 */
 	public function billrunExists($key, $row) {
-		$query = array('aid' => 54, "billrun_key" => '201806');
+		$aid = $row['test']['fake_aid'];
+		$stamp = $row['test']['fake_stamp'];
+		$query = array('aid' => $aid, "billrun_key" => $stamp);
 		$billrun = $this->getBillruns($query)->count();
 		if ($sumBillruns > 0) {
 			$this->assertTrue(false);
 			$this->message .= '<b style="color:red;">aggregate run full cycle</b>' . $this->fail;
 		}
 	}
-
+	/**
+	 * run full cycle number of the test case
+	 * @param type $key
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function fullCycle($key, $returnBillrun, $row) {
 		$passed = true;
-		$query = array('aid' => 54, "billrun_key" => '201806');
+		$aid = $row['test']['aid'];
+		$stamp = $row['test']['options']['stamp'];
+		$query = array('aid' => $aid, "billrun_key" => $stamp);
 		$billrun = $this->getBillruns($query)->count();
 		if (count($billrun) > 0) {
 			$this->message .= '<b>aggregate run full cycle</b>' . $this->pass;
@@ -727,7 +767,14 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
-
+	
+	/**
+	 * check the pagination
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function pagination($key, $returnBillrun, $row) {
 		$passed = true;
 		$billrun = $this->getBillruns()->count();
@@ -740,24 +787,32 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* charge_included_service=0 */
-
+	/**
+	 * set charge_included_service to false
+	 */
 	public function charge_included_service($key, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_included_service.ini');
 	}
 
-	/* charge_included_service=1 */
-
+	/**
+	 *  set charge_included_service to true
+	 */
 	public function charge_not_included_service($key, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_not_included_service.ini');
 	}
 
-	/* check if invoice was created */
-
+	/**
+	 * check if invoice was created
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */ 
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
-		$path = APPLICATION_PATH . '/shared/test/files/invoices/' . $row['test']['options']['stamp'] . '/pdf/' . $row['test']['invoice_path'];
+		Billrun_Util::getBillRunSharedFolderPath('/shared/test/files/invoices/');
+		$path .= $row['test']['options']['stamp'] . '/pdf/' . $row['test']['invoice_path'];
 		if (!file_exists($path)) {
 			$passed = false;
 			$this->message .= 'the invoice is not found' . $this->fail;
@@ -767,12 +822,18 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* Check override mode using passthrough_fields  */
-
+	/**
+	 * Check override mode using passthrough_fields 
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function passthrough($key, $returnBillrun, $row) {
 		$passed = true;
+		$billrun = new Billrun_Account_Db;
 		$this->message .= "<b> passthrough_fields :</b> <br>";
-		$account = $this->subscribersCol->query(array('aid' => $row['test']['aid'], 'type' => 'account'))->cursor()->current()->getRawData();
+		$account= $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
 		$address = $account['address'];
 		if ($returnBillrun['attributes']['address'] === $address) {
 			$this->message .= "passthrough work well" . $this->pass;
@@ -783,14 +844,21 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/* save invoice_id */
-
+	/**
+	 *  save invoice_id 
+	 */
 	public function saveId($returnBillrun, $row) {
 		if (!empty($returnBillrun)) {
 			$this->ids[$returnBillrun['aid']] = $returnBillrun['invoice_id'];
 		}
 	}
-
+	/**
+	 * chack if reaggregation is overrides_invoice_id
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function overrides_invoice($key, $returnBillrun, $row) {
 		$this->message .= "<b> overrides_invoice_id :</b> <br>";
 		$passed = true;
@@ -822,7 +890,13 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
-
+	
+	/**
+	 * check if exepted invoice are created billrun object
+	 * @param type $key number of the test case
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function expected_invoice($key, $row) {
 		$this->message .= "<b> expected_invoice :</b> <br>";
 		$passed = true;
@@ -845,8 +919,16 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	/*When an account has multiple revisions in a specific billing cycle, take the last one when generating the billrun object
-	 *  (check subs.attributes.account_name field)*/
+	
+	/**
+	 * When an account has multiple revisions in a specific billing cycle,
+	 *  take the last one when generating the billrun object
+	  (check subs.attributes.account_name field)
+	 * @param type $key number of the test case
+	 * @param type $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
 	public function takeLastRevision($key, $returnBillrun, $row) {
 		$this->message .= "<b> Take last account_name for billrun with many revisions  at a cycle:</b> <br>";
 		$passed = true;

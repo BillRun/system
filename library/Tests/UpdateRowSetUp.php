@@ -21,8 +21,8 @@ class Tests_UpdateRowSetUp {
 	 * 
 	 * @var array
 	 */
-	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates','lines','balances'];
-	protected $importData =		   ['plans', 'services', 'subscribers', 'rates','lines','balances'];
+	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
+	protected $importData = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
 	protected $backUpData = array();
 	public $config;
 	protected $configCollection;
@@ -30,16 +30,17 @@ class Tests_UpdateRowSetUp {
 	protected $unitTestName;
 	protected $dataPath = '/data/';
 
-	public function __construct($unitTestName = null,$dataToLoad = null) {
+	public function __construct($unitTestName = null, $dataToLoad = null) {
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
 		}
-		if(isset($dataToLoad)){
-			$this->collectionToClean = array_merge($this->collectionToClean,$dataToLoad);
-			$this->importData =   array_merge($this->importData,$dataToLoad);
+		if (isset($dataToLoad)) {
+			$this->collectionToClean = array_merge($this->collectionToClean, $dataToLoad);
+			$this->importData = array_merge($this->importData, $dataToLoad);
 		}
 	}
+
 	/**
 	 * executes set up for update row test
 	 */
@@ -60,7 +61,6 @@ class Tests_UpdateRowSetUp {
 			$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 			$coll->batchInsert($data);
 		}
-		
 	}
 
 	public function restoreColletions() {
@@ -102,27 +102,23 @@ class Tests_UpdateRowSetUp {
 	}
 
 	/* convert :
-	 * DBRefblabla":{
+	 * blabla":{
 	 * 		"collection":"plan",
-	 * 		"ObjectId":"5aeee54905e68c5b1f45f9f4"
+	 * 		"ObjectId":"5aeee54905e68c5b1f45f9f4",
+	 * 		"isDbRef" : true
 	 * 	},
 	 * TO  "blabla": DBRef("plans", ObjectId("5aeee54905e68c5b1f45f9f4")),
 	 */
 
 	public function fixDbRef($data) {
 		foreach ($data as $key => $value) {
-		
-			if (preg_match("/DBRef/", $key)) {
-				$newRef = preg_replace("/^DBRef/", "", $key);
-				$data[$newRef] = $data[$key];
-				$data[$newRef] = MongoDB::createDBRef($data[$newRef]['collection'], new MongoID($data[$newRef]['ObjectId']));
-				unset($data[$key]);
-			}
-				if (is_array($value) && count($value) > 0) {
-				$data[$key] = $this->fixDbRef($value);
+			if (is_array($value)) {
+				if (isset($value['isDbRef'])) {
+					unset($value['isDbRef']);
+					$data[$key] = MongoDB::createDBRef($data[$key]['collection'], new MongoID($data[$key]['ObjectId']));
+				}
 			}
 		}
-
 		return $data;
 	}
 
@@ -143,9 +139,9 @@ class Tests_UpdateRowSetUp {
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
 		}
-		foreach ($data as $key => $jsonFile) {
-			$data[$key] = $this->fixDBobjID($jsonFile);
-		}
+//		foreach ($data as $key => $jsonFile) {
+//			$data[$key] = $this->fixDBobjID($jsonFile);
+//		}
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixDbRef($jsonFile);
 		}
@@ -182,21 +178,19 @@ class Tests_UpdateRowSetUp {
 			->current()
 			->getRawData();
 		$this->data = $ret;
-		
 	}
 
 	public function setConfig() {
 		unset($this->data['_id']);
 		$this->config->insert($this->data);
 	}
-	
-	public function changeConfig($key,$value){
+
+	public function changeConfig($key, $value) {
 		$orignalData = $this->data;
 		Billrun_Util::setIn($this->data, $key, $value);
 		$this->setConfig();
-		$this->data = $orignalData ;
+		$this->data = $orignalData;
 	}
-
 
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {

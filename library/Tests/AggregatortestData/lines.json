@@ -63,13 +63,15 @@
 						}
 					],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5aeec10905e68c1a29770a9b"
+						"ObjectId": "5aeec10905e68c1a29770a9b",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5aeee54905e68c5b1f45f9f4"
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
 					},
 					"arate_key": "CALL",
 					"rates": [
@@ -77,9 +79,10 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefarate": {
+							"arate": {
 								"collection": "rates",
-								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
 							},
 							"pricing": {
 								"out_group": 100,
@@ -90,9 +93,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5aeee57b463d4f12759b7634"
+						"ObjectId": "5aeee57b463d4f12759b7634",
+						"isDbRef": true
 					},
 					"out_group": 100,
 					"out_plan": 100,
@@ -174,13 +178,15 @@
 						}
 					],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5aeee54905e68c5b1f45f9f4"
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
 					},
 					"arate_key": "CALL",
 					"rates": [
@@ -188,9 +194,11 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"rate": {
 								"collection": "rates",
 								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								,
+								"isDbRef": true
 							},
 
 							"pricing": {
@@ -200,9 +208,10 @@
 										"usagev": 50,
 										"left": 50,
 										"total": 100,
-										"DBRefbalance_ref": {
+										"balance_ref": {
 											"collection": "balances",
-											"ObjectId": "5af44ef9f3140f9783a80137"
+											"ObjectId": "5af44ef9f3140f9783a80137",
+											"isDbRef": true
 										}
 									}
 								],
@@ -216,9 +225,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5af44ef9f3140f9783a80137"
+						"ObjectId": "5af44ef9f3140f9783a80137",
+						"isDbRef": true
 					},
 					"arategroups": [
 						{
@@ -226,9 +236,10 @@
 							"usagev": 50,
 							"left": 50,
 							"total": 100,
-							"DBRefbalance_ref": {
+							"balance_ref": {
 								"collection": "balances",
-								"ObjectId": "5af44ef9f3140f9783a80137"
+								"ObjectId": "5af44ef9f3140f9783a80137",
+								"isDbRef": true
 							},
 							"usagesb": 0
 						}
@@ -328,13 +339,15 @@
 						}
 					],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5aeee54905e68c5b1f45f9f4"
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
 					},
 					"arate_key": "CALL",
 					"rates": [
@@ -342,9 +355,10 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"rate": {
 								"collection": "rates",
-								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
 							},
 							"pricing": {
 								"arategroups": [
@@ -353,9 +367,10 @@
 										"usagev": 50,
 										"left": 0,
 										"total": 100,
-										"DBRefbalance_ref": {
+										"balance_ref": {
 											"collection": "balances",
-											"ObjectId": "5af44ef9f3140f9783a80137"
+											"ObjectId": "5af44ef9f3140f9783a80137",
+											"isDbRef": true
 										},
 										"usagesb": 50
 									}
@@ -370,9 +385,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5af44ef9f3140f9783a80137"
+						"ObjectId": "5af44ef9f3140f9783a80137",
+						"isDbRef": true
 					},
 					"arategroups": [
 						{
@@ -380,9 +396,10 @@
 							"usagev": 50,
 							"left": 0,
 							"total": 100,
-							"DBRefbalance_ref": {
+							"balance_ref": {
 								"collection": "balances",
-								"ObjectId": "5af44ef9f3140f9783a80137"
+								"ObjectId": "5af44ef9f3140f9783a80137",
+								"isDbRef": true
 							},
 							"usagesb": 50
 						}
@@ -482,13 +499,15 @@
 						}
 					],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5aeee54905e68c5b1f45f9f4"
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
 					},
 					"arate_key": "CALL",
 					"rates": [
@@ -496,9 +515,10 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"rate": {
 								"collection": "rates",
-								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
 							},
 							"pricing": {
 								"arategroups": [
@@ -507,9 +527,10 @@
 										"usagev": 50,
 										"left": 50,
 										"total": 100,
-										"DBRefbalance_ref": {
+										"balance_ref": {
 											"collection": "balances",
-											"ObjectId": "5af44f41f3140f9783a80179"
+											"ObjectId": "5af44f41f3140f9783a80179",
+											"isDbRef": true
 										},
 										"usagesb": 0
 									}
@@ -524,9 +545,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5af44f41f3140f9783a80179"
+						"ObjectId": "5af44f41f3140f9783a80179",
+						"isDbRef": true
 					},
 					"arategroups": [
 						{
@@ -534,9 +556,10 @@
 							"usagev": 50,
 							"left": 50,
 							"total": 100,
-							"DBRefbalance_ref": {
+							"balance_ref": {
 								"collection": "balances",
-								"ObjectId": "5af44f41f3140f9783a80179"
+								"ObjectId": "5af44f41f3140f9783a80179",
+								"isDbRef": true
 							},
 							"usagesb": 0
 						}
@@ -622,13 +645,15 @@
 						}
 					],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+						"ObjectId": "5af44c8e05e68c42b71a6ab5",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5aeee54905e68c5b1f45f9f4"
+						"ObjectId": "5aeee54905e68c5b1f45f9f4",
+						"isDbRef": true
 					},
 					"arate_key": "CALL",
 					"rates": [
@@ -636,9 +661,10 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"rate": {
 								"collection": "rates",
-								"ObjectId": "5aeee54905e68c5b1f45f9f4"
+								"ObjectId": "5aeee54905e68c5b1f45f9f4",
+								"isDbRef": true
 							},
 							"pricing": {
 								"arategroups": [
@@ -647,9 +673,10 @@
 										"usagev": 50,
 										"left": 50,
 										"total": 100,
-										"DBRefbalance_ref": {
+										"balance_ref": {
 											"collection": "balances",
-											"ObjectId": "5af44f41f3140f9783a80174"
+											"ObjectId": "5af44f41f3140f9783a80174",
+											"isDbRef": true
 										},
 										"usagesb": 0
 									}
@@ -664,9 +691,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5af44f41f3140f9783a80174"
+						"ObjectId": "5af44f41f3140f9783a80174",
+						"isDbRef": true
 					},
 					"arategroups": [
 						{
@@ -674,9 +702,10 @@
 							"usagev": 50,
 							"left": 50,
 							"total": 100,
-							"DBRefbalance_ref": {
+							"balance_ref": {
 								"collection": "balances",
-								"ObjectId": "5af44f41f3140f9783a80174"
+								"ObjectId": "5af44f41f3140f9783a80174",
+								"isDbRef": true
 							},
 							"usagesb": 0
 						}
@@ -746,13 +775,15 @@
 					"services": [],
 					"services_data": [],
 					"connection_type": "postpaid",
-					"DBRefplan_ref": {
+					"plan_ref": {
 						"collection": "plans",
-						"ObjectId": "5b34a72705e68c7f46016a12"
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
 					},
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5b34a72705e68c7f46016a12"
+						"ObjectId": "5b34a72705e68c7f46016a12",
+						"isDbRef": true
 					},
 					"arate_key": "NONVAT",
 					"rates": [
@@ -760,9 +791,10 @@
 							"tariff_category": "retail",
 							"key": "NONVAT",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"rate": {
 								"collection": "rates",
-								"ObjectId": "5b34a72705e68c7f46016a12"
+								"ObjectId": "5b34a72705e68c7f46016a12",
+								"isDbRef": true
 							},
 							"pricing": {
 								"out_group": 100,
@@ -773,9 +805,10 @@
 						}
 					],
 					"usagev_offset": 0,
-					"DBRefbalance_ref": {
+					"balance_ref": {
 						"collection": "balances",
-						"ObjectId": "5b34a88592cecd0d32fea483"
+						"ObjectId": "5b34a88592cecd0d32fea483",
+						"isDbRef": true
 					},
 					"out_group": 100,
 					"out_plan": 100,
@@ -801,9 +834,10 @@
 					"process_time": "time*2018-06-28T10:59:17.304Z",
 					"modifier": 1,
 					"orignal_modifier": 1,
-					"DBRefarate": {
+					"arate": {
 						"collection": "rates",
-						"ObjectId": "5b34bee305e68c7fa55cb902"
+						"ObjectId": "5b34bee305e68c7fa55cb902",
+						"isDbRef": true
 					},
 					"aid": 1,
 					"source": "billrun",
