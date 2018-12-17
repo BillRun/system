@@ -408,6 +408,14 @@ if (typeof lastConfig.plays == 'undefined') {
 	];
 }
 
+//BRCD-1643: add email template for fraud notification
+if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
+	lastConfig.email_templates.fraud_notification = {
+		subject: "Event [[event_code]] was triggered",
+		content: "<pre>\n[[fraud_event_details]]</pre>\n",
+	};
+}
+
 //BRCD-1613 - Configurable VAT label on invoice
 var vatLabel = lastConfig['taxation']['vat_label'];
 if (!vatLabel) {
