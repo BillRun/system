@@ -301,4 +301,10 @@ db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 db.counters.dropIndex("coll_1_oid_1");
 
+//BRCD-1613 - Configurable VAT label on invoice
+var vatLabel = lastConfig['taxation']['vat_label'];
+if (!vatLabel) {
+	lastConfig['taxation']['vat_label'] = 'VAT';
+}
+
 db.config.insert(lastConfig);

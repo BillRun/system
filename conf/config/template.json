@@ -75,7 +75,8 @@
 				"auth_code": "",
 				"apply_optional_charges": true
 		 },
-		 "vat" : 0
+		 "vat" : 0,
+		 "vat_label": "VAT"
 	},
 	"discounts": {
     "fields": [
