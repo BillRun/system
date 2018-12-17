@@ -48,8 +48,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	protected function getLineUsageType($row) {
 		switch ($row['record_type']) {
 			case '08':
-			case '09':
 				return 'sms';
+			case '09':
+				return 'incoming_sms';
 
 			case '02':
 			case '12':
