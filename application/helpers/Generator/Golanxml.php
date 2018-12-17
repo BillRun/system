@@ -821,10 +821,9 @@ class Generator_Golanxml extends Billrun_Generator {
 						if (!empty($currentRate['alpha3'])) {
 							$this->writer->writeAttribute('alpha3', $currentRate['alpha3']);
 						} else {
-							$this->writer->writeAttribute('alpha3', '');
+							$this->writer->writeAttribute('special', $zone_key);
 						}
 					}
-					$this->writer->writeAttribute('special', $zone_key);
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 						$this->writer->startElement('BREAKDOWN_ENTRY');
 						$roamingTitle = $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
