@@ -205,15 +205,15 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	
 	protected function getAlpha3($row, $usage_type) {
 		$prefixes = Billrun_Util::getPrefixes($row['called_number']);
+		if (in_array('972', $prefixes)) {
+			return 'ISR';
+		}
 		$match = array(
 			'from' => array(
 				'$lte' => new MongoDate($row['urt']->sec),
 			),
 			'to' => array(
 				'$gte' => new MongoDate($row['urt']->sec),
-			),
-			"rates.{$usage_type}" => array(
-				'$exists' => true,
 			),
 			'alpha3' => array(
 				'$exists' => true,

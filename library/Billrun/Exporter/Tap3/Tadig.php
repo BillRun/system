@@ -497,7 +497,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		}
 		
 		$rate = Billrun_DBRef::getEntity($row['arate']);
-		if ($rate->isEmpty()) {
+		if (!$rate || $rate->isEmpty()) {
 			return $defaultCurrency;
 		}
 
