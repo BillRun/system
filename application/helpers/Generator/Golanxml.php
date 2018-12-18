@@ -215,7 +215,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_charge_fixed = 0;
 		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$servicesTotalCost = array();
+		$servicesTotalCostPerAccount = 0;
 		$servicesCost = array();
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
@@ -573,6 +573,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_charge_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED;
 			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
+			$servicesTotalCost = array();
 			foreach ($servicesCost as $name => $serviceCost) {
 				if (!isset($servicesTotalCost[$name])) {
 					$servicesTotalCost[$name] = 0;
@@ -593,12 +594,24 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED * (1 + $billrun['vat']));
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED * (1 + $billrun['vat']));
-//			$servicesTotalSum = 0;
-//			foreach ($servicesTotalCost as $serviceSum) {
-//				$servicesTotalSum += $serviceSum;
-//			}
-//			$fixedCharges = $servicesTotalSum + $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
-//			$this->writer->writeElement('FIXED_CHARGES', $fixedCharges);
+			$servicesTotalSum = 0;
+			$servicesTotalSumWithVat = 0;
+			$servicesTotalVat = 0;
+			foreach ($servicesTotalCost as $serviceKey => $serviceSum) {
+				if (isset($this->ratesByKey[$serviceKey]) && !empty($this->ratesByKey[$serviceKey]['vatable'])) {
+					$serviceVatValue = $serviceSum * $billrun['vat'];
+					$serviceSumWithVat = $serviceSum + $serviceVatValue;
+				} else {
+					$serviceVatValue = 0;
+					$serviceSumWithVat = $serviceSum;
+				}
+				$servicesTotalSum += $serviceSum;
+				$servicesTotalSumWithVat += $serviceSumWithVat;
+				$servicesTotalVat += $serviceVatValue;
+			}
+			$servicesTotalCostPerAccount += $servicesTotalSumWithVat;
+			$fixedCharges = $servicesTotalSumWithVat + ($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
+			$this->writer->writeElement('TOTAL_FIXED_CHARGE', $fixedCharges);
 //			$additionalCharges = $subscriber_sumup_TOTAL_ABOVE_GIFT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
 //			$this->writer->writeElement('ADDITIONAL_CHARGES', $additionalCharges);
 //			$subscriberManualCorrections = $subscriber_sumup_TOTAL_MANUAL_CORRECTION - $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
@@ -948,9 +961,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
-		foreach ($servicesTotalCost as $serviceNameTotal => $totalCost) {
-			$this->writer->writeElement("TOTAL_$serviceNameTotal", $totalCost);
-		}
+		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
@@ -1610,6 +1621,8 @@ EOI;
 		$this->writer->writeElement('TTAR_ACCESSPRICE1', $access_price);
 		$this->writer->writeElement('TTAR_SAMPLEDELAYINSEC1', $interval);
 		$this->writer->writeElement('TTAR_SAMPPRICE1', $rate);
+		$this->writer->writeElement('UNIT_COST', $rate * (1 + $vat));
+		$this->writer->writeElement('ACCESS_COST', $access_price * ( (1 + $vat)));	
 		$this->writer->writeElement('INTERNATIONAL', $intl_flag);
 		$this->writer->writeElement('DISCOUNT_USAGE', $discount_usage);
 		$this->writer->writeElement('ROAMING', $roaming);
