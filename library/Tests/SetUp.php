@@ -13,7 +13,7 @@
  * @subpackage      Config
  * @since           4.4
  */
-class Tests_UpdateRowSetUp {
+trait Tests_SetUp {
 
 	/**
 	 * json files names in data dir
@@ -30,7 +30,7 @@ class Tests_UpdateRowSetUp {
 	protected $unitTestName;
 	protected $dataPath = '/data/';
 
-	public function __construct($unitTestName = null, $dataToLoad = null) {
+	public function construct($unitTestName = null, $dataToLoad = null) {
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
@@ -45,7 +45,7 @@ class Tests_UpdateRowSetUp {
 	 * executes set up for update row test
 	 */
 	public function setColletions() {
-		$this->loadConfig();
+		$this->origalConfig = $this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
@@ -113,7 +113,7 @@ class Tests_UpdateRowSetUp {
 	public function fixDbRef($data) {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
-				if (isset($value['isDbRef'])) {
+				if (!empty($value['isDbRef'])) {
 					unset($value['isDbRef']);
 					$data[$key] = MongoDB::createDBRef($data[$key]['collection'], new MongoID($data[$key]['ObjectId']));
 				}
@@ -139,9 +139,9 @@ class Tests_UpdateRowSetUp {
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
 		}
-//		foreach ($data as $key => $jsonFile) {
-//			$data[$key] = $this->fixDBobjID($jsonFile);
-//		}
+		foreach ($data as $key => $jsonFile) {
+			$data[$key] = $this->fixDBobjID($jsonFile);
+		}
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixDbRef($jsonFile);
 		}
@@ -177,19 +177,25 @@ class Tests_UpdateRowSetUp {
 			->limit(1)
 			->current()
 			->getRawData();
-		$this->data = $ret;
+		return  $ret;
 	}
-
-	public function setConfig() {
-		unset($this->data['_id']);
-		$this->config->insert($this->data);
+	
+	
+	
+	public function setConfig($data) {
+		unset($data['_id']);
+		$this->config->insert($data);
 	}
-
-	public function changeConfig($key, $value) {
-		$orignalData = $this->data;
-		Billrun_Util::setIn($this->data, $key, $value);
-		$this->setConfig();
-		$this->data = $orignalData;
+                    
+	/**
+	 * 
+	 * @param array $data 
+	 * @param string $key key to change its value
+	 * @param string | int|array $value new value
+	 */
+	public function changeConfigKey($data,$key, $value) {
+		Billrun_Util::setIn($data, $key, $value);
+		$this->setConfig($data);
 	}
 
 	protected function restoreCollection() {
@@ -198,7 +204,7 @@ class Tests_UpdateRowSetUp {
 				Billrun_Factory::db()->$colName()->batchInsert($items);
 			}
 		}
-		$this->setConfig();
+		$this->setConfig($this->origalConfig);
 	}
 
 }

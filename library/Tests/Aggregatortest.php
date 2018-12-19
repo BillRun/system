@@ -15,7 +15,7 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Aggregator extends UnitTestCase {
-
+    use Tests_SetUp;
 	protected $ratesCol;
 	protected $plansCol;
 	protected $linesCol;
@@ -288,18 +288,18 @@ class Tests_Aggregator extends UnitTestCase {
 		$this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
 		$this->balancesCol = Billrun_Factory::db()->discountsCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts']);
-		$this->init->setColletions();
-		$this->loadConfig();
+		$this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts']);
+		$this->setColletions();
+		$this->loadDbConfig();
 	}
 
-	public function loadConfig($a = null, $b = null) {
+	public function loadDbConfig() {
 		Billrun_Config::getInstance()->loadDbConfig();
 	}
 
 	/**
 	 * 
-	 * @param type $row current test case
+	 * @param type array $row current test case
 	 */
 	public function aggregator($row) {
 		$options = array_merge($this->defaultOptions, $row['test']['options']);
@@ -323,7 +323,7 @@ class Tests_Aggregator extends UnitTestCase {
 	 * print the test result
 	 * and restore the original data 
 	 */
-	public function testUpdateRow() {
+	public function TestPerform() {
 
 		foreach ($this->tests as $key => $row) {
 			
@@ -368,13 +368,13 @@ class Tests_Aggregator extends UnitTestCase {
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
 		print_r($this->message);
-		$this->init->restoreColletions();
+		$this->restoreColletions();
 	}
 	
 	/**
-	 * 
-	 * @param type $row current test case 
-	 * @return type  billrun object/s 
+	 * run aggregation on current test case and return its billrun object/s
+	 * @param type array $row current test case 
+	 * @return type type Mongodloid_Entity|array $entityAfter billrun object/s 
 	 */
 	protected function runT($row) {
 		$id = isset($row['test']['aid']) ? $row['test']['aid'] : 0;
@@ -387,9 +387,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * 
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case 
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case 
 	 * @return boolean true if the test is pass and false if the tast is fail 
 	 */
 	protected function basicCompare($key, $returnBillrun, $row) {
@@ -427,9 +427,9 @@ class Tests_Aggregator extends UnitTestCase {
 	
 	/**
 	 * check if all subscribers was calculeted
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function sumSids($key, $returnBillrun, $row) {
@@ -447,9 +447,9 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 *  check the price before and after vat
 	 * 
-	 * @param type $key number of the test case
-	 *  @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function totalsPrice($key, $returnBillrun, $row) {
@@ -495,8 +495,8 @@ class Tests_Aggregator extends UnitTestCase {
 	/* save Latest 3 Results  */
 	/**
 	 * 
-	 * * @param type $returnBillrun is the billrun object of current test after aggregation is the billrun object of current test after aggregation
-	 * @param type $row current test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation is the billrun object of current test after aggregation
+	 * @param type array $row current test case
 	 */
 	public function saveLatestResults($returnBillrun, $row) {
 		$lest = array($returnBillrun, $row);
@@ -513,8 +513,8 @@ class Tests_Aggregator extends UnitTestCase {
 	
 	/**
 	 * 
-	 * @param type $row current test case current test case
-	 * @return return all lines  of aid in specific billrun_key 
+	 * @param type array $row current test case current test case
+	 * @return type array $alllines return all lines  of aid in specific billrun_key 
 	 */
 	public function getLines($row) {
 		$stamp = (isset($row['test']['options']['stamp'])) ? $row['test']['options']['stamp'] : $this->defaultOptions['stamp'];
@@ -531,9 +531,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * check if all the lines was created 
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function lineExists($key, $returnBillrun, $row) {
@@ -568,9 +568,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * 
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean return pass if the billrun was not created
 	 */
 	public function billrunNotCreated($key, $returnBillrun = null, $row) {
@@ -586,20 +586,21 @@ class Tests_Aggregator extends UnitTestCase {
 	}
     /**
 	 * change and reload Config 
-	 * @param type $key number of the test case
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type array $row current test case
 	 */
 	public function changeConfig($key, $row) {
 		$key = $row['test']['overrideConfig']['key'];
 		$value = $row['test']['overrideConfig']['value'];
-		$this->init->changeConfig($key, $value);
-		$this->loadConfig();
+		$data = $this->loadConfig();
+		$this->changeConfigKey($data,$key, $value);
+		$this->loadDbConfig();
 	}
 	/**
 	 * check if created duplicate billruns
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function duplicateAccounts($key, $returnBillrun, $row) {
@@ -619,8 +620,8 @@ class Tests_Aggregator extends UnitTestCase {
 	 
 	/**
 	 * confirm specific invoice
-	 * @param type $returnBillrun is the billrun object of current test after aggregation
-	 * @param type $row current test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation
+	 * @param type array $row current test case
 	 */
 	public function confirm($returnBillrun, $row) {
 		$options['type'] = (string) 'billrunToBill';
@@ -634,9 +635,9 @@ class Tests_Aggregator extends UnitTestCase {
 	 
     /**
 	 * check after_vat per sid 
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function subsPrice($key, $returnBillrun, $row) {
@@ -659,9 +660,9 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * General check for all tests - sum of account lines equals billrun object total
 	 *  (aprice = before_vat, final_charge - after_vat)
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function linesVSbillrun($key, $returnBillrun, $row) {
@@ -701,9 +702,9 @@ class Tests_Aggregator extends UnitTestCase {
 	 
 	/**
 	 * 'totals.after_vat_rounded' is rounding of 'totals.after_vat
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function rounded($key, $returnBillrun, $row) {
@@ -720,8 +721,8 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * remove billrun and lines for aid in speciphic cycle
-	 * @param type $key number of the test case
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type array $row current test case
 	 */
 	public function removeBillrun($key, $row) {
 		$stamp = $row['test']['options']['stamp'];
@@ -732,8 +733,8 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * check that billrun not run full cycle by checking if aid 54 is run
-	 * @param type $key  
-	 * @param type $row 
+	 * @param type int $key  
+	 * @param type array $row 
 	 * 
 	 */
 	public function billrunExists($key, $row) {
@@ -748,9 +749,9 @@ class Tests_Aggregator extends UnitTestCase {
 	}
 	/**
 	 * run full cycle number of the test case
-	 * @param type $key
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function fullCycle($key, $returnBillrun, $row) {
@@ -770,9 +771,9 @@ class Tests_Aggregator extends UnitTestCase {
 	
 	/**
 	 * check the pagination
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function pagination($key, $returnBillrun, $row) {
@@ -803,15 +804,15 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * check if invoice was created
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */ 
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
-		Billrun_Util::getBillRunSharedFolderPath('/shared/test/files/invoices/');
+		$path = Billrun_Util::getBillRunSharedFolderPath('/shared/test/files/invoices/');
 		$path .= $row['test']['options']['stamp'] . '/pdf/' . $row['test']['invoice_path'];
 		if (!file_exists($path)) {
 			$passed = false;
@@ -824,9 +825,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 * Check override mode using passthrough_fields 
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function passthrough($key, $returnBillrun, $row) {
@@ -846,6 +847,8 @@ class Tests_Aggregator extends UnitTestCase {
 
 	/**
 	 *  save invoice_id 
+	 *  @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 *  @param type array $row current test case
 	 */
 	public function saveId($returnBillrun, $row) {
 		if (!empty($returnBillrun)) {
@@ -854,9 +857,9 @@ class Tests_Aggregator extends UnitTestCase {
 	}
 	/**
 	 * chack if reaggregation is overrides_invoice_id
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function overrides_invoice($key, $returnBillrun, $row) {
@@ -893,8 +896,8 @@ class Tests_Aggregator extends UnitTestCase {
 	
 	/**
 	 * check if exepted invoice are created billrun object
-	 * @param type $key number of the test case
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function expected_invoice($key, $row) {
@@ -924,9 +927,9 @@ class Tests_Aggregator extends UnitTestCase {
 	 * When an account has multiple revisions in a specific billing cycle,
 	 *  take the last one when generating the billrun object
 	  (check subs.attributes.account_name field)
-	 * @param type $key number of the test case
-	 * @param type $returnBillrun is the billrun object of current test after aggregation 
-	 * @param type $row current test case
+	 * @param type int $key number of the test case
+	 * @param type Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param type array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
 	 */
 	public function takeLastRevision($key, $returnBillrun, $row) {
