@@ -175,7 +175,6 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (($balanceValue + $this->chargingValue) > 0) {
 			return false;
 		}
-
 		
 		return true;
 	}
