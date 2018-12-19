@@ -137,6 +137,7 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
+
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -288,7 +289,6 @@ db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
-
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
@@ -307,7 +307,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
-
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
