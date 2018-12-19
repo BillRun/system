@@ -400,11 +400,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				}
 			}
 
-			$query['$isolated'] = 1; //isolate the update
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple' => true));
+			$queue->update(array_merge($query, array('$isolated' => 1)), $update, array('multiple' => true));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 
