@@ -163,7 +163,7 @@ abstract class Billrun_Discount {
 		$charge = $totalPrice = 0;
 		$addedPricingData = [];
 		//discount each of the subject  included in the discount
-		foreach ($totals['rates'] as $key => $ratePrice ) {
+		foreach (($totals['rates'] ?: []) as $key => $ratePrice ) {
 			if( empty($discount['discount'][$key]) && !$this->isApplyToAnySubject() ) {
 				Billrun_Factory::log('discount generated invoice totals that  arer not  in the discount subject',Zend_Log::WARN);
 				continue;

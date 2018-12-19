@@ -77,14 +77,32 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
         $eligible = !empty(@Billrun_Util::getFieldVal($this->discountData['params'], array()));
-        $multiplier = 1;
+
         $startDate = $endDate = null;
         $subscriberData = $subscriber->getData();
         $addedData = array('aid' => $accountInvoice->getRawData()['aid'], 'sid' => $subscriberData['sid']);
 		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
 		
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
-		
+		$cover = [ 'start' => new MongoDate($this->billrunStartDate), 'end' => new MongoDate($this->billrunDate-1) ];
+		if($eligible) {
+			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
+			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
+			foreach($matchedDocs as $matchedDoc ) {
+				foreach($matchedDoc as $matchedType ) {
+					foreach($matchedType as $matched) {
+						if(!empty($matched['start']) && $cover['start'] < $matched['start'] && $cover['end'] > $matched['start']) {
+							$cover['start'] = $matched['start'];
+						}
+						if(!empty($matched['end']) && $cover['end'] > $matched['end'] && $cover['start'] < $matched['end']) {
+							$cover['end'] = $matched['end'];
+						}
+					}
+				}
+			}
+        }
+        $startDate = $cover['start'];
+        $multiplier = Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec));
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 
