@@ -312,7 +312,7 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * 
 	 * @param $query
-	 * @return type billrun objects by query or all if query is null
+	 * @return billrun objects by query or all if query is null
 	 */
 	public function getBillruns($query = null) {
 		return $this->billrunCol->query($query)->cursor();
@@ -374,7 +374,7 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * run aggregation on current test case and return its billrun object/s
 	 * @param array $row current test case 
-	 * @return type type Mongodloid_Entity|array $entityAfter billrun object/s 
+	 * @return  Mongodloid_Entity|array $entityAfter billrun object/s 
 	 */
 	protected function runT($row) {
 		$id = isset($row['test']['aid']) ? $row['test']['aid'] : 0;
@@ -514,7 +514,7 @@ class Tests_Aggregator extends UnitTestCase {
 	/**
 	 * 
 	 * @param array $row current test case current test case
-	 * @return type array $alllines return all lines  of aid in specific billrun_key 
+	 * @return array $alllines return all lines  of aid in specific billrun_key 
 	 */
 	public function getLines($row) {
 		$stamp = (isset($row['test']['options']['stamp'])) ? $row['test']['options']['stamp'] : $this->defaultOptions['stamp'];
