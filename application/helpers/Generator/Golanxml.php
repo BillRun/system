@@ -389,6 +389,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->endElement(); // end SUBSCRIBER_GIFT_USAGE
 			}
 			$planInCycle = null;
+			$printedServicesBillrun = array();
 			foreach ($plans as $key => $planOffer) {
 				$current_plan_ref = $planOffer['current_plan'];
 				if (MongoDBRef::isRef($current_plan_ref)) {
@@ -399,11 +400,12 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
 					foreach ($serviceBalances as $serviceBalance) {
+						if (in_array($serviceBalance['billrun_month'], $printedServicesBillrun) || $serviceBalance['sid'] != $sid) {
+							continue;
+						}
+						$printedServicesBillrun[] = $serviceBalance['billrun_month'];
 						$servicesNameWithBalance[] = $serviceBalance['service_name'];
 						$callUsage = 0;
-						$smsUsage = 0;
-						$mmsUsage = 0;
-						$dataUsage = 0;
 						$balanceUsages = $serviceBalance['balance']['totals'];
 						$this->writer->startElement('SUBSCRIBER_SERVICE_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $serviceBalance['service_name']);
