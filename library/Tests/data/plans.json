@@ -570,8 +570,8 @@
 					"to": "time*2166-10-30T08:51:56Z",
 					"creation_time": "time*2017-04-01T00:00:00Z"
 				}, {
-					
-					"from":"time*2017-12-31T22:00:00Z",
+
+					"from": "time*2017-12-31T22:00:00Z",
 					"name": "PLAN_A",
 					"price": [
 						{
@@ -587,124 +587,99 @@
 					"upfront": false,
 					"connection_type": "postpaid",
 					"prorated": true,
-					"to":"time*2167-05-02T16:17:51Z",
-					"creation_time":"time*2017-12-31T22:00:00Z"
-				}
-
-
-
-        },
-		{
-			"name" : "NEW-PLAN-O4",
-			"plan_code" : "NEW-PLAN-O4",
-			"description" : "NEW-PLAN-O4",
-			"upfront" : false,
-			"from" : "time*2016-10-05T08:08:36Z",
-			"to" : "time*2116-10-05T08:08:36Z",
-			"include" : {
-				"groups" : {
-					"ABC": {
-						"call": 40,
-						"unit": "seconds",
-						"account_shared": false,
-						"account_pool": false,
-						"rates": [
-							"RATE-O4",
-							"RATE-O5",
-							"RATE-O6"
-						]
+					"to": "time*2167-05-02T16:17:51Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"name": "NEW-PLAN-O4",
+					"plan_code": "NEW-PLAN-O4",
+					"description": "NEW-PLAN-O4",
+					"upfront": false,
+					"from": "time*2016-10-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"ABC": {
+								"call": 40,
+								"unit": "seconds",
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-O4",
+									"RATE-O5",
+									"RATE-O6"
+								]
+							}
+						}
 					}
-				}
-			}
-        },
-		{
-			"name" : "NEW-PLAN-Q1",
-			"plan_code" : "NEW-PLAN-Q1",
-			"description" : "NEW-PLAN-Q1",
-			"upfront" : false,
-			"from" : "time*2016-10-05T08:08:36Z",
-			"to" : "time*2116-10-05T08:08:36Z"
-        },
-	{
-		"name" : "PLAN-IS1",
-		"plan_code" : "PLAN-IS1",
-		"description" : "PLAN-IS1",
-		"upfront" : false,
-		"from" : "time*2016-10-05T08:08:36Z",
-		"to" : "time*2116-10-05T08:08:36Z",
-		"include" : {
-			"services" : ["SERVICE-IS1"]
-		}
-        },
-        {
-	
-	"from" : "time*2017-04-01T00:00:00Z",
-	"name" : "WITH_NOTHING",
-	"price" : [
-		{
-			"price" : "",
-			"from" : 0,
-			"to" : "UNLIMITED"
-		}
-	],
-	"description" : "with_nothing",
-	"recurrence" : {
-		"periodicity" : "month"
-	},
-	"upfront" : false,
-	"connection_type" : "postpaid",
-	"prorated" : true,
-	"to" : "time*2166-10-30T08:51:56Z",
-	"creation_time" : "time*2017-04-01T00:00:00Z"
-},
-{
-    "name" : "NEW_PLAN_OVERRIDE_USA",
-    "code" : "NEW_PLAN_OVERRIDE_USA",
-    "description" : "NEW_PLAN_OVERRIDE_USA",
-    "recurrence" : {
-        "unit" :1,
-        "periodicity" : "month"
-    },
-    "upfront" : false,
-    "price" : [
-        {
-            "price" : "10",
-            "from" : 0,
-            "to" : 2,
-            "trial" : true
-        },
-        {
-            "price" : "25",
-            "from" : 2,
-            "to" : 999999999
-        }
-    ],
-	"rates": {
-		"NEW-CALL-USA": {
-			"call": {
-					"rate":
-					 [
-				
+				},
+				{
+					"name": "NEW-PLAN-Q1",
+					"plan_code": "NEW-PLAN-Q1",
+					"description": "NEW-PLAN-Q1",
+					"upfront": false,
+					"from": "time*2016-10-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z"
+				},
+				{
+					"name": "PLAN-IS1",
+					"plan_code": "PLAN-IS1",
+					"description": "PLAN-IS1",
+					"upfront": false,
+					"from": "time*2016-10-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"services": ["SERVICE-IS1"]
+					}
+				},
+				{
+					"name": "NEW_PLAN_OVERRIDE_USA",
+					"code": "NEW_PLAN_OVERRIDE_USA",
+					"description": "NEW_PLAN_OVERRIDE_USA",
+					"recurrence": {
+						"unit": 1,
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"price": [
 						{
-							"from" : 0,
-							"to" : 20,
-							"interval" : 1,
-							"price" : 0.2
+							"price": "10",
+							"from": 0,
+							"to": 2,
+							"trial": true
 						},
 						{
-							"from" : 21,
-							"to" : 999999999,
-							"interval" : 1,
-							"price" : 0.5
+							"price": "25",
+							"from": 2,
+							"to": 999999999
 						}
-						
-				]
-			}
-		}
-	},
-    "from" : "time*2016-10-05T08:08:36Z",
-    "to" : "time*2116-10-05T08:08:36Z"
-  }
+					],
+					"rates": {
+						"NEW-CALL-USA": {
+							"call": {
+								"rate":
+										[
+
+											{
+												"from": 0,
+												"to": 20,
+												"interval": 1,
+												"price": 0.2
+											},
+											{
+												"from": 21,
+												"to": 999999999,
+												"interval": 1,
+												"price": 0.5
+											}
+
+										]
+							}
+						}
+					},
+					"from": "time*2016-10-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z"
+				}
 
 			]
 }
