@@ -161,6 +161,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 
 	public function applyDiscounts() {
+		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
 		$dm = new Billrun_DiscountManager();
 		$this->discounts = $dm->getEligibleDiscounts($this);
 		$sidDiscounts = array();
@@ -210,6 +211,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param int $invoiceId minimum invoice id to start from
 	 */
 	public function close($invoiceId,$isFake = FALSE,$customCollName = FALSE) {
+		Billrun_Factory::log('closing invoice.', Zend_Log::DEBUG);
 		if(!$this->isAccountActive()) {
 			Billrun_Factory::log("Deactivated account: " . $this->aid, Zend_Log::INFO);
 			return;
@@ -274,6 +276,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
+		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
 		$newTotals = array(
