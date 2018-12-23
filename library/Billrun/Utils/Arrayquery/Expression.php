@@ -183,7 +183,7 @@ class Billrun_Utils_Arrayquery_Expression {
 	 */
 	protected function _search($field, $value) {
 		$ret = false;
-		if($field instanceof Traversable) {
+		if($field instanceof Traversable || is_array($field)) {
 			foreach($field as $subfield) {
 				if( $ret |= $this->evaluate($subfield, $value)) {
 					break;
