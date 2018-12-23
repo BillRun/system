@@ -299,7 +299,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('VAT_COST', $vatCost);
 				$CostWithVat = $planPrice + $vatCost;
 				$this->writer->writeElement('TOTAL_COST', $CostWithVat);	
-				$subscriber_gift_usage_TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
+				$subscriber_gift_usage_TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] * (1 +  $billrun['vat']) : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
 				$this->writer->writeElement('TOTAL_FREE_COUNTER_COST', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
 				//$this->writer->writeElement('VOICE_COUNTERVALUEBEFBILL', ???);
 				//$this->writer->writeElement('VOICE_FREECOUNTER', ???);
@@ -1229,12 +1229,16 @@ class Generator_Golanxml extends Billrun_Generator {
 		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
 			$tariffItem = $line['service_name'];
 		} else {
-			if ($line['type'] == 'tap3'|| isset($line['roaming'])) {
+			if (($line['type'] == 'tap3'|| isset($line['roaming'])) && ($line['arate_key'] != 'HOME_NETWORK_CUSTOMER_SERVICE')) {
 				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
 			} else {
-				$arate = $this->getRowRate($line);
-				if (isset($arate['key'])) {
-					$tariffItem = $arate['key'];
+				if ($line['arate_key'] == 'HOME_NETWORK_CUSTOMER_SERVICE') {
+					$tariffItem = '$HOME_NETWORK_CUSTOMER_SERVICE';
+				} else {
+					$arate = $this->getRowRate($line);
+					if (isset($arate['key'])) {
+						$tariffItem = $arate['key'];
+					}	
 				}
 			}
 		}
