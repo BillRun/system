@@ -53,6 +53,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			foreach($this->discountData['discount_subject']['service'][$subjectKey]['operations'] as $operation) {
 				switch($operation['name']) {
 					case 'recurring_by_quantity':
+							//Multiply the discount amount  by some intrval  over the quantity of the service.
 							$quantityMultiplier = 0;
 							foreach($operation['params'] as $param) {
 								$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
@@ -60,7 +61,8 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 							$pricingData[] = ['name' => 'recurring_by_quantity', 'multiplier' => $quantityMultiplier , 'base_price' => $retPrice ];
 							$retPrice = $retPrice * $quantityMultiplier;
 						break;
-						case 'dequtitive_amount':
+						case 'unquantitative_amount':
+							//retrive the original  service price form a quantitve service.
 							$quantityMultiplier = 0;
 							foreach($operation['params'] as $param) {
 								$quantityMultiplier +=  $totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)];
