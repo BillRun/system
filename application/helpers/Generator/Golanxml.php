@@ -239,6 +239,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
+			$subscriberFlatCosts = 0;
 			$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
@@ -289,6 +290,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planIncludes = $planObj['include']['groups'][$planObj['name']];
 				$planPrice = $plan['fraction'] * $planObj['price'];
+				$subscriberFlatCosts += $planPrice;
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
 				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
 				$this->writer->writeElement('GIFTID_START_DATE',  date("Y/m/d H:i:s", strtotime($plan['start_date'])));
@@ -585,8 +587,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
-			$subscriber_gift_usage_TOTAL_COST_WITH_VAT = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) * (1 + $billrun['vat']) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
-			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_COST_WITH_VAT);
+			$this->writer->writeElement('TOTAL_GIFT', $subscriberFlatCosts * (1 + $billrun['vat']));
 			$subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) * (1 + $billrun['vat']));
 			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT); // vatable overplan cost		
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT = floatval((isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
