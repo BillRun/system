@@ -86,7 +86,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	}
 
 	protected function generateLineStamp($line) {
-		return md5($line['charge_op'] . '_' . $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key() . '_' . $line['aprice']);
+		return md5($line['charge_op'] . '_' . $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key() . '_' . $line['aprice'].$this->start);
 	}
 	
 	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
