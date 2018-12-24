@@ -23,20 +23,35 @@ class Api_Translator_RangesModel extends Api_Translator_TypeModel {
 	 */
 	public function internalTranslateField($data) {
 		try {
-			return [
-				$this->fieldName => [
-					'$elemMatch' => [
-						'from' => [
-							'$lte' => $data,
-						],
-						'to' => [
-							'$gte' => $data,
-						],
-					],
-				],
-			];
+			return self::getRangesFieldQuery($this->fieldName, $data);
 		} catch (MongoException $ex) {
 			return false;
 		}
+	}
+	
+	protected static function getRangesFieldQuery($fieldName, $value) {
+		return [
+			$fieldName => [
+				'$elemMatch' => [
+					'from' => [
+						'$lte' => $value,
+					],
+					'to' => [
+						'$gte' => $value,
+					],
+				],
+			],
+		];
+	}
+	
+	public static function getOverlapQuery($field, $ranges) {
+		$ret = ['$or' => []];
+		
+		foreach ($ranges as $range) {
+			$ret['$or'][] = self::getRangesFieldQuery($field, $range['from']);
+			$ret['$or'][] = self::getRangesFieldQuery($field, $range['to']);
+		}
+		
+		return $ret;
 	}
 }

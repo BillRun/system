@@ -198,12 +198,14 @@ class Models_Entity {
 		$mandatoryFields = array();
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
+		$fieldTypes = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
 			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
+			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -218,7 +220,7 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
-			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
 			}
 			if (!is_null($val)) {
@@ -230,9 +232,11 @@ class Models_Entity {
 //		print_R($this->update);die;
 	}
 
-	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
-		if (is_array($val)) {
+		if ($fieldType == 'ranges') {
+			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
+		} else if (is_array($val)) {
 			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
