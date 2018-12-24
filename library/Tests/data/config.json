@@ -2475,8 +2475,224 @@
 							"unify": [],
 							"filters": [],
 							"enabled": true
+						},
+						{
+							"file_type": "realTime",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid",
+										"checked": true
+									},
+									{
+										"name": "date",
+										"checked": true
+									},
+									{
+										"name": "usage",
+										"checked": true
+									},
+									{
+										"name": "volume",
+										"checked": true
+									},
+									{
+										"name": "rate",
+										"checked": true
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"conditions": [
+											{
+												"src_field": "usage",
+												"pattern": "call",
+												"op": "$eq",
+												"op_label": "Equals"
+											}
+										],
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"conditions": [
+											{
+												"src_field": "usage",
+												"pattern": "sms",
+												"op": "$eq",
+												"op_label": "Equals"
+											}
+										],
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"conditions": [
+											{
+												"src_field": "usage",
+												"pattern": "data",
+												"op": "$eq",
+												"op_label": "Equals"
+											}
+										],
+										"pattern": "data",
+										"usaget": "data",
+										"unit": "byte",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"data": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "rate"
+											}
+										]
+									],
+									"sms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "rate"
+											}
+										]
+									],
+									"data": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "rate"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": [],
+								"sms": [],
+								"data": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
 						}
-
 					],
 					"receive": "1",
 					"process": "1",
@@ -2769,6 +2985,17 @@
 									]
 								}
 							]
+						}
+					},
+					"email_templates": {
+						"invoice_ready": {
+							"subject": "Your invoice is ready",
+							"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
+						},
+						"fraud_notification": {
+							"subject": "Event [[event_code]] was triggered",
+							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
 						}
 					},
 					"menu": {

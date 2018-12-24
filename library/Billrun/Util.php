@@ -1259,7 +1259,7 @@ class Billrun_Util {
 	 * @return boolean true if multidimentional array.
 	 */
 	public static function isMultidimentionalArray($arr) {
-		return count($arr) != count($arr, COUNT_RECURSIVE);
+		return is_array($arr) && count($arr) != count($arr, COUNT_RECURSIVE);
 	}
 
 	public static function isAssoc($arr) {

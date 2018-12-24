@@ -52,6 +52,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'cycle' => 'aggregate lines in billing_cycle',
+				'export' => 'Export data',
 				'charge' => 'pay payments through payment gateway',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',

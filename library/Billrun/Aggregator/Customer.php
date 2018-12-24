@@ -656,7 +656,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function getPage($retries = 100) {
 
-		$zeroPages = $this->getAggregatorConfig('zero_pages_limit');
+		$zeroPages = $this->getAggregatorConfig('zero_pages_limit', 2);
 		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
 			return false;
 		}

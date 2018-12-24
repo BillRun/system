@@ -171,6 +171,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
 			return false;
 		}
+		
+		if (($balanceValue + $this->chargingValue) > 0) {
+			return false;
+		}
+		
 		return true;
 	}
 	/**

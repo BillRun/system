@@ -137,17 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-//BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
-db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
-		function(obj) {
-			var activeGateway = obj.payment_gateway.active;
-			var token = activeGateway.card_token;
-			var fourDigits = token.substring(token.length - 4, token.length);
-			activeGateway.four_digits = fourDigits;
-			db.subscribers.save(obj)
-		}
-)
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -299,7 +288,6 @@ db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
-
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
@@ -318,7 +306,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
-
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -421,6 +408,20 @@ if (typeof lastConfig.plays == 'undefined') {
 	lastConfig.plays = [
 		{"name": "Default", "enabled": true, "default": true }
 	];
+}
+
+//BRCD-1643: add email template for fraud notification
+if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
+	lastConfig.email_templates.fraud_notification = {
+		subject: "Event [[event_code]] was triggered",
+		content: "<pre>\n[[fraud_event_details]]</pre>\n",
+	};
+}
+
+//BRCD-1613 - Configurable VAT label on invoice
+var vatLabel = lastConfig['taxation']['vat_label'];
+if (!vatLabel) {
+	lastConfig['taxation']['vat_label'] = 'VAT';
 }
 
 db.config.insert(lastConfig);
