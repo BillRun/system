@@ -29,7 +29,7 @@ class Api_Translator_RangesModel extends Api_Translator_TypeModel {
 		}
 	}
 	
-	protected static function getRangesFieldQuery($fieldName, $value) {
+	public static function getRangesFieldQuery($fieldName, $value) {
 		return [
 			$fieldName => [
 				'$elemMatch' => [
