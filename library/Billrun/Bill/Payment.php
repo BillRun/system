@@ -834,12 +834,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	protected static function getPaginationQuery($filtersQuery, $page, $size) {		
-		if (!empty($filtersQuery)) {
-			$pipelines[] = array(
-				'$match' => $filtersQuery,
-			);
-		}
+	protected static function getPaginationQuery($filtersQuery, $page, $size) {
+		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$notPaidBiils = array(
+			'$or' => array(
+				array('left' => array('$gt' => 0)),
+				array('left_to_pay' => array('$gt' => 0)),
+			),
+		);
+		$updatedQuery = array_merge($filtersQuery, $nonRejectedOrCanceled, $notPaidBiils);
+		$pipelines[] = array(
+			'$match' => $updatedQuery,
+		);
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
