@@ -252,8 +252,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			"rates.{$usage_type}" => array(
 				'$exists' => true,
 			),
+			'params.roaming_rate' => true,
 			'params.roaming_tadig' => array(
-				'$in' => array($tadig),
+				'$in' => array($tadig, null), // null is for default roaming rate where tadig field does not exist
 			),
 		);
 	}

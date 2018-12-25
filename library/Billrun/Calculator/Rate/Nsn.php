@@ -190,8 +190,15 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if (!$alpha3) {
 			return false;
 		}
+		
 		$query['params.roaming_alpha3'] = array(
 			'$in' => array($alpha3, null), // null is for default rate where alpha3 field does not exist
+		);
+		
+		// assuming rates has only alpha3 OR zone (and not both)
+		$zone = $this->getZone($alpha3, $row);
+		$query['params.roaming_zone'] = array(
+			'$in' => array($zone, null), // null is for default rate where zone field does not exist
 		);
 
 		return $query;
@@ -200,6 +207,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	protected function getRoamingRateSort($row, $usage_type) {
 		return array(
 			'params.roaming_alpha3' => -1,
+			'params.roaming_zone' => -1,
 		);
 	}
 	
@@ -260,6 +268,30 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			return '';
 		}
 		return $rate[0]['alpha3'];
+	}
+	
+	protected function getZone($alpha3, $row) {
+		$zones_coll = Billrun_Factory::db()->zonesCollection();
+
+		$query = [
+			'from' => [
+				'$lte' => new MongoDate($row['urt']->sec),
+			],
+			'to' => [
+				'$gte' => new MongoDate($row['urt']->sec),
+			],
+			'alpha3' => [
+				'$in' => [$alpha3],
+			],
+		];
+		
+		$zone = $zones_coll->query($query)->cursor()->current();
+		
+		if (!$zone || $zone->isEmpty()) {
+			return null;
+		}
+		
+		return $zone['zone'];
 	}
 		
 }
