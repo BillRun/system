@@ -211,6 +211,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction = 0;
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
+		$invoice_total_manual_correction_refund = 0;
 		$invoice_total_manual_correction_credit_fixed = 0;
 		$invoice_total_manual_correction_charge_fixed = 0;
 		$invoice_total_manual_correction_refund_fixed = 0;
@@ -290,7 +291,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planIncludes = $planObj['include']['groups'][$planObj['name']];
 				$planPrice = $plan['fraction'] * $planObj['price'];
-				$subscriberFlatCosts += $planPrice;
+				$subscriberFlatCosts += $planPrice * (1 + $billrun['vat']);
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
 				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
 				$this->writer->writeElement('GIFTID_START_DATE',  date("Y/m/d H:i:s", strtotime($plan['start_date'])));
@@ -565,14 +566,16 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 			$subscriber_sumup_FRACTION_OF_MONTH = floatval((isset($subscriber['fraction']) ? $subscriber['fraction'] : 0));
 			$this->writer->writeElement('FRACTION_OF_MONTH', $subscriber_sumup_FRACTION_OF_MONTH);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT = floatval((isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT = floatval((isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 
-
-			$invoice_total_gift+= $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST;
+			$invoice_total_gift+= $subscriberFlatCosts;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
 			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
 			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
-			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
+			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT;
+			$invoice_total_manual_correction_refund += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT;
 			$invoice_total_manual_correction_credit_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
 			$invoice_total_manual_correction_charge_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED;
 			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
@@ -587,12 +590,10 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
-			$this->writer->writeElement('TOTAL_GIFT', $subscriberFlatCosts * (1 + $billrun['vat']));
+			$this->writer->writeElement('TOTAL_GIFT', $subscriberFlatCosts);
 			$subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) * (1 + $billrun['vat']));
 			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT); // vatable overplan cost		
-			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT = floatval((isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT);
-			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT = floatval((isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) * (1 + $billrun['vat'])) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED * (1 + $billrun['vat']));
@@ -960,10 +961,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $invoice_total_manual_correction_refund);
 		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
