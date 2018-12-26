@@ -137,17 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-//BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
-db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
-		function(obj) {
-			var activeGateway = obj.payment_gateway.active;
-			var token = activeGateway.card_token;
-			var fourDigits = token.substring(token.length - 4, token.length);
-			activeGateway.four_digits = fourDigits;
-			db.subscribers.save(obj)
-		}
-)
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -351,3 +340,16 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailed
 
 
 db.config.insert(lastConfig);
+
+// BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
+db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1552 collection
+db.collection_steps.dropIndex("aid_1");
+db.collection_steps.dropIndex("trigger_date_1_done_1");
+db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
+db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
+
+//BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
+db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
+
