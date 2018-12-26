@@ -422,3 +422,16 @@ if (!vatLabel) {
 }
 
 db.config.insert(lastConfig);
+
+// BRCD-1717
+db.subscribers.getIndexes().forEach(function(index){
+	if (index.key.sid && index.key.from && index.key.aid && index.unique) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'sid': 1 , 'from' : 1, 'aid' : 1}, { unique: false, sparse: true, background: true });
+	}
+	else if (index.key.aid && index.sparse && (Object.keys(index.key).length === 1)) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+	}
+})
+sh.shardCollection("billing.subscribers", { "aid" : 1 } );
