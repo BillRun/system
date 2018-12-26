@@ -226,6 +226,6 @@ var detailedField = {
 				"select_options" : ""
 };
 
-lastConfig = addFieldToConfig(lastConfig, detailedField, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
 db.config.insert(lastConfig);
