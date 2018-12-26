@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
         
 	/**
 	 * reserved names of File Types.
@@ -57,7 +57,7 @@ class ConfigModel {
 	public function __construct() {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db()->configCollection();
-		$this->options = array('receive', 'process', 'calculate');
+		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
@@ -614,7 +614,7 @@ class ConfigModel {
 		}
 		
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
-		if (Billrun_Util::isAssoc($data)) {
+		if (Billrun_Util::isAssoc($data) && !empty($data)) {
 			foreach ($data as $key => $value) {
 				if (!$this->_updateConfig($currentConfig, $category . "." . $key, $value)) {
 					return 0;
@@ -1195,6 +1195,7 @@ class ConfigModel {
 						$ratingUsageTypes = array_merge($ratingUsageTypes, array_keys($rates));
 					}
 					$ratingUsageTypes = array_unique($ratingUsageTypes);
+					$ratingLineKeys = array();
 					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
 						foreach ($rates as $rules) {
 							foreach ($rules as $usageRules) {
@@ -1223,7 +1224,7 @@ class ConfigModel {
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
-			}
+		}
 		}
 		return true;
 	}
@@ -1232,17 +1233,20 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed', 'json');
+		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
+		if (array_column($parserSettings['structure'], 'name') != array_unique(array_column($parserSettings['structure'], 'name'))) {
+			 throw new Exception('Duplicate field names found');
+		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 		} else if ($parserSettings['type'] == 'separator') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
 			}
@@ -1250,7 +1254,7 @@ class ConfigModel {
 				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
 			}
 		} else {
-			$customKeys = array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			$customLengths = array_column($parserSettings['structure'], 'width');
 			if ($customLengths != array_filter($customLengths, function($length) {
 					return Billrun_Util::IsIntegerValue($length);
@@ -1398,7 +1402,7 @@ class ConfigModel {
 		}
 		if (in_array($receiverSettings['type'], array('ftp', 'ssh'))) {
 			foreach ($receiverSettings['connections'] as $index => $connection) {
-				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
+				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['remote_directory'], $connection['passive'], $connection['delete_received']) || (!isset($connection['password']) && !isset($connection['key']))) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
 				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
@@ -1573,6 +1577,12 @@ class ConfigModel {
 			$query['$or'][] = array($mandatoryField => array('$exists' => false));
 		}
 		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
+	}
+	
+	protected function getCustomKeys($parserStructure) {
+		return array_column(array_filter($parserStructure, function($field) {
+				return isset($field['checked']) && $field['checked'] === true;
+			}),'name');
 	}
 
 }

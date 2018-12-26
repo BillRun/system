@@ -55,6 +55,9 @@ class Billrun_Utils_Units {
 		if (!$uom) {
 			return $volume;
 		}
+		if (isset($uom['convertFunction']) && method_exists(get_class(), $uom['convertFunction']) && $toBaseUnit) {
+			return call_user_func_array(array(get_class(),$uom['convertFunction']), array($volume));
+		}
 		
 		if (isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) {
 			return call_user_func_array(array(get_class(), $uom['function_name']), array($volume, $uom));
@@ -216,6 +219,11 @@ class Billrun_Utils_Units {
 	 */
 	protected static function parseDataUsage($bytes) {
 		return Billrun_Util::byteFormat($bytes, '', 2, true);
+	}
+	
+	public static function formatedTimeToSeconds($volume) {
+		sscanf($volume, "%d:%d:%d", $hours, $minutes, $seconds);
+		return isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
 	}
 	
 }

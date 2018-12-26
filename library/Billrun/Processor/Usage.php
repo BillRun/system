@@ -71,6 +71,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected $prepricedMapping = null;
 	
+	/**
+	 * 
+	 * the time zone field defined by the user
+	 * @var type string
+	 */
+	protected $timeZone = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -101,6 +107,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
+		if (!empty($options['processor']['timezone_field'])) {
+			$this->timeZone = $options['processor']['timezone_field'];
+		}
 
 		$this->dateField = $options['processor']['date_field'];
 		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true)['pricing'];
@@ -117,7 +126,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 		foreach ($parsedData as $parsedRow) {
+			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 			$row = $this->getBillRunLine($parsedRow);
+			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
 				return false;
 			}
@@ -139,11 +150,15 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			return false;
 		}
 		
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));	
+		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
+		$row['timezone'] = $datetime->getOffset();
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
-		$usagev = $this->getLineUsageVolume($row['uf']);
+		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
+		if ($usagev === false) {
+			return false;
+		}
 		$row['usagev_unit'] = $this->usagevUnit;
-		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
+		$row['usagev'] = $usagev;
 		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
 		}
@@ -158,7 +173,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 	
 	protected function getRowDateTime($row) {
-		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
+		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZone);
 	}
 
 	/**
@@ -169,6 +184,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
 	protected function filterFields($rawRow) {
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
+		foreach ($parserFields as $field) {
+			if (isset($field['checked']) && $field['checked'] === false) {
+				unset($rawRow[$field['name']]); 
+			}
+		}
 		$row = array();
 		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
 		if (!empty($requiredFields)) {
@@ -210,29 +231,50 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getLineUsageType($userFields) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
-				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field'])) {
+				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field']) && !isset($usagetMapping['conditions'])) {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
 					return $usagetMapping['usaget'];
 				}
-				if (isset($userFields[$usagetMapping['src_field']])) {
-					if (!Billrun_Util::isValidRegex($usagetMapping['pattern'])) {
-						$usagetMapping['pattern'] = "/^" . preg_quote($usagetMapping['pattern']) . "$/";
+
+				if (!isset($usagetMapping['conditions'])) { // backward compatibility
+					if (isset($usagetMapping['src_field'])) {
+						$usagetMapping['conditions'][0]['src_field'] = $usagetMapping['src_field'];
 					}
-					if (preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
-						$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
-						$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
-						$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
-						return $usagetMapping['usaget'];
+					if (isset($usagetMapping['pattern'])) {
+						$usagetMapping['conditions'][0]['pattern'] = $usagetMapping['pattern'];
 					}
+					$usagetMapping['conditions'][0]['op'] = '$eq';
+				}
+
+				$matchedConditions = true;
+				foreach ($usagetMapping['conditions'] as $condition) {
+					if (Billrun_Util::isValidRegex($condition['pattern'])) {
+						$condition['op'] = '$regex';
+					}
+					if (empty($condition['op'])) {
+						$condition['op'] = '$eq';
+					}
+					$query = array($condition['src_field'] => array($condition['op'] => $condition['pattern']));
+					$matchedConditions = $matchedConditions && Billrun_Utils_Arrayquery_Query::exists($userFields, $query);
+					if (!$matchedConditions) {
+						break;
+					}
+				}
+
+				if (($matchedConditions)) {
+					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
+					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
+					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
+					return $usagetMapping['usaget'];
 				}
 			}
 		}
 		return $this->defaultUsaget;
 	}
 
-	protected function getLineUsageVolume($userFields, $falseOnError = false) {
+	protected function getLineUsageVolume($userFields, $usaget = null, $falseOnError = false) {
 		$volume = 0;
 		if ($this->volumeType === 'value') {
 			if (!is_numeric($this->volumeSrc)) {
@@ -244,8 +286,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagevFields = is_array($this->volumeSrc) ? $this->volumeSrc : array($this->volumeSrc);
 		if (!empty($usagevFields)) {
 			foreach ($usagevFields as $usagevField) {
-				if (isset($userFields[$usagevField]) && is_numeric($userFields[$usagevField])) {
-					$volume += floatval($userFields[$usagevField]);
+				$usagev = Billrun_util::getIn($userFields, $usagevField);
+				if (!is_null($usagev) && !is_null($usaget)) {
+					$usagev = Billrun_Utils_Units::convertVolumeUnits($usagev, $usaget, $this->usagevUnit, true);
+				}
+				if (!is_null($usagev) && is_numeric($usagev)) {
+					$volume += floatval($usagev);
 				}
 				else {
 					Billrun_Factory::log('Usage volume field ' . $usagevField . ' is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
@@ -266,4 +312,5 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function isLinePrepriced($usaget) {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
+	
 }

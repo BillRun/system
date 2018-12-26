@@ -97,7 +97,7 @@ class ResetLinesModel {
 					),
 					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
 						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lte' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
+						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
 					)
 				),
 			),
@@ -281,12 +281,13 @@ class ResetLinesModel {
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
 		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
-
+		
+		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-
+		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
 		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -299,7 +300,7 @@ class ResetLinesModel {
 					throw new Exception();
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line", Zend_Log::ERR);
+				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
 				foreach ($queue_lines as $qline) {
 					$ret = $queue_coll->insert($qline); // ok==1, err null
 					if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -315,7 +316,8 @@ class ResetLinesModel {
 					return FALSE;
 				}
 			}
-		}
+		}		
+		Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -437,6 +439,7 @@ class ResetLinesModel {
 				$query = array(
 					'_id' => new MongoId($balanceId),
 				);
+				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 				$balancesColl->update($query, $updateData);
 			}
 		}
@@ -471,6 +474,7 @@ class ResetLinesModel {
 					$query = array(
 						'_id' => $balanceToUpdate['_id'],
 					);
+					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
 					$ret = $balancesColl->update($query, $updateData);
 				}
 			}

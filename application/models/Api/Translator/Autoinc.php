@@ -20,7 +20,7 @@ class Api_Translator_AutoincModel extends Api_Translator_TypeModel {
 	 * @return mixed Translated value.
 	 */
 	public function internalTranslateField($data) {
-		$autoinc = Billrun_Factory::db()->subscribersCollection()->createAutoInc($this->fieldName);
+		$autoinc = Billrun_Factory::db()->subscribersCollection()->createAutoInc();
 		return $autoinc;
 	}
 }

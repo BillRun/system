@@ -148,7 +148,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for account ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
+		Billrun_Factory::log('Finished querying for subscriber ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
 
 		return $ret;
 	}
@@ -269,7 +269,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			// Plan name
 			$index = $value['plan'];
 			if(!isset($mongoPlans[$index])) {
-				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
+				if(!empty($value['sid'])) {
+					Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
+				}
 				continue;
 			}
 
@@ -434,6 +436,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$substart = PHP_INT_MAX;
 		$subend = 0;
 		foreach ($current as $subscriber) {
+			if(!$this->hasPlans($subscriber)) {
+				continue;
+			}
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
 			//Find the earliest instance of the subscriber
 			foreach(Billrun_Util::getFieldVal($subscriber['plans'],array()) as  $subPlan) {
@@ -490,5 +495,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$subscriber['to'] = date(Billrun_Base::base_datetimeformat, $to);
 
 		return $subscriber;
+	}
+
+	/**
+	 * Test if a subscription entry contain a plan (if not then it`s an account level "subscription") 
+	 * @param type $subscription
+	 * @return type true if the subscription contain a plan false otherwise (account as sub)
+	 */
+	protected function hasPlans($subscription) {
+		return !empty($subscription['plans']);
 	}
 }

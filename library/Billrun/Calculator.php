@@ -96,12 +96,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->months_limit = $options['months_limit'];
 		}
 
-		if (!isset($options['autoload']) || $options['autoload']) {
-			$this->load();
-		}
-
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
+		}
+
+		if (!isset($options['autoload']) || $options['autoload']) {
+			$this->load();
 		}
 
 		if (Billrun_Util::getFieldVal($options['calculator']['rates_query'], false)) {
@@ -134,7 +134,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		  $this->data[] = $entity;
 		  } */
 
-		Billrun_Factory::log("entities loaded: " . count($this->lines), Zend_Log::INFO);
+		Billrun_Factory::log("Entities loaded: " . count($this->lines), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}
@@ -185,6 +185,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
+		$this->clearAddedForeignFields();
 		Billrun_Factory::log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
@@ -399,11 +400,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				}
 			}
 
-			$query['$isolated'] = 1; //isolate the update
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple' => true));
+			$queue->update(array_merge($query, array('$isolated' => 1)), $update, array('multiple' => true));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 

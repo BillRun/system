@@ -23,6 +23,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $rates = array();
 	
 	protected $invoicedLines = array();
+	
+	protected $shouldKeepLinesinMemory = true;
         
 	/**
 	 * 
@@ -30,7 +32,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param integer $sid
 	 * @param integer $aid
 	 */
-	public function __construct($rates, $data, $sid = 0, $aid = 0) {
+	public function __construct(&$rates, $data, $sid = 0, $aid = 0) {
 		$this->rates = &$rates;
 		if(!$data) {
 			$this->data = $this->createClosedSubscriber($sid, $aid);
@@ -57,6 +59,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		return $subscriber;
 	}
 
+	public function setShouldKeepLinesinMemory($newValue) {
+        $this->shouldKeepLinesinMemory = $newValue;
+	}
+	
 	/**
 	 * Set data
 	 * @param type $key
@@ -214,7 +220,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes']);
+
+		$addedData = [];
+		if(!empty($row['start'])) {
+			$addedData['start'] = $row['start'];
+		}
+		if(!empty($row['end'])) {
+			$addedData['end'] = $row['end'];
+		}
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
 		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -251,7 +265,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals'][$breakdownKey]['before_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['before_vat'], 0) + $pricingData['aprice'];
 		$this->data['totals'][$breakdownKey]['after_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['after_vat'], 0) + $priceAfterVat;
 		
-		$this->invoicedLines[$row['stamp']] = $row;
+		if ($this->shouldKeepLinesinMemory) {
+			$this->invoicedLines[$row['stamp']] = $row;
+		}
 	}
 
 	/**
@@ -332,7 +348,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$sid = $this->data['sid'];
 		$aid = $this->data['aid'];
 		
-		Billrun_Factory::log("Querying subscriber " . $aid . ":" . $sid . " for lines...", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $aid:$sid" . " lines: " . count($lines), Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
@@ -366,9 +381,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-		
+
 		$this->aggregateLinesToBreakdown($subLines);
-		
+
 		return $updatedLines;
 	}
 	
@@ -380,6 +395,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines',array());
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		Billrun_Factory::log('Updating billrun object with aggregated lines for SID : ' . $this->data['sid']);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs as $breakdownConfig) {
@@ -389,12 +405,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
-						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(), array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)), 
-																																									array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(),  array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)),
+						array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
 					}
 				}
 			}
 		}
+		Billrun_Factory::log('Finished aggreating into billrun object for SID : ' . $this->data['sid']);
 	}
 
 	/**

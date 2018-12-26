@@ -19,10 +19,9 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 	 */
 	public function getPrice($quantity = 1) {
 		$charges = array();
-		if ($this->endOffset > 0) {
+		if ($this->endOffset > 0 ) {
 			foreach ($this->price as $tariff) {
-				$baseOffset = max(0, floor($this->startOffset));
-				$price = Billrun_Plan::getPriceByTariff($tariff, $baseOffset, ceil(round($this->endOffset-$this->startOffset,6))+$baseOffset);
+				$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset);
 				if (!empty($price)) {
 					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) );
 				}
@@ -30,5 +29,16 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 		}
 
 		return $charges;
+	}
+	
+	/**
+	 * Get the price of the current plan.
+	 */
+	protected function setMonthlyCover() {
+		$formatActivation = date('Y-m-01', $this->activation);
+		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+		$formatEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end() - 1 );
+		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
 	}
 }

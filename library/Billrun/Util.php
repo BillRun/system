@@ -1476,6 +1476,23 @@ class Billrun_Util {
 		return Billrun_Factory::config()->getConfigValue('tenant.email', '');
 	}
 	
+	public static function getCompanyLogo($base64 = true) {
+		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
+		if (!$logo) {
+			return '';
+		}
+		if (!($logo instanceof MongoGridFSFile)) {
+			$logo = new MongoGridFSFile($gridFsColl, $logo);
+		}
+		$bytes = $logo->getBytes();
+		if ($base64) {
+			return base64_encode($bytes);
+		}
+		
+		return $bytes;
+	}
+	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
 		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
 	}
@@ -1491,6 +1508,20 @@ class Billrun_Util {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;
+	}
+	
+	public static function getCmdCommand($options, $params = array()) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		if (!is_array($options)) {
+			$options = array($options);
+		}
+		foreach ($options as $option) {
+			$cmd .= ' ' . $option;
+		}
+		foreach ($params as $paramKey => $paramVal) {
+			$cmd .= ' ' . $paramKey . '="' . $paramVal . '"';
+		}
+		return $cmd;
 	}
 	
 	public static function IsIntegerValue($value) {
@@ -1607,6 +1638,28 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * Deeply unsets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param mixed $value - value to unset
+	 */
+	public static function unsetIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		unset($current[$value]);
+	}
+
+
+	/**
 	 * Gets the value from an array.
 	 * Also supports deep fetch (for nested arrays)
 	 * 
@@ -1637,6 +1690,21 @@ class Billrun_Util {
 		
 		return $ret;
 	}
+	
+	/**
+	 * Retrive the first field (field path supported) that has value 
+	 * 	(mostly should be used to get )
+	 */
+	 public static function getFirstValueIn($src, $keys, $defaultValue = null) {
+		foreach($keys as $keyPath) {
+			$ret = static::getIn($src,$keyPath,$defaultValue);
+			if($ret !=  $defaultValue) {
+				return $ret;
+			}
+		}
+		
+		return $defaultValue;
+	 }
 	
 	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
@@ -1711,4 +1779,39 @@ class Billrun_Util {
 		}
 		return $str;
 	}
+	
+	/**
+	 * Check if a given string/strings array has one item that matches a given regex array
+	 * @param type $regexs An array of regexes
+	 * @param type $strings A string or an array of strings to check the regexes against
+	 * @return TRUE if there was at leat one match FALSE otherwise
+	 */
+	public static function regexArrMatch($regexs, $strings) {
+		$strings = is_array($strings) ? $strings : array($strings);
+		foreach ($regexs as $regex) {
+			if (!empty(preg_grep($regex, $strings))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * check if a specific condition is met
+	 * 
+	 * @param array $row
+	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function isConditionMet($row, $condition) {
+		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
+		$query = array(
+			'first_val' => array(
+				$condition['op'] => $condition['value'],
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
+	}
+
 }

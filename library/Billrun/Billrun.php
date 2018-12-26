@@ -212,13 +212,26 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
+		$data = self::getBillrunData($aid, $billrun_key, false);
+		return $data && !$data->isEmpty();
+	}
+	
+	/**
+	 * gets data from billrun collection according to received fields
+	 * 
+	 * @param int $aid
+	 * @param string $billrun_key
+	 * @param boolean $rawData
+	 * @return array
+	 */
+	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
 				))
 				->cursor()->limit(1)->current();
-		return !$data->isEmpty();
+		return $rawData ? $data->getRawData() : $data;
 	}
 
 	/**
@@ -947,6 +960,9 @@ class Billrun_Billrun {
 	 * @todo create an appropriate index on billrun collection
 	 */
 	public static function getActiveBillrun() {
+		$query = array(
+			'attributes.invoice_type' => array('$ne' => 'immediate'),
+		);
 		$now = time();
 		$sort = array(
 			'billrun_key' => -1,
@@ -955,7 +971,7 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$runtime_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
-		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
+		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {

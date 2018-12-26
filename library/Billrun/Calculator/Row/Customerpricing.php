@@ -73,6 +73,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected $plan;
 
 	/**
+	 * row service details
+	 * 
+	 * @param array Array of Billrun_Service objects
+	 */
+	protected $services = array();
+
+	/**
 	 * End time of the active billrun (unix timestamp)
 	 * @var int
 	 */
@@ -104,11 +111,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
-		$planSettings = array(
-			'name' => $this->row['plan'],
-			'time' => $this->row['urt']->sec,
-		);
-		$this->plan = Billrun_Factory::plan($planSettings);
+		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
+			$this->plan = null;
+		} else {
+			$planSettings = array(
+				'name' => $this->row['plan'],
+				'time' => $this->row['urt']->sec,
+			);
+			$this->plan = Billrun_Factory::plan($planSettings);
+		}
+		$this->services = [];
 		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
@@ -135,7 +147,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -252,7 +264,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 3, 'float'))); // float avoid set type to int
-			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getCallOffset(), $this->row['urt']->sec);
+			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 		}
 	}
 
@@ -398,7 +410,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$ret = array();
 		$balanceId = (string) $this->balance->getId();
 		$valueToCharge = $volume;
-		if (!isset($this->row['retail_rate']) || $this->row['retail_rate']) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
+		$isRetailRate = !isset($this->row['retail_rate']) || $this->row['retail_rate'];
+		if ($isRetailRate) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
 			if ($plan->isRateInEntityGroup($rate, $usageType)) {
 				$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
 
@@ -435,7 +448,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					} else if ($valueToCharge > 0) {
 						$ret['out_group'] = $ret['out_plan'] = $valueToCharge;
 					}
-					$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
+					$services = $this->getServices();
 					if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
 						$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
 						$balanceType = key($value);
@@ -446,7 +459,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 			} else {
 				$balanceType = 'usagev';
-				$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
+				$services = $this->getServices();
 				if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
 					$ret['arategroups'] = array();
 					$groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $volume), $ret['arategroups']);
@@ -460,14 +473,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		
-		if ($this->isPrepriced()) {
+		if ($isRetailRate && $this->isPrepriced()) {
 			$prepriced = $this->getLineAprice();
 			if ($prepriced === false) {
 				return false;
 			}
 			$charges = (float) $prepriced;
 		} else if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
 			$charges = $valueToCharge;
 		}
@@ -475,6 +488,17 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 		$ret[$this->pricingField] = $charges;
 		return $ret;
+	}
+	
+	/**
+	 * Get this class' cached services property
+	 * @return array
+	 */
+	protected function getServices() {
+		if (empty($this->services)) {
+			$this->services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
+		}
+		return $this->services;
 	}
 
 	/**
@@ -607,9 +631,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				if ($balanceType != $keyRequired) {
 					if ($keyRequired == 'cost') {
-						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan']);
+						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
 					} else {
-						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], 0, 0, 0, null, $this->row['usagev']);
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);
 					}
 				} else {
 					$comparedValue = $value;
@@ -799,7 +823,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usagev = 0;
 		$usedUsagevFields = is_array($config['realtime']['used_usagev_field']) ? $config['realtime']['used_usagev_field'] : array($config['realtime']['used_usagev_field']);
 		foreach ($usedUsagevFields as $usedUsagevField) {
-			$usagev += isset($this->row['uf'][$usedUsagevField]) ? $this->row['uf'][$usedUsagevField] : 0;
+			$usedUsage = Billrun_util::getIn($this->row['uf'], $usedUsagevField);
+			$usagev += !is_null($usedUsage) ? $usedUsage : 0;
 		}
 
 		$this->handleAccumulativeUsagev($usagev, $lineToRebalance, $config);
@@ -886,20 +911,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	}
 
 	/**
-	 * gets the price of the rebalance
-	 * 
-	 * @param array $lineToRebalance
-	 * @param float $realUsagev
-	 * @return float
-	 */
-	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
-		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
-		$realPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
-		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
-		return $realPricing - $chargedPricing;
-	}
-
-	/**
 	 * gets the data required for the rebalance
 	 * 
 	 * @param array $lineToRebalance
@@ -982,8 +993,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usageType = $this->row['usaget'];
 		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
-		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
-			$aprice = $userFields[$apriceField];
+		$aprice = Billrun_util::getIn($userFields, $apriceField);
+		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 				$aprice *= $apriceMult;

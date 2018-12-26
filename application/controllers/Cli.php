@@ -30,6 +30,9 @@ class CliController extends Yaf_Controller_Abstract {
 		}
 		$this->setActions();
 		$this->setOptions();
+		if (isset($this->options->cron)) {
+			$this->cronForward();
+		}
 		// this will verify db config will load into main config
 		Billrun_Factory::db();
 	}
@@ -52,6 +55,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'cycle' => 'aggregate lines in billing_cycle',
+				'export' => 'Export data',
 				'charge' => 'pay payments through payment gateway',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
@@ -69,7 +73,8 @@ class CliController extends Yaf_Controller_Abstract {
 				'clearcall' => 'Finds and inform about open calls without balance',
 				'collect' => 'Change collection state for accounts',
 				'run_collect_step' => 'Run action for accounts in collection',
-				'notify' => 'notify events on cron'
+				'notify' => 'notify events on cron',
+				'cron' => 'scheduled tasks'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
@@ -106,7 +111,7 @@ class CliController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		// add log to stdout when we are on cli
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
-		$this->addOutput("Running Billrun from CLI!");
+		$this->addOutput("Running BillRun from CLI!");
 		$this->addOutput("Running under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
 
 
@@ -186,6 +191,18 @@ class CliController extends Yaf_Controller_Abstract {
 			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
 		}
 		return $options;
+	}
+
+	/**
+	 * forward to cron controller
+	 */
+	protected function cronForward() {
+		if (isset($this->options->type)) {
+			$action = strtolower($this->options->type);
+		} else {
+			$action = 'index';
+		}
+		$this->forward('Cron', $action);
 	}
 
 }

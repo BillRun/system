@@ -13,7 +13,7 @@
  * @package  Billing
  * @since    5.0
  */
-interface Billrun_CollectionSteps_TaskStrategy {
+interface Billrun_CollectionSteps_Notifiers_Strategy {
 
-	public function run($task);
+	public function notify();
 }

@@ -418,7 +418,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$tariff = Billrun_Rates_Util::getTariff($rate, $lineToRebalance['usaget'], $lineToRebalance['plan']);
+		$tariff = Billrun_Rates_Util::getTariff($rate, $lineToRebalance['usaget'], $lineToRebalance['plan'], array()); // TODO pass the correct subscriber services
 		if ($originalRow['type'] == 'gy') {
 			$realUsagevCeil = Billrun_Tariff_Util::getIntervalCeiling($tariff, $realUsagev + $lineToRebalance['call_offset']);
 			$rebalanceUsagev += ($realUsagevCeil - $realUsagev - $lineToRebalance['call_offset']);

@@ -69,37 +69,68 @@ class Billrun_EventsManager {
 					$conditionEntityAfter = $entityAfter;
 					$conditionEntityBefore = $entityBefore;
 				}
-				if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter)) {
+				$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
+				if ($extraValues === false) {
 					continue 2;
 				}
 				$conditionSettings = $rawEventSettings;
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams);
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams, $extraValues);
 		}
 	}
 
-	protected function isConditionMet($condition, $rawEventSettings, $entityBefore, $entityAfter) {
+	protected function getValuesPerCondition($condition, $rawEventSettings, $entityBefore, $entityAfter) {
 		switch ($condition) {
 			case self::CONDITION_IS:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IN:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$in', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$in', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IS_NOT:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+				if ($this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IS_LESS_THAN:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IS_LESS_THAN_OR_EQUAL:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IS_GREATER_THAN:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_IS_GREATER_THAN_OR_EQUAL:
-				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value']);
+				if (!$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value'])) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_HAS_CHANGED:
-				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL));
+				if (!(Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL))) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_HAS_CHANGED_TO:
-				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityAfter, $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+				if (!((Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityAfter, $rawEventSettings['path'], '$eq', $rawEventSettings['value']))) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_HAS_CHANGED_FROM:
-				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityBefore, $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+				if (!((Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityBefore, $rawEventSettings['path'], '$eq', $rawEventSettings['value']))) {
+					return false;
+				}
+				return array();
 			case self::CONDITION_REACHED_CONSTANT:
 				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
@@ -109,9 +140,16 @@ class Billrun_EventsManager {
 				} else {
 					$eventValues = array($eventValue);
 				}
+				if ($valueBefore < $valueAfter) {
+					rsort($eventValues);
+				} else {
+					sort($eventValues);
+				}			
 				foreach ($eventValues as $eventVal) {
 					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
-						return true;
+						$extraValues['reached_constant'] = $eventVal;
+
+						return $extraValues;
 					}
 				}
 				
@@ -122,7 +160,13 @@ class Billrun_EventsManager {
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = floor($rawValueBefore / $eventValue);
 				$valueAfter = floor($rawValueAfter / $eventValue);
-				return (intval($valueBefore) != intval($valueAfter));
+				if (intval($valueBefore) == intval($valueAfter)) {
+					return false;
+				}
+				$thresholdIncreasing = $rawValueAfter - ($rawValueAfter % $eventValue);
+				$extraValues['reached_constant'] = ($rawValueBefore < $rawValueAfter) ? $thresholdIncreasing : $thresholdIncreasing + $eventValue;
+				
+				return $extraValues;
 			default:
 				return FALSE;
 		}
@@ -143,7 +187,7 @@ class Billrun_EventsManager {
 		return Billrun_Utils_Arrayquery_Query::exists(array($data), $query);
 	}
 
-	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array()) {
+	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new MongoDate();
@@ -162,6 +206,9 @@ class Billrun_EventsManager {
 			array_pop($pathArray);
 			$path = implode('.', $pathArray) . '.total';
 			$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+		}
+		foreach ($extraValues as $key => $value) {
+			$event[$key] = $value;
 		}
 		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
 		self::$collection->insert($event);
@@ -299,6 +346,6 @@ class Billrun_EventsManager {
 	protected function isConditionOnGroup($path) {
 		return (substr_count($path, 'balance.groups') > 0);
 	}
-	
+
 	
 }

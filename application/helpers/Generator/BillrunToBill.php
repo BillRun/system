@@ -19,6 +19,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
 	protected $billrunColl;
+	protected $logo = null;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -47,13 +48,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	}
 
 	public function generate() {
+		$invoicesIds = array();
 		foreach ($this->data as $invoice) {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
-			$sendCycleNotification = Billrun_Factory::config()->getConfigValue('billrun.email_after_confirmation', false);
-			if ($sendCycleNotification){
-				$this->sendInvoiceByMail($invoice);
-			}
+			$invoicesIds[] = $invoice['invoice_id'];
 		}
+		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
@@ -79,14 +79,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'lastname' => $invoice['attributes']['lastname'],
 				'firstname' => $invoice['attributes']['firstname'],
 				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'payment_method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
+				'method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
 				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => $invoice['invoice_file'],
+				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
@@ -95,6 +95,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
+			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
@@ -103,6 +104,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
  	}
 	
 	/**
@@ -184,47 +186,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		);
 	}
 	
-	protected function buildEmailBody($firstName, $lastName, $amount) {
-		$msg = "Hello " . $lastName . " " . $firstName . ",\n";
-		$msg .="Your total sum is: " . $amount;
-		return $msg;
-	}
 	
-	protected function sendInvoiceByMail($invoice) {
-		$attachments = array();
-		$firstName = $invoice['attributes']['firstname'];
-		$lastName = $invoice['attributes']['lastname'];
-		$amount = $invoice['totals']['after_vat_rounded'];
-		$email = $invoice['attributes']['email'];
-		$msg = $this->buildEmailBody($firstName, $lastName, $amount);
-		$subject = "Billrun invoice for " . date(Billrun_Base::base_dateformat, $invoice['invoice_date']->sec);
-		$invoiceData = $invoice->getRawData();
-		$invoiceFile = $this->getInvoicePDF($invoiceData);
-		if ($invoiceFile) {
-			$attachment = new Zend_Mime_Part($invoiceFile);
-			$attachment->type = 'application/pdf';
-			$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
-			$attachment->encoding = Zend_Mime::ENCODING_BASE64;
-			$attachment->filename = $invoiceData['billrun_key'] . '_' . $invoiceData['aid'] . '_' . $invoiceData['invoice_id'] . ".pdf";
-			array_push($attachments, $attachment);
-		}
-		Billrun_Util::sendMail($subject, $msg, array($email), $attachments);
-	}
-	
-	protected function getInvoicePDF($invoiceData) {
-		$aid = $invoiceData['aid'];
-		$billrunKey = $invoiceData['billrun_key'];
-		$invoiceId = $invoiceData['invoice_id'];	
-		$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-		$fileName = $billrunKey . '_' . $aid . '_' . $invoiceId . ".pdf";
-		$pdf = $filesPath . $billrunKey . '/pdf/' . $fileName;
-		header('Content-disposition: inline; filename="'.$fileName.'"');
-		header('Cache-Control: public, must-revalidate, max-age=0');
-		header('Pragma: public');
-		header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
-		header('Content-Type: application/pdf');
-		$cont = file_get_contents($pdf);
-		return $cont;
+	protected function handleSendInvoicesByMail($invoices) {
+		$options = array(
+			'email_type' => 'invoiceReady',
+			'billrun_key' => (string) $this->stamp,
+			'invoices' => $invoices,
+		);
+		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 	
 }

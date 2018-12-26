@@ -30,6 +30,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if (!$this->isLineTaxable($current)) {
 			$newData = $current;
 			$newData['final_charge'] = $newData['aprice'];
+			$newData['tax_data'] = [ 'total_amount' => 0, 'total_tax' => 0, 'taxes'=> []]; 
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
 				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
@@ -106,9 +107,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	
 	protected function isLineTaxable($line) {
 		$rate = $this->getRateForLine($line);
-		return  (!empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'])
-					|| 
-				( $line['usaget'] == 'flat' || !isset($rate['vatable']) );
+		return  (!isset($rate['vatable']) || !empty($rate['vatable']));
 	}
 	
 	protected function isLineDataComplete($line) {
@@ -129,7 +128,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if(!empty($line['arate'])) {
 			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
 		} else {
-			$flatRate = $line['type'] == 'flat' ? 
+			$flatRate = $line['type'] == 'flat' ?
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
 				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
 			$rate = $flatRate->getData();

@@ -213,6 +213,28 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	public function getBalanceTotalsKey($pricingData) {
 		return $this->getBalanceChargingTotalsKey($this->row['usaget']);
 	}
+	
+	/**
+	 * method to get the instance of the class (singleton)
+	 * 
+	 * @param type $params
+	 * 
+	 * @return Billrun_Balance
+	 */
+	public static function getInstance($params = null) {
+		$stamp = Billrun_Util::generateArrayStamp($params);
+		if (empty(self::$instance[$stamp])) {
+			if (empty($params)) {
+				$params = Yaf_Application::app()->getConfig();
+			}
+			self::$instance[$stamp] = new Billrun_Balance_Prepaid($params);
+		} else {
+			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
+				self::$instance[$stamp]->reload();
+			}
+		}
 
+		return self::$instance[$stamp];
+	}
 
 }

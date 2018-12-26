@@ -213,6 +213,127 @@ for (var i in lastConfig['payment_gateways']) {
 	}
 }
 
+//BRCD-1411 - Multiple conditions for usage type mapping.
+var fileTypes = lastConfig['file_types'];
+for (var fileType in fileTypes) {
+	if (typeof fileTypes[fileType]['processor']['usaget_mapping'] !== 'undefined') {
+		var usagetMapping = fileTypes[fileType]['processor']['usaget_mapping'];
+		for (var mapping in usagetMapping) {
+			if (typeof fileTypes[fileType]['processor']['usaget_mapping'][mapping]['conditions'] === 'undefined') {
+				var conditions = [];
+				var condition = {
+					"src_field": usagetMapping[mapping]["src_field"],
+					"pattern": usagetMapping[mapping]["pattern"],
+					"op": "$eq",
+				};
+				conditions.push(condition);
+				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
+			}
+		}
+	}
+}
+
+// BRCD-1415 - add invoice when ready email template
+if(!lastConfig.email_templates) {
+	lastConfig.email_templates = {
+    "invoice_ready": {
+      "subject": "Your invoice is ready",
+      "content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+      "html_translation": [
+        "invoice_id",
+        "invoice_total",
+        "invoice_due_date",
+        "cycle_range",
+        "company_email",
+        "company_name"
+      ]
+    }
+  };
+}
+
+// BRCD-1415 - add system field to account (invoice_shipping_method)
+var fields = lastConfig['subscribers']['account']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "invoice_shipping_method") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"select_list":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_shipping_method",
+		"default_value":"email",
+		"show_in_list":true,
+		"title":"Invoice shipping method",
+		"mandatory":false,
+		"select_options":"email",
+		"changeable_props": ["select_options"]
+	});
+}
+lastConfig['subscribers']['account']['fields'] = fields;
+
+
+// BRCD-1458 - Add support for hh:mm:ss, mm:ss "units" in input processor volume stage.
+var propertyTypes = lastConfig['property_types'];
+for (var i in propertyTypes) {
+	if (propertyTypes[i]['type'] === 'time') {
+		var timeProperty = lastConfig['property_types'][i];
+		if (timeProperty['uom']) {
+			for (var j in timeProperty['uom']) {
+				if (timeProperty['uom'][j]['name'] === 'hhmmss' || timeProperty['uom'][j]['name'] === 'mmss') {
+					lastConfig['property_types'][i]['uom'][j]['convertFunction'] = 'formatedTimeToSeconds'; 
+				}
+			}
+		}
+	}
+}
+
+
+db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+
+// BRCD-1443 - Wrong billrun field after a rebalance
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+
+// BRCD-1457 - Fix creation_time field in subscriber services
+db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
+	function(obj) {
+		var services = obj.services;
+		for (var service in services) {
+			if (obj['services'][service]['creation_time'] === undefined) {
+				obj['services'][service]['creation_time'] = obj['services'][service]['from'];
+			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
+				var sec = obj['services'][service]['creation_time']['sec'];
+				var usec = obj['services'][service]['creation_time']['usec'];
+				var milliseconds = sec * 1000 + usec;
+				obj['services'][service]['creation_time'] = new Date(milliseconds);
+			}
+		}
+		
+		db.subscribers.save(obj);
+	}
+);
+
+db.counters.dropIndex("coll_1_oid_1");
+db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
+
+// BRCD-1475 - Choose CDR fields that will be saved under 'uf'
+for (var i in lastConfig['file_types']) {
+	var fileType = lastConfig['file_types'][i];
+	for (var j in fileType['parser']['structure']) {
+		if (fileType['parser']['structure'][j]['checked'] === undefined) {
+			lastConfig['file_types'][i]['parser']['structure'][j]['checked'] = true;
+		}
+	}
+}
+
+db.config.insert(lastConfig);
+
 var detailedField = {
 				"select_list" : false,
 				"display" : true,
@@ -227,5 +348,6 @@ var detailedField = {
 };
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
+
 
 db.config.insert(lastConfig);

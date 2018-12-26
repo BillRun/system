@@ -9,7 +9,13 @@
 	},
 	"collection" : {
 		"steps": [],
-		"min_debt": 10
+		"settings": {
+			"step_ttl_value": 90,
+			"step_ttl_type": "days",
+			"min_debt": 10,
+			"change_state_url" : "",
+			"change_state_method": ""
+		}
 	},
 	"invoice_export" : {
 		"export"  : "files/invoices/",
@@ -33,6 +39,13 @@
 		"status" : {
 			"header" : false,
 			"footer" : false
+		}
+	},
+	"email_templates": {
+		"invoice_ready": {
+			"subject": "Your invoice is ready",
+			"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+			"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
 		}
 	},
 	"menu" : {
@@ -97,6 +110,10 @@
 		"v": false,
 		"t": "Boolean"
 		},
+	"email_after_confirmation": {
+		"v": false,
+		"t": "Boolean"
+	},
 	"generate_pdf":{
 		"v": true,
 		"t": "Boolean"

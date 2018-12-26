@@ -18,7 +18,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 	/**
 	 * general method to parse
 	 *
-	 * @return mixed
+	 * @return string Raw line content
 	 */
 	public function parseLine($line) {
 		$pointer = 0;

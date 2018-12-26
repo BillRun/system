@@ -78,7 +78,8 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function logCrash($e, $priority = Billrun_Log::CRIT) {
 		$log = print_R($_SERVER, TRUE) . PHP_EOL .
-			print_R('Error code : ' . $e->getCode() . PHP_EOL .
+			print_R('Exception type : ' . get_class($e) . PHP_EOL .
+				'Error code : ' . $e->getCode() . PHP_EOL .
 				'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' .
 				gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE);
 		$this->log('Crashed When running... exception details are as follow : ' . PHP_EOL . $log, $priority);

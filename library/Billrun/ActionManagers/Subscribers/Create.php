@@ -156,7 +156,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		foreach ($this->fields as $field) {
 			$fieldName = $field['field_name'];
 			if (isset($field['generated']) && $field['generated']) {
-				$this->query[$fieldName] = Billrun_Factory::db()->subscribersCollection()->createAutoInc($fieldName);
+				$this->query[$fieldName] = Billrun_Factory::db()->subscribersCollection()->createAutoInc();
 			}
 		}
 	}

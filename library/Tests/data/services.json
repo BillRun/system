@@ -503,6 +503,71 @@
                 "balance_period" : "+1 months",
                 "to" : "time*2166-10-29T15:27:45Z",
                 "creation_time" : "time*2017-08-01T00:00:00Z"
+        },
+        {
+                "name" : "SERVICE_OVERRIDE_PRICE",
+                "description" : "Override price in service",
+                "price" : 33,
+                "from" : "time*2016-10-29T15:27:45Z",
+                "to" : "time*2166-10-29T15:27:45Z",
+                "rates" : {
+                        "NEW-CALL-USA" : {
+                                "call" : {
+                                        "rate" : [
+                                                {
+                                                        "from" : 0,
+                                                        "to" : 20,
+                                                        "interval" : 1,
+                                                        "price" : 0.111111
+                                                },
+                                                {
+                                                        "from" : 21,
+                                                        "to" : 999999999,
+                                                        "interval" : 1,
+                                                        "price" : 1
+                                                }
+                                        ]
+                                }
+                        }
+                }
+        },
+        {
+                "name" : "SERVICE_INCLUDE_PLUS_OVERRIDE_PRICE",
+                "description" : "Override price in service + includes",
+                "price" : 33,
+                "from" : "time*2016-10-29T15:27:45Z",
+                "to" : "time*2166-10-29T15:27:45Z",
+                "include" : {
+                        "groups" : {
+                                "AAA" : {
+                                        "call" : 10,
+                                        "rates" : [
+                                                "NEW-CALL-USA"
+                                        ]
+                                }
+                        }
+                },
+                "rates" : {
+                        "NEW-CALL-USA" : {
+                                "call" : {
+                                        "rate" : [
+                                                {
+                                                        "from" : 0,
+                                                        "to" : 5,
+                                                        "interval" : 1,
+                                                        "price" : 0.111111
+                                                },
+                                                {
+                                                        "from" : 6,
+                                                        "to" : 999999999,
+                                                        "interval" : 1,
+                                                        "price" : 0.5
+                                                }
+                                        ]
+                                }
+                        }
+                }
         }
+
         ]
 }

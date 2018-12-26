@@ -143,6 +143,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 		$group = array();
 		$group2 = array();
 		$project = array();
+		$sub_push = array();
 		foreach ($this->passthroughFields as $accountField) {
 			$group[$accountField] = array('$addToSet' => '$' . $accountField);
 			$group2[$accountField] = array('$first' => '$' . $accountField);

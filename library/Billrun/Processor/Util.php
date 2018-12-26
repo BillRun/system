@@ -24,19 +24,25 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
-		if (!isset($userFields[$dateField])) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
+		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
+		$timeZoneValue = null;
+		if (is_null($dateValue)) {
 			return null;
 		}
-		$dateValue = $userFields[$dateField];
+		if (!empty($timeZone)) {
+			if (!empty($value = billrun_util::getIn($userFields, $timeZone))) {
+				$timeZoneValue = new DateTimeZone($value);
+			} else $timeZoneValue = null;
+		}
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
 			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
 			return $datetime;
 		}
 		$withTimeField = false;
-		if (!empty($timeField) && isset($userFields[$timeField])) {
-			$dateValue .= ' ' . $userFields[$timeField];
+		if (!empty($timeField) && !is_null(Billrun_Util::getIn($userFields, $timeField))) {
+			$dateValue .= ' ' . Billrun_Util::getIn($userFields, $timeField);
 			$withTimeField = true;
 		}
 		if (!empty($dateFormat)) {
@@ -45,11 +51,18 @@ class Billrun_Processor_Util {
 			} else if ($withTimeField) {
 				return null;
 			}
-			return DateTime::createFromFormat($dateFormat, $dateValue);
+			if (!is_null($timeZoneValue)) {
+				return DateTime::createFromFormat($dateFormat, $dateValue, $timeZoneValue);
+			} else {
+				return DateTime::createFromFormat($dateFormat, $dateValue);
+			}
 		} else {
-			$date = strtotime($dateValue);
+			$date = !is_null($timeZoneValue) ? strtotime($dateValue .' ' .$timeZoneValue->getName()) : strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
+			if (!is_null($timeZoneValue)) {
+				$datetime->setTimezone($timeZoneValue);
+			}
 			return $datetime;
 		}
 		return null;

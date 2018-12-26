@@ -143,6 +143,18 @@ class RealtimeController extends ApiController {
 	 */
 	protected function process() {
 		$options = $this->config;
+		$parserFields = $options['parser']['structure'];
+		foreach ($parserFields as $field) {
+			if (isset($field['checked']) && $field['checked'] === false) {
+				if (strpos($field['name'], '.') !== false) {
+					$splittedArray = explode('.', $field['name']);
+					$lastValue = array_pop($splittedArray);
+					Billrun_Util::unsetIn($this->event['uf'], $splittedArray, $lastValue);
+				} else {
+					unset($this->event['uf'][$field['name']]);
+				}
+			}
+		}
 		$options['parser'] = 'none';
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {

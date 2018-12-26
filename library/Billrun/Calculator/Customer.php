@@ -435,15 +435,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
-		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account'));
-		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData));
+		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
+		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;
-				$row->setRawData( array_merge($rowData, $enrichedData));
+				$row->setRawData(array_merge($rowData, $foreignData, $enrichedData));
 			} else {
 				$row['subscriber'] = $enrichedData;
-				$row = array_merge($row,$enrichedData);
+				$row = array_merge($row,$foreignData, $enrichedData);
 			}
 		}
 		return $row;
@@ -492,7 +492,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 	/**
@@ -518,7 +518,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 }

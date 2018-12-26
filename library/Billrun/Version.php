@@ -18,19 +18,19 @@ class Billrun_Version {
 	public static $PRODUCT = 'BillRun';
 
 	/** @var  string  Release version. */
-	public static $RELEASE = '5.8';
+	public static $RELEASE = '5.9';
 
 	/** @var  string  Maintenance version. */
-	public static $DEV_LEVEL = '5';
+	public static $DEV_LEVEL = '';
 
 	/** @var  string  Development STATUS. */
-	public static $DEV_STATUS = 'Stable';
+	public static $DEV_STATUS = 'Beta';
 
 	/** @var  string  Build number. */
-	public static $BUILD = '4';
+	public static $BUILD = '2';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '10-April-2018';
+	public static $RELDATE = '02-December-2018';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';

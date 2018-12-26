@@ -172,11 +172,11 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function getListOfFiles($dir, $recursive = false) {
 		$files = array();
 		$rootFolders = $this->getConnection()->nlist($dir, $recursive);
-		
 		if (empty($rootFolders)) {
 			Billrun_Factory::log("No files received");
 			return array();
 		}
+		Billrun_Factory::log()->log("Finished searching for files", Zend_Log::INFO);
 		$check_is_numeric = Billrun_Factory::config()->getConfigValue('Seclibgateway.check_is_numeric');
 		foreach ($rootFolders as $folder) {
 			if ($check_is_numeric && !is_numeric($folder)) {

@@ -60,6 +60,15 @@ class Billrun_Service {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
 	}
+	
+	/**
+	 * initialize internal variables
+	 */
+	public function init() {
+		$this->groups = null;
+		$this->groupSelected = null;
+		$this->strongestGroup = null;
+	}
 
 	/**
 	 * load the service from DB
@@ -111,7 +120,7 @@ class Billrun_Service {
 	
 	/**
 	 * Validates that the service still have cycles left (not exhausted yet)
-	 * If this is custom period service it will check if the duration is still aligned to the row timw
+	 * If this is custom period service it will check if the duration is still aligned to the row time
 	 * 
 	 * @param $serviceStartDate the date from which the service is valid for the subscriber
 	 * 
