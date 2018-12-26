@@ -208,6 +208,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_gift = 0;
 		$invoice_total_above_gift = 0;
 		$invoice_total_outside_gift_vat = 0;
+		$invoice_total_outside_gift_no_vat = 0;
 		$invoice_total_manual_correction = 0;
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
@@ -524,6 +525,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT);
+			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT = floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE = floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
@@ -571,7 +574,8 @@ class Generator_Golanxml extends Billrun_Generator {
 
 			$invoice_total_gift+= $subscriberFlatCosts;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
-			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
+			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;	
+			$invoice_total_outside_gift_no_vat += $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT;		
 			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT;
@@ -958,7 +962,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->startElement('INVOICE_SUMUP');
 		$this->writer->writeElement('TOTAL_GIFT', $invoice_total_gift);
 		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoice_total_above_gift);
-		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat);
+		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat * (1 + $billrun['vat']));	
+		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $invoice_total_outside_gift_no_vat);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
