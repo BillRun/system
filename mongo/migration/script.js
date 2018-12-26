@@ -218,7 +218,7 @@ var detailedField = {
 				"display" : true,
 				"editable" : true,
 				"multiple" : false,
-				"field_name" : "detailed_invoice",
+				"field_name" : "invoice_detailed",
 				"unique" : false,
 				"title" : "Detailed Invoice",
 				"mandatory" : false,
