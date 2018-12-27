@@ -75,7 +75,7 @@ class Billrun_EventsManager {
 		}
 
 		$conditionSettings = array();
-		foreach ($this->eventsSettings[$eventType] as $event) {
+		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawsEventSettings) {
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'],
