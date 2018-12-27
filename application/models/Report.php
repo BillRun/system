@@ -654,6 +654,8 @@ class ReportModel {
 				return 'events';
 			case 'logFile':
 				return 'log';
+			case 'bills':
+				return 'bills';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -776,6 +778,9 @@ class ReportModel {
 				} else {
 					$values = explode(',', $value);
 				}
+				if ($field == 'paid' && in_array('0', $values)) {
+					$values[] = false;
+				}
 				$formatedExpression = array(
 					"\${$op}" => $values
 				);
@@ -867,7 +872,8 @@ class ReportModel {
 		if ($size === -1 && $page === -1) {
 			return 0;
 		}
-		return intval($page) * intval($size);
+		// Size has addition 1 item to check if next page exists 
+		return intval($page) * intval($size - 1);
 	}
 	
 	protected function getLimit($size = -1) {

@@ -87,6 +87,7 @@ class Billrun_Cycle_AggregatePipeline {
 						'type' => '$type',
 						'sid' => '$sid',
 						'plan' => '$plan',
+						'play' => '$play',
 						'from' => '$from',
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
@@ -124,6 +125,7 @@ class Billrun_Cycle_AggregatePipeline {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
+					'play' => '$sub_plans.play',
 					'first_name' => '$sub_plans.first_name',
 					'last_name' => '$sub_plans.last_name',
 					'type' => '$sub_plans.type',
@@ -167,6 +169,7 @@ class Billrun_Cycle_AggregatePipeline {
 		$group = array();
 		$group2 = array();
 		$project = array();
+		$sub_push = array();
 		foreach ($this->passthroughFields as $accountField) {
 			$group[$accountField] = array('$addToSet' => '$' . $accountField);
 			$group2[$accountField] = array('$first' => '$' . $accountField);

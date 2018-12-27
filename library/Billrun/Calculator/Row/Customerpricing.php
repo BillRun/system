@@ -410,7 +410,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$ret = array();
 		$balanceId = (string) $this->balance->getId();
 		$valueToCharge = $volume;
-		if (!isset($this->row['retail_rate']) || $this->row['retail_rate']) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
+		$isRetailRate = !isset($this->row['retail_rate']) || $this->row['retail_rate'];
+		if ($isRetailRate) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
 			if ($plan->isRateInEntityGroup($rate, $usageType)) {
 				$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
 
@@ -472,7 +473,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		
-		if ($this->isPrepriced()) {
+		if ($isRetailRate && $this->isPrepriced()) {
 			$prepriced = $this->getLineAprice();
 			if ($prepriced === false) {
 				return false;
@@ -592,7 +593,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			
 			$serviceName = $service->getName();
-
+			$serviceQuantity = 1;
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
@@ -601,8 +602,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
 					'service_start_date' => $service->get('service_start_date'),
 				);
+				$isGroupShared = $service->isGroupAccountShared($rate, $usageType, $serviceGroup);
 				// pre-check if need to switch to other balance with the new service
-				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
+				if ($isGroupShared && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = 0;
@@ -621,7 +623,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				} else { // use same balance as plan balance
 					$balance = $this->balance;
 				}
-				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, null, $this->row['urt']->sec);
+				if (!$isGroupShared || ($isGroupShared && $service->isGroupAccountPool($serviceGroup))) {
+					$serviceQuantity = $this->getServiceQuantity($this->row['services_data'], $serviceName);
+				}
+				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity);
 				$balanceType = key($groupVolume); // usagev or cost
 				$value = current($groupVolume);
 
@@ -642,7 +647,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'name' => $serviceGroup,
 						$balanceType => $valueRequired,
 						'left' => $value - $valueRequired,
-						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
+						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity),
 						'balance' => $balance,
 					);
 					$this->servicesUsed[] = $service;
@@ -652,7 +657,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'name' => $serviceGroup,
 					$balanceType => $value,
 					'left' => 0,
-					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
+					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup, null, $serviceQuantity),
 					'balance' => $balance,
 				);
 				if ($keyRequired != $balanceType) {
@@ -1012,5 +1017,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	*/
 	public function isPrepriced() {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
+	}
+	
+	protected function getServiceQuantity($servicesData = array(), $serviceName) {
+		$quantity = 1;
+		foreach ($servicesData as $service) {
+			if ($service['name'] == $serviceName && !empty($service['quantity'])) {
+				$quantity = intval($service['quantity']);
+			}
+		}
+		return $quantity;
 	}
 }

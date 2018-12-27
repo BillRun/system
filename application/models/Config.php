@@ -57,7 +57,7 @@ class ConfigModel {
 	public function __construct() {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db()->configCollection();
-		$this->options = array('receive', 'process', 'calculate');
+		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
@@ -114,15 +114,6 @@ class ConfigModel {
 				return $fileSettings;
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
-		}
-		else if ($category == 'events.balance') {
-			if (empty($data['event_code'])) {
-				return Billrun_Util::getIn($currentConfig, $category, []);
-			}
-			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_code', $data['event_code'])) {
-				return $fileSettings;
-			}
-			throw new Exception('Unknown event ' . $data['event_code']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
 		} else if ($category == 'payment_gateways') {
@@ -230,11 +221,6 @@ class ConfigModel {
 			}
 			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
-		}
-		else if ($category === 'events.balance') {
-			if ($this->validateEvent($data)) {
-				$this->setSettingsArrayElement($updatedData, $data, 'events.balance', 'event_code');
-			}
 		} else if ($category === 'payment_gateways') {	
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
@@ -328,6 +314,13 @@ class ConfigModel {
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
 			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
+		} else if (strpos($category, 'events.') === 0 && !$this->validateEvents($category, $data)) {
+			throw new Exception("Error saving events");
+		} else if (strpos($category, 'event.') === 0) {
+			$eventType = explode('.', $category)[1];
+			if ($this->validateEvent($eventType, $data)) {
+				$updatedData['events'][$eventType][] = $data;
+			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -366,6 +359,8 @@ class ConfigModel {
 					throw new Exception('Must select a property type');
 				}
 			}
+		} else if ($category === 'plays') {
+			$this->validatePlays($category, $data, $prevData);
 		}
 		return true;
 	}
@@ -420,6 +415,51 @@ class ConfigModel {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * validates that plays configuration is valid
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on validation success
+	 * @throws Exception on validation failure
+	 */
+	protected function validatePlays($category, &$data, $prevData) {
+		foreach ($data as $play) {
+			$playName = $play['name'];
+			if (empty($playName)) {
+				throw new Exception('Play name cannot be empty');
+			}
+			$playsWithSameName = array_filter($data, function($play) use ($playName) { return $play['name'] == $playName; });
+			if (count($playsWithSameName) > 1) {
+				throw new Exception("Play with name \"{$playName}\" already exists");
+			}
+		}
+		
+		$removedOrDisabled = array();
+		foreach ($prevData as $prevPlay) {
+			$index = array_search($prevPlay['name'], array_column($data, 'name'));
+			if ($index === false || ($prevPlay['enabled'] && !$data[$index]['enabled'])) {
+				$removedOrDisabled[] = $prevPlay['name'];
+			}
+		}
+		
+		if (!empty($removedOrDisabled) && $this->isPlaysInUse($removedOrDisabled)) {
+			throw new Exception("Plays in use cannot be removed/disabled");
+		}
+		
+		return true;
+	}
+	
+	protected function isPlaysInUse($plays) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['play'] = array(
+			'$in' => $plays,
+		);
+		
+		return !Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->isEmpty();
 	}
 	
 	/**
@@ -614,7 +654,7 @@ class ConfigModel {
 		}
 		
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
-		if (Billrun_Util::isAssoc($data)) {
+		if (Billrun_Util::isAssoc($data) && !empty($data)) {
 			foreach ($data as $key => $value) {
 				if (!$this->_updateConfig($currentConfig, $category . "." . $key, $value)) {
 					return 0;
@@ -786,12 +826,6 @@ class ConfigModel {
 			if (isset($data['name'])) {
 				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
-		}
-		else if ($category === 'events.balance') {
-			if (empty($data['event_code'])) {
-				throw new Exception('Must supply event_code');
-			}
-			$this->unsetSettingsArrayElement($updatedData, $category, 'event_code', $data['event_code']);
 		}
 		else if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
@@ -1048,14 +1082,50 @@ class ConfigModel {
 	/**
 	 * 
 	 * @todo Insert validations
+	 * @param string $category
 	 * @param type $data
 	 * @return boolean
 	 */
-	protected function validateEvent($data) {
-		if (!isset($data['event_code'])) {
-			throw new Exception('Invalid data for events.');
+	protected function validateEvents($category, $events) {
+		$eventType = explode('.', $category)[1];
+		foreach ($events as $event) {
+			$this->validateEvent($type, $event);
 		}
+		
 		return TRUE;
+	}
+	
+	protected function validateEvent($eventType, $event) {
+		switch ($eventType) {
+			case 'fraud':
+				return $this->validateFraudEvent($event);
+			case 'balance':
+				return $this->validateBalanceEvent($event);
+			case 'settings':
+			default:
+				return true;
+		}
+		return true;
+	}
+
+
+	protected function validateBalanceEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
+		return true;
+	}
+
+	protected function validateFraudEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
+		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
+		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
+		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
+			throw new Exception('Event recurrence must be less than or equal to date range');
+		}
+		return true;
 	}
 
 	protected function validateType($type) {
@@ -1224,7 +1294,7 @@ class ConfigModel {
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
-			}
+		}
 		}
 		return true;
 	}
@@ -1402,7 +1472,7 @@ class ConfigModel {
 		}
 		if (in_array($receiverSettings['type'], array('ftp', 'ssh'))) {
 			foreach ($receiverSettings['connections'] as $index => $connection) {
-				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
+				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['remote_directory'], $connection['passive'], $connection['delete_received']) || (!isset($connection['password']) && !isset($connection['key']))) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
 				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {

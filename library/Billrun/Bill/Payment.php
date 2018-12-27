@@ -14,7 +14,6 @@
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
-	use Billrun_Traits_Api_OperationsLock;
 	/**
 	 *
 	 * @var string
@@ -69,6 +68,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['gateway_details'])){
 				$this->data['gateway_details'] = $options['gateway_details'];
+			}
+			if (isset($options['transaction_status'])) {
+				$this->data['transaction_status'] = $options['transaction_status'];
 			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
@@ -198,8 +200,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['rejection'] = TRUE;
 		$rawData['rejection_code'] = $response['status'];
-		if (isset($response['extra_params'])) {
-			$rawData['vendor_response'] = $response['extra_params'];
+		if (isset($response['additional_params'])) {
+			$rawData['vendor_response'] = $response['additional_params'];
 		}
 		return new $className($rawData);
 	}
@@ -426,7 +428,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setPaymentStatus($response, $gatewayName) {
 		$vendorResponse = array('name' => $gatewayName, 'status' => $response['status']);
 		$this->data['last_checked_pending'] = new MongoDate();
-		$extraParams = isset($response['extra_params']) ? $response['extra_params'] : array();	
+		$extraParams = isset($response['additional_params']) ? $response['additional_params'] : array();
 		$vendorResponse = array_merge($vendorResponse, $extraParams);
 		$this->data['vendor_response'] = $vendorResponse;
 		$this->save();
@@ -477,10 +479,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['invoices'])) {
 			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
 		}
-		if (!static::lock()) {
-			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
-			return;
-		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, @$chargeOptions['invoices'] ?: FALSE));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
@@ -498,6 +496,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}
 		foreach ($customers as $customer) {
+			$paymentParams = array();
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
@@ -540,24 +539,53 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				Billrun_Factory::log("Charging account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log("Refunding account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+				Billrun_Factory::log("Starting to pay bills by invoice ids: " . implode(',', $chargeOptions['invoices']), Zend_Log::INFO);
 			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
-			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				if ($gatewayDetails['amount'] > 0) {
-					Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
-				} else {
-					Billrun_Factory::log("Successful refunding of account " . $customer['aid'] . ". Amount: " . $paymentParams['amount'], Zend_Log::INFO);
+			try {
+				$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);	
+			} catch (Exception $e) {
+				Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+				continue;
+			}
+			foreach ($paymentResponse['payment'] as $payment) {
+				$paymentData = $payment->getRawData();
+				$transactionId = $paymentData['payment_gateway']['transactionId'];
+				if (isset($paymentResponse['response'][$transactionId]['status']) && $paymentResponse['response'][$transactionId]['status'] === '000') {
+					if ($paymentData['gateway_details']['amount'] > 0) {
+						Billrun_Factory::log("Successful charging of account " . $paymentData['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
+					} else {
+						Billrun_Factory::log("Successful refunding of account " . $paymentData['aid'] . ". Amount: " . $paymentData['amount'], Zend_Log::INFO);
+					}
+				}
+				self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
+				if ($paymentResponse['response'][$transactionId]['stage'] == 'Rejected') {
+					$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+					$newPaymentParams['amount'] = $paymentData['amount'];
+					$newPaymentParams['aid'] = $paymentData['aid'];
+					$newPaymentParams['gateway_details'] = $paymentData['gateway_details'];
+					$newPaymentParams['dir'] = $paymentData['dir'];
+					$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'][$transactionId], $newPaymentParams);
+					try {
+						if ($updatedPaymentParams) {
+							$paymentResponse = Billrun_Bill::pay($paymentData['method'], array($updatedPaymentParams), $options);
+							$newPaymentData = $paymentResponse['payment'][0]->getRawData();
+							$newTransactionId = $newPaymentData['payment_gateway']['transactionId'];
+							self::updateAccordingToStatus($paymentResponse['response'][$newTransactionId], $paymentResponse['payment'][0], $gatewayName);
+							if (isset($paymentResponse['response'][$newTransactionId]['status']) && $paymentResponse['response'][$newTransactionId]['status'] === '000') {
+								if ($newPaymentData['gateway_details']['amount'] > 0) {
+									Billrun_Factory::log("Successful charging of account " . $newPaymentData['aid'] . ". Amount: " . $newPaymentData['amount'], Zend_Log::INFO);
+								} else {
+									Billrun_Factory::log("Successful refunding of account " . $newPaymentData['aid'] . ". Amount: " . $newPaymentData['amount'], Zend_Log::INFO);
+								}
+							}
+						}
+					} catch (Exception $ex) {
+						Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
+					}
 				}
 			}
-			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
-		}
-		
-		if (!static::release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-			return;
-		}
-		
+		}	
 	}
 	
 	/**
@@ -581,6 +609,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
 				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
 			}
@@ -625,6 +654,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $this->data['gateway_details'];
 	}
 	
+	public function getAid(){
+		return $this->data['aid'];
+	}
+	
 	protected function getPaymentGatewayTransactionId(){
 		return $this->data['payment_gateway']['transactionId'];
 	}
@@ -635,34 +668,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public function setGatewayChargeFailure($message){
 		return $this->data['failure_message'] = $message;
-	}
-	
-	protected function getConflictingQuery() {
-		if (!empty(self::$aids)){
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => self::$aids)),
-				),
-			);
-		}
-		
-		return array();
-	}
-	
-	protected function getInsertData() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-		);
-	}
-	
-	protected function getReleaseQuery() {
-		return array(
-			'action' => 'charge_account',
-			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
-			'end_time' => array('$exists' => false)
-		);
 	}
 	
 	public function getInvoicesIdFromReceipt() {
@@ -705,4 +710,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 
+	public function getSinglePaymentStatus() {
+		return !empty($this->data['transaction_status']) ? $this->data['transaction_status'] : null;
+	}
+	
+	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
+		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
+		$gatewayName = $paymentParams['gateway_details']['name'];
+		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+		foreach ($paymentResponse['payment'] as $payment) {
+			$paymentData = $payment->getRawData();
+			$transactionId = $paymentData['payment_gateway']['transactionId'];
+			if (isset($paymentResponse['response'][$transactionId]['status']) && preg_match($gateway->getCompletionCodes(), $paymentResponse['response'][$transactionId]['status'])) {
+				Billrun_Factory::log("Received payment for account " . $paymentData['aid'] . ". Amount: " . $paymentData['gateway_details']['transferred_amount'], Zend_Log::INFO);
+			}
+			self::updateAccordingToStatus($paymentResponse['response'][$transactionId], $payment, $gatewayName);
+		}
+	}
 }

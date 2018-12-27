@@ -31,7 +31,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->cycle = $options['cycle'];
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
-		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine, TRUE);
+		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine);
 	}
 
 	protected function getCharges($options) {
@@ -57,6 +57,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		}
 
 		$entry = $this->addTaxationToLine($entry);
+		$entry = $this->addExternalFoerignFields($entry);
 		
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;
@@ -76,8 +77,12 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$flatEntry['vatable'] = TRUE;
 		}
 
-		$merged = array_merge($this->getForeignFields(array(), array_merge($this->foreignFields,$flatEntry),TRUE),$flatEntry, $this->stumpLine);
-		return $merged;
+		
+		return array_merge($flatEntry, $this->stumpLine);
+	}
+	
+	protected function addExternalFoerignFields($entry) {
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields,$entry),TRUE),$entry);
 	}
 
 	protected function generateLineStamp($line) {

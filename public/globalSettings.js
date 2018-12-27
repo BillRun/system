@@ -1,7 +1,7 @@
 var globalSetting = {
   storageVersion: '0.0.1',
   serverUrl: "",
-  serverApiVersion: '5.8.7.3',
+  serverApiVersion: '5.9-beta3',
   serverApiTimeOut: 300000, // 5 minutes
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',
@@ -21,7 +21,9 @@ var globalSetting = {
   serviceCycleUnlimitedValue: 'UNLIMITED',
   productUnlimitedValue: 'UNLIMITED',
   keyUppercaseRegex: /^[A-Z0-9_]+$/,
+  keyUppercaseCleanRegex: /[^A-Z|0-9_']/g,
   keyRegex: /^[A-Za-z0-9_]*$/,
+  keyCleanRegex: /[^a-z|A-Z|0-9_']/g,
   defaultLogo: 'billRun-cloud-logo.png',
   billrunCloudLogo: 'billRun-cloud-logo.png',
   billrunLogo: 'billRun-logo.png',

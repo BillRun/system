@@ -435,15 +435,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
-		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account'));
-		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData));
+		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
+		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;
-				$row->setRawData( array_merge($rowData, $enrichedData));
+				$row->setRawData(array_merge($rowData, $foreignData, $enrichedData));
 			} else {
 				$row['subscriber'] = $enrichedData;
-				$row = array_merge($row,$enrichedData);
+				$row = array_merge($row,$foreignData, $enrichedData);
 			}
 		}
 		return $row;
@@ -514,11 +514,28 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'from' => $service['from'],
 					'to' => $service['to'],
 					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
+					'quantity' => isset($service['quantity']) ? $service['quantity'] : 1,
 				);
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
 		return array_merge($planIncludedServices, $retServices);
+	}
+	
+	/**
+	 * Used for enriching lines data with subscriber's play
+	 * 
+	 * @param array $services
+	 * @param array $translationRules
+	 * @param array $subscriber
+	 * @param array $row
+	 * @return services array
+	 */
+	public function getPlayFromRow($play, $translationRules, $subscriber, $row) {
+		if (!Billrun_Utils_Plays::isPlaysInUse()) {
+			return null;
+		}
+		return $play;
 	}
 	
 }
