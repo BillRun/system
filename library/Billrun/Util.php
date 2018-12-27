@@ -1259,7 +1259,7 @@ class Billrun_Util {
 	 * @return boolean true if multidimentional array.
 	 */
 	public static function isMultidimentionalArray($arr) {
-		return count($arr) != count($arr, COUNT_RECURSIVE);
+		return is_array($arr) && count($arr) != count($arr, COUNT_RECURSIVE);
 	}
 
 	public static function isAssoc($arr) {
@@ -1577,36 +1577,44 @@ class Billrun_Util {
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
-			} else switch (@$trans['type']) {
-				//Handle funtion based transaltion
-				case 'function' :
-					if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
-						$retData[$key] = $instance->{$trans['translation']['function']}(@$source[$sourceKey],
-																						Billrun_Util::getFieldVal($trans['translation']['values'], array()),
-																						$source,
-																						$userData);
-					} else if (function_exists($trans['translation']['function'])) {
-						$retData[$key] = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
-																									   $userData) );
-					} else {
-						Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-					}
-					break;
-				//Handle regex translation
-				case 'regex' :
-					if (isset($trans['translation'][0]) && is_array($trans)) {
-						foreach ($trans['translation'] as $value) {
-							$retData[$key] = preg_replace(key($value), reset($value), @$source[$sourceKey]);
+			} else {
+				switch (@$trans['type']) {
+					//Handle funtion based transaltion
+					case 'function' :
+						if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
+							$val = $instance->{$trans['translation']['function']}(@$source[$sourceKey],
+																							Billrun_Util::getFieldVal($trans['translation']['values'], array()),
+																							$source,
+																							$userData);
+						} else if (function_exists($trans['translation']['function'])) {
+							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
+																										   $userData) );
+						} else {
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
+							continue;
 						}
-					} else if(isset($trans['translation'])) {
-						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
-					} else {
-						Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-					}
-					break;
-				default :
-						Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-					break;
+						break;
+					//Handle regex translation
+					case 'regex' :
+						if (isset($trans['translation'][0]) && is_array($trans)) {
+							foreach ($trans['translation'] as $value) {
+								$val = preg_replace(key($value), reset($value), @$source[$sourceKey]);
+							}
+						} else if(isset($trans['translation'])) {
+							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
+						} else {
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+							continue;
+						}
+						break;
+					default :
+							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
+							continue;
+						break;
+				}
+				if (!is_null($val) || !empty($trans['nullable'])) {
+					$retData[$key] = $val;
+				}
 			}
 		}
 		

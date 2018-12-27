@@ -514,11 +514,28 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'from' => $service['from'],
 					'to' => $service['to'],
 					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
+					'quantity' => isset($service['quantity']) ? $service['quantity'] : 1,
 				);
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
 		return array_merge($planIncludedServices, $retServices);
+	}
+	
+	/**
+	 * Used for enriching lines data with subscriber's play
+	 * 
+	 * @param array $services
+	 * @param array $translationRules
+	 * @param array $subscriber
+	 * @param array $row
+	 * @return services array
+	 */
+	public function getPlayFromRow($play, $translationRules, $subscriber, $row) {
+		if (!Billrun_Utils_Plays::isPlaysInUse()) {
+			return null;
+		}
+		return $play;
 	}
 	
 }

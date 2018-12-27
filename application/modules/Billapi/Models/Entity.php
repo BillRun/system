@@ -162,7 +162,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
 		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
 		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
@@ -193,7 +193,7 @@ class Models_Entity {
 	 */
 	protected function addCustomFields($fields, $originalUpdate) {
 //		$ad = $this->getCustomFields();
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($this->update);
 		$additionalFields = array_column($customFields, 'field_name');
 		$mandatoryFields = array();
 		$uniqueFields = array();
@@ -219,7 +219,7 @@ class Models_Entity {
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
-				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
 			}
 			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
@@ -276,7 +276,7 @@ class Models_Entity {
 		return $query;
 	}
 
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()), function($customField) {
 			return !Billrun_Util::getFieldVal($customField['system'], false);
 		});
