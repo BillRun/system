@@ -993,6 +993,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 				$aprice *= $apriceMult;
 			}
+			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
+				$aprice = Billrun_Calculator_Tax::getInstance()->removeTax($aprice);
+			}
 			return $aprice;
 		}
 		
