@@ -425,11 +425,12 @@ db.config.insert(lastConfig);
 
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
-	if (index.key.sid && index.key.from && index.key.aid && index.unique) {
+	var indexFields = Object.keys(index.key);
+	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
 		db.subscribers.dropIndex(index.name);
-		db.subscribers.ensureIndex({'sid': 1 , 'from' : 1, 'aid' : 1}, { unique: false, sparse: true, background: true });
+		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
 	}
-	else if (index.key.aid && index.sparse && (Object.keys(index.key).length === 1)) {
+	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
 		db.subscribers.dropIndex(index.name);
 		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
