@@ -47,7 +47,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$account->load(array('aid' => (int)$aid));
 		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
-
 		return $this->getXmlStructureByParams($credentials, $xmlParams);
 	}
 
@@ -101,13 +100,21 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
-			$retParams['transferred_amount'] = $this->convertReceivedAmount((int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total);
+			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
 			$retParams['transaction_status'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->status;
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			if ($retParams['action'] == 'SinglePayment') {
 				$this->transactionId = (string) $xmlObj->response->tranId;
+				$creditType = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType;
+				if ($creditType == 'Payments') {
+					$retParams['installments'] = array();
+					$retParams['installments']['total_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
+					$retParams['installments']['number_of_payments'] = (int)($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->numberOfPayments) + 1;
+					$retParams['installments']['first_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->firstPayment));
+					$retParams['installments']['periodical_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->periodicalPayment));
+				}
 			}
 
 			return $retParams;
@@ -357,7 +364,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return $expires < new DateTime();
 	}
 
-	protected function buildSinglePaymentArray($params) {
+	protected function buildSinglePaymentArray($params, $options) {
 		$credentials = $this->getGatewayCredentials();
 		$xmlParams['version'] = '1001';
 		$xmlParams['mpiValidation'] = 'AutoComm';
@@ -365,12 +372,18 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['aid'] = $params['aid'];
 		$xmlParams['ok_page'] = $params['ok_page'];
 		$xmlParams['return_url'] = $params['return_url'];
-		$xmlParams['amount'] = (int) $this->convertAmountToSend($params['amount']);
+		$xmlParams['amount'] = $this->convertAmountToSend($params['amount']);
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
 		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
 		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
-		
+		if (isset($options['installments'])) {
+			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
+			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
+			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
+			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
+			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams);
+		}
 		return $this->getXmlStructureByParams($credentials, $xmlParams);
 	}
 	
@@ -423,4 +436,55 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 						   </ashrait>'
 		);
 	}
+	
+	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams) {
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>' . $xmlParams['version'] . '</version>
+								 <language>' . $xmlParams['language'] . '</language>
+								 <dateTime/>
+								 <command>doDeal</command>
+								 <doDeal>
+										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
+										  ' . $xmlParams['addFailPage'] . '
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <mainTerminalNumber/>
+										  <cardNo>CGMPI</cardNo>
+										  <total>' . $installmentParams['amount'] . '</total>
+										  <transactionType>Debit</transactionType>
+										  <creditType>Payments</creditType>
+										  <currency>ILS</currency>
+										  <transactionCode>Phone</transactionCode>
+										  <authNumber/>
+										  <numberOfPayments>' . $installmentParams['number_of_payments'] . '</numberOfPayments>
+										  <firstPayment>' . $installmentParams['first_payment'] . '</firstPayment>
+										  <periodicalPayment>' . $installmentParams['periodical_payments'] . '</periodicalPayment>
+										  <validation>TxnSetup</validation>
+										  <dealerNumber/>
+										  <user>something</user>
+										  <mid>' . (int) $credentials['mid'] . '</mid>
+										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
+										  <customerData>
+										   <userData1>' . $xmlParams['aid'] . '</userData1>
+										   <userData2>' . $xmlParams['userData2'] . '</userData2>
+										   <userData3/>
+										   <userData4/>
+										   <userData5/>
+										   <userData6/>
+										   <userData7/>
+										   <userData8/>
+										   <userData9/>
+										   <userData10/>
+										  </customerData>
+								 </doDeal>
+							</request>
+						   </ashrait>'
+		);
+	}
+
 }

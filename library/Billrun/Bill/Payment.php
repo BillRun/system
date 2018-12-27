@@ -72,6 +72,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['transaction_status'])) {
 				$this->data['transaction_status'] = $options['transaction_status'];
 			}
+			if (isset($options['installments'])) {
+				$this->data['installments'] = $options['installments'];
+			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
