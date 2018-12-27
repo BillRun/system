@@ -87,9 +87,10 @@ class Billrun_EventsManager {
 					$conditionSettings[] = $rawEventSettings;
 				}
 			}
-			foreach ($conditionSettings as $conditionSetting) {
-				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
-			}
+		}
+		
+		foreach ($conditionSettings as $conditionSetting) {
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
 		}
 	}
 
@@ -185,15 +186,12 @@ class Billrun_EventsManager {
 				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case before is empty (new balance)
-				if (preg_match('/\d+,\d+/', $eventTotalValue)) {
-					$eventPercentageValues = explode(',', $eventTotalValue);
-					$eventValues = array();
-					foreach ($eventPercentageValues as $percentageValue) {
-						$eventValues[] = $percentageValue * $eventTotalValue / 100;
-					}
-				} else {
-					$eventValues = array($percentageValue * $eventTotalValue / 100);
+				$eventPercentageValues = explode(',', $rawEventSettings['value']);
+				$eventValues = [];
+				foreach ($eventPercentageValues as $percentageValue) {
+					$eventValues[] = $percentageValue * $eventTotalValue / 100;
 				}
+
 				if ($valueBefore < $valueAfter) {
 					rsort($eventValues);
 					rsort($eventPercentageValues);
