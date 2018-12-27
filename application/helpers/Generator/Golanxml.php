@@ -218,6 +218,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
 		$servicesTotalCostPerAccount = 0;
+		$invoiceChargeExemptVat = 0;
 		$servicesCost = array();
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
@@ -575,8 +576,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			
 			$invoice_total_gift+= $subscriberFlatCosts;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT;
-			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;	
-			$invoice_total_outside_gift_no_vat += $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT;		
+			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
+			$invoice_total_outside_gift_no_vat += $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT;
 			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT;
@@ -596,14 +597,15 @@ class Generator_Golanxml extends Billrun_Generator {
 
 			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
 			$this->writer->writeElement('TOTAL_GIFT', $subscriberFlatCosts);
-			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT);
-			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT * (1 + $billrun['vat']));
-			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
+			$totalAboveGift = $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT * (1 + $billrun['vat']) + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT;
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $totalAboveGift);
+		//	$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT * (1 + $billrun['vat']));
+		//	$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_WITH_VAT);
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED * (1 + $billrun['vat']));
-			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED * (1 + $billrun['vat']));
+	//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED * (1 + $billrun['vat']));
+	//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED * (1 + $billrun['vat']));
+	//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED * (1 + $billrun['vat']));
 			$servicesTotalSum = 0;
 			$servicesTotalSumWithVat = 0;
 			$servicesTotalVat = 0;
@@ -633,7 +635,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_charge_summary_vatable);
 			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_charge_summary_after_vat);
-			$this->writer->writeElement('TOTAL_CHARGE_EXEMPT_VAT', $subscriber_charge_summary_vat_free);
+			$this->writer->writeElement('TOTAL_CHARGE_EXEMPT_VAT', $subscriber_charge_summary_vat_free);		
+			$invoiceChargeExemptVat += $subscriber_charge_summary_vat_free;
 			$this->writer->endElement(); // end SUBSCRIBER_CHARGE_SUMMARY
 
 			foreach ($plans as $planToCharge) {
@@ -961,26 +964,37 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
 		$this->writer->writeElement('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('GIFTS');
-		$this->writer->startElement('INVOICE_SUMUP');
+//		$this->writer->startElement('INVOICE_SUMUP');
+//		$this->writer->writeElement('TOTAL_GIFT', $invoice_total_gift);
+//		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoice_total_above_gift);
+//		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat * (1 + $billrun['vat']));	
+//		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $invoice_total_outside_gift_no_vat);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+//		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $invoice_total_manual_correction_refund);
+//		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
+//		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
+//		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
+//		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
+//		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
+//		$this->writer->endElement(); // end INVOICE_SUMUP
+		$this->writer->startElement('INVOICE_CHARGE_SUMMARY');
 		$this->writer->writeElement('TOTAL_GIFT', $invoice_total_gift);
-		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoice_total_above_gift);
-		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat * (1 + $billrun['vat']));	
-		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $invoice_total_outside_gift_no_vat);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
-		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
+		$invoiceTotalAboveGift = $invoice_total_above_gift + $invoice_total_outside_gift_vat * (1 + $billrun['vat']) + $invoice_total_outside_gift_no_vat;
+		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoiceTotalAboveGift);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $invoice_total_manual_correction_refund);
 		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
-		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
+		$this->writer->writeElement("TOTAL_CHARGE_EXEMPT_VAT", $invoiceChargeExemptVat);
+		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat - $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
-		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
-		$this->writer->endElement(); // end INVOICE_SUMUP
+		$this->writer->endElement(); // end INVOICE_CHARGE_SUMMARY
 		$this->writer->endElement(); // end INV_INVOICE_TOTAL
-
 		$this->endInvoice();
 
 		$this->writer->endDocument();
