@@ -106,7 +106,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			try {
 				$hostRet = $this->receiveFromHost($hostName, $config);
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log("FTP: Fail when downloading from : $hostName with exception : " . $e, Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("FTP: Fail when downloading from : $hostName with exception : " . $e, Zend_Log::WARN);
 			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 
