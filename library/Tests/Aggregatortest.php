@@ -812,7 +812,7 @@ class Tests_Aggregator extends UnitTestCase {
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
-		$path = Billrun_Util::getBillRunSharedFolderPath('/shared/test/files/invoices/');
+		$path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
 		$path .= $row['test']['options']['stamp'] . '/pdf/' . $row['test']['invoice_path'];
 		if (!file_exists($path)) {
 			$passed = false;
