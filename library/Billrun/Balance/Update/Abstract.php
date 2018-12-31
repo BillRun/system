@@ -33,6 +33,13 @@ abstract class Billrun_Balance_Update_Abstract {
 	protected $subscriber = array();
 	
 	/**
+	 * additional parameters to be saved
+	 * 
+	 * @var array 
+	 */
+	protected $additional = array();
+	
+	/**
 	 * The line saved to lines collection
 	 * 
 	 * @var array
@@ -57,6 +64,10 @@ abstract class Billrun_Balance_Update_Abstract {
 		}
 
 		$this->loadSubscriber((int) $identifier, $field, $subscriber_type);
+		
+		if (!empty($params['additional'])) {
+			$this->additional= $params['additional'];
+		}
 	}
 
 	abstract protected function init();
