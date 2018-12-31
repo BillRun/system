@@ -473,4 +473,14 @@ class Billrun_Config {
 		}
 		return array();
 	}
+	
+	public function getCustomFieldType($customFieldsKey, $fieldName) {
+		$customFields = $this->getConfigValue("{$customFieldsKey}.fields", []);
+		foreach ($customFields as $customField) {
+			if ($customField['field_name'] == $fieldName) {
+				return isset($customField['type']) ? $customField['type'] : 'string';
+			}
+		}
+		return 'string';
+	}
 }
