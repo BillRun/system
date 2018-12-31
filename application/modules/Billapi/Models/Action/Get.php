@@ -136,12 +136,22 @@ class Models_Action_Get extends Models_Action {
 			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
 				$ret [] = array(
 					'name' => $field['field_name'],
-					'type' => 'string',
+					'type' => $this->getCustomFieldType($field),
 				);
 			}
 		}
 		
 		return $ret;
+	}
+	
+	protected function getCustomFieldType($field) {
+		$type = Billrun_Util::getIn($field, 'type', 'string');
+		switch ($type) {
+			case 'ranges':
+				return $type; 
+			default:
+				return 'string';
+		}
 	}
 	
 	protected function getCustomFieldsKey() {
