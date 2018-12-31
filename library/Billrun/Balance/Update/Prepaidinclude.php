@@ -294,10 +294,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 	}
 	
-    /**
+	/**
 	 * get the balance key in the balance document
-     * @return string the balance reference; if nested put dot for object hierarchy 
-     */
+	 * 
+	 * @return string the balance reference; if nested put dot for object hierarchy 
+	 */
 	protected function getChargingField() {
 		switch ($this->data['charging_by']) :
 			case 'cost':
