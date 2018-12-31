@@ -130,6 +130,9 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
+		if (!empty($this->additional)) {
+			$row['additional'] = $this->additional;
+		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);
 		foreach ($this->data as $prepaidInclude) {
