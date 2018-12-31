@@ -838,8 +838,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$notPaidBiils = array(
 			'$or' => array(
-				array('left' => array('$gt' => 0)),
-				array('left_to_pay' => array('$gt' => 0)),
+				array('left' => array('$gt' => Billrun_Bill::precision)),
+				array('left_to_pay' => array('$gt' => Billrun_Bill::precision)),
 			),
 		);
 		$updatedQuery = array_merge($filtersQuery, $nonRejectedOrCanceled, $notPaidBiils);
