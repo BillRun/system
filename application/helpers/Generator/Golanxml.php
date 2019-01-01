@@ -640,311 +640,316 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->endElement(); // end SUBSCRIBER_CHARGE_SUMMARY
 
 			foreach ($plans as $planToCharge) {
-				$planUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
-				$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
-				$this->writer->startElement('BREAKDOWN_ENTRY');
-				$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
-				$this->writer->writeElement('UNITS', 1);
-				$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost'] : 0;
-				$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
-				$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
-				$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
-				$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
-				$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
-				$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
-				$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
-				$this->writer->endElement();			
-				$over_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base'] : array();
-				$out_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base'] : array();
-				$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
-				foreach ($over_out_plan_base as $zone_name => $zone) {
-					if ($zone_name != 'service') {
-	//							$out_of_usage_entry->addChild('TITLE', ?);
-						foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
-							$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
-							if ($usagev > 0) {
-								$this->writer->startElement('BREAKDOWN_ENTRY');
-								$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
-								$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));		
-								$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($type));	
-								$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
-								$unitCost = $this->getRateByKey($zone_name, $type);							
-								if (isset($this->ratesByKey[$zone_name])) {
-									$rateByKey = $this->ratesByKey[$zone_name];
-									$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$type]['access']) ? $rateByKey['rates'][$type]['access'] * (1 + $out_of_usage_entry_VAT / 100) : 0);
+				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
+				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']]);				
+				array_push($planUniqueIds, $currentUniqueId);
+				foreach ($planUniqueIds as $planUniqueId) {
+					$planUniqueId = strval($planUniqueId);
+					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
+					$this->writer->writeElement('UNITS', 1);
+					$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost'] : 0;
+					$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
+					$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
+					$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
+					$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
+					$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
+					$this->writer->endElement();
+					$over_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base'] : array();
+					$out_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base'] : array();
+					$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
+					foreach ($over_out_plan_base as $zone_name => $zone) {
+						if ($zone_name != 'service') {
+							//							$out_of_usage_entry->addChild('TITLE', ?);
+							foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
+								$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
+								if ($usagev > 0) {
+									$this->writer->startElement('BREAKDOWN_ENTRY');
+									$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
+									$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));
+									$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($type));
+									$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
+									$unitCost = $this->getRateByKey($zone_name, $type);
+									if (isset($this->ratesByKey[$zone_name])) {
+										$rateByKey = $this->ratesByKey[$zone_name];
+										$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$type]['access']) ? $rateByKey['rates'][$type]['access'] * (1 + $out_of_usage_entry_VAT / 100) : 0);
+									}
+									$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $out_of_usage_entry_VAT / 100));
+									$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
+									$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
+									$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
+									$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
+									$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
+									$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
+									$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($type));
+									$this->writer->endElement();
 								}
-								$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $out_of_usage_entry_VAT / 100));
-								$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
-								$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
-								$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
-								$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
-								$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
-								$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
-								$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($type));
+							}
+						}
+					}
+					$this->writer->endElement(); // end BREAKDOWN_TOPIC
+
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'CHARGED_SERVICES');
+					foreach ($servicesCost as $chargedService => $serviceCost) {
+						if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'])) {
+							if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService])) {
+								$this->writer->startElement('BREAKDOWN_ENTRY');
+								$this->writer->writeElement('TITLE', $chargedService);
+								$this->writer->writeElement('UNITS', 1);
+								$service_entry_COST_WITHOUTVAT = $serviceCost;
+								$this->writer->writeElement('COST_WITHOUTVAT', $service_entry_COST_WITHOUTVAT);
+								$service_entry_VAT = $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService]['vat'] * 100;
+								$this->writer->writeElement('VAT', $service_entry_VAT);
+								$service_entry_VAT_COST = $service_entry_COST_WITHOUTVAT * $service_entry_VAT / 100;
+								$this->writer->writeElement('VAT_COST', $service_entry_VAT_COST);
+								$this->writer->writeElement('TOTAL_COST', $service_entry_COST_WITHOUTVAT + $service_entry_VAT_COST);
+								$this->writer->writeElement('TYPE_OF_BILLING', strtoupper('service'));
 								$this->writer->endElement();
 							}
 						}
 					}
-				}
-				$this->writer->endElement(); // end BREAKDOWN_TOPIC
-			
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'CHARGED_SERVICES');
-				foreach ($servicesCost as $chargedService => $serviceCost) {
-					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'])) {
-						if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService])) {
+					$this->writer->endElement(); // end BREAKDOWN_TOPIC
+
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'INTERNATIONAL');
+					$subscriber_intl = array();
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
+							if (isset($plan['intl'])) {
+								foreach ($plan['intl'] as $zone_name => $zone) {
+									foreach ($zone['totals'] as $usage_type => $usage_totals) {
+										if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
+											if (isset($subscriber_intl[$zone_name][$usage_type])) {
+												$subscriber_intl[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
+												$subscriber_intl[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
+											} else {
+												$subscriber_intl[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
+												$subscriber_intl[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
+												$subscriber_intl[$zone_name]['vat'] = $zone['vat'];
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					foreach ($subscriber_intl as $zone_name => $zone) {
+						foreach ($zone['totals'] as $usage_type => $usage_totals) {
 							$this->writer->startElement('BREAKDOWN_ENTRY');
-							$this->writer->writeElement('TITLE', $chargedService);
-							$this->writer->writeElement('UNITS', 1);
-							$service_entry_COST_WITHOUTVAT = $serviceCost;
-							$this->writer->writeElement('COST_WITHOUTVAT', $service_entry_COST_WITHOUTVAT);
-							$service_entry_VAT = $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['service']['base'][$chargedService]['vat'] * 100;
-							$this->writer->writeElement('VAT', $service_entry_VAT);
-							$service_entry_VAT_COST = $service_entry_COST_WITHOUTVAT * $service_entry_VAT / 100;
-							$this->writer->writeElement('VAT_COST', $service_entry_VAT_COST);
-							$this->writer->writeElement('TOTAL_COST', $service_entry_COST_WITHOUTVAT + $service_entry_VAT_COST);
-							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper('service'));
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
+							$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+							$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+							$international_entry_VAT = $this->displayVAT($zone['vat']);
+							$unitCost = $this->getRateByKey($zone_name, $usage_type);
+							if (isset($this->ratesByKey[$zone_name])) {
+								$rateByKey = $this->ratesByKey[$zone_name];
+								$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $international_entry_VAT / 100) : 0);
+							}
+							$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $international_entry_VAT / 100));
+							$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+							$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('VAT', $international_entry_VAT);
+							$international_entry_VAT_COST = $international_entry_COST_WITHOUTVAT * $international_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $international_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $international_entry_COST_WITHOUTVAT + $international_entry_VAT_COST);
+							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
 							$this->writer->endElement();
 						}
 					}
-				}
-				$this->writer->endElement(); // end BREAKDOWN_TOPIC
+					$this->writer->endElement();
 
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'INTERNATIONAL');
-				$subscriber_intl = array();
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
-						if (isset($plan['intl'])) {
-							foreach ($plan['intl'] as $zone_name => $zone) {
-								foreach ($zone['totals'] as $usage_type => $usage_totals) {
-									if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
-										if (isset($subscriber_intl[$zone_name][$usage_type])) {
-											$subscriber_intl[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
-											$subscriber_intl[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
-										} else {
-											$subscriber_intl[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
-											$subscriber_intl[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
-											$subscriber_intl[$zone_name]['vat'] = $zone['vat'];
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'SPECIAL_SERVICES');
+					$subscriber_special = array();
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
+							if (isset($plan['special'])) {
+								foreach ($plan['special'] as $zone_name => $zone) {
+									foreach ($zone['totals'] as $usage_type => $usage_totals) {
+										if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
+											if (isset($subscriber_special[$zone_name][$usage_type])) {
+												$subscriber_special[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
+												$subscriber_special[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
+											} else {
+												$subscriber_special[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
+												$subscriber_special[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
+												$subscriber_special[$zone_name]['vat'] = $zone['vat'];
+											}
 										}
 									}
 								}
 							}
 						}
 					}
-				}
-				foreach ($subscriber_intl as $zone_name => $zone) {
-					foreach ($zone['totals'] as $usage_type => $usage_totals) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
-						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
-						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$international_entry_VAT = $this->displayVAT($zone['vat']);
-						$unitCost = $this->getRateByKey($zone_name, $usage_type);
-						if (isset($this->ratesByKey[$zone_name])) {
-							$rateByKey = $this->ratesByKey[$zone_name];
-							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $international_entry_VAT / 100) : 0);
+					foreach ($subscriber_special as $zone_name => $zone) {
+						foreach ($zone['totals'] as $usage_type => $usage_totals) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
+							$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+							$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+							$special_entry_VAT = $this->displayVAT($zone['vat']);
+							$unitCost = $this->getRateByKey($zone_name, $usage_type);
+							if (isset($this->ratesByKey[$zone_name])) {
+								$rateByKey = $this->ratesByKey[$zone_name];
+								$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $special_entry_VAT / 100) : 0);
+							}
+							$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $special_entry_VAT / 100));
+							$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+							$this->writer->writeElement('COST_WITHOUTVAT', $special_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('VAT', $special_entry_VAT);
+							$special_entry_VAT_COST = $special_entry_COST_WITHOUTVAT * $special_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $special_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $special_entry_COST_WITHOUTVAT + $special_entry_VAT_COST);
+							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+							$this->writer->endElement();
 						}
-						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $international_entry_VAT / 100));
-						$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-						$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);		
-						$this->writer->writeElement('VAT', $international_entry_VAT);
-						$international_entry_VAT_COST = $international_entry_COST_WITHOUTVAT * $international_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $international_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $international_entry_COST_WITHOUTVAT + $international_entry_VAT_COST);
-						$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
-						$this->writer->endElement();
 					}
-				}
-				$this->writer->endElement();
+					$this->writer->endElement();
 
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'SPECIAL_SERVICES');
-				$subscriber_special = array();
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
-						if (isset($plan['special'])) {
-							foreach ($plan['special'] as $zone_name => $zone) {
-								foreach ($zone['totals'] as $usage_type => $usage_totals) {
-									if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
-										if (isset($subscriber_special[$zone_name][$usage_type])) {
-											$subscriber_special[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
-											$subscriber_special[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
-										} else {
-											$subscriber_special[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
-											$subscriber_special[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
-											$subscriber_special[$zone_name]['vat'] = $zone['vat'];
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'ROAMING');
+					$subscriber_roaming = array();
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
+							if (isset($plan['roaming'])) {
+								foreach ($plan['roaming'] as $zone_name => $zone) {
+									foreach ($zone['totals'] as $usage_type => $usage_totals) {
+										if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
+											if (isset($subscriber_roaming[$zone_name]['totals'][$usage_type])) {
+												$subscriber_roaming[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
+												$subscriber_roaming[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
+											} else {
+												$subscriber_roaming[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
+												$subscriber_roaming[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
+												$subscriber_roaming[$zone_name]['vat'] = $zone['vat'];
+											}
 										}
 									}
 								}
 							}
 						}
 					}
-				}
-				foreach ($subscriber_special as $zone_name => $zone) {
-					foreach ($zone['totals'] as $usage_type => $usage_totals) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
-						$this->writer->writeElement('UNITS', $usage_totals['usagev']);
-						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$special_entry_VAT = $this->displayVAT($zone['vat']);
-						$unitCost = $this->getRateByKey($zone_name, $usage_type);
-						if (isset($this->ratesByKey[$zone_name])) {
-							$rateByKey = $this->ratesByKey[$zone_name];
-							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $special_entry_VAT / 100) : 0);
-						}
-						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $special_entry_VAT / 100));
-						$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-						$this->writer->writeElement('COST_WITHOUTVAT', $special_entry_COST_WITHOUTVAT);
-						$this->writer->writeElement('VAT', $special_entry_VAT);
-						$special_entry_VAT_COST = $special_entry_COST_WITHOUTVAT * $special_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $special_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $special_entry_COST_WITHOUTVAT + $special_entry_VAT_COST);
-						$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
-						$this->writer->endElement();
-					}
-				}
-				$this->writer->endElement();
-
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'ROAMING');
-				$subscriber_roaming = array();
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId] as $plan) {
-						if (isset($plan['roaming'])) {
-							foreach ($plan['roaming'] as $zone_name => $zone) {
-								foreach ($zone['totals'] as $usage_type => $usage_totals) {
-									if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
-										if (isset($subscriber_roaming[$zone_name]['totals'][$usage_type])) {
-											$subscriber_roaming[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
-											$subscriber_roaming[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
-										} else {
-											$subscriber_roaming[$zone_name]['totals'][$usage_type]['usagev'] = $usage_totals['usagev'];
-											$subscriber_roaming[$zone_name]['totals'][$usage_type]['cost'] = $usage_totals['cost'];
-											$subscriber_roaming[$zone_name]['vat'] = $zone['vat'];
-										}
-									}
-								}
+					foreach ($subscriber_roaming as $zone_key => $zone) {
+						$this->writer->startElement('BREAKDOWN_SUBTOPIC');
+						$this->writer->writeAttribute('name', '');
+						unset($currentRate);
+						foreach ($this->rates as $rate) {
+							if ($rate['key'] == $zone_key) {
+								$currentRate = $rate;
+								break;
 							}
 						}
-					}
-				}
-				foreach ($subscriber_roaming as $zone_key => $zone) {
-					$this->writer->startElement('BREAKDOWN_SUBTOPIC');
-					$this->writer->writeAttribute('name', '');
-					unset($currentRate);
-					foreach ($this->rates as $rate){
-						if ($rate['key'] == $zone_key){
-							$currentRate = $rate;
-							break;
-						}
-					}
-					if (empty($currentRate)){
-						$this->writer->writeAttribute('alpha3', '');
-					} else {
-						if (!empty($currentRate['alpha3'])) {
-							$this->writer->writeAttribute('alpha3', $currentRate['alpha3']);
+						if (empty($currentRate)) {
+							$this->writer->writeAttribute('alpha3', '');
 						} else {
-							$this->writer->writeAttribute('special', $zone_key);
+							if (!empty($currentRate['alpha3'])) {
+								$this->writer->writeAttribute('alpha3', $currentRate['alpha3']);
+							} else {
+								$this->writer->writeAttribute('special', $zone_key);
+							}
 						}
-					}
-					foreach ($zone['totals'] as $usage_type => $usage_totals) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$roamingTitle = $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
-						$this->writer->writeElement('TITLE', $roamingTitle);
-						$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
-						$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
-						$roaming_entry_VAT = $this->displayVAT($zone['vat']);
-						$unitCost = $this->getRateByKey($zone_key, $usage_type);					
-						if (isset($this->ratesByKey[$zone_key])) {
-							$rateByKey = $this->ratesByKey[$zone_key];
-							$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $roaming_entry_VAT / 100) : 0);
-						}					
-						$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $roaming_entry_VAT / 100));
-						$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-						$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);					
-						$this->writer->writeElement('VAT', $roaming_entry_VAT);
-						$roaming_entry_VAT_COST = $roaming_entry_COST_WITHOUTVAT * $roaming_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $roaming_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $roaming_entry_COST_WITHOUTVAT + $roaming_entry_VAT_COST);
-						$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+						foreach ($zone['totals'] as $usage_type => $usage_totals) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$roamingTitle = $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type));
+							$this->writer->writeElement('TITLE', $roamingTitle);
+							$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
+							$this->writer->writeElement('UNIT_TYPE', $this->getUnitTypeByUsage($usage_type));
+							$roaming_entry_VAT = $this->displayVAT($zone['vat']);
+							$unitCost = $this->getRateByKey($zone_key, $usage_type);
+							if (isset($this->ratesByKey[$zone_key])) {
+								$rateByKey = $this->ratesByKey[$zone_key];
+								$this->writer->writeElement('ACCESS_COST', isset($rateByKey['rates'][$usage_type]['access']) ? $rateByKey['rates'][$usage_type]['access'] * (1 + $roaming_entry_VAT / 100) : 0);
+							}
+							$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $roaming_entry_VAT / 100));
+							$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+							$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('VAT', $roaming_entry_VAT);
+							$roaming_entry_VAT_COST = $roaming_entry_COST_WITHOUTVAT * $roaming_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $roaming_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $roaming_entry_COST_WITHOUTVAT + $roaming_entry_VAT_COST);
+							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+							$this->writer->endElement();
+						}
 						$this->writer->endElement();
 					}
 					$this->writer->endElement();
-				}
-				$this->writer->endElement();
 
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'CHARGE_PER_CLI');
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'] as $reason => $cost) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-						$this->writer->writeElement('UNITS', 1);
-						$charge_entry_COST_WITHOUTVAT = $cost;
-						$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
-						$charge_entry_VAT = $this->displayVAT($billrun['vat']);
-						$this->writer->writeElement('VAT', $charge_entry_VAT);
-						$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
-						$this->writer->endElement();
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'CHARGE_PER_CLI');
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vatable'] as $reason => $cost) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+							$this->writer->writeElement('UNITS', 1);
+							$charge_entry_COST_WITHOUTVAT = $cost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
+							$charge_entry_VAT = $this->displayVAT($billrun['vat']);
+							$this->writer->writeElement('VAT', $charge_entry_VAT);
+							$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
+							$this->writer->endElement();
+						}
 					}
-				}
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'] as $reason => $cost) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-						$this->writer->writeElement('UNITS', 1);
-						$charge_entry_COST_WITHOUTVAT = $cost;
-						$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
-						$charge_entry_VAT = 0;
-						$this->writer->writeElement('VAT', $charge_entry_VAT);
-						$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
-						$this->writer->endElement();
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['charge_vat_free'] as $reason => $cost) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+							$this->writer->writeElement('UNITS', 1);
+							$charge_entry_COST_WITHOUTVAT = $cost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
+							$charge_entry_VAT = 0;
+							$this->writer->writeElement('VAT', $charge_entry_VAT);
+							$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
+							$this->writer->endElement();
+						}
 					}
-				}
-				$this->writer->endElement();
+					$this->writer->endElement();
 
-				$this->writer->startElement('BREAKDOWN_TOPIC');
-				$this->writer->writeAttribute('name', 'REFUND_PER_CLI');
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'] as $reason => $cost) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-						$this->writer->writeElement('UNITS', 1);
-						$refund_entry_COST_WITHOUTVAT = $cost;
-						$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
-						$refund_entry_VAT = $this->displayVAT($billrun['vat']);
-						$this->writer->writeElement('VAT', $refund_entry_VAT);
-						$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
-						$this->writer->endElement();
+					$this->writer->startElement('BREAKDOWN_TOPIC');
+					$this->writer->writeAttribute('name', 'REFUND_PER_CLI');
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vatable'] as $reason => $cost) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+							$this->writer->writeElement('UNITS', 1);
+							$refund_entry_COST_WITHOUTVAT = $cost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+							$refund_entry_VAT = $this->displayVAT($billrun['vat']);
+							$this->writer->writeElement('VAT', $refund_entry_VAT);
+							$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
+							$this->writer->endElement();
+						}
 					}
-				}
-				if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'])) {
-					foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'] as $reason => $cost) {
-						$this->writer->startElement('BREAKDOWN_ENTRY');
-						$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-						$this->writer->writeElement('UNITS', 1);
-						$refund_entry_COST_WITHOUTVAT = $cost;
-						$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
-						$refund_entry_VAT = 0;
-						$this->writer->writeElement('VAT', $refund_entry_VAT);
-						$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
-						$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
-						$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
-						$this->writer->endElement();
+					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'])) {
+						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'] as $reason => $cost) {
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+							$this->writer->writeElement('UNITS', 1);
+							$refund_entry_COST_WITHOUTVAT = $cost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+							$refund_entry_VAT = 0;
+							$this->writer->writeElement('VAT', $refund_entry_VAT);
+							$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
+							$this->writer->endElement();
+						}
 					}
+					$this->writer->endElement(); // end BREAKDOWN_TOPIC
+					$this->writer->endElement(); // end SUBSCRIBER_BREAKDOWN
 				}
-				$this->writer->endElement(); // end BREAKDOWN_TOPIC
-				$this->writer->endElement(); // end SUBSCRIBER_BREAKDOWN
-		}
+			}
 			$this->writer->endElement(); // end SUBSCRIBER_INF
 			$this->flush();
 		}
@@ -1958,5 +1963,15 @@ EOI;
 			Billrun_Factory::log($ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 		}
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
+	}
+	
+	protected function getAllSubUniquePlanIds($plans, $breakdown) {
+		$uniquePlanIds = array();
+		foreach ($plans as $plan) {
+			$uniquePlanId = $plan['id'] . strtotime($plan['start_date']); 
+			$uniquePlanIds[$uniquePlanId] = $plan;
+		}
+		$lateUniqueIds = array_diff_key($breakdown, $uniquePlanIds);
+		return array_keys($lateUniqueIds);
 	}
 }
