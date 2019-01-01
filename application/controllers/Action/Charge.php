@@ -25,6 +25,8 @@ class ChargeAction extends Action_Base {
 	public function execute() {
 		$possibleOptions = array(
 			'stamp' => true,
+			'page' => true,
+			'size' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -39,7 +41,7 @@ class ChargeAction extends Action_Base {
 		Billrun_Bill_Payment::checkPendingStatus($options);
 		if (!isset($options['pending'])) {
 			$this->getController()->addOutput("Starting to charge unpaid payments...");
-			$this->aids = Billrun_Util::verify_array($options['aids'], 'int');
+			$this->aids = isset($options['aids']) ? Billrun_Util::verify_array($options['aids'], 'int') : array();
 			if (!$this->lock()) {
 				Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 				return;

@@ -137,7 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -369,6 +368,10 @@ lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");

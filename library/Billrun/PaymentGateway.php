@@ -580,51 +580,6 @@ abstract class Billrun_PaymentGateway {
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['receiver'];
 	}
-	
-	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		if (!empty($aids)) {
-			$match = array(
-				'$match' => array(
-					'aid' => array('$in' => $aids),
-				),
-			);
-			if (!empty($specificInvoices)) {
-				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
-			}
-		}
-		$match['$match']['$or'] = array(
-				array('due_date' => array('$exists' => false)),
-				array('due_date' => array('$lt' => new MongoDate())),
-		);
-		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'due_date' => -1,
-			),
-		);
-		$pipelines[] = array(
-			'$addFields' => array(
-				'method' => array('$ifNull' => array('$method', '$payment_method')),
-			),	
-		);
-		
-		$pipelines[] = array(
-			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
-		);
-		$pipelines[] = array(
-			'$match' => array(
-				'$or' => array(
-					array('due' => array('$gt' => Billrun_Bill::precision)),
-					array('due' => array('$lt' => -Billrun_Bill::precision)),
-				),
-				'suspend_debit' => NULL,
-			),
-		);
-		$res = $billsColl->aggregate($pipelines);
-		return $res;
-	}
 
 	protected function rearrangeParametres($params){
 		foreach ($params as $value) {
@@ -760,59 +715,6 @@ abstract class Billrun_PaymentGateway {
 	
 	protected function credit($gatewayDetails) {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
-	}
-	
-	protected static function getGroupByMode($mode = false) {
-		$group = array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			);	
-		if ($mode == 'byInvoiceId') {
-			$group['_id'] = '$invoice_id';
-			$group['left_to_pay'] = array('$first' => '$left_to_pay');
-			$group['left'] = array('$first' => '$left');
-			$group['invoice_id'] = array('$first' => '$invoice_id');
-		}	
-			
-		return $group;
 	}
 	
 	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
