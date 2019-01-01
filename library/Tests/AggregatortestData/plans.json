@@ -186,6 +186,51 @@
 					"prorated": true,
 					"to": "time*2167-06-25T13:29:55Z",
 					"creation_time": "time*2018-06-26T00:00:00Z"
+				},
+				{
+					"OBJID": "5c2b34e905e68c5dd90152d2",
+					"from": "time*2018-01-02T00:00:00Z",
+					"name": "A",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"prorated": true,
+					"to": "time*2168-01-01T09:37:45Z",
+					"creation_time": "time*2018-01-02T00:00:00Z"
+				},
+				{
+					"OBJID": "5c2b373c05e68c5dd90152d4",
+					"from": "time*2018-01-02T00:00:00Z",
+					"name": "B",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "b",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"prorated": true,
+					"to": "time*2168-01-01T09:47:40Z",
+					"creation_time": "time*2018-01-02T00:00:00Z"
 				}
+
 			]
 }
