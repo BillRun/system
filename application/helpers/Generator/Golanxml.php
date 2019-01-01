@@ -638,13 +638,15 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_CHARGE_EXEMPT_VAT', $subscriber_charge_summary_vat_free);		
 			$invoiceChargeExemptVat += $subscriber_charge_summary_vat_free;
 			$this->writer->endElement(); // end SUBSCRIBER_CHARGE_SUMMARY
-
+			
+			$alreadyUsedUniqueIds = array();
 			foreach ($plans as $planToCharge) {
 				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
-				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']]);				
+				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']], $alreadyUsedUniqueIds);
 				array_push($planUniqueIds, $currentUniqueId);
 				foreach ($planUniqueIds as $planUniqueId) {
 					$planUniqueId = strval($planUniqueId);
+					$alreadyUsedUniqueIds[$planUniqueId] = $planToCharge['plan'];
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
@@ -1965,13 +1967,13 @@ EOI;
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 	
-	protected function getAllSubUniquePlanIds($plans, $breakdown) {
+	protected function getAllSubUniquePlanIds($plans, $breakdown, $alreadyUsedUniqueIds) {
 		$uniquePlanIds = array();
 		foreach ($plans as $plan) {
 			$uniquePlanId = $plan['id'] . strtotime($plan['start_date']); 
 			$uniquePlanIds[$uniquePlanId] = $plan;
 		}
-		$lateUniqueIds = array_diff_key($breakdown, $uniquePlanIds);
+		$lateUniqueIds = array_diff_key($breakdown, $uniquePlanIds, $alreadyUsedUniqueIds);
 		return array_keys($lateUniqueIds);
 	}
 }
