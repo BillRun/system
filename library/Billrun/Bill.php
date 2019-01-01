@@ -534,7 +534,7 @@ abstract class Billrun_Bill {
 			'due_date' => array(
 				'$lt' => new MongoDate(),
 			),
-			'paid' => array('$in' => array(false, '0', 0, 'false')),
+			'paid' => array('$in' => array(false, '0', 0)),
 		);
 		
 		if (!empty($aids)) {
