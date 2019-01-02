@@ -405,7 +405,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
 					foreach ($serviceBalances as $serviceBalance) {
-						if (in_array($serviceBalance['billrun_month'], $printedServicesBillrun) || $serviceBalance['sid'] != $sid) {
+						if (in_array($serviceBalance['billrun_month'], $printedServicesBillrun) || $serviceBalance['sid'] != $sid || !isset($planInCycle['include']['groups'][$serviceBalance['service_name']])) {
 							continue;
 						}
 						$printedServicesBillrun[] = $serviceBalance['billrun_month'];
@@ -526,7 +526,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT);
-			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT = floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0);
+			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT = floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0) + floatval(isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0);;
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE = floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE);
