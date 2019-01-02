@@ -650,6 +650,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
+					$this->writer->writeAttribute('offerId', substr($planUniqueId, 0, -10));
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 					$this->writer->writeElement('UNITS', 1);
