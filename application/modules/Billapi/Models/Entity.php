@@ -55,6 +55,12 @@ class Models_Entity {
 	protected $update = array();
 
 	/**
+	 * Additional data to save
+	 * @var array
+	 */
+	protected $additional = array();
+
+	/**
 	 * The update options
 	 * @var array
 	 */
@@ -1235,4 +1241,10 @@ class Models_Entity {
 		}
 	}
 
+	protected function validateAdditionalData($additional) {
+		if (!is_array($additional)) {
+			return [];
+		}
+		return $additional;
+	}
 }
