@@ -87,7 +87,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 		
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
 		$cover = [ 'start' => new MongoDate($this->billrunStartDate), 'end' => new MongoDate($this->billrunDate-1) ];
-		if($eligible) {
+		if($eligible && !empty($this->discountData['prorated'])) {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
 			foreach($matchedDocs as $matchedDoc ) {
@@ -104,7 +104,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			}
         }
         $startDate = $cover['start'];
-        $multiplier = Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec));
+        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 
