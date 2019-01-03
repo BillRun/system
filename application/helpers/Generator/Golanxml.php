@@ -505,7 +505,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
-							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6442450944 : $group['data']); // Hard coded 6GB for vf data abroad
+							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
 						}
 						if (isset($group['mms'])) {
 							$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);
@@ -648,9 +648,9 @@ class Generator_Golanxml extends Billrun_Generator {
 					$planUniqueId = strval($planUniqueId);
 					$alreadyUsedUniqueIds[$planUniqueId] = $planToCharge['plan'];
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
+					$this->writer->writeAttribute('offerId', substr($planUniqueId, 0, -10));
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
-					$this->writer->writeAttribute('offerId', substr($planUniqueId, 0, -10));
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 					$this->writer->writeElement('UNITS', 1);
