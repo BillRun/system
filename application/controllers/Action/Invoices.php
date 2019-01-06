@@ -85,7 +85,7 @@ class AccountInvoicesAction extends ApiAction {
 		if ($invoice->isEmpty()) {
 			return 'Invoice was not found';
 		}
-		if (!is_null($confirmedOnly && $confirmedOnly == '1')) {
+		if (!is_null($confirmedOnly) && $confirmedOnly == '1') {
 			if (empty($invoice->get('billed')) || $invoice->get('billed') !== 1) {
 				return 'Invoice not found';
 			}
