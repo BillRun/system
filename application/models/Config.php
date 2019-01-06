@@ -466,7 +466,7 @@ class ConfigModel {
 			'$in' => $plays,
 		);
 		
-		$checkInEntities = ['subscribers', 'rates', 'services', 'plans'];
+		$checkInEntities = ['plans', 'services', 'rates', 'subscribers'];
 		foreach ($checkInEntities as $entity) {
 			$inUseInEntity = !Billrun_Factory::db()->{$entity . 'Collection'}()->query($query)->cursor()->current()->isEmpty();
 			if ($inUseInEntity) {
