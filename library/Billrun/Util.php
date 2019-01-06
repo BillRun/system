@@ -1612,7 +1612,7 @@ class Billrun_Util {
 							continue;
 						break;
 				}
-				if (!is_null($val) || !empty($trans['nullable'])) {
+				if (!is_null($val) || empty($trans['ignore_null'])) {
 					$retData[$key] = $val;
 				}
 			}
