@@ -109,7 +109,7 @@ class Billrun_Utils_Usage {
 	
 	public static function conditionsMet($fieldConf, $rowData) {
 		$conditionsMet = true;
-		if (!empty($conditions = $fieldConf['conditions'])) {
+		if (!empty($conditions = @$fieldConf['conditions'])) {
 			foreach($conditions as $condition) {
 				$conditionsMet &= Billrun_Util::isConditionMet($rowData, $condition);
 			}

@@ -209,6 +209,12 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+			if (isset($pricingData['out_group'])) {
+				$update['$inc']['balance.totals.' . $row['usaget'] . '.out_group' . '.usagev'] = $pricingData['out_group'];
+			}
+			if (isset($pricingData['over_group'])) {
+				$update['$inc']['balance.totals.' . $row['usaget'] . '.over_group' . '.usagev'] = $pricingData['over_group'];
+			}
 		}
 		// update balance group (if exists); supported only on postpaid
 		$this->buildBalanceGroupsUpdateQuery($update, $pricingData);

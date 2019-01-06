@@ -171,6 +171,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
 			return false;
 		}
+		
+		if (($balanceValue + $this->chargingValue) > 0) {
+			return false;
+		}
+		
 		return true;
 	}
 	/**
@@ -344,6 +349,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		);
 		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
+		}
+		if (!empty($this->additional)) {
+			$row['additional'] = $this->additional;
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);

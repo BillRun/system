@@ -55,6 +55,12 @@ class Models_Entity {
 	protected $update = array();
 
 	/**
+	 * Additional data to save
+	 * @var array
+	 */
+	protected $additional = array();
+
+	/**
 	 * The update options
 	 * @var array
 	 */
@@ -162,7 +168,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
 		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
 		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
@@ -193,17 +199,19 @@ class Models_Entity {
 	 */
 	protected function addCustomFields($fields, $originalUpdate) {
 //		$ad = $this->getCustomFields();
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($this->update);
 		$additionalFields = array_column($customFields, 'field_name');
 		$mandatoryFields = array();
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
+		$fieldTypes = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
 			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
+			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -218,8 +226,8 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
-			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
-				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
 			}
 			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
@@ -230,9 +238,11 @@ class Models_Entity {
 //		print_R($this->update);die;
 	}
 
-	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
-		if (is_array($val)) {
+		if ($fieldType == 'ranges') {
+			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
+		} else if (is_array($val)) {
 			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
@@ -276,7 +286,7 @@ class Models_Entity {
 		return $query;
 	}
 
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()), function($customField) {
 			return !Billrun_Util::getFieldVal($customField['system'], false);
 		});
@@ -1231,4 +1241,10 @@ class Models_Entity {
 		}
 	}
 
+	protected function validateAdditionalData($additional) {
+		if (!is_array($additional)) {
+			return [];
+		}
+		return $additional;
+	}
 }
