@@ -189,10 +189,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * @return array list of lines exported
 	 */
 	function export() {
+		Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
 		$this->beforeExport();
 		$this->prepareDataToExport();
 		$exportedData = $this->handleExport();
 		$this->afterExport();
+		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$exportedData, $this));
 		return $exportedData;
 	}
 	
@@ -220,9 +222,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getRecordData($row) {
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
 		$recordType = $this->getRecordType($row);
 		$fieldsMapping = Billrun_Util::getIn($this->config, array('fields_mapping', $recordType));
-		return $this->mapFields($fieldsMapping, $row);
+		$ret = $this->mapFields($fieldsMapping, $row);
+		Billrun_Factory::dispatcher()->trigger('ExportAfterGetRecordData', array(&$row, &$ret, $this));
+		return $ret;
 	}
 	
 	/**
@@ -256,6 +261,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		}
 		$headerMapping = Billrun_Util::getIn($this->config, 'header_mapping');
 		$this->headerToExport = $this->mapFields($headerMapping);
+		Billrun_Factory::dispatcher()->trigger('ExportAfterGetHeader', array(&$this->headerToExport, $this));
 	}
 	
 	/**
@@ -269,6 +275,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		}
 		$footerMapping = Billrun_Util::getIn($this->config, 'footer_mapping');
 		$this->footerToExport = $this->mapFields($footerMapping);
+		Billrun_Factory::dispatcher()->trigger('ExportAfterGetFooter', array(&$this->headerToExport, $this));
 	}
 	
 	/**
@@ -337,12 +344,14 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 */
 	protected function loadRows() {
 		$collection = $this->getCollection();
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
 		$rows = $collection->query($this->query)->cursor();
 		foreach ($rows as $row) {
 			$rawRow = $row->getRawData();
 			$this->rawRows[] = $rawRow;
 			$this->rowsToExport[] = $this->getRecordData($rawRow);
 		}
+		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->query, $collection, $this));
 	}
 	
 	/**
@@ -441,6 +450,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	public function mapFields($fieldsMapping, $row = array()) {
 		$data = array();
 		foreach ($fieldsMapping as $fieldMapping) {
+			Billrun_Factory::dispatcher()->trigger('ExportBeforeMapField', array(&$row, &$fieldMapping, $this));
 			$val = '';
 			$fieldName = $fieldMapping['field_name'];
 			$mapping = $fieldMapping['mapping'];
@@ -468,6 +478,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			} else {
 				Billrun_Log::getInstance()->log('Bulk exporter: invalid mapping: ' . print_R($fieldMapping, 1), Zend_log::WARN);
 			}
+			Billrun_Factory::dispatcher()->trigger('ExportAfterMapField', array(&$row, &$fieldMapping, &$val, $this));
 			
 			if (!is_null($val)) {
 				$val = self::formatMappingValue($val, $mapping);
@@ -479,6 +490,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	}
 	
 	protected function formatMappingValue($value, $mapping) {
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeFormatValue', array(&$value, $mapping, $this));
 		if (isset($mapping['padding'])) {
 			$padding = Billrun_Util::getIn($mapping, 'padding.character', ' ');
 			$length = Billrun_Util::getIn($mapping, 'padding.length', strlen($value));
