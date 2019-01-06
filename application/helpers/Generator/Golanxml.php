@@ -435,8 +435,8 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('SMS_CAPACITY', $usageInGroup['sms']);
 						}
 						if (isset($usageInGroup['data'])) {
-							$this->writer->writeElement('DATA_USAGE', $balanceUsages['data']['usagev']);
-							$this->writer->writeElement('DATA_CAPACITY',  $usageInGroup['data']);
+							$this->writer->writeElement('DATA_USAGE', $this->bytesToKB($balanceUsages['data']['usagev']));
+							$this->writer->writeElement('DATA_CAPACITY', $this->bytesToKB($usageInGroup['data']));
 						}
 						if (isset($usageInGroup['mms'])) {
 							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
