@@ -425,8 +425,6 @@ if (!vatLabel) {
 }
 
 // BRCD-1682 - Add new custom 'play' field to Proucts/Services/Plans
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var entities = ['plans', 'rates', 'services'];
 for (var i in entities) {
 	var entity = entities[i];
