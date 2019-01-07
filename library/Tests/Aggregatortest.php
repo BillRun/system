@@ -15,7 +15,9 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Aggregator extends UnitTestCase {
-    use Tests_SetUp;
+
+	use Tests_SetUp;
+
 	protected $ratesCol;
 	protected $plansCol;
 	protected $linesCol;
@@ -158,7 +160,7 @@ class Tests_Aggregator extends UnitTestCase {
 		 * part 1
 		 *  */
 		array(
-			'test' => array('test_number' => 21, "aid" => 50, 'sid' => 51, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun'), 'options' => array("stamp" => "201806", "force_accounts" => array(50)),'fake_aid' => 54, 'fake_stamp' => '201806'),
+			'test' => array('test_number' => 21, "aid" => 50, 'sid' => 51, 'function' => array('basicCompare', 'lineExists', 'linesVSbillrun'), 'options' => array("stamp" => "201806", "force_accounts" => array(50)), 'fake_aid' => 54, 'fake_stamp' => '201806'),
 			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201806', 'aid' => 50),
 				'line' => array('types' => array('flat',))),
 			'postRun' => array('confirm', 'billrunExists', 'saveId'),
@@ -253,7 +255,7 @@ class Tests_Aggregator extends UnitTestCase {
 		//attributes
 		/* Take last account_name for billrun */
 		array(
-			'test' => array('test_number' => 33, "aid" => 66, 'sid' => 67, 'function' => array( 'takeLastRevision'), 'options' => array("stamp" => "201810", "force_accounts" => array(66))),
+			'test' => array('test_number' => 33, "aid" => 66, 'sid' => 67, 'function' => array('takeLastRevision'), 'options' => array("stamp" => "201810", "force_accounts" => array(66))),
 			'expected' => array('billrun' => array('firstname' => 'yossiB'),)
 		),
 		/* 	vat 0 
@@ -269,16 +271,22 @@ class Tests_Aggregator extends UnitTestCase {
 		array(
 			'test' => array('test_number' => 34, "aid" => 70, 'sid' => 71, 'function' => array('totalsPrice'), 'options' => array("stamp" => "201901", "force_accounts" => array(70))),
 			'expected' => array('billrun' => array('billrun_key' => '201901', 'aid' => 70, 'after_vat' => array("71" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),)
-	),
+		),
+		//BRCD-1725
+		array('test' => array('test_number' => 35, "aid" => 73, 'sid' => 74, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201901", "force_accounts" => array(73))),
+			'expected' => array('billrun' => array('invoice_id' => 131, 'billrun_key' => '201901', 'aid' => 73, 'after_vat' => array("74" => 117))),
+			'line' => array('types' => array('flat')),
+			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
+			),
 		array(
 			'preRun' => ('expected_invoice'),
-			'test' => array('test_number' => 35,),
+			'test' => array('test_number' => 36,),
 			'expected' => array(),
 		),
 //		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 36, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 37, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 		)
 	);
@@ -313,7 +321,6 @@ class Tests_Aggregator extends UnitTestCase {
 		$aggregator->aggregate();
 	}
 
-	 
 	/**
 	 * 
 	 * @param $query
@@ -322,7 +329,7 @@ class Tests_Aggregator extends UnitTestCase {
 	public function getBillruns($query = null) {
 		return $this->billrunCol->query($query)->cursor();
 	}
-	
+
 	/**
 	 * the function is runing all the test cases  
 	 * print the test result
@@ -331,7 +338,7 @@ class Tests_Aggregator extends UnitTestCase {
 	public function TestPerform() {
 
 		foreach ($this->tests as $key => $row) {
-			
+
 			$aid = $row['test']['aid'];
 			$this->message .= 'test number : ' . $row['test']['test_number'];
 			// run fenctions before the test begin 
@@ -375,7 +382,7 @@ class Tests_Aggregator extends UnitTestCase {
 		print_r($this->message);
 		$this->restoreColletions();
 	}
-	
+
 	/**
 	 * run aggregation on current test case and return its billrun object/s
 	 * @param array $row current test case 
@@ -406,6 +413,7 @@ class Tests_Aggregator extends UnitTestCase {
 		$retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
 		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
 		$this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
+		$this->message .= isset($row['jiraLink']) ? '</br><a href='."'".$row['jiraLink']."'>issus in jira</a>" : '';
 		$this->message .= '</br><b> Result: </b> <br>';
 		if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
 			$this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
@@ -428,8 +436,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	  
-	
 	/**
 	 * check if all subscribers was calculeted
 	 * @param int $key number of the test case
@@ -448,7 +454,6 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 	}
 
-	 
 	/**
 	 *  check the price before and after vat
 	 * 
@@ -481,6 +486,7 @@ class Tests_Aggregator extends UnitTestCase {
 	}
 
 	/* return the percent of the vat */
+
 	/**
 	 * 
 	 * @param $beforVat
@@ -498,6 +504,7 @@ class Tests_Aggregator extends UnitTestCase {
 	}
 
 	/* save Latest 3 Results  */
+
 	/**
 	 * 
 	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation is the billrun object of current test after aggregation
@@ -515,7 +522,7 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		$this->LatestResults[0] = $lest;
 	}
-	
+
 	/**
 	 * 
 	 * @param array $row current test case current test case
@@ -532,7 +539,6 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $allLines;
 	}
-
 
 	/**
 	 * check if all the lines was created 
@@ -570,7 +576,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-
 	/**
 	 * 
 	 * @param int $key number of the test case
@@ -589,7 +594,8 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
-    /**
+
+	/**
 	 * change and reload Config 
 	 * @param int $key number of the test case
 	 * @param array $row current test case
@@ -598,9 +604,10 @@ class Tests_Aggregator extends UnitTestCase {
 		$key = $row['test']['overrideConfig']['key'];
 		$value = $row['test']['overrideConfig']['value'];
 		$data = $this->loadConfig();
-		$this->changeConfigKey($data,$key, $value);
+		$this->changeConfigKey($data, $key, $value);
 		$this->loadDbConfig();
 	}
+
 	/**
 	 * check if created duplicate billruns
 	 * @param int $key number of the test case
@@ -622,7 +629,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	 
 	/**
 	 * confirm specific invoice
 	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation
@@ -637,8 +643,7 @@ class Tests_Aggregator extends UnitTestCase {
 		$generator->generate();
 	}
 
-	 
-    /**
+	/**
 	 * check after_vat per sid 
 	 * @param int $key number of the test case
 	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
@@ -661,7 +666,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	  
 	/**
 	 * General check for all tests - sum of account lines equals billrun object total
 	 *  (aprice = before_vat, final_charge - after_vat)
@@ -704,7 +708,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	 
 	/**
 	 * 'totals.after_vat_rounded' is rounding of 'totals.after_vat
 	 * @param int $key number of the test case
@@ -731,10 +734,9 @@ class Tests_Aggregator extends UnitTestCase {
 	 */
 	public function removeBillrun($key, $row) {
 		$stamp = $row['test']['options']['stamp'];
-		$account[]= $row['test']['aid'];
-		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp,$account);
+		$account[] = $row['test']['aid'];
+		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
 	}
-
 
 	/**
 	 * check that billrun not run full cycle by checking if aid 54 is run
@@ -752,6 +754,7 @@ class Tests_Aggregator extends UnitTestCase {
 			$this->message .= '<b style="color:red;">aggregate run full cycle</b>' . $this->fail;
 		}
 	}
+
 	/**
 	 * run full cycle number of the test case
 	 * @param int $key
@@ -773,7 +776,7 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
-	
+
 	/**
 	 * check the pagination
 	 * @param int $key number of the test case
@@ -813,11 +816,11 @@ class Tests_Aggregator extends UnitTestCase {
 	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
 	 * @param array $row current test case
 	 * @return boolean true if the test is pass and false if the tast is fail
-	 */ 
+	 */
 	public function invoice_exist($key, $returnBillrun, $row) {
 		$this->message .= "<b> invoice exist :</b> <br>";
 		$passed = true;
-		$path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+		$path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export', 'files/invoices/'));
 		$path .= $row['test']['options']['stamp'] . '/pdf/' . $row['test']['invoice_path'];
 		if (!file_exists($path)) {
 			$passed = false;
@@ -839,7 +842,7 @@ class Tests_Aggregator extends UnitTestCase {
 		$passed = true;
 		$billrun = new Billrun_Account_Db;
 		$this->message .= "<b> passthrough_fields :</b> <br>";
-		$account= $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
+		$account = $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
 		$address = $account['address'];
 		if ($returnBillrun['attributes']['address'] === $address) {
 			$this->message .= "passthrough work well" . $this->pass;
@@ -860,6 +863,7 @@ class Tests_Aggregator extends UnitTestCase {
 			$this->ids[$returnBillrun['aid']] = $returnBillrun['invoice_id'];
 		}
 	}
+
 	/**
 	 * chack if reaggregation is overrides_invoice_id
 	 * @param int $key number of the test case
@@ -898,7 +902,7 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
-	
+
 	/**
 	 * check if exepted invoice are created billrun object
 	 * @param int $key number of the test case
@@ -927,7 +931,6 @@ class Tests_Aggregator extends UnitTestCase {
 		return $passed;
 	}
 
-	
 	/**
 	 * When an account has multiple revisions in a specific billing cycle,
 	 *  take the last one when generating the billrun object
@@ -940,16 +943,16 @@ class Tests_Aggregator extends UnitTestCase {
 	public function takeLastRevision($key, $returnBillrun, $row) {
 		$this->message .= "<b> Take last account_name for billrun with many revisions  at a cycle:</b> <br>";
 		$passed = true;
-		$query  = array('aid' => 66, "billrun_key" => '201810');
+		$query = array('aid' => 66, "billrun_key" => '201810');
 		$lastRvision = $this->getBillruns($query);
 		foreach ($lastRvision as $last) {
 			$lastR[] = $last->getRawData();
 		}
-		if($lastR[0]['attributes']['firstname'] === $row['expected']['billrun']['firstname']){
-			$this->message .= "The latest revision of the subscriber was taken" . $this->pass; 
-		}else{
+		if ($lastR[0]['attributes']['firstname'] === $row['expected']['billrun']['firstname']) {
+			$this->message .= "The latest revision of the subscriber was taken" . $this->pass;
+		} else {
 			$passed = false;
-				$this->message .= "The version taken is not the last" . $this->fail; 
+			$this->message .= "The version taken is not the last" . $this->fail;
 		}
 		return $passed;
 	}

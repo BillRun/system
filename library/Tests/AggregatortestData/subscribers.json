@@ -1398,6 +1398,116 @@
 					"activation_date": "time*2018-01-01T00:00:00+02:00",
 					"plan_deactivation": "time*2168-01-01T09:51:30Z",
 					"deactivation_date": "time*2168-01-01T09:51:30Z"
+				}, {
+					"OBJID" :"5c322de005e68c295b04a54b",
+					"from": "time*2018-04-11T21:00:00Z",
+					"aid": 73,
+					"firstname": "d",
+					"lastname": "d",
+					"email": "d",
+					"country": "d",
+					"address": "d",
+					"zip_code": "d",
+					"salutation": "d",
+					"phone_number": "d",
+					"city": "d",
+					"street": "d",
+					"house_number": "d",
+					"floor": "d",
+					"entrance": "d",
+					"apartment": "d",
+					"account_name": "",
+					"invoice_shipping_method": "email",
+					"type": "account",
+					"to": "time*2168-01-06T16:33:36Z",
+					"creation_time": "time*2019-01-05T22:00:00Z"
+				},
+				{
+					"OBJID" :"5c322e1905e68c295b04a54e",
+					"from": "time*2018-04-11T21:00:00Z",
+					"aid": 73,
+					"sid": 74,
+					"plan": "PLAN_B",
+					"firstname": "d",
+					"lastname": "d",
+					"address": "d",
+					"country": "d",
+					"phone_number": "d",
+					"ndcsn": "d",
+					"imsi": [
+						"d"
+					],
+					"type": "subscriber",
+					"plan_activation": "time*2018-04-11T21:00:00Z",
+					"to": "time*2018-07-09T21:00:00Z",
+					"creation_time": "time*2018-04-11T21:00:00Z",
+					"activation_date": "time*2018-04-11T21:00:00Z",
+					"plan_deactivation": "time*2018-07-30T21:00:00Z",
+					"deactivation_date": "time*2168-01-06T16:37:58Z"
+				},
+				{
+					"OBJID" :"5c322e9905e68c12d25111b1",
+					"from": "time*2018-07-09T21:00:00Z",
+					"aid": 73,
+					"sid": 74,
+					"plan": "PLAN_B",
+					"firstname": "d",
+					"lastname": "d",
+					"address": "d",
+					"country": "d",
+					"phone_number": "d",
+					"ndcsn": "d",
+					"imsi": [
+						"d"
+					],
+					"type": "subscriber",
+					"plan_activation": "time*2018-04-11T21:00:00Z",
+					"to": "time*2018-07-30T21:00:00Z",
+					"creation_time": "time*2018-04-11T21:00:00Z",
+					"activation_date": "time*2018-04-11T21:00:00Z",
+					"plan_deactivation": "time*2018-07-30T21:00:00Z",
+					"deactivation_date": "time*2168-01-06T16:37:58Z",
+					"services": [
+						{
+							"name": "WEEK",
+							"from": "time*2018-07-09T21:00:00Z",
+							"to": "time*2018-07-16T21:00:00Z",
+							"service_id": "1621929599063426",
+							"creation_time": "time*2019-01-06T16:36:41.677Z"
+						}
+					]
+				},
+				{
+					"OBJID" :"5c322ee605e68c12d25111b3",
+					"from": "time*2018-11-30T22:00:00Z",
+					"aid": 73,
+					"sid": 74,
+					"plan": "PLAN_B",
+					"firstname": "d",
+					"lastname": "d",
+					"address": "d",
+					"country": "d",
+					"phone_number": "d",
+					"ndcsn": "d",
+					"imsi": [
+						"d"
+					],
+					"type": "subscriber",
+					"plan_activation": "time*2018-11-30T22:00:00Z",
+					"to": "time*2019-01-31T22:00:00Z",
+					"creation_time": "time*2018-04-11T21:00:00Z",
+					"activation_date": "time*2018-04-11T21:00:00Z",
+					"plan_deactivation": "time*2019-01-31T22:00:00Z",
+					"services": [
+						{
+							"name": "WEEK",
+							"from": "time*2018-07-09T21:00:00Z",
+							"to": "time*2018-07-16T21:00:00Z",
+							"service_id": "1621929599063426",
+							"creation_time": "time*2019-01-06T16:36:41.677Z"
+						}
+					],
+					"deactivation_date": "time*2168-01-06T16:37:58Z"
 				}
 
 			]
