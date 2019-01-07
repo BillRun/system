@@ -456,7 +456,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach($services as $service) {
 				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
 				$service['end'] =  min($subend, $service['end']);
-				$service['start'] =  max($substart, $service['start']);
+				$service['start'] =  max($subscriber['activation_date'], $service['start']);
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
 
