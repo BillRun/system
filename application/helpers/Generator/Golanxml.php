@@ -648,7 +648,15 @@ class Generator_Golanxml extends Billrun_Generator {
 					$planUniqueId = strval($planUniqueId);
 					$alreadyUsedUniqueIds[$planUniqueId] = $planToCharge['plan'];
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
-					$this->writer->writeAttribute('offerId', substr($planUniqueId, 0, -10));
+					$offerId = substr($planUniqueId, 0, -10);
+					$this->writer->writeElement('OFFER_ID', $offerId);
+					$offerStartDate = substr($planUniqueId, -10);
+					if ($offerStartDate < Billrun_Util::getStartTime($billrun_key)) {
+						$offerUniqueId = $sid . '_' . $offerId . '_0';
+					} else {
+						$offerUniqueId = $sid . '_' . $offerId . '_' . $offerStartDate;
+					}
+					$this->writer->writeElement('OFFER_UNIQUE_ID', $offerUniqueId);
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 					$this->writer->startElement('BREAKDOWN_ENTRY');
