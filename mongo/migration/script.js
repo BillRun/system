@@ -425,3 +425,17 @@ if (!vatLabel) {
 }
 
 db.config.insert(lastConfig);
+
+// BRCD-1717
+db.subscribers.getIndexes().forEach(function(index){
+	var indexFields = Object.keys(index.key);
+	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
+	}
+	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+	}
+})
+sh.shardCollection("billing.subscribers", { "aid" : 1 } );
