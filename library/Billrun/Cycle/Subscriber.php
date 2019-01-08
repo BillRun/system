@@ -434,14 +434,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$subscriberPlans = array();
 		$services = array();
-		$substart = PHP_INT_MAX;
 		$subend = 0;
 		foreach ($current as $subscriber) {
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
-			//Find the earliest instance of the subscriber
-			foreach(Billrun_Util::getFieldVal($subscriber['plans'],array()) as  $subPlan) {
-				$substart = min($subPlan['plan_activation']->sec, $substart);
-			}
 			$subend = max($subscriber['sto'], $subend);
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
@@ -454,7 +449,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach($services as $service) {
 				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
 				$service['end'] =  min($subend, $service['end']);
-				$service['start'] =  max($substart, $service['start']);
+				$service['start'] =  max($subscriber['activation_date'], $service['start']);
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
 
