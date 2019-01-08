@@ -277,16 +277,28 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('invoice_id' => 131, 'billrun_key' => '201901', 'aid' => 73, 'after_vat' => array("74" => 117))),
 			'line' => array('types' => array('flat')),
 			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
-			),
+		),
+		/* (not included in plan) service limited to X cycles - verify no charge / line since the X+1 cycle */
+		array('test' => array('test_number' => 36, "aid" => 75, 'sid' => 76, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(75))),
+			'expected' => array('billrun' => array('invoice_id' => 132, 'billrun_key' => '201807', 'aid' => 75, 'after_vat' => array("76" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
+				'line' => array('types' => array('flat', 'service'))),
+			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
+		),
+		array('test' => array('test_number' => 37, "aid" => 75, 'sid' => 76, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(75))),
+			'expected' => array('billrun' => array('invoice_id' => 133, 'billrun_key' => '201808', 'aid' => 75, 'after_vat' => array("76" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+				'line' => array('types' => array('flat',))),
+			'postRun' => array('saveId'),
+			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
+		),
 		array(
 			'preRun' => ('expected_invoice'),
-			'test' => array('test_number' => 36,),
+			'test' => array('test_number' => 38,),
 			'expected' => array(),
 		),
 //		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 37, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 39, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 		)
 	);
@@ -412,8 +424,8 @@ class Tests_Aggregator extends UnitTestCase {
 		$retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
 		$retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
 		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
+		$this->message .= isset($row['jiraLink']) ? '</br><a target="_blank" href=' . "'" . $row['jiraLink'] . "'>issus in jira</a>" : '';
 		$this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
-		$this->message .= isset($row['jiraLink']) ? '</br><a href='."'".$row['jiraLink']."'>issus in jira</a>" : '';
 		$this->message .= '</br><b> Result: </b> <br>';
 		if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
 			$this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
