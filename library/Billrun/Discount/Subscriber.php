@@ -56,6 +56,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 							//Multiply the discount amount  by some intrval  over the quantity of the service.
 							$quantityMultiplier = 0;
 							foreach($operation['params'] as $param) {
+								if(empty($param['value'])) { continue; }
 								$quantityMultiplier += floor($totals[$param['name']][($this->isApplyToAnySubject() ? 'total' : $subjectKey)] / $param['value']);
 							}
 							$pricingData[] = ['name' => 'recurring_by_quantity', 'multiplier' => $quantityMultiplier , 'base_price' => $retPrice ];
