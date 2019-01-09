@@ -351,7 +351,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			$this->rawRows[] = $rawRow;
 			$this->rowsToExport[] = $this->getRecordData($rawRow);
 		}
-		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->query, $collection, $this));
+		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
 	}
 	
 	/**
@@ -491,17 +491,20 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	
 	protected function formatMappingValue($value, $mapping) {
 		Billrun_Factory::dispatcher()->trigger('ExportBeforeFormatValue', array(&$value, $mapping, $this));
+		if (isset($mapping['format']['regex'])) {
+			$value = preg_replace($mapping['format']['regex'], '', $value);
+		}
+		if (isset($mapping['format']['date'])) {
+			$value = $this->formatDate($value, $mapping);
+		}
+		if (isset($mapping['format']['number'])) {
+			$value = $this->formatNumber($value, $mapping);
+		}
 		if (isset($mapping['padding'])) {
 			$padding = Billrun_Util::getIn($mapping, 'padding.character', ' ');
 			$length = Billrun_Util::getIn($mapping, 'padding.length', strlen($value));
 			$padDirection = strtolower(Billrun_Util::getIn($mapping, 'padding.direction', 'left')) == 'right' ? STR_PAD_RIGHT : STR_PAD_LEFT;
-			return str_pad($value, $length, $padding, $padDirection);
-		}
-		if (isset($mapping['format']['regex'])) {
-			return preg_replace($mapping['format']['regex'], '', $value);
-		}
-		if (isset($mapping['format']['date'])) {
-			return $this->formatDate($value, $mapping);
+			$value = str_pad($value, $length, $padding, $padDirection);
 		}
 		return $value;
 	}
@@ -514,6 +517,14 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		}
 		$dateFormat = Billrun_Util::getIn($mapping, 'format.date', 'YmdHis');
 		return date($dateFormat, $date);
+	}
+	
+	protected function formatNumber($number, $mapping) {
+		$multiply = Billrun_Util::getIn($mapping, 'format.number.multiply', 1);
+		$decimals = Billrun_Util::getIn($mapping, 'format.number.decimals', 0);
+		$dec_point = Billrun_Util::getIn($mapping, 'format.number.dec_point', '.');
+		$thousands_sep = Billrun_Util::getIn($mapping, 'format.number.thousands_sep', ',');
+		return number_format(($number * $multiply), $decimals, $dec_point, $thousands_sep);
 	}
 	
 	
@@ -558,13 +569,26 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	
 	protected function getNumberOfRecords($row = array(), $mapping = array()) {
 		$numberOfRecords = count($this->rowsToExport);
-		if ($this->hasHeader()) {
+		$includeHeader = Billrun_Util::getIn($mapping, 'func.include_header', true);
+		$includeFooter = Billrun_Util::getIn($mapping, 'func.include_footer', true);
+		if ($includeHeader && $this->hasHeader()) {
 			$numberOfRecords++;
 		}
-		if ($this->hasFooter()) {
+		if ($includeFooter && $this->hasFooter()) {
 			$numberOfRecords++;
 		}
 		return $this->formatMappingValue($numberOfRecords, $mapping);
+	}
+	
+	protected function sumField($row = array(), $mapping = array()) {
+		$sum = 0;
+		$fieldName = Billrun_Util::getIn($mapping, 'func.field', '');
+		foreach ($this->rowsToExport as $i => $rowToExport) {
+			$value = Billrun_Util::getIn($rowToExport, $fieldName, Billrun_Util::getIn($this->rawRows[$i], $fieldName, 0));
+			$sum += $value;
+		}
+		
+		return $this->formatMappingValue($sum, $mapping);
 	}
 	
 	/** pre-defined functions end **/
