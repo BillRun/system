@@ -289,13 +289,16 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('SUBSCRIBER_GIFT_USAGE');
 				$this->writer->writeElement('GIFTID_GIFTCLASSNAME', "GC_GOLAN");
 				$planCurrentPlan = $plan['current_plan'];
-				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);
+				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);				
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planIncludes = $planObj['include']['groups'][$planObj['name']];
 				$planPrice = $plan['fraction'] * $planObj['price'];
 				$subscriberFlatCosts += $planPrice * (1 + $billrun['vat']);
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
 				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
+				$offerStartDate = substr($uniquePlanId, -10);
+				$offerUniqueId = $sid . '_' .  $plan['id'] . '_' . $offerStartDate;
+				$this->writer->writeElement('OFFER_UNIQUE_ID', $offerUniqueId);	
 				$this->writer->writeElement('GIFTID_START_DATE',  date("Y/m/d H:i:s", strtotime($plan['start_date'])));
 				$this->writer->writeElement('GIFTID_END_DATE', date("Y/m/d H:i:s", strtotime($plan['end_date'])));
 				$this->writer->writeElement('GIFTID_PRICE', $planPrice);
@@ -404,6 +407,9 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE_BY_PLAN');
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					$this->writer->writeElement('OFFER_ID', $planOffer['id']);
+					$offerStartDate = substr($planOffer['unique_plan_id'], -10);
+					$offerUniqueId = $sid . '_' .  $planOffer['id'] . '_' . $offerStartDate;
+					$this->writer->writeElement('OFFER_UNIQUE_ID', $offerUniqueId);	
 					foreach ($serviceBalances as $serviceBalance) {
 						if (in_array($serviceBalance['billrun_month'], $printedServicesBillrun) || $serviceBalance['sid'] != $sid || !isset($planInCycle['include']['groups'][$serviceBalance['service_name']])) {
 							continue;
