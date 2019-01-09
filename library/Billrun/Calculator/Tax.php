@@ -106,9 +106,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 public static function isLinePreTaxed($line) {
 		$userFields = $line['uf'];
 		$usageType = $line['usaget'];
-		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['tax_included'];
+		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
 
-		return !empty($prepricedMapping[$usageType]['aprice_field']);
+		return !empty($prepricedMapping[$usageType]['tax_included']);
 	 }
 	
 	//================================ Protected ===============================	
