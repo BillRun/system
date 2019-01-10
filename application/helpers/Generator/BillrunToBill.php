@@ -20,11 +20,15 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $invoices;
 	protected $billrunColl;
 	protected $logo = null;
+	protected $sendEmail = true;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
 		if (!empty($options['invoices'])) {
 			$this->invoices = Billrun_Util::verify_array($options['invoices'], 'int');
+		}
+		if (isset($options['send_email'])) {
+			$this->sendEmail = $options['send_email'];
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -116,6 +120,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	}
 	
 	/**
+	 * update the billrun once the bill object was created and mark it as not to bill.
+	 * @param type $data
+	 */
+	public function updateBillrunNotForBill($data) {
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>2)));
+	}
+	
+	/**
 	 * 
 	 * @param type $uniqueKeys
 	 * @param type $data
@@ -187,7 +199,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	}
 	
 	
-	protected function handleSendInvoicesByMail($invoices) {
+	public function handleSendInvoicesByMail($invoices) {
+		if (!$this->sendEmail) {
+			return;
+		}
+		
 		$options = array(
 			'email_type' => 'invoiceReady',
 			'billrun_key' => (string) $this->stamp,
