@@ -68,23 +68,21 @@ class OnetimeinvoiceAction extends ApiAction {
 		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $sendEmail]);
 		
-		if (!$billrunToBill->lock()) {
-			Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
-			return;
-		}
-		
 		if ($step >= self::STEP_PDF_AND_BILL) {
+			if (!$billrunToBill->lock()) {
+				Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
+				return;
+			}
 			$billrunToBill->load();
 			$billrunToBill->generate();
+			if (!$billrunToBill->release()) {
+				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+				return;
+			}
 		} else {
 			$invoiceData = $this->invoice->getRawData();
 			$billrunToBill->updateBillrunNotForBill($invoiceData);
 			$billrunToBill->handleSendInvoicesByMail([$invoiceData['invoice_id']]);
-		}
-		
-		if (!$billrunToBill->release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-			return;
 		}
 
 		if ($step >= self::STEP_FULL) {
