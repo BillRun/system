@@ -106,12 +106,12 @@ class Billrun_Cycle_Paging {
 		$modify = array('$setOnInsert' => $modifyQuery);
 		try {
 			$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));
-		} catch(Exception $e) {	
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+		} catch(Exception $e) {
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 				Billrun_Factory::log()->log('Exception: ' . $e->getMessage(), Zend_Log::ALERT);
 				return true;	
 			}
-			throw new Exception($e->getMessage() . ', error code: ' . $e->getCode());
+			throw $e;
 		}
 		return !$checkExists->isEmpty();
 	}
