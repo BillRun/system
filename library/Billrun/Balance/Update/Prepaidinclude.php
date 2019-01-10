@@ -294,6 +294,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 	}
 	
+	/**
+	 * get the balance key in the balance document
+	 * 
+	 * @return string the balance reference; if nested put dot for object hierarchy 
+	 */
 	protected function getChargingField() {
 		switch ($this->data['charging_by']) :
 			case 'cost':
@@ -308,6 +313,12 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		return $key;
 	}
 	
+	/**
+	 * get the balance value for the this charge
+	 * 
+	 * @param array $balance the balance object that the charging running on
+	 * @return double the balance value
+	 */
 	public function getBalanceValue($balance) {
 		switch ($this->data['charging_by']) :
 			case 'cost':
@@ -321,6 +332,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		endswitch;
 	}
 
+	/**
+	 * initialize method
+	 */
 	protected function preload() {
 		$this->before = Billrun_Factory::db()->balancesCollection()->query($this->query)->cursor()->current();
 	}
@@ -347,6 +361,14 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			'balance_after' => $this->getBalanceAfter(),
 			'balance_normalized' => $this->normalizeValue,
 		);
+	
+		$chargingValue = $row['balance_after'] - $row['balance_before'];
+		if ($this->data['charging_by'] == 'usagev') {
+			$row['usagev'] = $chargingValue;
+		} else {
+			$row['aprice'] = $chargingValue;
+		}
+
 		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
