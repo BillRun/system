@@ -166,8 +166,14 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$query = json_decode($querySettings['query'], JSON_OBJECT_AS_ARRAY);
 		if (isset($querySettings['time_range'])) {
 			$timeRange = $querySettings['time_range'];
-			$endTime = $this->exportTime;
-			$startTime = strtotime($timeRange, $endTime);
+			if (isset($querySettings['time_range_hour'])) {
+				$hour = $querySettings['time_range_hour'];
+				$endTime = strtotime($hour, $this->exportTime);
+				$startTime = strtotime($timeRange . ' ' . $hour, $endTime);
+			} else {
+				$endTime = $this->exportTime;
+				$startTime = strtotime($timeRange, $endTime);
+			}
 			$query['urt'] = array(
 				'$gte' => new MongoDate($startTime),
 				'$lt' => new MongoDate($endTime),
