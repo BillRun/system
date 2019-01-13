@@ -278,17 +278,19 @@ class Tests_Aggregator extends UnitTestCase {
 			'line' => array('types' => array('flat')),
 			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
 		),
-		/* (not included in plan) service limited to X cycles - verify no charge / line since the X+1 cycle */
+		/* (not included in plan) service limited to X cycles - verify no charge / line since the X+1 cycle  + check BRCD-1730*/
 		array('test' => array('test_number' => 36, "aid" => 75, 'sid' => 76, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(75))),
 			'expected' => array('billrun' => array('invoice_id' => 132, 'billrun_key' => '201807', 'aid' => 75, 'after_vat' => array("76" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
 				'line' => array('types' => array('flat', 'service'))),
 			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
 		),
-		array('test' => array('test_number' => 37, "aid" => 75, 'sid' => 76, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(75))),
+		array('test' => array('test_number' => 37, "aid" => 75, 'sid' => 76, 'function' => array('planExist','basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(75))),
 			'expected' => array('billrun' => array('invoice_id' => 133, 'billrun_key' => '201808', 'aid' => 75, 'after_vat' => array("76" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat',))),
 			'postRun' => array('saveId'),
-			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
+			'jiraLink' => array('https://billrun.atlassian.net/browse/BRCD-1725',
+				'https://billrun.atlassian.net/browse/BRCD-1730'
+				)
 		),
 		array(
 			'preRun' => ('expected_invoice'),
@@ -424,7 +426,11 @@ class Tests_Aggregator extends UnitTestCase {
 		$retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
 		$retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
 		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
-		$this->message .= isset($row['jiraLink']) ? '</br><a target="_blank" href=' . "'" . $row['jiraLink'] . "'>issus in jira</a>" : '';
+		if(!is_array($row['jiraLink'])){$this->message .= isset($row['jiraLink']) ? '</br><a target="_blank" href=' . "'" . $row['jiraLink'] . "'>issus in jira".$row['jiraLink']."</a>" : '';}
+		$jiraLink = isset($row['jiraLink']) ?$row['jiraLink']:'';
+		foreach ($jiraLink as $link){
+			$this->message .= '</br><a target="_blank" href=' . "'" . $link . "'>issus in jira :".$link."</a>";
+		}
 		$this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
 		$this->message .= '</br><b> Result: </b> <br>';
 		if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
@@ -968,5 +974,33 @@ class Tests_Aggregator extends UnitTestCase {
 		}
 		return $passed;
 	}
+	
+	/**
+	 * check if 'plan' filed under sub in billrun object exists
+	 * @param int $key number of the test case
+	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param array $row current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
+	public function planExist($key, $returnBillrun, $row) {
+		$passed = true;
+		$this->message .= "<br><b> plan filed  :</b> <br>";
+		$sids  = (array) $row['test']['sid'];
+		foreach ($sids as $sid) {
+			foreach ($returnBillrun['subs'] as $sub){
+				if($sid == $sub['sid']){
+					if(!array_key_exists('plan', $sub)){
+						$this->message .= "plan filed NOT exists in billrun object" . $this->fail;
+						$passed = false;
+					} else {
+						$this->message .= "plan filed exists in billrun object" . $this->pass;
+					}
+				}
+			}
+		}
+		
+		return $passed;
+	}
+
 
 }
