@@ -404,12 +404,12 @@ subscribers.forEach(function (sub) {
 		});
 });
 
-// BRCD-1624: add default Plays to config
-if (typeof lastConfig.plays == 'undefined') {
-	lastConfig.plays = [
-		{"name": "Default", "enabled": true, "default": true }
-	];
-}
+//// BRCD-1624: add default Plays to config
+//if (typeof lastConfig.plays == 'undefined') {
+//	lastConfig.plays = [
+//		{"name": "Default", "enabled": true, "default": true }
+//	];
+//}
 
 //BRCD-1643: add email template for fraud notification
 if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
