@@ -362,6 +362,7 @@ if(!found) {
 		"field_name":"play",
 		"show_in_list":true,
 		"title":"Play",
+                "multiple" : false,
 	});
 }
 lastConfig['subscribers']['subscriber']['fields'] = fields;
