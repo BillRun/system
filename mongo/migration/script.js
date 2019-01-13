@@ -444,6 +444,7 @@ for (var i in entities) {
 			"field_name":"play",
 			"show_in_list":true,
 			"title":"Play",
+                        "multiple" : ['plans', 'services'].includes(entity),
 		});
 	}
 	lastConfig[entity]['fields'] = fields;
