@@ -94,7 +94,7 @@ class CycleAction extends Action_Base {
 				
 		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
 			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
-				$pid = pcntl_fork();
+				$pid = Billrun_Util::forkAndUpdateLogStamp();
 				if ($pid == -1) {
 					die('could not fork');
 				}

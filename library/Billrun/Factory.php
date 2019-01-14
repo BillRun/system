@@ -165,6 +165,14 @@ class Billrun_Factory {
 
 		return self::$log;
 	}
+	
+	static public function updateLogPidStamp() {
+		if (!self::$log) {
+			self::$log = Billrun_Log::getInstance();
+		}
+		self::$log->updateStamp();
+		return self::$log;
+	}
 
 	/**
 	 * method to retrieve the config instance

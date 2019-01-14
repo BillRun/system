@@ -97,6 +97,7 @@ class Billrun_Log extends Zend_Log {
 	public function log($message, $priority = Zend_Log::DEBUG, $extras = null) {
 		$prefixes = array();
 		if ($this->stamp) {
+			//$this->updateStamp();
 			$prefixes[] = $this->stamp;
 		}
 
@@ -159,6 +160,13 @@ class Billrun_Log extends Zend_Log {
 			'priorityName' => $this->_priorities[$priority]
 			), $this->_extras
 		);
+	}
+	
+	public function updateStamp() {
+		$currentPid = ":p" . getmypid();
+		$stampPidPosition = strrpos($this->stamp, ":p");
+		$subStamp = substr($this->stamp, 0, $stampPidPosition);
+		$this->stamp = $subStamp . $currentPid;
 	}
 
 }
