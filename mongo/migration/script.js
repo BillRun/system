@@ -438,4 +438,8 @@ db.subscribers.getIndexes().forEach(function(index){
 		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
 })
-sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+
+// BRCD-1717
+if (db.lines.stats().sharded) {
+	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+}
