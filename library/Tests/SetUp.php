@@ -14,20 +14,46 @@
  * @since           4.4
  */
 trait Tests_SetUp {
-
 	/**
 	 * json files names in data dir
 	 * each file will be added to the relevant collection.
 	 * 
 	 * @var array
 	 */
+
+	/**
+	 * collection To Clean from DB and store in cash  while the unit test is run
+	 * @var array 
+	 */
 	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
+
+	/**
+	 * collection names to set for testing
+	 * @var array 
+	 */
 	protected $importData = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
+
+	/**
+	 * collection names to restore 
+	 * @var arrray 
+	 */
 	protected $backUpData = array();
+
+	/**
+	 * @var Mongodloid_Collection 
+	 */
 	public $config;
-	protected $configCollection;
-	public $data;
+
+	/**
+	 * name of the runing unit test
+	 * @var string 
+	 */
 	protected $unitTestName;
+
+	/**
+	 * path of json files with data for runing unit test
+	 * @var string
+	 */
 	protected $dataPath = '/data/';
 
 	public function construct($unitTestName = null, $dataToLoad = null) {
@@ -42,10 +68,10 @@ trait Tests_SetUp {
 	}
 
 	/**
-	 * executes set up for update row test
+	 * executes set up for the unit runing unit test 
 	 */
 	public function setColletions() {
-		$this->origalConfig = $this->loadConfig();
+		$this->originalConfig = $this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
@@ -110,6 +136,11 @@ trait Tests_SetUp {
 	 * TO  "blabla": DBRef("plans", ObjectId("5aeee54905e68c5b1f45f9f4")),
 	 */
 
+	/**
+	 * 
+	 * @param array $data
+	 * @return array
+	 */
 	public function fixDbRef($data) {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
@@ -126,6 +157,11 @@ trait Tests_SetUp {
 	 * 	converte "OBJID":"blablablablabal"  to   "_id": ObjectId("blablablablabal")
 	 */
 
+	/**
+	 * 
+	 * @param array $data
+	 * @return array
+	 */
 	public function fixDBobjID($data) {
 		if (isset($data['OBJID'])) {
 			$data['_id'] = $data['OBJID'];
@@ -135,6 +171,11 @@ trait Tests_SetUp {
 		return $data;
 	}
 
+	/**
+	 * call to fix functions for each json object
+	 * @param array $data
+	 * @return array
+	 */
 	public function fixData($data) {
 		foreach ($data as $key => $jsonFile) {
 			$data[$key] = $this->fixArrayDates($jsonFile);
@@ -158,6 +199,10 @@ trait Tests_SetUp {
 		}
 	}
 
+	/**
+	 * store the collection from DB for restore after the unit test run
+	 * @param arrray $colNames
+	 */
 	protected function backUpCollection($colNames) {
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
@@ -169,6 +214,10 @@ trait Tests_SetUp {
 		}
 	}
 
+	/**
+	 * return the current config from DB
+	 * @return Mongo_object
+	 */
 	public function loadConfig() {
 		$this->config = Billrun_Factory::db()->configCollection();
 		$ret = $this->config->query()
@@ -177,34 +226,39 @@ trait Tests_SetUp {
 			->limit(1)
 			->current()
 			->getRawData();
-		return  $ret;
+		return $ret;
 	}
-	
-	
-	
+
+	/**
+	 * insert config
+	 * @param array $data
+	 */
 	public function setConfig($data) {
 		unset($data['_id']);
 		$this->config->insert($data);
 	}
-                    
+
 	/**
 	 * 
 	 * @param array $data 
 	 * @param string $key key to change its value
 	 * @param string | int|array $value new value
 	 */
-	public function changeConfigKey($data,$key, $value) {
+	public function changeConfigKey($data, $key, $value) {
 		Billrun_Util::setIn($data, $key, $value);
 		$this->setConfig($data);
 	}
 
+	/**
+	 * after unit test run ,restore the original collection to DB
+	 */
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {
 			if (count($items) > 0) {
 				Billrun_Factory::db()->$colName()->batchInsert($items);
 			}
 		}
-		$this->setConfig($this->origalConfig);
+		$this->setConfig($this->originalConfig);
 	}
 
 }

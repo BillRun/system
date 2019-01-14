@@ -426,8 +426,7 @@ class Tests_Aggregator extends UnitTestCase {
 		$retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
 		$retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
 		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
-		if(!is_array($row['jiraLink'])){$this->message .= isset($row['jiraLink']) ? '</br><a target="_blank" href=' . "'" . $row['jiraLink'] . "'>issus in jira".$row['jiraLink']."</a>" : '';}
-		$jiraLink = isset($row['jiraLink']) ?$row['jiraLink']:'';
+		$jiraLink = isset($row['jiraLink']) ?(array)$row['jiraLink']:'';
 		foreach ($jiraLink as $link){
 			$this->message .= '</br><a target="_blank" href=' . "'" . $link . "'>issus in jira :".$link."</a>";
 		}
