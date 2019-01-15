@@ -1282,11 +1282,6 @@ class ConfigModel {
 					$customerMappingTarget = array_map(function($mapping) {
 						return $mapping['target_key'];
 					}, $customerIdentification);
-//					$subscriberFields = array_map(function($field) {
-//						return $field['field_name'];
-//					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-//							return !empty($field['unique']);
-//						}));
 					$subscriberFields = array_map(function($field) {
 						return $field['field_name'];
 					}, $config['subscribers']['subscriber']['fields']);
