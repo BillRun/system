@@ -1284,9 +1284,7 @@ class ConfigModel {
 					}, $customerIdentification);
 					$subscriberFields = array_map(function($field) {
 						return $field['field_name'];
-					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-							return !empty($field['unique']);
-						}));
+					}, $config['subscribers']['subscriber']['fields']);
 					if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
 						throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 					}

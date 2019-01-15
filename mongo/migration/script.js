@@ -362,6 +362,7 @@ if(!found) {
 		"field_name":"play",
 		"show_in_list":true,
 		"title":"Play",
+                "multiple" : false,
 	});
 }
 lastConfig['subscribers']['subscriber']['fields'] = fields;
@@ -403,12 +404,12 @@ subscribers.forEach(function (sub) {
 		});
 });
 
-// BRCD-1624: add default Plays to config
-if (typeof lastConfig.plays == 'undefined') {
-	lastConfig.plays = [
-		{"name": "Default", "enabled": true, "default": true }
-	];
-}
+//// BRCD-1624: add default Plays to config
+//if (typeof lastConfig.plays == 'undefined') {
+//	lastConfig.plays = [
+//		{"name": "Default", "enabled": true, "default": true }
+//	];
+//}
 
 //BRCD-1643: add email template for fraud notification
 if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
@@ -443,6 +444,7 @@ for (var i in entities) {
 			"field_name":"play",
 			"show_in_list":true,
 			"title":"Play",
+                        "multiple" : ['plans', 'services'].includes(entity),
 		});
 	}
 	lastConfig[entity]['fields'] = fields;
