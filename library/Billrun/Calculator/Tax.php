@@ -33,10 +33,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			if($this->isLinePreTaxed($current)) {
 				$taxFactor = Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun());
 				$newData['tax_data'] = [
-									'total_amount'=> $this->getLinePriceToTax($current),
+									'total_amount'=> $newData['aprice'] * $taxFactor,
 									'total_tax' => $taxFactor,
 									'taxes' =>  [
-												'tax'=> $taxFactor, 'amount' => $this->getLinePriceToTax($current) , 'description' => Billrun_Factory::config()->getConfigValue('taxation.vat_label', 'VAT') , 'pass_to_customer'=> 1
+												'tax'=> $taxFactor, 'amount' => $newData['aprice'] * $taxFactor , 'description' => Billrun_Factory::config()->getConfigValue('taxation.vat_label', 'VAT') , 'pass_to_customer'=> 1
 											]
 									];
 			} else {
@@ -64,7 +64,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row = $newData;
 		}
-		$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
+		if($this->isLinePreTaxed($current)) {
+			$row['final_charge']  = $this->getLinePriceToTax($current);
+		} else {
+			$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
