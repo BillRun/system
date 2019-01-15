@@ -118,6 +118,14 @@ class Billrun_Cycle_AggregatePipeline {
 		$pipelines[] = array(
 			'$unwind' => '$sub_plans',
 		);
+		
+		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1,
+				'sub_plans.sid' => 1,
+				'sub_plans.from' => -1,
+			)
+		);
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['second_group'], array(
 				'_id' => array(
