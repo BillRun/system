@@ -1,0 +1,246 @@
+{
+	"collection": "servicesCollection",
+	"data":
+			[
+				{
+					"OBJID": "5aeee0fc05e68c02db448bae",
+					"from": "time*2018-01-06T22:00:00Z",
+					"name": "SERVICE_A",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "100"
+						}
+					],
+					"description": "service_a",
+					"prorated": true,
+					"to": "time*2167-05-06T12:03:24Z",
+					"creation_time": "time*2018-01-06T22:00:00Z"
+				},
+				{
+					"OBJID": "5aeee22705e68c5b1905fab6",
+					"from": "time*2018-01-06T22:00:00Z",
+					"name": "SERVICE_B",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "100"
+						}
+					],
+					"description": "service_b",
+					"prorated": true,
+					"to": "time*2167-05-06T12:08:23Z",
+					"creation_time": "time*2018-01-06T22:00:00Z"
+				},
+				{
+					"OBJID": "5af4459905e68c42b91d7b25",
+					"from": "time*2018-01-10T22:00:00Z",
+					"name": "DAY",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "10"
+						}
+					],
+					"description": "day",
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "tomorrow +0 days",
+					"to": "time*2167-05-10T14:14:01Z",
+					"creation_time": "time*2018-01-10T22:00:00Z"
+				},
+				{
+					"OBJID": "5af445ba05e68c4201086658",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "MONTH",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "10"
+						}
+					],
+					"description": "month",
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 months",
+					"to": "time*2167-05-10T14:14:34Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af445ef05e68c4b32787292",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "WEEK",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "10"
+						}
+					],
+					"description": "week",
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 weeks",
+					"to": "time*2167-05-10T14:15:27Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af4461b05e68c0e9a3bdf37",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "YEAR",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "100"
+						}
+					],
+					"description": "year",
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 years",
+					"to": "time*2167-05-10T14:16:11Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af44bc605e68c42b91d7b27",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "CALL",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "100"
+						}
+					],
+					"description": "call",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-05-10T14:40:22Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af44d2405e68c420108665a",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "CUSTOM_CALL",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "100"
+						}
+					],
+					"description": "custom_call",
+					"include": {
+						"groups": {
+							"C_CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 months",
+					"to": "time*2167-05-10T14:46:12Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af4527705e68c5d7762cd36",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "DISCOUNT_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "100"
+						}
+					],
+					"description": "discount_service",
+					"prorated": true,
+					"to": "time*2167-05-10T15:08:55Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af4560005e68c6c42585be2",
+					"from": "time*2018-04-30T21:00:00Z",
+					"name": "NOT_TAXABLE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "100"
+						}
+					],
+					"description": "not_taxable",
+					"prorated": true,
+					"vatable": false,
+					"to": "time*2167-05-10T15:24:00Z",
+					"creation_time": "time*2018-04-30T21:00:00Z"
+				}, {
+					"OBJID": "5b22322905e68c51fd38f626",
+					"from": "time*2018-01-14T22:00:00Z",
+					"name": "CYCLES",
+					"price": [
+						{
+							"from": 0,
+							"to": "1",
+							"price": "100"
+						}
+					],
+					"description": "cycles",
+					"prorated": true,
+					"to": "time*2167-06-14T10:15:21Z",
+					"creation_time": "time*2018-01-14T22:00:00Z"
+				}, {
+					"OBJID" :"5b333a3105e68c3b15157562",
+					"from": "time*2018-01-27T22:00:00Z",
+					"name": "IPHONEX",
+					"price": [
+						{
+							"from": 0,
+							"to": "1",
+							"price": "1000"
+						}
+					],
+					"description": "iphoneX",
+					"prorated": true,
+					"quantitative": true,
+					"to": "time*2167-06-27T08:18:09Z",
+					"creation_time": "time*2018-06-27T21:00:00Z"
+				}
+
+
+
+
+			]
+}
