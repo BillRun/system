@@ -234,9 +234,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
 			return false;
 		}
-
-		$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
-		if (!($balance = self::createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
+		$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key, 'unique_plan_id' => $row['unique_plan_id']);
+		if (!($balance = self::createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref, $row['unique_plan_id']))) {
 			return false;
 		} else if ($balance === true) {
 			$balance = null;
@@ -248,11 +247,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'sid' => $row['sid'],
-					'billrun_month' => $billrun_key
+					'billrun_month' => $billrun_key,
+					'unique_plan_id' => $row['unique_plan_id']
 					), 1), Zend_Log::INFO);
 			return false;
 		} else {
-			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'] . ', unique_plan_id=' . $row['unique_plan_id'], Zend_Log::DEBUG);
 		}
 		return $balance;
 	}
@@ -341,7 +341,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances', 'addon_balances');
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances', 'addon_balances', 'plan_usage');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -420,7 +420,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance, $plan);
-		$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month']);
+		$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month'], 'unique_plan_id' => $row['unique_plan_id']);
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
 		foreach ($counters as $key => $value) {
@@ -549,6 +549,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$query = array(
 			'billrun_month' => $billrun_key,
 			'sid' => $sid,
+			'unique_plan_id' => $row['unique_plan_id']
 		);
 		$values = array(
 			'$unset' => array(
@@ -663,12 +664,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * Create a subscriber entry if none exists. Uses an update query only if the balance doesn't exist
 	 * @param type $subscriber
 	 */
-	protected static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
-		$balance = Billrun_Factory::balance(array('sid' => $sid, 'billrun_key' => $billrun_key));
+	protected static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $uniquePlanId) {
+		$balance = Billrun_Factory::balance(array('sid' => $sid, 'billrun_key' => $billrun_key, 'unique_plan_id' => $uniquePlanId));
 		if ($balance->isValid()) {
 			return $balance;
 		} else {
-			return Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
+			return Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $uniquePlanId);
 		}
 	}
 

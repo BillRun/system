@@ -341,9 +341,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$planRef = $plan->createRef();
 		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
 		if (!empty($packageLimits['joined_field'])) {
-			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $packageLimits['joined_field']);
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, '', $from, $to, $serviceId, $serviceName, $packageLimits['joined_field']);
 		} else {
-			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, '', $from, $to, $serviceId, $serviceName);
 		}	
 	}
 

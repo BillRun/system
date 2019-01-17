@@ -59,7 +59,11 @@ class Generator_Balance extends Generator_Golanxml {
 			$this->setSubscribers($options['subscribers']);
 		}
 		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
-		$this->now = time();
+		if (isset($options['stamp'])) {
+			$this->now = Billrun_Util::getEndTime($options['stamp']);
+		} else {
+			$this->now = time();
+		}
 	}
 
 	public function load() {

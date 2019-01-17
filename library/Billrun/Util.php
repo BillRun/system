@@ -534,6 +534,7 @@ class Billrun_Util {
 			'source_amount_without_vat' => array(),
 			'additional' => array(),
 			'id' => array(),
+			'unique_plan_id' => array(),
 		);
 		$filtered_request = array();
 
@@ -984,5 +985,15 @@ class Billrun_Util {
 		return $zend_date;
 	}
 	
+	public static function getIsraelTransitions(){
+		return timezone_transitions_get(new DateTimeZone(date_default_timezone_get()), strtotime('January 1st'), strtotime('December 31'));
+	}
+	
+	public static function isWrongIsrTransitions($transitions){
+		if (count($transitions) != 3){
+			return true;
+		}
+		return false;
+	}
 }
 

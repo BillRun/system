@@ -189,6 +189,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			if (isset($exhaustedBalancesKeys)) {
 				$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
+			} else {
+				if ($this->extraUsage < $row['usagev']) {
+					$row['plan_usage'] = $row['usagev'] - $this->extraUsage;
+				}
 			}
 			if (isset($balancesIncludeRow)) {
 				$row['addon_balances'] = $balancesIncludeRow;
@@ -348,7 +352,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function createAddonBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName) {
 		$planRef = $plan->createRef();
-		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
+		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, '', $from, $to, $serviceId, $serviceName);
 	}
 
 	/**
