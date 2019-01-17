@@ -99,7 +99,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
 		$subConstratorData['history'] = $sorted;
-		$subConstratorData['subscriber_info'] = reset($sorted);
+		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
 		$subConstratorData['subscriber_info']['line_stump'] = $this->getLineStump(end($sorted), $this->cycleAggregator->getCycle());
 		$cycleSub =  new Billrun_Cycle_Subscriber($subConstratorData, $this->cycleAggregator);

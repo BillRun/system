@@ -137,7 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -370,6 +369,10 @@ lastConfig['subscribers']['subscriber']['fields'] = fields;
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
 
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
+
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");
 db.collection_steps.dropIndex("trigger_date_1_done_1");
@@ -422,3 +425,17 @@ if (!vatLabel) {
 }
 
 db.config.insert(lastConfig);
+
+// BRCD-1717
+db.subscribers.getIndexes().forEach(function(index){
+	var indexFields = Object.keys(index.key);
+	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
+	}
+	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+	}
+})
+sh.shardCollection("billing.subscribers", { "aid" : 1 } );

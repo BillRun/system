@@ -50,6 +50,7 @@ class Billrun_DiscountManager {
 		if (empty(static::getCache())) {
 			static::addToCache($this->loadDiscountsRates(array(), Billrun_Billingcycle::getEndTime($invoice->getBillrunKey())));
 		}
+		Billrun_Factory::log("Checking eligible discount... ", Zend_Log::INFO);
 		$discountCdrs = $discountInstances = $eligibilityData = array();
 		//Check eligiblility of  each discount rate
 		foreach (static::getCache() as $discountRate) {
