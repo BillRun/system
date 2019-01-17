@@ -1,0 +1,62 @@
+{
+	"collection": "discountsCollection",
+	"data": [
+		{
+			"OBJID": "5aeeb4c105e68c6d4d758032",
+			"from": "time*2018-03-31T21:00:00Z",
+			"key": "TT",
+			"description": "ttt",
+			"params": {
+				"plan": "PLAN_A"
+			},
+			"discount_type": "percentage",
+			"discount_subject": {
+				"plan": {
+					"PLAN_A": 0.1
+				}
+			},
+			"to": "time*2167-05-06T08:54:41Z",
+			"creation_time": "time*2018-03-31T21:00:00Z"
+		},
+		{
+			"OBJID": "5af452a805e68c420108665f",
+			"from": "time*2017-12-31T22:00:00Z",
+			"key": "SER",
+			"description": "ser",
+			"params": {
+				"service": [
+					"DISCOUNT_SERVICE"
+				]
+			},
+			"discount_type": "monetary",
+			"discount_subject": {
+				"service": {
+					"DISCOUNT_SERVICE": "50"
+				}
+			},
+			"to": "time*2167-05-10T15:09:44Z",
+			"creation_time": "time*2017-12-31T22:00:00Z"
+		},
+		{
+			"OBJID":"5b34bee305e68c7fa55cb902",
+			"from": "time*2018-01-28T22:00:00Z",
+			"key": "D",
+			"description": "d",
+			"params": {
+				"service": [
+					"NOT_TAXABLE"
+				]
+			},
+			"discount_type": "monetary",
+			"discount_subject": {
+				"service": {
+					"NOT_TAXABLE": "10"
+				}
+			},
+			"to": "time*2167-06-28T11:56:35Z",
+			"creation_time": "time*2018-01-28T22:00:00Z"
+		}
+
+
+	]
+}
