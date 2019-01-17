@@ -1831,7 +1831,7 @@ class Billrun_Util {
 	public static function fork() {
 		$pid = pcntl_fork();
 		if ($pid !== -1) {
-			Billrun_Factory::updateLogPidStamp();
+			Billrun_Factory::log()->updateStamp();
 		}	
 		return $pid;
 	}
