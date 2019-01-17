@@ -138,7 +138,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
 		if (!in_array($subscriberPlay, $servicePlays)) {
-			throw new Billrun_Exceptions_Api(0, array(), "\"{$plan->get('description')}\" does not match subscriber's play");
+			throw new Billrun_Exceptions_Api(0, array(), "\"{$service->get('description')}\" does not match subscriber's play");
 		}
 		return true;
 	}
