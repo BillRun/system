@@ -304,7 +304,7 @@ db.counters.dropIndex("coll_1_oid_1");
 //BRCD-1613 - Configurable VAT label on invoice
 var vatLabel = lastConfig['taxation']['vat_label'];
 if (!vatLabel) {
-	lastConfig['taxation']['vat_label'] = 'VAT';
+	lastConfig['taxation']['vat_label'] = 'Vat';
 }
 
 db.config.insert(lastConfig);
