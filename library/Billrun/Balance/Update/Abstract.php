@@ -159,5 +159,9 @@ abstract class Billrun_Balance_Update_Abstract {
 	public function getAfter() {
 		return null;
 	}
+	
+	public function addAdditional($key, $val) {
+		$this->additional[$key] = $val;
+	}
 
 }

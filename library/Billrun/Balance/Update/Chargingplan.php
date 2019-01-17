@@ -134,8 +134,10 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 			$row['additional'] = $this->additional;
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
-		Billrun_Factory::db()->linesCollection()->insert($row);
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		$linesColl->insert($row);
 		foreach ($this->data as $prepaidInclude) {
+			$prepaidInclude->addAdditional('parent_ref', $linesColl->createRefByEntity($row));
 			$prepaidInclude->createBillingLines();
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
