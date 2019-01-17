@@ -97,7 +97,6 @@ class Billrun_Log extends Zend_Log {
 	public function log($message, $priority = Zend_Log::DEBUG, $extras = null) {
 		$prefixes = array();
 		if ($this->stamp) {
-			//$this->updateStamp();
 			$prefixes[] = $this->stamp;
 		}
 
