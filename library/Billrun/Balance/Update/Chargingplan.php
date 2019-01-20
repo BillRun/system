@@ -112,7 +112,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 	 * create row to track the balance update
 	 * @todo
 	 */
-	protected function createBillingLines() {
+	protected function createBillingLines($chargingData = array()) {
 		Billrun_Factory::dispatcher()->trigger('beforeBalanceUpdateCreateBillingLine', array($this));
 		$row = array(
 			'source' => 'billapi',
@@ -136,9 +136,9 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$linesColl->insert($row);
+		$chargingInfo = array('parent_ref' => $linesColl->createRefByEntity($row));
 		foreach ($this->data as $prepaidInclude) {
-			$prepaidInclude->addAdditional('parent_ref', $linesColl->createRefByEntity($row));
-			$prepaidInclude->createBillingLines();
+			$prepaidInclude->createBillingLines($chargingInfo);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
 		return $row;
