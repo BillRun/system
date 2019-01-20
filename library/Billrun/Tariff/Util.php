@@ -16,6 +16,8 @@ class Billrun_Tariff_Util {
 	
 	const PRICING_METHOD_TIERED = 'tiered';
 	const PRICING_METHOD_VOLUME = 'volume';
+	
+	protected static $ratesList = array();
 
 	/**
 	 * Gets correct access price from tariff
@@ -29,7 +31,7 @@ class Billrun_Tariff_Util {
 		return 0;
 	}
 
-	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null) {
+	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null, $rate = null, $usageType = null) {
 		if (is_null($pricingMethod)) {
 			$pricingMethod = self::PRICING_METHOD_TIERED;
 		}
@@ -40,7 +42,13 @@ class Billrun_Tariff_Util {
 		} else {
 			$isNegative = false;
 		}
+		$percentage = 1;
+		if (isset($tariff['percentage'])) {
+			$percentage = $tariff['percentage'];
+			$tariff = $rate['rates'][$usageType]['BASE'];
+		}
 		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume, $pricingMethod);
+		$price *= $percentage;
 		$ret = $accessPrice + $price;
 		return ($isNegative ? $ret * (-1) : $ret);
 	}
