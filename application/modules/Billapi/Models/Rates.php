@@ -20,4 +20,15 @@ class Models_Rates extends Models_Entity {
 			$this->update['add_to_retail'] = true;
 		}
 	}
+	
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function getCustomFields($update = array()) {
+		$customFields = parent::getCustomFields();
+		$play = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		return Billrun_Utils_Plays::filterCustomFields($customFields, $play);
+	}
 }

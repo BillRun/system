@@ -512,4 +512,9 @@ class Billrun_Service {
 		return $results['s'];
 	}
 	
+	public function getPlays() {
+		$plays = $this->get('play');
+		return empty($plays) ? [] : $plays;
+	}
+	
 }
