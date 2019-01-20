@@ -422,7 +422,7 @@ if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
 //BRCD-1613 - Configurable VAT label on invoice
 var vatLabel = lastConfig['taxation']['vat_label'];
 if (!vatLabel) {
-	lastConfig['taxation']['vat_label'] = 'VAT';
+	lastConfig['taxation']['vat_label'] = 'Vat';
 }
 
 // BRCD-1682 - Add new custom 'play' field to Proucts/Services/Plans
