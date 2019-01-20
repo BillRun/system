@@ -1,0 +1,236 @@
+{
+	"collection": "plansCollection",
+	"data":
+			[
+
+				{
+					"OBJID": "5aeec10905e68c1a29770a9b",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "PLAN_A",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-05-02T16:17:51Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af2ddb405e68c1ab43a4597",
+					"from": "time*2018-01-08T22:00:00Z",
+					"name": "PLAN_B",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_b",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": false,
+					"to": "time*2167-05-09T12:38:28Z",
+					"creation_time": "time*2018-01-09T22:00:00Z"
+				},
+				{
+					"OBJID": "5af2e04505e68c6dbd791222",
+					"from": "time*2018-03-14T21:00:00Z",
+					"name": "PLAN_C",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_c",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-05-09T12:48:07Z",
+					"creation_time": "time*2018-01-09T22:00:00Z"
+				},
+				{
+					"OBJID": "5af2e75e05e68c419119e68b",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "PLAN_D",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_d",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"include": {
+						"services": [
+							"SERVICE_A"
+						]
+					},
+					"prorated": true,
+					"to": "time*2167-05-09T13:19:42Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5af44c8e05e68c42b71a6ab5",
+					"from": "time*2017-12-31T22:00:00Z",
+					"name": "PLAN_E",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_e",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"include": {
+						"services": [
+							"CALL"
+						]
+					},
+					"prorated": true,
+					"to": "time*2167-05-10T14:43:42Z",
+					"creation_time": "time*2017-12-31T22:00:00Z"
+				},
+				{
+					"OBJID": "5b03d51f05e68c10537e21b2",
+					"from": "time*2018-01-22T22:00:00Z",
+					"name": "PLAN_F",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "PLAN_F",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-05-22T09:30:23Z",
+					"creation_time": "time*2018-01-22T22:00:00Z"
+				}, {
+					"OBJID": "5b22325d05e68c17e337357b",
+					"from": "time*2018-01-14T22:00:00Z",
+					"name": "PLAN_H",
+					"price": [
+						{
+							"price": "0",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_h",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"include": {
+						"services": [
+							"CYCLES"
+						]
+					},
+					"rates": [],
+					"prorated": true,
+					"to": "time*2167-06-14T10:16:13Z",
+					"creation_time": "time*2018-01-14T22:00:00Z"
+				},
+				{
+					"OBJID": "5b30ee5305e68c5f5f545509",
+					"from": "time*2018-01-26T00:00:00Z",
+					"name": "UPFRONT",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "upfront",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": true,
+					"connection_type": "postpaid",
+					"rates": [],
+					"prorated": true,
+					"to": "time*2167-06-25T13:29:55Z",
+					"creation_time": "time*2018-06-26T00:00:00Z"
+				},
+				{
+					"OBJID": "5c2b34e905e68c5dd90152d2",
+					"from": "time*2018-01-02T00:00:00Z",
+					"name": "A",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"prorated": true,
+					"to": "time*2168-01-01T09:37:45Z",
+					"creation_time": "time*2018-01-02T00:00:00Z"
+				},
+				{
+					"OBJID": "5c2b373c05e68c5dd90152d4",
+					"from": "time*2018-01-02T00:00:00Z",
+					"name": "B",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "b",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"prorated": true,
+					"to": "time*2168-01-01T09:47:40Z",
+					"creation_time": "time*2018-01-02T00:00:00Z"
+				}
+
+			]
+}
