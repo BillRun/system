@@ -16,7 +16,7 @@ class Billrun_Tariff_Util {
 	
 	const PRICING_METHOD_TIERED = 'tiered';
 	const PRICING_METHOD_VOLUME = 'volume';
-	
+
 	/**
 	 * Gets correct access price from tariff
 	 * @param array $tariff the tariff structure
