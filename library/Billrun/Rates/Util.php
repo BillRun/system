@@ -79,8 +79,9 @@ class Billrun_Rates_Util {
 				// override product price by different rate
 				if (array_keys($rates[$rate['key']][$usage_type])[0] === 'rate') {
 					return $rates[$rate['key']][$usage_type];
+				} 
 				// override product price by percentage
-				} else if (isset($rate['rates'][$usage_type]['BASE'])) {
+				if (isset($rate['rates'][$usage_type]['BASE'])) {
 					$percentage = array_values($rates[$rate['key']][$usage_type])[0];
 					return $rate['rates'][$usage_type]['BASE'];
 				}
