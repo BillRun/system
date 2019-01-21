@@ -61,7 +61,7 @@ class Billrun_Rates_Util {
 		return false;
 	}
 
-	public static function getTariff($rate, $usage_type, $planName = null, $services = array(), $time = null, &$percentage) {
+	public static function getTariff($rate, $usage_type, $planName = null, $services = array(), $time = null) {
 		foreach ($services as $service) {
 			$rates = $service->get('rates');
 			if (isset($rates[$rate['key']], $rates[$rate['key']][$usage_type])) {
@@ -76,15 +76,7 @@ class Billrun_Rates_Util {
 		}
 		if (isset($plan) && $plan instanceof Billrun_Plan && ($rates = $plan->get('rates')) &&
 			isset($rates[$rate['key']]) && isset($rates[$rate['key']][$usage_type])) {
-				// override product price by different rate
-				if (array_keys($rates[$rate['key']][$usage_type])[0] === 'rate') {
-					return $rates[$rate['key']][$usage_type];
-				} 
-				// override product price by percentage
-				if (isset($rate['rates'][$usage_type]['BASE'])) {
-					$percentage = array_values($rates[$rate['key']][$usage_type])[0];
-					return $rate['rates'][$usage_type]['BASE'];
-				}
+				return $rates[$rate['key']][$usage_type];
 		}
 		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
 			return $rate['rates'][$usage_type][$planName];
@@ -109,8 +101,15 @@ class Billrun_Rates_Util {
 	 * @return array the calculated charges
 	 */
 	public static function getCharges($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
-		$percentage = 1;
-		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time, $percentage);
+		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time);
+		$overrideByPercentage = array_keys($tariff)[0] === 'percentage';
+		$percentage = $overrideByPercentage ? array_values($tariff)[0] : 1;
+		// if $overrideByPercentage is true --> use the original rate
+		if ($overrideByPercentage) {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
@@ -200,10 +199,16 @@ class Billrun_Rates_Util {
 	 * @return array the calculated charges
 	 */
 	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
-		$percentage = 1;
-		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $services, $time, $percentage);
+		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $services, $time);
+		$overrideByPercentage = array_keys($tariff)[0] === 'percentage';
+		$percentage = $overrideByPercentage ? array_values($tariff)[0] : 1;
+		// if $overrideByPercentage is true --> use the original rate
+		if ($overrideByPercentage) {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
-		$percentage = 1;
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
