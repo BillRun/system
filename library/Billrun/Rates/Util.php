@@ -102,12 +102,13 @@ class Billrun_Rates_Util {
 	 */
 	public static function getCharges($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time);
-		$overrideByPercentage = array_keys($tariff)[0] === 'percentage';
-		$percentage = $overrideByPercentage ? array_values($tariff)[0] : 1;
-		// if $overrideByPercentage is true --> use the original rate
-		if ($overrideByPercentage) {
+		$percentage = 1;
+		
+		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
+		if (array_keys($tariff)[0] === 'percentage') {
 			if (isset($rate['rates'][$usageType]['BASE'])) {
 				$tariff = $rate['rates'][$usageType]['BASE'];
+				$percentage = array_values($tariff)[0];
 			}
 		}
 		$pricingMethod = $rate['pricing_method'];
