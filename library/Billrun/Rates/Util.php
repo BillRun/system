@@ -76,7 +76,7 @@ class Billrun_Rates_Util {
 		}
 		if (isset($plan) && $plan instanceof Billrun_Plan && ($rates = $plan->get('rates')) &&
 			isset($rates[$rate['key']]) && isset($rates[$rate['key']][$usage_type])) {
-				return $rates[$rate['key']][$usage_type];
+			return $rates[$rate['key']][$usage_type];
 		}
 		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
 			return $rate['rates'][$usage_type][$planName];
