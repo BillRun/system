@@ -107,8 +107,8 @@ class Billrun_Rates_Util {
 		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
 		if (array_keys($tariff)[0] === 'percentage') {
 			if (isset($rate['rates'][$usageType]['BASE'])) {
-				$tariff = $rate['rates'][$usageType]['BASE'];
 				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
 			}
 		}
 		$pricingMethod = $rate['pricing_method'];
@@ -206,8 +206,8 @@ class Billrun_Rates_Util {
 		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
 		if (array_keys($tariff)[0] === 'percentage') {
 			if (isset($rate['rates'][$usageType]['BASE'])) {
-				$tariff = $rate['rates'][$usageType]['BASE'];
 				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
 			}
 		}
 		$pricingMethod = $rate['pricing_method'];
