@@ -97,8 +97,8 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					if($usaget == "_KEEP_SOURCE_USAGE_TYPE_") {
 						$uom_display = $existingRate['rates'][$usagetype]['BASE']['rate'][0]['uom_display'];
 						$entity['rates'][$usagetype] = $rates;
-						foreach ($entity['rates'][$usagetype] as $plan_name => $plan_rates) {
-							foreach ($plan_rates['rate'] as $key => $rate) {
+						foreach ($entity['rates'][$usagetype] as $plan_name => &$plan_rates) {
+							foreach ($plan_rates['rate'] as $key => &$rate) {
 								if ($rate['uom_display']['interval'] === '_KEEP_SOURCE_USAGE_TYPE_UNIT_') {
 									$rate['uom_display']['interval'] = $uom_display['interval'];
 								}
@@ -124,19 +124,20 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 							// Check if update Plan or Service by serching for plan if not exist update service
 							$planQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
 							$planQuery['name'] = $plan_name;
-							$existingPlan = Billrun_Factory::db()->ratesCollection()->query($planQuery)->cursor()->current();
+							$existingPlan = Billrun_Factory::db()->plansCollection()->query($planQuery)->cursor()->current();
 							$collection = (!$existingPlan || $existingPlan->isEmpty()) ? 'services' : 'plans' ;
-							
+							$key = $existingRate['key'];
 							$query = array(
 								'effective_date' => $from,
 								'name' => $plan_name
 							);
-							$update = array(
-								"rates.{$key}" => array(
-									$usaget => $rates[$plan_name]
-								),
-								'from' => $from
-							);
+							$update = [];
+							$update['from'] = $from;
+							if (isset($rates[$plan_name]['rate'])) {
+								$update["rates"][$key][$usaget] = [
+									"rate" => $rates[$plan_name]['rate']
+								];
+							}
 							$params = array(
 								'collection' => $collection,
 								'request' => array(
@@ -154,9 +155,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 							} catch (Exception $exc) {
 								$plan_updates = $exc->getMessage();
 							}
-
-							
-							
 							// Remove plan rates
 							unset($entity['rates'][$usaget][$plan_name]);
 							if (empty($entity['rates'][$usaget])) {
