@@ -385,6 +385,7 @@ class ConfigModel {
 		$uniqueFields = array();
 		foreach ($data as &$field) {
 			$fieldName = $field['field_name'];
+			$plays = Billrun_Util::getIn($field, 'plays', []);
 			$prevField = false;
 			foreach ($prevData as $f) {
 				if ($f['field_name'] === $fieldName) {
@@ -398,20 +399,26 @@ class ConfigModel {
 			}
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
-				$mandatoryFields[] = $fieldName;
+				$mandatoryFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 			
 			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
-				$uniqueFields[] = $fieldName;
+				$uniqueFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 		}
 
 		if (!$this->validateMandatoryFields($entityModel, $mandatoryFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $mandatoryFields) .'] mandatory because there is an entity missing one of those fields');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($mandatoryFields, 'name')) .'] mandatory because there is an entity missing one of those fields');
 		}
 
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $uniqueFields) .'] unique because for one of those fields there is more than one entity with the same value');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
 		
 		return true;
@@ -459,7 +466,15 @@ class ConfigModel {
 			'$in' => $plays,
 		);
 		
-		return !Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->isEmpty();
+		$checkInEntities = ['plans', 'services', 'rates', 'subscribers'];
+		foreach ($checkInEntities as $entity) {
+			$inUseInEntity = !Billrun_Factory::db()->{$entity . 'Collection'}()->query($query)->cursor()->current()->isEmpty();
+			if ($inUseInEntity) {
+				return true;
+			}
+		}
+		return false;
+		
 	}
 	
 	/**
@@ -493,8 +508,19 @@ class ConfigModel {
 		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
 		$mandatoryQuery['$or'] = array();
 		foreach ($mandatoryFields as $field) {
-			$mandatoryQuery['$or'][] = array($field => '');
-			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => ''
+				);
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => array('$exists' => false)
+				);
+			} else {
+				$mandatoryQuery['$or'][] = array($field['name'] => '');
+				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
+			}
 		}
 		
 		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
@@ -519,16 +545,22 @@ class ConfigModel {
 		);
 		
 		foreach ($uniqueFields as $field) {
-			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
-			$unwind = '$' . $field;
+			$matchFields = array(
+				$field['name'] => array('$exists' => true),
+			);
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$matchFields['play'] = ['$in' => $field['plays']];
+			}
+			$match = array_merge($basicMatch, $matchFields);
+			$unwind = '$' . $field['name'];
 			$project = array(
-				$field => 1,
+				$field['name'] => 1,
 				't.from' => '$from',
 				't.to' => '$to',
 			);
 			
 			$group = array(
-				'_id' => '$' . $field,
+				'_id' => '$' . $field['name'],
 				'ts' => array('$push' => '$t'),
 				's' => array('$sum' => 1),
 			);
@@ -1252,9 +1284,7 @@ class ConfigModel {
 					}, $customerIdentification);
 					$subscriberFields = array_map(function($field) {
 						return $field['field_name'];
-					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-							return !empty($field['unique']);
-						}));
+					}, $config['subscribers']['subscriber']['fields']);
 					if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
 						throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 					}

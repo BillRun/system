@@ -342,7 +342,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	/**
 	 * create row to track the balance update
 	 */
-	protected function createBillingLines() {
+	protected function createBillingLines($chargingData = array()) {
 		Billrun_Factory::dispatcher()->trigger('beforeBalanceUpdateCreateBillingLine', array($this));
 		$row = array(
 			'source' => 'billapi',
@@ -375,6 +375,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (!empty($this->additional)) {
 			$row['additional'] = $this->additional;
 		}
+		$row = array_merge($chargingData, $row);
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));

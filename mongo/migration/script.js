@@ -362,6 +362,7 @@ if(!found) {
 		"field_name":"play",
 		"show_in_list":true,
 		"title":"Play",
+                "multiple" : false,
 	});
 }
 lastConfig['subscribers']['subscriber']['fields'] = fields;
@@ -403,12 +404,12 @@ subscribers.forEach(function (sub) {
 		});
 });
 
-// BRCD-1624: add default Plays to config
-if (typeof lastConfig.plays == 'undefined') {
-	lastConfig.plays = [
-		{"name": "Default", "enabled": true, "default": true }
-	];
-}
+//// BRCD-1624: add default Plays to config
+//if (typeof lastConfig.plays == 'undefined') {
+//	lastConfig.plays = [
+//		{"name": "Default", "enabled": true, "default": true }
+//	];
+//}
 
 //BRCD-1643: add email template for fraud notification
 if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
@@ -421,7 +422,32 @@ if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
 //BRCD-1613 - Configurable VAT label on invoice
 var vatLabel = lastConfig['taxation']['vat_label'];
 if (!vatLabel) {
-	lastConfig['taxation']['vat_label'] = 'VAT';
+	lastConfig['taxation']['vat_label'] = 'Vat';
+}
+
+// BRCD-1682 - Add new custom 'play' field to Proucts/Services/Plans
+var entities = ['plans', 'rates', 'services'];
+for (var i in entities) {
+	var entity = entities[i];
+	var fields = lastConfig[entity]['fields'];
+	var found = false;
+	for (var field_key in fields) {
+		if (fields[field_key].field_name === "play") {
+			found = true;
+		}
+	}
+	if(!found) {
+		fields.push({
+			"system":false,
+			"display":true,
+			"editable":true,
+			"field_name":"play",
+			"show_in_list":true,
+			"title":"Play",
+                        "multiple" : ['plans', 'services'].includes(entity),
+		});
+	}
+	lastConfig[entity]['fields'] = fields;
 }
 
 db.config.insert(lastConfig);
@@ -438,4 +464,8 @@ db.subscribers.getIndexes().forEach(function(index){
 		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
 })
-sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+
+// BRCD-1717
+if (db.lines.stats().sharded) {
+	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+}
