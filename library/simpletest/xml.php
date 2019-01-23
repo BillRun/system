@@ -299,7 +299,7 @@ class NestingXmlTag {
      *    @param hash $attributes   Name value pairs.
      *    @access public
      */
-    function NestingXmlTag($attributes) {
+    public function __construct($attributes) {
         $this->name = false;
         $this->attributes = $attributes;
     }
@@ -347,7 +347,7 @@ class NestingMethodTag extends NestingXmlTag {
      *    @param hash $attributes   Name value pairs.
      *    @access public
      */
-    function NestingMethodTag($attributes) {
+    public function __construct($attributes) {
         $this->NestingXmlTag($attributes);
     }
 
@@ -387,7 +387,7 @@ class NestingCaseTag extends NestingXmlTag {
      *    @param hash $attributes   Name value pairs.
      *    @access public
      */
-    function NestingCaseTag($attributes) {
+    public function __construct($attributes) {
         $this->NestingXmlTag($attributes);
     }
 
@@ -427,7 +427,7 @@ class NestingGroupTag extends NestingXmlTag {
      *    @param hash $attributes   Name value pairs.
      *    @access public
      */
-    function NestingGroupTag($attributes) {
+    public function __construct($attributes) {
         $this->NestingXmlTag($attributes);
     }
 
@@ -485,7 +485,7 @@ class SimpleTestXmlParser {
      *    @param SimpleReporter $listener   Listener of tag events.
      *    @access public
      */
-    function SimpleTestXmlParser(&$listener) {
+    public function __construct(&$listener) {
         $this->listener = &$listener;
         $this->expat = &$this->createParser();
         $this->tag_stack = array();
