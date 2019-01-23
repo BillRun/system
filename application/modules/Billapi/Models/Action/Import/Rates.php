@@ -126,17 +126,20 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 							$planQuery['name'] = $plan_name;
 							$existingPlan = Billrun_Factory::db()->plansCollection()->query($planQuery)->cursor()->current();
 							$collection = (!$existingPlan || $existingPlan->isEmpty()) ? 'services' : 'plans' ;
-							$key = $existingRate['key'];
+							$rateKey = $existingRate['key'];
+							$existingRateRates = $existingPlan['rates'];
 							$query = array(
 								'effective_date' => $from,
 								'name' => $plan_name
 							);
-							$update = [];
-							$update['from'] = $from;
-							if (isset($rates[$plan_name]['rate'])) {
-								$update["rates"][$key][$usaget] = [
-									"rate" => $rates[$plan_name]['rate']
-								];
+							$update = [
+								'from' => $from,
+								'rates' => $existingRateRates,
+							];
+							if (!empty($rates[$plan_name]['rate'])) {
+								$update['rates'][$rateKey][$usaget] = ['rate' => $rates[$plan_name]['rate']];
+							} else if (!empty($rates[$plan_name]['percentage'])) {
+								$update['rates'][$rateKey][$usaget] = ['percentage' => (float)$rates[$plan_name]['percentage']];
 							}
 							$params = array(
 								'collection' => $collection,
