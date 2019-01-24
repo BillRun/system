@@ -32,6 +32,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$this->initParsing();
 		$this->addParsingMethods();
 		$this->initFraudAggregation();
+		if(!empty(Billrun_Factory::config()->getConfigValue('ggsn.fraud.db'))) {
+			$this->fraudCollection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('ggsn.fraud.db'))->linesCollection();
+		}
 	}
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
