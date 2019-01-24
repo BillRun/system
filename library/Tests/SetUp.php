@@ -83,7 +83,7 @@ trait Tests_SetUp {
 				echo(' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
 				continue;
 			}
-			if (!empty($parsedData) ) {
+			if (!empty($parsedData['data']) ) {
 					$data = $this->fixData($parsedData['data']);
 					$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 					$coll->batchInsert($data);
