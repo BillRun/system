@@ -733,10 +733,11 @@ abstract class Billrun_PaymentGateway {
 		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
 		$account = Billrun_Factory::account();
 		$account->load(array('aid' => $this->saveDetails['aid']));
-		$gatewayDetails = !empty($account->payment_gateway['active']) ? $account->payment_gateway['active'] : array();
+		$accountGateway = $account->payment_gateway;
+		$gatewayDetails = !empty($accountGateway) ? $accountGateway['active'] : array();
 		$accountId = $account->aid;
 		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
-			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::INFO);
+			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
 		}
 		if (!isset($retParams['transferred_amount'])) {
 			throw new Exception("Missing amount for single payment, aid = " . $accountId);
