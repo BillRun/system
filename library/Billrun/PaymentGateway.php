@@ -731,15 +731,12 @@ abstract class Billrun_PaymentGateway {
 	
 	protected function paySinglePayment($retParams) {
 		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
-		$query['aid'] = $this->saveDetails['aid'];
-		$query['type'] = "account";
 		$account = Billrun_Factory::account();
 		$account->load(array('aid' => $this->saveDetails['aid']));
-		$gatewayDetails = $account->payment_gateway['active'];
+		$gatewayDetails = !empty($account->payment_gateway['active']) ? $account->payment_gateway['active'] : array();
 		$accountId = $account->aid;
 		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
-			throw new Exception("Non valid payment gateway for aid = " . $accountId);
+			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::INFO);
 		}
 		if (!isset($retParams['transferred_amount'])) {
 			throw new Exception("Missing amount for single payment, aid = " . $accountId);
@@ -751,7 +748,7 @@ abstract class Billrun_PaymentGateway {
 		$gatewayDetails['amount'] = $cashAmount;
 		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
 		$paymentParams['gateway_details'] = $retParams;
-		$paymentParams['gateway_details']['name'] = $gatewayDetails['name'];
+		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
 		if (isset($retParams['installments'])) {
 			$paymentParams['installments'] = $retParams['installments'];
