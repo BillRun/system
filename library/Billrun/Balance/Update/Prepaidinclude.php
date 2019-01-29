@@ -402,8 +402,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	 * @return true on success log change else false
 	 */
 	protected function trackChanges() {
+		$before = $this->before instanceof Mongodloid_Entity ? $this->before->getRawData() : $this->before;
+		$after = $this->after instanceof Mongodloid_Entity ? $this->after->getRawData() : $this->after;
+
 		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . (isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0), 
-			'balances', $this->before->getRawData(), $this->after->getRawData());
+			'balances', $before, $after);
 	}
 
 }

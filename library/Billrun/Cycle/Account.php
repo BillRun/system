@@ -98,6 +98,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
+		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );
 		$subConstratorData['history'] = $sorted;
 		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;

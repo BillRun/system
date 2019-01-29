@@ -28,7 +28,10 @@ class Models_Balances extends Models_Entity {
 
 	public function update() {
 		$className = 'Billrun_Balance_Update_';
-		if (isset($this->query['pp_includes_external_id']) || isset($this->query['pp_includes_external_name']) || isset($this->query['id']) || isset($this->query['_id'])) {
+		if (isset($this->query['id']) || isset($this->query['_id'])) {
+			$className .= 'Id';
+			// load pp includes update balance
+		} else if (isset($this->query['pp_includes_external_id']) || isset($this->query['pp_includes_external_name'])) {
 			$className .= 'Prepaidinclude';
 			// load pp includes update balance
 		} else if (isset($this->query['charging_plan']) || isset($this->query['charging_plan_name'])) {
