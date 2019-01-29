@@ -543,11 +543,16 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			$newEvent['source'] = 'billing';
 			$newEvent['stamp'] = md5(serialize($newEvent));
 			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
-			$newEvent['priority'] = Billrun_Util::getFieldVal($this->fraudConfig[$this->getName()][$event['event_type']]['priority'],10);	
-				
-			
+			$newEvent['priority'] = Billrun_Util::getFieldVal($this->fraudConfig[$this->getName()][$event['event_type']]['priority'],10);
+
 			$item['event_stamp'] = $newEvent['stamp'];
-			if($events->query(['sid'=>$newEvent['sid'],'event_type'=>$newEvent['event_type'],'creation_time'=>['$gt'=>$dateHorizion]])->cursor()->limit(1)->current()->isEmpty()) {
+			if($events->query([ 'sid'=>$newEvent['sid'],
+								'event_type'=>$newEvent['event_type'],
+								'creation_time'=>['$gt'=>$dateHorizion],
+								'value'=>['$gt'=>$newEvent['value']-$newEvent['threshold']],
+								'returned_value.success'=>['$in'=>[true,1]]
+								])->cursor()->limit(1)->current()->isEmpty()) {
+
 				$ret[] = $events->save($newEvent);
 			}
 		}
