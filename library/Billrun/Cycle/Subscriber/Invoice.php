@@ -25,6 +25,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $invoicedLines = array();
 	
 	protected $shouldKeepLinesinMemory = true;
+	protected $shouldAggregateUsage = true;
         
 	/**
 	 * 
@@ -61,6 +62,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 
 	public function setShouldKeepLinesinMemory($newValue) {
         $this->shouldKeepLinesinMemory = $newValue;
+	}
+
+	public function setShouldAggregateUsage($newValue) {
+        $this->shouldAggregateUsage = $newValue;
 	}
 	
 	/**
@@ -381,8 +386,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-
-		$this->aggregateLinesToBreakdown($subLines);
+		if ($this->shouldAggregateUsage) {
+			$this->aggregateLinesToBreakdown($subLines);
+		} else {
+			Billrun_Factory::log('Skipping subscriber '. $this->data['sid'].' usage aggrergation for AID :'. $this->data['aid'],Zend_Log::INFO);
+		}
 
 		return $updatedLines;
 	}

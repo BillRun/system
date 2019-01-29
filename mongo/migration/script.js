@@ -466,6 +466,6 @@ db.subscribers.getIndexes().forEach(function(index){
 })
 
 // BRCD-1717
-if (db.lines.stats().sharded) {
+//if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
-}
+//}
