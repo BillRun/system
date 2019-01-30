@@ -319,29 +319,24 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
-// add detailed invoice flag to accounts
-fields = lastConfig.subscribers.account.fields;
-var found = false;
-for (var field_key in fields) {
-	if (fields[field_key].field_name === "detailed_invoice") {
-		found = true;
-	}
-}
-if(!found) {
-	fields.push ({
-		"display":true,
-		"editable":true,
-		"generated":false,
-		"system":true,
-		"field_name":"detailed_invoice",
-		"unique":false,
-		"show_in_list":false,
-		"title":"Detailed invoice",
-		"type":"boolean",
-		"mandatory":false
-	});
-	lastConfig.subscribers.account.fields = fields;
-}
+//BRCD-1420 : Integrate Invoice usage details from the CRM with the billing
+var detailedField = {
+					"select_list" : false,
+					"display" : true,
+					"editable" : true,
+					"generated":false,
+					"multiple" : false,
+					"system":true,
+					"field_name" : "invoice_detailed",
+					"unique" : false,
+					"show_in_list":false,
+					"title" : "Detailed Invoice",
+					"type" : "boolean",
+					"mandatory" : false,
+					"select_options" : ""
+};
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
 
 // BRCD-1636 Add new custom 'play' field to Subscribers.
