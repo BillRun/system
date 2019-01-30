@@ -321,16 +321,19 @@ for (var i in lastConfig['file_types']) {
 
 //BRCD-1420 : Integrate Invoice usage details from the CRM with the billing
 var detailedField = {
-				"select_list" : false,
-				"display" : true,
-				"editable" : true,
-				"multiple" : false,
-				"field_name" : "invoice_detailed",
-				"unique" : false,
-				"title" : "Detailed Invoice",
-				"mandatory" : false,
-				"type" : "boolean",
-				"select_options" : ""
+					"select_list" : false,
+					"display" : true,
+					"editable" : true,
+					"generated":false,
+					"multiple" : false,
+					"system":true,
+					"field_name" : "invoice_detailed",
+					"unique" : false,
+					"show_in_list":false,
+					"title" : "Detailed Invoice",
+					"type" : "boolean",
+					"mandatory" : false,
+					"select_options" : ""
 };
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
