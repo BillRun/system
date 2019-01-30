@@ -288,7 +288,6 @@ db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
-
 // BRCD-1457 - Fix creation_time field in subscriber services
 db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:1}}).forEach(
 	function(obj) {
@@ -307,7 +306,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
-
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -321,8 +319,7 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
-db.config.insert(lastConfig);
-
+//BRCD-1420 : Integrate Invoice usage details from the CRM with the billing
 var detailedField = {
 				"select_list" : false,
 				"display" : true,
@@ -339,10 +336,34 @@ var detailedField = {
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
 
-db.config.insert(lastConfig);
+// BRCD-1636 Add new custom 'play' field to Subscribers.
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fields = lastConfig['subscribers']['subscriber']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "play") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"display":true,
+		"editable":true,
+		"field_name":"play",
+		"show_in_list":true,
+		"title":"Play",
+	});
+}
+lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");
@@ -353,3 +374,64 @@ db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , spars
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
 
+//BRCD-1621 - Service quantity based quota
+var subscribers = db.subscribers.find({type:'subscriber', services:{$exists:1,$ne:[]}, $where: function() {
+	var services = this.services; 
+		var hasStringQuantity = false; 
+		services.forEach(function (service) {
+			if (typeof service.quantity === "string") {
+				hasStringQuantity = true;
+			}
+		});
+		return hasStringQuantity;
+}});
+subscribers.forEach(function (sub) {
+		var services = sub.services;
+		services.forEach(function (service) {
+			if (service.quantity) {
+				service.quantity = Number(service.quantity);
+				db.subscribers.save(sub);
+			}
+		});
+});
+
+// BRCD-1624: add default Plays to config
+if (typeof lastConfig.plays == 'undefined') {
+	lastConfig.plays = [
+		{"name": "Default", "enabled": true, "default": true }
+	];
+}
+
+//BRCD-1643: add email template for fraud notification
+if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
+	lastConfig.email_templates.fraud_notification = {
+		subject: "Event [[event_code]] was triggered",
+		content: "<pre>\n[[fraud_event_details]]</pre>\n",
+	};
+}
+
+//BRCD-1613 - Configurable VAT label on invoice
+var vatLabel = lastConfig['taxation']['vat_label'];
+if (!vatLabel) {
+	lastConfig['taxation']['vat_label'] = 'Vat';
+}
+
+db.config.insert(lastConfig);
+
+// BRCD-1717
+db.subscribers.getIndexes().forEach(function(index){
+	var indexFields = Object.keys(index.key);
+	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
+	}
+	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+	}
+})
+
+// BRCD-1717
+//if (db.lines.stats().sharded) {
+//	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+//}

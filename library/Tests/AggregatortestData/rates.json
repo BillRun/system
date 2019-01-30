@@ -1,0 +1,66 @@
+{
+	"collection": "ratesCollection",
+	"data":
+			[
+				{
+					"OBJID": "5aeee54905e68c5b1f45f9f4",
+					"from": "time*2018-01-06T22:00:00Z",
+					"key": "CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": "0",
+										"to": "UNLIMITED",
+										"interval": "1",
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-05-06T12:21:45Z",
+					"creation_time": "time*2018-01-06T22:00:00Z"
+				}, {
+					"OBJID":"5b34a72705e68c7f46016a12",
+					"from": "time*2018-01-28T22:00:00Z",
+					"key": "NONVAT",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": "0",
+										"to": "UNLIMITED",
+										"interval": "1",
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "nonvat",
+					"vatable": false,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-06-28T10:15:19Z",
+					"creation_time": "time*2018-06-28T21:00:00Z"
+				}
+
+
+
+			]
+}

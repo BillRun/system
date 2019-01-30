@@ -89,8 +89,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
 				$rate = $this->getRateForLine($line);
 				$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
-				
-				$line->collection(Billrun_Factory::db()->linesCollection());
+				if ($line instanceof Mongodloid_Entity) {
+					$line->collection(Billrun_Factory::db()->linesCollection());
+				}
 				$name = $this->getLineUsageName($line);
 				$key = $this->getLineAggregationKey($line, $rate, $name);
 				$subscriptionList[$key]['desc'] = $name;	

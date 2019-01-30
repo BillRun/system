@@ -400,6 +400,9 @@ class Mongodloid_Collection {
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
+				if ($doc instanceof Mongodloid_Entity) {
+					$doc = $doc->getRawData();
+				}
 				$batch->add($doc);
 			}
 			return $batch->execute($options);

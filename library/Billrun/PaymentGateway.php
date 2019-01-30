@@ -154,6 +154,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function redirectToGateway($aid, $accountQuery, $timestamp, $request, $data) {
 		$singlePaymentParams = array();
+		$options = array();
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
@@ -165,13 +166,19 @@ abstract class Billrun_PaymentGateway {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
 			}
+			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
+				throw new Exception("Single payment amount different from installments amount");
+			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
 		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
 		}
+		if (isset($data['installments'])) {
+			$options['installments'] = $data['installments'];
+		}
 		if ($this->needRequestForToken()){
-			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams);
+			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
 			$response = $updateOkPage;
@@ -348,10 +355,11 @@ abstract class Billrun_PaymentGateway {
 	/**
 	 * Build request for start a transaction of making single payment.
 	 * 
-	 * @param Int $params - Relevant parameters
+	 * @param array $params - parameteres that transferred in the request.
+	 * @param array $options - options to decide on the pg request (installment for example)
 	 * @return array - represents the request
 	 */
-	abstract protected function buildSinglePaymentArray($params);
+	abstract protected function buildSinglePaymentArray($params, $options);
 
 		/**
 	 * Redirect to the payment gateway page of card details.
@@ -362,7 +370,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $maxTries = 10) {
+	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries = 10) {
 		if ($maxTries < 0) {
 			throw new Exception("Payment gateway error, number of requests for token reached it's limit");
 		}
@@ -371,7 +379,7 @@ abstract class Billrun_PaymentGateway {
 			$singlePaymentParams['return_url'] = $returnUrl;
 			$singlePaymentParams['ok_page'] = $okPage;
 			$singlePaymentParams['fail_page'] = $failPage;
-			$postArray = $this->buildSinglePaymentArray($singlePaymentParams);
+			$postArray = $this->buildSinglePaymentArray($singlePaymentParams, $options);
 		} else { // Request to get token
 			$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
 		}
@@ -384,7 +392,7 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
-				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $maxTries - 1);
+				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
 			} else {
 				$response = $result;
 			}
@@ -580,51 +588,6 @@ abstract class Billrun_PaymentGateway {
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['receiver'];
 	}
-	
-	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		if (!empty($aids)) {
-			$match = array(
-				'$match' => array(
-					'aid' => array('$in' => $aids),
-				),
-			);
-			if (!empty($specificInvoices)) {
-				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
-			}
-		}
-		$match['$match']['$or'] = array(
-				array('due_date' => array('$exists' => false)),
-				array('due_date' => array('$lt' => new MongoDate())),
-		);
-		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'due_date' => -1,
-			),
-		);
-		$pipelines[] = array(
-			'$addFields' => array(
-				'method' => array('$ifNull' => array('$method', '$payment_method')),
-			),	
-		);
-		
-		$pipelines[] = array(
-			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
-		);
-		$pipelines[] = array(
-			'$match' => array(
-				'$or' => array(
-					array('due' => array('$gt' => Billrun_Bill::precision)),
-					array('due' => array('$lt' => -Billrun_Bill::precision)),
-				),
-				'suspend_debit' => NULL,
-			),
-		);
-		$res = $billsColl->aggregate($pipelines);
-		return $res;
-	}
 
 	protected function rearrangeParametres($params){
 		foreach ($params as $value) {
@@ -762,74 +725,19 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
-	protected static function getGroupByMode($mode = false) {
-		$group = array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			);	
-		if ($mode == 'byInvoiceId') {
-			$group['_id'] = '$invoice_id';
-			$group['left_to_pay'] = array('$first' => '$left_to_pay');
-			$group['left'] = array('$first' => '$left');
-			$group['invoice_id'] = array('$first' => '$invoice_id');
-		}	
-			
-		return $group;
-	}
-	
 	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
 		return false;
 	}
 	
 	protected function paySinglePayment($retParams) {
 		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
-		$query['aid'] = $this->saveDetails['aid'];
-		$query['type'] = "account";
 		$account = Billrun_Factory::account();
 		$account->load(array('aid' => $this->saveDetails['aid']));
-		$gatewayDetails = $account->payment_gateway['active'];
+		$accountGateway = $account->payment_gateway;
+		$gatewayDetails = !empty($accountGateway) ? $accountGateway['active'] : array();
 		$accountId = $account->aid;
 		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
-			throw new Exception("Non valid payment gateway for aid = " . $accountId);
+			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
 		}
 		if (!isset($retParams['transferred_amount'])) {
 			throw new Exception("Missing amount for single payment, aid = " . $accountId);
@@ -841,8 +749,11 @@ abstract class Billrun_PaymentGateway {
 		$gatewayDetails['amount'] = $cashAmount;
 		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
 		$paymentParams['gateway_details'] = $retParams;
-		$paymentParams['gateway_details']['name'] = $gatewayDetails['name'];
+		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
+		if (isset($retParams['installments'])) {
+			$paymentParams['installments'] = $retParams['installments'];
+		}
 		$paymentParams['dir'] = 'fc';
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
 		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);

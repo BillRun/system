@@ -511,6 +511,15 @@ class Billrun_Factory {
 	/**
 	 * 
 	 * @param array $params
+	 * @return Billrun_FraudManager
+	 */
+	public static function fraudManager($params = array()) {
+		return Billrun_FraudManager::getInstance($params);
+	}
+	
+	/**
+	 * 
+	 * @param array $params
 	 * @return Billrun_EmailSenderManager
 	 */
 	public static function emailSenderManager($params = array()) {

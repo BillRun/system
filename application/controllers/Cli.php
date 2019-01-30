@@ -30,9 +30,6 @@ class CliController extends Yaf_Controller_Abstract {
 		}
 		$this->setActions();
 		$this->setOptions();
-		if (isset($this->options->cron)) {
-			$this->cronForward();
-		}
 		// this will verify db config will load into main config
 		Billrun_Factory::db();
 	}
@@ -191,18 +188,6 @@ class CliController extends Yaf_Controller_Abstract {
 			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
 		}
 		return $options;
-	}
-
-	/**
-	 * forward to cron controller
-	 */
-	protected function cronForward() {
-		if (isset($this->options->type)) {
-			$action = strtolower($this->options->type);
-		} else {
-			$action = 'index';
-		}
-		$this->forward('Cron', $action);
 	}
 
 }

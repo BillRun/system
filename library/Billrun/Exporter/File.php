@@ -22,6 +22,7 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 	protected function getFileName() {
 		$fileName = $this->config['file_name'];
 		$searchesAndReplaces = $this->getSearchesAndReplaces();
+		Billrun_Factory::dispatcher()->trigger('ExportFileGetFileName', array(&$fileName, &$searchesAndReplaces, $this));
 		return str_replace(array_keys($searchesAndReplaces), array_values($searchesAndReplaces), $fileName);
 	}
 	
@@ -73,15 +74,18 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter {
 		}
 		$exportedData = array();
 		if (!empty($this->headerToExport)) {
+			Billrun_Factory::dispatcher()->trigger('BeforeExportHeader', array(&$this->headerToExport, $this));
 			$this->exportRowToFile($fp, $this->headerToExport, 'header');
 			$exportedData[] = $this->headerToExport;
 		}
 
 		foreach ($this->rowsToExport as $row) {
+			Billrun_Factory::dispatcher()->trigger('BeforeExportRow', array(&$row, $this));
 			$this->exportRowToFile($fp, $row);
 			$exportedData[] = $row;
 		}
 		if (!empty($this->footerToExport)) {
+			Billrun_Factory::dispatcher()->trigger('BeforeExportFooter', array(&$this->footerToExport, $this));
 			$this->exportRowToFile($fp, $this->footerToExport, 'footer');
 			$exportedData[] = $this->footerToExport;
 		}

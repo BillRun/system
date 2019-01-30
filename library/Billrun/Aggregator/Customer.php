@@ -428,7 +428,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$raw = $subscriberPlan['id'];
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data',array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
-						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+						$ret = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+						if (!is_null($ret) || (!isset($srcField['nullable']) || $srcField['nullable'])) {
+							$raw[$dstField] = $ret;
+						}
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
@@ -700,6 +703,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return  $planData['plan'];
 		}
 		return NULL;
+	}
+	
+	protected function getPlay($play) {
+		return Billrun_Utils_Plays::isPlaysInUse() ? $play : null;
 	}
 
 	public function getGeneratePdf() {
