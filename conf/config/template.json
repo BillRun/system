@@ -90,7 +90,7 @@
 				"apply_optional_charges": true
 		 },
 		 "vat" : 0,
-		 "vat_label": "VAT"
+		 "vat_label": "Vat"
 	},
 	"discounts": {
     "fields": [
