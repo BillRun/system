@@ -45,7 +45,7 @@ class Billrun_Log extends Zend_Log {
 	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
 		
-		$this->stamp = $this->updateStamp();
+		$this->updateStamp();
 
 		if (isset($_SERVER['REQUEST_URI']) && stripos($_SERVER['REQUEST_URI'], 'realtime') === FALSE && ($user = Billrun_Factory::user()) !== FALSE) {
 			$this->user = $user->getUsername();
