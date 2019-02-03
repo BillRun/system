@@ -288,16 +288,21 @@ class Billrun_Cycle_Account_Invoice {
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
+			'current_balance' => array('after_vat' => 0),
 		);
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
 		}
+		
+		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
+		
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
-		if($pastBalance['total'] < -Billrun_Billingcycle::PRECISION  ) {
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $invoicingDay);
+		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
+		$newTotals['current_balance']['after_vat'] = $newTotals['past_balance']['after_vat'] + $newTotals['after_vat'];
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
 	}
