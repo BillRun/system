@@ -27,42 +27,44 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $stepsPeriodicity = 'hourly'; // shouldn't be configurable
 	protected $collection;
 	protected $nonWorkingDays = array(0, 6);
+	protected $collectionSteps;
 
 	public function __construct($options = array()) {
 		$this->collection = Billrun_Factory::collection();
+		$this->collectionSteps = Billrun_Factory::collectionSteps();
 	}
 	
 	public function afterChargeSuccess($bill) {
 		if ($this->immediateExit) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'exit_collection');
 		}
 	}
 	
 	public function afterPaymentAdjusted($oldAmount, $newAmount, $aid) {
 		if (($oldAmount - $newAmount < 0) && $this->immediateExit) {
-			$this->collection->collect(array($aid));
+			$this->collection->collect(array($aid), 'exit_collection');
 		} else if (($oldAmount - $newAmount) > 0 && $this->immediateEnter) {
-			$this->collection->collect(array($aid));
+			$this->collection->collect(array($aid), 'enter_collection');
 		}
 	}
 
 	public function afterRefundSuccess($bill) {
 		if ($this->immediateEnter) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
 	}
 	
 	public function afterInvoiceConfirmed($bill) {
 		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->immediateEnter) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']], 'enter_collection');
 		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->immediateExit) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']], 'exit_collection');
 		}
 	}	
 
 	public function afterRejection($bill) {
 		if ($this->immediateEnter) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
 	}
 	
@@ -70,8 +72,8 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->cronFrequency == 'hourly') {
 			$this->collection->collect();
 		}
-		if ($this->stepsPeriodicity == 'daily') {
-			Run_collect_stepAction::runCollectStep();
+		if ($this->stepsPeriodicity == 'hourly') {
+			$this->collectionSteps->runCollectStep();
 		}
 	}
 
@@ -80,7 +82,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->collection->collect();
 		}
 		if ($this->stepsPeriodicity == 'daily') {
-			Run_collect_stepAction::runCollectStep();
+			$this->collectionSteps->runCollectStep();
 		}
 	}
 	

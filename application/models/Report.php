@@ -23,6 +23,7 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $cacheEntityFields = [];
 	protected $currentTime = null;
 	
 	/**
@@ -268,8 +269,16 @@ class ReportModel {
 				return $value[$pluckField['key']];
 			}
 		}
-
-		return $value;
+		
+		$columns = array_column($this->report['columns'], null, 'key');
+		$field = $columns[$key];
+		$field_conf = $this->getEntityCustomFields($field['entity'], $field['field_name']);
+		switch ($field_conf['type']) {
+			case 'ranges':
+				return "{$value['from']}-{$value['to']}";
+			default:
+				return $value;
+		}
 	}
 	
 	protected function applyValueformat($value, $format) {
@@ -654,9 +663,39 @@ class ReportModel {
 				return 'events';
 			case 'logFile':
 				return 'log';
+			case 'bills':
+				return 'bills';
 			default:
 				throw new Exception("Invalid entity type");
 		}
+	}
+
+	/**
+	 * Map entity custom fields
+	 * 
+	 * @param type $entity name 
+	 * @return string path to custom fields
+	 */
+	protected function entityCustomFieldsMapper($entity) {
+		switch ($entity) {
+			case 'subscription':
+				return 'subscribers.subscriber.fields';
+			case 'customer':
+				return 'subscribers.account.fields';
+			default: {
+				$collection = $this->entityMapper($entity);
+				return "{$collection}.fields";
+			}
+		}
+	}
+	
+	protected function getEntityCustomFields($entity, $fieldName) {		
+		if(!empty($this->cacheEntityFields[$entity])) {
+			return $this->cacheEntityFields[$entity][$fieldName];
+		}
+		$entityFieldConfig = array_column(Billrun_Factory::config()->getConfigValue($this->entityCustomFieldsMapper($entity), []), null, "field_name");
+		$this->cacheEntityFields[$entity] = $entityFieldConfig;
+		return $this->cacheEntityFields[$entity][$fieldName];
 	}
 	
 	protected function getGroup() {
@@ -750,6 +789,24 @@ class ReportModel {
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
 		switch ($op) {
+			case 'in_range':
+				$formatedExpression = [
+					'$elemMatch' => [
+						'from' => ['$lte' => $value],
+						'to' => ['$gte' => $value],
+					],
+				];
+				break;
+			case 'nin_range':
+				$formatedExpression = [
+					'$not' => [
+						'$elemMatch' => [
+							'from' => ['$lte' => $value],
+							'to' => ['$gte' => $value],
+						]
+					]
+				];
+				break;
 			case 'like':
 				$formatedExpression = array(
 					'$regex' => "{$value}",
@@ -775,6 +832,9 @@ class ReportModel {
 					$values = array_map('floatval', explode(',', $value));
 				} else {
 					$values = explode(',', $value);
+				}
+				if ($field == 'paid' && in_array('0', $values)) {
+					$values[] = false;
 				}
 				$formatedExpression = array(
 					"\${$op}" => $values
@@ -867,7 +927,8 @@ class ReportModel {
 		if ($size === -1 && $page === -1) {
 			return 0;
 		}
-		return intval($page) * intval($size);
+		// Size has addition 1 item to check if next page exists 
+		return intval($page) * intval($size - 1);
 	}
 	
 	protected function getLimit($size = -1) {

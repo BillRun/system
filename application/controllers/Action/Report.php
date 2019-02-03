@@ -28,6 +28,7 @@ class ReportAction extends ApiAction {
 	protected $response = array();
 	protected $type = null;
 	protected $headers = array();
+	protected $executionTime = null;
 	
 	public function execute() {
 		$this->allowed();
@@ -64,9 +65,18 @@ class ReportAction extends ApiAction {
 	public function generateReport($report, $page, $size) {
 		$parsed_report = json_decode($report, TRUE);
 		$this->model = new ReportModel($parsed_report);
-		$this->response = $this->model->applyFilter($page, $size);
-		$nextPageData = ($size !== -1) ? $this->model->applyFilter($page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
-		$this->next_page = count($nextPageData) > 0; 
+		// add 1 to check it next page exists
+		$limit = ($size === -1) ? $size : $size + 1;
+		$report_start = microtime(true);
+		$rows = $this->model->applyFilter($page, $limit);
+		$executionTime = microtime(true) - $report_start;
+		$nextPageExists = (count($rows) === $limit);
+		if ($nextPageExists) {
+			array_pop($rows);
+		}
+		$this->response = $rows;
+		$this->next_page = $nextPageExists;
+		$this->executionTime = number_format($executionTime, 2);
 	}
 	
 	public function taxationReport($report, $page, $size) {	
@@ -84,6 +94,7 @@ class ReportAction extends ApiAction {
 				'desc' => $this->desc,
 				'details' => $this->response,
 				'next_page' => $this->next_page,
+				'execution_time' => $this->executionTime,
 			)
 		));
 		return true;

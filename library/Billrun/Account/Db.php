@@ -198,9 +198,11 @@ class Billrun_Account_Db extends Billrun_Account {
 
 	public function getInCollection($aids = array()) {
 		$results = array();
-		$params = array(
-			'in_collection' => true
-		);
+		$params = Billrun_Utils_Mongo::getDateBoundQuery();
+		$params['in_collection'] = true;
+		if (!empty($aids)) {
+			$params['aid'] = array('$in' => $aids);
+		}
 		$query = $this->buildQuery($params);
 		$cursor = $this->collection->query($query)->cursor();
 		foreach ($cursor as $row) {

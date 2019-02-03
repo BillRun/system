@@ -106,6 +106,12 @@ class Billrun_Factory {
 	protected static $plan = array();
 
 	/**
+	 * Service instances
+	 *
+	 * @var Billrun_Billrun Service
+	 */
+	protected static $service = array();
+	/**
 	 * Smser instance
 	 * 
 	 * @var Billrun_Billrun Smser
@@ -385,6 +391,25 @@ class Billrun_Factory {
 	}
 
 	/**
+	 * method to retrieve the service instance
+	 *
+	 * @return Billrun_Plan
+	 */
+	static public function service($params) {
+
+		if (isset($params['disableCache']) && $params['disableCache']) {
+			return new Billrun_Service($params);
+		}
+		// unique stamp per plan
+		$stamp = Billrun_Util::generateArrayStamp($params);
+
+		if (!isset(self::$service[$stamp])) {
+			self::$service[$stamp] = new Billrun_Service($params);
+		}
+		return self::$service[$stamp];
+	}
+
+	/**
 	 * method to retrieve a billrun instance
 	 * 
 	 * @return Billrun_Billrun
@@ -481,6 +506,15 @@ class Billrun_Factory {
 	 */
 	public static function eventsManager($params = array()) {
 		return Billrun_EventsManager::getInstance($params);
+	}
+	
+	/**
+	 * 
+	 * @param array $params
+	 * @return Billrun_FraudManager
+	 */
+	public static function fraudManager($params = array()) {
+		return Billrun_FraudManager::getInstance($params);
 	}
 	
 	/**

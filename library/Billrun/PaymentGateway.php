@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
-require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * This class represents a payment gateway
@@ -154,7 +152,9 @@ abstract class Billrun_PaymentGateway {
 	 * @param Int $timestamp - Unix timestamp
 	 * @return Int - Account id
 	 */
-	public function redirectForToken($aid, $accountQuery, $timestamp, $request, $data) {
+	public function redirectToGateway($aid, $accountQuery, $timestamp, $request, $data) {
+		$singlePaymentParams = array();
+		$options = array();
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
@@ -162,11 +162,23 @@ abstract class Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantReturnUrl);
 		$okPage = (isset($data['iframe']) && $data['iframe']) ? $data['ok_page'] : $this->getOkPage($request);
 		$failPage = (isset($data['iframe']) && $data['iframe']) ? $data['fail_page'] : false;
+		if (isset($data['action']) && $data['action'] == 'single_payment') {
+			if (empty($data['amount'])) {
+				throw new Exception("Missing amount when making single payment");
+			}
+			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
+				throw new Exception("Single payment amount different from installments amount");
+			}
+			$singlePaymentParams['amount'] = floatval($data['amount']);
+		}
 		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
 		}
+		if (isset($data['installments'])) {
+			$options['installments'] = $data['installments'];
+		}
 		if ($this->needRequestForToken()){
-			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage);
+			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
 			$response = $updateOkPage;
@@ -338,9 +350,18 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * return Boolean - True if there's an error that was handled. 
 	 */
-	abstract protected function handleTokenRequestError($response, $params); 
+	abstract protected function handleTokenRequestError($response, $params);
 	
 	/**
+	 * Build request for start a transaction of making single payment.
+	 * 
+	 * @param array $params - parameteres that transferred in the request.
+	 * @param array $options - options to decide on the pg request (installment for example)
+	 * @return array - represents the request
+	 */
+	abstract protected function buildSinglePaymentArray($params, $options);
+
+		/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -349,11 +370,19 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $okPage, $failPage, $maxTries = 10) {
+	protected function getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries = 10) {
 		if ($maxTries < 0) {
 			throw new Exception("Payment gateway error, number of requests for token reached it's limit");
 		}
-		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
+		if (!empty($singlePaymentParams)) {
+			$singlePaymentParams['aid'] = $aid;
+			$singlePaymentParams['return_url'] = $returnUrl;
+			$singlePaymentParams['ok_page'] = $okPage;
+			$singlePaymentParams['fail_page'] = $failPage;
+			$postArray = $this->buildSinglePaymentArray($singlePaymentParams, $options);
+		} else { // Request to get token
+			$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
+		}
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
 		} else {
@@ -363,7 +392,7 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
-				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $maxTries - 1);
+				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $singlePaymentParams, $options, $maxTries - 1);
 			} else {
 				$response = $result;
 			}
@@ -398,7 +427,13 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: Too much time passed', Zend_Log::ALERT);
 			throw new Exception('Too much time passed');
 		}
-		$this->savePaymentGateway();
+
+		if (isset($retParams['action']) && $retParams['action'] == 'SinglePayment') {
+			$this->paySinglePayment($retParams);
+		} else {
+			$this->savePaymentGateway();
+		}
+		
 		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
 	}
 
@@ -497,13 +532,13 @@ abstract class Billrun_PaymentGateway {
 	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return Array - the status and stage of the payment.
 	 */
-	public function checkPaymentStatus($status, $gateway, $params = array()) {
+	public static function checkPaymentStatus($status, $gateway, $params = array()) {
 		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Completed", 'additional_params' => $params);
 		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Pending", 'additional_params' => $params);
 		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected", 'extra_params' => $params);
+			return array('status' => $status, 'stage' => "Rejected", 'additional_params' => $params);
 		} else {
 			throw new Exception("Unknown status");
 		}
@@ -552,45 +587,6 @@ abstract class Billrun_PaymentGateway {
 		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['receiver'];
-	}
-	
-	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		if (!empty($aids)) {
-			$match = array(
-				'$match' => array(
-					'aid' => array('$in' => $aids),
-				),
-			);
-			if (!empty($specificInvoices)) {
-				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
-			}
-		}
-		$match['$match']['$or'] = array(
-				array('due_date' => array('$exists' => false)),
-				array('due_date' => array('$lt' => new MongoDate())),
-		);
-		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'due_date' => -1,
-			),
-		);
-		$pipelines[] = array(
-			'$group' => !empty($specificInvoices) ? self::getGroupByMode('byInvoiceId') : self::getGroupByMode(),
-		);
-		$pipelines[] = array(
-			'$match' => array(
-				'$or' => array(
-					array('due' => array('$gt' => Billrun_Bill::precision)),
-					array('due' => array('$lt' => -Billrun_Bill::precision)),
-				),
-				'suspend_debit' => NULL,
-			),
-		);
-		$res = $billsColl->aggregate($pipelines);
-		return $res;
 	}
 
 	protected function rearrangeParametres($params){
@@ -715,7 +711,7 @@ abstract class Billrun_PaymentGateway {
 	public function getExportParameters() {
 		return array();
 	}
-	
+
 	public function makeOnlineTransaction($gatewayDetails) {
 		$amountToPay = $gatewayDetails['amount'];
 		if ($amountToPay > 0) {
@@ -729,60 +725,41 @@ abstract class Billrun_PaymentGateway {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
-	protected function getGroupByMode($mode = false) {
-		$group = array(
-				'_id' => '$aid',
-				'suspend_debit' => array(
-					'$first' => '$suspend_debit',
-				),
-				'type' => array(
-					'$first' => '$type',
-				),
-				'payment_method' => array(
-					'$first' => '$method',
-				),
-				'due' => array(
-					'$sum' => '$due',
-				),
-				'aid' => array(
-					'$first' => '$aid',
-				),
-				'billrun_key' => array(
-					'$first' => '$billrun_key',
-				),
-				'lastname' => array(
-					'$first' => '$lastname',
-				),
-				'firstname' => array(
-					'$first' => '$firstname',
-				),
-				'bill_unit' => array(
-					'$first' => '$bill_unit',
-				),
-				'bank_name' => array(
-					'$first' => '$bank_name',
-				),
-				'due_date' => array(
-					'$first' => '$due_date',
-				),
-				'source' => array(
-					'$first' => '$source',
-				),
-				'currency' => array(
-					'$first' => '$currency',
-				),
-			);	
-		if ($mode == 'byInvoiceId') {
-			$group['_id'] = '$invoice_id';
-			$group['left_to_pay'] = array('$first' => '$left_to_pay');
-			$group['left'] = array('$first' => '$left');
-			$group['invoice_id'] = array('$first' => '$invoice_id');
-		}	
-			
-		return $group;
+	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
+		return false;
 	}
 	
-	public function handleTransactionRejectionCases($responseFromGateway, $gatewayDetails, $aid) {
-		return $responseFromGateway;
+	protected function paySinglePayment($retParams) {
+		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
+		$account = Billrun_Factory::account();
+		$account->load(array('aid' => $this->saveDetails['aid']));
+		$accountGateway = $account->payment_gateway;
+		$gatewayDetails = !empty($accountGateway) ? $accountGateway['active'] : array();
+		$accountId = $account->aid;
+		if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
+			Billrun_Factory::log("Non valid payment gateway for aid = " . $accountId, Zend_Log::NOTICE);
+		}
+		if (!isset($retParams['transferred_amount'])) {
+			throw new Exception("Missing amount for single payment, aid = " . $accountId);
+		}
+		$cashAmount = $retParams['transferred_amount'];
+		$paymentParams['aid'] = $accountId;
+		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$paymentParams['amount'] = abs($cashAmount);
+		$gatewayDetails['amount'] = $cashAmount;
+		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
+		$paymentParams['gateway_details'] = $retParams;
+		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
+		$paymentParams['transaction_status'] = $retParams['transaction_status'];
+		if (isset($retParams['installments'])) {
+			$paymentParams['installments'] = $retParams['installments'];
+		}
+		$paymentParams['dir'] = 'fc';
+		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
+		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
+	}
+	
+	public function getCompletionCodes() {
+		return $this->completionCodes;
 	}
 }

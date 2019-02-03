@@ -25,6 +25,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $invoicedLines = array();
 	
 	protected $shouldKeepLinesinMemory = true;
+	protected $shouldAggregateUsage = true;
         
 	/**
 	 * 
@@ -61,6 +62,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 
 	public function setShouldKeepLinesinMemory($newValue) {
         $this->shouldKeepLinesinMemory = $newValue;
+	}
+
+	public function setShouldAggregateUsage($newValue) {
+        $this->shouldAggregateUsage = $newValue;
 	}
 	
 	/**
@@ -220,7 +225,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes']);
+
+		$addedData = [];
+		if(!empty($row['start'])) {
+			$addedData['start'] = $row['start'];
+		}
+		if(!empty($row['end'])) {
+			$addedData['end'] = $row['end'];
+		}
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
 		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -373,8 +386,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-
-		$this->aggregateLinesToBreakdown($subLines);
+		if ($this->shouldAggregateUsage) {
+			$this->aggregateLinesToBreakdown($subLines);
+		} else {
+			Billrun_Factory::log('Skipping subscriber '. $this->data['sid'].' usage aggrergation for AID :'. $this->data['aid'],Zend_Log::INFO);
+		}
 
 		return $updatedLines;
 	}
@@ -397,8 +413,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
-						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(), array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)), 
-																																									array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(),  array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)),
+						array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
 					}
 				}
 			}
