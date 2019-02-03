@@ -340,8 +340,6 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailed
 
 
 // BRCD-1636 Add new custom 'play' field to Subscribers.
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var fields = lastConfig['subscribers']['subscriber']['fields'];
 var found = false;
 for (var field_key in fields) {
