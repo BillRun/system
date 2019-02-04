@@ -76,6 +76,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->extraData = $options['calculator']['extra_data'];
 		}
 
+		Billrun_Factory::db()->setMongoNativeLong(1);
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
