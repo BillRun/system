@@ -88,7 +88,7 @@ class Billrun_Balance implements ArrayAccess {
 				'unique_plan_id' => $uniquePlanId
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
-			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
+			->limit(1)->current();
 
 		// set the data collection to enable clear save
 		$this->data->collection($this->collection);
