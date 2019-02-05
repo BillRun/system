@@ -36,35 +36,35 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function afterChargeSuccess($bill) {
 		if ($this->immediateExit) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'exit_collection');
 		}
 	}
 	
 	public function afterPaymentAdjusted($oldAmount, $newAmount, $aid) {
 		if (($oldAmount - $newAmount < 0) && $this->immediateExit) {
-			$this->collection->collect(array($aid));
+			$this->collection->collect(array($aid), 'exit_collection');
 		} else if (($oldAmount - $newAmount) > 0 && $this->immediateEnter) {
-			$this->collection->collect(array($aid));
+			$this->collection->collect(array($aid), 'enter_collection');
 		}
 	}
 
 	public function afterRefundSuccess($bill) {
 		if ($this->immediateEnter) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
 	}
 	
 	public function afterInvoiceConfirmed($bill) {
 		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->immediateEnter) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']], 'enter_collection');
 		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->immediateExit) {
-			$this->collection->collect();
+			$this->collection->collect([$bill['aid']], 'exit_collection');
 		}
 	}	
 
 	public function afterRejection($bill) {
 		if ($this->immediateEnter) {
-			$this->collection->collect(array($bill['aid']));
+			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
 	}
 	

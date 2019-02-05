@@ -14,11 +14,16 @@
  */
 class Billrun_Collection extends Billrun_Base {
 
-	public function collect($aids = array()) {
+	public function collect($aids = array(), $collectDir = '') {
 		$account = Billrun_Factory::account();
 		$markedAsInCollection = $account->getInCollection($aids);
 		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
-		$updateCollectionStateChanged = array('in_collection' => array_diff_key($reallyInCollection, $markedAsInCollection), 'out_of_collection' => array_diff_key($markedAsInCollection, $reallyInCollection));
+		if ($collectDir == 'enter_collection' || empty($collectDir)) {
+			$updateCollectionStateChanged['in_collection'] = array_diff_key($reallyInCollection, $markedAsInCollection);
+		}	
+		if ($collectDir == 'exit_collection' || empty($collectDir)) {
+			$updateCollectionStateChanged['out_of_collection'] = array_diff_key($markedAsInCollection, $reallyInCollection);
+		}
 		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
 		return $result;
 	}

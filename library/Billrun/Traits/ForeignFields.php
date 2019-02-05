@@ -24,7 +24,7 @@ trait Billrun_Traits_ForeignFields  {
 	
 	
 	protected function getAddedFoerignFields() {
-		return $this->addedForeignFields;
+		return array_keys($this->addedForeignFields);
 	}
 	
 	protected function clearAddedForeignFields() {
@@ -33,7 +33,6 @@ trait Billrun_Traits_ForeignFields  {
 	
 
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
-		$this->clearAddedForeignFields();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
 		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
 			return isset($value['foreign']);	
@@ -46,7 +45,7 @@ trait Billrun_Traits_ForeignFields  {
 			}
 			if( $autoLoadEntities && empty($foreignEntities[$fieldConf['foreign']['entity']]) && empty(Billrun_Util::getIn($foreignFieldsData,$fieldConf['field_name']))
 				&& (!is_array($autoLoadEntities) || in_array($fieldConf['foreign']['entity'],$autoLoadEntities)) ) {
-				$entityValue = Billrun_Utils_Usage::retriveEntityFromUsage(array_merge($foreignFieldsData,$fullData), $fieldConf['foreign']['entity']);
+				$entityValue = Billrun_Utils_Usage::retriveEntityFromUsage(array_merge($foreignFieldsData,$fullData), $fieldConf['foreign']['entity'],$fieldConf);
 				if($entityValue != null) {
 					$foreignEntities[$fieldConf['foreign']['entity']] = $entityValue;
 				}
@@ -59,7 +58,7 @@ trait Billrun_Traits_ForeignFields  {
 						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']));
 					}
 				}
-				$this->addedForeignFields[] = preg_replace('/\..+$/','',$fieldConf['field_name']);
+				$this->addedForeignFields[preg_replace('/\..+$/','',$fieldConf['field_name'])] = true;
 			}
 		}
 		return $foreignFieldsData;

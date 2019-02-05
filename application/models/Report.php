@@ -23,6 +23,7 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $cacheEntityFields = [];
 	protected $currentTime = null;
 	
 	/**
@@ -121,16 +122,23 @@ class ReportModel {
 				throw new Exception("No support to join {$report_entity} with those entities: {$report_entities}");
 			}
 			foreach ($join_entities as $join_entity) {
-				$lookupRestriction = FALSE;
-				if($join_entity === 'customer' ) {
-					$lookupRestriction = ['type' => 'account'];
-				}
-				if($join_entity === 'subscription' ) {
-					$lookupRestriction = ['type' => 'subscriber'];
-				}
-				$lookup = $this->getGraphLookup($join_entity,$lookupRestriction);
+				$lookup = $this->getLookup($join_entity);
 				if(!empty($lookup)) {
-					$aggregate[] = array('$graphLookup' => $lookup);
+					$aggregate[] = array('$lookup' => $lookup);
+				}
+				// filter by account type beacuse subscribers collection is mixed 
+				if($join_entity === 'customer' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
+				}
+				// filter by subscriber type beacuse subscribers collection is mixed 
+				if($join_entity === 'subscription' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'subscriber');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
 				}
 				if(in_array($join_entity, $this->entityWithRevisions)) {
 					$filterByRevision = $this->getFilterByRevision($join_entity);
@@ -174,7 +182,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-
+		
 		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
@@ -261,8 +269,16 @@ class ReportModel {
 				return $value[$pluckField['key']];
 			}
 		}
-
-		return $value;
+		
+		$columns = array_column($this->report['columns'], null, 'key');
+		$field = $columns[$key];
+		$field_conf = $this->getEntityCustomFields($field['entity'], $field['field_name']);
+		switch ($field_conf['type']) {
+			case 'ranges':
+				return "{$value['from']}-{$value['to']}";
+			default:
+				return $value;
+		}
 	}
 	
 	protected function applyValueformat($value, $format) {
@@ -551,23 +567,6 @@ class ReportModel {
 		return $lookup;
 	}
 	
-	protected function getGraphLookup($entity,$restrict = FALSE) {
-		$report_entity = $this->getReportEntity();
-		$join_entity = $this->entityMapper($entity);
-		$lookup = array(
-			'from' => $join_entity,
-			'connectFromField' => $this->mapJoin[$report_entity][$entity]['source_field'],
-			'connectToField' => $this->mapJoin[$report_entity][$entity]['target_field'],
-			'startWith' =>'$'.$this->mapJoin[$report_entity][$entity]['source_field'],
-			'maxDepth' => 0,
-			'as' => $entity
-		);
-		if(!empty($restrict)) {
-			$lookup['restrictSearchWithMatch'] = $restrict;
-		}
-		return $lookup;
-	}
-	
 	protected function getUnwind($entity) {
 		return array(
 			'path' => "\$$entity",
@@ -670,6 +669,34 @@ class ReportModel {
 				throw new Exception("Invalid entity type");
 		}
 	}
+
+	/**
+	 * Map entity custom fields
+	 * 
+	 * @param type $entity name 
+	 * @return string path to custom fields
+	 */
+	protected function entityCustomFieldsMapper($entity) {
+		switch ($entity) {
+			case 'subscription':
+				return 'subscribers.subscriber.fields';
+			case 'customer':
+				return 'subscribers.account.fields';
+			default: {
+				$collection = $this->entityMapper($entity);
+				return "{$collection}.fields";
+			}
+		}
+	}
+	
+	protected function getEntityCustomFields($entity, $fieldName) {		
+		if(!empty($this->cacheEntityFields[$entity])) {
+			return $this->cacheEntityFields[$entity][$fieldName];
+		}
+		$entityFieldConfig = array_column(Billrun_Factory::config()->getConfigValue($this->entityCustomFieldsMapper($entity), []), null, "field_name");
+		$this->cacheEntityFields[$entity] = $entityFieldConfig;
+		return $this->cacheEntityFields[$entity][$fieldName];
+	}
 	
 	protected function getGroup() {
 		$group = array();
@@ -762,6 +789,24 @@ class ReportModel {
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
 		switch ($op) {
+			case 'in_range':
+				$formatedExpression = [
+					'$elemMatch' => [
+						'from' => ['$lte' => $value],
+						'to' => ['$gte' => $value],
+					],
+				];
+				break;
+			case 'nin_range':
+				$formatedExpression = [
+					'$not' => [
+						'$elemMatch' => [
+							'from' => ['$lte' => $value],
+							'to' => ['$gte' => $value],
+						]
+					]
+				];
+				break;
 			case 'like':
 				$formatedExpression = array(
 					'$regex' => "{$value}",

@@ -69,9 +69,9 @@ class Billrun_Billingcycle {
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	protected static function getDatetime() {
+	public static function getDatetime($billrunKey) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		return self::$billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
 	/**
