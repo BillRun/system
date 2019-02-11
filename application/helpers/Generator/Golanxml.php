@@ -240,6 +240,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (is_null($lines) && (!isset($this->subscribers) || in_array(0, $this->subscribers))) {
 			$lines = $this->get_lines($billrun);
 		}
+        Billrun_Factory::db()->setMongoNativeLong(1);
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriberFlatCosts = 0;
@@ -337,11 +338,12 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 					}
 				}
+
 				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'])) {
 					foreach ($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['in_plan'] as $category_key => $category) {
 						if ($category_key != 'roaming') { // Do not count VF in_plan
 							foreach ($category as $rateKey => $zone) {
-								$subType = $this->getSubTypeOfUsage($rateKey);							
+								$subType = $this->getSubTypeOfUsage($rateKey);
 								$callTotalsKey = isset($zone['totals']['calll']['plan_usagev']) ? 'plan_usagev' : 'usagev';
 								$smsTotalsKey = isset($zone['totals']['sms']['plan_usagev']) ? 'plan_usagev' : 'usagev';
 								$dataTotalsKey = isset($zone['totals']['data']['plan_usagev']) ? 'plan_usagev' : 'usagev';
@@ -354,6 +356,26 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 					}
 				}
+                //HACK to fix missing lines without  the correct unique plan id
+				if (count($plans) == 1 && isset($subscriber['breakdown'][$plan['plan']['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']['in_plan'])) {
+					foreach ($subscriber['breakdown'][$plan['plan']]['in_plan'] as $category_key => $category) {
+						if ($category_key != 'roaming') { // Do not count VF in_plan
+							foreach ($category as $rateKey => $zone) {
+								$subType = $this->getSubTypeOfUsage($rateKey);
+								$callTotalsKey = isset($zone['totals']['calll']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$smsTotalsKey = isset($zone['totals']['sms']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$dataTotalsKey = isset($zone['totals']['data']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$mmsTotalsKey = isset($zone['totals']['mms']['plan_usagev']) ? 'plan_usagev' : 'usagev';
+								$usagesArray['call'][$subType]['usage'] = (isset($usagesArray['call'][$subType]['usage']) ? $usagesArray['call'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $callTotalsKey, 'call');
+								$usagesArray['sms'][$subType]['usage'] = (isset($usagesArray['sms'][$subType]['usage']) ? $usagesArray['sms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $smsTotalsKey, 'sms');
+								$usagesArray['data'][$subType]['usage'] = (isset($usagesArray['data'][$subType]['usage']) ? $usagesArray['data'][$subType]['usage'] : 0) + $this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, $dataTotalsKey, 'data'));
+								$usagesArray['mms'][$subType]['usage'] = (isset($usagesArray['mms'][$subType]['usage']) ? $usagesArray['mms'][$subType]['usage'] : 0) + $this->getZoneTotalsFieldByUsage($zone, $mmsTotalsKey, 'mms');
+							}
+						}
+					}
+				}
+                //HACK to fix unified ggsn line  missing unique plan id (usage taken from the balance )
+                $usagesArray['data']['SPECIAL']['usage'] = $this->bytesToKB($basePlanBalance['balance']['groups'][$plan['plan']]['data']['usagev']);
 
 				$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION = 0;
 				if (isset($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$plan['plan']][$uniquePlanId]['credit']['refund_vatable'])) {
@@ -652,6 +674,10 @@ class Generator_Golanxml extends Billrun_Generator {
 				array_push($planUniqueIds, $currentUniqueId);
 				foreach ($planUniqueIds as $planUniqueId) {
 					$planUniqueId = strval($planUniqueId);
+					//HACK to fix unified lines without unique_plan_id
+					if(!preg_match('/^\d+$/',$planUniqueId)) {
+                        continue;
+					}
 					$alreadyUsedUniqueIds[$planUniqueId] = $planToCharge['plan'];
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 					$offerId = substr($planUniqueId, 0, -10);
@@ -756,6 +782,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							}
 						}
 					}
+
 					foreach ($subscriber_intl as $zone_name => $zone) {
 						foreach ($zone['totals'] as $usage_type => $usage_totals) {
 							$this->writer->startElement('BREAKDOWN_ENTRY');
