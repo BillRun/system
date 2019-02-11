@@ -357,7 +357,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 				}
                 //HACK to fix missing lines without  the correct unique plan id
-				if (count($plans) == 1 && isset($subscriber['breakdown'][$plan['plan']['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']['in_plan'])) {
+				if (count($plans) == 1 && isset($subscriber['breakdown'][$plan['plan']]['in_plan']) && is_array($subscriber['breakdown'][$plan['plan']]['in_plan'])) {
 					foreach ($subscriber['breakdown'][$plan['plan']]['in_plan'] as $category_key => $category) {
 						if ($category_key != 'roaming') { // Do not count VF in_plan
 							foreach ($category as $rateKey => $zone) {
