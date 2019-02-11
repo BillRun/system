@@ -28,9 +28,14 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$this->shouldTranslate($request)) {
 			return;
 		}
+		
+		if (in_array($action, ['get', 'uniqueget'])) {
+			$this->translateGetRequest($collection, $request);
+		}
 	}
 	
 	public function afterBillApi($collection, $action, $request, &$output) {
+		$strip = $this->getCompundParam($request->get('strip', false), false);
 		$request = $request->getRequest();
 		if (!$this->shouldTranslate($request)) {
 			return;
@@ -39,9 +44,18 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($collection == 'plans') {
 			$this->enrichPlansResponse($output);
 		}
+		
+		if ($strip) {
+			$output = $this->stripResults($output, $params['strip']);
+		}
 	}
 	
-	protected function translatePlanGetRequest(&$request) {	
+	protected function translateGetRequest($collection, &$request) {
+		if (in_array($collection, ['rates', 'plans'])) {
+			$query = json_decode($request['query'], JSON_OBJECT_AS_ARRAY);
+			$query['hidden_from_api'] = false;
+			$request['query'] = json_encode($query);
+		}
 	}
 	
 	protected function enrichPlansResponse(&$output) {
@@ -97,5 +111,48 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->configs[$configVar] = Billrun_Factory::config()->getConfigValue($configVar, []);
 		}
 		return $this->configs[$configVar];
+	}
+	
+	/**
+	 * copied from Plans/Rates API for BC
+	 * 
+	 * @param type $results
+	 * @param type $strip
+	 * @return type
+	 * TODO: This function is found in the project multiple times, should be moved to a better location.
+	 */
+	protected function stripResults($results, $strip) {
+		$stripped = array();
+		foreach ($strip as $field) {
+			foreach ($results as $result) {
+				if (isset($result[$field])) {
+					if (is_array($result[$field])) {
+						$stripped[$field] = array_merge(isset($stripped[$field]) ? $stripped[$field] : array(), $result[$field]);
+					} else {
+						$stripped[$field][] = $result[$field];
+					}
+				}
+			}
+		}
+		return $stripped;
+	}
+
+	/**
+	 * process a compund http parameter (an array)
+	 * @param type $param the parameter that was passed by the http;
+	 * @return type
+	 */
+	protected function getCompundParam($param, $retParam = array()) {
+		if (isset($param)) {
+			$retParam = $param;
+			if ($param !== FALSE) {
+				if (is_string($param)) {
+					$retParam = json_decode($param, true);
+				} else {
+					$retParam = (array) $param;
+				}
+			}
+		}
+		return $retParam;
 	}
 }
