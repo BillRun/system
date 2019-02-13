@@ -13,11 +13,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @package  Action
  * 
  * @since    2.6
+ * @deprecated since version 5
  */
 class PlansAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
+		$this->forward('billapi', 'uniqueget', 'index', ['collection' => 'plans', 'action' => 'uniqueget', 'translate' => true]);
+		return false;
 		$this->allowed();
 		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
