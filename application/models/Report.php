@@ -878,7 +878,7 @@ class ReportModel {
 				if (in_array($type, ['date', 'datetime'])) {
 					$formatedExpression = array(
 						'$gte' => new MongoDate(strtotime($value['from'])),
-						'$lte' => new MongoDate(strtotime($value['to'] + 59)), // to last minute second
+						'$lt' => new MongoDate(strtotime($value['to'] + 60)), // to last minute second
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
