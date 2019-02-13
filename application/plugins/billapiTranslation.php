@@ -20,6 +20,9 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $configs = [];
 	
 	public function shouldTranslate($request) {
+		if ($request instanceof Yaf_Request_Http) {
+			return $request->get('translate', $request->getParam('translate', false));
+		}
 		return Billrun_Util::getIn($request, 'translate', false);
 	}
 
@@ -35,8 +38,6 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterBillApi($collection, $action, $request, &$output) {
-		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$request = $request->getRequest();
 		if (!$this->shouldTranslate($request)) {
 			return;
 		}
@@ -45,6 +46,7 @@ class billapiTranslationPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->enrichPlansResponse($output);
 		}
 		
+		$strip = $this->getCompundParam($request->get('strip', false), false);
 		if ($strip) {
 			$output = $this->stripResults($output, $params['strip']);
 		}
