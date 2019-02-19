@@ -1821,5 +1821,18 @@ class Billrun_Util {
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
-
+	
+	/**
+	 * try to fork, and if successful update the process log stamp
+	 * to match the correct pid after the fork
+	 * 
+	 * @return $pid the result from fork attempt
+	 */
+	public static function fork() {
+		$pid = pcntl_fork();
+		if ($pid !== -1) {
+			Billrun_Factory::log()->updateStamp();
+		}	
+		return $pid;
+	}
 }
