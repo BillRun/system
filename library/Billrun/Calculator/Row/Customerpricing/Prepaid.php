@@ -18,6 +18,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 
 	protected function init() {
 		parent::init();
+		$this->initMinBalanceValues();
 		$this->loadSubscriberBalance();
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok');
 		$this->initMinBalanceValues();
@@ -28,6 +29,16 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			$this->row['apr'] = 0;
 			$this->row['usagev'] = 0;
 		}
+	}
+	
+	/**
+	 * see parent::initMinBalanceValues
+	 * just adds 2 additional internal variables that were mistakenly used in the code without touching postpaid logic
+	 */
+	protected function initMinBalanceValues() {
+		parent::initMinBalanceValues();
+		$this->granted_volume = $this->min_balance_volume;
+		$this->granted_cost = $this->min_balance_cost;
 	}
 
 	/**
