@@ -222,7 +222,7 @@
 					"to": "time*2167-06-14T10:15:21Z",
 					"creation_time": "time*2018-01-14T22:00:00Z"
 				}, {
-					"OBJID" :"5b333a3105e68c3b15157562",
+					"OBJID": "5b333a3105e68c3b15157562",
 					"from": "time*2018-01-27T22:00:00Z",
 					"name": "IPHONEX",
 					"price": [
@@ -237,7 +237,26 @@
 					"quantitative": true,
 					"to": "time*2167-06-27T08:18:09Z",
 					"creation_time": "time*2018-06-27T21:00:00Z"
+				},
+				{
+					"OBJID": "5a55cbaf6d5b99344e5226c5",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "CALL_CUSTOM",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "100"
+						}
+					],
+					"description": "call_custom",
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 months",
+					"to": "time*2167-01-10T08:15:43Z",
+					"creation_time": "time*2018-01-11T00:00:00Z"
 				}
+
 
 
 

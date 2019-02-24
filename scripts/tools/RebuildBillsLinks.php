@@ -1,5 +1,6 @@
 <?php
 
+// Example: php scripts/tools/RebuildBillsLinks.php --accounts=123 --env <env> --tenant <tenant>
 
 $dir = '/var/www/billrun/';
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
