@@ -17,6 +17,13 @@ class BalanceAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	public function execute() {
+		$options = [
+			'fake_cycle' => true,
+			'generate_pdf' => false,
+			'output' => 'invoice_meta_data',
+		];
+		$this->forward('generateExpected', $options);
+		return false;
 		$this->allowed();
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
