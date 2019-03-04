@@ -244,9 +244,12 @@ class Generator_Golanxml extends Billrun_Generator {
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriberFlatCosts = 0;
-			$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
+			$vfCountDays = 0;
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			$plans = isset($subscriber['plans']) ? $subscriber['plans'] : array();
+			if ($this->hasVFPlanInCycle($plans)) {
+				$vfCountDays = $this->queryVFDaysApi($sid, date('Y'), date(Billrun_Base::base_dateformat, time()));
+			}
 			$this->plansToCharge = !empty($plans) ? $this->getPlanNames($plans): array();
 			if (empty($plans) && !isset($subscriber['breakdown'])) {
 				continue;
@@ -2017,5 +2020,19 @@ EOI;
 		}
 		$lateUniqueIds = array_diff_key($breakdown, $uniquePlanIds, $alreadyUsedUniqueIds);
 		return array_keys($lateUniqueIds);
+	}
+	
+	protected function hasVFPlanInCycle($plans) {
+		foreach ($plans as $plan) {
+			$planCurrentPlan = $plan['current_plan'];
+			$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
+			$planGroups = $planObj['include']['groups'];
+			foreach ($planGroups as $groupName => $groupIncludes) {
+				if ($groupName == 'VF') {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
