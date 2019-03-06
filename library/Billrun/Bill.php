@@ -525,10 +525,20 @@ abstract class Billrun_Bill {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
+		$subject_to = $account->getIncludeFromCollection($aids);
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
+		// white list exists but aids not included
+		if (!is_null($subject_to) && empty($subject_to)) {
+			return [];
+		}
+		// white list exists and aids included
+		if (!is_null($subject_to) && !empty($subject_to)) {
+			$aids = $subject_to;
+		}
+		
 		$matchQuery = array(
 			'type' => 'inv',
 			'due_date' => array(
@@ -563,7 +573,7 @@ abstract class Billrun_Bill {
 			$match['$match']['aid']['$in'] = $aids;
 		}
 		if ($exempted) {
-			$match['$match']['aid']['$nin'] = array_keys($exempted);
+			$match['$match']['aid']['$nin'] = $exempted;
 		}
 
 		$project = array(

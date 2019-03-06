@@ -131,7 +131,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	abstract public function updateCrmInCollection($contractors);
 //	abstract public function markCollectionStepsCompleted($aids = array());
 	abstract public function getExcludedFromCollection($aids = array());
+	abstract public function getIncludeFromCollection($aids = array());
 
-
-	
 }

@@ -193,15 +193,44 @@ class Billrun_Account_Db extends Billrun_Account {
 	}
 
 	public function getExcludedFromCollection($aids = array()) {
-		return array();
+		$excludeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.exempted_from_collection', []);
+		if(empty($excludeIds)) {
+			return [];
+		}
+		if (empty($aids)) {
+			return $excludeIds;
+		}
+		return array_intersect($aids, $excludeIds);
+	}
+	
+	public function getIncludeFromCollection($aids = array()) {
+		$includeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.subject_to_collection', []);
+		if (empty($includeIds)) {
+			return empty($aids) ? null : $aids;
+		}
+		if (empty($aids)) {
+			return $includeIds;
+		}	
+		return array_intersect($aids, $includeIds);
 	}
 
 	public function getInCollection($aids = array()) {
 		$results = array();
 		$params = Billrun_Utils_Mongo::getDateBoundQuery();
+		$exempted = $this->getExcludedFromCollection($aids);
+		$subject_to = $this->getIncludeFromCollection($aids);
 		$params['in_collection'] = true;
-		if (!empty($aids)) {
-			$params['aid'] = array('$in' => $aids);
+		// white list exists but aids not included
+		if (!is_null($subject_to) && empty($subject_to)) {
+			return $results;
+		}
+		// white list exists and aids included
+		if (!is_null($subject_to) && !empty($subject_to)) {
+			$params['aid']['$in'] = $subject_to;
+		}
+		// black list exist and include aids
+		if (!empty($exempted)) {
+			$params['aid']['$nin'] = $exempted;
 		}
 		$query = $this->buildQuery($params);
 		$cursor = $this->collection->query($query)->cursor();
