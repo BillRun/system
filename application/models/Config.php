@@ -1323,7 +1323,7 @@ class ConfigModel {
 			}, $customFields));
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
-				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
+				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
 		}
 		}
 		return true;

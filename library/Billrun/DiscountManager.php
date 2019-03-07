@@ -75,6 +75,7 @@ class Billrun_DiscountManager {
 				$pricingData = $discountInstances[$discountId]->calculatePriceAndTax($cdr, $invoice);
 				$cdr['aprice'] = $pricingData['price'];
 				$cdr['tax_info'] = $pricingData['tax_info'];
+				$cdr['pricing_data'] = $pricingData['discount_pricing_data'];
 			}
 		}
 
@@ -227,8 +228,8 @@ class Billrun_DiscountManager {
 		$beforeVatTotals[$accountEntityId] = $invoiceObj->getTotals();
 		foreach ($discounts as $discountId => &$typeDiscounts) {
 			$instance = $discountInstances[$discountId];
-			foreach ($typeDiscounts as &$discount) {			
-				$entityId = $instance->getEntityId($discount);			
+			foreach ($typeDiscounts as &$discount) {
+				$entityId = $instance->getEntityId($discount);
 				if (!isset($entityTotals[$entityId])) {
 					$beforeVatTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
 					$entityTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
