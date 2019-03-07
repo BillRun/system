@@ -203,7 +203,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		return array_intersect($aids, $excludeIds);
 	}
 	
-	public function getIncludeFromCollection($aids = array()) {
+	public function getIncludedInCollection($aids = array()) {
 		$includeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.subject_to_collection', []);
 		if (empty($includeIds)) {
 			return empty($aids) ? null : $aids;
@@ -218,7 +218,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		$results = array();
 		$params = Billrun_Utils_Mongo::getDateBoundQuery();
 		$exempted = $this->getExcludedFromCollection($aids);
-		$subject_to = $this->getIncludeFromCollection($aids);
+		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
