@@ -103,7 +103,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					// Copy file from remote directory
 					$fileData = $this->getFileLogData($file, $type);
 					
-					Billrun_Factory::dispatcher()->trigger('changeFilenameBeforeReceive', array($this->ssh, &$file, &$fileData));
+					Billrun_Factory::dispatcher()->trigger('afterFileLock', array($this->ssh, &$file, &$fileData));
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
 					$sourcePath = $ssh_path;
