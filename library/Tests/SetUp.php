@@ -83,12 +83,11 @@ trait Tests_SetUp {
 				echo(' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
 				continue;
 			}
-			if (!empty($parsedData['data']) ) {
-					$data = $this->fixData($parsedData['data']);
-					$coll = Billrun_Factory::db()->{$parsedData['collection']}();
-					$coll->batchInsert($data);
+			if (!empty($parsedData['data'])) {
+				$data = $this->fixData($parsedData['data']);
+				$coll = Billrun_Factory::db()->{$parsedData['collection']}();
+				$coll->batchInsert($data);
 			}
-		
 		}
 	}
 
@@ -149,7 +148,9 @@ trait Tests_SetUp {
 			if (is_array($value)) {
 				if (!empty($value['isDbRef'])) {
 					unset($value['isDbRef']);
-					$data[$key] = MongoDB::createDBRef($data[$key]['collection'], new MongoID($data[$key]['ObjectId']));
+					$dbname = Billrun_Factory::config()->getConfigValue('db.name');
+					$mongo = new MongoDB(new MongoClient,$dbname );
+					$data[$key] = $mongo->createDBRef($data[$key]['collection'], new MongoID($data[$key]['ObjectId']));
 				}
 			}
 		}
