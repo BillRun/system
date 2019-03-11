@@ -148,9 +148,7 @@ trait Tests_SetUp {
 			if (is_array($value)) {
 				if (!empty($value['isDbRef'])) {
 					unset($value['isDbRef']);
-					$dbname = Billrun_Factory::config()->getConfigValue('db.name');
-					$mongo = new MongoDB(new MongoClient,$dbname );
-					$data[$key] = $mongo->createDBRef($data[$key]['collection'], new MongoID($data[$key]['ObjectId']));
+					$data[$key] = Billrun_Factory::db()->getCollection($data[$key]['collection'])->createRefByEntity([ '_id'=>$data[$key]['ObjectId']]);
 				}
 			}
 		}
