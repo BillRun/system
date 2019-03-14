@@ -230,6 +230,27 @@
 					"prorated": true,
 					"to": "time*2168-01-01T09:47:40Z",
 					"creation_time": "time*2018-01-02T00:00:00Z"
+				},
+				{
+					"OBJID": "5a55ca8b6d5b99344e5226c3",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "FREE_WITH_NOTHING",
+					"price": [
+						{
+							"price": "",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "free_with_nothing",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:10:51Z",
+					"creation_time": "time*2017-11-01T00:00:00Z"
 				}
 
 			]

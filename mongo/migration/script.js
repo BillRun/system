@@ -443,6 +443,12 @@ for (var i in entities) {
 	lastConfig[entity]['fields'] = fields;
 }
 
+// #727 set subscriber services fields to be multiple to use Push/Pull option
+var subscriberServicesFieldIndex = lastConfig['subscribers']['subscriber']['fields'].findIndex(field => field.field_name === "services");
+if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] === 'undefined') {
+    lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717

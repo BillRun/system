@@ -1317,13 +1317,13 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget', 'file');
+			$billrunFields = array('type', 'usaget', 'file', 'connection_type');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
-				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
+				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
 		}
 		}
 		return true;
