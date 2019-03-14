@@ -59,6 +59,31 @@ abstract class ApiAction extends Action_Base {
 	}
 
 	/**
+	 * Set a success message to the controller.
+	 * @param mixed $details
+	 * @param object $input - The input the triggerd the error
+	 * @return true
+	 */
+	function setSuccess($details = null, $input = null) {
+		$output = array(
+			'status' => 1,
+			'desc' => 'success',
+		);
+		
+		if (!is_null($input)) {
+			$output['input'] = $input;
+		}
+		
+		if (!is_null($details)) {
+			$output['details'] = $details;
+		}
+
+		
+		$this->getController()->setOutput(array($output));
+		return true;
+	}
+
+	/**
 	 * method to store and fetch by global cache layer
 	 * 
 	 * @param type $params params to be used by cache to populate and store
