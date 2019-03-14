@@ -83,6 +83,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function logDB($fileData) {
+		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this, &$addData));
 		
 		$query = array(
 			'stamp' => $fileData['stamp'],
@@ -93,7 +94,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => new MongoDate()
 		);
-		
+
 		$update = array(
 			'$set' => array_merge($fileData, $addData)
 		);

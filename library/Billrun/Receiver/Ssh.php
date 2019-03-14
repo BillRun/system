@@ -99,10 +99,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 						continue;
 					}
-										
+					
 					// Copy file from remote directory
 					$fileData = $this->getFileLogData($file, $type);
-					
+
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
 					$sourcePath = $ssh_path;

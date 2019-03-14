@@ -116,7 +116,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 
 			$fileData = $this->getFileLogData($file->name, static::$type, $isFileReceivedMoreFields);
-			
+
 			Billrun_Factory::log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 			$targetPath = $this->workspace;
 			if (substr($targetPath, -1) != '/') {
