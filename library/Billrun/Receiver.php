@@ -134,5 +134,9 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		self::$instance[$stamp] = new $class($args);
 		return self::$instance[$stamp];
 	}
+	
+	public function getReceiver() {
+		
+	}
 
 }
