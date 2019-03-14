@@ -75,9 +75,11 @@ class GenerateExpectedAction extends ApiAction {
 		Billrun_Factory::dispatcher()->trigger('beforeGenerateExpectedAggregatorLoad', array($this, $options));
 		$this->aggregator = Billrun_Aggregator::getInstance($options);
 		$this->aggregator->load();
+		
 		if (!$this->aggregator->aggregate()) {
 			throw new Exception("Failed to generate expected", 0);
 		}
+
 		return $this->setOutput();
 	}
 
@@ -91,7 +93,6 @@ class GenerateExpectedAction extends ApiAction {
 				return $this->getDiscounts();
 			case 'invoice_meta_data':
 				return $this->getInvoiceMetaData();
-				break;
 			default:
 				return true;
 		}
@@ -150,15 +151,28 @@ class GenerateExpectedAction extends ApiAction {
 
 	protected function getDiscounts() {
 		$dm = new Billrun_DiscountManager();
+		$eligibilityOnly = $this->params['eligible_only'] ?: false;
+		$invoice = $this->getInvoiceMetaData(false);
+		$types = ['monetary', 'percentage'];
+		
+		//Get all the eligible discounts for  this  billing cycle
+		return array_map(function($dis) {
+			return $dis->getRawData();
+		}, $dm->getEligibleDiscounts($invoice, $types, $eligibilityOnly));
 	}
 
-	protected function getInvoiceMetaData() {
+	protected function getInvoiceMetaData($rawData = true) {
 		$data = $this->aggregator->getData();
 		$accountData = Billrun_Util::getIn($data, 0);
 		if (empty($accountData)) {
 			return [];
 		}
-		return $accountData->getInvoice()->getRawData();
+		$ret = $accountData->getInvoice();
+		if ($ret && $rawData) {
+			$ret = $ret->getRawData();
+		}
+		
+		return $ret;
 
 	}
 
