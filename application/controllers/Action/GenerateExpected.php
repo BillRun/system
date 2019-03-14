@@ -63,7 +63,11 @@ class GenerateExpectedAction extends ApiAction {
 			'generate_pdf' => $this->shouldGeneratePdf(),
 		];
 		
-		if (isset($this->params['aid'])) {
+		if (!empty($this->params['data'])) {
+			$options['type'] = 'customernondb';
+			$options['data'] = $this->params['data'];
+			$options['aid'] = $this->params['aid'] ?: null;
+		} else if (isset($this->params['aid'])) {
 			$aids = is_array($this->params['aid']) ? $this->params['aid'] : [$this->params['aid']];
 			$options['force_accounts'] = $aids;
 		}

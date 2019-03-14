@@ -19,7 +19,7 @@ class DiscountAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
-		$accountJson = json_decode($request->get("data"),TRUE);
+		$accountJson = json_decode($request->get("data"), TRUE);
 		$aid = $request->get("aid");
 		$action = $request->get("action");
 		
@@ -31,6 +31,7 @@ class DiscountAction extends ApiAction {
 			'generate_pdf' => false,
 			'output' => 'discounts',
 			'aid' => $actualAid,
+			'data' => $accountJson,
 		];
 		
 		switch ($action) {
