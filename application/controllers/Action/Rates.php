@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -17,30 +17,28 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class RatesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
-	protected $model;
-
 	public function execute() {
-		$this->allowed();
-		Billrun_Factory::log("Execute rates api call", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
-		$this->model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
-
+		Billrun_Factory::log()->log("Query API Input: " . print_R($request->getRequest(), 1), Zend_Log::DEBUG);
 
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('key', 'rates', 'provider');
+		$filter = !empty($strip) ? $strip : array('_id', 'key', 'rates', 'provider', 'model', 'inventory_id', 'brand', 'ax_code', 'invoice_labels', 'zone_grouping','vti_name','type');
+		$sort = @json_decode($request->get('sort', '{"from" : 1}'), JSON_OBJECT_AS_ARRAY);
 
 		$cacheParams = array(
 			'fetchParams' => array(
 				'query' => $query,
 				'filter' => $filter,
 				'strip' => $strip,
+				'sort' => $sort,
 			),
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 
-		$this->setCacheLifeTime(86400); // 1 day TODO: Use time utils.
+		$this->setCacheLifeTime(86400); // 1 day
 		$results = $this->cache($cacheParams);
 
 		$this->getController()->setOutput(array(array(
@@ -59,6 +57,7 @@ class RatesAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function fetchData($params) {
+		$model = new RatesModel(array('sort' => $params['sort']));
 		if (is_null($params)) {
 			$params = array();
 		}
@@ -67,18 +66,18 @@ class RatesAction extends ApiAction {
 		}
 		$params['query']['$or'] = array(
 			array(
-				'hiddenFromApi' => array(
+				'hidden_from_api' => array(
 					'$exists' => 0,
 				)
 			),
 			array(
-				'hiddenFromApi' => false
+				'hidden_from_api' => false
 			),
 			array(
-				'hiddenFromApi' => 0
+				'hidden_from_api' => 0
 			)
 		);
-		$results = $this->model->getData($params['query'], $params['filter']);
+		$results = $model->getData($params['query'], $params['filter']);
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
@@ -92,24 +91,31 @@ class RatesAction extends ApiAction {
 	 */
 	protected function processQuery($query) {
 		$retQuery = array();
+
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
-			$matches = preg_grep('/rates.\w+.plans/', array_keys($retQuery));
-			foreach ($matches as $m) {
-				$retQuery[$m] = $this->model->getPlan($retQuery[$m]);
-			}
-
-			if (!isset($retQuery['from'])) {
-				$retQuery['from']['$lte'] = new MongoDate();
+			if (!empty($retQuery['_id']) && is_array($retQuery['_id'])) {
+				$hexIds = $retQuery['_id'];
+				unset($retQuery['_id']);
+				foreach ($hexIds as $hexId) {
+					if (MongoId::isValid($hexId)) {
+						$retQuery['_id']['$in'][] = new MongoId($hexId);
+					}
+				}
 			} else {
-				$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
-			}
-			if (!isset($retQuery['to'])) {
-				$retQuery['to']['$gte'] = new MongoDate();
-			} else {
-				$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
+				if (!isset($retQuery['from'])) {
+					$retQuery['from']['$lte'] = new MongoDate();
+				} else {
+					$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
+				}
+				if (!isset($retQuery['to'])) {
+					$retQuery['to']['$gte'] = new MongoDate();
+				} else {
+					$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
+				}
 			}
 		}
+
 		return $retQuery;
 	}
 
@@ -119,7 +125,6 @@ class RatesAction extends ApiAction {
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	// TODO: Moved this function to Billrun_Db.
 	protected function intToMongoDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
@@ -146,6 +151,8 @@ class RatesAction extends ApiAction {
 				if (isset($rate[$field])) {
 					if (is_array($rate[$field])) {
 						$stripped[$field] = array_merge(isset($stripped[$field]) ? $stripped[$field] : array(), $rate[$field]);
+					} elseif ($rate[$field] instanceof Mongodloid_Id) {
+						$stripped[$field][] = strval($rate[$field]);
 					} else {
 						$stripped[$field][] = $rate[$field];
 					}
