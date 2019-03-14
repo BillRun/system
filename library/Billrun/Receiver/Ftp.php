@@ -103,6 +103,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		Billrun_Factory::log("FTP: Starting to receive from remote host : $hostName", Zend_Log::INFO);
 		$count = 0;
 		foreach ($this->sortByFileDate($files) as $file) {
+			Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file));
 			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::INFO);
 			$extraData = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));

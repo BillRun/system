@@ -86,7 +86,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				}
 
 				foreach ($files as $file) {
-					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file));
+					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
