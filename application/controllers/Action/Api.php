@@ -77,7 +77,6 @@ abstract class ApiAction extends Action_Base {
 		if (!is_null($details)) {
 			$output['details'] = $details;
 		}
-
 		
 		$this->getController()->setOutput(array($output));
 		return true;
