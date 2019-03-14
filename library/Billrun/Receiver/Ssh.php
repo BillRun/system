@@ -86,7 +86,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				}
 
 				foreach ($files as $file) {
-					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, $file));
+					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
@@ -99,7 +99,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 						continue;
 					}
-
+					
 					// Copy file from remote directory
 					$fileData = $this->getFileLogData($file, $type);
 
@@ -178,6 +178,15 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 */
 	protected function getSourceTimestamp($file_path) {
 		return $this->ssh->getTimestamp($file_path);
+	}
+	
+	/**
+	 * Getter for SFTP receiver connection.
+	 * 
+	 * @return Billrun_Ssh_Seclibgateway
+	 */
+	public function getReceiver() {
+		return $this->ssh;
 	}
 
 	/**
