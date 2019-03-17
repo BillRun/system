@@ -247,7 +247,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		return false;
 	}
 		
-	protected function buildSinglePaymentArray($params) {
+	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
 

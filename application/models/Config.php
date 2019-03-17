@@ -114,15 +114,6 @@ class ConfigModel {
 				return $fileSettings;
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
-		}
-		else if ($category == 'events.balance') {
-			if (empty($data['event_code'])) {
-				return Billrun_Util::getIn($currentConfig, $category, []);
-			}
-			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_code', $data['event_code'])) {
-				return $fileSettings;
-			}
-			throw new Exception('Unknown event ' . $data['event_code']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
 		} else if ($category == 'payment_gateways') {
@@ -230,11 +221,6 @@ class ConfigModel {
 			}
 			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
-		}
-		else if ($category === 'events.balance') {
-			if ($this->validateEvent($data)) {
-				$this->setSettingsArrayElement($updatedData, $data, 'events.balance', 'event_code');
-			}
 		} else if ($category === 'payment_gateways') {	
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
@@ -328,6 +314,13 @@ class ConfigModel {
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
 			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
+		} else if (strpos($category, 'events.') === 0 && !$this->validateEvents($category, $data)) {
+			throw new Exception("Error saving events");
+		} else if (strpos($category, 'event.') === 0) {
+			$eventType = explode('.', $category)[1];
+			if ($this->validateEvent($eventType, $data)) {
+				$updatedData['events'][$eventType][] = $data;
+			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -392,6 +385,7 @@ class ConfigModel {
 		$uniqueFields = array();
 		foreach ($data as &$field) {
 			$fieldName = $field['field_name'];
+			$plays = Billrun_Util::getIn($field, 'plays', []);
 			$prevField = false;
 			foreach ($prevData as $f) {
 				if ($f['field_name'] === $fieldName) {
@@ -405,20 +399,26 @@ class ConfigModel {
 			}
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
-				$mandatoryFields[] = $fieldName;
+				$mandatoryFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 			
 			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
-				$uniqueFields[] = $fieldName;
+				$uniqueFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 		}
 
 		if (!$this->validateMandatoryFields($entityModel, $mandatoryFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $mandatoryFields) .'] mandatory because there is an entity missing one of those fields');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($mandatoryFields, 'name')) .'] mandatory because there is an entity missing one of those fields');
 		}
 
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $uniqueFields) .'] unique because for one of those fields there is more than one entity with the same value');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
 		
 		return true;
@@ -466,7 +466,15 @@ class ConfigModel {
 			'$in' => $plays,
 		);
 		
-		return !Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->isEmpty();
+		$checkInEntities = ['plans', 'services', 'rates', 'subscribers'];
+		foreach ($checkInEntities as $entity) {
+			$inUseInEntity = !Billrun_Factory::db()->{$entity . 'Collection'}()->query($query)->cursor()->current()->isEmpty();
+			if ($inUseInEntity) {
+				return true;
+			}
+		}
+		return false;
+		
 	}
 	
 	/**
@@ -500,8 +508,19 @@ class ConfigModel {
 		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
 		$mandatoryQuery['$or'] = array();
 		foreach ($mandatoryFields as $field) {
-			$mandatoryQuery['$or'][] = array($field => '');
-			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => ''
+				);
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => array('$exists' => false)
+				);
+			} else {
+				$mandatoryQuery['$or'][] = array($field['name'] => '');
+				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
+			}
 		}
 		
 		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
@@ -526,16 +545,22 @@ class ConfigModel {
 		);
 		
 		foreach ($uniqueFields as $field) {
-			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
-			$unwind = '$' . $field;
+			$matchFields = array(
+				$field['name'] => array('$exists' => true),
+			);
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$matchFields['play'] = ['$in' => $field['plays']];
+			}
+			$match = array_merge($basicMatch, $matchFields);
+			$unwind = '$' . $field['name'];
 			$project = array(
-				$field => 1,
+				$field['name'] => 1,
 				't.from' => '$from',
 				't.to' => '$to',
 			);
 			
 			$group = array(
-				'_id' => '$' . $field,
+				'_id' => '$' . $field['name'],
 				'ts' => array('$push' => '$t'),
 				's' => array('$sum' => 1),
 			);
@@ -834,12 +859,6 @@ class ConfigModel {
 				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
 		}
-		else if ($category === 'events.balance') {
-			if (empty($data['event_code'])) {
-				throw new Exception('Must supply event_code');
-			}
-			$this->unsetSettingsArrayElement($updatedData, $category, 'event_code', $data['event_code']);
-		}
 		else if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
  				if (count($data) == 1) {
@@ -1095,14 +1114,50 @@ class ConfigModel {
 	/**
 	 * 
 	 * @todo Insert validations
+	 * @param string $category
 	 * @param type $data
 	 * @return boolean
 	 */
-	protected function validateEvent($data) {
-		if (!isset($data['event_code'])) {
-			throw new Exception('Invalid data for events.');
+	protected function validateEvents($category, $events) {
+		$eventType = explode('.', $category)[1];
+		foreach ($events as $event) {
+			$this->validateEvent($type, $event);
 		}
+		
 		return TRUE;
+	}
+	
+	protected function validateEvent($eventType, $event) {
+		switch ($eventType) {
+			case 'fraud':
+				return $this->validateFraudEvent($event);
+			case 'balance':
+				return $this->validateBalanceEvent($event);
+			case 'settings':
+			default:
+				return true;
+		}
+		return true;
+	}
+
+
+	protected function validateBalanceEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
+		return true;
+	}
+
+	protected function validateFraudEvent($event) {
+		if (!isset($event['event_code'])) {
+			throw new Exception('Event code is missing');
+		}
+		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
+		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
+		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
+			throw new Exception('Event recurrence must be less than or equal to date range');
+		}
+		return true;
 	}
 
 	protected function validateType($type) {
@@ -1229,9 +1284,7 @@ class ConfigModel {
 					}, $customerIdentification);
 					$subscriberFields = array_map(function($field) {
 						return $field['field_name'];
-					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-							return !empty($field['unique']);
-						}));
+					}, $config['subscribers']['subscriber']['fields']);
 					if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
 						throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 					}
@@ -1264,13 +1317,13 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget', 'file');
+			$billrunFields = array('type', 'usaget', 'file', 'connection_type');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
-				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
+				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
 		}
 		}
 		return true;

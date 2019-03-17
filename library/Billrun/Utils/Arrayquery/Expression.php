@@ -132,8 +132,8 @@ class Billrun_Utils_Arrayquery_Expression {
 	
 	protected function _in($field, $value) {
 		return  is_array($value) && is_array($field) && !empty(array_intersect($value,$field))
-				|| is_array($value) && in_array($field,$value) 				
-				|| is_array($field) && in_array($value,$field) 
+				|| is_array($value) && in_array($field,$value, true)
+				|| is_array($field) && in_array($value,$field, true)
 				|| $this->_equal($field, $value);
 	}
 	
@@ -143,7 +143,7 @@ class Billrun_Utils_Arrayquery_Expression {
 	
 	protected function _covers($field, $value) {
 		return is_array($value) && count($value) == count(array_filter($value,function($val) use ($field) { 
-			return $this->evaluate($field, $val);			
+			return $this->evaluate($field, $val);
 		}));
 	}
 	/**
@@ -183,9 +183,11 @@ class Billrun_Utils_Arrayquery_Expression {
 	 */
 	protected function _search($field, $value) {
 		$ret = false;
-		foreach($field as  $subfield) {
-			if( $ret |= $this->evaluate($subfield, $value)) {	
-				break;	
+		if($field instanceof Traversable || is_array($field)) {
+			foreach($field as $subfield) {
+				if( $ret |= $this->evaluate($subfield, $value)) {
+					break;
+				}
 			}
 		}
 		

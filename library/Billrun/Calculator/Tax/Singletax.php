@@ -23,7 +23,7 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 								'total_amount'=> $line['aprice'] * $this->tax,
 								'total_tax' => $this->tax,
 								'taxes' =>  array(
-										array('tax'=> $this->tax, 'amount' => $line['aprice'] * $this->tax, 'description' => "Vat" , 'pass_to_customer'=> 1 )
+										array('tax'=> $this->tax, 'amount' => $line['aprice'] * $this->tax, 'description' => Billrun_Factory::config()->getConfigValue('taxation.vat_label', 'Vat') , 'pass_to_customer'=> 1 )
 									)
 								);
 		

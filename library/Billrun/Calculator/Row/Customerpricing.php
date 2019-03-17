@@ -229,7 +229,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if (!isset($this->row['plan_ref'])) {
 			$plan_ref = $this->plan->createRef();
 			if (is_null($plan_ref)) {
-				Billrun_Factory::log('No plan found for subscriber ' . $this->sid, Zend_Log::ALERT);
+				Billrun_Factory::log('No plan found for subscriber ' . $this->sid . ', line ' . $this->row['stamp'], Zend_Log::ALERT);
 				$this->usagev = 0;
 				$this->apr = 0;
 				return false;
@@ -1002,6 +1002,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 				$aprice *= $apriceMult;
+			}
+			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
+				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice);
 			}
 			return $aprice;
 		}

@@ -44,13 +44,8 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-
-		if ($pid = getmypid()) {
-			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . Billrun_Util::getHostName() . ':p' . $pid;
-		} else {
-			// Make a unique log stamp for each run of the application
-			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
-		}
+		
+		$this->updateStamp();
 
 		if (isset($_SERVER['REQUEST_URI']) && stripos($_SERVER['REQUEST_URI'], 'realtime') === FALSE && ($user = Billrun_Factory::user()) !== FALSE) {
 			$this->user = $user->getUsername();
@@ -160,5 +155,14 @@ class Billrun_Log extends Zend_Log {
 			), $this->_extras
 		);
 	}
-
+	
+	public function updateStamp() {
+		if ($pid = getmypid()) {
+			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . Billrun_Util::getHostName() . ':p' . $pid;
+		} else {
+			// Make a unique log stamp for each run of the application
+			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
+		}
+	}
+	
 }

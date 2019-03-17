@@ -34,11 +34,11 @@ class Billrun_Balance_Update_Secret extends Billrun_Balance_Update_Chargingplan 
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Secret not provide');
 		}
-		$this->card = $this->getCardBySecret((string) $params['secret']);
+		$this->card = $this->getCardBySecret((string) $this->secret);
 		if ($this->card->isEmpty()) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Card not found');
 		}
-		$params['charging_plan_name'] = $card['charging_plan_name'];
+		$params['charging_plan_name'] = $this->card['charging_plan_name'];
 		parent::__construct($params);
 	}
 

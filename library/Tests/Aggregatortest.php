@@ -408,7 +408,7 @@ class Tests_Aggregator extends UnitTestCase {
 			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
-		print_r($this->message);die;
+		print_r($this->message);
 		$this->restoreColletions();
 	}
 
