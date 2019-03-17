@@ -26,10 +26,10 @@ class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
 	/**
 	 * see parent::loadRawData
 	 */
-	protected function loadRawData2($cycle) {
+	protected function loadRawData($cycle) {
 		Billrun_Factory::dispatcher()->trigger('beforeTranslateCustomerAggregatorData', array($this));
 		$translatedData = $this->translateCustomerData($this->data);
-		Billrun_Factory::dispatcher()->trigger('afterTranslateCustomerAggregatorData', array($this, $translatedData));
+		Billrun_Factory::dispatcher()->trigger('afterTranslateCustomerAggregatorData', array($this, &$translatedData));
 		return [
 			'data' => $translatedData,
 		];

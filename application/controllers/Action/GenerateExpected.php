@@ -81,7 +81,7 @@ class GenerateExpectedAction extends ApiAction {
 		$this->aggregator = Billrun_Aggregator::getInstance($options);
 		$this->aggregator->load();
 		
-		if (!$this->aggregator->aggregate()) {
+		if ($this->aggregator->aggregate() === false) {
 			throw new Exception("Failed to generate expected", 0);
 		}
 
@@ -113,14 +113,6 @@ class GenerateExpectedAction extends ApiAction {
 		}
 		
 		return 'default';
-	}
-
-	protected function getBillable() {
-		if (isset($this->params['billable'])) {
-			return $this->params['billable'];
-		}
-
-		//TODO: return aggregate data
 	}
 	
 	protected function downloadPdf() {
