@@ -14,7 +14,11 @@
 			"step_ttl_type": "days",
 			"min_debt": 10,
 			"change_state_url" : "",
-			"change_state_method": ""
+			"change_state_method": "",
+			"customers": {
+				"subject_to_collection": [],
+				"exempted_from_collection":[]
+			}
 		}
 	},
 	"invoice_export" : {
