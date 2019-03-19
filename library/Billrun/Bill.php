@@ -326,7 +326,7 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getUnpaidQuery() {
-		return array_merge(array('due' => array('$gt' => 0,), 'paid' => array('$nin' => array(TRUE, '1', '2'),),), static::getNotRejectedOrCancelledQuery()
+		return array_merge(array('due' => array('$gt' => 0,), 'left_to_pay' => array('$gt' => 0), 'paid' => array('$nin' => array(TRUE, '1', '2'),),), static::getNotRejectedOrCancelledQuery()
 		);
 	}
 
@@ -525,52 +525,61 @@ abstract class Billrun_Bill {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
+		$subject_to = $account->getIncludedInCollection($aids);
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
+		// white list exists but aids not included
+		if (!is_null($subject_to) && empty($subject_to)) {
+			return [];
+		}
+		// white list exists and aids included
+		if (!is_null($subject_to) && !empty($subject_to)) {
+			$aids = $subject_to;
+		}
+		
+		$matchQuery = array(
+			'type' => 'inv',
+			'due_date' => array(
+				'$lt' => new MongoDate(),
+			),
+			'paid' => array('$in' => array(false, '0', 0)),
+		);
+		
+		if (!empty($aids)) {
+			$aidsQuery = array('aid' => array('$in' => $aids));			
+			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
+		} else if (!empty($exempted)){
+			$aidsQuery = array('aid' => array('$nin' => $aids));
+			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
+		} else {
+			$relevantAids = $billsColl->distinct('aid', $matchQuery);
+		}
+		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
+		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$validGatewaysAids = array();
+		foreach ($currentAccounts as $activeAccount) {
+			if (!empty($activeAccount['payment_gateway']['active'])) {
+				$validGatewaysAids[] = $activeAccount['aid'];
+			}
+		}
+
 		$match = array(
-			'$match' => array(
-				'type' => 'inv',
-				'due_date' => array(
-					'$lt' => new MongoDate(),
-				),
-				'paid' => array('$in' => array(false, '0', 0, 'false')),
-			)
+			'$match' => $matchQuery,
 		);
 
 		if ($aids) {
 			$match['$match']['aid']['$in'] = $aids;
 		}
 		if ($exempted) {
-			$match['$match']['aid']['$nin'] = array_keys($exempted);
+			$match['$match']['aid']['$nin'] = $exempted;
 		}
-
-		$lookup = array(
-			'$graphLookup' => array(
-				'from' => 'subscribers',
-				'connectFromField' => 'aid',
-				'connectToField' => 'aid',
-				'startWith' =>'$aid',
-				'maxDepth' => 0,
-				'restrictSearchWithMatch' => $accountCurrentRevisionQuery,
-				'as' => 'account'
-			)
-		);
 
 		$project = array(
 			'$project' => array(
-				'account_gateway' => array('$ifNull' => array('$account.payment_gateway.active', array())),
+				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
-				'aid' => 1,
-				'left_to_pay' => 1
-			)
-		);
-
-		$project2 = array(
-			'$project' => array(
-				'valid_gateway' => array('$cond' => array(array('$ne' => array('$account_gateway', [])), true, false)),
-				'past_rejections' => 1,
 				'aid' => 1,
 				'left_to_pay' => 1
 			)
@@ -607,7 +616,7 @@ abstract class Billrun_Bill {
 				)
 			)
 		);
-		$results = iterator_to_array($billsColl->aggregate($match, $lookup, $project, $project2, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregate($match, $project, $group, $project3, $match2));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
