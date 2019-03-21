@@ -89,8 +89,10 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 					$datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[$this->structConfig['config']['date_field']] . $offset);
 				}
 				switch ($row['record_type']) {
-					case '1' : $row['usaget'] = 'incoming_sms';
-								break;
+					case '1' :
+					case '09' :
+						$row['usaget'] = 'incoming_sms';
+						break;
 					case '2' : $row['usaget'] = 'sms';
 								break;
 					default: 
