@@ -73,6 +73,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				 return $ret;
 			 }
 			Billrun_Factory::log()->log("Success: Connected to: " . $this->ssh->getHost() , Zend_Log::INFO);
+			$this->ssh->changeDir($ssh_path);
 			try {
 				Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
 				$files = $this->ssh->getListOfFiles($ssh_path, true);
@@ -90,7 +91,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				}
 				
 				foreach ($files as $file) {
-					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type, $sourcePath));
+					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
