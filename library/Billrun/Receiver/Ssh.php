@@ -80,13 +80,17 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				$type = static::$type;
 				$count = 0;
 				$targetPath = $this->workspace;
+				$sourcePath = $ssh_path;
+				if (substr($sourcePath, -1) != '/') {
+					$sourcePath .= '/';
+				}
 
 				if (substr($targetPath, -1) != '/') {
 					$targetPath .= '/';
 				}
-
+				
 				foreach ($files as $file) {
-					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
+					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type, $sourcePath));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 
 					if (!$this->isFileValid($file, '')) {
@@ -104,11 +108,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					$fileData = $this->getFileLogData($file, $type);
 
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
-
-					$sourcePath = $ssh_path;
-					if (substr($sourcePath, -1) != '/') {
-						$sourcePath .= '/';
-					}
 
 					$fileData['path'] = $targetPath . $file;
 
@@ -189,6 +188,14 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 		return $this->ssh;
 	}
 
+	/** Getter for filename regex
+	 * 
+	 * @return string
+	 */
+	public function getFilenameRegex() {
+		return $this->filenameRegex;
+	}
+	
 	/**
 	 * delete file from remote host
 	 * @param String $file_path
