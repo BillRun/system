@@ -20,7 +20,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected $backup = false;
 	protected $checkReceivedSize = true;
 	protected $connect_type;
-	protected $ssh_path;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -63,10 +62,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				$hostAndPort .= ':'.$config['port'];
 			}
 			
-			$this->ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
-			if (substr($this->ssh_path, -1) != '/') {
-				$this->ssh_path .= '/';
-			}
+			$ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
 			$this->filenameRegex = !empty($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->ssh->getHost() , Zend_Log::INFO);
@@ -80,7 +76,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			$this->ssh->changeDir($ssh_path);
 			try {
 				Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-				$files = $this->ssh->getListOfFiles($this->ssh_path, true);
+				$files = $this->ssh->getListOfFiles($ssh_path, true);
 	
 				$type = static::$type;
 				$count = 0;
@@ -89,7 +85,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				if (substr($targetPath, -1) != '/') {
 					$targetPath .= '/';
 				}
-				
+		
 				foreach ($files as $file) {
 					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
@@ -110,13 +106,18 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
+					$sourcePath = $ssh_path;
+					if (substr($sourcePath, -1) != '/') {
+						$sourcePath .= '/';
+					}
+
 					$fileData['path'] = $targetPath . $file;
 
 					if (!file_exists(dirname($fileData['path']))) {
 						mkdir(dirname($fileData['path']), 0777, true);
 					}
 
-					$sourceFile = $this->ssh_path . $file;
+					$sourceFile = $sourcePath . $file;
 
 					if ($this->ssh->get($sourceFile, $fileData['path']) === FALSE) {
 						Billrun_Factory::log()->log("SSH: failed to download " . $file, Zend_Log::ALERT);
@@ -152,7 +153,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						// Delete from remote
 						if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-							if(!$this->deleteRemote($this->ssh_path . $fileData['file_name'])) {
+							if(!$this->deleteRemote($ssh_path . '/' . $fileData['file_name'])) {
 								Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
 							}
 						}
@@ -197,14 +198,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 */
 	public function getFilenameRegex() {
 		return $this->filenameRegex;
-	}
-	
-	/** Getter for ssh_path directory
-	 * 
-	 * @return string
-	 */
-	public function getSshPath() {
-		return $this->ssh_path;
 	}
 	
 	/**
