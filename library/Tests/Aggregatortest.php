@@ -297,6 +297,16 @@ class Tests_Aggregator extends UnitTestCase {
 			'line' => array('types' => array('flat','service')),
 			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1758'
 		),
+		//check prorated service - subscribers start in 05/03/19 with a prorated service need to pay for only 27 days
+		array('test' => array('test_number' => 39, "aid" => 80, 'sid' => 81, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201904", "force_accounts" => array(80))),
+			'expected' => array('billrun' => array('invoice_id' => 135, 'billrun_key' => '201904', 'aid' => 80, 'after_vat' => array("81" => 101.903225))),
+			'line' => array('types' => array('flat','service')),
+		),
+		//check prorated service - subscribers end in 05/03/19 with a prorated service need to pay for only 5 days
+		array('test' => array('test_number' => 40, "aid" => 82, 'sid' => 83, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201904", "force_accounts" => array(82))),
+			'expected' => array('billrun' => array('invoice_id' => 136, 'billrun_key' => '201904', 'aid' => 82, 'after_vat' => array("83" => 18.870967742))),
+			'line' => array('types' => array('flat','service')),
+		),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 38,),
@@ -305,7 +315,7 @@ class Tests_Aggregator extends UnitTestCase {
 //		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 39, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 41, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 		)
 	);
