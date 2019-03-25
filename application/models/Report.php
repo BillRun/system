@@ -25,6 +25,9 @@ class ReportModel {
 	protected $cacheFormatStyle = [];
 	protected $cacheEntityFields = [];
 	protected $currentTime = null;
+	protected $aggregateOptions = [
+		'allowDiskUse' => true,
+	];
 	
 	/**
 	 *  Array of entity join map keys
@@ -183,7 +186,7 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
 		
-		$results = $collection->aggregate($aggregate);
+		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
 		foreach ($results as $result) {
