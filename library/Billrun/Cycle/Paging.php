@@ -25,7 +25,7 @@ class Billrun_Cycle_Paging {
 	public function __construct($options, $pagingCollection) {
 		$this->options = Billrun_Util::getFieldVal($options, $this->defaultOptions);
 		$this->pagerCollection = $pagingCollection;
-		$this->host = gethostname();
+		$this->host = Billrun_Util::getHostName();
 	}
 	
 	/**
