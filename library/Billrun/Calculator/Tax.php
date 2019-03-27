@@ -17,11 +17,19 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	
 	protected $config = array();
 	protected $nonTaxableTypes = array();
+	
+	/**
+	 * timestamp of minimum row time that can be calculated
+	 * @var int timestamp
+	 */
+	protected $billrun_lower_bound_timestamp = 0;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->config = Billrun_Factory::config()->getConfigValue('taxation',array());
 		$this->nonTaxableTypes = Billrun_Factory::config('taxation.non_taxable_types', array());
+		$this->months_limit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
+		$this->billrun_lower_bound_timestamp = strtotime($this->months_limit . " months ago");
 	}
 
 	public function updateRow($row) {
@@ -157,7 +165,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
+		return (empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc'])) && 
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}	
 	
 	protected function isLineTaxable($line) {
