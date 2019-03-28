@@ -278,7 +278,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
 						$subscriber->setPlanName($offer['plan']);
 						$subscriber->setPlanId($offer['id']);
-						$flat_price = $subscriber->getFlatPrice($offer['fraction']);
+						$flat_price = isset($offer['offer_amount']) ? ($offer['offer_amount'] * $offer['fraction']) : $subscriber->getFlatPrice($offer['fraction']);
 						Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
 						if (is_null($flat_price)) {
 							Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);

@@ -329,7 +329,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$offer['unique_plan_id'] = self::generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
 									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
-									if (isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
+									$offer['offer_amount'] = $subscriberOffer['offer_amount'];
+									if (!isset($subscriberOffer['offer_amount']) && isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
 										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
 										$offerCredit = $this->refundCredit;
 										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
@@ -785,7 +786,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
-			'aprice' => $this->getFlatPrice($fraction),
+			'aprice' => isset($offer['offer_amount']) ? $offer['offer_amount'] * $fraction : $this->getFlatPrice($fraction),
 			'plan' => $plan->getName(),
 			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
