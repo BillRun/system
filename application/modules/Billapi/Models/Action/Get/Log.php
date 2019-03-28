@@ -17,17 +17,13 @@ class Models_Action_Get_Log extends Models_Action_Get {
 	
 	protected function __construct(array $params = array()) {
 		parent::__construct($params);
-		if(isset($this->query['urt'])){
-			Billrun_Utils_Mongo::convertQueryMongoDates($this->query['urt']);
-		}
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->query);
 	}
-
-	protected function runQuery() {
-		$records = parent::runQuery();
-		foreach($records as  &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record, array('urt'));
-		}
-		return $records;
+	
+	protected function getDateFields() {
+		$fields = parent::getDateFields();
+		$fields[] = 'urt';
+		return array_unique($fields);
 	}
 
 }
