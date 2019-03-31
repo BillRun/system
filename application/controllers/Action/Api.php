@@ -57,29 +57,30 @@ abstract class ApiAction extends Action_Base {
 
 		return false;
 	}
-
+	
+	
 	/**
-	 * Set a success message to the controller.
-	 * @param mixed $details
-	 * @param object $input - The input the triggerd the error
-	 * @return true
+	 * set a response for a successful response to the controller
+	 * 
+	 * @param array $details
+	 * @param array $input
+	 * @param string $desc
 	 */
-	function setSuccess($details = null, $input = null) {
-		$output = array(
+	function setSuccess($details = null, $input = null, $desc = 'success') {
+		$output = [
 			'status' => 1,
-			'desc' => 'success',
-		);
-		
-		if (!is_null($input)) {
-			$output['input'] = $input;
-		}
-		
+			'desc' => $desc,
+		];
+
 		if (!is_null($details)) {
 			$output['details'] = $details;
 		}
-		
+
+		if (!is_null($input)) {
+			$output['input'] = $input;
+		}
+
 		$this->getController()->setOutput(array($output));
-		return true;
 	}
 
 	/**
