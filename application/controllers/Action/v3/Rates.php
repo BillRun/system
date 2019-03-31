@@ -8,13 +8,13 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Rates action class
+ * Rates action class of version 3
  *
  * @package  Action
  * 
  * @since    2.6
  */
-class RatesAction extends ApiAction {
+class V3_ratesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
