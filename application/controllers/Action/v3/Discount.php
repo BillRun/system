@@ -6,16 +6,15 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once dirname(__FILE__).'/Api.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Balance action class
+ * Balance action class of version 3
  *
  * @package  Action
  * @since    0.5
- * @deprecated since version 5
  */
-class DiscountAction extends ApiAction {
+class V3_discountAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
