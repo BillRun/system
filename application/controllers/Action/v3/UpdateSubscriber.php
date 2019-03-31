@@ -11,10 +11,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * Update subscriber in BillRun's cache
  *
  * @author shai
- * @deprecated since version 5
  * @todo implement
  */
-class UpdateSubscriberAction extends ApiAction {
+class V3_updateSubscriberAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
 
