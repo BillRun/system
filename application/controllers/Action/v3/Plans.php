@@ -2,25 +2,29 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Verification.php';
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Action.php';
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Action/Get.php';
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Action/Uniqueget.php';
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Entity.php';
 
 /**
- * Plans action class
+ * Plans action class of version 3
  *
  * @package  Action
  * 
  * @since    2.6
- * @deprecated since version 5
  */
-class PlansAction extends ApiAction {
+class V3_PlansAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->forward('billapi', 'uniqueget', 'index', ['collection' => 'plans', 'action' => 'uniqueget', 'translate' => true]);
-		return false;
+//		$this->forward('billapi', 'uniqueget', 'index', ['collection' => 'plans', 'action' => 'uniqueget', 'translate' => true]);
+//		return false;
 		$this->allowed();
 		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
@@ -68,15 +72,15 @@ class PlansAction extends ApiAction {
 		}
 		$params['query']['$or'] = array(
 			array(
-				'hiddenFromApi' => array(
+				'hidden_from_api' => array(
 					'$exists' => 0,
 				)
 			),
 			array(
-				'hiddenFromApi' => false
+				'hidden_from_api' => false
 			),
 			array(
-				'hiddenFromApi' => 0
+				'hidden_from_api' => 0
 			)
 		);
 		$model = new PlansModel(array('sort' => array('from' => 1)));
@@ -93,7 +97,59 @@ class PlansAction extends ApiAction {
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
+		$this->enrichPlansResponse($results);
 		return $results;
+	}
+	
+	protected function enrichPlansResponse(&$results) {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/services.ini');
+		foreach ($results as &$plan) {
+			$services = $this->getPlanServices($plan);
+			$billableOptions = [];
+			$nonBillableOptions = [];
+			foreach ($services as $service) {
+				$serviceName = $service['name'];
+				$billable = Billrun_Util::getIn($service, 'billable', true);
+				if ($billable) {
+					$billableOptions[$serviceName] = $service;
+				} else {
+					$nonBillableOptions[$serviceName] = $service;
+				}
+			}
+			$plan['options'] = $billableOptions;
+			$plan['not_billable_options'] = $nonBillableOptions;
+		}
+	}
+	
+	protected function getPlanServices($plan) {
+		$servicesNames = Billrun_Util::getIn($plan, 'include.services', []);
+		if (empty($servicesNames)) {
+			return [];
+		}
+		$collection = 'services';
+		$action = 'uniqueget';
+		$query = [
+			'name' => [ '$regex' => implode('|', $servicesNames) ],
+		];
+		$params = [
+			'request' => [
+				'collection' => $collection,
+				'action' => $action,
+				'query' => json_encode($query),
+			],
+			'settings' => $this->getActionConfig($collection, $action),
+		];
+
+		$action = new Models_Action_Uniqueget($params);
+		return $action->execute();
+	}
+	
+	protected function getActionConfig($collection, $action) {
+		$configVar = 'billapi.' . $collection . '.' . $action;
+		if (!isset($this->configs[$configVar])) {
+			$this->configs[$configVar] = Billrun_Factory::config()->getConfigValue($configVar, []);
+		}
+		return $this->configs[$configVar];
 	}
 
 	/**
