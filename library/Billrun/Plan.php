@@ -122,7 +122,7 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->planDeactivation;
 	}
 
-	protected static function initPlans() {
+	public static function initPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
 		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {

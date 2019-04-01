@@ -8,21 +8,22 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Update subscriber in BillRun's cache
+ * Balance action class of version 3
  *
- * @author shai
- * @deprecated since version 5
- * @todo implement
+ * @package  Action
+ * @since    0.5
  */
-class UpdateSubscriberAction extends ApiAction {
-
+class V3_balanceAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	public function execute() {
-		Billrun_Factory::log()->log("Execute update subscriber api call", Zend_Log::INFO);
-		$request = $this->getRequest()->getRequest();
-		$this->setSuccess(true, $request);
-		return true;
+		$options = [
+			'fake_cycle' => true,
+			'generate_pdf' => false,
+			'output' => 'invoice_meta_data',
+		];
+		$this->forward('generateExpected', $options);
+		return false;
 	}
 
 	protected function getPermissionLevel() {

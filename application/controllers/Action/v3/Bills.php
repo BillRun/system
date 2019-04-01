@@ -8,7 +8,7 @@
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
-class PaymentHistoryAction extends ApiAction {
+class V3_paymentHistoryAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {

@@ -14,9 +14,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * This is API used in V3 and is here for backward compatibility
  *
  * @author eran
- * @deprecated since version 5
  */
-class ExportAction extends ApiAction {
+class V3_exportAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	public function execute() {
