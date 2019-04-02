@@ -57,7 +57,7 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 */
 	protected function getHeader() {
 		$headersMapping = $this->getConfig('header_mapping', array());
-		return $this->mapFields($headersMapping);
+		return [$this->mapFields($headersMapping)];
 	}
 	
 	/**
