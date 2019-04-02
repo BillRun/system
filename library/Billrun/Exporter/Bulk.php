@@ -142,10 +142,10 @@ abstract class Billrun_Exporter_Bulk extends Billrun_Exporter {
 		$footer = $this->getFooter();
 		$dataToExport = $this->rowsToExport;
 		if (!empty($header)) {
-			$dataToExport = array_merge($header, $dataToExport);
+			$dataToExport = array_merge([$header], $dataToExport);
 		}
 		if (!empty($footer)) {
-			$dataToExport = array_merge($dataToExport, $footer);
+			$dataToExport = array_merge($dataToExport, [$footer]);
 		}
 		
 		return $dataToExport;

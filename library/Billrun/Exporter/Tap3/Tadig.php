@@ -88,6 +88,18 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	/**
+	 * gets data to log after export is done
+	 * 
+	 * @return array
+	 */
+	protected function getLogData() {
+		$logData = parent::getLogData();
+		$logData['tadig'] = $this->getVpmnTadig();
+		
+		return $logData;
+	}
+	
+	/**
 	 * see parent::getNextLogSequenceNumberQuery()
 	 */
 	protected function getNextLogSequenceNumberQuery() {
@@ -338,7 +350,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		switch ($this->getLineType($row)) {
 			case self::$LINE_TYPE_DATA:	
 				$recEntityType = $this->getConfig('rec_entity_type.GGSN');
-				$recEntityId = $row['ggsn_address'];
+				$recEntityId = Billrun_Util::getIn($row, 'ggsn_address', '');
 				$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 				break;
 			
