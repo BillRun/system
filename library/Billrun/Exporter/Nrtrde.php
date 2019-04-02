@@ -22,8 +22,15 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 	 */
 	protected function getQuery() {
 		return array(
-			'type' => 'nsn',
+			'type' => array(
+				'$in' => array(
+					'ggsn',
+					'sgsn',
+					'nsn',
+				),
+			),
 			'incoming_roaming' => true,
+			'usagev' => ['$gt' => 0], //TODO: check if it's possible that we will want to charge line with usagev 0
 			'urt' => array(
 				'$gte' => new MongoDate($this->getPeriodStartTime()),
 				'$lte' => new MongoDate($this->getPeriodEndTime()),

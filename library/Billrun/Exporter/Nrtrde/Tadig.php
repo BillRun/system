@@ -20,12 +20,8 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	const CALL_EVENT_MTC = 'MTC';
 	const CALL_EVENT_GPRS = 'GPRS';
 	
-	const SEQUENCE_NUM_INIT = 1;
-	
 	protected $vpmnTadig = '';
 	protected $stamps = '';
-	protected $lastLogSequenceNum = null;
-	protected $sequenceNum = null;
 	protected $time = null;
 	protected $logStamp = null;
 
@@ -44,6 +40,16 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	protected function getFieldsMapping($row) {
 		$callEvent = $this->getCallEvent($row);
 		return $this->getConfig(array('fields_mapping', strtolower($callEvent)), array());
+	}
+	
+	/**
+	 * see parent::getNextLogSequenceNumberQuery()
+	 */
+	protected function getNextLogSequenceNumberQuery() {
+		$query = parent::getNextLogSequenceNumberQuery();
+		$query['tadig'] = $this->getVpmnTadig();
+		
+		return $query;
 	}
 
 	/**
@@ -95,7 +101,6 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	protected function getLogData() {
 		$logData = parent::getLogData();
 		$logData['tadig'] = $this->getVpmnTadig();
-		$logData['sequence_num'] = $this->getNextLogSequenceNumber();
 		
 		return $logData;
 	}
@@ -117,43 +122,6 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	protected function getHpmnTadig() {
 		return $this->getConfig('hmpn_tadig', '');
 	}
-	
-	/**
-	 * gets current sequence number for the file
-	 * 
-	 * @return string - number in the range of 00001-99999
-	 */
-	protected function getSequenceNumber() {
-		if (is_null($this->sequenceNum)) {
-			$nextSequenceNum = $this->getNextLogSequenceNumber();
-			$this->sequenceNum = sprintf('%05d', $nextSequenceNum % 100000);
-		}
-		return $this->sequenceNum;
-	}
-	
-	/**
-	 * gets the next sequence number of the VPMN from log collection
-	 */
-	protected function getNextLogSequenceNumber() {
-		if (is_null($this->lastLogSequenceNum)) {
-			$query = array(
-				'source' => 'export',
-				'type' => static::$type,
-				'tadig' => $this->getVpmnTadig(),
-			);
-			$sort = array(
-				'export_time' => -1,
-			);
-			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
-			if (is_null($lastSeq)) {
-				$this->lastLogSequenceNum = self::SEQUENCE_NUM_INIT;
-			} else {
-				$this->lastLogSequenceNum = $lastSeq + 1;
-			}
-		}
-		return $this->lastLogSequenceNum;
-	}
-
 
 	/**
 	 * gets file available timestamp
@@ -203,10 +171,11 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 */
 	protected function getFileName() {
 		$pref = $this->getConfig('file_name.prefix', '');
+		$suffix = $this->getConfig('file_name.suffix', '');
 		$hpmnTadig = $this->getHpmnTadig();
 		$vpmnTadig = $this->getVpmnTadig();
 		$sequenceNum = $this->getSequenceNumber();
-		return $pref . $hpmnTadig . $vpmnTadig . $sequenceNum . '.csv';
+		return $pref . $hpmnTadig . $vpmnTadig . $sequenceNum . $suffix;
 	}
 
 	/**

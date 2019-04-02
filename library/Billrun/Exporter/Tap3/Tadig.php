@@ -88,6 +88,16 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	/**
+	 * see parent::getNextLogSequenceNumberQuery()
+	 */
+	protected function getNextLogSequenceNumberQuery() {
+		$query = parent::getNextLogSequenceNumberQuery();
+		$query['tadig'] = $this->getVpmnTadig();
+		
+		return $query;
+	}
+	
+	/**
 	 * gets call event details to get correct mapping according to usage type
 	 * 
 	 * @param array $row
@@ -131,10 +141,16 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	 * see parent::getFileName
 	 */
 	protected function getFileName() {
-		$pref = $this->getConfig('file_name.prefix', '');
+		if (Billrun_Factory::config()->isProd()) {
+			$pref = $this->getConfig('file_name.prefix.prod', '');
+		} else {
+			$pref = $this->getConfig('file_name.prefix.test', '');
+		}
+		$suffix = $this->getConfig('file_name.suffix', '');
 		$hpmnTadig = $this->getHpmnTadig();
 		$vpmnTadig = $this->getVpmnTadig();
-		return (empty($pref) ? '' : "{$pref}_") . "{$hpmnTadig}_{$vpmnTadig}.tap3";
+		$sequenceNum = $this->getSequenceNumber();
+		return $pref . $hpmnTadig . $vpmnTadig . $sequenceNum . $suffix;
 	}
 
 	/**
@@ -210,7 +226,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 					'CurrencyConversion' => array(
 						'ExchangeRateCode' => $currencyCode,
 						'NumberOfDecimalPlaces' => $numberOfDecimalPlaces,
-						'ExchangeRate' => $this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces),
+						'ExchangeRate' => floor($this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces)),
 					),
 				);
 			}
@@ -490,7 +506,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getCurrency($row) {
-		$defaultCurrency = 'NIS';
+		$defaultCurrency = 'EUR';
 		$currentDate = new MongoDate();
 		if (!isset($row['arate'])) {
 			return $defaultCurrency;

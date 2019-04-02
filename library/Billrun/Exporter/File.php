@@ -16,6 +16,11 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 	
 	static protected $type = 'file';
 	
+	const SEQUENCE_NUM_INIT = 1;
+	
+	protected $lastLogSequenceNum = null;
+	protected $sequenceNum = null;
+	
 	/**
 	 * get file name
 	 */
@@ -77,7 +82,48 @@ abstract class Billrun_Exporter_File extends Billrun_Exporter_Bulk {
 			'exported_time' => date(self::base_dateformat),
 			'file_name' => $fileName,
 			'path' => $filePath,
+			'sequence_num' => $this->getNextLogSequenceNumber(),
 		);
+	}
+	
+	protected function getNextLogSequenceNumberQuery() {
+		return [
+			'source' => 'export',
+			'type' => static::$type,
+		];
+	}
+		
+	/**
+	 * gets the next sequence number of the VPMN from log collection
+	 */
+	protected function getNextLogSequenceNumber() {
+		if (is_null($this->lastLogSequenceNum)) {
+			$query = $this->getNextLogSequenceNumberQuery();
+			$sort = array(
+				'export_time' => -1,
+			);
+			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
+			if (is_null($lastSeq)) {
+				$this->lastLogSequenceNum = self::SEQUENCE_NUM_INIT;
+			} else {
+				$this->lastLogSequenceNum = $lastSeq + 1;
+			}
+		}
+		return $this->lastLogSequenceNum;
+	}
+	
+	/**
+	 * gets current sequence number for the file
+	 * 
+	 * @return string - number in the range of 00001-99999
+	 */
+	protected function getSequenceNumber() {
+		if (is_null($this->sequenceNum)) {
+			$seqNumLength = $this->getConfig('sequence_num_length', 5);
+			$nextSequenceNum = $this->getNextLogSequenceNumber();
+			$this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+		}
+		return $this->sequenceNum;
 	}
 	
 }
