@@ -17,6 +17,7 @@ class Models_Accounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	public function get() {
