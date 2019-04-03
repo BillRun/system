@@ -548,7 +548,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * 
 	 * @return string - number in the range of 00001-99999
 	 */
-	protected function getSequenceNumber() {
+	protected function getSequenceNumber($row = array(), $mapping = array()) {
 		if (is_null($this->sequenceNum)) {
 			$query = array(
 				'source' => 'export',
@@ -563,8 +563,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			} else {
 				$nextSeq = $lastSeq + 1;
 			}
-			$this->sequenceNum = sprintf('%05d', $nextSeq % 100000);
+			
+			$this->sequenceNum = $nextSeq;
 		}
+		
+		$length = intval(Billrun_Util::getIn($mapping, 'func.length', 5));
+		$this->sequenceNum = sprintf('%0' . $length . 'd', $this->sequenceNum % pow(10, $length));
 		return $this->sequenceNum;
 	}
 	
