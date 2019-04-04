@@ -60,9 +60,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['method'] = $this->method;
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
-			$this->data['amount'] = floatval($options['amount']);
+			$this->data['amount'] = round(floatval($options['amount']), 2);
 			if (isset($options['due'])) {
-				$this->data['due'] = $options['due'];
+				$this->data['due'] = round($options['due'], 2);
 			} else {
 				$this->data['due'] = $this->getDir() == 'fc' ? -$this->data['amount'] : $this->data['amount'];
 			}
@@ -513,12 +513,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
-				if (!empty($billDetails['left_to_pay']) && empty(!$billDetails['left'])) {
-					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
+				if (!Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
+					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
-				if (empty($billDetails['left_to_pay']) && empty($billDetails['left'])) {
-					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
+				if (Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
+					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
