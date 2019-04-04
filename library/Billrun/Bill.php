@@ -412,7 +412,7 @@ abstract class Billrun_Bill {
 				$amount += array_sum($this->data['paid_by']['rec']);
 			}
 			$this->data['total_paid'] = $amount;
-			$this->data['left_to_pay'] = $this->getLeftToPay();
+			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
@@ -428,7 +428,7 @@ abstract class Billrun_Bill {
 			if (isset($this->data['pays']['rec'])) {
 				$amount += array_sum($this->data['pays']['rec']);
 			}
-			$this->data['left'] = $this->data['amount'] - $amount;				
+			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
 		return $this;
 	}
