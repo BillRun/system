@@ -72,6 +72,7 @@ class Tap3ExplicitlyTaggedObject extends ExplicitlyTaggedObject {
 		switch (strtolower($type)) {
 			case 'integer':
 				$object = is_numeric($object) === false ? 0 : intval($object);
+				return new Universal\Integer($object);
 
 			case 'octetstring':
 				return new Universal\OctetString($object);
