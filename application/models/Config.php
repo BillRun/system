@@ -1024,18 +1024,18 @@ class ConfigModel {
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetFileTypeSettings(&$config, $fileType) {
-		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
+		$config['file_types'] = array_values(array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
-		});
+		}));
 	}
 	
 	/**
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetPaymentGatewaySettings(&$config, $pg) {
- 		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
+ 		$config['payment_gateways'] = array_values(array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] !== $pg;
- 		});
+ 		}));
  	}
 	
 	protected function unsetExportGeneratorSettings(&$config, $name) {
@@ -1048,9 +1048,9 @@ class ConfigModel {
 	}
 	
 	protected function unsetSharedSecretSettings(&$config, $secret) {
- 		$config['shared_secret'] = array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
+ 		$config['shared_secret'] = array_values(array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
  			return $secretSettings['key'] !== $secret;
- 		});
+ 		}));
  	}
  
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
