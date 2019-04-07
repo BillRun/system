@@ -21,15 +21,59 @@ class PayAction extends ApiAction {
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->get('method');
+		$action = $request->get('action');
+		$txIdArray = json_decode($request->get('txid'), TRUE);
+		$unfreezedDeposits = array();
+		$aids = array();
 		$jsonPayments = $request->get('payments');
-
 		if (!$method) {
 			return $this->setError('No method found', $request->getPost());
 		}
-		if (!(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
+		if (empty($action) && !(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
+			if (!empty($action) && $action == 'use_deposit' && !empty($txIdArray)) {
+				$billsColl = Billrun_Factory::db()->billsCollection();
+				$queryDeposit = array(
+					'deposit' => true,
+					'deposit_amount' => array('$ne' => 0),
+					'txid' => array('$in' => $txIdArray),
+				);
+				$deposits = $billsColl->query($queryDeposit)->cursor();
+				foreach ($deposits as $deposit) {
+					$currentTxid = $deposit['txid'];
+					$depositAmount = $deposit['deposit_amount'];
+					$updateQuery = array(
+						'$set' => array(
+							'deposit_amount' => 0,
+							'amount' => $depositAmount,
+							'due' => -$depositAmount,
+							'left' => $depositAmount,
+						)
+					);
+					$unfreezedDeposits[] = $currentTxid;
+					if (!in_array($deposit['aid'], $aids)) {
+						$aids[] = $deposit['aid'];
+					}
+					$billsColl->update(array('txid' => $currentTxid), $updateQuery);
+				}
+				foreach ($aids as $aid) {
+					Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
+				}
+				
+				$this->getController()->setOutput(array(array(
+					'status' => 1,
+					'desc' => 'success',
+					'input' => $request->getPost(),
+					'details' => array(
+						'deposits_received' => $txIdArray,
+						'deposits_unfreezed' => $unfreezedDeposits,
+					),
+				)));
+			
+				return;
+			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
 			$emailsToSend = array();
 			foreach ($payments as $payment) {

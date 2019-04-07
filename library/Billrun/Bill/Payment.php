@@ -49,7 +49,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($options['_id'])) {
 			$this->data = new Mongodloid_Entity($options, $this->billsColl);
 		} elseif (isset($options['aid'], $options['amount'])) {
-			if (!is_numeric($options['amount']) || $options['amount'] <= 0 || !is_numeric($options['aid'])) {
+			if (!is_numeric($options['amount']) || $options['amount'] < 0 || !is_numeric($options['aid'])) {
 				throw new Exception('Billrun_Bill_Payment: Wrong input. Was: Customer: ' . $options['aid'] . ', amount: ' . $options['amount'] . '.');
 			}
 			$this->data = new Mongodloid_Entity($this->billsColl);
@@ -74,6 +74,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
+			}
+			if (isset($options['deposit'])) {
+				$this->data['deposit'] = $options['deposit'];
+			}
+			if (isset($options['deposit_amount'])) {
+				$this->data['deposit_amount'] = $options['deposit_amount'];
 			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
