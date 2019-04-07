@@ -42,7 +42,7 @@ abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	 */
 	protected function getHeader() {
 		$includeHeader = $this->getConfig('include_header', true);
-		return $includeHeader ? array_keys($this->getFieldsMapping()) : array();
+		return $includeHeader ? [array_keys($this->getFieldsMapping())] : array();
 	}
 	
 	/**

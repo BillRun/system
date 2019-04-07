@@ -34,7 +34,7 @@ class OctetString extends BaseObject implements Parsable
 
         if (strlen($value) % 2 != 0) {
             // transform values like 1F2 to 01F2
-            $value = '0'.$value;
+            $value = $value . 'F';
         }
 
         $this->value = $value;
