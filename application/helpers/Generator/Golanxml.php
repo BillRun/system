@@ -295,8 +295,9 @@ class Generator_Golanxml extends Billrun_Generator {
 				$planCurrentPlan = $plan['current_plan'];
 				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);				
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
-				$planIncludes = $planObj['include']['groups'][$planObj['name']];
-				$planPrice = $plan['fraction'] * $planObj['price'];
+				$planIncludes = $planObj['include']['groups'][$planObj['name']];	
+				$planCurrPrice = isset($plan['offer_amount']) ? $plan['offer_amount'] : $planObj['price'];		
+				$planPrice = $plan['fraction'] * $planCurrPrice;
 				$subscriberFlatCosts += $planPrice * (1 + $billrun['vat']);
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
 				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
@@ -310,7 +311,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$vatCost = $planPrice * $billrun['vat'];
 				$this->writer->writeElement('VAT_COST', $vatCost);
 				$CostWithVat = $planPrice + $vatCost;
-				$this->writer->writeElement('TOTAL_COST', $CostWithVat);	
+				$this->writer->writeElement('TOTAL_COST', $CostWithVat);
 				$subscriber_gift_usage_TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] * (1 +  $billrun['vat']) : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
 				$this->writer->writeElement('TOTAL_FREE_COUNTER_COST', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
 				//$this->writer->writeElement('VOICE_COUNTERVALUEBEFBILL', ???);
