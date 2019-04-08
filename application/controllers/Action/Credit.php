@@ -125,11 +125,16 @@ class CreditAction extends ApiAction {
 				if (isset($credit_row[$fieldName])) {
 					$ret[$fieldName] = $credit_row[$fieldName];
 				} else if (isset($field['alternative_fields']) && is_array($field['alternative_fields'])) {
+					$found = false;
 					foreach ($field['alternative_fields'] as $alternativeFieldName) {
 						if (isset($credit_row[$alternativeFieldName])) {
 							$ret[$fieldName] = $credit_row[$alternativeFieldName];
+							$found = true;
 							break;
 						}
+					}
+					
+					if (!$found) {
 						$this->setError('Following field/s are missing: one of: (' . implode(', ', array_merge(array($fieldName), $field['alternative_fields']))) . ')';
 					}
 				} else {
