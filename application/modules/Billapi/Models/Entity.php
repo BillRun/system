@@ -1180,12 +1180,14 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		$queryCreation = array(
-			$keyField => $this->before[$keyField],
-		);
-		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-		if ($this->update['_id'] == strval($firstRevision->getId())) {
-			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		if(isset($this->update['_id'])) {
+			$queryCreation = array(
+				$keyField => $this->before[$keyField],
+			);
+			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+			if ($this->update['_id'] == strval($firstRevision->getId())) {
+				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+			}
 		}
 	}
 
