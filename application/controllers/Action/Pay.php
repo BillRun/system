@@ -33,30 +33,20 @@ class PayAction extends ApiAction {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
-			if (!empty($action) && $action == 'use_deposit' && !empty($txIdArray)) {
+			if ($this->useDeposits($action, $txIdArray)) {
 				$billsColl = Billrun_Factory::db()->billsCollection();
 				$queryDeposit = array(
 					'deposit' => true,
 					'deposit_amount' => array('$ne' => 0),
 					'txid' => array('$in' => $txIdArray),
 				);
-				$deposits = $billsColl->query($queryDeposit)->cursor();
+				$deposits = Billrun_Bill_Payment::queryPayments($queryDeposit);
 				foreach ($deposits as $deposit) {
-					$currentTxid = $deposit['txid'];
-					$depositAmount = $deposit['deposit_amount'];
-					$updateQuery = array(
-						'$set' => array(
-							'deposit_amount' => 0,
-							'amount' => $depositAmount,
-							'due' => -$depositAmount,
-							'left' => $depositAmount,
-						)
-					);
-					$unfreezedDeposits[] = $currentTxid;
+					Billrun_Bill_Payment::unfreezeDeposit($deposit);
+					$unfreezedDeposits[] = $deposit['txid'];
 					if (!in_array($deposit['aid'], $aids)) {
 						$aids[] = $deposit['aid'];
 					}
-					$billsColl->update(array('txid' => $currentTxid), $updateQuery);
 				}
 				foreach ($aids as $aid) {
 					Billrun_Bill::payUnpaidBillsByOverPayingBills($aid);
@@ -126,4 +116,7 @@ class PayAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
+	protected function useDeposits($action, $txIdArray) {
+		return !empty($action) && $action == 'use_deposit' && !empty($txIdArray);
+	}
 }

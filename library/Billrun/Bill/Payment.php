@@ -875,4 +875,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		
 		return $pipelines;
 	}
+	
+	public static function unfreezeDeposit($deposit) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$depositAmount = $deposit['deposit_amount'];
+		$updateQuery = array(
+			'$set' => array(
+				'deposit_amount' => 0,
+				'amount' => $depositAmount,
+				'due' => -$depositAmount,
+				'left' => $depositAmount,
+			)
+		);
+		$billsColl->update(array('txid' => $deposit['txid']), $updateQuery);
+	}
 }
