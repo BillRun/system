@@ -21,19 +21,16 @@ class GetController extends BillapiController {
 		
 	}
 
-	public function init() {
-		parent::init();
-		$request = $this->getRequest();
-		$this->params['sort'] = json_decode($request->get('sort'), TRUE);
-		$this->params['page'] = $request->get('page', 0);
-		$this->params['size'] = $request->get('size', 10);
+	protected function runOperation() {
+		$this->params['sort'] = json_decode($this->params['request']['sort'], TRUE);
+		$this->params['page'] = Billrun_Util::getIn($this->params, 'request.page', 0);
+		$this->params['size'] = Billrun_Util::getIn($this->params, 'request.size', 10);
 		if (!is_null($this->params['sort'])) {
 			$this->validateSort($this->params['sort']);
 		}
-	}
-
-	protected function runOperation() {
+		
 		$this->action = Models_Action::getInstance($this->params);
+
 		if (!$this->action) {
 			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
 		}
