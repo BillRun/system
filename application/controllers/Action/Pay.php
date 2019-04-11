@@ -23,7 +23,6 @@ class PayAction extends ApiAction {
 		$method = $request->get('method');
 		$action = $request->get('action');
 		$txIdArray = json_decode($request->get('txid'), TRUE);
-		$unfreezedDeposits = array();
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
 		if (!$method) {
@@ -34,11 +33,8 @@ class PayAction extends ApiAction {
 		}
 		try {
 			foreach ($paymentsArr as $key => $inputPayment) {
-				if (!isset($inputPayment['deposit'])) {
+				if (empty($inputPayment['deposit'])) {
 					continue;
-				}
-				if ($inputPayment['deposit'] != true) {
-					throw new Exception('deposit parameter can only be set to true');
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$deposit = new $className($inputPayment);
@@ -58,26 +54,7 @@ class PayAction extends ApiAction {
 				return;
 			}
 			if ($this->useDeposits($action, $txIdArray)) {
-				foreach ($txIdArray as $txid) {
-					$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
-					if (empty($deposit)) {
-						continue;
-					}
-					$depositUnfreezed = $deposit->unfreezeDeposit();
-					if ($depositUnfreezed) {
-						$unfreezedDeposits[] = $txid;
-					}
-				}
-				$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'input' => $request->getPost(),
-					'details' => array(
-						'deposits_received' => $txIdArray,
-						'deposits_unfreezed' => $unfreezedDeposits,
-					),
-				)));
-			
+				$this->unfreezeDeposits($txIdArray, $request);	
 				return;
 			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
@@ -141,5 +118,36 @@ class PayAction extends ApiAction {
 	 */
 	protected function useDeposits($action, $txIdArray) {
 		return !empty($action) && $action == 'use_deposit' && !empty($txIdArray);
+	}
+	
+	
+	/**
+	 * Check if need to unfreeze deposits or not.
+	 * @param string $action - action to execute.
+	 * @param array $txIdArray - array of tx id.
+	 * 
+	 * @return true if need to unfreeze deposits
+	 */
+	protected function unfreezeDeposits($txIdArray, $request) {
+		$unfreezedDeposits = array();
+		foreach ($txIdArray as $txid) {
+			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
+			if (empty($deposit)) {
+				continue;
+			}
+			$depositUnfreezed = $deposit->unfreezeDeposit();
+			if ($depositUnfreezed) {
+				$unfreezedDeposits[] = $txid;
+			}
+		}
+		$this->getController()->setOutput(array(array(
+			'status' => 1,
+			'desc' => 'success',
+			'input' => $request->getPost(),
+			'details' => array(
+				'deposits_received' => $txIdArray,
+				'deposits_unfreezed' => $unfreezedDeposits,
+			),
+		)));
 	}
 }

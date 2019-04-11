@@ -878,9 +878,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		
 		return $pipelines;
 	}
+	
+	protected function isDeposit() {
+		 return (!empty($this->data['deposit']) && isset($this->data['deposit_amount']));
+	}
 
 	public function unfreezeDeposit() {
-		if (empty($this->data['deposit']) || !isset($this->data['deposit_amount'])) {
+		if (!$this->isDeposit()) {
 			throw new Exception('Payment is not a deposit');
 		}
 		if (empty($this->data['deposit_amount'])) {
