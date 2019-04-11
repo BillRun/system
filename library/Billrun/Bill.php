@@ -667,13 +667,6 @@ abstract class Billrun_Bill {
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
 				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);			
-				if (isset($rawPayment['deposit']) && $rawPayment['deposit'] == true) {
-					if ($dir != 'fc') {
-						throw new Exception('Deposit can only be received from customer');
-					}
-					$rawPayment['deposit_amount'] = $rawPayment['amount'];
-					$rawPayment['amount'] = 0;
-				}
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays'])) {
 						if (!empty($rawPayment['pays']['inv'])) {

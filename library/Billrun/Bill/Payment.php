@@ -49,7 +49,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($options['_id'])) {
 			$this->data = new Mongodloid_Entity($options, $this->billsColl);
 		} elseif (isset($options['aid'], $options['amount'])) {
-			if (!is_numeric($options['amount']) || $options['amount'] < 0 || !is_numeric($options['aid'])) {
+			if (!is_numeric($options['amount']) || $options['amount'] < 0 || ($options['amount'] == 0 && !isset($options['deposit'])) || !is_numeric($options['aid'])) {
 				throw new Exception('Billrun_Bill_Payment: Wrong input. Was: Customer: ' . $options['aid'] . ', amount: ' . $options['amount'] . '.');
 			}
 			$this->data = new Mongodloid_Entity($this->billsColl);
@@ -75,11 +75,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
-			if (isset($options['deposit'])) {
+			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
-			}
-			if (isset($options['deposit_amount'])) {
-				$this->data['deposit_amount'] = $options['deposit_amount'];
+				if ($direction != 'fc') {
+					throw new Exception('Deposit can only be received from customer');
+				}
+				$this->data['deposit_amount'] = $this->data['amount'];
+				$this->data['amount'] = 0;
+				$this->data['due'] = 0;
 			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
@@ -875,18 +878,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		
 		return $pipelines;
 	}
-	
-	public static function unfreezeDeposit($deposit) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$depositAmount = $deposit['deposit_amount'];
-		$updateQuery = array(
-			'$set' => array(
-				'deposit_amount' => 0,
-				'amount' => $depositAmount,
-				'due' => -$depositAmount,
-				'left' => $depositAmount,
-			)
-		);
-		$billsColl->update(array('txid' => $deposit['txid']), $updateQuery);
+
+	public function unfreezeDeposit() {
+		if (empty($this->data['deposit']) || !isset($this->data['deposit_amount'])) {
+			throw new Exception('Payment is not a deposit');
+		}
+		if (empty($this->data['deposit_amount'])) {
+			return false;
+		}
+		$depositAmount = $this->data['deposit_amount'];
+		$this->data['deposit_amount'] = 0;
+		$this->data['amount'] = $depositAmount;
+		$this->data['due'] = -$depositAmount;
+		$this->data['left'] = $depositAmount;
+		$this->save();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
+		return true;
 	}
 }
