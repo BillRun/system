@@ -611,7 +611,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$query = [
 			'billrun' => [
 				'$gt' => $billrunKey,
-				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 length billrun keys only
+				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'installments' => [
 				'$exists' => true,
