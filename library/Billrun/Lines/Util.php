@@ -55,6 +55,7 @@ class Billrun_Lines_Util {
 				[
 					'billrun' => [
 						'$gte' => Billrun_Billingcycle::getBillrunKeyByTimestamp(),
+						'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 length billrun keys only
 					],
 				],
 			],

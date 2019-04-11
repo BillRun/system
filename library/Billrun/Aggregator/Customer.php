@@ -611,6 +611,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$query = [
 			'billrun' => [
 				'$gt' => $billrunKey,
+				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 length billrun keys only
 			],
 			'installments' => [
 				'$exists' => true,
@@ -640,7 +641,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		try {
 			$linesCol = Billrun_Factory::db()->linesCollection();
-			$linesCol->update($query, $update, $options);
+			$res = $linesCol->update($query, $update, $options);
 		} catch (Exception $e) {
 			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
 				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
