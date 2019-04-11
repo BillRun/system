@@ -642,6 +642,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		try {
 			$linesCol = Billrun_Factory::db()->linesCollection();
 			$res = $linesCol->update($query, $update, $options);
+			if ($res['ok']) {
+				Billrun_Factory::log($res['nModified'] . " future installments were updated for subscribers " . implode(',', $sids) . " to the current billrun " . $billrunKey, Zend_Log::NOTICE);
+			} else {
+				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				. ". error message: " . $res['err'] . ". error code: " . $res['errmsg'], Zend_log::ALERT);
+			}
 		} catch (Exception $e) {
 			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
 				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
