@@ -557,6 +557,98 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
+		
+		if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+			$this->handleInstallmentsPrepone($accounts);
+		}
+	}
+	
+	protected function handleInstallmentsPrepone($accounts) {
+		$cycleEndTime = $this->getCycle()->end();
+		$accountsToPrepone = [];
+		
+		foreach ($accounts as $account) {
+			$aid = $account->getInvoice()->getAid();
+			$maxDeactivationTime = PHP_INT_MIN;
+			$sidsToPrepone = [];
+			
+			foreach ($account->getRecords() as $sub) {
+				$sid = $sub->getSid();
+				if ($sid == 0) {
+					continue;
+				}
+				
+				$deactivationTime = $this->getDeactivationTime($sub);
+				if ($deactivationTime > $maxDeactivationTime) {
+					$maxDeactivationTime = $deactivationTime;
+				}
+				
+				if ($deactivationTime <= $cycleEndTime) {
+					$sidsToPrepone[] = $sid;
+				}
+			}
+			
+			if ($maxDeactivationTime <= $cycleEndTime) {
+				$sidsToPrepone[] = 0;
+			}
+			
+			if (!empty($sidsToPrepone)) {
+				$accountsToPrepone[$aid] = $sidsToPrepone;
+			}
+		}
+		
+		if (!empty($accountsToPrepone)) {
+			$this->preponeInstallments($accountsToPrepone);
+		}
+	}
+	
+	protected function preponeInstallments($accounts) {
+		if (empty($accounts)) {
+			return;
+		}
+		
+		$billrunKey = $this->getCycle()->key();	
+		$query = [
+			'billrun' => [
+				'$gt' => $billrunKey,
+			],
+			'installments' => [
+				'$exists' => true,
+			],
+			'$or' => [],
+		];
+		
+		foreach ($accounts as $aid => $sids) {
+			$query['$or'][] = [
+				'aid' => $aid,
+				'sid' => [
+					'$in' => $sids,
+				],
+			];
+		}
+
+		$update = [
+			'$set' => [
+				'billrun' => $billrunKey,
+				'preponed' => new MongoDate(),
+			],
+		];
+		
+		$options = [
+			'multiple' => true,
+		];
+		
+		try {
+			$linesCol = Billrun_Factory::db()->linesCollection();
+			$linesCol->update($query, $update, $options);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+		}
+	}
+	
+	protected function getDeactivationTime($sub) {
+		return max(array_column($sub->getRecords()['plans'], 'end'));
 	}
 
 
