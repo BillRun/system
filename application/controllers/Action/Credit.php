@@ -236,6 +236,9 @@ class CreditAction extends ApiAction {
 		return $ret;
 	}
 	
+	/**
+	 * Handles the case of an error while processing credit lines
+	 */
 	protected function handleProcessError() {
 		if (!$this->hasInstallments()) {
 			return;
