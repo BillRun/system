@@ -26,6 +26,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
+	protected $exporterFlags = null;
 	
 
 	/**
@@ -110,6 +111,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
 		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/header/header_tpl.html') ) );
 		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/footer/footer_tpl.html' ) ) );
+		$this->exporterFlags =   Billrun_Util::getFieldVal($options['exporter_flags'],  Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type'));
 		$this->custom = array(
 			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
 			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
@@ -229,9 +231,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($html, $this->filePermissions);
 
 		$this->updateHtmlDynamicData($account);
-		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
+		//$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
 		Billrun_Factory::log('Generating invoice ' . $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . " to : $pdf", Zend_Log::INFO);
-		exec($this->wkpdf_exec . " {$ExporterFlagsString} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+		exec($this->wkpdf_exec . " {$this->exporterFlags} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
 			$firstPage = $this->view_path . 'first_page/main.phtml';
