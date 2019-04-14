@@ -90,7 +90,8 @@ class CreditAction extends ApiAction {
 		
 		// handle first installment
 		$firstInstallment['aprice'] = $firstInstallmentPrice;
-		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($installmentData); // update stamp because data was changed
+		unset($firstInstallment['stamp']);
+		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
 		
 		// handle other installments
 		for ($i = 2; $i <= $numOfInstallments; $i++) {
@@ -101,6 +102,7 @@ class CreditAction extends ApiAction {
 			$installmentData['first_installment'] = $firstInstallment['stamp'];
 			$installmentData['credit_time'] = Billrun_Billingcycle::getStartTime($billrunKey) + 1;
 			$installmentData['rand'] = rand(1, 1000000);
+			unset($installmentData['stamp']);
 			$installmentData['stamp'] = Billrun_Util::generateArrayStamp($installmentData);
 			
 			$this->events[] = $installmentData;
