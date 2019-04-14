@@ -237,8 +237,9 @@ class Billrun_Utils_Mongo {
 	 */
 	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($fields as $timeField) {
-			if (isset($record[$timeField]->sec)) {
-				$record[$timeField] = date($format, $record[$timeField]->sec);
+			$value = Billrun_Util::getIn($record, $timeField, null);
+			if (isset($value->sec)) {
+				Billrun_Util::setIn($record, $timeField, date($format, $value->sec));
 			}
 		}
 

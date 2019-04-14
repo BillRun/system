@@ -113,7 +113,8 @@ class Models_Subscribers extends Models_Entity {
 	 * validates that the plan added to the subscriber matches his play
 	 */
 	protected function validatePlan() {
-		return $this->validateServicePlay($this->update['plan'], 'plan');
+		$plan = isset($this->update['plan']) ? $this->update['plan'] : '';
+		return $this->validateServicePlay($plan, 'plan');
 	}
 	
 	/**

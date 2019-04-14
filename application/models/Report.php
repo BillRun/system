@@ -25,6 +25,9 @@ class ReportModel {
 	protected $cacheFormatStyle = [];
 	protected $cacheEntityFields = [];
 	protected $currentTime = null;
+	protected $aggregateOptions = [
+		'allowDiskUse' => true,
+	];
 	
 	/**
 	 *  Array of entity join map keys
@@ -183,7 +186,7 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
 		
-		$results = $collection->aggregate($aggregate);
+		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
 		foreach ($results as $result) {
@@ -432,15 +435,15 @@ class ReportModel {
 		switch ($op) {
 			case 'last_hours':
 				$hours = -1 * intval($value);
-				return strtotime("{$hours} hours");
+				return date("c", strtotime("{$hours} hours"));
 			case 'last_days_include_today':
 				$days = -1 * intval($value);
-				return strtotime("{$days} day midnight");
+				return date("c", strtotime("{$days} day midnight"));
 			case 'last_days':
 				$days = -1 * (intval($value) + 1);
 				return array(
-					'from' => strtotime("{$days} day midnight"),
-					'to' => strtotime("today") - 1	
+					'from' => date("c", strtotime("{$days} day midnight")),
+					'to' => date("c", strtotime("today") - 1)
 				);
 		}
 		// search by field_name
@@ -852,6 +855,14 @@ class ReportModel {
 						'$gte' => new MongoDate($gteDate),
 						'$lt' => new MongoDate($ltDate),
 					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$gteDate = ($op === 'eq') ? $date : $date + 59;
+					$ltDate = ($op === 'eq') ? $date + 59 : $date;
+					$formatedExpression = array(
+						'$gte' => new MongoDate($gteDate),
+						'$lt' => new MongoDate($ltDate),
+					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
 						"\${$op}" => floatval($value)
@@ -867,10 +878,10 @@ class ReportModel {
 				}
 				break;
 			case 'between':
-				if ($type === 'date') {
+				if (in_array($type, ['date', 'datetime'])) {
 					$formatedExpression = array(
-						'$gte' => new MongoDate($value['from']),
-						'$lte' => new MongoDate($value['to']),
+						'$gte' => new MongoDate(strtotime($value['from'])),
+						'$lt' => new MongoDate(strtotime($value['to'] + 60)), // to last minute second
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
@@ -891,6 +902,12 @@ class ReportModel {
 				if ($type === 'date') {
 					$date = strtotime($value);
 					$queryDate = ($op === 'gt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
+					$formatedExpression = array(
+						"\${$op}" => new MongoDate($queryDate),
+					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$queryDate = ($op === 'gt' || $op === 'lte') ? $date + 59 : $date;
 					$formatedExpression = array(
 						"\${$op}" => new MongoDate($queryDate),
 					);
