@@ -183,7 +183,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (isset($options['generate_pdf'])) {
-			$this->generatePdf = ($options['generate_pdf'] == 'false' ? false : true);
+			$this->generatePdf = (filter_var($options['generate_pdf'], FILTER_VALIDATE_BOOLEAN) == false ? false : true);
 		}
 	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
@@ -867,6 +867,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
 		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
 		return $ret;
+	}
+	
+	public function getData() {
+		return $this->data;
 	}
 
 }

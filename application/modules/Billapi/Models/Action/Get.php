@@ -148,6 +148,7 @@ class Models_Action_Get extends Models_Action {
 		$type = Billrun_Util::getIn($field, 'type', 'string');
 		switch ($type) {
 			case 'ranges':
+			case 'boolean':
 				return $type; 
 			default:
 				return 'string';
