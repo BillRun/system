@@ -23,11 +23,6 @@ class PayAction extends ApiAction {
 		$method = $request->get('method');
 		$action = $request->get('action');
 		$jsonPayments = $request->get('payments');
-		$params['amount'] = !empty($request->get('amount')) ?  $request->get('amount') : 0;
-		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
-		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
-		$params['installments'] = !empty($request->get('installments')) ?  $request->get('installments') : array();
-		$params['aid'] = !empty($request->get('aid')) ?  $request->get('aid') : '';
 
 		if (!$method) {
 			return $this->setError('No method found', $request->getPost());
@@ -36,8 +31,8 @@ class PayAction extends ApiAction {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
-			if ($this->isLegitSplitBillAction($action, $params)) {
-				$this->executeSplitBill($params, $request);
+			if ($action == 'split_bill') {
+				$this->executeSplitBill($request);
 				return;
 			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
@@ -91,20 +86,20 @@ class PayAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
-	
+		
 	/**
-	 * Validate action split bill.
-	 * @param string $action - action to execute.
+	 * Creates rec with mwthod installment_agreement and splits it to installments.
 	 * @param array $params - parameters for split bill action.
 	 * 
-	 * @return true if legit split bill action.
 	 */
-	protected function isLegitSplitBillAction($action, $params) {
-		if ($action != 'split_bill') {
-			return false;
-		}
+	protected function executeSplitBill($request) {
+		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
+		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
+		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
+		$params['installments'] = !empty($request->get('installments')) ?  $request->get('installments') : array();
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
 		if (empty($params['amount']) || empty($params['aid'])) {
-			throw new Exception('In action split_bill must transfer amount parameter and aid');
+			throw new Exception('In action split_bill must transfer amount and aid parameters');
 		}
 		if (!empty($params['installments']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
 			throw new Exception('Passed parameters in contradiction');
@@ -112,31 +107,17 @@ class PayAction extends ApiAction {
 		if ((!empty($params['installments_num'] && empty($params['first_due_date']))) || (empty($params['installments_num'] && !empty($params['first_due_date'])))) {
 			throw new Exception("installment_num and first_due_date parameters must be passed together");
 		}
-
-		return true;
-	}
-		
-	/**
-	 * Creates rec with mwthod installment_agreement and splits it to installments.
-	 * @param array $params - parameters for split bill action.
-	 * 
-	 */
-	protected function executeSplitBill($params, $request) {
-		$aid = intval($params['aid']);
-		$amount = floatval($params['amount']);
-		$customerDebt = Billrun_Bill::getTotalDueForAccount($aid);
-		if ($amount > $customerDebt['without_waiting']) {
+		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
+		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
-		$installmentAgreement->splitBill();
+		$success = $installmentAgreement->splitBill();
 		$this->getController()->setOutput(array(array(
-			'status' => 1,
-			'desc' => 'success',
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'failure',
 			'input' => $request->getPost(),
-			'details' => array(
-				'split_bill id' => $installmentAgreement->getId(),
-			),
+			'details' => $success ? array('split_bill id' => $installmentAgreement->getAgreementId()) : array(),
 		)));
 
 	}

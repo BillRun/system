@@ -43,7 +43,12 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			'aid' => $this->data['aid']
 		));
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
-		$primaryInstallment->splitToInstallments();
+		if (!empty($primaryInstallment->getId())){
+			$success = $primaryInstallment->splitToInstallments();
+			return $success;
+		}
+		
+		return false;
 	}
 	
 	protected function splitToInstallments() {
@@ -52,12 +57,36 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		} else {
 			$installments = $this->splitPrimaryBillByTotalAmount();
 		}
-		
-		$this->savePayments($installments);
+		$res = $this->savePayments($installments);
+		if ($res && isset($res['ok']) && $res['ok']) {
+			return true;
+		} else {
+			throw new Exception("Split to installments failed");
+		}
 	}
 	
 	protected function splitPrimaryBillByInstallmentsArray() {
+		$installments = array();
+		$amountsArray = array_column($this->data['installments'], 'amount');
+		if (count($amountsArray) != 0 && count($amountsArray) != $this->data['installments_num']) {
+			throw new Exception("All installments must all be with/without amount");
+		}
+		$dueDateArray = array_column($this->data['installments'], 'due_date');
+		if (count($dueDateArray) != $this->data['installments_num']) {
+			throw new Exception("All installments must have due_date");
+		}
+		foreach ($this->data['installments'] as $key => $installmentPayment) {
+			$index = $key + 1;
+			if (empty($amountsArray)) {
+				$installment = $this->buildInstallmentByTotalAmount($index);
+			} else {
+				// build installment by each amount
+			}
+			$installment['due_date'] = new MongoDate(date(Billrun_Base::base_datetimeformat, strtotime("$index month", strtotime($installmentPayment))));
+			$installments[] = Billrun_Bill_Payment::getInstanceByData($installment);
+		}
 
+		return $installments;
 	}
 	
 	protected function splitPrimaryBillByTotalAmount() {
@@ -91,5 +120,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['id'] = $this->data['id'];
 		$installment['installment_index'] = $index;
 		return $installment;
+	}
+	
+	public function getAgreementId() {
+		return $this->data['id'];
 	}
 }
