@@ -25,21 +25,22 @@ foreach(glob($pdfsPath."*.pdf") as $filePath ) {
 
 
 $MAX_DPI = 120;
+$MIN_DPI = 105;
 foreach($brokenPdfs as $brokenFile) {
 	print("Received Paths {$brokenFile}\n");
-	$dpi=96;
+	$dpi=$MIN_DPI;
+	$highestDpi = FALSE;
 	$basePdfGenCmd = 'php -t '.APPLICATION_PATH.'/ '.APPLICATION_PATH.'/public/index.php --env '.Billrun_Factory::config()->getEnv()." --generate --type invoice_export --stamp {$billrunKey}";
 	$aid = preg_replace("/\d+_(\d+)_\d+.*/",'$1',basename($brokenFile));
 	for(;$dpi <= $MAX_DPI;$dpi++) {
 		$pdfParameters = "--page-size A4 -R 0 -L 0 -T 45 -B 27 --dpi {$dpi} --print-media-type";
 		exec("$basePdfGenCmd accounts={$aid},{$aid} exporter_flags='{$pdfParameters}'");
-		if(empty(exec("{$pdfVerifyExec} {$brokenFile} 2>/dev/null"))) {
-			break;
+		if(!empty(exec("{$pdfVerifyExec} {$brokenFile} 2>/dev/null"))) {
+			$highestDpi = $dpi;
 		}
 	}
-	if($dpi <= $MAX_DPI) {
-		$dpi--;
-		$pdfParameters = "--page-size A4 -R 0 -L 0 -T 45 -B 27 --dpi {$dpi} --print-media-type";
+	if($highestDpi) {
+		$pdfParameters = "--page-size A4 -R 0 -L 0 -T 45 -B 27 --dpi {$highestDpi} --print-media-type";
 		exec("$basePdfGenCmd accounts={$aid},{$aid} exporter_flags='{$pdfParameters}'");
 		print("$basePdfGenCmd accounts={$aid},{$aid} exporter_flags='{$pdfParameters}' \n");
 	} else {
