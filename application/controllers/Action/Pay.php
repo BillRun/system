@@ -38,6 +38,7 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$deposit = new $className($inputPayment);
+				$deposit->setUnfreezedDepositLeft();
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
@@ -122,11 +123,10 @@ class PayAction extends ApiAction {
 	
 	
 	/**
-	 * Check if need to unfreeze deposits or not.
-	 * @param string $action - action to execute.
+	 * unfreeze deposits.
 	 * @param array $txIdArray - array of tx id.
+	 * @param string $request - API request.
 	 * 
-	 * @return true if need to unfreeze deposits
 	 */
 	protected function unfreezeDeposits($txIdArray, $request) {
 		$unfreezedDeposits = array();
