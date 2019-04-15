@@ -100,20 +100,24 @@
 		"fields": [
 			{
 				"field_name": "key",
+				"system": true,
 				"mandatory": true
 			},
 			{
 				"field_name": "from",
+				"system": true,
 				"mandatory": true,
 				"type": "date"
 			},
 			{
 				"field_name": "to",
+				"system": true,
 				"mandatory": true,
 				"type": "date"
 			},
 			{
 				"field_name": "description",
+				"system": true,
 				"mandatory": true
 			}
 		]
