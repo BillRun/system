@@ -17,7 +17,7 @@ foreach(glob($pdfsPath."*.pdf") as $filePath ) {
 	$log->log("Verifing {$filePath}");
 	$res = exec("{$pdfVerifyExec} {$filePath} 2>/dev/null");
 	if(empty($res)) {
-		$log->log("{$filePath} is borken retuned result {$res}");
+		$log->log("{$filePath} is borken {$res}");
 		print("{$filePath} is borken retuned result {$res} \n");
 		$brokenPdfs[] = $filePath;
 	}
@@ -34,7 +34,8 @@ foreach($brokenPdfs as $brokenFile) {
 	$aid = preg_replace("/\d+_(\d+)_\d+.*/",'$1',basename($brokenFile));
 	for(;$dpi <= $MAX_DPI;$dpi++) {
 		$pdfParameters = "--page-size A4 -R 0 -L 0 -T 45 -B 27 --dpi {$dpi} --print-media-type";
-		exec("$basePdfGenCmd accounts={$aid},{$aid} exporter_flags='{$pdfParameters}'");
+		$log->log('Generating Invoice '.basename($brokenFile).' with dpi of :'.$dpi);
+		exec("$basePdfGenCmd accounts={$aid},{$aid} exporter_flags='{$pdfParameters}' 2>/dev/null");
 		if(!empty(exec("{$pdfVerifyExec} {$brokenFile} 2>/dev/null"))) {
 			$highestDpi = $dpi;
 		}
