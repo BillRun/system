@@ -16,33 +16,40 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 
 	protected $method = 'installment_agreement';
 	protected $installments = array();
+	protected $installmentsNum;
+	protected $id;
+	protected $totalAmount;
+	protected $firstDueDate;
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if (!empty($options['split_bill'])) {
-			return;
-		}
 		if (!isset($options['id'])) {
-			$this->data['id'] = $this->generateAgreementId();
+			$this->id = $this->data['payment_agreement.id'] = $this->generateAgreementId();
 		} else {
-			$this->data['id'] = $options['id'];
+			$this->id = $this->data['payment_agreement.id'] = $options['id'];
 		}
+		if (!empty($options['installment_index'])) {
+			$this->data['payment_agreement.installment_index'] = $options['installment_index'];
+		}
+		
 		if (!empty($options['installments_num']) && !empty($options['first_due_date']) && !empty($options['amount'])) {
 			if (!Billrun_Util::IsIntegerValue($options['installments_num'])) {
 				throw new Exception('installments_num parameter must be numeric value');
 			}
-			$this->data['installments_num'] = intval($options['installments_num']);
-			$this->data['total_amount'] = $this->data['amount'] = floatval($options['amount']);
+			$this->installmentsNum = $this->data['payment_agreement.installments_num'] = intval($options['installments_num']);
+			$this->data['amount'] = floatval($options['amount']);
+			$this->totalAmount = $this->data['payment_agreement.total_amount'] = !empty($options['total_amount']) ? $options['total_amount'] : floatval($options['amount']);
 			$firstDueDate = strtotime($options['first_due_date']);
 			if ($firstDueDate) {
-				$this->data['first_due_date'] = new MongoDate($firstDueDate);
+				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new MongoDate($firstDueDate);
 			} else {
-				$this->data['first_due_date'] = $options['first_due_date'];
+				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = $options['first_due_date'];
 			}
 		} else if (!empty($options['installments_agreement']) && !empty($options['amount'])) {
-			$this->data['total_amount'] = $this->data['amount'] = floatval($options['amount']);
+			$this->data['amount'] = floatval($options['amount']);
+			$this->totalAmount = $this->data['payment_agreement.total_amount'] = !empty($options['total_amount']) ? $options['total_amount'] : floatval($options['amount']);
 			$this->installments = $options['installments_agreement'];
-			$this->data['installments_num'] = count($options['installments_agreement']);
+			$this->installmentsNum = count($options['installments_agreement']);
 		} else {
 			throw new Exception('Billrun_Bill_Payment_InstallmentAgreement: Insufficient options supplied.');
 		}
@@ -50,22 +57,22 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	
 	protected function splitBill() {
 		$paymentsArr = array(array(
-			'amount' => $this->data['total_amount'],
-			'installments_num' => $this->data['installments_num'],
-			'total_amount' => $this->data['total_amount'],
-			'first_due_date' => !is_null($this->data['first_due_date']) ? $this->data['first_due_date'] : '',
+			'amount' => $this->totalAmount,
+			'installments_num' => $this->installmentsNum,
+			'total_amount' => $this->totalAmount,
+			'first_due_date' => !is_null($this->firstDueDate) ? $this->firstDueDate : '',
 			'dir' => 'fc',
 			'aid' => $this->data['aid'],
 			'installments_agreement' => $this->installments,
-			'id' => $this->data['id'],
+			'id' => $this->id,
 		));
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
-		if (!empty($primaryInstallment->getId())){
+		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$success = $primaryInstallment->splitToInstallments();
 			return $success;
 		}
 		
-		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::NOTICE);
+		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
 	
@@ -87,28 +94,19 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected function splitPrimaryBill() {
 		$installments = array();
 		$amountsArray = array_column($this->installments, 'amount');
-		if (count($amountsArray) != 0 && count($amountsArray) != $this->data['installments_num']) {
-			throw new Exception("All installments must all be with/without amount");
-		}
-		$dueDateArray = array_column($this->installments, 'due_date');
-		if (count($dueDateArray) != $this->data['installments_num']) {
-			throw new Exception("All installments must have due_date");
-		}
 		foreach ($this->installments as $key => $installmentPayment) {
 			$index = $key + 1;
 			$installment = $this->buildInstallment($index);
 			if (empty($amountsArray)) {
-				$totalAmount = $this->data['total_amount'];
-				$periodicalPaymentAmount = floor($totalAmount/ $this->data['installments_num']);
-				$firstPaymentAmount = $totalAmount - (($this->data['installments_num'] - 1) * $periodicalPaymentAmount);
+				$totalAmount = $this->totalAmount;
+				$periodicalPaymentAmount = floor($totalAmount/ $this->installmentsNum);
+				$firstPaymentAmount = $totalAmount - (($this->installmentsNum - 1) * $periodicalPaymentAmount);
 				$installment['amount'] = ($index == 1) ? $firstPaymentAmount : $periodicalPaymentAmount;
-				$installment['due'] = $installment['amount'];
 			} else {
 				$installment['amount'] = $installmentPayment['amount'];
-				$installment['due'] = $installmentPayment['amount'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installments[] = Billrun_Bill_Payment::getInstanceByData($installment);
+			$installments[] = new self($installment);
 		}
 
 		return $installments;
@@ -123,7 +121,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$dueDates[$key] = $row['due_date'];
 		}
 		array_multisort($dueDates, SORT_ASC, $this->installments);
-		$this->data['first_due_date'] = new MongoDate(strtotime($this->installments[0]['due_date']));
+		$this->firstDueDate = new MongoDate(strtotime($this->installments[0]['due_date']));
 	}
 	
 	protected function generateAgreementId() {
@@ -134,11 +132,19 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->installments)) {
 			return;
 		}
-		if (empty($this->data['installments_num']) || empty($this->data['total_amount'])) {
+		if (empty($this->installmentsNum) || empty($this->totalAmount)) {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
-		for ($index = 0; $index < $this->data['installments_num']; $index++) {
-			$this->installments[$index] = array('due_date' => date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->data['first_due_date']->sec)));
+		for ($index = 0; $index < $this->installmentsNum; $index++) {
+			$this->installments[$index] = array('due_date' => date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec)));
+		}
+		$amountsArray = array_column($this->installments, 'amount');
+		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
+			throw new Exception("All installments must all be with/without amount");
+		}
+		$dueDateArray = array_column($this->installments, 'due_date');
+		if (count($dueDateArray) != $this->installmentsNum) {
+			throw new Exception("All installments must have due_date");
 		}
 	}
 	
@@ -147,11 +153,11 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['method'] = $this->method;
 		$installment['aid'] = $this->data['aid'];
 		$installment['type'] = 'rec';
-		$installment['payment_agreement']['installments_num'] = $this->data['installments_num'];
-		$installment['payment_agreement']['first_due_date'] = $this->data['first_due_date'];
-		$installment['payment_agreement']['id'] = $this->data['id'];
-		$installment['payment_agreement']['total_amount'] = $this->data['total_amount'];
-		$installment['payment_agreement']['installment_index'] = $index;
+		$installment['installments_num'] = $this->installmentsNum;
+		$installment['first_due_date'] = $this->firstDueDate;
+		$installment['id'] = $this->id;
+		$installment['total_amount'] = $this->totalAmount;
+		$installment['installment_index'] = $index;
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
 		return $installment;
