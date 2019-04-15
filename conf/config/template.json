@@ -96,7 +96,29 @@
 		 "vat" : 0,
 		 "vat_label": "Vat"
 	},
-	"discounts": {
+	"taxes": {
+		"fields": [
+			{
+				"field_name": "key",
+				"mandatory": true
+			},
+			{
+				"field_name": "from",
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "to",
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "description",
+				"mandatory": true
+			}
+		]
+	},
+        "discounts": {
     "fields": [
       {
         "field_name": "key",
