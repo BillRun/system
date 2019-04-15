@@ -93,6 +93,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				foreach ($options['paid_by']['inv'] as $invId => $credit) {
 					$options['paid_by']['inv'][$invId] = floatval($credit);
 				}
+			}		
+			if ($this->isDeposit()) {
+				$this->data['left'] = 0;
 			}
 			
 			$this->data['urt'] = new MongoDate();
@@ -910,14 +913,5 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
 	}
-	
-	/**
-	 * Sets left field to 0 when inserting a deposit.
-	 * 
-	 */
-	public function setUnfreezedDepositLeft() {
-		if ($this->isDeposit()) {
-			$this->data['left'] = 0;
-		}
-	}
+
 }

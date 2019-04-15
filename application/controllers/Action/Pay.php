@@ -38,7 +38,6 @@ class PayAction extends ApiAction {
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$deposit = new $className($inputPayment);
-				$deposit->setUnfreezedDepositLeft();
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
