@@ -96,15 +96,22 @@ class PayAction extends ApiAction {
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
-		$params['installments'] = !empty($request->get('installments')) ?  $request->get('installments') : array();
+		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
+		if(!empty($installments)) {
+			$params['installments_agreement'] = json_decode($installments, true);
+			$amountsArray = array_column($params['installments_agreement'], 'amount');
+			if (!empty($amountsArray) && array_sum($amountsArray) != $params['amount']) {
+				throw new Exception('Sum of amounts in installments array must be equal to total amount');
+			}
+		}
 		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
 		if (empty($params['amount']) || empty($params['aid'])) {
 			throw new Exception('In action split_bill must transfer amount and aid parameters');
 		}
-		if (!empty($params['installments']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
+		if (!empty($params['installments_agreement']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
 			throw new Exception('Passed parameters in contradiction');
 		}
-		if ((!empty($params['installments_num'] && empty($params['first_due_date']))) || (empty($params['installments_num'] && !empty($params['first_due_date'])))) {
+		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
 			throw new Exception("installment_num and first_due_date parameters must be passed together");
 		}
 		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
