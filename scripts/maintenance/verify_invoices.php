@@ -23,12 +23,14 @@ $billrunKey = $argv[4];
 $pdfVerifyExec = Billrun_Factory::config()->getConfigValue('invoice_export.verfiy_pdf_exec','pdfinfo');
 $pdfsPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export',"files/insddvoices")) . DIRECTORY_SEPARATOR. $billrunKey .DIRECTORY_SEPARATOR. 'pdf'. DIRECTORY_SEPARATOR ;
 $brokenPdfs = [];
-$log->log("Received Paths {$pdfsPath}");
+$log->log("Verifing invoices at path {$pdfsPath}");
+$thinkArr = ['-','\\','|','/'];
+$thinkIdx=0;
 foreach(glob($pdfsPath."*.pdf") as $filePath ) {
-	$log->log("Verifing {$filePath}");
+	print($thinkArr[$thinkIdx++ %4] ."\r");
 	$res = exec("{$pdfVerifyExec} {$filePath} 2>/dev/null");
 	if(empty($res)) {
-		$log->log("{$filePath} is borken {$res}");
+		$log->log("{$filePath} is borken {$res}",Zend_Log::WARN);
 		$brokenPdfs[] = $filePath;
 	}
 }
@@ -49,7 +51,7 @@ foreach($brokenPdfs as $brokenFile) {
 			$highestDpi = $dpi;
 			$log->log('Invoice generation succesful');
 		} else {
-		$log->log('Invoice generation failed');
+		$log->log('Invoice generation failed for : {$brokenFile}',Zend_Log::WARN);
 		}
 	}
 	if($highestDpi) {
