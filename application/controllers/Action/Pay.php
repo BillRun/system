@@ -32,7 +32,7 @@ class PayAction extends ApiAction {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
-if ($action == 'split_bill') {
+			if ($action == 'split_bill') {
 				$this->executeSplitBill($request);
 				return;
 			}
