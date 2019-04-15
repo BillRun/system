@@ -21,7 +21,7 @@ class PayAction extends ApiAction {
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->get('method');
-		$action = $request->get('action');
+		$action = !is_null($request->get('action')) ? $request->get('action') : '';
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
@@ -31,10 +31,16 @@ class PayAction extends ApiAction {
 		if (empty($action) && !(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
-		try {
-			if ($action == 'split_bill') {
-				$this->executeSplitBill($request);
-				return;
+		try {	
+			switch ($action) {
+				case 'split_bill':
+					$this->executeSplitBill($request);
+					return;
+				case 'use_deposit':
+					$this->unfreezeDeposits($txIdArray, $request);
+					return;
+				default:
+					break;
 			}
 			if ($method == 'installment_agreement') {
 				throw new Exception("Method installment_agreement must be transferred with action split_bill");
@@ -58,10 +64,6 @@ class PayAction extends ApiAction {
 						'deposits_saved' => count($deposits),
 					),
 				)));
-				return;
-			}
-			if ($this->useDeposits($action, $txIdArray)) {
-				$this->unfreezeDeposits($txIdArray, $request);	
 				return;
 			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
@@ -115,18 +117,6 @@ class PayAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
-	
-	/**
-	 * Check if need to unfreeze deposits or not.
-	 * @param string $action - action to execute.
-	 * @param array $txIdArray - array of tx id.
-	 * 
-	 * @return true if need to unfreeze deposits
-	 */
-	protected function useDeposits($action, $txIdArray) {
-		return !empty($action) && $action == 'use_deposit' && !empty($txIdArray);
-	}
-	
 	
 	/**
 	 * unfreeze deposits.
