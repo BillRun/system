@@ -35,6 +35,9 @@ class PayAction extends ApiAction {
 				$this->executeSplitBill($request);
 				return;
 			}
+			if ($method == 'installment_agreement') {
+				throw new Exception("Method installment_agreement must be transferred with action split_bill");
+			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
@@ -100,7 +103,7 @@ class PayAction extends ApiAction {
 		if(!empty($installments)) {
 			$params['installments_agreement'] = json_decode($installments, true);
 			$amountsArray = array_column($params['installments_agreement'], 'amount');
-			if (!empty($amountsArray) && array_sum($amountsArray) != $params['amount']) {
+			if (!empty($amountsArray) && !Billrun_Util::isEqual(array_sum($amountsArray), $params['amount'], Billrun_Bill::precision)) {				
 				throw new Exception('Sum of amounts in installments array must be equal to total amount');
 			}
 		}
@@ -118,13 +121,13 @@ class PayAction extends ApiAction {
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
-		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
-		$success = $installmentAgreement->splitBill();
+		$success = Billrun_Bill_Payment::createInstallmentAgreement($params);
+		
 		$this->getController()->setOutput(array(array(
 			'status' => $success ? 1 : 0,
-			'desc' => $success ? 'success' : 'failure',
+			'desc' => $success ? '' : 'failure',
 			'input' => $request->getPost(),
-			'details' => $success ? array('split_bill id' => $installmentAgreement->getAgreementId()) : array(),
+			'details' => $success ? 'created installments successfully' : 'failed creating installments',
 		)));
 
 	}

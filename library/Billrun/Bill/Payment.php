@@ -85,9 +85,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					$options['paid_by']['inv'][$invId] = floatval($credit);
 				}
 			}
-			
-			$this->data['urt'] = new MongoDate();
 
+			$this->data['urt'] = new MongoDate();
+			if ($this->method == 'installment_agreement') {
+				$this->data['payment_agreement.installments_num'] = $options['installments_num'];
+				$firstDueDate = strtotime($options['first_due_date']);
+				if ($firstDueDate) {
+					$this->data['payment_agreement.first_due_date'] = new MongoDate($firstDueDate);
+				} else {
+					$this->data['payment_agreement.first_due_date'] = $options['first_due_date'];
+				}
+				$this->data['payment_agreement.id'] = $options['id'];
+				$this->data['payment_agreement.total_amount'] = $options['amount'];
+			}
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -868,5 +878,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		);
 		
 		return $pipelines;
+	}
+	
+	public static function createInstallmentAgreement($params) {
+		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
+		return $installmentAgreement->splitBill();
 	}
 }
