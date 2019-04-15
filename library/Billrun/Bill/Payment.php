@@ -49,7 +49,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($options['_id'])) {
 			$this->data = new Mongodloid_Entity($options, $this->billsColl);
 		} elseif (isset($options['aid'], $options['amount'])) {
-			if (!is_numeric($options['amount']) || $options['amount'] <= 0 || !is_numeric($options['aid'])) {
+			if (!is_numeric($options['amount']) || $options['amount'] < 0 || ($options['amount'] == 0 && !isset($options['deposit'])) || !is_numeric($options['aid'])) {
 				throw new Exception('Billrun_Bill_Payment: Wrong input. Was: Customer: ' . $options['aid'] . ', amount: ' . $options['amount'] . '.');
 			}
 			$this->data = new Mongodloid_Entity($this->billsColl);
@@ -75,6 +75,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
+			if (isset($options['deposit']) && $options['deposit'] == true) {
+				$this->data['deposit'] = $options['deposit'];
+				if ($direction != 'fc') {
+					throw new Exception('Deposit can only be received from customer');
+				}
+				$this->data['deposit_amount'] = $this->data['amount'];
+				$this->data['amount'] = 0;
+				$this->data['due'] = 0;
+			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
@@ -84,6 +93,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				foreach ($options['paid_by']['inv'] as $invId => $credit) {
 					$options['paid_by']['inv'][$invId] = floatval($credit);
 				}
+			}		
+			if ($this->isDeposit()) {
+				$this->data['left'] = 0;
 			}
 
 			$this->data['urt'] = new MongoDate();
@@ -884,4 +896,37 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
+	
+	
+	/**
+	 * Checks if payment is a deposit.
+	 * 
+	 * @return true if the payment is deposit.
+	 */
+	protected function isDeposit() {
+		 return (!empty($this->data['deposit']) && isset($this->data['deposit_amount']));
+	}
+
+	/**
+	 * Method to unfreeze deposit.
+	 * 
+	 * @return true if the deposit got unfreezed.
+	 */
+	public function unfreezeDeposit() {
+		if (!$this->isDeposit()) {
+			throw new Exception('Payment is not a deposit');
+		}
+		if (empty($this->data['deposit_amount'])) {
+			return false;
+		}
+		$depositAmount = $this->data['deposit_amount'];
+		$this->data['deposit_amount'] = 0;
+		$this->data['amount'] = $depositAmount;
+		$this->data['due'] = -$depositAmount;
+		$this->data['left'] = $depositAmount;
+		$this->save();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
+		return true;
+	}
+
 }

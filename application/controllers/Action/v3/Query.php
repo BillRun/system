@@ -2,20 +2,22 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Query action class
+ * Query action class of version 3
  *
  * @package  Action
  * 
  * @since    2.6
  */
-class QueryAction extends ApiAction {
+class V3_queryAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
+	
+	protected $model = null;
 	
 	/**
 	 * method to execute the query
@@ -156,13 +158,14 @@ class QueryAction extends ApiAction {
 	 * @return array lines to return for the action.
 	 */
 	protected function getLinesData($request, $linesRequestQueries) {
-		$model = new LinesModel($linesRequestQueries['options']);
+		Billrun_Factory::dispatcher()->trigger('beforeGetLinesData', array($request, &$linesRequestQueries));
+		$this->model = new LinesModel($linesRequestQueries['options']);
 		$lines = null;
 		$query = $linesRequestQueries['find'];
 		if (isset($request['distinct'])) {
-			$lines = $model->getDistinctField((string) $request['distinct'], $query);
+			$lines = $this->model->getDistinctField((string) $request['distinct'], $query);
 		} else {
-			$lines = $model->getData($query);
+			$lines = $this->model->getData($query);
 			foreach ($lines as &$line) {
 				if (isset($line['source_ref'])) {
 					$row = $line->get('source_ref', false)->getRawData();
@@ -182,17 +185,60 @@ class QueryAction extends ApiAction {
 	 * @return array of lines to return as result, false if error occurred.
 	 */
 	protected function getResultLines($request) {
+		Billrun_Factory::dispatcher()->trigger('beforeQueryGetResultLines', array($request));
 		$executeQuery = $this->buildQuery($request);
 		// Error occured.
 		if ($executeQuery === false) {
 			return false;
 		}
-
+		
 		$queryOptions = $this->getQueryOptions($request);
 
 		// Send the queries in an array.
 		$linesRequestQueries = array('find' => $executeQuery, 'options' => $queryOptions);
 		return $this->getLinesData($request, $linesRequestQueries);
+	}
+	
+	/**
+	 * Add the number of total results (ignoring the size param) and pagination data
+	 * @param array $ret
+	 * @param TableModel $model
+	 * @return array
+	 */
+	protected function addPaginationData($ret, $model) {
+		$ret[0]['nbResults'] = $model->count(true);
+		$ret[0]['pagination'] = $model->getPager();
+		return $ret;
+	}
+
+	/**
+	 * validates projection correctness
+	 * 
+	 * @param array $request
+	 * @return boolean
+	 */
+	protected function validateProjectionParams($request) {
+		$fields = array();
+		if (isset($request['fields']) && !empty($tmpFields = $this->getArrayParam($request['fields']))) {
+			$fields = $tmpFields;
+			
+			//force inclusion (or remove from exclusion) of the arate column because it's needed in the getData() method
+			$previousProjectionParam = reset($fields);
+			if ($previousProjectionParam == 1) {
+				$fields['arate'] = 1;
+			} else {
+				unset($fields['arate']);
+			}
+			
+			//ensure that all fields are either included or excluded (mongo does not allow a mix of both)
+			foreach ($fields as $projectionParam) {
+				if ($projectionParam != $previousProjectionParam) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
 	}
 
 	/**
@@ -222,6 +268,12 @@ class QueryAction extends ApiAction {
 				'details' => $result,
 			)
 		);
+		
+		// will add the number of total results (ignoring the size param) and pagination data
+		if (isset($request['paginationInfos'])) {
+			$ret = $this->addPaginationData($ret, $this->model);
+		}
+		
 		$this->getController()->setOutput($ret);
 	}
 
@@ -260,8 +312,13 @@ class QueryAction extends ApiAction {
 				$ret = true;
 			}
 		}
+		
 		if ($ret === false) {
 			$this->setError('Require to supply one of the following fields: ' . implode(', ', $requestFields), $request);
+		}
+		
+		if (!$this->validateProjectionParams($request)) {
+			$this->setError('You can not mix inclusion and exclusion for fields params', $request);
 		}
 		return $ret;
 	}

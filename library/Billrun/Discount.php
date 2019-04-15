@@ -436,5 +436,28 @@ abstract class Billrun_Discount {
 	protected function getLimit() {
 		return empty($this->discountData['limit']) ? -(PHP_INT_MAX-1) : $this->discountData['limit'];
 	}
+	
+	static public function remove($stamps) {
+		$query = array(
+			'stamp' => array(
+				'$in' => array_values($stamps)
+			),
+			'type' => 'credit',
+			'$or' => array(
+				array(
+					'billrun' => array(
+						'$exists' => false,
+					),
+				),
+				array(
+					'billrun' => array(
+						'$gte' => Billrun_Billingcycle::getBillrunKeyByTimestamp(),
+					),
+				),
+			),
+		);
+		$discountColl = Billrun_Factory::db()->linesCollection();
+		return $discountColl->remove($query);
+	}
 
 }

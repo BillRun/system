@@ -666,7 +666,7 @@ abstract class Billrun_Bill {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
-				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
+				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);			
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays'])) {
 						if (!empty($rawPayment['pays']['inv'])) {
