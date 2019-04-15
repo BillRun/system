@@ -21,15 +21,42 @@ class PayAction extends ApiAction {
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->get('method');
+		$action = $request->get('action');
+		$txIdArray = json_decode($request->get('txid'), TRUE);
+		$deposits = array();
 		$jsonPayments = $request->get('payments');
-
 		if (!$method) {
 			return $this->setError('No method found', $request->getPost());
 		}
-		if (!(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
+		if (empty($action) && !(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
+			foreach ($paymentsArr as $key => $inputPayment) {
+				if (empty($inputPayment['deposit'])) {
+					continue;
+				}
+				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
+				$deposit = new $className($inputPayment);
+				$deposits[] = $deposit;
+				$deposit->save();
+				unset($paymentsArr[$key]);
+			}
+			if (!empty($deposits) && empty($paymentsArr)) {
+				$this->getController()->setOutput(array(array(
+					'status' => 1,
+					'desc' => 'success',
+					'input' => $request->getPost(),
+					'details' => array(
+						'deposits_saved' => count($deposits),
+					),
+				)));
+				return;
+			}
+			if ($this->useDeposits($action, $txIdArray)) {
+				$this->unfreezeDeposits($txIdArray, $request);	
+				return;
+			}
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
@@ -81,5 +108,45 @@ class PayAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
-
+	
+	/**
+	 * Check if need to unfreeze deposits or not.
+	 * @param string $action - action to execute.
+	 * @param array $txIdArray - array of tx id.
+	 * 
+	 * @return true if need to unfreeze deposits
+	 */
+	protected function useDeposits($action, $txIdArray) {
+		return !empty($action) && $action == 'use_deposit' && !empty($txIdArray);
+	}
+	
+	
+	/**
+	 * unfreeze deposits.
+	 * @param array $txIdArray - array of tx id.
+	 * @param string $request - API request.
+	 * 
+	 */
+	protected function unfreezeDeposits($txIdArray, $request) {
+		$unfreezedDeposits = array();
+		foreach ($txIdArray as $txid) {
+			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
+			if (empty($deposit)) {
+				continue;
+			}
+			$depositUnfreezed = $deposit->unfreezeDeposit();
+			if ($depositUnfreezed) {
+				$unfreezedDeposits[] = $txid;
+			}
+		}
+		$this->getController()->setOutput(array(array(
+			'status' => 1,
+			'desc' => 'success',
+			'input' => $request->getPost(),
+			'details' => array(
+				'deposits_received' => $txIdArray,
+				'deposits_unfreezed' => $unfreezedDeposits,
+			),
+		)));
+	}
 }
