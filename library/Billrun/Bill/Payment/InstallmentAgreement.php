@@ -23,6 +23,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 
 	public function __construct($options) {
 		parent::__construct($options);
+		if (isset($options['payment_agreement'])) {
+			return;
+		}
 		if (!isset($options['id'])) {
 			$this->id = $this->data['payment_agreement.id'] = $this->generateAgreementId();
 		} else {
