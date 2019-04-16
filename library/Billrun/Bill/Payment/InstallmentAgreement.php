@@ -69,6 +69,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			'installments_agreement' => $this->installments,
 			'id' => $this->id,
 		));
+		if (!empty($this->data['note'])) {
+			$paymentsArr[0]['note'] = $this->data['note'];
+		}
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$success = $primaryInstallment->splitToInstallments();
@@ -107,6 +110,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['amount'] = ($index == 1) ? $firstPaymentAmount : $periodicalPaymentAmount;
 			} else {
 				$installment['amount'] = $installmentPayment['amount'];
+			}
+			if (!empty($installmentPayment['note'])) {
+				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
 			$installments[] = new self($installment);
