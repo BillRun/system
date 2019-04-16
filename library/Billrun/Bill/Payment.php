@@ -72,6 +72,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['transaction_status'])) {
 				$this->data['transaction_status'] = $options['transaction_status'];
 			}
+			if (isset($options['due_date'])) {
+				$this->data['due_date'] = $options['due_date'];
+			} 
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
@@ -97,9 +100,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if ($this->isDeposit()) {
 				$this->data['left'] = 0;
 			}
-			
-			$this->data['urt'] = new MongoDate();
 
+			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -880,6 +882,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		);
 		
 		return $pipelines;
+	}
+	
+	public static function createInstallmentAgreement($params) {
+		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
+		return $installmentAgreement->splitBill();
 	}
 	
 	
