@@ -540,10 +540,7 @@ abstract class Billrun_Bill {
 		}
 		
 		$matchQuery = array(
-			'$and' => array(
-				array('due_date' => array('$exists' => true)),
-				array('due_date' => array('$lt' => new MongoDate())),
-			),
+			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
 			'paid' => array('$in' => array(false, '0', 0)),
 		);
 		
