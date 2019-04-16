@@ -52,7 +52,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$this->data['amount'] = floatval($options['amount']);
 			$this->totalAmount = $this->data['payment_agreement.total_amount'] = !empty($options['total_amount']) ? $options['total_amount'] : floatval($options['amount']);
 			$this->installments = $options['installments_agreement'];
-			$this->installmentsNum = count($options['installments_agreement']);
+			$this->installmentsNum = $this->data['payment_agreement.installments_num'] = count($options['installments_agreement']);
 		} else {
 			throw new Exception('Billrun_Bill_Payment_InstallmentAgreement: Insufficient options supplied.');
 		}
@@ -88,6 +88,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installments = $this->splitPrimaryBill();
 		$res = $this->savePayments($installments);
 		if ($res && isset($res['ok']) && $res['ok']) {
+			Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array(array('aid' => $this->data['aid'])));
 			return true;
 		} else {
 			throw new Exception("Split to installments failed");
