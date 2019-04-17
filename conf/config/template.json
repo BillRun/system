@@ -119,6 +119,15 @@
 				"field_name": "description",
 				"system": true,
 				"mandatory": true
+			},
+			{
+				"field_name": "rate",
+				"system": true,
+				"title": "Rate",
+				"mandatory": true,
+				"type": "percentage",
+				"editable": true,
+				"display": true
 			}
 		]
 	},
