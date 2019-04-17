@@ -2,35 +2,35 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Billing Longest Prefix rate filter
+ * Billing Longest Prefix filter
  *
  * @package  calculator
- * @since 5.0
+ * @since 5.9
  */
-class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_Rate_Filters_Base {
+class Billrun_EntityGetter_Filters_LongestPrefix extends Billrun_EntityGetter_Filters_Base {
 
 	protected function updateMatchQuery(&$match, $row) {
 		$match = array_merge(
 			$match, 
-			array($this->params['rate_key'] => $this->getPrefixMatchQuery($this->getRowFieldValue($row, $this->params['line_key'])))
+			array($this->params['entity_key'] => $this->getPrefixMatchQuery($this->getRowFieldValue($row, $this->params['line_key'])))
 		);
 	}
 	
 	protected function updateAdditionalQuery($row) {
-		return array('$unwind' => "$" . $this->params['rate_key']);
+		return array('$unwind' => "$" . $this->params['entity_key']);
 	}
 	
 	protected function updateGroupQuery(&$group, $row) {
 		$group['_id'] = array_merge(
 			$group['_id'],
-			array("pref" => "$" . $this->params['rate_key'])
+			array("pref" => "$" . $this->params['entity_key'])
 		);
-		$group[$this->getAggregatedPrefixFieldName()] = array('$first' => "$" . $this->params['rate_key']);
+		$group[$this->getAggregatedPrefixFieldName()] = array('$first' => "$" . $this->params['entity_key']);
 	}
 	
 	protected function updateAdditionaAfterGrouplQuery($row) {
@@ -43,7 +43,7 @@ class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_R
 	}
 	
 	protected function getAggregatedPrefixFieldName() {
-		return 'prefix_field_' . str_replace('.', '_', $this->params['rate_key']);
+		return 'prefix_field_' . str_replace('.', '_', $this->params['entity_key']);
 	}
 		
 	/**

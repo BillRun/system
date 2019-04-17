@@ -2,20 +2,20 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Billing manager for rate filters
+ * Billing manager for filters
  *
  * @package  calculator
- * @since 5.0
+ * @since 5.9
  */
-class Billrun_Calculator_Rate_Filters_Manager {
+class Billrun_EntityGetter_Filters_Manager {
 	
 	public static function getFilterHandler($filter) {
-		$className = 'Billrun_Calculator_Rate_Filters_' . ucfirst($filter['type']);
+		$className = 'Billrun_EntityGetter_Filters_' . ucfirst($filter['type']);
 		if (!class_exists($className)) {
 			return false;
 		}

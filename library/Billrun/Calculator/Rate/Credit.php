@@ -88,6 +88,6 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 			return false;
 		}
 
-		return $this->findRateByMatchedRate($matchedRate, $rates_coll);
+		return $this->getFullEntityData($matchedRate);
 	}
 }

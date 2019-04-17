@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -10,14 +10,14 @@
  * Billing basic base filter
  *
  * @package  calculator
- * @since 5.0
+ * @since 5.9
  */
-class Billrun_Calculator_Rate_Filters_Base {
+class Billrun_EntityGetter_Filters_Base {
 
 	public $params = array();
 
 	/**
-	 * wheather or not this can handle the rate query
+	 * whether or not this can handle the query
 	 * @var boolean
 	 */
 	protected $canHandle = true;
@@ -61,7 +61,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (isset($row[$field])) {
 			return $this->regexValue($row[$field], $regex);
 		}
-		Billrun_Factory::log("Cannot get row value for rate. field: " . $field . " stamp: " . $row['stamp'], Zend_Log::NOTICE);
+		Billrun_Factory::log("Cannot get row value for entity. field: " . $field . " stamp: " . $row['stamp'], Zend_Log::NOTICE);
 		return '';
 	}
 
@@ -130,7 +130,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 	 * 
 	 * @param array $row
 	 * @param boolean $conditionRes
-	 * @return value to compare against the rate key
+	 * @return value to compare
 	 */
 	protected function getComputedValueResult($row, $conditionRes) {
 		if (Billrun_Util::getIn($this->params, array('computed', 'must_met'), false) && !$conditionRes) {
