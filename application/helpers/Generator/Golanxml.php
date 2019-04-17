@@ -285,7 +285,23 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 			$this->writer->endElement();
 			
-			$this->writeBillingLines($subscriber, $lines, $billrun['vat']);
+			$subsLines = $this->writeBillingLines($subscriber, $lines, $billrun['vat']);
+			$planToUniqueIdLines =[];
+			$lineFieldInArray = [ 'credit' => [ 'service_name' => ['IR_USAGE_DEPOSIT','FP_NATIONAL_DEPOSIT'] ] ];
+			foreach($lineFieldInArray as $cdrType => $lineQueryValues) {
+				foreach($subsLines as $subLine) {
+					if(!isset($subLine['unique_plan_id']) && $subLine['type'] == $cdrType ) {
+						foreach($lineQueryValues as $cdrField => $inArrayValues) {
+							if(in_array($subLine[$cdrField],$inArrayValues)) {
+								$cdrPlanUniqueId = $this->getUniqueIdFromUrt($plans, $subLine['urt'], $subLine['plan']);
+								if($cdrPlanUniqueId) {
+									$planToUniqueIdLines[$cdrPlanUniqueId][$cdrType][] = $subLine;
+								}
+							}
+						}
+					}
+				}
+			}
 
 			//$planNames = $this->getPlanNames($plans);
 			//if (!empty($plans)) {
@@ -293,7 +309,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->startElement('SUBSCRIBER_GIFT_USAGE');
 				$this->writer->writeElement('GIFTID_GIFTCLASSNAME', "GC_GOLAN");
 				$planCurrentPlan = $plan['current_plan'];
-				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);				
+				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planIncludes = $planObj['include']['groups'][$planObj['name']];	
 				$planCurrPrice = isset($plan['offer_amount']) ? $plan['offer_amount'] : $planObj['price'];		
@@ -982,6 +998,23 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->endElement();
 						}
 					}
+					if (isset($subscriber['breakdown'][$planToCharge['plan']]['credit']['refund_vatable']) && is_array($subscriber['breakdown'][$planToCharge['plan']]['credit']['refund_vatable']) && !empty($planToUniqueIdLines[$planUniqueId]['credit'])) {
+						foreach ($planToUniqueIdLines[$planUniqueId]['credit'] as $cdr) {
+							$reason = $cdr['service_name'];
+							$cost = $cdr['aprice'];
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+							$this->writer->writeElement('UNITS', 1);
+							$refund_entry_COST_WITHOUTVAT = $cost;
+							$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+							$refund_entry_VAT = $this->displayVAT($billrun['vat']);
+							$this->writer->writeElement('VAT', $refund_entry_VAT);
+							$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
+							$this->writer->endElement();
+						}
+					}
 					if (isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'])) {
 						foreach ($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['credit']['refund_vat_free'] as $reason => $cost) {
 							$this->writer->startElement('BREAKDOWN_ENTRY');
@@ -1460,6 +1493,8 @@ EOI;
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
+
+		return $subscriber_lines;
 	}
 
 	protected function flush() {
@@ -2025,7 +2060,17 @@ EOI;
 		$lateUniqueIds = array_diff_key($breakdown, $uniquePlanIds, $alreadyUsedUniqueIds);
 		return array_keys($lateUniqueIds);
 	}
-	
+
+	protected function getUniqueIdFromUrt($plans, $urt, $planKey) {
+		foreach ($plans as $plan) {
+			if($planKey == $plan['plan'] && strtotime($plan['start_date']) <= $urt->sec && $urt->sec < strtotime($plan['end_date'])  ) {
+				$uniquePlanId = $plan['id'] . strtotime($plan['start_date']);
+				return $uniquePlanId;
+			}
+		}
+		return FALSE;
+	}
+
 	protected function hasVFPlanInCycle($plans) {
 		foreach ($plans as $plan) {
 			$planCurrentPlan = $plan['current_plan'];
