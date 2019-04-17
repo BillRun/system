@@ -175,12 +175,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 	}
 
-	public function pay($gatewayDetails) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit');
+	public function pay($gatewayDetails, $addonData) {
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
 		return $this->sendPaymentRequest($paymentArray);
 	}
 
-	protected function buildPaymentRequset($gatewayDetails, $transactionType) {
+	protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {
 		$credentials = $this->getGatewayCredentials();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 
@@ -204,6 +204,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionCode>Phone</transactionCode>
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
+										<user>' . $addonData['txid'] . '</user>
+										<addonData>' . $addonData['aid'] . '</addonData>
 										<validation>AutoComm</validation>
 									</doDeal>
 								</request>
@@ -287,8 +289,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return false;
 	}
 
-	protected function credit($gatewayDetails) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit');
+	protected function credit($gatewayDetails, $addonData) {
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit', $addonData);
 		return $this->sendPaymentRequest($paymentArray);
 	}
 	

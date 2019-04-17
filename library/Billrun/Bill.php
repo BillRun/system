@@ -802,6 +802,7 @@ abstract class Billrun_Bill {
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
+						$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
 						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
 						if (is_null($gateway)) {
 							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
@@ -812,7 +813,7 @@ abstract class Billrun_Bill {
 						if (empty($options['single_payment_gateway'])) {
 							try {
 								$payment->setPending(true);
-								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
 							} catch (Exception $e) {
 								$payment->setGatewayChargeFailure($e->getMessage());
 								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");

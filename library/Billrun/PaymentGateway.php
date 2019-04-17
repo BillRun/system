@@ -293,7 +293,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param array $gatewayDetails - Details of the chosen payment gateway
 	 * @return String - Status of the payment.
 	 */
-	abstract protected function pay($gatewayDetails);
+	abstract protected function pay($gatewayDetails, $addonData);
 
 	/**
 	 * Check the status of previously pending payment.
@@ -712,16 +712,16 @@ abstract class Billrun_PaymentGateway {
 		return array();
 	}
 
-	public function makeOnlineTransaction($gatewayDetails) {
+	public function makeOnlineTransaction($gatewayDetails, $addonData) {
 		$amountToPay = $gatewayDetails['amount'];
 		if ($amountToPay > 0) {
-			return $this->pay($gatewayDetails);
+			return $this->pay($gatewayDetails, $addonData);
 		} else {
-			return $this->credit($gatewayDetails);
+			return $this->credit($gatewayDetails, $addonData);
 		}
 	}
 	
-	protected function credit($gatewayDetails) {
+	protected function credit($gatewayDetails, $addonData) {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
