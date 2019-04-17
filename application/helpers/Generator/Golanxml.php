@@ -287,7 +287,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			
 			$subsLines = $this->writeBillingLines($subscriber, $lines, $billrun['vat']);
 			$planToUniqueIdLines =[];
-			$lineFieldInArray = [ 'credit' => [ 'service_name' => ['IR_USAGE_DEPOSIT'] ] ];
+			$lineFieldInArray = [ 'credit' => [ 'service_name' => ['IR_USAGE_DEPOSIT','FP_NATIONAL_DEPOSIT'] ] ];
 			foreach($lineFieldInArray as $cdrType => $lineQueryValues) {
 				foreach($subsLines as $subLine) {
 					if(!isset($subLine['unique_plan_id']) && $subLine['type'] == $cdrType ) {
