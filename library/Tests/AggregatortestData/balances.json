@@ -1,0 +1,142 @@
+{
+	"collection": "balancesCollection",
+	"data":[
+				{
+					"OBJID": "5aeee57b463d4f12759b7634",
+					"aid": 9,
+					"period": "default",
+					"priority": 0,
+					"sid": 10,
+					"start_period": "default",
+					"from": "time*2018-04-30T21:00:00Z",
+					"to": "time*2018-05-30T21:00:00Z",
+					"DBRefcurrent_plan": {
+						"collection": "plans",
+						"ObjectId": "5aeec10905e68c1a29770a9b"
+					},
+					"connection_type": "postpaid",
+					"plan_description": "plan_a",
+					"balance": {
+						"cost": 100,
+						"totals": {
+							"out_plan_call": {
+								"usagev": 100,
+								"cost": 100,
+								"count": 1
+							}
+						}
+					},
+					"tx": {
+
+					}
+				},
+				{
+					"OBJID": "5af44ef9f3140f9783a80137",
+					"aid": 40,
+					"period": "default",
+					"priority": 0,
+					"sid": 41,
+					"start_period": "default",
+					"from": "time*2018-04-30T21:00:00Z",
+					"to": "time*2018-05-31T21:00:00Z",
+					"DBRefcurrent_plan": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+					},
+					"connection_type": "postpaid",
+					"plan_description": "plan_e",
+					"balance": {
+						"cost": 0,
+						"groups": {
+							"CALL": {
+								"left": 0,
+								"total": 100,
+								"usagev": 100,
+								"count": 2
+							}
+						},
+						"totals": {
+							"call": {
+								"usagev": 100,
+								"cost": 0,
+								"count": 2
+							}
+						}
+					},
+					"tx": {
+
+					}
+				},
+				{
+					"OBJID": "5af44f41f3140f9783a80174",
+					"aid": 40,
+					"period": "default",
+					"priority": 0,
+					"sid": 41,
+					"start_period": "default",
+					"from": "time*2018-05-31T21:00:00Z",
+					"to": "time*2018-06-30T21:00:00Z",
+					"DBRefcurrent_plan": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+					},
+					"connection_type": "postpaid",
+					"plan_description": "plan_e",
+					"balance": {
+						"cost": 0,
+						"groups": {
+							"CALL": {
+								"left": 50,
+								"total": 100,
+								"usagev": 50,
+								"count": 1
+							}
+						},
+						"totals": {
+							"call": {
+								"usagev": 50,
+								"cost": 0,
+								"count": 1
+							}
+						}
+					},
+					"tx": {
+
+					}
+				},
+				{
+					"OBJID": "5af44f41f3140f9783a80179",
+					"aid": 40,
+					"period": "+1 months",
+					"priority": "1600085166982347",
+					"service_name": "CUSTOM_CALL",
+					"sid": 41,
+					"start_period": "time*2018-05-14T21:00:00Z",
+					"from": "time*2018-05-14T21:00:00Z",
+					"to": "time*2018-06-14T21:00:00Z",
+					"DBRefcurrent_plan": {
+						"collection": "plans",
+						"ObjectId": "5af44c8e05e68c42b71a6ab5"
+					},
+					"connection_type": "postpaid",
+					"plan_description": "plan_e",
+					"balance": {
+						"cost": 0,
+						"groups": {
+							"C_CALL": {
+								"left": 50,
+								"total": 100,
+								"usagev": 50,
+								"count": 1
+							}
+						}
+					},
+					"tx": {
+
+					}
+				}
+
+
+
+			]
+}

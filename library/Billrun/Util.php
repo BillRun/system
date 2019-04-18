@@ -1259,7 +1259,7 @@ class Billrun_Util {
 	 * @return boolean true if multidimentional array.
 	 */
 	public static function isMultidimentionalArray($arr) {
-		return count($arr) != count($arr, COUNT_RECURSIVE);
+		return is_array($arr) && count($arr) != count($arr, COUNT_RECURSIVE);
 	}
 
 	public static function isAssoc($arr) {
@@ -1510,6 +1510,20 @@ class Billrun_Util {
 		return $ret;
 	}
 	
+	public static function getCmdCommand($options, $params = array()) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		if (!is_array($options)) {
+			$options = array($options);
+		}
+		foreach ($options as $option) {
+			$cmd .= ' ' . $option;
+		}
+		foreach ($params as $paramKey => $paramVal) {
+			$cmd .= ' ' . $paramKey . '="' . $paramVal . '"';
+		}
+		return $cmd;
+	}
+	
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
@@ -1563,36 +1577,44 @@ class Billrun_Util {
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
-			} else switch (@$trans['type']) {
-				//Handle funtion based transaltion
-				case 'function' :
-					if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
-						$retData[$key] = $instance->{$trans['translation']['function']}(@$source[$sourceKey],
-																						Billrun_Util::getFieldVal($trans['translation']['values'], array()),
-																						$source,
-																						$userData);
-					} else if (function_exists($trans['translation']['function'])) {
-						$retData[$key] = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
-																									   $userData) );
-					} else {
-						Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-					}
-					break;
-				//Handle regex translation
-				case 'regex' :
-					if (isset($trans['translation'][0]) && is_array($trans)) {
-						foreach ($trans['translation'] as $value) {
-							$retData[$key] = preg_replace(key($value), reset($value), @$source[$sourceKey]);
+			} else {
+				switch (@$trans['type']) {
+					//Handle funtion based transaltion
+					case 'function' :
+						if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
+							$val = $instance->{$trans['translation']['function']}(@$source[$sourceKey],
+																							Billrun_Util::getFieldVal($trans['translation']['values'], array()),
+																							$source,
+																							$userData);
+						} else if (function_exists($trans['translation']['function'])) {
+							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
+																										   $userData) );
+						} else {
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
+							continue;
 						}
-					} else if(isset($trans['translation'])) {
-						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
-					} else {
-						Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-					}
-					break;
-				default :
-						Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-					break;
+						break;
+					//Handle regex translation
+					case 'regex' :
+						if (isset($trans['translation'][0]) && is_array($trans)) {
+							foreach ($trans['translation'] as $value) {
+								$val = preg_replace(key($value), reset($value), @$source[$sourceKey]);
+							}
+						} else if(isset($trans['translation'])) {
+							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
+						} else {
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+							continue;
+						}
+						break;
+					default :
+							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
+							continue;
+						break;
+				}
+				if (!is_null($val) || empty($trans['ignore_null'])) {
+					$retData[$key] = $val;
+				}
 			}
 		}
 		
@@ -1624,6 +1646,28 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * Deeply unsets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param mixed $value - value to unset
+	 */
+	public static function unsetIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		unset($current[$value]);
+	}
+
+
+	/**
 	 * Gets the value from an array.
 	 * Also supports deep fetch (for nested arrays)
 	 * 
@@ -1654,6 +1698,21 @@ class Billrun_Util {
 		
 		return $ret;
 	}
+	
+	/**
+	 * Retrive the first field (field path supported) that has value 
+	 * 	(mostly should be used to get )
+	 */
+	 public static function getFirstValueIn($src, $keys, $defaultValue = null) {
+		foreach($keys as $keyPath) {
+			$ret = static::getIn($src,$keyPath,$defaultValue);
+			if($ret !=  $defaultValue) {
+				return $ret;
+			}
+		}
+		
+		return $defaultValue;
+	 }
 	
 	/**
 	 * Maps a nested array  where the identifing key is in the object (as a field values ) to an hash  where the identifing key is the field name.
@@ -1743,6 +1802,77 @@ class Billrun_Util {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * check if a specific condition is met
+	 * 
+	 * @param array $row
+	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	public static function isConditionMet($row, $condition) {
+		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
+		$query = array(
+			'first_val' => array(
+				$condition['op'] => $condition['value'],
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
+	}
+	
+	/**
+	 * try to fork, and if successful update the process log stamp
+	 * to match the correct pid after the fork
+	 * 
+	 * @return $pid the result from fork attempt
+	 */
+	public static function fork() {
+		$pid = pcntl_fork();
+		if ($pid !== -1) {
+			Billrun_Factory::log()->updateStamp();
+		}	
+		return $pid;
+	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function findInArray($array, $fields, $defaultVal = null, $retArr = FALSE) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField, $attr);
+		if (!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=", Billrun_Util::getFieldVal($attr[1], FALSE));
+		}
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField);
+		$aggregate = $retArr && ($field == '*');
+		$keys = ($field != "*") ? array($field) : array_keys($array);
+
+		$retVal = $aggregate ? array() : $defaultVal;
+		foreach ($keys as $key) {
+			if (isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] )) {
+				if (!$aggregate) {
+					$retVal[$key] = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($retVal[$key] === $defaultVal) {
+						unset($retVal[$key]);
+					}
+					break;
+				} else {
+					$tmpRet = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($tmpRet !== $defaultVal) {
+						$retVal[$key] = $tmpRet;
+					}
+				}
+			}
+		}
+
+		return $retVal;
 	}
 
 }

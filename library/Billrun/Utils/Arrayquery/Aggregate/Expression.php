@@ -65,6 +65,20 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $ret;
 	}
 
+
+		/**
+	*
+	*/
+	protected static function clearLeadingDollar($fieldsWithDollar) {
+		if(!is_array($fieldsWithDollar)) {
+			return preg_replace('/^\$/', '', $fieldsWithDollar);
+		}
+		foreach($fieldsWithDollar as &$value) {
+			$value = preg_replace('/^\$/', '', $value);
+		}
+		return $fieldsWithDollar;
+	}
+
 	//======================================= instancing logic  ==============================
 	protected function _first($data, $expression, $pastValue = FALSE) {
 		$result = $pastValue;
@@ -83,8 +97,8 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $result;
 	}
 	
-	protected function _push($data, $expression, $pastValue) {
-		$result = empty($pastValue) ? array() : $pastValue;
+	protected function _push($data, $expression, $pastValue = FALSE) {
+		$result = empty($pastValue) ? array() : is_array($pastValue)  ? $pastValue : [$pastValue];
 		if(is_array($expression)) {
 			foreach($expression as $dstKey => $subExpression) {
 				$addedData[$dstKey] = $this->evaluate($data, $subExpression);

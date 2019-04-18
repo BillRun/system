@@ -85,7 +85,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aid = $options['aid'];
 		$this->key = $options['billrun_key'];
 		$force = (isset($options['autoload']) && $options['autoload']);
-		$this->load($force);
+		$this->load($force, $options);
 	}
 	
 	/**
@@ -100,7 +100,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Load the billrun object, if already exists change the internal indication.
 	 * @param boolean $force - If true, force the load.
 	 */
-	protected function load($force) {
+	protected function load($force, $options = FALSE) {
 		$this->loadData();
 		if (!$this->data->isEmpty() && !$this->overrideMode) {
 			$this->exists = !$force;
@@ -110,7 +110,7 @@ class Billrun_Cycle_Account_Invoice {
 		if ($this->overrideMode && !$this->data->isEmpty()) {
 			$invoiceId = isset($this->data['invoice_id']) ? $this->data['invoice_id'] : null;
 		}
-		$this->reset($invoiceId);
+		$this->reset($invoiceId, $options);
 	}
 	
 	/**
@@ -288,15 +288,21 @@ class Billrun_Cycle_Account_Invoice {
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
+			'current_balance' => array('after_vat' => 0),
 		);
+		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
 		}
+		
+		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
+		
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
-		if($pastBalance['total'] < -Billrun_Billingcycle::PRECISION  ) {
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $invoicingDay);
+		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
+		$newTotals['current_balance']['after_vat'] = $newTotals['past_balance']['after_vat'] + $newTotals['after_vat_rounded'];
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
 	}
@@ -304,7 +310,7 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Resets the billrun data. If an invoice id exists, it will be kept.
 	 */
-	public function reset($invoiceId) {
+	public function reset($invoiceId, $options) {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
@@ -314,7 +320,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
-		$this->initInvoiceDates();
+		$this->initInvoiceDates($options);
 	}
 	
 	/**
@@ -345,20 +351,25 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Init the date values of the invoice.
 	 */
-	protected function initInvoiceDates() {
+	protected function initInvoiceDates($options) {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
 		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 
+										strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1) :
+										strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
         
     //======================================================
     
 	function isAccountActive() {
+		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
+			return true;
+		}
 		$hasUsageLines = !$this->lines->query(['aid'=>$this->aid,'billrun'=>$this->key,'usaget'=>['$nin'=>['flat']]])->cursor()->limit(1)->current()->isEmpty();
 		return !empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);})) || $hasUsageLines;
 	}

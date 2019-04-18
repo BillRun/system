@@ -17,11 +17,6 @@ class ImportController extends BillapiController {
 	
 	protected $action;
 
-	public function init() {
-		parent::init();
-		$request = $this->getRequest();
-	}
-
 	protected function runOperation() {
 		$this->action = Models_Action::getInstance($this->params);
 		if (!$this->action) {

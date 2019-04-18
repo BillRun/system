@@ -486,7 +486,17 @@
             "format": "Y-m-d H:i:s"
           }
         }
+      },
+      {
+        "field_name" : "foreign.service.description",
+        "foreign" : {
+            "entity" : "service",
+            "field"  :"invoice_description"
+        }
       }
     ]
-  }
+  },
+  "plays": [
+	{ "name": "Default", "enabled": true, "default": true }
+  ]
 }

@@ -174,20 +174,21 @@ class BillrunController extends ApiController {
 	 */
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
-		$aids = $request->get('aids');
+		$params = array();
 		$mode = $request->get('mode');
+		$params['date'] = $request->get('date');
+		$params['aids'] = $request->get('aids');
+		$params['invoices'] = $request->get('invoices');
+		$params['billrun_key'] = $request->get('billrun_key');
+		$params['pay_mode']= $request->get('pay_mode');
+		$params['mode'] = $request->get('charge_mode');
+		$params['min_invoice_date'] = $request->get('min_invoice_date');
+		$params['exclude_accounts'] = $request->get('exclude_accounts');
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
-		$aidsArray = explode(',', $aids);
-		if (!empty($aids) && is_null($aidsArray)) {
-			throw new Exception('aids parameter must be array of integers');
-		}
-		if (is_null($aids)) {
-			$success = self::processCharge($mode);
-		} else {
-			$success = self::processCharge($mode, $aidsArray);
-		}
+		$success = self::processCharge($mode, $params);
+
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -309,19 +310,9 @@ class BillrunController extends ApiController {
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
-	protected function processCharge($mode, $aids = array()) {
-		if (!empty($aids)) {
-			$aidsArray = array_diff(Billrun_util::verify_array($aids, 'int'), array(0));
-			if (empty($aidsArray)) {
-				throw new Exception("Illgal account id's");
-			}
-			$aids = implode(',', $aidsArray);			
-		}
-		if (!empty($aids)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids . ' ' . $mode;
-		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge' . ' ' . $mode;
-		}
+	protected function processCharge($mode, $params = array()) {
+		$paramsString = $this->buildCommandByParams($params);
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . $paramsString . ' ' . $mode;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
@@ -388,6 +379,19 @@ class BillrunController extends ApiController {
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
+	}
+	
+	protected function buildCommandByParams($params) {
+		$paramsString = '';
+		foreach ($params as $key => $value) {
+			if (is_null($value)) {
+				continue;
+			}
+			
+			$paramsString .= $key . '=' . $value . ' ';
+		}
+		
+		return $paramsString;
 	}
 
 }

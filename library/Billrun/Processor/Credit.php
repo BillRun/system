@@ -23,15 +23,14 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 	 * @return true
 	 */
 	public function parse() {
-		// credit have only one event (currently)
 		reset($this->data['data']);
-		$rowKey = key($this->data['data']);
-		$row = &$this->data['data'][$rowKey];
-		$row['type'] = 'credit';
-		if (isset($row['credit_time'])) {
-			$row['urt'] = new MongoDate($row['credit_time']);
-		} else {
-			$row['urt'] = new MongoDate();
+		foreach ($this->data['data'] as $rowKey => &$row) {
+			$row['type'] = 'credit';
+			if (isset($row['credit_time'])) {
+				$row['urt'] = new MongoDate($row['credit_time']);
+			} else {
+				$row['urt'] = new MongoDate();
+			}
 		}
 
 		return true;

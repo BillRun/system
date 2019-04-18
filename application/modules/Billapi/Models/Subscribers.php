@@ -34,6 +34,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		
 		$this->verifyServices();
+		$this->validatePlan();
 	}
 
 	public function get() {
@@ -46,10 +47,12 @@ class Models_Subscribers extends Models_Entity {
 	 * 
 	 * @param array $fields array of field settings
 	 */
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
-		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
-		return array_merge($accountFields, $customFields);
+		$subscriberFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
+		$subscriberPlay = Billrun_Util::getIn($update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		$subscriberFields = Billrun_Utils_Plays::filterCustomFields($subscriberFields, $subscriberPlay);
+		return array_merge($subscriberFields, $customFields);
 	}
 	
 	public function getCustomFieldsPath() {
@@ -58,40 +61,87 @@ class Models_Subscribers extends Models_Entity {
 
 	/**
 	 * Verify services are correct before update is applied to the subscription
+	 * and makes sure it matches his play
 	 */
 	protected function verifyServices() {
-		if (empty($this->update) || empty($this->update['services'])) {
-			return FALSE;
+		$services_sources = array();
+		if (!empty($this->update['services'])) {
+			$services_sources[] = &$this->update['services'];
+		}
+		if (!empty($this->queryOptions['$push']['services']['$each'])){
+			$services_sources[] = &$this->queryOptions['$push']['services']['$each'];
 		}
 		
-		foreach ($this->update['services'] as &$service) {
-			if (gettype($service) == 'string') {
-				$service = array('name' => $service);
-			}
-			if (gettype($service['from']) == 'string') {
-				$service['from'] = new MongoDate(strtotime($service['from']));
-			}
-			if (empty($this->before)) { // this is new subscriber
-				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
-			}
-			//Handle custom period services
-			$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
-			if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
-				$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
-			}
-
-			//to can't be more then the updated 'to' of the subscription
-			$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-			$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
-			if (!isset($service['service_id'])) {
-				$service['service_id'] = hexdec(uniqid());
-			}
-
-			if (!isset($service['creation_time'])) {
-				$service['creation_time'] = new MongoDate();
-			}
-
+		if (empty($services_sources)) {
+			return FALSE;
 		}
+		foreach ($services_sources as &$services_source) {	
+			foreach ($services_source as &$service) {
+				if (gettype($service) == 'string') {
+					$service = array('name' => $service);
+				}
+				if (gettype($service['from']) == 'string') {
+					$service['from'] = new MongoDate(strtotime($service['from']));
+				}
+				if (empty($this->before)) { // this is new subscriber
+					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
+				}
+				//Handle custom period services
+				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
+				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
+					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+				}
+
+				//to can't be more then the updated 'to' of the subscription
+				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
+				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+				if (!isset($service['service_id'])) {
+					$service['service_id'] = hexdec(uniqid());
+				}
+
+				if (!isset($service['creation_time'])) {
+					$service['creation_time'] = new MongoDate();
+				}
+				
+				$this->validateServicePlay($service['name']);
+
+			}
+		}
+	}
+	
+	/**
+	 * validates that the plan added to the subscriber matches his play
+	 */
+	protected function validatePlan() {
+		$plan = isset($this->update['plan']) ? $this->update['plan'] : '';
+		return $this->validateServicePlay($plan, 'plan');
+	}
+	
+	/**
+	 * validates that the plan added to the subscriber matches his play
+	 */
+	protected function validateServicePlay($serviceName, $type ='service') {
+		if (empty($serviceName) || !Billrun_Utils_Plays::isPlaysInUse()) {
+			return true;
+		}
+		if ($type == 'plan') {
+			$service = new Billrun_Plan(array('name'=> $serviceName, 'time'=> time())); 
+		} else {
+			$service = new Billrun_Service(array('name'=> $serviceName, 'time'=> time())); 
+		}
+		
+		if (!$service) {
+			return false;
+		}
+		$servicePlays = $service->getPlays();
+		if (empty($servicePlays)) {
+			return true;
+		}
+		$subscriberPlay = Billrun_Util::getIn($this->update, 'play', Billrun_Util::getIn($this->before, 'play', ''));
+		if (!in_array($subscriberPlay, $servicePlays)) {
+			throw new Billrun_Exceptions_Api(0, array(), "\"{$service->get('description')}\" does not match subscriber's play");
+		}
+		return true;
 	}
 	
 		
@@ -291,6 +341,10 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($this->update['deactivation_date'])) {
 			$this->update['deactivation_date'] = $this->update['to'];
 		}
+		if (Billrun_Utils_Plays::isPlaysInUse() && empty($this->update['play'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Mandatory update parameter play missing');
+		}
+		
 		parent::create();
 	}
 	

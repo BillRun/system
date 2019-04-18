@@ -84,7 +84,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-
+		
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
@@ -112,6 +112,30 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 
 		return $result['n'] == 1 && $result['ok'] == 1;
+	}
+	
+	public static function getInstance() {
+		$args = func_get_args();
+		$stamp = md5(static::class . serialize($args));
+		if (isset(self::$instance[$stamp])) {
+			return self::$instance[$stamp];
+		}
+
+		$type = $args[0]['receiver']['receiver_type'];
+		unset($args[0]['receiver']['receiver_type']);
+		$args = $args[0];
+		$args['type'] = $args['file_type'];
+		$class = 'Billrun_Receiver_' . ucfirst($type);
+		if (!@class_exists($class, true)) {
+			Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
+			return false;
+		}
+		self::$instance[$stamp] = new $class($args);
+		return self::$instance[$stamp];
+	}
+	
+	public function getReceiver() {
+		
 	}
 
 }

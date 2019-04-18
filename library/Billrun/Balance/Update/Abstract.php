@@ -33,6 +33,13 @@ abstract class Billrun_Balance_Update_Abstract {
 	protected $subscriber = array();
 	
 	/**
+	 * additional parameters to be saved
+	 * 
+	 * @var array 
+	 */
+	protected $additional = array();
+	
+	/**
 	 * The line saved to lines collection
 	 * 
 	 * @var array
@@ -57,6 +64,10 @@ abstract class Billrun_Balance_Update_Abstract {
 		}
 
 		$this->loadSubscriber((int) $identifier, $field, $subscriber_type);
+		
+		if (!empty($params['additional'])) {
+			$this->additional= $params['additional'];
+		}
 	}
 
 	abstract protected function init();
@@ -96,7 +107,7 @@ abstract class Billrun_Balance_Update_Abstract {
 	/**
 	 * create row to track the balance update
 	 */
-	abstract protected function createBillingLines();
+	abstract protected function createBillingLines($chargingData = array());
 
 	/**
 	 * method to track change in audit trail
@@ -147,6 +158,16 @@ abstract class Billrun_Balance_Update_Abstract {
 	
 	public function getAfter() {
 		return null;
+	}
+	
+	/**
+	 * method to add property to additional info
+	 * 
+	 * @param string $key
+	 * @param mixed $val
+	 */
+	public function addAdditional($key, $val) {
+		$this->additional[$key] = $val;
 	}
 
 }

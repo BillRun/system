@@ -48,7 +48,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 		$paymentParams = array(
 			'dd_stamp' => $this->getStamp(),
 		);
-		$this->customers = iterator_to_array($this->gateway->getCustomers());
+		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues());
 		
 		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));

@@ -17,6 +17,7 @@ class Models_Accounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	public function get() {
@@ -29,7 +30,7 @@ class Models_Accounts extends Models_Entity {
 	 * 
 	 * @param array $fields array of field settings
 	 */
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		$customFields = parent::getCustomFields();
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".account.fields", array());
 		return array_merge($accountFields, $customFields);

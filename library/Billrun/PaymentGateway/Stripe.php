@@ -232,4 +232,8 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
+	
+	protected function buildSinglePaymentArray($params, $options) {
+		throw new Exception("Single payment not supported in " . $this->billrunName);
+	}
 }
