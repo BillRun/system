@@ -16,6 +16,12 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	
 	static protected $type = 'nrtrde';
 	
+	static protected $LINE_TYPE_DATA = 'data';
+	static protected $LINE_TYPE_CALL = 'call';
+	static protected $LINE_TYPE_INCOMING_CALL = 'incoming_call';
+	static protected $LINE_TYPE_SMS = 'sms';
+	static protected $LINE_TYPE_INCOMING_SMS = 'incoming_sms';
+	
 	const CALL_EVENT_MOC = 'MOC';
 	const CALL_EVENT_MTC = 'MTC';
 	const CALL_EVENT_GPRS = 'GPRS';
@@ -197,10 +203,36 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 	 * @todo currently, only supports MOC
 	 */
 	protected function getCallEvent($row) {
-		switch ($row['type']) {
-			case 'nsn':
-			default:
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
+				return self::CALL_EVENT_GPRS;
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_SMS:
 				return self::CALL_EVENT_MOC;
+			case self::$LINE_TYPE_INCOMING_CALL:
+			case self::$LINE_TYPE_INCOMING_SMS:
+				return self::CALL_EVENT_MTC;
+			default:
+				return '';
+		}
+	}
+	
+	protected function getLineType($row) {
+		switch ($row['type']) {
+			case 'sgsn':
+				return self::$LINE_TYPE_DATA;
+			case 'nsn':
+				if ($row['usaget'] == 'incoming_call') {
+					return self::$LINE_TYPE_INCOMING_CALL;
+				}
+				if ($row['usaget'] == 'sms') {
+					return Billrun_Util::getIn($row, 'record_type', '08') == '08'
+						? self::$LINE_TYPE_SMS
+						: self::$LINE_TYPE_INCOMING_SMS;
+				}
+				return self::$LINE_TYPE_CALL;
+			default:
+				return false;
 		}
 	}
 

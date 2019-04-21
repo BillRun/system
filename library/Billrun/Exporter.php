@@ -132,6 +132,10 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	
 	protected function mapFields($fieldsMapping, $row = array()) {
 		$data = array();
+		$allowNull = $this->getConfig('allow_null', false);
+		$nullVal = $this->getConfig('null_value', '');
+		
+		
 		foreach ($fieldsMapping as $field => $fieldMapping) {
 			if (!is_array($fieldMapping)) {
 				$val = Billrun_Util::getIn($row, $fieldMapping, null);
@@ -158,7 +162,11 @@ abstract class Billrun_Exporter extends Billrun_Base {
 				$val = '';
 			}
 			
-			if (!is_null($val)) {
+			if (is_null($val) && $allowNull) {
+				$val = $nullVal;
+			}
+			
+			if (!is_null($val) || $allowNull) {
 				Billrun_Util::setIn($data, explode('>', $field), $val);
 			}
 		}
