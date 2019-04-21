@@ -540,10 +540,7 @@ abstract class Billrun_Bill {
 		}
 		
 		$matchQuery = array(
-			'type' => 'inv',
-			'due_date' => array(
-				'$lt' => new MongoDate(),
-			),
+			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
 			'paid' => array('$in' => array(false, '0', 0)),
 		);
 		
@@ -662,11 +659,11 @@ abstract class Billrun_Bill {
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
-		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
+		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit', 'installment_agreement'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
-				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
+				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);			
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays'])) {
 						if (!empty($rawPayment['pays']['inv'])) {
