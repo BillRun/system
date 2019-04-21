@@ -117,7 +117,7 @@ trait Models_Verification {
 				if (isset($requestOptions[$op])) {
 					foreach ($requestOptions[$op] as $op_field) {
 						$index = array_search($op_field['field_name'], $fields_names);
-						if($index !== FALSE && $fields_settings[$index]['multiple'] && $fields_settings[$index]['editable'] !== FALSE) {
+						if($index !== FALSE && isset($fields_settings[$index]['multiple']) && $fields_settings[$index]['multiple'] && isset($fields_settings[$index]['editable']) && $fields_settings[$index]['editable'] !== FALSE) {
 							$translated['query_options'][$op][] = $op_field;
 						} else {
 							throw new Billrun_Exceptions_Api($error, array(), "Can not run {$op_name} on non multiple field '{$op_field['field_name']}'");
