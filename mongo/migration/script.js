@@ -454,7 +454,6 @@ var servicesFields = lastConfig['services']['fields'];
 if (servicesFields) {
 	servicesFields.forEach(function (field){
 		if (field['field_name'] === 'vatable') {
-			printjson(field);
 			field['default_value'] = true;
 		}
 	});
