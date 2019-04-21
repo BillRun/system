@@ -184,7 +184,7 @@ var vatableField ={
 					"multiple" : false,
 					"field_name" : "vatable",
 					"unique" : false,
-					"default_value" : "1",
+					"default_value" : true,
 					"title" : "This service is taxable",
 					"mandatory" : false,
 					"type" : "boolean",
@@ -447,6 +447,18 @@ for (var i in entities) {
 var subscriberServicesFieldIndex = lastConfig['subscribers']['subscriber']['fields'].findIndex(field => field.field_name === "services");
 if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] === 'undefined') {
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
+}
+
+// BRCD-1843 - Service is taxable but shown as non-taxable
+var servicesFields = lastConfig['services']['fields'];
+if (servicesFields) {
+	servicesFields.forEach(function (field){
+		if (field['field_name'] === 'vatable') {
+			printjson(field);
+			field['default_value'] = true;
+		}
+	});
+	lastConfig['services']['fields'] = servicesFields;
 }
 
 db.config.insert(lastConfig);
