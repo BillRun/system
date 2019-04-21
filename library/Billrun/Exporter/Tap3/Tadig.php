@@ -182,9 +182,9 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	protected function getHeader() {
 		return array(
 			'BatchControlInfo' => array(
-				'Sender' => $this->getConfig('header.sender'),
-				'Recipient' => 'ISRGT',
-				'FileSequenceNumber' => '00003',
+				'Sender' => $this->getHpmnTadig(),
+				'Recipient' => $this->getVpmnTadig(),
+				'FileSequenceNumber' => $this->getSequenceNumber(),
 				'FileCreationTimeStamp' => array(
 					'LocalTimeStamp' => $this->startTimeStamp,
 					'UtcTimeOffset' => $this->timeZoneOffset,
