@@ -748,7 +748,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 	
-	protected static function buildFilterQuery($chargeFilters) {
+	public static function buildFilterQuery($chargeFilters) {
 		$filtersQuery = array();
 		$errorMessage = self::validateChargeFilters($chargeFilters);
 		if ($errorMessage) {

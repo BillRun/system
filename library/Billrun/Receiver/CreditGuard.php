@@ -12,13 +12,16 @@
  * @package  Billing
  * @since    5.0
  */
-class Billrun_Receiver_CGfeedback extends Billrun_Receiver_Ssh {
+class Billrun_Receiver_CreditGuard extends Billrun_Receiver_Ssh {
 
-	static protected $type = 'CGfeedback';
+	static protected $type = 'CreditGuard';
 	protected $gateway;
 
 	public function __construct($options) {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.config_path'));
+		if (!isset($options['version'])) {
+			throw new Exception('Please pass Credit Guard version for receiving files');
+		}
+		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.' . $options['version'] . '.config_path'));
 		$options = array_merge($options, $this->getAllReceiverDefinitions());
 		parent::__construct($options);
 	}

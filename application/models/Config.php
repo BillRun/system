@@ -976,9 +976,14 @@ class ConfigModel {
 	
 	
 	protected function setPaymentGatewaySettings(&$config, $pgSettings) {
- 		$paymentGateway = $pgSettings['name'];
+ 		$paymentGatewayName = $pgSettings['name'];
  		foreach ($config['payment_gateways'] as &$somePgSettings) {
- 			if ($somePgSettings['name'] == $paymentGateway) {
+ 			if ($somePgSettings['name'] == $paymentGatewayName) {
+				if (!empty($pgSettings['receiver'])) {
+					foreach ($pgSettings['receiver']['connections'] as $key => $connection) {
+						$pgSettings['receiver']['connections'][$key]['receiver_type'] = $paymentGatewayName;
+					}
+				}
  				$somePgSettings = $pgSettings;
  				return;
  			}

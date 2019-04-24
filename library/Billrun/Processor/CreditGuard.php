@@ -11,14 +11,14 @@
  * @package  Billing
  * @since    5.7
  */
-class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
+class Billrun_Processor_CreditGuard extends Billrun_Processor_Updater {
 
 	/**
 	 *
 	 * @var string
 	 */
 
-	protected static $type = 'CGfeedback';
+	protected static $type = 'CreditGuard';
 
 	protected $structConfig;
 	protected $headerStructure;
@@ -31,8 +31,11 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 
 
 	public function __construct($options) {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.config_path'));
+		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.' . $options['version']. '.config_path'));
 		$options = array_merge($options, $this->getProcessorDefinitions());
+		if (!isset($options['version'])) {
+			throw new Exception('Please pass Credit Guard version for processing files');
+		}
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
@@ -59,7 +62,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 			$row['row_number'] = ++$rowCount;
 			$this->addDataRow($row);
 		}
-		return true;		
+		return true;
 	}
 
 	protected function getBillRunLine($rawLine) {
@@ -77,6 +80,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 				continue;
 			}	
 			$paymentResponse = $this->getPaymentResponse($row);
+			$bill->setPending(false);
 			Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $bill, 'CreditGuard');
 			if ($paymentResponse['stage'] == 'Completed') {
 				$bill->markApproved($paymentResponse['stage']);

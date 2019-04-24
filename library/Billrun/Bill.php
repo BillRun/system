@@ -171,6 +171,7 @@ abstract class Billrun_Bill {
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
 				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+				'total3' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due' , 'else' => 0)),
 
 			),
 		);
@@ -183,6 +184,9 @@ abstract class Billrun_Bill {
 				'total2' => array(
 					'$sum' => '$total2',
 				),
+				'total3' => array(
+					'$sum' => '$total3',
+				),
 			),
 		);
 		
@@ -192,6 +196,7 @@ abstract class Billrun_Bill {
 				'aid' => '$_id',
 				'total' => 1,
 				'total2' =>  1,
+				'total3' => 1
 			),
 		);
 
@@ -212,6 +217,7 @@ abstract class Billrun_Bill {
 			$results = array_map(function($ele) {
 				$ele['total'] = Billrun_Util::getChargableAmount($ele['total']);
 				$ele['total2'] = Billrun_Util::getChargableAmount($ele['total2']);
+				$ele['total3'] = Billrun_Util::getChargableAmount($ele['total3']);
 				return $ele;
 			}, $results);
 		}
@@ -238,12 +244,13 @@ abstract class Billrun_Bill {
 		if (count($results)) {
 			$total =  current($results)['total'];
 			$totalWaiting = current($results)['total2'];
+			$totalPending = abs(current($results)['total3']);
 		} else if ($notFormatted) {
-			$total = $totalWaiting = 0;
+			$total = $totalWaiting = $totalPending = 0;
 		} else {
-			$total = $totalWaiting = Billrun_Util::getChargableAmount(0);
+			$total = $totalWaiting = $totalPending = Billrun_Util::getChargableAmount(0);
 		}
-		return array('total' => $total, 'without_waiting' => $totalWaiting);
+		return array('total' => $total, 'without_waiting' => $totalWaiting, 'total_pending_amount' => $totalPending);
 	}
 
 	public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true) {
@@ -844,9 +851,9 @@ abstract class Billrun_Bill {
 						foreach ($payment->getPaidBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
+									$payment->setPending(true);
 								}
-								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
 								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
@@ -856,9 +863,9 @@ abstract class Billrun_Bill {
 						foreach ($payment->getPaidByBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
+									$payment->setPending(true);
 								}
-								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
 								$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
@@ -869,13 +876,13 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
-					if (is_null($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
+					if (empty($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}
