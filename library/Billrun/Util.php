@@ -1612,7 +1612,7 @@ class Billrun_Util {
 							continue;
 						break;
 				}
-				if (!is_null($val) || !empty($trans['nullable'])) {
+				if (!is_null($val) || empty($trans['ignore_null'])) {
 					$retData[$key] = $val;
 				}
 			}
@@ -1820,6 +1820,59 @@ class Billrun_Util {
 		);
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
+	}
+	
+	/**
+	 * try to fork, and if successful update the process log stamp
+	 * to match the correct pid after the fork
+	 * 
+	 * @return $pid the result from fork attempt
+	 */
+	public static function fork() {
+		$pid = pcntl_fork();
+		if ($pid !== -1) {
+			Billrun_Factory::log()->updateStamp();
+		}	
+		return $pid;
+	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function findInArray($array, $fields, $defaultVal = null, $retArr = FALSE) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField, $attr);
+		if (!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=", Billrun_Util::getFieldVal($attr[1], FALSE));
+		}
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField);
+		$aggregate = $retArr && ($field == '*');
+		$keys = ($field != "*") ? array($field) : array_keys($array);
+
+		$retVal = $aggregate ? array() : $defaultVal;
+		foreach ($keys as $key) {
+			if (isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] )) {
+				if (!$aggregate) {
+					$retVal[$key] = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($retVal[$key] === $defaultVal) {
+						unset($retVal[$key]);
+					}
+					break;
+				} else {
+					$tmpRet = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($tmpRet !== $defaultVal) {
+						$retVal[$key] = $tmpRet;
+					}
+				}
+			}
+		}
+
+		return $retVal;
 	}
 
 }

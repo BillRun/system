@@ -137,7 +137,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-
 // BRCD-1353: CreditGuard fixes
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
@@ -320,34 +319,27 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 
-// add detailed invoice flag to accounts
-fields = lastConfig.subscribers.account.fields;
-var found = false;
-for (var field_key in fields) {
-	if (fields[field_key].field_name === "detailed_invoice") {
-		found = true;
-	}
-}
-if(!found) {
-	fields.push ({
-		"display":true,
-		"editable":true,
-		"generated":false,
-		"system":true,
-		"field_name":"detailed_invoice",
-		"unique":false,
-		"show_in_list":false,
-		"title":"Detailed invoice",
-		"type":"boolean",
-		"mandatory":false
-	});
-	lastConfig.subscribers.account.fields = fields;
-}
+//BRCD-1420 : Integrate Invoice usage details from the CRM with the billing
+var detailedField = {
+					"select_list" : false,
+					"display" : true,
+					"editable" : true,
+					"generated":false,
+					"multiple" : false,
+					"system":true,
+					"field_name" : "invoice_detailed",
+					"unique" : false,
+					"show_in_list":false,
+					"title" : "Detailed Invoice",
+					"type" : "boolean",
+					"mandatory" : false,
+					"select_options" : ""
+};
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
 
 // BRCD-1636 Add new custom 'play' field to Subscribers.
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var fields = lastConfig['subscribers']['subscriber']['fields'];
 var found = false;
 for (var field_key in fields) {
@@ -363,12 +355,17 @@ if(!found) {
 		"field_name":"play",
 		"show_in_list":true,
 		"title":"Play",
+                "multiple" : false,
 	});
 }
 lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+
+// BRCD-1516 - Charge command filtration
+db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");
@@ -400,12 +397,12 @@ subscribers.forEach(function (sub) {
 		});
 });
 
-// BRCD-1624: add default Plays to config
-if (typeof lastConfig.plays == 'undefined') {
-	lastConfig.plays = [
-		{"name": "Default", "enabled": true, "default": true }
-	];
-}
+//// BRCD-1624: add default Plays to config
+//if (typeof lastConfig.plays == 'undefined') {
+//	lastConfig.plays = [
+//		{"name": "Default", "enabled": true, "default": true }
+//	];
+//}
 
 //BRCD-1643: add email template for fraud notification
 if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
@@ -418,7 +415,56 @@ if (typeof lastConfig.email_templates.fraud_notification == 'undefined') {
 //BRCD-1613 - Configurable VAT label on invoice
 var vatLabel = lastConfig['taxation']['vat_label'];
 if (!vatLabel) {
-	lastConfig['taxation']['vat_label'] = 'VAT';
+	lastConfig['taxation']['vat_label'] = 'Vat';
+}
+
+// BRCD-1682 - Add new custom 'play' field to Proucts/Services/Plans
+var entities = ['plans', 'rates', 'services'];
+for (var i in entities) {
+	var entity = entities[i];
+	var fields = lastConfig[entity]['fields'];
+	var found = false;
+	for (var field_key in fields) {
+		if (fields[field_key].field_name === "play") {
+			found = true;
+		}
+	}
+	if(!found) {
+		fields.push({
+			"system":false,
+			"display":true,
+			"editable":true,
+			"field_name":"play",
+			"show_in_list":true,
+			"title":"Play",
+                        "multiple" : ['plans', 'services'].includes(entity),
+		});
+	}
+	lastConfig[entity]['fields'] = fields;
+}
+
+// #727 set subscriber services fields to be multiple to use Push/Pull option
+var subscriberServicesFieldIndex = lastConfig['subscribers']['subscriber']['fields'].findIndex(field => field.field_name === "services");
+if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] === 'undefined') {
+    lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
 db.config.insert(lastConfig);
+
+// BRCD-1717
+db.subscribers.getIndexes().forEach(function(index){
+	var indexFields = Object.keys(index.key);
+	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
+	}
+	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
+		db.subscribers.dropIndex(index.name);
+		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+	}
+})
+
+// BRCD-1717
+//if (db.lines.stats().sharded) {
+//	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
+//}

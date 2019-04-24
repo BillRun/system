@@ -67,6 +67,9 @@ class ErrorController extends Yaf_Controller_Abstract {
 
 	   /* error occurs */
 	   switch ($exception->getCode()) {
+		   case 999999:
+			   $output['data']['message'] = 'Internal error raised';
+			   break;
 		   case YAF_ERR_NOTFOUND_MODULE:
 		   case YAF_ERR_NOTFOUND_CONTROLLER:
 		   case YAF_ERR_NOTFOUND_ACTION:

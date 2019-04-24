@@ -84,7 +84,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-
+		
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
@@ -132,6 +132,10 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 		self::$instance[$stamp] = new $class($args);
 		return self::$instance[$stamp];
+	}
+	
+	public function getReceiver() {
+		
 	}
 
 }

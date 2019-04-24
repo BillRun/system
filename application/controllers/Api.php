@@ -266,6 +266,15 @@ if ($errorMessage === "Failed to authenticate") {
 		$this->allowed();
 		$this->forward('currencies', 'index');
 	}
+	
+	public function versionsbcAction() {
+		$this->allowed();
+		$request = $this->getRequest();
+		$version = $request->get('api_version');
+		$action = $request->get('api_action');
+		$this->forward('Api', "v{$version}_{$action}");
+		return false;
+	}
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;

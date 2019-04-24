@@ -111,7 +111,8 @@ abstract class Billrun_Discount {
 		}
 		foreach ($this->discountData['discount_subject'] as $subjects) {
 			foreach ($subjects as $key => $val) {
-							if ($this->isMonetray()) {
+				$val = is_array($val) ? $val['value'] : $val; // Backward compatibility with amount/perecnt only discount subject.
+				if ($this->isMonetray()) {
 					$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;
 				} else {
 					$discountLine['discount'][$key]['value'] = $val;
@@ -160,8 +161,9 @@ abstract class Billrun_Discount {
 			return FALSE;
 		}
 		$charge = $totalPrice = 0;
+		$addedPricingData = [];
 		//discount each of the subject  included in the discount
-		foreach ($totals['rates'] as $key => $ratePrice ) {
+		foreach (($totals['rates'] ?: []) as $key => $ratePrice ) {
 			if( empty($discount['discount'][$key]) && !$this->isApplyToAnySubject() ) {
 				Billrun_Factory::log('discount generated invoice totals that  arer not  in the discount subject',Zend_Log::WARN);
 				continue;
@@ -175,7 +177,10 @@ abstract class Billrun_Discount {
 			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$price = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
+			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
+			$pricingData = $this->priceManipulation($simplePrice, $val, $key ,$discountLimit, $totals);
+			$addedPricingData[] = $pricingData;
+			$price = $pricingData['price'];
 			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
 			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
@@ -185,7 +190,7 @@ abstract class Billrun_Discount {
 			$charge = $totalPrice > 0 ? $totalPrice : max($totalPrice, $discountLimit);
 		}
 
-		return array('price' => $charge, 'tax_info' => $taxationInformation);
+		return array('price' => $charge, 'tax_info' => $taxationInformation,'discount_pricing_data'=> $addedPricingData);
 	}
 
 	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
@@ -204,6 +209,7 @@ abstract class Billrun_Discount {
 
 			$rateColl = Billrun_Factory::db()->getCollection($mapping['coll']);
 			$query = array_merge(array($mapping['key_field'] => $identifingKey), Billrun_Utils_Mongo::getDateBoundQuery($discount['urt']->sec));
+			//TODO this should use a cache! who programmed this huging function!.
 			$tmpRate = $rateColl->query($query)->cursor()->limit(1)->current();
 			if($tmpRate && !$tmpRate->isEmpty()) {
 				$rate = $tmpRate;
@@ -402,6 +408,13 @@ abstract class Billrun_Discount {
       
 	//=================================== Protected ======================================
 	
+	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
+		return [
+				'price' => max($min(0,simpleDiscountPrice),$discountLimit) ,
+				'pricing_breakdown' => [$subjectKey => [['base_price' => $simpleDiscountPrice]]]
+				];
+	}
+
 	/**
 	 * Get Totals from the billrun object
 	 * @param type $billrun
@@ -422,6 +435,29 @@ abstract class Billrun_Discount {
 	
 	protected function getLimit() {
 		return empty($this->discountData['limit']) ? -(PHP_INT_MAX-1) : $this->discountData['limit'];
+	}
+	
+	static public function remove($stamps) {
+		$query = array(
+			'stamp' => array(
+				'$in' => array_values($stamps)
+			),
+			'type' => 'credit',
+			'$or' => array(
+				array(
+					'billrun' => array(
+						'$exists' => false,
+					),
+				),
+				array(
+					'billrun' => array(
+						'$gte' => Billrun_Billingcycle::getBillrunKeyByTimestamp(),
+					),
+				),
+			),
+		);
+		$discountColl = Billrun_Factory::db()->linesCollection();
+		return $discountColl->remove($query);
 	}
 
 }

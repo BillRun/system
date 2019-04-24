@@ -81,9 +81,10 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest();
 		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
 		$this->params['settings'] = $this->settings;
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiRunOperation', array($this->collection, $this->action, &$this->params['request']));
 		$this->runOperation();
 		$this->getResponse()->setHeader('Content-Type', 'application/json');
-		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
+		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, &$this->output));
 	}
 
 	protected function runOperation() {

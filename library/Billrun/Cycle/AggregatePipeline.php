@@ -119,6 +119,14 @@ class Billrun_Cycle_AggregatePipeline {
 		$pipelines[] = array(
 			'$unwind' => '$sub_plans',
 		);
+		
+		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1,
+				'sub_plans.sid' => 1,
+				'sub_plans.from' => -1,
+			)
+		);
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['second_group'], array(
 				'_id' => array(
@@ -131,7 +139,8 @@ class Billrun_Cycle_AggregatePipeline {
 					'type' => '$sub_plans.type',
 					'email' => '$sub_plans.email',
 					'address' => '$sub_plans.address',
-					'services' => '$sub_plans.services'
+					'services' => '$sub_plans.services',
+					'activation_date' => '$sub_plans.activation_date'
 				),
 				'plan_dates' => array(
 					'$push' => array(
