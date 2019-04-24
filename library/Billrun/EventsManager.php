@@ -198,6 +198,7 @@ class Billrun_EventsManager {
 				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventTotalValue = Billrun_Util::getIn($entityAfter, $rawEventSettings['total_path'], 0); // we need to use after in case before is empty (new balance)
+				$relatedEntities = $rawEventSettings['related_entities'] ?: [];
 				$eventPercentageValues = explode(',', $rawEventSettings['value']);
 				$eventValues = [];
 				foreach ($eventPercentageValues as $percentageValue) {
@@ -215,6 +216,7 @@ class Billrun_EventsManager {
 					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
 						$extraValues['reached_constant'] = $eventVal;
 						$extraValues['reached_constant_percentage'] = $eventPercentageValues[$key];
+						$extraValues['related_entities'] = $relatedEntities;
 
 						return $extraValues;
 					}
