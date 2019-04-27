@@ -100,6 +100,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if ($this->isDeposit()) {
 				$this->data['left'] = 0;
 			}
+			if (isset($options['note'])) {
+				$this->data['note'] = $options['note'];
+			}
 
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {

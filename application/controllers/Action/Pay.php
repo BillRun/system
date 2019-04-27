@@ -165,6 +165,10 @@ class PayAction extends ApiAction {
 			}
 		}
 		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		$note = $request->get('note');
+		if (!empty($note)) {
+			$params['note'] = $note;
+		}
 		if (empty($params['amount']) || empty($params['aid'])) {
 			throw new Exception('In action split_bill must transfer amount and aid parameters');
 		}
