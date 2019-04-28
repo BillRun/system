@@ -68,6 +68,7 @@ trait Billrun_Traits_EntityGetter {
 	 */
 	public function getMatchingEntity($row, $params = []) {
 		$filters = $params['filters'] ?: $this->getFilters($row, $params);
+		$category = $params['category'] ?: '';
 		
 		if (empty($filters)) {
 			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . ($params['category'] ?: '') . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -113,6 +114,7 @@ trait Billrun_Traits_EntityGetter {
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
 			$coll = $this->getCollection($params);
+			$a = json_encode($query);
 			$matchedEntity = $coll->aggregate($query)->current();
 			if (!$matchedEntity->isEmpty()) {
 				break;

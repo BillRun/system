@@ -131,6 +131,9 @@ class Billrun_Helpers_QueueCalculators {
 				break;
 
 			case 'tax':
+				$calc_options = array('type' => 'tax_Usage');
+				break;
+			
 			case 'unify':
 				$calc_options = array('type' => $calc_name);
 				break;

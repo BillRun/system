@@ -13,45 +13,136 @@
  * @since 5.9
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
+	use Billrun_Traits_EntityGetter;
 
 	/**
 	 * @see Billrun_Calculator_Tax::updateRowTaxInforamtion
 	 */
 	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
+		$taxData = $this->getRowTaxData($line);
+		if ($taxData === false) {
+			return false;
+		}
 		
+		$line['tax_data'] = $taxData;
+		return $line;
 	}
+	
+	/**
+	 * @see Billrun_Calculator_Tax::getPreTaxedRowTaxData
+	 */
+	protected function getPreTaxedRowTaxData($line) {
+		return $this->getRowTaxData($line);
+	}
+	
+	/**
+	 * get the Tax entity for the line
+	 * 
+	 * @param array $line
+	 * @return Mongodloid_Entity if found, false otherwise
+	 */
+	public function getLineTaxes($line) {
+		$taxes = $this->getMatchingEntitiesByCategories($line, $params);
+		
+		if ($taxes !== false) {
+			return $taxes;
+		}
+		
+		$time = $row['urt']->sec;
+		return [
+			'default' => $this->getDetaultTax($time),
+		];
+	}
+	
+		/**
+	 * get row's tax data 
+	 * 
+	 * @param array $line
+	 */
+	protected function getRowTaxData($line) {
+		if (!empty($line['tax_data'])) {
+			return $line['tax_data'];
+		}
+		
+		$taxes = $this->getLineTaxes($line);
+		if ($taxes === false) {
+			return false;
+		}
+		
+		$totalTax = 0;
+		$totalAmount = 0;
+		$taxesData = [];
 
-	//================================= Static =================================
+		foreach ($taxes as $taxCategory => $tax) {
+			$taxFactor = $tax['rate'];
+			$taxAmount = $line['aprice'] * $taxFactor;
+			$taxesData[] = [
+				'tax' => $taxFactor,
+				'amount' => $taxAmount,
+				'description' => $tax['description'] ?: 'VAT',
+				'key' => $tax['key'],
+				'type' => $taxCategory,
+				'pass_to_customer' => 1,
+			];
+			$totalAmount += $taxAmount;
+			$totalTax += $taxFactor;
+		}
 
+		return [
+			'total_amount' => $totalAmount,
+			'total_tax' => $totalTax,
+			'taxes' => $taxesData,
+		];
+	}
+	
 	/**
 	 * get system's default tax
 	 * 
 	 * @return Mongodloid_Entity
 	 */
-	protected static function getDetaultTax($time = null) {
+	protected function getDetaultTax($time = null) {
 		$taxKey = Billrun_Factory::config()->getConfigValue('tax.default.key', '');
 		if (empty($taxKey)) {
 			return false;
 		}
 
-		$taxCollection = Billrun_Factory::db()->taxesCollection();
+		$taxCollection = $this->getCollection();
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
 		$query['key'] = $taxKey;
+		
+		$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
+		return !$tax->isEmpty() ? $tax : false;
 	}
-
-	/**
-	 * get system's default tax's rate
+	
+		/**
+	 * get line's tax's rate
 	 * 
 	 * @return float
 	 */
-	protected static function getDetaultTaxRate($time = null) {
-		$defaultTax = self::getDetaultTax($time);
-		if (empty($defaultTax) || !isset($defaultTax['rate'])) {
+	protected function getLineTaxRate($line = null) {
+		if (isset($taxedLine['tax_data']['total_tax'])) {
+			return $taxedLine['tax_data']['total_tax'];
+		}
+		
+		$totalRate = 0;
+		$taxes = $this->getLineTaxes($line);
+		
+		if (empty($taxes)) {
 			return false;
 		}
+		
+		foreach ($taxes as $tax) {
+			if (!isset($tax['rate'])) {
+				return false;
+			}
+			
+			$totalRate += $tax['rate'];
+		}
 
-		return $defaultTax['rate'] / 100;
+		return $totalRate;
 	}
+
+	//================================= Static =================================
 
 	/**
 	 * @see Billrun_Calculator_Tax::addTax
@@ -89,9 +180,12 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if (isset($taxedLine['tax_data']['tax_amount'])) {
 			return $taxedLine['tax_data']['tax_amount'];
 		}
+		if (isset($taxedLine['tax_data']['total_amount'])) {
+			return $taxedLine['tax_data']['total_amount'];
+		}
 
-		$time = $row['urt']->sec;
-		$taxRate = self::getDetaultTax($time);
+		$taxCalc = new self();
+		$taxRate = $taxCalc->getLineTaxRate($taxedLine);
 		if (empty($taxRate)) {
 			return false;
 		}
@@ -105,5 +199,18 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				return false;
 		}
 	}
+
+	
+	//------------------- Entity Getter functions ----------------------------------------------------
+	
+	protected function getCollection($params = []) {
+		return Billrun_Factory::db()->taxesCollection();
+	}
+
+	protected function getFilters($row = [], $params = []) {
+		return Billrun_Factory::config()->getConfigValue('tax.mapping', []);
+	}
+	
+	//------------------- Entity Getter functions - END ----------------------------------------------
 
 }

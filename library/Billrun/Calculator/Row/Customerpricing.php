@@ -1004,7 +1004,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$aprice *= $apriceMult;
 			}
 			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
-				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice);
+				$aprice = Billrun_Calculator::getInstance(['type'=>'tax_Usage'])->removeTax($aprice, $this->row);
 			}
 			return $aprice;
 		}

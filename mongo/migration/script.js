@@ -449,6 +449,17 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
+// BRCD-1835: add default TAX key
+if (typeof lastConfig['tax'] === 'undefined') {
+	lastConfig.tax = {};
+}
+if (typeof lastConfig['tax']['default'] === 'undefined') {
+	lastConfig.tax.default = {};
+}
+if (typeof lastConfig['tax']['default']['key'] === 'undefined') {
+	lastConfig.tax.default.key = "DEFAULT_TAX";
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
