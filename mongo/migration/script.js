@@ -388,13 +388,15 @@ var subscribers = db.subscribers.find({type:'subscriber', services:{$exists:1,$n
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
+	var services = sub.services;
+	if (services) {
 		services.forEach(function (service) {
 			if (service.quantity) {
 				service.quantity = Number(service.quantity);
 				db.subscribers.save(sub);
 			}
 		});
+	}
 });
 
 //// BRCD-1624: add default Plays to config
