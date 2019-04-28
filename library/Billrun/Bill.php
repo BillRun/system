@@ -882,7 +882,7 @@ abstract class Billrun_Bill {
 					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
-					if (empty($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
+					if (empty($responsesFromGateway[$transactionId]) && !isset($options['file_based_charge']) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}

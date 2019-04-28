@@ -84,6 +84,13 @@ class Billrun_Processor_CreditGuard extends Billrun_Processor_Updater {
 			Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $bill, 'CreditGuard');
 			if ($paymentResponse['stage'] == 'Completed') {
 				$bill->markApproved($paymentResponse['stage']);
+				$billData = $bill->getRawData();
+				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
+					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+				}
+				if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+				}
 			}
 		}
 	}

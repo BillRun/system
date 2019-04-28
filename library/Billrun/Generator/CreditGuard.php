@@ -27,14 +27,14 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 
 	protected $customers;
 	protected $subscribers;
-	protected $dd_log_file; 
+	protected $cgLogFile; 
 	protected $gatewayCredentials; 
 	protected $gateway;
 	protected $extractionDateFormat;
 	protected $generateStructure;
 	protected $exportDefinitions;
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
-	protected $chargeOptions;
+	protected $chargeOptions = array();
 	protected $startingString;
 	protected $endingString;
 
@@ -49,17 +49,16 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 		$this->extractionDateFormat = isset($this->exportDefinitions['extraction_date_format']) ? date($this->exportDefinitions['extraction_date_format']) : '';
 		$this->startingString = isset($this->exportDefinitions['file_starting_string']) ?$this->exportDefinitions['file_starting_string'] : '';
 		$this->endingString = isset($this->exportDefinitions['file_ending_string']) ?$this->exportDefinitions['file_ending_string'] : '';
-	//	$this->initLogFile($options['stamp']);
-
-		parent::__construct($options);
 		$this->initChargeOptions($options);
+		$this->initLogFile();
+		parent::__construct($options);
 		$this->export_dir = $options['export']['dir'];
 	}
 
 	public function load() {
-//		$paymentParams = array(
-//			'dd_stamp' => $this->getStamp(),
-//		);
+		$paymentParams = array(
+			'dd_stamp' => $this->getStamp(),
+		);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
@@ -186,16 +185,16 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 
 	public function generate() {
 		parent::generate();
-	//	$this->dd_log_file->setProcessTime();
-	//	$this->dd_log_file->save();
+		$this->cgLogFile->setProcessTime();
+		$this->cgLogFile->save();
 	}
 
-	protected function initLogFile($stamp) {
-		$this->dd_log_file = new Billrun_LogFile_DD(array('stamp' => $stamp));
-		$this->dd_log_file->setSequenceNumber();
+	protected function initLogFile() {
+		$this->cgLogFile = new Billrun_LogFile_CreditGuard($this->chargeOptions);
+		$this->cgLogFile->setSequenceNumber();
 		$this->setFilename();
-		$this->dd_log_file->setFileName($this->filename);
-		$this->dd_log_file->setStamp();
+		$this->cgLogFile->setFileName($this->filename);
+		$this->cgLogFile->setStamp();
 	}
 
 	protected function initPaymentGatwayDetails() {
