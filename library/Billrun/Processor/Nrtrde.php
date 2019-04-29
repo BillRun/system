@@ -124,6 +124,14 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 				$row[$value] = $row[$key];
 			}
 		}
+		//Remove leading zeros from the called/calling numbers
+		if(!empty($row['calling_number'])) {
+			$row['calling_number'] = preg_replace('/^0+/','',$row['calling_number']);
+		}
+		if(!empty($row['called_number'])) {
+			$row['called_number'] = preg_replace('/^0+/','',$row['called_number']);
+		}
+
 		
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
