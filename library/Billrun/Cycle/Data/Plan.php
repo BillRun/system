@@ -60,6 +60,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		}
 
 		$entry = $this->addTaxationToLine($entry);
+		unset($entry['tax']);
 		$entry = $this->addExternalFoerignFields($entry);
 		
 		if (!empty($this->plan)) {
