@@ -460,6 +460,8 @@ if (typeof lastConfig['tax']['default']['key'] === 'undefined') {
 	lastConfig.tax.default.key = "DEFAULT_TAX";
 }
 
+lastConfig.taxation.tax_type = "usage";
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
