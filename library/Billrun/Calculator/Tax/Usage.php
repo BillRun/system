@@ -83,8 +83,13 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @return array
 	 */
 	protected function getLineTaxHint($line) {
-		$rate = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
-		return Billrun_Util::getIn($rate, 'tax', []);
+		if ($line['usaget'] == 'flat') { // plan/service line
+			$entity = $line;
+		} else {
+			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
+		}
+		
+		return Billrun_Util::getIn($entity, 'tax', []);
 	}
 	
 	/**

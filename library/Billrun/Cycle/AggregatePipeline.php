@@ -55,7 +55,8 @@ class Billrun_Cycle_AggregatePipeline {
 				'recurrence.periodicity' => 1,
 				'plan_activation' => 1,
 				'plan_deactivation' => 1,
-				'include' => 1
+				'include' => 1,
+				'tax' => 1,
 			)
 		);
 	}
