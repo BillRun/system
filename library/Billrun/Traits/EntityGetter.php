@@ -38,6 +38,7 @@ trait Billrun_Traits_EntityGetter {
 		$ret = [];
 		$matchFilters = $this->getFilters($row, $params);
 		$mustMatch = $params['must_match'] ?: true;
+		$skipCategories = $params['skip_categories'] ?: [];
 		
 		if (empty($matchFilters)) {
 			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -45,6 +46,10 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		foreach ($matchFilters as $category => $categoryFilters) {
+			if (in_array($category, $skipCategories)) {
+				continue;
+			}
+			
 			$params['category'] = $category;
 			$params['filters'] = $this->getCategoryFilters($categoryFilters, $row, $params);
 			$entity = $this->getMatchingEntity($row, $params);
@@ -114,7 +119,6 @@ trait Billrun_Traits_EntityGetter {
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
 			$coll = $this->getCollection($params);
-			$a = json_encode($query);
 			$matchedEntity = $coll->aggregate($query)->current();
 			if (!$matchedEntity->isEmpty()) {
 				break;

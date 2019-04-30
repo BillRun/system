@@ -39,21 +39,107 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * get the Tax entity for the line
 	 * 
 	 * @param array $line
-	 * @return Mongodloid_Entity if found, false otherwise
+	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
 	 */
 	public function getLineTaxes($line) {
-		$taxes = $this->getMatchingEntitiesByCategories($line, $params);
+		$taxHint = $this->getLineTaxHint($line);
+		$taxes = $this->getLineTaxHintOverrideData($line, $taxHint);
 		
-		if ($taxes !== false) {
-			return $taxes;
+		if ($taxes === false) {
+			return false;
 		}
 		
-		return [
-			'default' => self::getDetaultTax($row['urt']->sec),
+		$params = [
+			'skip_categories' => array_keys($taxes),
 		];
+		
+		$globalTaxes = $this->getMatchingEntitiesByCategories($line, $params);
+		
+		if ($globalTaxes !== false) {
+			$taxes = array_merge($taxes, $globalTaxes);
+		}
+		
+		$taxHintFallback = $this->getLineTaxHintFallbackData($line, $taxHint, $taxes);
+		
+		if ($taxHintFallback === false) {
+			return false;
+		}
+		
+		$taxes = array_merge($taxes, $taxHintFallback);
+		
+		if (!isset($taxes['vat'])) {
+			$taxes['vat'] = self::getDetaultTax($row['urt']->sec);
+		}
+
+		return array_filter($taxes, function($taxData) {
+			return !empty($taxData);
+		});
 	}
 	
-		/**
+	protected function getLineTaxHint($line) {
+		$rate = $this->getLineRate($line);
+		return Billrun_Util::getIn($rate, 'tax', []);
+	}
+	
+	protected function getLineTaxHintOverrideData($line, $taxHint) {
+		$ret = [];
+		$time = $line['urt']->sec;
+		
+		foreach ($taxHint as $taxHintData) {
+			$category = $taxHintData['type'] ?: '';
+			
+			switch ($taxHintData['taxation']) {
+				case 'no':
+					$ret[$category] = [];
+					break;
+				case 'default':
+					$ret[$category] = self::getDetaultTax($time);
+					break;
+				case 'custom':
+					if ($taxHintData['custom_logic'] == 'override') {
+						$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
+						break;
+					}
+				default:
+					continue;
+			}
+			
+			if ($ret[$category] === false) {
+				return false;
+			}
+		}
+		
+		return $ret;
+	}
+	
+	protected function getLineTaxHintFallbackData($line, $taxHint, $taxes = []) {
+		$ret = [];
+		$time = $line['urt']->sec;
+		
+		foreach ($taxHint as $taxHintData) {
+			$category = $taxHintData['type'] ?: '';
+			
+			if (isset($taxes[$category])) {
+				continue;
+			}
+			
+			if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
+				$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
+				if (empty($ret[$category])) {
+					return false;
+				}
+			}
+		}
+		
+		return $ret;
+	}
+	
+	protected function getLineRate($line) {
+		return Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
+	}
+
+
+	/**
 	 * get row's tax data 
 	 * 
 	 * @param array $line
