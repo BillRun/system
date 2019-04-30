@@ -76,11 +76,24 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		});
 	}
 	
+	/**
+	 * get tax hints of the givven line
+	 * 
+	 * @param array $line
+	 * @return array
+	 */
 	protected function getLineTaxHint($line) {
-		$rate = $this->getLineRate($line);
+		$rate = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 		return Billrun_Util::getIn($rate, 'tax', []);
 	}
 	
+	/**
+	 * get tax data of override taxation (hint tax calculated before general taxation)
+	 * 
+	 * @param array $line
+	 * @param array $taxHint
+	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
+	 */
 	protected function getLineTaxHintOverrideData($line, $taxHint) {
 		$ret = [];
 		$time = $line['urt']->sec;
@@ -112,6 +125,14 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return $ret;
 	}
 	
+	/**
+	 * get tax data of fallback taxation (hint tax calculated after general taxation)
+	 * 
+	 * @param array $line
+	 * @param array $taxHint
+	 * @param array $taxes - taxes that were found on general taxation calculation
+	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
+	 */
 	protected function getLineTaxHintFallbackData($line, $taxHint, $taxes = []) {
 		$ret = [];
 		$time = $line['urt']->sec;
@@ -132,10 +153,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		}
 		
 		return $ret;
-	}
-	
-	protected function getLineRate($line) {
-		return Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 	}
 
 
