@@ -96,6 +96,22 @@
 		 "vat" : 0,
 		 "vat_label": "Vat"
 	},
+    "tax":{  
+        "mapping":{
+            "vat":[
+                [
+                    {
+                        "use_hint_doc" : true
+                    }
+                ],
+                [
+                    {
+                        "default_fallback" : false
+                    }
+                ]
+            ]
+        }
+    },
 	"taxes": {
 		"fields": [
 			{
