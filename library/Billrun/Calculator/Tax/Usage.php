@@ -48,9 +48,8 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			return $taxes;
 		}
 		
-		$time = $row['urt']->sec;
 		return [
-			'default' => $this->getDetaultTax($time),
+			'default' => self::getDetaultTax($row['urt']->sec),
 		];
 	}
 	
@@ -96,25 +95,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	}
 	
 	/**
-	 * get system's default tax
-	 * 
-	 * @return Mongodloid_Entity
-	 */
-	protected function getDetaultTax($time = null) {
-		$taxKey = Billrun_Factory::config()->getConfigValue('tax.default.key', '');
-		if (empty($taxKey)) {
-			return false;
-		}
-
-		$taxCollection = $this->getCollection();
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
-		$query['key'] = $taxKey;
-		
-		$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
-		return !$tax->isEmpty() ? $tax : false;
-	}
-	
-		/**
 	 * get line's tax's rate
 	 * 
 	 * @return float
@@ -144,6 +124,34 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 	//================================= Static =================================
 
+	/**
+	 * get system's default tax
+	 * 
+	 * @return Mongodloid_Entity
+	 */
+	public static function getDetaultTax($time = null) {
+		$taxKey = Billrun_Factory::config()->getConfigValue('tax.default.key', '');
+		if (empty($taxKey)) {
+			return false;
+		}
+
+		return self::getTaxByKey($taxKey, $time);
+	}
+	
+	/**
+	 * get tax by key
+	 * 
+	 * @return Mongodloid_Entity
+	 */
+	public static function getTaxByKey($key, $time = null) {
+		$taxCollection = self::getTaxCollection();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
+		$query['key'] = $key;
+		
+		$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
+		return !$tax->isEmpty() ? $tax : false;
+	}
+	
 	/**
 	 * @see Billrun_Calculator_Tax::addTax
 	 */
@@ -200,11 +208,15 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		}
 	}
 
-	
+	public static function getTaxCollection() {
+		return Billrun_Factory::db()->taxesCollection();
+	}
+
+
 	//------------------- Entity Getter functions ----------------------------------------------------
 	
 	protected function getCollection($params = []) {
-		return Billrun_Factory::db()->taxesCollection();
+		return self::getTaxCollection();
 	}
 
 	protected function getFilters($row = [], $params = []) {
