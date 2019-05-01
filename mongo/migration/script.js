@@ -505,3 +505,25 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// BRCD-1837: convert rates' "vatable" field to new tax mapping
+db.rates.find({vatable:{$exists:1}}).forEach(
+	function(obj) {
+		if (obj.vatable) {
+			obj.tax = [
+				{
+					type: "vat",
+					taxation: "global"
+				}
+			];
+		} else {
+			obj.tax = [
+				{
+					type: "no"
+				}
+			];
+		}
+		delete obj.vatable;
+		db.rates.save(obj);
+	}
+);
