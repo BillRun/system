@@ -460,7 +460,31 @@ if (typeof lastConfig['tax']['default']['key'] === 'undefined') {
 	lastConfig.tax.default.key = "DEFAULT_TAX";
 }
 
-lastConfig.taxation.tax_type = "usage";
+// BRCD-1837: convert legacy VAT taxation to default taxation rate
+if (typeof lastConfig['taxation']['tax_type'] == 'vat') {
+	var vatRate = lastConfig['taxation']['vat']['v'];
+	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
+	
+	lastConfig.taxation = {
+		"tax_type": "usage"
+	};
+	
+	lastConfig.tax.default.key = "DEFAULT_VAT";
+	
+	var vatFrom = new Date('2019-01-01');
+	var vatTo = new Date('2119-01-01');
+	var vat = {
+		key: "DEFAULT_VAT",
+		from: vatFrom,
+		creation_time: vatFrom,
+		to: vatTo,
+		description: vatLabel,
+		rate: vatRate,
+		params: {}
+	};
+	
+	db.taxes.insert(vat);
+}
 
 db.config.insert(lastConfig);
 
