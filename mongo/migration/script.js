@@ -449,6 +449,15 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
+//BRCD-1834 : Add tax field
+var taxField ={
+    "system":true,
+    "field_name" : "tax"
+};
+lastConfig = addFieldToConfig(lastConfig, taxField, 'rates');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'plans');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
