@@ -241,15 +241,10 @@ class Billrun_Util {
 	 * 
 	 * @return float the VAT at the current timestamp
 	 * @todo move to specific VAT object
+	 * @deprecated since version 5.9 - use Tax calculator
 	 */
 	public static function getVATAtDate($timestamp) {
-		$mongo_date = new MongoDate($timestamp);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+		return Billrun_Rates_Util::getVat(0.17, $timestamp);
 	}
 
 	/**
