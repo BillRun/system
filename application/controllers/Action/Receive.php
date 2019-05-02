@@ -43,13 +43,13 @@ class ReceiveAction extends Action_Base {
 		// If not type all process normaly.
 		if(!$this->handleTypeAll($options)) {
 			$connectionsPerReceiverType = array();
-			$paymentGatewayReceiver = $this->loadPaymentGatewayReceiver($options['type']);
+			$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);
 			$pgConnections = isset($paymentGatewayReceiver['connections']) ? $paymentGatewayReceiver['connections'] : [];
 			foreach ($pgConnections as $pgConnection) {
 				$pgOptions = $options;
 				$pgOptions['file_type'] = $options['type'];
-				$pgOptions['receiver']['connections'] = $pgConnection;
-				$pgOptions['receiver']['receiver_type'] = $pgConnection['receiver_type'];
+				$pgOptions['receiver']['connection'] = $pgConnection;
+				$pgOptions['receiver']['receiver_type'] = 'PaymentGateway_' . $options['gateway'] . '_' . ucfirst($options['type']);
 				$this->loadReceiver($pgOptions);
 			}
 			$inputProcessor = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);
@@ -91,20 +91,5 @@ class ReceiveAction extends Action_Base {
 	protected function getNameType() {
 		return "receiver";
 	}
-	
-	protected function loadPaymentGatewayReceiver($type) {
-		$pgReceiver = array();
-		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($type) {
-			return $paymentGateway['name'] === $type;
-		});
-		if ($paymentGatewaySettings) {
-			$paymentGatewaySettings = current($paymentGatewaySettings);
-		}
-		if (!empty($paymentGatewaySettings['receiver'])) {
-			$pgReceiver = $paymentGatewaySettings['receiver'];
-		}	
-		return $pgReceiver;
-	}
-		
 
 }
