@@ -252,6 +252,10 @@ class Billrun_Exporter_Nrtrde_Tadig extends Billrun_Exporter_Csv {
 		$dateFormat = $this->getConfig('date_format', 'YmdHis');
 		return date($dateFormat, $datetime);
 	}
+	
+	protected function getCauseForTermination($row) {
+		return intval($row['cause_for_termination']);
+	}
 
 }
 
