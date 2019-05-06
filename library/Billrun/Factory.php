@@ -321,7 +321,7 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the account instance
 	 * 
-	 * @return Billrun_Subscriber
+	 * @return Billrun_CollectionSteps
 	 */
 	static public function collectionSteps() {
 		if (!self::$collectionSteps) {
@@ -506,6 +506,15 @@ class Billrun_Factory {
 	 */
 	public static function eventsManager($params = array()) {
 		return Billrun_EventsManager::getInstance($params);
+	}
+	
+	/**
+	 * 
+	 * @param array $params
+	 * @return Billrun_FraudManager
+	 */
+	public static function fraudManager($params = array()) {
+		return Billrun_FraudManager::getInstance($params);
 	}
 	
 	/**

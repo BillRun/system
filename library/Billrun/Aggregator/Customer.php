@@ -183,7 +183,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (isset($options['generate_pdf'])) {
-			$this->generatePdf = ($options['generate_pdf'] == 'false' ? false : true);
+			$this->generatePdf = (filter_var($options['generate_pdf'], FILTER_VALIDATE_BOOLEAN) == false ? false : true);
 		}
 	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
@@ -194,7 +194,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
+		$this->overrideMode = $this->getAggregatorConfig('override_mode', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$pageResult = $this->getPage();
@@ -205,8 +205,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$aggregateOptions = array(
-			'passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array()),
-			'subs_passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.subscriber.passthrough_data', array())
+			'passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
+			'subs_passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
 		);
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
@@ -415,7 +415,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				$raw = $subscriberPlan['id'];
-				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.account.passthrough_data',array()) as $dstField => $srcField) {
+				foreach($this->getAggregatorConfig('account.passthrough_data',array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
@@ -426,9 +426,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
-				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
+				foreach($this->getAggregatorConfig('subscriber.passthrough_data',array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
-						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+						$ret = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+						if (!is_null($ret) || (!isset($srcField['nullable']) || $srcField['nullable'])) {
+							$raw[$dstField] = $ret;
+						}
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
@@ -509,7 +512,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'payment_details' => $paymentDetails,
 		);
 
-		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
+		foreach($this->getAggregatorConfig('passthrough_data',array()) as  $invoiceField => $subscriberField) {
 			if(isset($subscriberPlan['passthrough'][$subscriberField])) {
 				$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
 			}
@@ -576,10 +579,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function afterAggregate($results) {
-
-
-		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n";
-		$end_msg .="Processed " . (count($results)) . " accounts";
+		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n"
+			. "Host:" . Billrun_Util::getHostName() . "\n"
+			. "Processed " . (count($results)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
 
@@ -596,7 +598,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
-		if ($recipients) {
+		$sendMailConfig = $this->getAggregatorConfig('sendendmail', true);
+		if ($recipients && $sendMailConfig) {
 			Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
 		}
 	}
@@ -652,12 +655,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function getPage($retries = 100) {
 
-		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+		$zeroPages = $this->getAggregatorConfig('zero_pages_limit', 2);
 		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
 			return false;
 		}
 		$pagerConfiguration = array(
-			'maxProcesses' => Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit',10),
+			'maxProcesses' => $this->getAggregatorConfig('processes_per_host_limit', 10),
 			'size' => $this->size,
 			'identifingQuery' => array('billrun_key' => $this->stamp),
 
@@ -700,9 +703,33 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return NULL;
 	}
+	
+	protected function getPlay($play) {
+		return Billrun_Utils_Plays::isPlaysInUse() ? $play : null;
+	}
 
 	public function getGeneratePdf() {
 		return $this->generatePdf;
+	}
+	
+	/**
+	 * method to get aggregator configuration variable, and if not find search in parent configuration
+	 * 
+	 * @param string $var configuration variable
+	 * @param mixed  $defaultValue default value if variable not set (in both layers
+	 */
+	protected function getAggregatorConfig($var, $defaultValue) {
+		// there is no parent -> return variable without checking parent
+		if (get_class($this) == 'Billrun_Aggregator_Customer') {
+			return Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
+		}
+		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
+		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
+		return $ret;
+	}
+	
+	public function getData() {
+		return $this->data;
 	}
 
 }

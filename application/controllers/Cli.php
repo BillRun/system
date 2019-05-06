@@ -30,9 +30,6 @@ class CliController extends Yaf_Controller_Abstract {
 		}
 		$this->setActions();
 		$this->setOptions();
-		if (isset($this->options->cron)) {
-			$this->cronForward();
-		}
 		// this will verify db config will load into main config
 		Billrun_Factory::db();
 	}
@@ -55,6 +52,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'cycle' => 'aggregate lines in billing_cycle',
+				'export' => 'Export data',
 				'charge' => 'pay payments through payment gateway',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
@@ -190,18 +188,6 @@ class CliController extends Yaf_Controller_Abstract {
 			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
 		}
 		return $options;
-	}
-
-	/**
-	 * forward to cron controller
-	 */
-	protected function cronForward() {
-		if (isset($this->options->type)) {
-			$action = strtolower($this->options->type);
-		} else {
-			$action = 'index';
-		}
-		$this->forward('Cron', $action);
 	}
 
 }

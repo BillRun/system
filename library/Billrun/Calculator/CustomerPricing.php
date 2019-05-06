@@ -137,13 +137,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($options['calculator']['vatable'])) {
 			$this->vatable = $options['calculator']['vatable'];
 		}
-		if (isset($options['calculator']['months_limit'])) {
-			$this->months_limit = $options['calculator']['months_limit'];
-		}
 		if (isset($options['calculator']['unlimited_to_balances'])) {
 			$this->unlimited_to_balances = (boolean) ($options['calculator']['unlimited_to_balances']);
 		}
-		$this->billrun_lower_bound_timestamp = is_null($this->months_limit) ? 0 : strtotime($this->months_limit . " months ago");
+		$this->months_limit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
+		$this->billrun_lower_bound_timestamp = strtotime($this->months_limit . " months ago");
 		// set months limit
 		if ($autoload) {
 			$this->load();

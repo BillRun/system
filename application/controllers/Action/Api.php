@@ -57,6 +57,31 @@ abstract class ApiAction extends Action_Base {
 
 		return false;
 	}
+	
+	
+	/**
+	 * set a response for a successful response to the controller
+	 * 
+	 * @param array $details
+	 * @param array $input
+	 * @param string $desc
+	 */
+	function setSuccess($details = null, $input = null, $desc = 'success') {
+		$output = [
+			'status' => 1,
+			'desc' => $desc,
+		];
+
+		if (!is_null($details)) {
+			$output['details'] = $details;
+		}
+
+		if (!is_null($input)) {
+			$output['input'] = $input;
+		}
+
+		$this->getController()->setOutput(array($output));
+	}
 
 	/**
 	 * method to store and fetch by global cache layer

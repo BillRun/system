@@ -5,7 +5,6 @@ backup
 exports
 files
 workspace
-mongo/*.json
 *~
 exports
 logs

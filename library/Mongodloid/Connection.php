@@ -33,6 +33,14 @@ class Mongodloid_Connection {
 	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
+		// casting timeout (int) values that are passed from config (string)
+		if (PHP_MAJOR_VERSION >= 7) {
+			foreach ($options as $key => &$option) {
+				if (stripos($key, 'timeout') !== FALSE && Billrun_Util::IsIntegerValue($option)) {
+					settype($option, 'int');
+				}
+			}
+		}
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;

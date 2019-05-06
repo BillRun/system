@@ -17,11 +17,19 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	
 	protected $config = array();
 	protected $nonTaxableTypes = array();
+	
+	/**
+	 * timestamp of minimum row time that can be calculated
+	 * @var int timestamp
+	 */
+	protected $billrun_lower_bound_timestamp = 0;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->config = Billrun_Factory::config()->getConfigValue('taxation',array());
 		$this->nonTaxableTypes = Billrun_Factory::config('taxation.non_taxable_types', array());
+		$this->months_limit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
+		$this->billrun_lower_bound_timestamp = strtotime($this->months_limit . " months ago");
 	}
 
 	public function updateRow($row) {
@@ -30,7 +38,18 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if (!$this->isLineTaxable($current)) {
 			$newData = $current;
 			$newData['final_charge'] = $newData['aprice'];
-			$newData['tax_data'] = [ 'total_amount' => 0, 'total_tax' => 0, 'taxes'=> []]; 
+			if($this->isLinePreTaxed($current)) {
+				$taxFactor = Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun());
+				$newData['tax_data'] = [
+									'total_amount'=> $newData['aprice'] * $taxFactor,
+									'total_tax' => $taxFactor,
+									'taxes' =>  [
+												'tax'=> $taxFactor, 'amount' => $newData['aprice'] * $taxFactor , 'description' => Billrun_Factory::config()->getConfigValue('taxation.vat_label', 'VAT') , 'pass_to_customer'=> 1
+											]
+									];
+			} else {
+				$newData['tax_data'] = [ 'total_amount' => 0, 'total_tax' => 0, 'taxes'=> []];
+			}
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
 				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
@@ -53,7 +72,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row = $newData;
 		}
-		$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
+		if($this->isLinePreTaxed($current)) {
+			$row['final_charge']  = $this->getLinePriceToTax($current);
+		} else {
+			$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -86,8 +109,48 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	public static function removeTax($taxedPrice, $taxedLine = NULL) {
 		return $taxedPrice - Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'],0);
 	}
+
+	/**
+	 * Check if the  line is pre taxed
+	 * @param $line  The Usage/Service/Plan CDR  to check for being  pretexed
+	 * return TRUE if the line/CDR is pre taxed  FALSE otherwise
+	 */
+	 public static function isLinePreTaxed($line) {
+		$usageType = $line['usaget'];
+		$prepricedMapping = @Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+
+		return !empty($prepricedMapping[$usageType]['tax_included']);
+	 }
 	
 	//================================ Protected ===============================	
+
+	/**
+	 * Get the price value to be used for taxation in the CDR
+	 *
+	 * @param  $line the  line to  retrive the  price  from.
+	 * @return price The price that ins found in the line if not found then FALSE is returned.
+	 */
+	protected function getLinePriceToTax($line) {
+		if($this->isLinePreTaxed($line)) {
+			$userFields = $line['uf'];
+			$usageType = $line['usaget'];
+			$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
+			$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
+			$aprice = Billrun_util::getIn($userFields, $apriceField);
+			if (!is_null($aprice) && is_numeric($aprice)) {
+				$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
+				if (!is_null($apriceMult) && is_numeric($apriceMult)) {
+					$aprice *= $apriceMult;
+				}
+				return $aprice;
+			}
+		}
+
+		if(!isset($line['aprice'])) {
+			Billrun_Factory::log("Line {$line['stamp']} has no pricing field legitimate for taxation", Zend_Log::ALERT);
+		}
+		return $line['aprice'] ?: FALSE;
+	}
 
 	/**
 	 * Retrive all queued lines except from those that are configured not to be retrived.
@@ -102,12 +165,13 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
+		return (empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc'])) && 
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}	
 	
 	protected function isLineTaxable($line) {
 		$rate = $this->getRateForLine($line);
-		return  (!isset($rate['vatable']) || !empty($rate['vatable']));
+		return  (!isset($rate['vatable']) || (!empty($rate['vatable']) && !$this->isLinePreTaxed($line)));
 	}
 	
 	protected function isLineDataComplete($line) {

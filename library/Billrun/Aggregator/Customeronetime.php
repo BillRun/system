@@ -13,6 +13,13 @@
  */
 class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'customeronetime';
+
 	protected $subInvoiceType = 'regular';
 	protected $invoicingConfig = array();
 	
@@ -20,8 +27,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$aggregateOptions = array(
-			'passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array()),
-			'subs_passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.subscriber.passthrough_data', array())
+			'passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
+			'subs_passthrough_fields' => $this->getAggregatorConfig('subscriber.passthrough_data', array()),
 		);
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
@@ -34,6 +41,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
 		$this->aggregationLogic = new Billrun_Cycle_Onetime_AggregatePipeline($aggregateOptions);
+		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -83,7 +91,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				$raw = $subscriberPlan['id'];
-				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
+				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
@@ -93,8 +101,12 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				$raw['sid']=0;
 				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
+				if( !empty($this->affectedSids) && !in_array($subscriberPlan['id']['sid'],$this->affectedSids) ) { 
+					continue;
+				}
+
 				$raw = $subscriberPlan['id'];
-				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
+				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {

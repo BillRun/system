@@ -14,7 +14,11 @@
 			"step_ttl_type": "days",
 			"min_debt": 10,
 			"change_state_url" : "",
-			"change_state_method": ""
+			"change_state_method": "",
+			"customers": {
+				"subject_to_collection": [],
+				"exempted_from_collection":[]
+			}
 		}
 	},
 	"invoice_export" : {
@@ -46,6 +50,10 @@
 			"subject": "Your invoice is ready",
 			"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
 			"html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
+		},
+		"fraud_notification": {
+			"subject": "Event [[event_code]] was triggered",
+			"content": "<pre>\n[[fraud_event_details]]</pre>\n"
 		}
 	},
 	"menu" : {
@@ -56,12 +64,16 @@
 	"payment_gateways":[],
 	"events" : {
 		"balance" : [],
+		"fraud" : [],
 		"settings": {
 			"http": {
 				"url": "",
 				"num_of_tries": 3,
 				"method": "post",
 				"decoder": "json"
+			},
+			"email": {
+				"global_addresses":[]
 			}
 		}
 	},
@@ -81,9 +93,61 @@
 				"auth_code": "",
 				"apply_optional_charges": true
 		 },
-		 "vat" : 0
+		 "vat" : 0,
+		 "vat_label": "Vat"
 	},
-	"discounts": {
+    "tax":{  
+        "mapping":{
+            "vat":[
+                [
+                    {
+                        "use_hint_doc" : true
+                    }
+                ],
+                [
+                    {
+                        "default_fallback" : false
+                    }
+                ]
+            ]
+        }
+    },
+	"taxes": {
+		"fields": [
+			{
+				"field_name": "key",
+				"system": true,
+				"mandatory": true
+			},
+			{
+				"field_name": "from",
+				"system": true,
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "to",
+				"system": true,
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "description",
+				"system": true,
+				"mandatory": true
+			},
+			{
+				"field_name": "rate",
+				"system": true,
+				"title": "Rate",
+				"mandatory": true,
+				"type": "percentage",
+				"editable": true,
+				"display": true
+			}
+		]
+	},
+        "discounts": {
     "fields": [
       {
         "field_name": "key",
@@ -121,5 +185,8 @@
   },
 	"system" : {
 		"closed_cycle_changes": false
-	}
+	},
+	"plays": [
+		{ "name": "Default", "enabled": true, "default": true }
+	]
 }
