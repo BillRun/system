@@ -35,18 +35,6 @@ class Billrun_Exporter_Nrtrde extends Billrun_Exporter_Bulk {
 				'$gte' => new MongoDate($this->getPeriodStartTime()),
 				'$lte' => new MongoDate($this->getPeriodEndTime()),
 			),
-			'$or' => [
-				[
-					'imsi' => [
-						'$nin' => ['', null],
-					],
-				],
-				[
-					'called_imsi' => [
-						'$nin' => ['', null],
-					],
-				],
-			],
 		);
 	}
 

@@ -993,14 +993,6 @@ class Billrun_Util {
 		if (!empty($row['imsi'])) {
 			return $row['imsi'];
 		}
-		
-		if (!empty($row['called_imsi'])) {
-			return $row['called_imsi'];
-		}
-		
-		if (!empty($row['calling_imsi'])) {
-			return $row['calling_imsi'];
-		}
 
 		return '';
 	}
