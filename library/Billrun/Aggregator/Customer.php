@@ -576,7 +576,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
-				Billrun_Factory::log('Fakeing finalization of the invoice', Zend_Log::DEBUG);
+				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() );
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
