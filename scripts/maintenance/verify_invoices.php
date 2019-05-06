@@ -51,7 +51,7 @@ foreach($brokenPdfs as $brokenFile) {
 			$highestDpi = $dpi;
 			$log->log('Invoice generation succesful');
 		} else {
-		$log->log('Invoice generation failed for : {$brokenFile}',Zend_Log::WARN);
+		$log->log("Invoice generation failed for : {$brokenFile}",Zend_Log::WARN);
 		}
 	}
 	if($highestDpi) {
