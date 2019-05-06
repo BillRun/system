@@ -457,6 +457,16 @@ var taxField ={
 lastConfig = addFieldToConfig(lastConfig, taxField, 'rates');
 lastConfig = addFieldToConfig(lastConfig, taxField, 'plans');
 lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
+//BRCD-1832 - Dummy priorities 
+var defaultVatMapping = {
+    "vat" : [
+        [{ "use_hint_doc" : true }],
+        [{ "default_fallback" : true }]
+    ]
+};
+if (lastConfig['tax']['mapping'] === undefined) {
+    lastConfig['tax']['mapping'] = defaultVatMapping;
+}
 
 db.config.insert(lastConfig);
 
