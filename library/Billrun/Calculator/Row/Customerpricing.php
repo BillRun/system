@@ -526,7 +526,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
 			
-			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
+			if (!($serviceObject = Billrun_Factory::Service($serviceSettings))) {
 				continue;
 			}
 			
