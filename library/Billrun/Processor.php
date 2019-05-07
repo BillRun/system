@@ -822,4 +822,77 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return false;
 	}
 
+	public static function getInstance() {
+		$args = func_get_args();
+
+		$stamp = md5(static::class . serialize($args));
+		if (isset(self::$instance[$stamp])) {
+			return self::$instance[$stamp];
+		}
+
+		$type = $args[0]['type'];
+		unset($args[0]['type']);
+		$args = $args[0];
+
+		if (!$config_type = Billrun_Factory::config()->{$type}) {
+			$config_type = array_filter(Billrun_Factory::config()->file_types->toArray(), function($fileSettings) use ($type) {
+				return $fileSettings['file_type'] === $type && Billrun_Config::isFileTypeConfigEnabled($fileSettings);
+			});
+			if ($config_type) {
+				$config_type = current($config_type);
+			}
+		}
+		$called_class = get_called_class();
+
+		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
+			$args = array_merge(Billrun_Factory::config()->getConfigValue($called_class)->toArray(), $args);
+		}
+
+		if (!isset($args['gateway'])) {
+			$class_type = $type;
+		} else {
+			$class_type = 'PaymentGateway_' . $args['gateway'] . '_' . ucfirst($type);
+		}
+
+		if ($config_type) {
+			if (is_object($config_type)) {
+				$config_type = $config_type->toArray();
+			}
+			$args = array_merge($config_type, $args);
+			if (isset($config_type[$called_class::$type]) &&
+				isset($config_type[$called_class::$type]['type'])) {
+					$class_type = $config_type[$called_class::$type]['type'];
+					$args['type'] = $type;
+			} else if(!empty($config_type[$called_class::$type]['type_mapping'])) {
+				foreach (@$config_type[$called_class::$type]['type_mapping'] as $typeConfig) {
+					$match = true;
+					foreach (@$typeConfig['config'] as $field => $value) {
+						$match &= Billrun_Factory::config()->getConfigValue($field,null) == $value;
+					}
+					if($match) {
+						$class_type = $typeConfig['type'];
+						$args['type'] = $type;
+						break;
+					}
+				}
+			}
+		}
+		$class = $called_class . '_' . ucfirst($class_type);
+		if (!@class_exists($class, true)) {
+			$external_class = str_replace('Billrun_', '', $class);
+			if (($pos = strpos($external_class, "_")) !== FALSE) {
+				$namespace = substr($external_class, 0, $pos);
+				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
+			}
+			if (!@class_exists($external_class, true)) {
+				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
+				return false;
+			}
+			$class = $external_class;
+		}
+
+		self::$instance[$stamp] = new $class($args);
+		return self::$instance[$stamp];
+	}
+
 }
