@@ -280,7 +280,7 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 		$latestUrt = null;
 		$dateFormat = $this->getConfig('datetime_format', 'YmdHis');
 		foreach ($this->rawRows as $row) {
-			$totalCharge += isset($row['apr']) ? floatval($row['apr']) * pow(10, $this->numOfDecPlaces) : 0;
+			$totalCharge += $this->getSdrPrice($row);
 			$totalTax += isset($row['tax']) ? floatval($row['tax']) * pow(10, $this->numOfDecPlaces) : 0;
 			$urt = $row['urt']->sec;
 			if (is_null($earliestUrt) || $urt < $earliestUrt) {
@@ -341,6 +341,12 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				$ret[] = array(
 					'RecEntityInformation' => $recEntityInfo,
 				);
+				
+				if ($this->getLineType($row) == self::$LINE_TYPE_DATA) {
+					$ret[] = array(
+						'RecEntityInformation' => $this->getSgsnRecEntityInformation($row),
+					);
+				}
 			}
 		}
 		return $ret;
@@ -367,6 +373,18 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				$recEntityCode = $recEntityType = 0;
 				$recEntityId = '';
 		}
+
+		return array(
+			'RecEntityCode' => intval($recEntityCode),
+			'RecEntityType' => intval($recEntityType),
+			'RecEntityId' => $recEntityId,
+		);
+	}
+	
+	protected function getSgsnRecEntityInformation($row) {
+		$recEntityType = $this->getConfig('rec_entity_type.SGSN');
+		$recEntityId = Billrun_Util::getIn($row, 'sgsn_address', '');
+		$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
 
 		return array(
 			'RecEntityCode' => intval($recEntityCode),
@@ -411,21 +429,12 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 	}
 	
 	protected function getRecEntityCodeList($row, $fieldMapping) {
-		switch ($this->getLineType($row)) {
-			case self::$LINE_TYPE_DATA:
-				$recEntityCode = 0; // TODO: get correct value
-				break;
-			case self::$LINE_TYPE_CALL:
-			case self::$LINE_TYPE_INCOMING_CALL:
-			case self::$LINE_TYPE_SMS:
-			case self::$LINE_TYPE_INCOMING_SMS:
-			default:
-				$recEntityCode = 0;
-		}
-
 		return array(
 			array(
-				'RecEntityCode' => $recEntityCode,
+				'RecEntityCode' => $this->getRecEntityCode($row),
+			),
+			array(
+				'RecEntityCode' => $this->getSgsnRecEntityInformation($row),
 			),
 		);
 	}
@@ -454,37 +463,48 @@ class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.international');
 				$chargedItem = $this->getConfig('charged_item.event_based_charge');
 				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
+				$chargeableUnits = null;
 				break;
 			default:
 				$callTypeLevel1 = $this->getConfig('call_type_level_1.unknown');
 				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
 				$chargedUnits = $chargeableUnits;
 		}
+		
+		$callTypeGroup = array(
+			'CallTypeLevel1' => intval($callTypeLevel1),
+			'CallTypeLevel2' => intval($callTypeLevel2),
+			'CallTypeLevel3' => intval($callTypeLevel3),
+		);
+		
+		$chargeDetail = array(
+			'ChargeType' => $chargeType,
+			'Charge' => $charge,
+		);
+		
+		if (!is_null($chargeableUnits)) {
+			$chargeDetail['ChargeableUnits'] = $chargeableUnits;
+		}
+		
+		$chargeDetail['ChargedUnits'] = $chargedUnits;
+		$chargeDetail['ChargeDetailTimeStamp'] = array(
+			'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
+			'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
+		);
+
+		$chargeDetailList = array(
+			array(
+				'ChargeDetail' => $chargeDetail,
+			),
+		);
 
 		return array(
 			array(
 				'ChargeInformation' => array(
 					'ChargedItem' => $chargedItem,
 					'ExchangeRateCode' => $this->getCurrencyCode($row),
-					'CallTypeGroup' => array(
-						'CallTypeLevel1' => intval($callTypeLevel1),
-						'CallTypeLevel2' => intval($callTypeLevel2),
-						'CallTypeLevel3' => intval($callTypeLevel3),
-					),
-					'ChargeDetailList' => array(
-						array(
-							'ChargeDetail' => array(
-								'ChargeType' => $chargeType,
-								'Charge' => $charge,
-								'ChargeableUnits' => $chargeableUnits,
-								'ChargedUnits' => $chargedUnits,
-								'ChargeDetailTimeStamp' => array(
-									'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
-									'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
-								),
-							),
-						),
-					),
+					'CallTypeGroup' => $callTypeGroup,
+					'ChargeDetailList' => $chargeDetailList,
 				),
 			),
 		);
