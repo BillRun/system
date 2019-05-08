@@ -78,6 +78,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
+			if (isset($options['denial'])) {
+				$this->data['denial'] = $options['denial'];
+			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
 				if ($direction != 'fc') {
@@ -922,6 +925,20 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
+	}
+	
+	public static function createDenial($denialParams, $matchedPayment) {
+		$denial = new Billrun_Bill_Payment_Denial($denialParams);
+		$denial->copyLinks($matchedPayment);
+		return $denial->save();
+	}
+	
+	public function deny() {
+		$this->data['denied'] = true;
+	}
+	
+	public function isPaymentDenied() {
+		return !empty($this->data['denied']);
 	}
 
 }
