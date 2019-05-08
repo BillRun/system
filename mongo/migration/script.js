@@ -464,8 +464,8 @@ var defaultVatMapping = {
         [{ "default_fallback" : true }]
     ]
 };
-if (lastConfig['tax']['mapping'] === undefined) {
-    lastConfig['tax']['mapping'] = defaultVatMapping;
+if (lastConfig['taxation']['mapping'] === undefined) {
+    lastConfig['taxation']['mapping'] = defaultVatMapping;
 }
 
 db.config.insert(lastConfig);
