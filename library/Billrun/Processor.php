@@ -57,7 +57,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	
 	/**
 	 * Limit iterator
-	 * used to limit the count of row to calc on.
+	 * used to limit the count of files to process on.
 	 * 0 or less means no limit
 	 *
 	 * @var int
