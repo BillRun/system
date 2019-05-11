@@ -238,7 +238,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @return Mongodloid_Entity
 	 */
 	public static function getDetaultTax($time = null) {
-		$taxKey = Billrun_Factory::config()->getConfigValue('tax.default.key', '');
+		$taxKey = Billrun_Factory::config()->getConfigValue('taxation.default.key', '');
 		if (empty($taxKey)) {
 			return false;
 		}
@@ -328,7 +328,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	}
 
 	protected function getFilters($row = [], $params = []) {
-		return Billrun_Factory::config()->getConfigValue('tax.mapping', []);
+		return Billrun_Factory::config()->getConfigValue('taxation.mapping', []);
 	}
 	
 	//------------------- Entity Getter functions - END ----------------------------------------------

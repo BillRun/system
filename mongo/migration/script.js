@@ -450,18 +450,18 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
 }
 
 // BRCD-1835: add default TAX key
-if (typeof lastConfig['tax'] === 'undefined') {
-	lastConfig.tax = {};
+if (typeof lastConfig['taxation'] === 'undefined') {
+	lastConfig.taxation = {};
 }
-if (typeof lastConfig['tax']['default'] === 'undefined') {
-	lastConfig.tax.default = {};
+if (typeof lastConfig['taxation']['default'] === 'undefined') {
+	lastConfig.taxation.default = {};
 }
-if (typeof lastConfig['tax']['default']['key'] === 'undefined') {
-	lastConfig.tax.default.key = "DEFAULT_TAX";
+if (typeof lastConfig['taxation']['default']['key'] === 'undefined') {
+	lastConfig.taxation.default.key = "DEFAULT_TAX";
 }
 
 // BRCD-1837: convert legacy VAT taxation to default taxation rate
-if (typeof lastConfig['taxation']['tax_type'] == 'vat') {
+if (lastConfig['taxation']['tax_type'] == 'vat') {
 	var vatRate = lastConfig['taxation']['vat']['v'];
 	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
 	
@@ -469,7 +469,7 @@ if (typeof lastConfig['taxation']['tax_type'] == 'vat') {
 		"tax_type": "usage"
 	};
 	
-	lastConfig.tax.default.key = "DEFAULT_VAT";
+	lastConfig.taxation.default.key = "DEFAULT_VAT";
 	
 	var vatFrom = new Date('2019-01-01');
 	var vatTo = new Date('2119-01-01');
