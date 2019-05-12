@@ -164,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 //			}
 //		}
 
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec,'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -469,21 +469,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$time = $time->sec;
 		}
 
-//		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
-//		$plansQuery['name'] = $planName;
-//		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
-		
-		$planParams = array(
-			'name' => $planName,
-			'time' => $time,
-		);
-		
-		$planObject = Billrun_Factory::plan($planParams);
-		if (empty($planObject)) {
-			return array();
-		}
-		
-		$plan = $planObject->getData();
+		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+		$plansQuery['name'] = $planName;
+		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
 		
 		if($plan->isEmpty() || empty($plan->get('include')) || !isset($plan->get('include')['services']) || empty($services = $plan->get('include')['services'])) {
 			return array();
