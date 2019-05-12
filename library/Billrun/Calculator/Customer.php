@@ -164,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 //			}
 //		}
 
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec,'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -476,6 +476,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$planParams = array(
 			'name' => $planName,
 			'time' => $time,
+			'disableCache' => true
 		);
 		
 		$planObject = Billrun_Factory::plan($planParams);
