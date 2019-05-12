@@ -519,15 +519,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceSettings = array(
 				'service_id' => $serviceId,
 				'name' => $serviceName,
-				'time' => $time,
-				'disableCache' => true
+				'time' => $time
 			);
 			
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
 			
-			if (!($serviceObject = Billrun_Factory::service($serviceSettings))) {
+			if (!($serviceObject = Billrun_Factory::Service($serviceSettings))) {
 				continue;
 			}
 			
