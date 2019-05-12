@@ -41,8 +41,12 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		$res = Billrun_Bill_Payment::createDenial($newRow, $payment);
 		if ($res) {
 			Billrun_Factory::log()->log("Denial was created successfully for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
+			Billrun_Factory::dispatcher()->trigger('afterDenial', array($newRow));
 			$payment->deny();
 			$paymentSaved = $payment->save();
+			if (!$paymentSaved) {
+				Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
+			}
 		} else {
 			Billrun_Factory::log()->log("Denial process was failed for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
 		}
