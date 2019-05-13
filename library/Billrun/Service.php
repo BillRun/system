@@ -552,10 +552,19 @@ class Billrun_Service {
 		return empty($plays) ? [] : $plays;
 	}
 	
+	/**
+	 * gets the DB collection of the entity (servicesCollection/plansCollection/etc...)
+	 * 
+	 * @return Mongodloid Collection
+	 */
 	public static function getCollection() {
 		return Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_called_class())) . 's');
 	}
 	
+	/**
+	 * loads all entities (Services/Plans/etc...) to a static local variable
+	 * these entities will be later use to fetch from the memory instead of from the DB
+	 */
 	public static function initEntities() {
 		$coll = self::getCollection();
 		$entities = $coll->query()->cursor();
@@ -572,6 +581,11 @@ class Billrun_Service {
 		}
 	}
 
+	/**
+	 * get local stored entities
+	 * 
+	 * @return array
+	 */
 	public static function getEntities() {
 		if (empty(self::$entities)) {
 			self::initEntities();
