@@ -112,7 +112,9 @@ trait Billrun_Traits_EntityGetter {
 	protected function getEntityByFilters($row, $filters, $params = []) {
 		$category = $params['category'] ?: '';
 		$matchedEntity = null;
-		foreach ($filters as $currentPriorityFilters) {
+		foreach ($filters as $priority) {
+			$currentPriorityFilters = $priority['filters'] ?: $priority;
+			$params['cache_db_queries'] = $priority['cache_db_queries'] ?: false;
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
 			if (!$query) {
@@ -140,10 +142,9 @@ trait Billrun_Traits_EntityGetter {
 	 * 
 	 * @param array $params
 	 * @return boolean
-	 * @todo should work with "cache_db_queries" flag
 	 */
 	protected function shouldCacheEntity($params = []) {
-		return true;
+		return !empty($params['cache_db_queries']);
 	}
 	
 	/**
@@ -330,6 +331,9 @@ trait Billrun_Traits_EntityGetter {
 	 * @return array
 	 */
 	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+		if (isset($categoryFilters['priorities'])) {
+			return $categoryFilters['priorities'];
+		}
 		return !empty($categoryFilters) ? $categoryFilters : [];
 	}
 	

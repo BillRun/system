@@ -212,7 +212,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		$usaget = $params['usaget'] ?: '';
-		return Billrun_Util::getIn($categoryFilters, $usaget, []);
+		return Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
 	}
 
 	protected function getConditionEntityKey($params = []) {
@@ -244,10 +244,6 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		
 		$query['key'] = $rawEntity['key']; // this is for sharding purpose
 		return $query;
-	}
-	
-	protected function shouldCacheEntity($params = []) {
-		return false;
 	}
 
 	//------------------- Entity Getter functions - END ----------------------------------------------
