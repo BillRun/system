@@ -12,6 +12,9 @@
  */
 trait Billrun_Traits_EntityGetter {
 	
+	protected static $entities = [];
+	protected static $entitiesData = [];
+	
 	/**
 	 * get filters for fetching the required entity/entities
 	 * 
@@ -118,9 +121,9 @@ trait Billrun_Traits_EntityGetter {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
-			$coll = $this->getCollection($params);
-			$matchedEntity = $coll->aggregate($query)->current();
-			if (!$matchedEntity->isEmpty()) {
+			
+			$matchedEntity = $this->getEntity($row, $query, $params);
+			if ($matchedEntity && !$matchedEntity->isEmpty()) {
 				break;
 			}
 		}
@@ -130,6 +133,109 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		return $this->getFullEntityData($matchedEntity, $row, $params);
+	}
+	
+	/**
+	 * should use cache to get the entity
+	 * 
+	 * @param array $params
+	 * @return boolean
+	 * @todo should work with "cache_db_queries" flag
+	 */
+	protected function shouldCacheEntity($params = []) {
+		return true;
+	}
+	
+	/**
+	 * get keys to remove from the query to get the cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return array of keys
+	 */
+	protected function getEntityCacheKeyFieldsToRemove($row, $query, $params = []) {
+		return ['from', 'to'];
+	}
+	
+	/**
+	 * get entity cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return string
+	 */
+	protected function getEntityCacheKey($row, $query, $params = []) {
+		$keysToRemove = $this->getEntityCacheKeyFieldsToRemove($row, $query, $params);
+		foreach ($query as $i => &$pipelineStage) {
+			foreach ($pipelineStage as $op => &$pipeline) {
+				foreach ($pipeline as $key => $val) {
+					if (in_array($key, $keysToRemove)) {
+						unset($pipeline[$key]);
+					}
+				}
+
+				if (empty($pipeline)) {
+					unset($pipelineStage[$op]);
+				}
+			}
+
+			if (empty($pipelineStage)) {
+				unset($query[$i]);
+			}
+		}
+		return md5(serialize($query));
+	}
+	
+	/**
+	 * get entity data cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return string
+	 */
+	protected function getEntityDataCacheKey($entity, $row = [], $params = []) {
+		return strval($entity->getRawData()['_id']['_id']);
+	}
+	
+	/**
+	 * get entity from internal cache or DB
+	 * 
+	 * @param array $row
+	 * @param array $query
+	 * @param array $params
+	 * @return Mongodloid entity if found, false or empty Mongodloid otherwise
+	 */
+	protected function getEntity($row, $query, $params = []) {
+		$useCache = $this->shouldCacheEntity($params);
+		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
+		$entity = false;
+		
+		if ($useCache && !empty(self::$entities[$cacheKey])) {
+			$time = isset($row['urt']) ? $row['urt']->sec : time();
+			foreach (self::$entities[$cacheKey] as $cachedEntity) {
+				if ($cachedEntity['from'] <= $time && (!isset($cachedEntity['to']) || is_null($cachedEntity['to']) || $cachedEntity['to'] >= $time)) {
+					$entity = $cachedEntity['entity'];
+					break;
+				}
+			}
+		}
+		
+		if (empty($entity)) {
+			$coll = $this->getCollection($params);
+			$entity = $coll->aggregate($query)->current();
+			if ($useCache && isset($entity['from']) && isset($entity['to'])) {
+				self::$entities[$cacheKey][] = [
+					'entity' => $entity,
+					'from' => $entity['from']->sec,
+					'to' => $entity['to']->sec,
+				];
+			}
+		}
+		
+		return $entity;
 	}
 	
 	/**
@@ -193,6 +299,12 @@ trait Billrun_Traits_EntityGetter {
 		return [
 			'_id' => [
 				'_id' => '$_id',
+			],
+			'from' => [
+				'$first' => '$from',
+			],
+			'to' => [
+				'$first' => '$to',
 			],
 		];
 	}
@@ -276,14 +388,19 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Mongodloid_Entity if found, false otherwise
 	 */
 	protected function getFullEntityData($entity, $row = [], $params = []) {
-		$rawEntity = $entity->getRawData();
-		$query = $this->getFullEntityDataQuery($rawEntity);
-		if (!$query) {
-			return false;
+		$cacheKey = $this->getEntityDataCacheKey($entity, $row, $params);
+		if (empty(self::$entitiesData[$cacheKey])) {
+			$rawEntity = $entity->getRawData();
+			$query = $this->getFullEntityDataQuery($rawEntity);
+			if (!$query) {
+				return false;
+			}
+
+			$coll = $this->getCollection($params);
+			self::$entitiesData[$cacheKey] = $coll->query($query)->cursor()->current();
 		}
 		
-		$coll = $this->getCollection($params);
-		return $coll->query($query)->cursor()->current();
+		return self::$entitiesData[$cacheKey];
 	}
 	
 	/**

@@ -245,6 +245,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		$query['key'] = $rawEntity['key']; // this is for sharding purpose
 		return $query;
 	}
+	
+	protected function shouldCacheEntity($params = []) {
+		return false;
+	}
 
 	//------------------- Entity Getter functions - END ----------------------------------------------
 }
