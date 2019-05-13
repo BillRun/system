@@ -34,8 +34,8 @@ class Models_Action_Import extends Models_Action {
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $entity) {
-			$errors = $entity['__ERRORS__'];
-			$csv_rows = $entity['__CSVROW__'];
+			$errors = isset($entity['__ERRORS__']) ? $entity['__ERRORS__'] : [];
+			$csv_rows = isset($entity['__CSVROW__']) ? $entity['__CSVROW__'] : [];
 			
 			if($this->request['operation'] !== $this->getImportOperation()) {
 				$this->setImportOperation($this->request['operation']);

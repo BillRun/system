@@ -47,16 +47,27 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		return parent::runQuery();
 	}
 	
+	protected function isTaxRateExists($key, $from) {
+		$taxQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+		$taxQuery['key'] = $key;
+		$existingTax = Billrun_Factory::db()->taxesCollection()->query($taxQuery)->cursor()->current();
+		if (!$existingTax || $existingTax->isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+	
 	protected function importEntity($entity) {
-		// TODO: in update key not exist
-		$unique_plan_rates = count(array_unique($this->rates_by_plan[$entity['key']]));
-		$plan_rates = count($this->rates_by_plan[$entity['key']]);
-		if($this->getImportOperation() == 'create' && $unique_plan_rates != $plan_rates){
+		$keyField = !empty($entity['__UPDATER__']['value']) ? $entity['__UPDATER__']['value'] : 'key';
+		$plans_names = isset($this->rates_by_plan[$entity[$keyField]]) ? $this->rates_by_plan[$entity[$keyField]] : [];
+		$unique_plan_rates_count = count(array_unique($plans_names));
+		$plan_rates_count = count($plans_names);
+		if($this->getImportOperation() == 'create' && $unique_plan_rates_count != $plan_rates_count){
 			return 'Create revision not allowd with import action Create, please use Update';
 		}
 		
 		$existingRate = null;
-		$key = $entity['key'];
+		$key = $entity['key']; // try to get it, exists only in create
 		$from = empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'];
 		
 		if($this->getImportOperation() == 'permanentchange') {
@@ -70,7 +81,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			if(!$existingRate || $existingRate->isEmpty()) {
 				throw new Exception("Product {$entity['__UPDATER__']['value']} does not exist");
 			}
-			$key = $existingRate['key'];
+			$key = $existingRate['key']; // get rate key in update
 			
 			if(!empty($entity['__MULTI_FIELD_ACTION__'])) {
 				foreach ($entity['__MULTI_FIELD_ACTION__'] as $fieldName => $action) {
@@ -110,6 +121,50 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 						unset($entity['rates']["_KEEP_SOURCE_USAGE_TYPE_"]);
 					}
 				}
+			}
+		}
+		// check if need to create \ update TAX object
+		if(!empty($entity['tax'])) {
+			if ($this->getImportOperation() == 'create') {
+				if ($entity['tariff_category'] === 'retail') {
+					$entity['tax']['type'] = "vat";
+					if (!empty($entity['tax']['taxation']) && $entity['tax']['taxation'] === "custom") {
+						$isTaxExists = $this->isTaxRateExists($entity['tax']['custom_tax'], $entity['from']);
+						if(!$isTaxExists) {
+							return "Tax rate {$entity['tax']['custom_tax']} does not exist";
+						}
+						// set default if not exists
+						$entity['tax']['custom_logic'] = !empty($entity['tax']['custom_logic']) ? $entity['tax']['custom_logic'] : "override";
+					} else {
+						if (empty($entity['tax']['taxation'])) {
+							// set default
+							$entity['tax']['taxation'] = 'global';
+						}
+						unset($entity['tax']['custom_tax']);
+						unset($entity['tax']['custom_logic']);
+					}
+				} else {
+					// fix by removing tax object if tariff_category is not retail
+					unset($entity['tax']);
+				}
+			} else if ($this->getImportOperation() == 'permanentchange') {
+				// get existing tax objet or use default
+				$existingTax = !empty($existingRate['tax']) ? $existingRate['tax'] : ['type' => 'vat', 'taxation' => 'global']; 
+				if (!empty($entity['tax']['taxation'])) {
+					$existingTax['taxation'] = $entity['tax']['taxation'];
+				}
+				if (!empty($entity['tax']['custom_tax'])) {
+					$from = empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'];
+					$isTaxExists = $this->isTaxRateExists($entity['tax']['custom_tax'], $from);
+					if(!$isTaxExists) {
+						return "Tax rate {$entity['tax']['custom_tax']} does not exist";
+					}
+					$existingTax['custom_tax'] = $entity['tax']['custom_tax'];
+				}
+				if (!empty($entity['tax']['custom_logic'])) {
+					$existingTax['custom_logic'] = $entity['tax']['custom_logic'];
+				}
+				$entity['tax'] = $existingTax;
 			}
 		}
 		
