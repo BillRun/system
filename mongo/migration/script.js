@@ -519,7 +519,8 @@ db.rates.find({vatable:{$exists:1}}).forEach(
 		} else {
 			obj.tax = [
 				{
-					type: "no"
+					type: "vat",
+					taxation: "no"
 				}
 			];
 		}

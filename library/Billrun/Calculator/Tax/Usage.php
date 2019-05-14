@@ -229,6 +229,24 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 		return $totalRate;
 	}
+	
+	/**
+	 * see parent::isLineTaxable
+	 */
+	protected function isLineTaxable($line) {
+		$rate = $this->getRateForLine($line);
+		foreach (Billrun_Util::getIn($rate, 'tax', []) as $tax) {
+			if ($tax['type'] == 'vat') {
+				if ($tax['taxation'] == 'no') {
+					return !$this->isLinePreTaxed($line);
+				}
+				
+				return true;
+			}
+		}
+		
+		return parent::isLineTaxable($line);
+	}
 
 	//================================= Static =================================
 
