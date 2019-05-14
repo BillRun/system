@@ -459,12 +459,11 @@ lastConfig = addFieldToConfig(lastConfig, taxField, 'plans');
 lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
 //BRCD-1832 - Dummy priorities 
 var defaultVatMapping = {
-    "vat" : [
-        [{ "use_hint_doc" : true }],
-        [{ "default_fallback" : true }]
-    ]
+    vat: {
+        "default_fallback": true,
+    }
 };
-if (lastConfig['taxation']['mapping'] === undefined) {
+if (astConfig['taxation']['mapping'] === undefined) {
     lastConfig['taxation']['mapping'] = defaultVatMapping;
 }
 

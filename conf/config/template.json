@@ -94,21 +94,7 @@
 				"apply_optional_charges": true
 		},
 		"vat" : 0,
-		"vat_label": "Vat",
-                "mapping":{
-                    "vat":[
-                        [
-                            {
-                                "use_hint_doc" : true
-                            }
-                        ],
-                        [
-                            {
-                                "default_fallback" : false
-                            }
-                        ]
-                    ]
-                }
+		"vat_label": "Vat"
 	},
         "import": {
             "mapping": []
