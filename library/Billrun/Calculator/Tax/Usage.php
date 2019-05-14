@@ -331,6 +331,11 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return Billrun_Factory::config()->getConfigValue('taxation.mapping', []);
 	}
 	
+	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		$time = isset($row['urt']) ? $row['urt']->sec : time();
+		return self::getDetaultTax($time);
+	}
+	
 	//------------------- Entity Getter functions - END ----------------------------------------------
 
 }

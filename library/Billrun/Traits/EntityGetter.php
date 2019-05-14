@@ -55,6 +55,7 @@ trait Billrun_Traits_EntityGetter {
 			
 			$params['category'] = $category;
 			$params['filters'] = $this->getCategoryFilters($categoryFilters, $row, $params);
+			$params['default_fallback'] = $this->useDefaultFallback($ret, $category, $row, $params);
 			$entity = $this->getMatchingEntity($row, $params);
 			if ($entity) {
 				$ret[$category] = $entity;
@@ -77,6 +78,7 @@ trait Billrun_Traits_EntityGetter {
 	public function getMatchingEntity($row, $params = []) {
 		$filters = $params['filters'] ?: $this->getFilters($row, $params);
 		$category = $params['category'] ?: '';
+		$defaultFallback = $params['default_fallback'] ?: '';
 		
 		if (empty($filters)) {
 			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . ($params['category'] ?: '') . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -84,6 +86,10 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		$entity = $this->getEntityByFilters($row, $filters, $params);
+		
+		if (empty($entity) && $defaultFallback) {
+			$entity = $this->getDefaultEntity($filters, $category, $row, $params);
+		}
 
 		if (empty($entity)) {
 			Billrun_Factory::log('Entity not found for row ' . $row['stamp'] . '. params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -335,6 +341,32 @@ trait Billrun_Traits_EntityGetter {
 			return $categoryFilters['priorities'];
 		}
 		return !empty($categoryFilters) ? $categoryFilters : [];
+	}
+	
+	/**
+	 * checks if a default entity should be used as fallback in the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return boolean
+	 */
+	protected function useDefaultFallback($categoryFilters, $category = '', $row = [], $params = []) {
+		return Billrun_Util::getIn($categoryFilters, 'default_fallback', false);
+	}
+
+	/**
+	 * get default entity for the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Entity
+	 */
+	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		return null;
 	}
 	
 	/**
