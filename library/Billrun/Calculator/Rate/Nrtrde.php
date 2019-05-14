@@ -60,7 +60,10 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		$aggregateBaseMatch = array(
 			array(
 				'$match' => array(
-					'params.serving_networks' => new MongoRegex("/^$alpha/"),
+					 '$or' => [
+							[ 'params.serving_networks' => new MongoRegex("/^$alpha/")],
+							[ 'params.serving_networks' => "/.*/"]
+						],
 					'to' => array(
 						'$gt' => $line_time,
 					),
