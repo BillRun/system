@@ -45,8 +45,10 @@ class Billrun_EntityGetter_Filters_Base {
 		if ($field === 'computed') {
 			return $this->getComputedValue($row);
 		}
-		if (isset($row['uf.' .$field])) {
-			return $this->regexValue($row['uf.' .$field], $regex);
+		
+		$ufVal = Billrun_Util::getIn($row, 'uf.' . $field, null);
+		if (!is_null($ufVal)) {
+			return $this->regexValue($ufVal, $regex);
 		}
 		
 		if (isset($row['foreign'][$field])) {

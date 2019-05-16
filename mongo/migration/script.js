@@ -449,6 +449,43 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
+// BRCD-1835: add default TAX key
+if (typeof lastConfig['taxation'] === 'undefined') {
+	lastConfig.taxation = {};
+}
+if (typeof lastConfig['taxation']['default'] === 'undefined') {
+	lastConfig.taxation.default = {};
+}
+if (typeof lastConfig['taxation']['default']['key'] === 'undefined') {
+	lastConfig.taxation.default.key = "DEFAULT_TAX";
+}
+
+// BRCD-1837: convert legacy VAT taxation to default taxation rate
+if (lastConfig['taxation']['tax_type'] == 'vat') {
+	var vatRate = lastConfig['taxation']['vat']['v'];
+	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
+	
+	lastConfig.taxation = {
+		"tax_type": "usage"
+	};
+	
+	lastConfig.taxation.default.key = "DEFAULT_VAT";
+	
+	var vatFrom = new Date('2019-01-01');
+	var vatTo = new Date('2119-01-01');
+	var vat = {
+		key: "DEFAULT_VAT",
+		from: vatFrom,
+		creation_time: vatFrom,
+		to: vatTo,
+		description: vatLabel,
+		rate: vatRate,
+		params: {}
+	};
+	
+	db.taxes.insert(vat);
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
@@ -468,3 +505,26 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// BRCD-1837: convert rates' "vatable" field to new tax mapping
+db.rates.find({vatable:{$exists:1}}).forEach(
+	function(obj) {
+		if (obj.vatable) {
+			obj.tax = [
+				{
+					type: "vat",
+					taxation: "global"
+				}
+			];
+		} else {
+			obj.tax = [
+				{
+					type: "vat",
+					taxation: "no"
+				}
+			];
+		}
+		delete obj.vatable;
+		db.rates.save(obj);
+	}
+);

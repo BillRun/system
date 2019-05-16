@@ -360,21 +360,15 @@
     }
   },
   "taxation" :{
-    "tax_type": "vat",
-     "CSI": {
-        "taxation_mapping": [],
-        "provider": "",
-        "auth_code": "",
-        "apply_optional_charges": true
-     },
-     "vat": {
-       "v": 0.17,
-       "t": "Float",
-       "range": {
-         "max": 1,
-         "min" : 0
-       }
-     }
+    "tax_type": "usage"
+  },
+  "tax": {
+    "default": {
+		"key": "DEFAULT_VAT"
+    },
+	"mapping": {
+		"vat": []
+	}
   },
   "property_types": [
 		{

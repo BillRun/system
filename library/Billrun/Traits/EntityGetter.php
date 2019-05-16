@@ -12,6 +12,9 @@
  */
 trait Billrun_Traits_EntityGetter {
 	
+	protected static $entities = [];
+	protected static $entitiesData = [];
+	
 	/**
 	 * get filters for fetching the required entity/entities
 	 * 
@@ -38,6 +41,7 @@ trait Billrun_Traits_EntityGetter {
 		$ret = [];
 		$matchFilters = $this->getFilters($row, $params);
 		$mustMatch = $params['must_match'] ?: true;
+		$skipCategories = $params['skip_categories'] ?: [];
 		
 		if (empty($matchFilters)) {
 			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -45,8 +49,13 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		foreach ($matchFilters as $category => $categoryFilters) {
+			if (in_array($category, $skipCategories)) {
+				continue;
+			}
+			
 			$params['category'] = $category;
 			$params['filters'] = $this->getCategoryFilters($categoryFilters, $row, $params);
+			$params['default_fallback'] = $this->useDefaultFallback($ret, $category, $row, $params);
 			$entity = $this->getMatchingEntity($row, $params);
 			if ($entity) {
 				$ret[$category] = $entity;
@@ -68,6 +77,8 @@ trait Billrun_Traits_EntityGetter {
 	 */
 	public function getMatchingEntity($row, $params = []) {
 		$filters = $params['filters'] ?: $this->getFilters($row, $params);
+		$category = $params['category'] ?: '';
+		$defaultFallback = $params['default_fallback'] ?: '';
 		
 		if (empty($filters)) {
 			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . ($params['category'] ?: '') . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -75,6 +86,10 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		$entity = $this->getEntityByFilters($row, $filters, $params);
+		
+		if (empty($entity) && $defaultFallback) {
+			$entity = $this->getDefaultEntity($filters, $category, $row, $params);
+		}
 
 		if (empty($entity)) {
 			Billrun_Factory::log('Entity not found for row ' . $row['stamp'] . '. params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -103,7 +118,9 @@ trait Billrun_Traits_EntityGetter {
 	protected function getEntityByFilters($row, $filters, $params = []) {
 		$category = $params['category'] ?: '';
 		$matchedEntity = null;
-		foreach ($filters as $currentPriorityFilters) {
+		foreach ($filters as $priority) {
+			$currentPriorityFilters = $priority['filters'] ?: $priority;
+			$params['cache_db_queries'] = $priority['cache_db_queries'] ?: false;
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
 			if (!$query) {
@@ -112,9 +129,9 @@ trait Billrun_Traits_EntityGetter {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
-			$coll = $this->getCollection($params);
-			$matchedEntity = $coll->aggregate($query)->current();
-			if (!$matchedEntity->isEmpty()) {
+			
+			$matchedEntity = $this->getEntity($row, $query, $params);
+			if ($matchedEntity && !$matchedEntity->isEmpty()) {
 				break;
 			}
 		}
@@ -124,6 +141,108 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		return $this->getFullEntityData($matchedEntity, $row, $params);
+	}
+	
+	/**
+	 * should use cache to get the entity
+	 * 
+	 * @param array $params
+	 * @return boolean
+	 */
+	protected function shouldCacheEntity($params = []) {
+		return !empty($params['cache_db_queries']);
+	}
+	
+	/**
+	 * get keys to remove from the query to get the cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return array of keys
+	 */
+	protected function getEntityCacheKeyFieldsToRemove($row, $query, $params = []) {
+		return ['from', 'to'];
+	}
+	
+	/**
+	 * get entity cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return string
+	 */
+	protected function getEntityCacheKey($row, $query, $params = []) {
+		$keysToRemove = $this->getEntityCacheKeyFieldsToRemove($row, $query, $params);
+		foreach ($query as $i => &$pipelineStage) {
+			foreach ($pipelineStage as $op => &$pipeline) {
+				foreach ($pipeline as $key => $val) {
+					if (in_array($key, $keysToRemove)) {
+						unset($pipeline[$key]);
+					}
+				}
+
+				if (empty($pipeline)) {
+					unset($pipelineStage[$op]);
+				}
+			}
+
+			if (empty($pipelineStage)) {
+				unset($query[$i]);
+			}
+		}
+		return md5(serialize($query));
+	}
+	
+	/**
+	 * get entity data cache key
+	 * 
+	 * @param array $row
+	 * @param array $filters
+	 * @param array $params
+	 * @return string
+	 */
+	protected function getEntityDataCacheKey($entity, $row = [], $params = []) {
+		return strval($entity->getRawData()['_id']['_id']);
+	}
+	
+	/**
+	 * get entity from internal cache or DB
+	 * 
+	 * @param array $row
+	 * @param array $query
+	 * @param array $params
+	 * @return Mongodloid entity if found, false or empty Mongodloid otherwise
+	 */
+	protected function getEntity($row, $query, $params = []) {
+		$useCache = $this->shouldCacheEntity($params);
+		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
+		$entity = false;
+		
+		if ($useCache && !empty(self::$entities[$cacheKey])) {
+			$time = isset($row['urt']) ? $row['urt']->sec : time();
+			foreach (self::$entities[$cacheKey] as $cachedEntity) {
+				if ($cachedEntity['from'] <= $time && (!isset($cachedEntity['to']) || is_null($cachedEntity['to']) || $cachedEntity['to'] >= $time)) {
+					$entity = $cachedEntity['entity'];
+					break;
+				}
+			}
+		}
+		
+		if (empty($entity)) {
+			$coll = $this->getCollection($params);
+			$entity = $coll->aggregate($query)->current();
+			if ($useCache && isset($entity['from']) && isset($entity['to'])) {
+				self::$entities[$cacheKey][] = [
+					'entity' => $entity,
+					'from' => $entity['from']->sec,
+					'to' => $entity['to']->sec,
+				];
+			}
+		}
+		
+		return $entity;
 	}
 	
 	/**
@@ -188,6 +307,12 @@ trait Billrun_Traits_EntityGetter {
 			'_id' => [
 				'_id' => '$_id',
 			],
+			'from' => [
+				'$first' => '$from',
+			],
+			'to' => [
+				'$first' => '$to',
+			],
 		];
 	}
 	
@@ -212,7 +337,36 @@ trait Billrun_Traits_EntityGetter {
 	 * @return array
 	 */
 	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+		if (isset($categoryFilters['priorities'])) {
+			return $categoryFilters['priorities'];
+		}
 		return !empty($categoryFilters) ? $categoryFilters : [];
+	}
+	
+	/**
+	 * checks if a default entity should be used as fallback in the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return boolean
+	 */
+	protected function useDefaultFallback($categoryFilters, $category = '', $row = [], $params = []) {
+		return Billrun_Util::getIn($categoryFilters, 'default_fallback', false);
+	}
+
+	/**
+	 * get default entity for the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Entity
+	 */
+	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		return null;
 	}
 	
 	/**
@@ -270,14 +424,19 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Mongodloid_Entity if found, false otherwise
 	 */
 	protected function getFullEntityData($entity, $row = [], $params = []) {
-		$rawEntity = $entity->getRawData();
-		$query = $this->getFullEntityDataQuery($rawEntity);
-		if (!$query) {
-			return false;
+		$cacheKey = $this->getEntityDataCacheKey($entity, $row, $params);
+		if (empty(self::$entitiesData[$cacheKey])) {
+			$rawEntity = $entity->getRawData();
+			$query = $this->getFullEntityDataQuery($rawEntity);
+			if (!$query) {
+				return false;
+			}
+
+			$coll = $this->getCollection($params);
+			self::$entitiesData[$cacheKey] = $coll->query($query)->cursor()->current();
 		}
 		
-		$coll = $this->getCollection($params);
-		return $coll->query($query)->cursor()->current();
+		return self::$entitiesData[$cacheKey];
 	}
 	
 	/**

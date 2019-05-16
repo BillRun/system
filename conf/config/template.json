@@ -78,7 +78,7 @@
 		}
 	},
 	"taxation" :{
-		"tax_type": "vat",
+		"tax_type": "usage",
 		 "CSI": {
 				"available_providers" :  {
 											"00":"ILEC",
