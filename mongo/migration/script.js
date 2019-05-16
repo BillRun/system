@@ -486,6 +486,24 @@ if (lastConfig['taxation']['tax_type'] == 'vat') {
 	db.taxes.insert(vat);
 }
 
+//BRCD-1834 : Add tax field
+var taxField ={
+    "system":true,
+    "field_name" : "tax"
+};
+lastConfig = addFieldToConfig(lastConfig, taxField, 'rates');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'plans');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
+//BRCD-1832 - Dummy priorities 
+var defaultVatMapping = {
+    vat: {
+        "default_fallback": true,
+    }
+};
+if (typeof lastConfig['taxation']['mapping'] === 'undefined') {
+    lastConfig['taxation']['mapping'] = defaultVatMapping;
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717

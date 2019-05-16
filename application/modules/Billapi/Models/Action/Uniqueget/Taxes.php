@@ -9,18 +9,14 @@
 /**
  * Billapi unique get operation
  * Retrieve list of entities while the key or name field is unique
- * This is accounts unique get
+ * This is subscribers unique get
  *
  * @package  Billapi
- * @since    5.5
+ * @since    5.3
  */
-class Models_Action_Import_Accounts extends Models_Action_Import {
+class Models_Action_Uniqueget_Taxes extends Models_Action_Uniqueget {
 
-	protected function getCollectionName() {
-		return 'accounts';
-	}
-	
-	protected function getEntityModel($params) {
-		return new Models_Accounts($params);
+	protected function initGroup() {
+		$this->group = 'key';
 	}
 }
