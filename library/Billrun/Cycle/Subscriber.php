@@ -77,6 +77,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		}
 		return "closed";
 	}
+	
+	/**
+	 * Get the sid of the subscriber.
+	 * @return int
+	 */
+	public function getSid() {
+		return $this->sid;
+	}
 
 	/**
 	 * Get the plan related data of the subscriber
