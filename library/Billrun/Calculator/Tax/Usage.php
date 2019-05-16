@@ -10,7 +10,7 @@
  * Billing tax calculator using configuration to determine it's logic
  *
  * @package  calculator
- * @since 5.9
+ * @since 5.10
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	use Billrun_Traits_EntityGetter;

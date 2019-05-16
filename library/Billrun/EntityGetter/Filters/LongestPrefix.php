@@ -10,7 +10,7 @@
  * Billing Longest Prefix filter
  *
  * @package  calculator
- * @since 5.9
+ * @since 5.10
  */
 class Billrun_EntityGetter_Filters_LongestPrefix extends Billrun_EntityGetter_Filters_Base {
 
