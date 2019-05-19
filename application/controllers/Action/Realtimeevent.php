@@ -31,7 +31,7 @@ class RealtimeeventAction extends ApiAction {
 			unset($this->event['mode']);
 			$asyncData = array(
 				'mode' => 'sync',
-				'usaget' => $this->event['usaget'],
+				'usaget' => $this->usaget,
 				'request' => $this->getRealtimeRequestBody(),
 			);
 			Billrun_Util::forkProcessWeb('/realtimeevent', $asyncData);
