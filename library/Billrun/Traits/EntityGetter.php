@@ -80,7 +80,7 @@ trait Billrun_Traits_EntityGetter {
 		$category = Billrun_Util::getIn($params, 'category', '');
 		$defaultFallback = Billrun_Util::getIn($params, 'default_fallback', '');
 		
-		if (empty($filters)) {
+		if ($filters === false) {
 			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . (Billrun_Util::getIn($params, 'category', '')) . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
 			return $this->afterEntityNotFound($row, $params);
 		}
