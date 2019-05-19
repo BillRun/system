@@ -91,6 +91,7 @@ class V3_PlansAction extends ApiAction {
 			$results = array();
 			foreach ($resource as $item) {
 				$rawItem = $item->getRawData();
+				$rawItem['price'] = isset($rawItem['price']['0']['price']) ? $rawItem['price']['0']['price'] : 0;
 				$results[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
 		}
