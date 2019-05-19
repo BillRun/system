@@ -7,7 +7,7 @@
  * Billing Match filter
  *
  * @package  GetterFilters
- * @since 5.9
+ * @since 5.10
  */
 
 class Billrun_EntityGetter_Filters_EqualFalse extends Billrun_EntityGetter_Filters_Match {

@@ -525,24 +525,5 @@ db.subscribers.getIndexes().forEach(function(index){
 //}
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.find({vatable:{$exists:1}}).forEach(
-	function(obj) {
-		if (obj.vatable) {
-			obj.tax = [
-				{
-					type: "vat",
-					taxation: "global"
-				}
-			];
-		} else {
-			obj.tax = [
-				{
-					type: "vat",
-					taxation: "no"
-				}
-			];
-		}
-		delete obj.vatable;
-		db.rates.save(obj);
-	}
-);
+db.rates.update({tax:{$exists:0},vatable:true},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.rates.update({tax:{$exists:0},$or:[{vatable:false},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
