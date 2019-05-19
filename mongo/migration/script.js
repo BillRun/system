@@ -466,10 +466,11 @@ if (lastConfig['taxation']['tax_type'] == 'vat') {
 	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
 	
 	lastConfig.taxation = {
-		"tax_type": "usage"
+		"tax_type": "usage",
+		"default": {
+			"key": "DEFAULT_VAT"
+		}
 	};
-	
-	lastConfig.taxation.default.key = "DEFAULT_VAT";
 	
 	var vatFrom = new Date('2019-01-01');
 	var vatTo = new Date('2119-01-01');
@@ -525,5 +526,5 @@ db.subscribers.getIndexes().forEach(function(index){
 //}
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
-db.rates.update({tax:{$exists:0},vatable:true},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
-db.rates.update({tax:{$exists:0},$or:[{vatable:false},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
+db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}});
+db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}});
