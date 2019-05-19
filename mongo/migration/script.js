@@ -498,7 +498,8 @@ lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
 //BRCD-1832 - Dummy priorities 
 var defaultVatMapping = {
     vat: {
-        "default_fallback": true,
+			  "priorities": [],
+        "default_fallback": true
     }
 };
 if (typeof lastConfig['taxation']['mapping'] === 'undefined') {
