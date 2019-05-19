@@ -449,6 +449,26 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
+//BRCD-1858 - UI for denials receiver for Credit Guard
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+			if (typeof lastConfig['payment_gateways'][i]['transactions'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['transactions'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['transactions']['receiver'] === 'undefined')	{
+				lastConfig["payment_gateways"][i]['transactions'].receiver = [];
+			}
+
+			if (typeof lastConfig['payment_gateways'][i]['denials'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['denials'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['denials']['receiver'] === 'undefined') {
+				lastConfig["payment_gateways"][i]['denials'].receiver = [];
+			}
+			delete(lastConfig['payment_gateways'][i]['receiver']);
+	}
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
