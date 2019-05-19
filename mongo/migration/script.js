@@ -466,10 +466,11 @@ if (lastConfig['taxation']['tax_type'] == 'vat') {
 	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
 	
 	lastConfig.taxation = {
-		"tax_type": "usage"
+		"tax_type": "usage",
+		"default": {
+			"key": "DEFAULT_VAT"
+		}
 	};
-	
-	lastConfig.taxation.default.key = "DEFAULT_VAT";
 	
 	var vatFrom = new Date('2019-01-01');
 	var vatTo = new Date('2119-01-01');
