@@ -89,7 +89,21 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 		}
 		
-		return Billrun_Util::getIn($entity, 'tax', []);
+		return Billrun_Util::getIn($entity, 'tax', $this->getDefaultTaxHint());
+	}
+    
+    /**
+     * get default tax hint for product/plan/service
+     * 
+     * @return array
+     */
+	protected function getDefaultTaxHint() {
+		return [
+			[
+				'type' => 'vat',
+				'taxation' => 'global',
+			],
+		];
 	}
 	
 	/**
