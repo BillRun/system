@@ -40,8 +40,8 @@ trait Billrun_Traits_EntityGetter {
 	public function getMatchingEntitiesByCategories($row, $params = []) {
 		$ret = [];
 		$matchFilters = $this->getFilters($row, $params);
-		$mustMatch = $params['must_match'] ?? true;
-		$skipCategories = $params['skip_categories'] ?? [];
+		$mustMatch = Billrun_Util::getIn($params, 'must_match', true);
+		$skipCategories = Billrun_Util::getIn($params, 'skip_categories', []);
 		
 		if (empty($matchFilters)) {
 			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -76,12 +76,12 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Mongodloid_Entity if found, false otherwise
 	 */
 	public function getMatchingEntity($row, $params = []) {
-		$filters = $params['filters'] ?? $this->getFilters($row, $params);
-		$category = $params['category'] ?? '';
-		$defaultFallback = $params['default_fallback'] ?? '';
+		$filters = Billrun_Util::getIn($params, 'filters', $this->getFilters($row, $params));
+		$category = Billrun_Util::getIn($params, 'category', '');
+		$defaultFallback = Billrun_Util::getIn($params, 'default_fallback', '');
 		
 		if (empty($filters)) {
-			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . ($params['category'] ?? '') . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
+			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . (Billrun_Util::getIn($params, 'category', '')) . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
 			return $this->afterEntityNotFound($row, $params);
 		}
 
@@ -116,11 +116,11 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Mongodloid_Entity if found, false otherwise
 	 */
 	protected function getEntityByFilters($row, $filters, $params = []) {
-		$category = $params['category'] ?? '';
+		$category = Billrun_Util::getIn($params, 'category', '');
 		$matchedEntity = null;
 		foreach ($filters as $priority) {
-			$currentPriorityFilters = $priority['filters'] ?? $priority;
-			$params['cache_db_queries'] = $priority['cache_db_queries'] ?? false;
+			$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
+			$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
 			if (!$query) {
