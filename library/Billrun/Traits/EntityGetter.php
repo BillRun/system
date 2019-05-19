@@ -55,7 +55,7 @@ trait Billrun_Traits_EntityGetter {
 			
 			$params['category'] = $category;
 			$params['filters'] = $this->getCategoryFilters($categoryFilters, $row, $params);
-			$params['default_fallback'] = $this->useDefaultFallback($ret, $category, $row, $params);
+			$params['default_fallback'] = $this->useDefaultFallback($categoryFilters, $category, $row, $params);
 			$entity = $this->getMatchingEntity($row, $params);
 			if ($entity) {
 				$ret[$category] = $entity;

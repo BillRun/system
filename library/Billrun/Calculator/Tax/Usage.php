@@ -67,8 +67,8 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		$taxes = array_merge($taxes, $taxHintFallback);
 		
-		if (!isset($taxes['vat'])) {
-			$taxes['vat'] = self::getDetaultTax($row['urt']->sec);
+		if (empty($taxes)) {
+			return false;
 		}
 
 		return array_filter($taxes, function($taxData) {
