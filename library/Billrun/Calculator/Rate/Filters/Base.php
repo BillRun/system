@@ -51,7 +51,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		
 		if (isset($row['foreign'][$field])) {
 			if (is_array($row['foreign'][$field])) {
-				return array_map(function ($element) {
+				return array_map(function ($element) use($regex) {
 					return $this->regexValue($element, $regex);
 				}, $row['foreign'][$field]) ;
 			}
