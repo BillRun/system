@@ -136,7 +136,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 					continue;
 			}
 			
-			if ($ret[$category] === false) {
+			if (isset($ret[$category]) && $ret[$category] === false) {
 				return false;
 			}
 		}
