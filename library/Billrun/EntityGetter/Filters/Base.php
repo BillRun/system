@@ -60,7 +60,7 @@ class Billrun_EntityGetter_Filters_Base {
 			return $this->regexValue($row['foreign'][$field], $regex);
 		}
         
-        $val = Billrun_Util::getIn($row, $field, null);
+		$val = Billrun_Util::getIn($row, $field, null);
 		if (!is_null($val)) {
 			return $this->regexValue($val, $regex);
 		}
