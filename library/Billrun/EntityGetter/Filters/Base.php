@@ -59,10 +59,12 @@ class Billrun_EntityGetter_Filters_Base {
 			}
 			return $this->regexValue($row['foreign'][$field], $regex);
 		}
-
-		if (isset($row[$field])) {
-			return $this->regexValue($row[$field], $regex);
+        
+		$val = Billrun_Util::getIn($row, $field, null);
+		if (!is_null($val)) {
+			return $this->regexValue($val, $regex);
 		}
+
 		Billrun_Factory::log("Cannot get row value for entity. field: " . $field . " stamp: " . $row['stamp'], Zend_Log::NOTICE);
 		return '';
 	}
