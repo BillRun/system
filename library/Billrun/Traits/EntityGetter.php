@@ -179,7 +179,7 @@ trait Billrun_Traits_EntityGetter {
 			if (empty($pipelineStage)) {
 				continue;
 			}
-            foreach ($pipelineStage as $op => &$pipeline) {
+			foreach ($pipelineStage as $op => &$pipeline) {
 				if (empty($pipeline)) {
 					continue;
 				}
