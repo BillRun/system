@@ -176,7 +176,13 @@ trait Billrun_Traits_EntityGetter {
 	protected function getEntityCacheKey($row, $query, $params = []) {
 		$keysToRemove = $this->getEntityCacheKeyFieldsToRemove($row, $query, $params);
 		foreach ($query as $i => &$pipelineStage) {
+			if (empty($pipelineStage)) {
+				continue;
+			}
 			foreach ($pipelineStage as $op => &$pipeline) {
+				if (empty($pipeline)) {
+					continue;
+				}
 				foreach ($pipeline as $key => $val) {
 					if (in_array($key, $keysToRemove)) {
 						unset($pipeline[$key]);
