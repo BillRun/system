@@ -359,17 +359,21 @@
       "html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
     }
   },
-  "taxation" :{
-    "tax_type": "usage"
-  },
-  "tax": {
-    "default": {
-		"key": "DEFAULT_VAT"
-    },
-	"mapping": {
-		"vat": []
-	}
-  },
+	
+	"taxation" : {
+		"tax_type" : "usage",
+		"default" : {
+			"key" : "DEFAULT_VAT"
+		},
+		"mapping" : {
+			"vat" : {
+				"priorities" : [ ],
+				"default_fallback" : true
+			}
+		},
+		"vat" : 0
+	},
+
   "property_types": [
 		{
 			"system": true,
