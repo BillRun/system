@@ -183,7 +183,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {
 		$credentials = $this->getGatewayCredentials();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-
+		$aidStringVal = strval($addonData['aid']);
+		if (strlen($aidStringVal) <  2) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+		}
+		if (strlen(strval($addonData['aid'])) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+		}
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -487,6 +493,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							</request>
 						   </ashrait>'
 		);
+	}
+	
+	protected function addLeadingZero($param) {
+		return str_pad($param, 2, "0", STR_PAD_LEFT);
 	}
 
 }
