@@ -109,7 +109,6 @@ class Billrun_DiscountManager {
 		foreach ($finalCdrs as &$cdr) {
 			$cdr = $this->addTaxationToLine($cdr, $taxedLines[$cdr['stamp']]);
 			unset($cdr['tax_info']);
-			$cdr = Billrun_Utils_Plays::addPlayToLineDuringCycle($cdr);
 		}
 
 		return $finalCdrs;
