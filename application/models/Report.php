@@ -388,8 +388,6 @@ class ReportModel {
 		return $this->currentTime;
 	}
 
-
-	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
 		$value = $condition['value'];
@@ -408,6 +406,14 @@ class ReportModel {
 					return 'in';
 				default:
 					return $op;
+			}
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if (in_array($op, ['nin', 'in']) && in_array($defaultPlay['name'], $values) ) {
+				return 'or';
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -442,6 +448,25 @@ class ReportModel {
 					'from' => strtotime("{$days} day midnight"),
 					'to' => strtotime("today") - 1	
 				);
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if (in_array($defaultPlay['name'], $values) ) {
+				if ($op === 'in') {
+					return array(
+						'$exists' => false,
+						'$in' => $values
+					);
+				}
+				if ($op === 'nin') {
+					return array(
+						'$exists' => true,
+						'$nin' => $values
+					);
+				}
+			}
 		}
 		// search by field_name
 		if($field === 'billrun') {
@@ -909,8 +934,10 @@ class ReportModel {
 					"\${$op}" => (bool) $value
 				);
 				break;
-			case 'and': // for complex queries
-				$field = '$and';
+			case 'and':
+			case 'or':
+				// for complex queries
+				$field = "\${$op}";
 				$formatedExpression = $value;
 				break;
 			default:
