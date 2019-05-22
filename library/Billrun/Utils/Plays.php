@@ -56,4 +56,41 @@ class Billrun_Utils_Plays {
 		});
 	}
 	
+	/**
+	 * Returns the default play
+	 * 
+	 * @return String - default play
+	 */
+	public static function getDefaultPlay() {
+		$plays = self::getAvailablePlays();
+		$defaultPlay = array();
+		foreach ($plays as $play) {
+			if (!empty($play['default'])) {
+				$defaultPlay = $play;
+				break;
+			}
+		}
+		return $defaultPlay;
+	}
+	
+	/**
+	 * Adding play details from subscriber to line created during billing cycle
+	 * 
+	 * @param mixed $line
+	 * @return mixed line with play data
+	 */
+	public static function addPlayToLineDuringCycle($line) {
+		if (!self::isPlaysInUse()) {
+			return $line;
+		}
+		$newEntry = $line;
+		$line['time'] = date(Billrun_Base::base_datetimeformat);
+		$subscriber = Billrun_Factory::subscriber();
+		$subscriber->load($line);
+		$subscriberData = $subscriber->getData();
+		$newEntry['subscriber'] = isset($subscriberData['play']) ? array('play' => $subscriberData['play']) : array('play' => self::getDefaultPlay()['name']);
+		
+		return $newEntry;
+	}
+	
 }

@@ -58,6 +58,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 		$entry = $this->addTaxationToLine($entry);
 		$entry = $this->addExternalFoerignFields($entry);
+		$entry = Billrun_Utils_Plays::addPlayToLineDuringCycle($entry);
 		
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;

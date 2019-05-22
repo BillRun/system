@@ -75,7 +75,7 @@ class Billrun_DiscountManager {
 				$pricingData = $discountInstances[$discountId]->calculatePriceAndTax($cdr, $invoice);
 				$cdr['aprice'] = $pricingData['price'];
 				$cdr['tax_info'] = $pricingData['tax_info'];
-				$cdr['pricing_data'] = $pricingData['discount_pricing_data'];
+				$cdr['pricing_data'] = $pricingData['discount_pricing_data']; 
 			}
 		}
 
@@ -109,6 +109,7 @@ class Billrun_DiscountManager {
 		foreach ($finalCdrs as &$cdr) {
 			$cdr = $this->addTaxationToLine($cdr, $taxedLines[$cdr['stamp']]);
 			unset($cdr['tax_info']);
+			$cdr = Billrun_Utils_Plays::addPlayToLineDuringCycle($cdr);
 		}
 
 		return $finalCdrs;
