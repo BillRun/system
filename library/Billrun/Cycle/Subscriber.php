@@ -244,7 +244,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
 			$serviceData['line_stump'] = $stumpLine;
-			$serviceData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']); 
+			if (Billrun_Utils_Plays::isPlaysInUse()) {
+				$serviceData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+			}
 			$this->records['services'][] = $serviceData;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,&$mongoServices));
@@ -282,7 +284,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			unset($rawMongo['_id']);
 			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
-			$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']); 
+			if (Billrun_Utils_Plays::isPlaysInUse()) {
+				$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+			} 
 			$planData['line_stump'] = $stumpLine;
 			$this->records['plans'][] = $planData;
 		}
