@@ -412,8 +412,13 @@ class ReportModel {
 		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
 			$values = explode(',', $value);
 			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
-			if (in_array($op, ['nin', 'in']) && in_array($defaultPlay['name'], $values) ) {
-				return 'or';
+			if (in_array($defaultPlay['name'], $values) ) {
+				if ($op === 'in') {
+					return 'or';
+				}
+				if ($op === 'nin') {
+					return 'and';
+				}
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
