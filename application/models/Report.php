@@ -483,12 +483,12 @@ class ReportModel {
 					];
 				}
 				if ($op === 'nin') {
-					return [
+					return [[
 						'subscriber.play' => [
 							'$exists' => true,
 							'$nin' => $values
 						]
-					];
+					]];
 				}
 			}
 		}
