@@ -426,12 +426,7 @@ class ReportModel {
 			$values = explode(',', $value);
 			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
 			if (in_array($defaultPlay['name'], $values) ) {
-				if ($op === 'in') {
-					return 'or';
-				}
-				if ($op === 'nin') {
-					return 'and';
-				}
+				return 'and';
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -473,16 +468,25 @@ class ReportModel {
 			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
 			if (in_array($defaultPlay['name'], $values) ) {
 				if ($op === 'in') {
-					return array(
-						'$exists' => false,
-						'$in' => $values
-					);
+					return [
+						['subscriber' => [
+							'$exists' => true,
+						]],
+						['$or' => [
+							['subscriber.play' => [
+								['$exists' => false],
+								['$in' => $values]
+							]],
+						]]
+					];
 				}
 				if ($op === 'nin') {
-					return array(
-						'$exists' => true,
-						'$nin' => $values
-					);
+					return [
+						'subscriber.play' => [
+							'$exists' => true,
+							'$nin' => $values
+						]
+					];
 				}
 			}
 		}
