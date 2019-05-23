@@ -27,6 +27,18 @@ class RealtimeeventAction extends ApiAction {
 		$this->events = array();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->event = $this->getRequestData();
+		if ($this->getRequest()->get('mode', 'sync') == 'async') {
+			unset($this->event['mode']);
+			$asyncData = array(
+				'mode' => 'sync',
+				'usaget' => $this->usaget,
+				'request' => $this->getRealtimeRequestBody(),
+			);
+			Billrun_Util::forkProcessWeb('/realtimeevent', $asyncData);
+			$this->event['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+			return $this->respond($this->event);
+		}
+
 		$this->setEventData();
 		if (isset($this->event['reverse_charge']) && $this->event['reverse_charge']) {
 			return $this->forward("reversecharge", array("event" => $this->event, "usaget" => $this->usaget));
@@ -36,7 +48,7 @@ class RealtimeeventAction extends ApiAction {
 		}
 		// split event mscc array into seperated events 
 		$this->setEventDataEvents();
-
+		
 		$data = $this->process();
 		return $this->respond($data);
 	}
@@ -86,14 +98,24 @@ class RealtimeeventAction extends ApiAction {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
 			return false;
 		}
-
-		if (!empty($request['request'])) {
-			$requestBody = $request['request'];
-		} else {
-			$requestBody = file_get_contents("PHP://input");
-		}
+		
+		$requestBody = $this->getRealtimeRequestBody();
 
 		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+	}
+	
+	/**
+	 * method to get the realtime request information
+	 * the $_REQUEST is checked and if empty it will take it from PHP input
+	 * 
+	 * @return string
+	 */
+	protected function getRealtimeRequestBody() {
+		$request = $this->getRequest()->getRequest();
+		if (empty($request['request'])) {
+			return file_get_contents("PHP://input");
+		}
+		return $request['request'];
 	}
 
 	/**
