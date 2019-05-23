@@ -476,9 +476,9 @@ class ReportModel {
 							['subscriber.play' =>
 								['$exists' => false],
 							],
-							['subscriber.play' => [
+							['subscriber.play' => 
 								['$in' => $values]
-							]],
+							],
 						]]
 					];
 				}
