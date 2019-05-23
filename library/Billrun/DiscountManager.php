@@ -75,7 +75,7 @@ class Billrun_DiscountManager {
 				$pricingData = $discountInstances[$discountId]->calculatePriceAndTax($cdr, $invoice);
 				$cdr['aprice'] = $pricingData['price'];
 				$cdr['tax_info'] = $pricingData['tax_info'];
-				$cdr['pricing_data'] = $pricingData['discount_pricing_data'];
+				$cdr['pricing_data'] = $pricingData['discount_pricing_data']; 
 			}
 		}
 

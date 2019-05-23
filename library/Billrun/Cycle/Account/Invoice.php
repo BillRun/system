@@ -166,8 +166,12 @@ class Billrun_Cycle_Account_Invoice {
 		$sidDiscounts = array();
 		foreach($this->discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
-				if($subscriber->getData()['sid'] == $discount['sid']) {
+				$subscriberData = $subscriber->getData();
+				if($subscriberData['sid'] == $discount['sid']) {
 					$rawDiscount = $discount->getRawData();
+					if (Billrun_Utils_Plays::isPlaysInUse()) {
+						$discount['subscriber'] = array('play' => isset($subscriberData['play']) ? $subscriberData['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+					}
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
