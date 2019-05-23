@@ -473,8 +473,10 @@ class ReportModel {
 							'$exists' => true,
 						]],
 						['$or' => [
-							['subscriber.play' => [
+							['subscriber.play' =>
 								['$exists' => false],
+							],
+							['subscriber.play' => [
 								['$in' => $values]
 							]],
 						]]
