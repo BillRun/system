@@ -208,6 +208,19 @@ class ReportModel {
 				$formats[] = $formatter;
 			}
 		}
+		$field_names = array_column($this->report['columns'], 'field_name', 'key');
+		// if field is subscriber.play forse add default empty value formater to be default Play
+		if($field_names[$key] === 'subscriber.play') {
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if(!empty($defaultPlay['name'])) {
+				$defaultEmptyPlayformat = [
+					'field' => $key,
+					'op' => 'default_empty',
+					'value' => $defaultPlay['name'],
+				];
+				array_unshift($formats, $defaultEmptyPlayformat);
+			}
+		}
 		return $formats;
 	}
 	
