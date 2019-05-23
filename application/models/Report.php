@@ -425,7 +425,7 @@ class ReportModel {
 		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
 			$values = explode(',', $value);
 			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
-			if (in_array($defaultPlay['name'], $values) ) {
+			if ($op === 'nin' || ($op === 'in' && in_array($defaultPlay['name'], $values))) {
 				return 'and';
 			}
 		}
@@ -466,31 +466,42 @@ class ReportModel {
 		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
 			$values = explode(',', $value);
 			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
-			if (in_array($defaultPlay['name'], $values) ) {
-				if ($op === 'in') {
-					return [
-						['subscriber' => [
-							'$exists' => true,
-						]],
-						['$or' => [
-							['subscriber.play' =>
-								['$exists' => false],
-							],
-							['subscriber.play' => 
-								['$in' => $values]
-							],
-						]]
-					];
-				}
-				if ($op === 'nin') {
-					return [[
-						'subscriber.play' => [
-							'$exists' => true,
-							'$nin' => $values
-						]
-					]];
-				}
+			$withDefault = in_array($defaultPlay['name'], $values);
+			// IN + DEFAULT
+			if ($op === 'in' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$or' => [
+						['subscriber.play' => ['$exists' => false]],
+						['subscriber.play' => ['$in' => $values]],
+					]]
+				];
 			}
+			// NIN + DEFAULT
+			if ($op === 'nin' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$and' => [
+						['subscriber.play' => ['$exists' => true]],
+						['subscriber.play' => ['$nin' => $values]],
+					]]
+				];
+			}
+			// NIN + NO DEFAULT
+			if ($op === 'nin' && !$withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['subscriber.play' => ['$nin' => $values]],
+				];
+			}
+			// IN + NO DEFAULT
+			// Nornal case return only [] value
 		}
 		// search by field_name
 		if($field === 'billrun') {
