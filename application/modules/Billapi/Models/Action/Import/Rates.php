@@ -127,21 +127,21 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		if(!empty($entity['tax'])) {
 			if ($this->getImportOperation() == 'create') {
 				if ($entity['tariff_category'] === 'retail') {
-					$entity['tax']['type'] = "vat";
-					if (!empty($entity['tax']['taxation']) && $entity['tax']['taxation'] === "custom") {
-						$isTaxExists = $this->isTaxRateExists($entity['tax']['custom_tax'], $entity['from']);
+					$entity['tax'][0]['type'] = "vat";
+					if (!empty($entity['tax'][0]['taxation']) && $entity['tax'][0]['taxation'] === "custom") {
+						$isTaxExists = $this->isTaxRateExists($entity['tax'][0]['custom_tax'], $entity['from']);
 						if(!$isTaxExists) {
-							return "Tax rate {$entity['tax']['custom_tax']} does not exist";
+							return "Tax rate {$entity['tax'][0]['custom_tax']} does not exist";
 						}
 						// set default if not exists
-						$entity['tax']['custom_logic'] = !empty($entity['tax']['custom_logic']) ? $entity['tax']['custom_logic'] : "override";
+						$entity['tax'][0]['custom_logic'] = !empty($entity['tax'][0]['custom_logic']) ? $entity['tax'][0]['custom_logic'] : "override";
 					} else {
-						if (empty($entity['tax']['taxation'])) {
+						if (empty($entity['tax'][0]['taxation'])) {
 							// set default
-							$entity['tax']['taxation'] = 'global';
+							$entity['tax'][0]['taxation'] = 'global';
 						}
-						unset($entity['tax']['custom_tax']);
-						unset($entity['tax']['custom_logic']);
+						unset($entity['tax'][0]['custom_tax']);
+						unset($entity['tax'][0]['custom_logic']);
 					}
 				} else {
 					// fix by removing tax object if tariff_category is not retail
@@ -150,19 +150,19 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			} else if ($this->getImportOperation() == 'permanentchange') {
 				// get existing tax objet or use default
 				$existingTax = !empty($existingRate['tax']) ? $existingRate['tax'] : ['type' => 'vat', 'taxation' => 'global']; 
-				if (!empty($entity['tax']['taxation'])) {
-					$existingTax['taxation'] = $entity['tax']['taxation'];
+				if (!empty($entity['tax'][0]['taxation'])) {
+					$existingTax['taxation'] = $entity['tax'][0]['taxation'];
 				}
-				if (!empty($entity['tax']['custom_tax'])) {
+				if (!empty($entity['tax'][0]['custom_tax'])) {
 					$from = empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'];
-					$isTaxExists = $this->isTaxRateExists($entity['tax']['custom_tax'], $from);
+					$isTaxExists = $this->isTaxRateExists($entity['tax'][0]['custom_tax'], $from);
 					if(!$isTaxExists) {
-						return "Tax rate {$entity['tax']['custom_tax']} does not exist";
+						return "Tax rate {$entity['tax'][0]['custom_tax']} does not exist";
 					}
-					$existingTax['custom_tax'] = $entity['tax']['custom_tax'];
+					$existingTax['custom_tax'] = $entity['tax'][0]['custom_tax'];
 				}
-				if (!empty($entity['tax']['custom_logic'])) {
-					$existingTax['custom_logic'] = $entity['tax']['custom_logic'];
+				if (!empty($entity['tax'][0]['custom_logic'])) {
+					$existingTax['custom_logic'] = $entity['tax'][0]['custom_logic'];
 				}
 				$entity['tax'] = $existingTax;
 			}
