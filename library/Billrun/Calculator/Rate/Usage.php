@@ -255,14 +255,14 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			array('tariff_category' => $tariffCategory)
 		);
         
-        if (Billrun_Utils_Plays::isPlaysInUse()) {
-            $play = Billrun_Util::getIn($row, 'subscriber.play', '');
-            $query['play'] = [
-                '$in' => [null, $play],
-            ];
-        }
-        
-        return $query;
+		if (Billrun_Utils_Plays::isPlaysInUse()) {
+			$play = Billrun_Util::getIn($row, 'subscriber.play', '');
+			$query['play'] = [
+				'$in' => [null, $play],
+			];
+		}
+
+		return $query;
 	}
 	
 	protected function getBasicGroupRateQuery($row) {
