@@ -203,14 +203,14 @@ class ImportPricesListAction extends ApiAction {
 				}
 				$infinite_counter = 0;
 				foreach ($rate_rules as $rate_rule) {
-					if ($rate_rule['times'] == '0' || $rate_rule['times'] == pow(2, 31) - 1) {
+					if ($rate_rule['times'] == '0' || intval($rate_rule['times'])*intval($rate_rule['interval']) >= pow(2, 31) - 4096) {
 						$infinite_counter++;
 					}
 				}
 				if ($infinite_counter != 1) {
-					return $this->setError('None or more than one infinite rule detected for ' . $key . ', ' . $usage_type);
+					return $this->setError("None or more than one infinite rule detected for {$key} , {$usage_type} got {$infinite_counter} infnities ");
 				}
-				if ($rate_rules[strval($max)]['times'] != '0' && $rate_rules[strval($max)]['times'] != pow(2, 31) - 1) {
+				if ($rate_rules[strval($max)]['times'] != '0' && !$rate_rules[strval($max)]['times']*$rate_rule['interval'] >= pow(2, 31) - 4096) {
 					return $this->setError('The last rule must be an infinite one (' . $key . ', ' . $usage_type . ')');
 				}
 			}
