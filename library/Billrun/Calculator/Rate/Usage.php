@@ -256,7 +256,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		);
         
 		if (Billrun_Utils_Plays::isPlaysInUse()) {
-			$play = Billrun_Util::getIn($row, 'subscriber.play', '');
+			$play = Billrun_Util::getIn($row, 'subscriber.play', Billrun_Util::getIn(Billrun_Utils_Plays::getDefaultPlay(), 'name', ''));
 			$query['play'] = [
 				'$in' => [null, $play],
 			];
