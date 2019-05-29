@@ -154,7 +154,6 @@ class BillrunController extends ApiController {
 	 */
 	public function chargeStatusAction() {
 		$setting['status'] = $this->isChargeAllowed();
-		$setting['owed_amount'] = $this->getOwedAmount();
 
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
@@ -207,12 +206,17 @@ class BillrunController extends ApiController {
 		$params['to'] = $request->get('to');
 		$params['billrun_key'] = $request->get('stamp');
 		$params['newestFirst'] = $request->get('newestFirst');
+		$params['timeStatus'] = $request->get('timeStatus');
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
 			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-			$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));	
+			if (empty($params['timeStatus'])) {
+				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+			} else {
+				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey);
+			}	
 			$settings[] = $setting;
 		}
 
@@ -315,28 +319,7 @@ class BillrunController extends ApiController {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . $paramsString . ' ' . $mode;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
-	
-	protected function getOwedAmount() {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$match = array(
-			'$match' => array(
-				'aid' => array('$exists' => true),
-			),
-		);
-		
-		$group = array(
-			'$group' => array(
-				'_id' => null,
-				'amount' => array(
-					'$sum' => '$due',
-				)
-			)
-		);
 
-		$result = $billsColl->aggregate($match, $group)->current();
-		return $result['amount'];
-	}
-	
 	protected function isChargeAllowed() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$query = array(
