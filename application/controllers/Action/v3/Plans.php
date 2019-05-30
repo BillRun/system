@@ -110,6 +110,7 @@ class V3_PlansAction extends ApiAction {
 			$nonBillableOptions = [];
 			foreach ($services as $service) {
 				$serviceName = $service['name'];
+				$service['price'] = isset($service['price']['0']['price']) ? $service['price']['0']['price'] : 0;
 				$billable = Billrun_Util::getIn($service, 'billable', true);
 				if ($billable) {
 					$billableOptions[$serviceName] = $service;
@@ -130,7 +131,7 @@ class V3_PlansAction extends ApiAction {
 		$collection = 'services';
 		$action = 'uniqueget';
 		$query = [
-			'name' => [ '$regex' => implode('|', $servicesNames) ],
+			'name' => [ '$regex' => "^" . implode('$|^', $servicesNames) . "$" ],
 		];
 		$params = [
 			'request' => [
