@@ -14,6 +14,7 @@
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	use Billrun_Traits_EntityGetter;
+	use Billrun_Traits_ForeignFields;
 
 	/**
 	 * @see Billrun_Calculator_Tax::updateRowTaxInforamtion
@@ -197,14 +198,15 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		foreach ($taxes as $taxCategory => $tax) {
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
-			$taxesData[] = [
+			$foreignTaxData = $this->getForeignFields(array('tax' => $tax));
+			$taxesData[] = array_merge([
 				'tax' => $taxFactor,
 				'amount' => $taxAmount,
 				'description' => $tax['description'] ?: 'VAT',
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
-			];
+			], $foreignTaxData);
 			$totalAmount += $taxAmount;
 			$totalTax += $taxFactor;
 		}
