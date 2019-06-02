@@ -118,7 +118,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 			);
 		}
 
-		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
+		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query) ? true : false;
 		if($operator === '$existsFalse') {
 			$res = !$res;
 		}
