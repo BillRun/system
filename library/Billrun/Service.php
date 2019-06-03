@@ -605,7 +605,7 @@ class Billrun_Service {
 		if (isset($entities['by_id'][$id])) {
 			return $entities['by_id'][$id];
 		}
-		return false;
+		return new Mongodloid_Entity(array(), self::getCollection());
 	}
 
 	/**
@@ -624,7 +624,7 @@ class Billrun_Service {
 				}
 			}
 		}
-		return false;
+		return new Mongodloid_Entity(array(), self::getCollection());
 	}
 	
 }
