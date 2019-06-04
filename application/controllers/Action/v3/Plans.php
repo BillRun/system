@@ -91,6 +91,7 @@ class V3_PlansAction extends ApiAction {
 			$results = array();
 			foreach ($resource as $item) {
 				$rawItem = $item->getRawData();
+				$rawItem['price'] = isset($rawItem['price']['0']['price']) ? $rawItem['price']['0']['price'] : 0;
 				$results[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
 		}
@@ -110,6 +111,7 @@ class V3_PlansAction extends ApiAction {
 			foreach ($services as $service) {
 				$serviceName = $service['name'];
 				$service['included'] = in_array($serviceName,Billrun_Util::getIn($plan, 'optional.services', []));
+				$service['price'] = isset($service['price']['0']['price']) ? $service['price']['0']['price'] : 0;
 				$billable = Billrun_Util::getIn($service, 'billable', true);
 				if ($billable) {
 					$billableOptions[$serviceName] = $service;
@@ -130,7 +132,7 @@ class V3_PlansAction extends ApiAction {
 		$collection = 'services';
 		$action = 'uniqueget';
 		$query = [
-			'name' => [ '$regex' => implode('|', $servicesNames) ],
+			'name' => [ '$regex' => "^" . implode('$|^', $servicesNames) . "$" ],
 		];
 		$params = [
 			'request' => [

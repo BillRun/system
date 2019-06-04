@@ -30,7 +30,7 @@ class Billrun_Utils_Arrayquery_Query {
 			return FALSE;
 		}
 		$query = static::translateQueryKeys($rawQuery);
-		return static::_exists($array, $query);
+		return static::_exists($array, $query) ? true : false;
 	}
 
 	protected  static function translateQueryKeys($query,$separator = '.') {
