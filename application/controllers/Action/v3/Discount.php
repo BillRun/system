@@ -19,7 +19,6 @@ class V3_discountAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$accountJson = json_decode($request->get("data"), TRUE);
 		$aid = $request->get("aid");
