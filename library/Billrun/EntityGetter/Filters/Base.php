@@ -89,7 +89,7 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 		$spceialQueries = array(
 			'$exists' => array('$exists' => 1),
-			'$existsFalse' => array('$exists' => 0),
+			'$existsFalse' => array('$exists' => 1),
 			'$isTrue' => array('$exists' => true, '$eq' => true),
 			'$isFalse' => array('$exists' => true, '$eq' => false),
 		);
@@ -117,7 +117,7 @@ class Billrun_EntityGetter_Filters_Base {
 		);
 		if (!empty($spceialQueries[$operator]) ) {
 			$data = $row;
-			$op = in_array($operator, ['$existsFalse']) ? '$and' : '$or';
+			$op = in_array($operator, []) ? '$and' : '$or';
 			$query = array(
 				$op => [
 					[$firstValKey => $spceialQueries[$operator]],
@@ -127,6 +127,9 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
+		if($operator === '$existsFalse') {
+			$res = !$res;
+		}
 		return $this->getComputedValueResult($row, $res);
 	}
 
