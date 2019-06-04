@@ -442,16 +442,32 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	protected function savePaymentGateway() {
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
-		$query['aid'] = (int) $this->saveDetails['aid'];
-		$query['type'] = "account";
+		$time = date(Billrun_Base::base_datetimeformat);
+		$aid = (int) $this->saveDetails['aid'];
+		$query = array(
+			'aid' => $aid,
+			'type' => 'account',
+			'effective_date' => $time,
+		);
+		$update = array();
 		$setQuery = $this->buildSetQuery();
-		if (!$this->validateStructureForCharge($setQuery['payment_gateway.active'])) {
-			throw new Exception("Non valid payment gateway for aid = " . $query['aid'], Zend_Log::ALERT);
+		$generateTokenTime = date("Y-m-d H:i:s", $setQuery['active']['generate_token_time']->sec);
+		$generateTokenTimeArray = explode(' ', $generateTokenTime);
+		$generateTokenTimeISOFormat = $generateTokenTimeArray[0] . 'T' . $generateTokenTimeArray[1] . 'Z';
+		$setQuery['active']['generate_token_time'] = $generateTokenTimeISOFormat;
+		$update['payment_gateway'] = $setQuery;
+		$update['from'] = $time;
+		if (!$this->validateStructureForCharge($update['payment_gateway']['active'])) {
+			throw new Exception("Non valid payment gateway for aid = " . $aid, Zend_Log::ALERT);
 		}
-		Billrun_Factory::log('Saving payment gateway ' . $setQuery['payment_gateway.active']['name'] . ' for ' . $query['aid'], Zend_Log::DEBUG);
-		$this->subscribers->update($query, array('$set' => $setQuery));
-		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
+		Billrun_Factory::log('Saving payment gateway ' . $update['payment_gateway']['active']['name'] . ' for ' . $query['aid'], Zend_Log::DEBUG);
+		try {
+			$this->account->permanentChange($query, $update);
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed", Zend_Log::ALERT);
+			return false;
+		}	
+		Billrun_Factory::log($update['payment_gateway']['active']['name'] . " was defined successfully for " . $aid, Zend_Log::INFO);
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
