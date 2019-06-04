@@ -48,7 +48,7 @@ class Billrun_DiscountManager {
 	public function getEligibleDiscounts($invoice, $types = array('monetary', 'percentage'), $eligibilityOnly = FALSE) {
 		//Load discount rates
 		if (empty(static::getCache())) {
-			static::addToCache($this->loadDiscountsRates(array(), Billrun_Billingcycle::getEndTime($invoice->getBillrunKey())));
+			static::addToCache($this->loadDiscountsRates(array(), Billrun_Billingcycle::getEndTime($invoice->getBillrunKey())-1));
 		}
 		Billrun_Factory::log("Checking eligible discount... ", Zend_Log::INFO);
 		$discountCdrs = $discountInstances = $eligibilityData = array();
@@ -330,7 +330,7 @@ class Billrun_DiscountManager {
 		$loadedDiscounts = $discountColl->query(array_merge($this->discountQueryFilter, $query))->cursor();
 		$ret = array();
 		foreach ($loadedDiscounts as $discount) {
-			if ($discount['from']->sec < $activeDate && $activeDate < $discount['to']->sec) { //Should this  be  on the entire pasy month or just on billrun time?
+			if ($discount['from']->sec <= $activeDate && $activeDate < $discount['to']->sec) { //Should this  be  on the entire pasy month or just on billrun time?
 				$ret[$discount['key']] = $discount;
 			}
 		}
