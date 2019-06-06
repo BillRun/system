@@ -14,6 +14,8 @@
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	use Billrun_Traits_EntityGetter;
+	
+	protected static $taxes = [];
 
 	/**
 	 * @see Billrun_Calculator_Tax::updateRowTaxInforamtion
@@ -284,12 +286,33 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @return Mongodloid_Entity
 	 */
 	public static function getTaxByKey($key, $time = null) {
-		$taxCollection = self::getTaxCollection();
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
-		$query['key'] = $key;
+		if (is_null($time)) {
+			$time = time();
+		}
 		
-		$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
-		return !$tax->isEmpty() ? $tax : false;
+		$tax = false;
+		if (!empty(self::$taxes[$key])) {
+			foreach (self::$taxes[$key] as $cachedTax) {
+				$from = $cachedTax['from']->sec;
+				$to = isset($cachedTax['to']) ? $cachedTax['to']->sec : null;
+				if ($from <= $time && (is_null($to) || $to >= $time)) {
+					$tax = $cachedTax;
+					break;
+				}
+			}
+		}
+		
+		if (empty($tax)) {
+			$taxCollection = self::getTaxCollection();
+			$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
+			$query['key'] = $key;
+			$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
+			
+			if (!$tax->isEmpty()) {
+				self::$taxes[$key][] = $tax;
+			}
+		}
+		return $tax && !$tax->isEmpty() ? $tax : false;
 	}
 	
 	/**
