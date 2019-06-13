@@ -41,7 +41,6 @@ trait Billrun_Traits_EntityGetter {
 		$ret = [];
 		$matchFilters = $this->getFilters($row, $params);
 		$mustMatch = Billrun_Util::getIn($params, 'must_match', true);
-		$skipCategories = Billrun_Util::getIn($params, 'skip_categories', []);
 		
 		if (empty($matchFilters)) {
 			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
@@ -49,7 +48,7 @@ trait Billrun_Traits_EntityGetter {
 		}
 
 		foreach ($matchFilters as $category => $categoryFilters) {
-			if (in_array($category, $skipCategories)) {
+			if ($this->shouldSkipCategory($category, $row, $params)) {
 				continue;
 			}
 			
@@ -84,11 +83,15 @@ trait Billrun_Traits_EntityGetter {
 			Billrun_Factory::log('No category filters found for row ' . $row['stamp'] . '. category: ' . (Billrun_Util::getIn($params, 'category', '')) . ', filters: ' . print_R($categoryFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
 			return $this->afterEntityNotFound($row, $params);
 		}
-
-		$entity = $this->getEntityByFilters($row, $filters, $params);
 		
-		if (empty($entity) && (!empty($fallbackEntity = $this->getFallbackEntity($filters, $category, $row, $params)))) {
-			$entity = $fallbackEntity;
+		$entity = $this->getOverrideEntity($filters, $category, $row, $params);
+
+		if (empty($entity)) {
+			$entity = $this->getEntityByFilters($row, $filters, $params);
+		}
+		
+		if (empty($entity)) {
+			$entity = $this->getFallbackEntity($filters, $category, $row, $params);
 		}
 		
 		if (empty($entity) && $defaultFallback) {
@@ -365,6 +368,18 @@ trait Billrun_Traits_EntityGetter {
 	protected function useDefaultFallback($categoryFilters, $category = '', $row = [], $params = []) {
 		return Billrun_Util::getIn($categoryFilters, 'default_fallback', false);
 	}
+	
+	/**
+	 * checks if a specific category should be skipped
+	 * 
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return boolean
+	 */
+	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
+		return false;
+	}
 
 	/**
 	 * get default entity for the category
@@ -389,6 +404,19 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Entity
 	 */
 	protected function getFallbackEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		return null;
+	}
+
+	/**
+	 * get override entity for the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Entity
+	 */
+	protected function getOverrideEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		return null;
 	}
 	

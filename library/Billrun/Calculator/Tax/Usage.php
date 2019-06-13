@@ -44,24 +44,9 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
 	 */
 	public function getLineTaxes($line) {
-		$taxHint = $this->getLineTaxHint($line);
-		$taxes = $this->getLineTaxHintOverrideData($line, $taxHint);
+		$taxes = $this->getMatchingEntitiesByCategories($line);
 		
 		if ($taxes === false) {
-			return false;
-		}
-		
-		$params = [
-			'skip_categories' => array_keys($taxes),
-		];
-		
-		$globalTaxes = $this->getMatchingEntitiesByCategories($line, $params);
-		
-		if ($globalTaxes !== false) {
-			$taxes = array_merge($taxes, $globalTaxes);
-		}
-		
-		if (empty($taxes)) {
 			return false;
 		}
 
@@ -74,16 +59,30 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * get tax hints of the givven line
 	 * 
 	 * @param array $line
+	 * @param string $category - specific category to fetch, empty to get all categories
 	 * @return array
+	 * @todo add cache
 	 */
-	protected function getLineTaxHint($line) {
+	protected function getLineTaxHint($line, $category = '') {
 		if ($line['usaget'] == 'flat') { // plan/service line
 			$entity = $line;
 		} else {
 			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 		}
 		
-		return !empty($entity['tax']) ? $entity['tax'] : $this->getDefaultTaxHint();
+		$taxHints = !empty($entity['tax']) ? $entity['tax'] : $this->getDefaultTaxHint();
+		if (empty($category)) {
+			return $taxHints;
+		}
+		
+		foreach ($taxHints as $taxHint) {
+			$taxHintCategory = $taxHint['type'] ?: '';
+			if ($taxHintCategory == $category) {
+				return $taxHint;
+			}
+		}
+		
+		return false;
 	}
     
     /**
@@ -98,44 +97,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				'taxation' => 'global',
 			],
 		];
-	}
-	
-	/**
-	 * get tax data of override taxation (hint tax calculated before general taxation)
-	 * 
-	 * @param array $line
-	 * @param array $taxHint
-	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
-	 */
-	protected function getLineTaxHintOverrideData($line, $taxHint) {
-		$ret = [];
-		$time = $line['urt']->sec;
-		
-		foreach ($taxHint as $taxHintData) {
-			$category = $taxHintData['type'] ?: '';
-			
-			switch ($taxHintData['taxation']) {
-				case 'no':
-					$ret[$category] = [];
-					break;
-				case 'default':
-					$ret[$category] = self::getDetaultTax($time);
-					break;
-				case 'custom':
-					if ($taxHintData['custom_logic'] == 'override') {
-						$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
-						break;
-					}
-				default:
-					continue;
-			}
-			
-			if (isset($ret[$category]) && $ret[$category] === false) {
-				return false;
-			}
-		}
-		
-		return $ret;
 	}
 
 	/**
@@ -352,26 +313,75 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return self::getDetaultTax($time);
 	}
 	
+	/**
+	 * get tax data of fallback taxation (hint tax calculated after general taxation)
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Mongodloid_Entity if found, false otherwise
+	 */
 	protected function getFallbackEntity($categoryFilters, $category = '', $row = [], $params = []) {
-		$ret = [];
 		$time = isset($row['urt']) ? $row['urt']->sec : time();
-		$taxHint = $this->getLineTaxHint($row);
+		$taxHintData = $this->getLineTaxHint($row, $category);
 		
-		foreach ($taxHint as $taxHintData) {
-			$taxHintCategory = $taxHintData['type'] ?: '';
-			
-			if ($taxHintCategory !== $category) {
-				continue;
-			}
-			
-			if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
-				return self::getTaxByKey($taxHintData['custom_tax'], $time);
-			}
+		if (empty($taxHintData)) {
+			return false;
+		}
+		
+		if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
+			return self::getTaxByKey($taxHintData['custom_tax'], $time);
 		}
 		
 		return false;
 	}
 	
+	/**
+	 * get tax data of override taxation (hint tax calculated before general taxation)
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Mongodloid_Entity if found, false otherwise
+	 */
+	protected function getOverrideEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		$time = isset($row['urt']) ? $row['urt']->sec : time();
+		$taxHintData = $this->getLineTaxHint($row, $category);
+		
+		if (empty($taxHintData)) {
+			return false;
+		}
+			
+		switch ($taxHintData['taxation']) {
+			case 'default':
+				return self::getDetaultTax($time);
+			case 'custom':
+				if ($taxHintData['custom_logic'] == 'override') {
+					return self::getTaxByKey($taxHintData['custom_tax'], $time);
+				}
+		}
+		
+		return false;
+	}
+	
+	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
+		$time = isset($row['urt']) ? $row['urt']->sec : time();
+		$taxHintData = $this->getLineTaxHint($row, $category);
+		
+		if (empty($taxHintData)) {
+			return false;
+		}
+		
+		if ($taxHintData['taxation'] == 'no') {
+			return true;
+		}
+		
+		return false;
+	}
+
+
 	//------------------- Entity Getter functions - END ----------------------------------------------
 
 }
