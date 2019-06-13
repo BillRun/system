@@ -61,14 +61,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			$taxes = array_merge($taxes, $globalTaxes);
 		}
 		
-		$taxHintFallback = $this->getLineTaxHintFallbackData($line, $taxHint, $taxes);
-		
-		if ($taxHintFallback === false) {
-			return false;
-		}
-		
-		$taxes = array_merge($taxes, $taxHintFallback);
-		
 		if (empty($taxes)) {
 			return false;
 		}
@@ -145,37 +137,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		return $ret;
 	}
-	
-	/**
-	 * get tax data of fallback taxation (hint tax calculated after general taxation)
-	 * 
-	 * @param array $line
-	 * @param array $taxHint
-	 * @param array $taxes - taxes that were found on general taxation calculation
-	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
-	 */
-	protected function getLineTaxHintFallbackData($line, $taxHint, $taxes = []) {
-		$ret = [];
-		$time = $line['urt']->sec;
-		
-		foreach ($taxHint as $taxHintData) {
-			$category = $taxHintData['type'] ?: '';
-			
-			if (isset($taxes[$category])) {
-				continue;
-			}
-			
-			if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
-				$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
-				if (empty($ret[$category])) {
-					return false;
-				}
-			}
-		}
-		
-		return $ret;
-	}
-
 
 	/**
 	 * get row's tax data 
@@ -389,6 +350,26 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		$time = isset($row['urt']) ? $row['urt']->sec : time();
 		return self::getDetaultTax($time);
+	}
+	
+	protected function getFallbackEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		$ret = [];
+		$time = isset($row['urt']) ? $row['urt']->sec : time();
+		$taxHint = $this->getLineTaxHint($row);
+		
+		foreach ($taxHint as $taxHintData) {
+			$taxHintCategory = $taxHintData['type'] ?: '';
+			
+			if ($taxHintCategory !== $category) {
+				continue;
+			}
+			
+			if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
+				return self::getTaxByKey($taxHintData['custom_tax'], $time);
+			}
+		}
+		
+		return false;
 	}
 	
 	//------------------- Entity Getter functions - END ----------------------------------------------

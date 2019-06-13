@@ -87,6 +87,10 @@ trait Billrun_Traits_EntityGetter {
 
 		$entity = $this->getEntityByFilters($row, $filters, $params);
 		
+		if (empty($entity) && (!empty($fallbackEntity = $this->getFallbackEntity($filters, $category, $row, $params)))) {
+			$entity = $fallbackEntity;
+		}
+		
 		if (empty($entity) && $defaultFallback) {
 			$entity = $this->getDefaultEntity($filters, $category, $row, $params);
 		}
@@ -372,6 +376,19 @@ trait Billrun_Traits_EntityGetter {
 	 * @return Entity
 	 */
 	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
+		return null;
+	}
+
+	/**
+	 * get fallback entity for the category
+	 * 
+	 * @param array $categoryFilters
+	 * @param string $category
+	 * @param array $row
+	 * @param array $params
+	 * @return Entity
+	 */
+	protected function getFallbackEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		return null;
 	}
 	
