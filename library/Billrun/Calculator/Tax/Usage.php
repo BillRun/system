@@ -61,7 +61,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @param array $line
 	 * @param string $category - specific category to fetch, empty to get all categories
 	 * @return array
-	 * @todo add cache
 	 */
 	protected function getLineTaxHint($line, $category = '') {
 		if ($line['usaget'] == 'flat') { // plan/service line
