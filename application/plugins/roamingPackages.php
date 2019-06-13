@@ -34,7 +34,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @var array
 	 */
-	protected $roamingPackages;
+	protected $raomingPackages;
 	
 
 	protected $package = null;
@@ -99,7 +99,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	public function __construct() {
-		$this->roamingPackages = Billrun_Factory::config()->getConfigValue('roamingPackages.available_packages');
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 	}
@@ -234,7 +233,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if (!in_array($groupSelected, $this->roamingPackages) || !isset($this->lineType)) {
+		if ( !isset($this->lineType) || empty($limits['roaming']) ) {
 			return;
 		}
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
@@ -251,9 +250,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$matchedIds[] = $package['id'];
 			$from = strtotime($package['from_date']);
 			$to = strtotime($package['to_date']);
-			if (!($this->lineTime >= $from && $this->lineTime <= $to)) {
-				continue;
-			}
+
+			$legitimate= (bool)($this->lineTime >= $from && $this->lineTime <= $to);
+			Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
+			if(!$legitimate) {	continue;	}
+
 			$usageType = $this->getTransformedUsageType($package['service_name'], $plan, $usageType);
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
 			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name']);

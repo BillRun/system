@@ -21,6 +21,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $cached_results = array();
 	protected $count_days;
 	protected $premium_ir_not_included = null;
+	protected $limit_count = 0 ;
 
 	
 	public function __construct() {
@@ -42,6 +43,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$this->premium_ir_not_included = null;
 		}
+		$this->limit_count = 0;
 	}
 
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
@@ -49,6 +51,30 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
 		$this->count_days = NULL;
+		$this->limit_count = 0;
+	}
+
+	public function checkPackageRules(&$legitimate, $package, $row, $plan, $usageType, $rate, $subscriberBalance) {
+		$planPackage = $plan->get('include.groups.'.$package['service_name']);
+		if(empty($planPackage)) {
+			@Billrun_Factory::log("VF plguin: couldn't find package : {$package['service_name']} in plan : {$plan['name']}");
+		}
+		//retrun is the package  valid for VF?
+		if( empty($planPackage) || empty($planPackage['limits']['vf'])|| empty($planPackage['limits']['days']) ) {
+			return;
+		}
+		//if the line isn't under the package then it`s not legitimate
+// 		$legitimate = $this->lineTime >= strtotime($package['from_date']) &&  $this->lineTime  < strtotime(date('%Y-12-31',strtotime($package['to_date'])));
+// 		if(!$legitimate ) {
+// 			return;
+// 		}
+
+		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, ['VF',$package['service_name']]);
+		$this->limit_count += $planPackage['limits']['days'];
+
+		if ($sidDayCount > $this->limit_count) {
+			$legitimate = false;
+		}
 	}
 	
 	/**
@@ -74,13 +100,34 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->line_type == 'tap3' && $usageType == 'sms' && $this->line_time >= $this->transferDaySmsc) {
 			return;
 		}
-		$sid = $subscriberBalance['sid'];
+
+		$this->count_days = $this->getSidDaysCount($subscriberBalance['sid'], $limits, $plan, [$groupSelected]);
+		$this->limit_count = $limits['days'];
+		if ($this->count_days <= $limits['days']) {
+			Billrun_Factory::log($this->count_days);
+			Billrun_Factory::log($limits['days']);
+			return;
+		}
+		
+		$rateUsageIncluded = 0; // user passed its limit; no more usage available
+		$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
+	}
+
+	protected function getSidDaysCount($sid, $limits, $plan, $groupsSelected) {
 		$line_year = substr($this->line_time, 0, 4);
 		$line_month = substr($this->line_time, 4, 2);
 		$line_day = substr($this->line_time, 6, 2);
 		$dayKey = $line_year . $line_month . $line_day;
-		$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected);
-		if (!isset($this->cached_results[$sid][$line_year]) || !in_array($dayKey, $this->cached_results[$sid][$line_year])) {
+
+		$results = [];
+		if (!isset($this->cached_results[$sid][$line_year]) ) {
+			$queryResults = $this->loadSidLines($sid, $limits, $plan, $groupsSelected);
+			Billrun_Factory::log(print_r($queryResults,1));
+			foreach ($queryResults as $elem) {
+					$this->cached_results[$sid][$line_year][] = $elem;
+			}
+		}
+		if( !in_array($dayKey, $this->cached_results[$sid][$line_year])) {
 			$this->cached_results[$sid][$line_year][] = $dayKey;
 		}
 		foreach ($this->cached_results[$sid][$line_year] as $elem) {
@@ -88,18 +135,12 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$results[] = $elem;
 			}
 		}
+		Billrun_Factory::log(print_r($results,1));
 		$results = array_unique($results);
-
-		$this->count_days = count($results);
-		if ($this->count_days <= $limits['days']) {
-			return;
-		}
-		
-		$rateUsageIncluded = 0; // user passed its limit; no more usage available
-		$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
+		return count($results);
 	}
 	
-	protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
+	protected function loadSidLines($sid, $limits, $plan, $groupsSelected) {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
@@ -127,7 +168,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					array('type' => "smsc"),
 				),
 				'plan' => $plan->getData()->get('name'),
-				'arategroup' => $groupSelected,
+				'$or' => [
+							['arategroup' => [ '$in'=> $groupsSelected ]],
+							['arategroups.service_name' => [ '$in'=> $groupsSelected ]]
+						],
 				'in_group' => array(
 					'$gt' => 0,
 				),
