@@ -376,19 +376,27 @@ class Models_Subscribers extends Models_Entity {
 			$currentPlan = $revision['plan'];
 			if ($currentPlan != $previousPlan && (empty($previousRevision) || $previousRevision['to'] == $revision['from']) || 
 				(isset($previousRevision['to']) && $previousRevision['to'] != $revision['from'])) {
+				if (!empty($previousPlan) && !(isset($previousRevision['to']) && $previousRevision['to'] != $revision['from'])) {
+					$formerPlan = $previousPlan;
+				}
 				$previousPlan = $currentPlan;
 				$planActivation = $revision['from'];
 				$planDeactivation = $revision['to'];
 				$indicator += 1;
-			}
+			}		
 			if (empty($revision['plan_activation']) || $planActivation != $revision['plan_activation']) {
 				$needUpdate[$revisionId]['plan_activation'] = $planActivation;
+			}
+			if (!empty($formerPlan) && ($formerPlan != $currentPlan)) {
+				$needUpdate[$revisionId]['former_plan'] = $formerPlan;
+			} else if (!empty($revision['former_plan'])) {
+				$needUpdate[$revisionId]['former_plan'] = 'unset';
 			}
 			$futureDeactivation = $revision['to'];
 			if ($planDeactivation < $futureDeactivation) {
 				$planDeactivation = $futureDeactivation;
 			}
-			$revision['indicator'] = $indicator;
+			$revision['indicator'] = $indicator;	
 			$plansDeactivation[$indicator] = $planDeactivation;
 			$previousRevision = $revision;
 		}
@@ -406,6 +414,10 @@ class Models_Subscribers extends Models_Entity {
 			$update = array();
 			$query = array('_id' => new MongoId($revisionId));
 			foreach ($updateValue as $field => $value) {
+				if ($field == 'former_plan' && $value == 'unset') {
+					$update['$unset'][$field] = true;
+					continue;
+				}
 				$update['$set'][$field] = $value;
 			}
 			$this->collection->update($query, $update);
