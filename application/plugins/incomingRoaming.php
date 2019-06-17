@@ -14,6 +14,7 @@
 class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected $incomingRoamingLines = [];
+	protected $incomingRoamingQueueLines = [];
 
 	public function beforeProcessorStore($processor) {
 		$data = &$processor->getData();
@@ -21,15 +22,38 @@ class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->isIncomingRoaming($line)) {
-				$this->$incomingRoamingLines[$line['stamp']] = $line;
+				$queue_data[$line['stamp']]['incoming_roaming'] = $line['incoming_roaming'] = true;
+				$this->incomingRoamingLines[$line['stamp']] = $line;
+				$this->incomingRoamingQueueLines[$line['stamp']] = $queue_data[$line['stamp']];
 			}
 
 			if ($this->shouldRemoveLine($line)) {
 				$processor->unsetQueueRow($line['stamp']);
 				unset($queue_data[$line['stamp']]);
-//				unset($data['data'][$key]);
+				unset($data['data'][$key]);
 			}
 		}
+	}
+	
+	public function afterProcessorStore($processor) {
+		Billrun_Factory::log()->log("Moving incoming roaming lines to incoming roaming DB", Zend_Log::INFO);
+		try {
+			$incomingRoamingDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('incoming_roaming.db'));
+			$linesCollection = $incomingRoamingDb->linesCollection();
+			$queueCollection = $incomingRoamingDb->queueCollection();
+			$options = [
+				'w' => 1,
+			];
+			Billrun_Factory::log()->log("About to batch insert incoming roaming lines", Zend_Log::INFO);
+			$linesCollection->batchinsert($this->incomingRoamingLines, $options);
+			Billrun_Factory::log()->log("Done inserting incoming roaming lines", Zend_Log::INFO);
+			Billrun_Factory::log()->log("About to batch insert incoming roaming queue lines", Zend_Log::INFO);
+			$queueCollection->batchinsert($this->incomingRoamingQueueLines, $options);
+			Billrun_Factory::log()->log("Done inserting incoming roaming queue lines", Zend_Log::INFO);
+		} catch (Exception $ex) {
+			Billrun_Factory::log()->log("Error bacth inserting incoming roaming lines. Exception code: {$ex->getCode()}. Details: {$ex->getMessage()}", Zend_Log::ERR);
+		}
+		
 	}
 
 	protected function isIncomingRoaming($row) {
@@ -37,7 +61,7 @@ class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 			case 'nsn':
 				$roamingIncomingRecordTypes = array('02', '09');
 				$roamingRecordTypes = array('01', '02', '08', '09');
-				$recordType = Billrun_Util::getIn($row, 'record_type', '');
+				$recordType = isset($row['record_type']) ? $row['record_type'] : '';
 				$imsiField = in_array($recordType, $roamingIncomingRecordTypes) ? 'called_imsi' : 'imsi';
 				$imsi = isset($row[$imsiField]) ? $row[$imsiField] : '';
 				return (!empty($imsi) && preg_match('/^(?!425)/', $imsi)) &&
