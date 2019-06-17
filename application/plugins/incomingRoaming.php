@@ -20,6 +20,8 @@ class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = &$processor->getData();
 		$queue_data = $processor->getQueueData();
 
+		$this->incomingRoamingLines = [];
+		$this->incomingRoamingQueueLines = [];
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->isIncomingRoaming($line)) {
 				$queue_data[$line['stamp']]['incoming_roaming'] = $line['incoming_roaming'] = true;
@@ -44,11 +46,15 @@ class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$options = [
 				'w' => 1,
 			];
-			Billrun_Factory::log()->log("About to batch insert incoming roaming lines", Zend_Log::INFO);
-			$linesCollection->batchinsert($this->incomingRoamingLines, $options);
+			Billrun_Factory::log()->log("About to batch insert " . count($this->incomingRoamingLines) . " incoming roaming lines", Zend_Log::INFO);
+			if (!empty($this->incomingRoamingLines)) {
+				$linesCollection->batchinsert($this->incomingRoamingLines, $options);
+			}
 			Billrun_Factory::log()->log("Done inserting incoming roaming lines", Zend_Log::INFO);
-			Billrun_Factory::log()->log("About to batch insert incoming roaming queue lines", Zend_Log::INFO);
-			$queueCollection->batchinsert($this->incomingRoamingQueueLines, $options);
+			Billrun_Factory::log()->log("About to batch insert " . count($this->incomingRoamingQueueLines) . " incoming roaming queue lines", Zend_Log::INFO);
+			if (!empty($this->incomingRoamingQueueLines)) {
+				$queueCollection->batchinsert($this->incomingRoamingQueueLines, $options);
+			}
 			Billrun_Factory::log()->log("Done inserting incoming roaming queue lines", Zend_Log::INFO);
 		} catch (Exception $ex) {
 			Billrun_Factory::log()->log("Error bacth inserting incoming roaming lines. Exception code: {$ex->getCode()}. Details: {$ex->getMessage()}", Zend_Log::ERR);
