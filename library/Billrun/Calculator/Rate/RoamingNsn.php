@@ -45,6 +45,15 @@ class Billrun_Calculator_Rate_RoamingNsn extends Billrun_Calculator_Rate_Nsn {
 		return $this->getRoamingLineRate($row, $usage_type);
 	}
 	
+	/**
+	 * @see Billrun_Calculator_Rate::getAdditionalProperties
+	 */
+	protected function getAdditionalProperties() {
+		$props = parent::getAdditionalProperties();
+		$props[] = 'plmn';
+		return $props;
+	}
+	
 	protected function getRoamingRateQuery($row, $usage_type) {
 		$query = $this->incomingRoamingGetRoamingRateQuery($row, $usage_type);
 		if (!$query) {

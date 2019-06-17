@@ -21,5 +21,14 @@ class Billrun_Calculator_Rate_RoamingSgsn extends Billrun_Calculator_Rate_Sgsn {
 	protected function getLineRate($row, $usage_type) {
 		return $this->getRoamingLineRate($row, $usage_type);
 	}
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getAdditionalProperties
+	 */
+	protected function getAdditionalProperties() {
+		$props = parent::getAdditionalProperties();
+		$props[] = 'plmn';
+		return $props;
+	}
 
 }

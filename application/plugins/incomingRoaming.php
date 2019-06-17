@@ -58,8 +58,15 @@ class incomingRoamingPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log("Done inserting incoming roaming queue lines", Zend_Log::INFO);
 		} catch (Exception $ex) {
 			Billrun_Factory::log()->log("Error bacth inserting incoming roaming lines. Exception code: {$ex->getCode()}. Details: {$ex->getMessage()}", Zend_Log::ERR);
+		}	
+	}
+	
+	public function afterCalculatorUpdateRow($row, $calculator) {
+		if ($calculator->getCalculatorQueueType() == 'rate' && !empty($row['incoming_roaming'])) {
+			if (!empty($tadig = $calculator->getTadig($row))) {
+				$row['plmn'] = $tadig;
+			}
 		}
-		
 	}
 
 	protected function isIncomingRoaming($row) {
