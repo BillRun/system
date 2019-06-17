@@ -40,8 +40,6 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
-		$mode = Billrun_Util::filter_var($this->controller->getRequest()->get('mode'), FILTER_SANITIZE_STRING);
-		$send_mode = Billrun_Util::filter_var($this->controller->getRequest()->get('send_mode'), FILTER_SANITIZE_STRING);
 
 		if ($call_tech == 'UMTS') {
 			$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
@@ -57,7 +55,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'msisdn' => $msisdn,
 				'imsi' => $imsi,
 				'dialedDigits' => $called_number,
-				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
+				'duration' => (!empty($nameAndUssage[1]) || $nameAndUssage[1] === '0') ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
 				'type' => $nameAndUssage[0],
 				'call_type' => $call_type,
 				'call_tech' => $call_tech,
@@ -71,8 +69,8 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			}
 			$data = $this->getRequestData($params);
 			$requestBody = array('usaget' => 'call', 'request' => $data);
-			if ($send_mode === 'on') {
-				$requestBody['mode'] = $mode;
+			if (!empty($nameAndUssage[2])) {
+				$requestBody['mode'] = $nameAndUssage[2];
 			}
 			$this->controller->sendRequest($requestBody);
 			sleep(1);

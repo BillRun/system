@@ -60,9 +60,10 @@
 		<label for="scenario" class="col-sm-4 text-right">Scenario</label>
 		<div class="col-sm-6">
 			<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
-			<small class="text-muted"><strong>[ACTION_NAME|DURATION_SECONDS]</strong> New line per action.
+			<small class="text-muted"><strong>[ACTION_NAME|DURATION_SECONDS|MODE]</strong> New line per action.
 				<br/>* ACTION_NAME : start_call / answer_call / reservation_time / release_call
 				<br/>* DURATION_SECONDS : seconds, default call duration is 480 seconds.
+				<br/>* MODE : sync / async
 			</small>
 		</div>
 	</div>
@@ -98,22 +99,6 @@
 						<span class="glyphicon glyphicon-calendar"></span>
 					</span>
 				</div>
-			</div>
-		</div>
-	</div>
-
-	<div class="form-group row">
-		<label class="col-sm-4 control-label text-right">Mode</label>
-		<div class="col-sm-6">
-			<div class="input-group">
-				<span class="input-group-addon">
-					<input type="checkbox" class='enable-input' name="send_mode">
-					<small class="text-muted text-center">Check to send value.</small>
-				</span>
-				<select class="form-control" name='mode' data-default="sync">
-					<option value="sync">Sync</option>
-					<option value="async">Async</option>
-				</select>
 			</div>
 		</div>
 	</div>
