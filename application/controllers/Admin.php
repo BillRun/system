@@ -652,6 +652,25 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$this->getView()->component = $this->renderView('config', $viewData);
 	}
+	
+	/**
+	 * TADIGs controller of admin
+	 */
+	public function tadigsAction() {
+		if (!$this->allowed('admin')) {
+			return false;
+		}
+		$table = "tadigs";
+		$options = array(
+			'collection' => $table,
+			'sort' => $this->applySort($table),
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
 
 	/**
 	 * config controller of admin
