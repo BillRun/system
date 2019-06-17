@@ -103,6 +103,22 @@
 	</div>
 
 	<div class="form-group row">
+		<label class="col-sm-4 control-label text-right">Mode</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="send_mode">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='mode' data-default="sync">
+					<option value="sync">Sync</option>
+					<option value="async">Async</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
 		<label for="np_code" class="col-sm-4 control-label text-right">NP Code</label>
 		<div class="col-sm-6">
 			<div class="input-group">

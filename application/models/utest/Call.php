@@ -40,6 +40,8 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
+		$mode = Billrun_Util::filter_var($this->controller->getRequest()->get('mode'), FILTER_SANITIZE_STRING);
+		$send_mode = Billrun_Util::filter_var($this->controller->getRequest()->get('send_mode'), FILTER_SANITIZE_STRING);
 
 		if ($call_tech == 'UMTS') {
 			$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
@@ -68,7 +70,11 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$params['time_date'] = date_format(date_add(date_create_from_format('d/m/Y H:i', $time_date), new DateInterval('PT' . $index . 'S')), 'Y/m/d H:i:s.000'); // 2015/08/13 11:59:03.325
 			}
 			$data = $this->getRequestData($params);
-			$this->controller->sendRequest(array('usaget' => 'call', 'request' => $data));
+			$requestBody = array('usaget' => 'call', 'request' => $data);
+			if ($send_mode === 'on') {
+				$requestBody['mode'] = $mode;
+			}
+			$this->controller->sendRequest($requestBody);
 			sleep(1);
 		}
 	}
