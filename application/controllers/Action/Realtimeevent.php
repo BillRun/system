@@ -34,7 +34,7 @@ class RealtimeeventAction extends ApiAction {
 				'usaget' => $this->usaget,
 				'request' => $this->getRealtimeRequestBody(),
 			);
-			Billrun_Util::forkProcessWeb('/realtimeevent', $asyncData);
+			Billrun_Util::forkProcessWeb('api/realtimeevent', $asyncData);
 			$this->event['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 			return $this->respond($this->event);
 		}
