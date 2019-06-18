@@ -55,7 +55,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'msisdn' => $msisdn,
 				'imsi' => $imsi,
 				'dialedDigits' => $called_number,
-				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
+				'duration' => (!empty($nameAndUssage[1]) || $nameAndUssage[1] === '0') ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
 				'type' => $nameAndUssage[0],
 				'call_type' => $call_type,
 				'call_tech' => $call_tech,
@@ -68,7 +68,11 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$params['time_date'] = date_format(date_add(date_create_from_format('d/m/Y H:i', $time_date), new DateInterval('PT' . $index . 'S')), 'Y/m/d H:i:s.000'); // 2015/08/13 11:59:03.325
 			}
 			$data = $this->getRequestData($params);
-			$this->controller->sendRequest(array('usaget' => 'call', 'request' => $data));
+			$requestBody = array('usaget' => 'call', 'request' => $data);
+			if (!empty($nameAndUssage[2])) {
+				$requestBody['mode'] = $nameAndUssage[2];
+			}
+			$this->controller->sendRequest($requestBody);
 			sleep(1);
 		}
 	}

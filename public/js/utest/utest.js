@@ -79,6 +79,10 @@ var utest_JS = {
 		if ($(this).is(':checked')) {
 			sendingValue.prop('disabled', false);
 			$(this).siblings('small').hide();
+			var defaultValue = sendingValue.data('default')
+			if (typeof defaultValue !== "undefined") {
+				sendingValue.val(defaultValue);
+			}
 		} else {
 			sendingValue.val('');
 			sendingValue.prop('disabled', true);
