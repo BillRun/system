@@ -29,12 +29,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $lineType = null;
 	
-	/**
-	 * the roaming packages names.
-	 * 
-	 * @var array
-	 */
-	protected $raomingPackages;
 	
 
 	protected $package = null;
@@ -154,6 +148,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.usagev'] = $this->extraUsage;
 					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.count'] = 1;	
 				}
+				Billrun_Factory::dispatcher()->trigger('addDataToUpdate', [$this->balanceToUpdate,&$row, &$pricingData, &$roamingQuery, &$roamingUpdate, $arate, $calculator]);
 				$balanceIds[] = $this->balanceToUpdate->getRawData()['_id'];
 				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
 				$balancesIncludeRow[] = array(
@@ -200,6 +195,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.count'] = 1;
 						$exhaustedUpdate['$set']['balance.totals.' . $packageLimits['joined_field'] . '.exhausted'] = true;
 					}
+					Billrun_Factory::dispatcher()->trigger('addDataToUpdate', [$exhausted,&$row, &$pricingData, &$query, &$exhaustedUpdate, $arate, $calculator]);
 					$balanceIds[] = $exhaustedBalance['_id'];
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);
 				}
@@ -207,7 +203,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($exhaustedBalancesKeys)) {
 				$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
 			}
-			if (isset($balancesIncludeRow)) {
+			if (!empty($balancesIncludeRow)) {
 				$row['roaming_balances'] = $balancesIncludeRow;
 				$this->updateRoamingBalancesTx($row, $balanceIds);
 			}
@@ -278,6 +274,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
+			$groupSelected = FALSE;
+			return;
 		}
 		foreach ($roamingBalances as $balance) {
 			foreach ($matchedPackages as $matchedPackage) {
@@ -286,6 +284,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 		}
+
 		ksort($roamingBalancesByOrder);
 		foreach ($roamingBalancesByOrder as $balance) {
 			$balancePackage = $balance['service_name'];
@@ -295,11 +294,19 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$subRaw = $balance->getRawData();
 			$stamp = strval($this->row['stamp']);
-			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx'][$stamp]['usagev'] : 0;	
-			$UsageIncluded += (int) $plan->get('include.groups.' . $balancePackage)[$usageType];
+			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx'][$stamp]['usagev'] : 0;
+			$planUsage = $plan->get('include.groups.' . $balancePackage)[$usageType];
+			if ($planUsage == 'UNLIMITED') {
+				$rateUsageIncluded = 'UNLIMITED';
+				$groupSelected = $balancePackage;
+				$this->package = $balancePackage;
+				$this->balanceToUpdate = $balance;
+				return;
+			}
+			$UsageIncluded += (int) $planUsage;
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
-				$usageLeft = (int) $plan->get('include.groups.' . $balancePackage)[$usageType] - $balance['balance']['totals'][$usageType]['usagev'];
+				$usageLeft = (int) $planUsage - $balance['balance']['totals'][$usageType]['usagev'];
 				$volume = $usageLeft - $this->extraUsage;
 				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $this->row['usaget'] . '.usagev', ceil($subscriberSpent / $this->coefficient));
 				$groupSelected = $balancePackage;
@@ -313,7 +320,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 		}
-		
+
 		$roundedUsage = floor($UsageIncluded / $this->coefficient);
 		if (!empty($UsageIncluded) && $roundedUsage > 0) {
 			$rateUsageIncluded = $roundedUsage;

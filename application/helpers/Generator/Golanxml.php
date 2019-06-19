@@ -490,11 +490,16 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
 							$this->writer->writeElement('MMS_CAPACITY', $usageInGroup['mms']);
 						}
+						if (isset($usageInGroup['limits']['days'])) {
+							$this->writer->writeElement('VF_DAYS_FREEUSAGE', isset($serviceBalance['vf_count_days']) ? $serviceBalance['vf_count_days'] : 0 );
+							$this->writer->writeElement('VF_DAYS_CAPACITY', $usageInGroup['limits']['days']);
+						}
+
 						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
 					}
 					
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
-						if (in_array($group_name, $servicesNameWithBalance)) {
+						if (in_array($group_name, $servicesNameWithBalance) && !in_array($group_name,['VF','IRP_VF_10_DAYS']) ) {
 							continue;
 						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
@@ -531,8 +536,9 @@ class Generator_Golanxml extends Billrun_Generator {
 									$subscriber_group_usage_MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
 								} else if ($plan == 'in_plan') {
 									$subscriber_group_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-									if ($group_name == 'VF') {
+									if ($group_name == 'VF' || !empty($group['limits']['vf'])) {
 										$subscriber_group_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'incoming_call');
+										$subscriber_group_usage_VF_DAYS = Billrun_Util::getFieldVal($zone['totals']['vf_count_days'],0);
 									}
 									$subscriber_group_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
 									$subscriber_group_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
@@ -558,7 +564,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
 							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
 							if(isset($group['limits']['vf'],$group['limits']['days'])) {
-								$this->writer->writeElement('VF_DAYS_FREEUSAGE', 0);//TODO
+								$this->writer->writeElement('VF_DAYS_FREEUSAGE', $subscriber_group_usage_VF_DAYS);
 								$this->writer->writeElement('VF_DAYS_CAPACITY', $group['limits']['days']);
 							}
 						}
