@@ -48,8 +48,8 @@ class VfdaysAction extends Action_Base {
 				'input' => $request->getRequest(),
 				'details' => array(
 					'days' => $max_days,
-					'min_day' => 45,
-					'max_day' => 45,
+// 					'min_day' => 45,
+// 					'max_day' => 45,
 				)
 		)));
 	}
@@ -64,6 +64,7 @@ class VfdaysAction extends Action_Base {
 
 //		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 //		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 
 		$match1 = array(
 			'$match' => array(
@@ -76,7 +77,7 @@ class VfdaysAction extends Action_Base {
 		$match2 = array(
 			'$match' => array(
 				'$or' => array(
-					array('arategroup' => 'VF'),
+					array('arategroup' => [ '$in' => $vfrateGroups] ),
 					array('vf_count_days' => array('$exists' => 1)),
 				),
 				'record_opening_time' => new MongoRegex("/^$year/")
@@ -139,6 +140,7 @@ class VfdaysAction extends Action_Base {
 
 	public function count_days_tap3($sid, $year = null, $max_datetime = null) {
 		try {
+			$vfRateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 			$from = strtotime($year . '-01-01' . ' 00:00:00');
 			if (is_null($max_datetime)) {
 				$to = strtotime($year . '-12-31' . ' 23:59:59');
@@ -167,7 +169,7 @@ class VfdaysAction extends Action_Base {
 						array('type' => 'smsc'),
 					),
 					'plan' => array('$in' => $this->plans),
-					'arategroup' => "VF",
+					'arategroup' => ['$in'=> $vfRateGroups ],
 					'billrun' => array(
 						'$exists' => true,
 					),
