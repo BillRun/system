@@ -499,7 +499,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 					
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
-						if (in_array($group_name, $servicesNameWithBalance) && !in_array($group_name,['VF','IRP_VF_10_DAYS']) ) {
+						if (in_array($group_name, $servicesNameWithBalance) ) {
 							continue;
 						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
