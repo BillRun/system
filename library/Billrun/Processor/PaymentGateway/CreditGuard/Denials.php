@@ -23,29 +23,38 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	}
 
 	protected function addFields($line) {
-		if (empty($line['customer_data'])) {
-			throw new Exception('X parameter is missing');
-		}
 		return array('transaction_id' => $line['customer_data']);
 	}
 
-	protected function updatePayments($row, $payment) {
-		$row['aid'] = $payment->getAid();
-		if ($row['amount'] != $payment->getDue()) {
-			throw new Exception("Amount isn't matching for payment with txid: " . $row['transaction_id']);
+	protected function updatePayments($row, $payment = null) {
+		if (is_null($payment) && empty($row['addon_data'])) {
+			Billrun_Factory::log('None matching payment and missing Z parameter for ' . $row['stamp'], Zend_Log::ALERT);
+			return;
 		}
-		if ($payment->isPaymentDenied()) {
-			Billrun_Factory::log()->log("Payment " . $row['transaction_id'] . " is already denied", Zend_Log::NOTICE);
+		$row['aid'] = !is_null($payment) ? $payment->getAid() : $row['addon_data'];
+		if (!is_null($payment)) {
+			if (abs($row['amount']) > $payment->getAmount()) {
+				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
+				return;
+			}
+			if ($payment->isPaymentDenied(abs($row['amount']))) {
+				Billrun_Factory::log()->log("Payment " . $row['transaction_id'] . " is already denied", Zend_Log::NOTICE);
+				return;
+			}
 		}
 		$newRow = $this->adjustRowDetails($row);
-		$res = Billrun_Bill_Payment::createDenial($newRow, $payment);
-		if ($res) {
-			Billrun_Factory::log()->log("Denial was created successfully for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
+		$denial = Billrun_Bill_Payment::createDenial($newRow, $payment);
+		if (!empty($denial)) {
 			Billrun_Factory::dispatcher()->trigger('afterDenial', array($newRow));
-			$payment->deny();
-			$paymentSaved = $payment->save();
-			if (!$paymentSaved) {
-				Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
+			if (!is_null($payment)) {
+				Billrun_Factory::log()->log("Denial was created successfully for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
+				$payment->deny($denial);
+				$paymentSaved = $payment->save();
+				if (!$paymentSaved) {
+					Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
+				}
+			} else {
+				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
 			}
 		} else {
 			Billrun_Factory::log()->log("Denial process was failed for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
@@ -61,6 +70,12 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		}
 		unset($newRow['vendor_fields']['inquiry_desc']);
 		return $newRow;
+	}
+	
+	protected function filterData($data) {
+		return array_filter($data['data'], function ($denial) {
+			return $denial['status'] != 1; 			
+		});
 	}
 
 }

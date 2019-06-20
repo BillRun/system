@@ -45,7 +45,11 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		return array('status' => $row['ret_code'], 'stage' => $stage);
 	}
 	
-	protected function updatePayments($row, $payment) {
+	protected function updatePayments($row, $payment = null) {
+		if (is_null($payment)) {
+			Billrun_Factory::log('Missing transaction_id in transactions file for ' . $row['stamp'], Zend_Log::ALERT);
+			return;
+		}
 		$paymentResponse = $this->getPaymentResponse($row);
 		$payment->setPending(false);
 		Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $payment, $this->gatewayName);
@@ -60,5 +64,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			}
 		}
 	}
-
+	
+	protected function filterData($data) {
+		return $data['data'];
+	}
 }
