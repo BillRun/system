@@ -374,10 +374,19 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildSinglePaymentArray($params, $options) {
 		$credentials = $this->getGatewayCredentials();
+		$addonData = array();
+		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
 		$xmlParams['version'] = '1001';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
-		$xmlParams['aid'] = $params['aid'];
+		$aidStringVal = strval($addonData['aid']);
+		if (strlen($aidStringVal) <  2) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+		}
+		if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+		}
+		$addonData['txid'] = $params['txid'];
 		$xmlParams['ok_page'] = $params['ok_page'];
 		$xmlParams['return_url'] = $params['return_url'];
 		$xmlParams['amount'] = $this->convertAmountToSend($params['amount']);
@@ -390,12 +399,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
 			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
 			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
-			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams);
+			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData);
 		}
-		return $this->getXmlStructureByParams($credentials, $xmlParams);
+		return $this->getXmlStructureByParams($credentials, $xmlParams, $addonData);
 	}
 	
-	protected function getXmlStructureByParams($credentials, $xmlParams) {
+	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
+		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
+		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+	
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -410,6 +422,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
 										  '. $xmlParams['addFailPage']  .'
 										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										 ' . $XParameter . '
+										 ' . $ZParameter . '
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $xmlParams['amount'] . '</total>
@@ -423,7 +437,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <periodicalPayment/>
 										  <validation>TxnSetup</validation>
 										  <dealerNumber/>
-										  <user>something</user>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
 										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
@@ -445,7 +458,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		);
 	}
 	
-	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams) {
+	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -463,6 +476,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $installmentParams['amount'] . '</total>
+										  <user>' . $addonData['txid'] . '</user>
+									      <addonData>' . $addonData['aid'] . '</addonData>
 										  <transactionType>Debit</transactionType>
 										  <creditType>Payments</creditType>
 										  <currency>ILS</currency>
@@ -473,7 +488,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <periodicalPayment>' . $installmentParams['periodical_payments'] . '</periodicalPayment>
 										  <validation>TxnSetup</validation>
 										  <dealerNumber/>
-										  <user>something</user>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
 										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
