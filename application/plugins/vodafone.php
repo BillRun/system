@@ -143,16 +143,23 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$results = [];
 		if (!isset($this->cached_results[$cacheID][$sid][$line_year]) || !empty($furtherMatch) ) {
+			if(!isset($this->cached_results[$cacheID][$sid][$line_year])) {
+				$this->cached_results[$cacheID][$sid][$line_year] = [];
+			}
 			$queryResults = $this->loadSidLines($sid, $limits, $plan, $groupSelected,$furtherMatch);
 			if(!empty($queryResults)) {
 				foreach ($queryResults as $elem) {
+					if( !in_array($elem, $this->cached_results[$cacheID][$sid][$line_year])) {
 						$this->cached_results[$cacheID][$sid][$line_year][] = $elem;
+					}
 				}
 			}
 			$queryResults = $this->loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected,$furtherMatch);
 			if(!empty($queryResults)) {
 				foreach ($queryResults as $elem) {
+					if( !in_array($elem, $this->cached_results[$cacheID][$sid][$line_year])) {
 						$this->cached_results[$cacheID][$sid][$line_year][] = $elem;
+					}
 				}
 			}
 		}
