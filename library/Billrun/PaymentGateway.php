@@ -291,6 +291,7 @@ abstract class Billrun_PaymentGateway {
 	 * Sending request to chosen payment gateway to charge the subscriber according to his bills.
 	 * 
 	 * @param array $gatewayDetails - Details of the chosen payment gateway
+	 * @param array $addonData - Added data to xml request
 	 * @return String - Status of the payment.
 	 */
 	abstract protected function pay($gatewayDetails, $addonData);
@@ -379,7 +380,7 @@ abstract class Billrun_PaymentGateway {
 			$singlePaymentParams['return_url'] = $returnUrl;
 			$singlePaymentParams['ok_page'] = $okPage;
 			$singlePaymentParams['fail_page'] = $failPage;
-			$singlePaymentParams['txid'] = $this->createTxid();
+			$singlePaymentParams['txid'] = Billrun_Bill_Payment::createTxid();
 			$postArray = $this->buildSinglePaymentArray($singlePaymentParams, $options);
 		} else { // Request to get token
 			$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
@@ -763,9 +764,5 @@ abstract class Billrun_PaymentGateway {
 	public function getCompletionCodes() {
 		return $this->completionCodes;
 	}
-	
-	protected function createTxid() {
-		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
-		return str_pad($txid, 13, '0', STR_PAD_LEFT);
-	}
+
 }

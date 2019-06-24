@@ -184,10 +184,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 		$aidStringVal = strval($addonData['aid']);
-		if (strlen($aidStringVal) <  2) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
-			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
-		}
-		if (strlen(strval($addonData['aid'])) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+		$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+		if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
 			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
 		}
 		return $post_array = array(
@@ -380,9 +378,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
 		$aidStringVal = strval($addonData['aid']);
-		if (strlen($aidStringVal) <  2) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
-			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
-		}
+		$addonData['aid'] = $this->addLeadingZero($aidStringVal);
 		if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
 			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
 		}
