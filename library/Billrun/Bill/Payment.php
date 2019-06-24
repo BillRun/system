@@ -68,6 +68,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['gateway_details'])){
 				$this->data['gateway_details'] = $options['gateway_details'];
+				if (isset($options['gateway_details']['txid'])) {
+					$this->data['txid'] = $options['gateway_details']['txid'];
+				}
 			}
 			if (isset($options['transaction_status'])) {
 				$this->data['transaction_status'] = $options['transaction_status'];

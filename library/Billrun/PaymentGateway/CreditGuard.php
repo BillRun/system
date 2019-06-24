@@ -108,6 +108,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if ($retParams['action'] == 'SinglePayment') {
 				$this->transactionId = (string) $xmlObj->response->tranId;
 				$creditType = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType;
+				if (!empty((string) $xmlObj->response->inquireTransactions->row->xRem)) {
+					$retParams['txid'] = (string) $xmlObj->response->inquireTransactions->row->xRem;
+				}
 				if ($creditType == 'Payments') {
 					$retParams['installments'] = array();
 					$retParams['installments']['total_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
