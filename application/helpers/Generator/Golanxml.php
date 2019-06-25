@@ -484,7 +484,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 						if (isset($usageInGroup['data'])) {
 							$this->writer->writeElement('DATA_USAGE', $this->bytesToKB($balanceUsages['data']['usagev']));
-							$this->writer->writeElement('DATA_CAPACITY', $this->bytesToKB($usageInGroup['data']));
+							$this->writer->writeElement('DATA_CAPACITY', empty($usageInGroup['limits']['vf']) ?  $this->bytesToKB($usageInGroup['data']) : 6291456 );   // TODO When possible change to this to only use the in group usage
 						}
 						if (isset($usageInGroup['mms'])) {
 							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
