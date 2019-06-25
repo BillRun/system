@@ -244,8 +244,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$subscriberSpent = 0;
 		foreach ($matchedPackages as $package) {
 			$matchedIds[] = $package['id'];
-			$from = strtotime($package['from_date']);
-			$to = strtotime($package['to_date']);
+			$from = empty($package['balance_from_date']) ? strtotime($package['from_date']) : $package['balance_from_date'];
+			$to = empty($package['balance_to_date']) ? strtotime($package['to_date']) : $package['balance_to_date'];
 
 			$legitimate= (bool)($this->lineTime >= $from && $this->lineTime <= $to);
 			Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
