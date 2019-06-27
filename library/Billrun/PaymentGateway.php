@@ -291,9 +291,10 @@ abstract class Billrun_PaymentGateway {
 	 * Sending request to chosen payment gateway to charge the subscriber according to his bills.
 	 * 
 	 * @param array $gatewayDetails - Details of the chosen payment gateway
+	 * @param array $addonData - Added data to xml request
 	 * @return String - Status of the payment.
 	 */
-	abstract protected function pay($gatewayDetails);
+	abstract protected function pay($gatewayDetails, $addonData);
 
 	/**
 	 * Check the status of previously pending payment.
@@ -379,6 +380,7 @@ abstract class Billrun_PaymentGateway {
 			$singlePaymentParams['return_url'] = $returnUrl;
 			$singlePaymentParams['ok_page'] = $okPage;
 			$singlePaymentParams['fail_page'] = $failPage;
+			$singlePaymentParams['txid'] = Billrun_Bill_Payment::createTxid();
 			$postArray = $this->buildSinglePaymentArray($singlePaymentParams, $options);
 		} else { // Request to get token
 			$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
@@ -712,16 +714,16 @@ abstract class Billrun_PaymentGateway {
 		return array();
 	}
 
-	public function makeOnlineTransaction($gatewayDetails) {
+	public function makeOnlineTransaction($gatewayDetails, $addonData) {
 		$amountToPay = $gatewayDetails['amount'];
 		if ($amountToPay > 0) {
-			return $this->pay($gatewayDetails);
+			return $this->pay($gatewayDetails, $addonData);
 		} else {
-			return $this->credit($gatewayDetails);
+			return $this->credit($gatewayDetails, $addonData);
 		}
 	}
 	
-	protected function credit($gatewayDetails) {
+	protected function credit($gatewayDetails, $addonData) {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
 	
@@ -762,4 +764,5 @@ abstract class Billrun_PaymentGateway {
 	public function getCompletionCodes() {
 		return $this->completionCodes;
 	}
+
 }

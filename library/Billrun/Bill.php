@@ -812,7 +812,8 @@ abstract class Billrun_Bill {
 						if (empty($options['single_payment_gateway'])) {
 							try {
 								$payment->setPending(true);
-								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+								$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
 							} catch (Exception $e) {
 								$payment->setGatewayChargeFailure($e->getMessage());
 								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
