@@ -73,8 +73,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if( empty($planPackage) || empty($planPackage['limits']['vf'])|| empty($planPackage['limits']['days']) ) {
 			return;
 		}
-		$pckgKey = $package['id'].$package['service_name'].strtotime($package['from_date']);
-		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, [$package['service_name']],$pckgKey,['roaming_balances.package_id'=>$package['id']]);
+		$pckgKey = $package['id'].$package['service_name'].strtotime($package['balance_from_date']);
+		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, $package['service_name'],$pckgKey,['roaming_balances.package_id'=>$package['id']]);
 
 		$this->limit_count[$pckgKey] = $planPackage['limits']['days'];
 		$this->usage_count[$pckgKey] = $sidDayCount;
