@@ -67,7 +67,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function checkPackageRules(&$legitimate, $package, $row, $plan, $usageType, $rate, $subscriberBalance) {
 		$planPackage = $plan->get('include.groups.'.$package['service_name']);
 		if(empty($planPackage)) {
-			@Billrun_Factory::log("VF plguin: couldn't find package : {$package['service_name']} in plan : {$plan['name']}");
+			Billrun_Factory::log("VF plguin: couldn't find package : {$package['service_name']} in plan : {$plan->get('name')}");
 		}
 		//retrun is the package  valid for VF?
 		if( empty($planPackage) || empty($planPackage['limits']['vf'])|| empty($planPackage['limits']['days']) ) {
