@@ -873,10 +873,11 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+					$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 					if (is_null($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
