@@ -73,8 +73,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if( empty($planPackage) || empty($planPackage['limits']['vf'])|| empty($planPackage['limits']['days']) ) {
 			return;
 		}
-		$pckgKey = $package['id'].$package['service_name'].strtotime($package['from_date']);
-		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, [$package['service_name']],$pckgKey,['roaming_balances.package_id'=>$package['id']]);
+		$pckgKey = $package['id'].$package['service_name'].$package['balance_from_date'];
+		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, $package['service_name'],$pckgKey,['roaming_balances.package_id'=>$package['id']]);
 
 		$this->limit_count[$pckgKey] = $planPackage['limits']['days'];
 		$this->usage_count[$pckgKey] = $sidDayCount;
@@ -132,7 +132,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$this->cached_results[$cacheID][$sid][$line_year][] = $elem;
 			}
 		}
-		if( !in_array($dayKey, $this->cached_results[$cacheID][$sid][$line_year])) {
+		if( !isset($this->cached_results[$cacheID][$sid][$line_year]) || !in_array($dayKey, $this->cached_results[$cacheID][$sid][$line_year])) {
 			$this->cached_results[$cacheID][$sid][$line_year][] = $dayKey;
 		}
 		foreach ($this->cached_results[$cacheID][$sid][$line_year] as $elem) {
@@ -175,7 +175,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'plan' => $plan->getData()->get('name'),
 				'$or' => [
 							['arategroup' => $groupSelected ],
-							['arategroups.service_name' =>  $groupSelected ]
+							['roaming_balances.service_name' =>  $groupSelected ]
 						],
 				'in_group' => array(
 					'$gt' => 0,
