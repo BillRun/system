@@ -60,7 +60,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function addDataToUpdate($balance,&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		$packageUsage = @$this->usage_count[$balance['service_id'].$balance['service_name'].$balance['from']->sec];
 		if(!empty($packageUsage)) {
-			$update['$set']['vf_count_days'] = $packageUsage;
+			$update['$max']['vf_count_days'] = $packageUsage;
 		}
 	}
 
