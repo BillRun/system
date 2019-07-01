@@ -117,5 +117,54 @@ class Billrun_Utils_Time {
 	public static function monthsToMilli($months) {
 		return static::monthsToSeconds($months) * self::MILLISEC_IN_SECOND;
 	}
+	
+	/**
+	 * Merge overlapping intervals
+	 * 
+	 * @param array $intervals - every element must have from and to fields
+	 * @return array of intervals (objects with from and to) sorted by from field
+	 */
+	public static function mergeTimeIntervals($intervals, $fromField = 'from', $toField = 'to') {
+ 		if (empty($intervals)) {
+			return [];
+		}
+
+		// Create an empty stack of intervals 
+		$intervalsStack = [];
+
+		// sort the intervals in increasing order of start time 
+		self::sortTimeIntervals($intervals, $fromField);
+
+		// push the first interval to stack 
+		array_unshift($intervalsStack, $intervals[0]);
+
+		// Start from the next interval and merge if necessary 
+		for ($i = 1; $i < count($intervals); $i++) {
+			// get interval from stack top
+			$top = current($intervalsStack);
+
+			if ($top[$toField] < $intervals[$i][$fromField]) { // if current interval is not overlapping with stack top, push it to the stack
+				array_unshift($intervalsStack, $intervals[$i]);
+			} else if ($top[$toField] < $intervals[$i][$toField]) { // Otherwise update the ending time of top if ending of current interval is more
+				$top[$toField] = $intervals[$i][$toField];
+				array_shift($intervalsStack);
+				array_unshift($intervalsStack, $top);
+			}
+		}
+		
+		self::sortTimeIntervals($intervalsStack);
+		return $intervalsStack;
+	}
+
+	/**
+	 * Sort given intervals (objects with from and to fields) array
+	 * 
+	 * @return array of intervals sorted by from field
+	 */
+	public static function sortTimeIntervals(&$intervals, $fromField = 'from') {
+		usort($intervals, function ($item1, $item2) use ($fromField) {
+			return $item1[$fromField] >= $item2[$fromField];
+		});
+	}
 
 }
