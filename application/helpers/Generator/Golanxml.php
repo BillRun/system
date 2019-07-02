@@ -477,22 +477,27 @@ class Generator_Golanxml extends Billrun_Generator {
 						if (isset($usageInGroup['call']) || isset($usageInGroup['incoming_call'])) {
 							$this->writer->writeElement('VOICE_USAGE', $callUsage);
 							$this->writer->writeElement('VOICE_CAPACITY', $usageInGroup['call']);
+							$this->writer->writeElement('VOICE_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['sms'])) {
 							$this->writer->writeElement('SMS_USAGE', $balanceUsages['sms']['usagev']);
 							$this->writer->writeElement('SMS_CAPACITY', $usageInGroup['sms']);
+							$this->writer->writeElement('SMS_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['data'])) {
 							$this->writer->writeElement('DATA_USAGE', $this->bytesToKB($balanceUsages['data']['usagev']));
 							$this->writer->writeElement('DATA_CAPACITY', empty($usageInGroup['limits']['vf']) ?  $this->bytesToKB($usageInGroup['data']) : 6291456 );   // TODO When possible change to this to only use the in group usage
+							$this->writer->writeElement('DATA_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['mms'])) {
 							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
 							$this->writer->writeElement('MMS_CAPACITY', $usageInGroup['mms']);
+							$this->writer->writeElement('MMS_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['limits']['days'])) {
 							$this->writer->writeElement('VF_DAYS_FREEUSAGE', isset($serviceBalance['vf_count_days']) ? $serviceBalance['vf_count_days'] : 0 );
 							$this->writer->writeElement('VF_DAYS_CAPACITY', $usageInGroup['limits']['days']);
+							$this->writer->writeElement('VF_DAYS_CAPACITY_ACCUMULATIVE',  "TRUE");
 						}
 
 						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
