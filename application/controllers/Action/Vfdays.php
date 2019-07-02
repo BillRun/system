@@ -77,8 +77,7 @@ class VfdaysAction extends Action_Base {
 		$match2 = array(
 			'$match' => array(
 				'$or' => array(
-					array('arategroup' => [ '$in' => $vfrateGroups] ),
-					array('vf_count_days' => array('$exists' => 1)),
+					array('arategroup' => [ '$in' => $vfrateGroups] )
 				),
 				'record_opening_time' => new MongoRegex("/^$year/")
 //				'$or' => array(

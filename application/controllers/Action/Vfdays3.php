@@ -51,7 +51,7 @@ class Vfdays3Action extends Action_Base {
 	 */
 	public function count_days_by_lines($min_days = 35, $max_datetime = null) {
 		$from = strtotime('January 1st');
-
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 //		$elements[] = array(
 //			'$match' => array(
 //				'$or' => array(
@@ -69,10 +69,7 @@ class Vfdays3Action extends Action_Base {
 				'record_opening_time' => array(
 					'$gte' => date('YmdHis', $from),
 				),
-				'$or' => array(
-					array('arategroup' => 'VF'),
-					array('vf_count_days' => array('$exists' => 1)),
-				),
+				'arategroup' => [ '$in' => $vfrateGroups],
 			),
 		);
 		if ($max_datetime) {

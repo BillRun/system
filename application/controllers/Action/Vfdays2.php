@@ -58,6 +58,7 @@ class Vfdays2Action extends Action_Base {
 			$offset_days = 1;
 		}
 
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 
 		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
 		$end = strtotime('midnight', $unix_datetime);
@@ -81,6 +82,7 @@ class Vfdays2Action extends Action_Base {
 					'$gte' => date('YmdHis', $start),
 					'$lte' => date('YmdHis', $end),
 				),
+				'arategroup' => [ '$in' => $vfrateGroups],
 				'vf_count_days' => array(
 					'$gte' => $min_days,
 				)
@@ -144,6 +146,8 @@ class Vfdays2Action extends Action_Base {
 		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
 		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
 		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
+
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 		
 		$match = array(
 			'$match' => array(
@@ -164,6 +168,7 @@ class Vfdays2Action extends Action_Base {
 					'$gte' => new MongoDate($start - 3600 * 24),
 					'$lte' => new MongoDate($end + 3600 * 24),
 				),
+				'arategroup' => [ '$in' => $vfrateGroups],
 				'vf_count_days' => array(
 					'$gte' => $min_days,
 				),
@@ -175,7 +180,7 @@ class Vfdays2Action extends Action_Base {
 				'sid' => 1,
 				'urt' => 1,
 				'type' => 1,    
-				'vf_count_days' => 1,			
+				'vf_count_days' => 1,
 				'isr_time' => array(
 					'$cond' => array(
 						'if' => array(
