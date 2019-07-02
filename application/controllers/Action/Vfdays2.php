@@ -114,7 +114,6 @@ class Vfdays2Action extends Action_Base {
 				'min_days' => array(
 					'$literal' => $min_days,
 				),
-				'max_days' => 45,
 			)
 		);
 
@@ -239,9 +238,6 @@ class Vfdays2Action extends Action_Base {
 				),
 				'min_days' => array(
 					'$literal' => $min_days,
-				),
-				'max_days' => array(
-					'$literal' => 45,
 				),
 			)
 		);
