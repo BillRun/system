@@ -1065,6 +1065,9 @@ class Models_Entity {
 		switch ($this->collectionName) {
 			case 'users':
 				return 'username';
+			case 'discounts':
+			case 'reports':
+			case 'taxes':
 			case 'rates':
 				return 'key';
 			case 'accounts':
