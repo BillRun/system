@@ -26,15 +26,13 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 	 * @var string
 	 */
 	protected $actionType;
-	
+	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
+
 	public function __construct($options) {
-		if (!isset($options['version'])) {
-			throw new Exception("Please pass " . $this->gatewayName . " version for receiving files");
-		}
 		if (!isset($options['receiver']['connection'])) {
 			throw new Exception('Missing connection details');
 		}
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue($this->gatewayName . '.' . $options['version'] . '.config_path'));
+		$this->loadConfig($this->configPath);
 		$options = array_merge($options, $this->getAllReceiverDefinitions($this->actionType));
 		parent::__construct($options);
 	}
@@ -90,10 +88,10 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 	 */
 	public static function getReceiverSettings($options) {
 		$type = $options['type'];
-		if (!isset($options['gateway'])) {
-			throw new Exception('Missing gateway');
+		if (!isset($options['payment_gateway'])) {
+			throw new Exception('Missing payment gateway');
 		}
-		$gateway = $options['gateway'];
+		$gateway = $options['payment_gateway'];
 		$pgReceiver = array();
 		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
 			return $paymentGateway['name'] === $gateway;

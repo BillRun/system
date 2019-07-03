@@ -34,14 +34,12 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 	protected $processorDefinitions;
 	protected $parserDefinitions;
 	protected $workspace;
+	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
 
 
 	public function __construct($options) {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue($this->gatewayName . '.' . $options['version']. '.config_path'));
+		$this->loadConfig($this->configPath);
 		$options = array_merge($options, $this->getProcessorDefinitions());
-		if (!isset($options['version'])) {
-			throw new Exception('Please pass ' . $this->gatewayName . ' version for processing files');
-		}
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
@@ -80,7 +78,7 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 		foreach ($data['data'] as $row) {
 			$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
 			if (is_null($bill)) {
-				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
+				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
 			$this->updatePayments($row, $bill);

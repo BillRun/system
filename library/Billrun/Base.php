@@ -169,7 +169,11 @@ abstract class Billrun_Base {
 			$args = array_merge(Billrun_Factory::config()->getConfigValue($called_class)->toArray(), $args);
 		}
 
-		$class_type = $type;
+		if (!isset($args['payment_gateway'])) {
+			$class_type = $type;
+		} else {
+			$class_type = 'PaymentGateway_' . $args['payment_gateway'] . '_' . ucfirst($type);
+		}
 		if ($config_type) {
 			if (is_object($config_type)) {
 				$config_type = $config_type->toArray();

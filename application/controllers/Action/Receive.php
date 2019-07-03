@@ -49,7 +49,7 @@ class ReceiveAction extends Action_Base {
 				$pgOptions = $options;
 				$pgOptions['file_type'] = $options['type'];
 				$pgOptions['receiver']['connection'] = $pgConnection;
-				$pgOptions['receiver']['receiver_type'] = 'PaymentGateway_' . $options['gateway'] . '_' . ucfirst($options['type']);
+				$pgOptions['receiver']['receiver_type'] = 'PaymentGateway_' . $options['payment_gateway'] . '_' . ucfirst($options['type']);
 				$this->loadReceiver($pgOptions);
 			}
 			$inputProcessor = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);

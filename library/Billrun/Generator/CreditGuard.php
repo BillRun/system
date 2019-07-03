@@ -37,13 +37,11 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 	protected $chargeOptions = array();
 	protected $startingString;
 	protected $endingString;
+	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
 
 	public function __construct($options) {
 		$this->initPaymentGatwayDetails();
-		if (!isset($options['version'])) {
-			throw new Exception('Please pass Credit Guard version for generating files');
-		}
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.' . $options['version']. '.config_path'));
+		$this->loadConfig($this->configPath);
 		$options = array_merge($options, $this->getAllExportDefinitions());
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->extractionDateFormat = isset($this->exportDefinitions['extraction_date_format']) ? date($this->exportDefinitions['extraction_date_format']) : '';
@@ -116,7 +114,12 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 			$paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['source'] = $customer['source'];
-			$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			try {
+				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
+				continue;
+			}
 			$currentPayment = $payment[0];
 			$currentPayment->save();
 			$params['amount'] = $this->convertAmountToSend($paymentParams['amount']);

@@ -170,9 +170,8 @@ abstract class Billrun_Bill {
 				'aid' => 1,
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
-				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
-				'total3' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due' , 'else' => 0)),
-
+				'waiting_for_confirmation_total' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+				'pending_total' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due' , 'else' => 0)),
 			),
 		);
 		$group = array(
@@ -181,11 +180,11 @@ abstract class Billrun_Bill {
 				'total' => array(
 					'$sum' => '$due',
 				),
-				'total2' => array(
-					'$sum' => '$total2',
+				'waiting_for_confirmation_total' => array(
+					'$sum' => '$waiting_for_confirmation_total',
 				),
-				'total3' => array(
-					'$sum' => '$total3',
+				'pending_total' => array(
+					'$sum' => '$pending_total',
 				),
 			),
 		);
@@ -195,8 +194,8 @@ abstract class Billrun_Bill {
 				'_id' => 0,
 				'aid' => '$_id',
 				'total' => 1,
-				'total2' =>  1,
-				'total3' => 1
+				'waiting_for_confirmation_total' =>  1,
+				'pending_total' => 1
 			),
 		);
 
@@ -216,8 +215,8 @@ abstract class Billrun_Bill {
 		if (!$notFormatted) {
 			$results = array_map(function($ele) {
 				$ele['total'] = Billrun_Util::getChargableAmount($ele['total']);
-				$ele['total2'] = Billrun_Util::getChargableAmount($ele['total2']);
-				$ele['total3'] = Billrun_Util::getChargableAmount($ele['total3']);
+				$ele['waiting_for_confirmation_total'] = Billrun_Util::getChargableAmount($ele['waiting_for_confirmation_total']);
+				$ele['pending_total'] = Billrun_Util::getChargableAmount($ele['pending_total']);
 				return $ele;
 			}, $results);
 		}
@@ -243,8 +242,8 @@ abstract class Billrun_Bill {
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
-			$totalWaiting = current($results)['total2'];
-			$totalPending = abs(current($results)['total3']);
+			$totalWaiting = current($results)['waiting_for_confirmation_total'];
+			$totalPending = abs(current($results)['pending_total']);
 		} else if ($notFormatted) {
 			$total = $totalWaiting = $totalPending = 0;
 		} else {
