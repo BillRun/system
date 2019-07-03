@@ -49,9 +49,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->count_days) && empty($this->premium_ir_not_included)) {
+		if (!is_null($this->count_days) && empty($this->premium_ir_not_included) && !empty($pricingData['arategroup']) &&in_array($pricingData['arategroup'],['VF','IRP_VF_10_DAYS'])) {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
+
 		$this->count_days = NULL;
 		$this->limit_count = [];
 		$this->usage_count = [];
@@ -61,6 +62,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$packageUsage = @$this->usage_count[$balance['service_id'].$balance['service_name'].$balance['from']->sec];
 		if(!empty($packageUsage)) {
 			$update['$max']['vf_count_days'] = $packageUsage;
+			$this->count_days = $packageUsage;
 		}
 	}
 
@@ -78,7 +80,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$this->limit_count[$pckgKey] = $planPackage['limits']['days'];
 		$this->usage_count[$pckgKey] = $sidDayCount;
-		$this->count_days += $this->usage_count[$pckgKey];
+		//$this->count_days += $this->usage_count[$pckgKey];
 
 		if ($sidDayCount > $planPackage['limits']['days']) {
 			$legitimate = false;
