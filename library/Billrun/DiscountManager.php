@@ -202,7 +202,7 @@ class Billrun_DiscountManager {
 		}
 
 		foreach ($subscribersRevisions as $subscriberRevisions) {
-			$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.fields', []);
+			$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
 		
 			if (empty($subscribersConditions)) {
 				$subsEligibility[$subscriberRevisions[0]['sid']] = [
