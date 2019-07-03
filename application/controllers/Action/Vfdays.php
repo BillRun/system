@@ -39,7 +39,7 @@ class VfdaysAction extends Action_Base {
 
 		$days = empty($results['VF']["count"]) ? 0 :$results['VF']["count"];
 		$tap3_vf_count = empty($tap3_results['VF']["day_sum"]) ? 0 :$tap3_results['VF']["day_sum"];
-		$addon_max_days = max($tap3_results['IRP_VF_10_DAYS']["day_sum"],$results['IRP_VF_10_DAYS']["count"]);
+		$addon_max_days = max(0,@$tap3_results['IRP_VF_10_DAYS']["day_sum"],@$results['IRP_VF_10_DAYS']["count"]);
 
 		$max_days = max($tap3_vf_count,$days);
 		$this->getController()->setOutput(array(array(
@@ -49,8 +49,6 @@ class VfdaysAction extends Action_Base {
 				'details' => array(
 					'days' => $max_days,
 					"days_addon"=>$addon_max_days
-// 					'min_day' => 45,
-// 					'max_day' => 45,
 				)
 		)));
 	}
