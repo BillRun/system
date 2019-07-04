@@ -6,17 +6,22 @@
 class Billrun_DiscountManager {
 	use Billrun_Traits_ConditionsCheck;
 
-	protected $startTime = null;
+    protected $billrunKey = '';
+    protected $startTime = null;
 	protected $endTime = null;
 	protected $eligibleDiscounts = [];
+	
 	protected static $discounts = [];
 	protected static $discountsFields = [];
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], $params = []) {
-		$time = Billrun_Util::getIn($params, 'time', time());
-		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($time);
-		$this->startTime = Billrun_Billingcycle::getStartTime($billrunKey);
-		$this->endTime = Billrun_Billingcycle::getEndTime($billrunKey);
+		$this->billrunKey = Billrun_Util::getIn($params, 'billrun_key', '');
+        if (empty($this->billrunKey)) {
+            $time = Billrun_Util::getIn($params, 'time', time());
+            $this->billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($time);
+        }
+		$this->startTime = Billrun_Billingcycle::getStartTime($this->billrunKey);
+		$this->endTime = Billrun_Billingcycle::getEndTime($this->billrunKey);
 		$this->loadEligibleDiscounts($accountRevisions, $subscribersRevisions);
 	}
 
@@ -28,14 +33,8 @@ class Billrun_DiscountManager {
 	 */
 	protected function loadEligibleDiscounts($accountRevisions, $subscribersRevisions = []) {
 		$this->eligibleDiscounts = [];
-		$accountDiscountsFields = self::getDiscountsFields('account', $this->endTime);
-		$subscrbierDiscountsFields = self::getDiscountsFields('subscriber', $this->endTime);
-		$accountRevisions = self::prepareEntityRevisions($accountRevisions, $accountDiscountsFields);
-		foreach ($subscribersRevisions as &$subscriberRevisions) {
-			$subscriberRevisions = self::prepareEntityRevisions($subscriberRevisions, $subscrbierDiscountsFields);
-		}
 		
-		foreach (self::getDiscounts($this->endTime) as $discount) {
+		foreach (self::getDiscounts($this->billrunKey) as $discount) {
 			$eligibilityDates = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			if (!empty($eligibilityDates)) {
 				$this->eligibleDiscounts[$discount['key']] = [
@@ -44,18 +43,6 @@ class Billrun_DiscountManager {
 				];
 			}
 		}
-	}
-	
-	/**
-	 * splits existing revisions' ranges fields
-	 * 
-	 * @param type $entityRevisions
-	 * @param array $fields - specific fields to split, if null received - splits all fields
-	 * @return array
-	 * @todo implement
-	 */
-	public static function prepareEntityRevisions($entityRevisions, $fields = null) {
-		return $entityRevisions;
 	}
 
 	/**
@@ -79,57 +66,77 @@ class Billrun_DiscountManager {
 	 * @param array $query
 	 * @return array
 	 */
-	public static function getDiscounts($time = null, $query = []) {
-		if (empty(self::$discounts)) {
-			$cycleEndTime = new MongoDate(is_null($time) ? time() : $time);
+	public static function getDiscounts($billrunKey, $query = []) {
+		if (empty(self::$discounts[$billrunKey])) {
 			$basicQuery = [
 				'params' => [
 					'$exists' => 1,
 				],
-				'from' => [
-					'$lt' => $cycleEndTime,
-				],
-				'to' => [
-					'$gt' => $cycleEndTime,
-				],
+                'from' => [
+                    '$lte' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunKey)),
+                ],
+                'to' => [
+                    '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($billrunKey)),
+                ],
 			];
-			$discountColl = Billrun_Factory::db()->discountsCollection();
-			$loadedDiscounts = $discountColl->query(array_merge($basicQuery, $query))->cursor();
+            
+            $sort = [
+                'to' => -1,
+            ];
+			
+            $discountColl = Billrun_Factory::db()->discountsCollection();
+			$loadedDiscounts = $discountColl->query(array_merge($basicQuery, $query))->cursor()->sort($sort);
 			self::$discounts = [];
-			foreach ($loadedDiscounts as $discount) {
-				self::$discounts[$discount['key']] = $discount;
+			
+            foreach ($loadedDiscounts as $discount) {
+                if (isset(self::$discounts[$billrunKey][$discount['key']]) &&
+                    self::$discounts[$billrunKey][$discount['key']]['from'] == $discount['to']) {
+                    self::$discounts[$billrunKey][$discount['key']]['from'] = $discount['from'];
+                } else {
+                    self::$discounts[$billrunKey][$discount['key']] = $discount;
+                }
 			}
 		}
 
-		return self::$discounts;
+		return self::$discounts[$billrunKey];
+	}
+	
+	/**
+	 * manually set discounts
+	 * 
+	 * @param array $discounts
+	 */
+	public static function setDiscounts($discounts) {
+		self::$discounts = $discounts;
 	}
 
 	/**
 	 * get all fields used by discount for the given $type
 	 * uses internal static cache
 	 * 
+	 * @param string $billrunKey
 	 * @param string $type
 	 * @return array
 	 */
-	public static function getDiscountsFields($type, $time = null) {
-		if (empty(self::$discountsFields[$type])) {
-			self::$discountsFields[$type] = [];
-			foreach (self::getDiscounts($time) as $discount) {
+	public static function getDiscountsFields($billrunKey, $type) {
+		if (empty(self::$discountsFields[$billrunKey][$type])) {
+			self::$discountsFields[$billrunKey][$type] = [];
+			foreach (self::getDiscounts($billrunKey) as $discount) {
 				foreach (Billrun_Util::getIn($discount, ['params', 'conditions'], []) as $condition) {
 					if (!isset($condition[$type])) {
 						continue;
 					}
 					
 					foreach (Billrun_Util::getIn($condition, [$type, 'fields'], []) as $field) {
-						self::$discountsFields[$type][] = $field['field'];
+                        self::$discountsFields[$billrunKey][$type][] = $field['field'];
 					}
 				}
 			}
 			
-			self::$discountsFields[$type] = array_unique(self::$discountsFields[$type]);
+			self::$discountsFields[$billrunKey][$type] = array_unique(self::$discountsFields[$billrunKey][$type]);
 		}
 
-		return self::$discountsFields[$type];
+		return self::$discountsFields[$billrunKey][$type];
 	}
 	
 	/**
@@ -141,12 +148,17 @@ class Billrun_DiscountManager {
 	 * @return array of intervals
 	 */
 	protected function getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions = []) {
+        $discountFrom = max($discount['from']->sec, $this->startTime);
+        $discountTo = min($discount['to']->sec, $this->endTime);
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			return [
-				$this->getAllCycleInterval(),
-			];
-		}
+                [
+                    'from' => $discountFrom,
+                    'to' => $discountTo,
+                ]
+            ];
+        }
 		
 		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 1);
 		$maxSubscribers = Billrun_Util::getIn($discount, 'params.max_subscribers', null);
@@ -168,8 +180,24 @@ class Billrun_DiscountManager {
 		
 		$eligibility = Billrun_Utils_Time::mergeTimeIntervals($eligibility);
 		
-		foreach ($eligibility as &$eligibilityInterval) {
+		foreach ($eligibility as $i => &$eligibilityInterval) {
 			$eligibilityInterval['to']--; // intervals are calculated until start of next day so merge will be available
+            
+            // limit eligibility to discount revision (from/to)
+            if ($eligibilityInterval['from'] < $discountFrom) {
+                if ($eligibilityInterval['to'] <= $discountFrom) {
+                    unset($eligibility[$i]);
+                } else {
+                    $eligibilityInterval['from'] = $discountFrom;
+                }
+            }
+            if ($eligibilityInterval['to'] > $discountTo) {
+                if ($eligibilityInterval['from'] >= $discountTo) {
+                    unset($eligibility[$i]);
+                } else {
+                    $eligibilityInterval['to'] = $discountTo;
+                }
+            }
 		}
 		
 		return $eligibility;
@@ -200,10 +228,10 @@ class Billrun_DiscountManager {
 			}
 			$accountEligibility = Billrun_Utils_Time::mergeTimeIntervals($accountEligibility);
 		}
+		
+		$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
 
 		foreach ($subscribersRevisions as $subscriberRevisions) {
-			$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
-		
 			if (empty($subscribersConditions)) {
 				$subsEligibility[$subscriberRevisions[0]['sid']] = [
 					$this->getAllCycleInterval(),
