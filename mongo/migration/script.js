@@ -517,6 +517,18 @@ if (servicesFields) {
 	lastConfig['services']['fields'] = servicesFields;
 }
 
+// BRCD-1917 - add system flag true to discount system fields
+var discountFields = lastConfig['discounts']['fields'];
+if (discountFields) {
+	var discountsSystemFields = ['key', 'from', 'to', 'description'];
+	discountFields.forEach(function (field){
+		if (discountsSystemFields.includes(field['field_name']) && typeof field['system'] === 'undefined') {
+			field['system'] = true;
+		}
+	});
+	lastConfig['discounts']['fields'] = discountFields;
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
