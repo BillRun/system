@@ -106,8 +106,8 @@ class Billrun_DiscountManager {
 	 * 
 	 * @param array $discounts
 	 */
-	public static function setDiscounts($discounts) {
-		self::$discounts = $discounts;
+	public static function setDiscounts($discounts, $billrunKey) {
+		self::$discounts[$billrunKey] = $discounts;
 	}
 
 	/**
