@@ -463,10 +463,15 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('SUBSCRIBER_SERVICE_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $serviceBalance['service_name']);
 						$this->writer->writeElement('GROUP_TYPE', $serviceBalance['service_name']);
-						$this->writer->writeElement('GROUP_ID', $serviceBalance['service_id']);	
-						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec));
-						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['to']->sec));
+						$this->writer->writeElement('GROUP_ID', $serviceBalance['service_id']);
 						$usageInGroup = $planInCycle['include']['groups'][$serviceBalance['service_name']];
+						$this->writer->writeElement('GROUP_START_DATE',empty($usageInGroup['limits']['days']) ?
+							date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec) :
+							date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec));
+						$this->writer->writeElement('GROUP_END_DATE', (empty($usageInGroup['limits']['days']) ||  $serviceBalance['to']->sec < Billrun_Util::getEndTime($billrun_key))  ?
+							date(Billrun_Base::base_dateformat,$serviceBalance['to']->sec) :
+							date('Y-12-31 23:59:59', $serviceBalance['to']->sec) );
+
 						
 						if (isset($usageInGroup['call'])) {
 							$callUsage += $balanceUsages['call']['usagev'];
@@ -495,7 +500,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('MMS_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['limits']['days'])) {
-							$this->writer->writeElement('VF_DAYS_FREEUSAGE', isset($serviceBalance['vf_count_days']) ? $serviceBalance['vf_count_days'] : 0 );
+							$this->writer->writeElement('VF_DAYS_USAGE', isset($serviceBalance['vf_count_days']) ? $serviceBalance['vf_count_days'] : 0 );
 							$this->writer->writeElement('VF_DAYS_CAPACITY', $usageInGroup['limits']['days']);
 							$this->writer->writeElement('VF_DAYS_CAPACITY_ACCUMULATIVE',  "TRUE");
 						}
