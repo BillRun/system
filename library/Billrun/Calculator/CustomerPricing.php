@@ -118,7 +118,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
-		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
+		try {
+			$this->sidsQueuedForRebalance = @array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
+		} catch (Exception $e) {
+			Billrun_Factory::log("Failed when trying to get the  sids in rebalance queue");
+		}
 	}
 
 	protected function getLines() {

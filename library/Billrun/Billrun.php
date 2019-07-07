@@ -530,6 +530,9 @@ class Billrun_Billrun {
 		if (isset($row['arategroup'])) {
 			if (isset($row['in_plan'])) {
 				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
+				if(!empty($row['vf_count_days'])) {
+				$sraw['groups'][$row['arategroup']]['in_plan']['totals']['vf_count_days'] = @max($sraw['groups'][$row['arategroup']]['in_plan']['totals']['vf_count_days'],$row['vf_count_days']);
+			}
 			}
 			if (isset($row['over_plan'])) {
 				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];

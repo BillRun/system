@@ -822,6 +822,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		$list = self::requestList($params_arr);
 
+
 		if (is_array($list) && !empty($list)) {
 			$message = 'Customer API responded with ' . count($list) . ' results';
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
@@ -835,6 +836,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							$temp = $item[$field];
 							unset($item[$field]);
 							$item[$key] = $temp;
+						}
+					}
+
+					if(!empty($item['addons'])) {
+						$balanceMonthKey = Billrun_Util::getBillrunKey(strtotime($item['DATETIME']));
+						$balanceStartDate = Billrun_Util::getStartTime($balanceMonthKey);
+						$balanceEndDate = Billrun_Util::getEndTime($balanceMonthKey);
+						foreach($item['addons']  as &$package) {
+								if(in_array($package['service_name'], Billrun_Factory::config()->getConfigValue('subscriber.monthly_bound_services',["IRP_VF_10_DAYS"])) ) {
+									$package['balance_from_date'] = max(strtotime($package['from_date']),$balanceStartDate);
+									$package['balance_to_date'] = min(strtotime($package['to_date']),$balanceEndDate);
+								}
 						}
 					}
 					$subscribers[$stamp] = new self(array_merge(array('data' => $item), $subscriberSettings));
