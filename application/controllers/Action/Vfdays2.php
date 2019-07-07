@@ -58,6 +58,7 @@ class Vfdays2Action extends Action_Base {
 			$offset_days = 1;
 		}
 
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 
 		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
 		$end = strtotime('midnight', $unix_datetime);
@@ -81,9 +82,12 @@ class Vfdays2Action extends Action_Base {
 					'$gte' => date('YmdHis', $start),
 					'$lte' => date('YmdHis', $end),
 				),
+				'arategroup' => [ '$in' => $vfrateGroups],
 				'vf_count_days' => array(
 					'$gte' => $min_days,
-				)
+				),
+				'in_plan' => ['$gt'=>0]
+
 			),
 		);
 
@@ -91,7 +95,10 @@ class Vfdays2Action extends Action_Base {
 			'$group' => array(
 				'_id' => '$sid',
 				'count_days' => array(
-					'$max' => '$vf_count_days',
+					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
+				),
+				'count_days_addon' => array(
+					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
 				),
 				'last_usage_time' => array(
 					'$max' => '$record_opening_time',
@@ -104,6 +111,7 @@ class Vfdays2Action extends Action_Base {
 				'_id' => 0,
 				'sid' => '$_id',
 				'count_days' => '$count_days',
+				'count_days_addon' => 1,
 				'last_date' => array(
 					'$substr' => array(
 						'$last_usage_time', 4, 4,
@@ -112,7 +120,6 @@ class Vfdays2Action extends Action_Base {
 				'min_days' => array(
 					'$literal' => $min_days,
 				),
-				'max_days' => 45,
 			)
 		);
 
@@ -144,6 +151,8 @@ class Vfdays2Action extends Action_Base {
 		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
 		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
 		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
+
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 		
 		$match = array(
 			'$match' => array(
@@ -164,9 +173,11 @@ class Vfdays2Action extends Action_Base {
 					'$gte' => new MongoDate($start - 3600 * 24),
 					'$lte' => new MongoDate($end + 3600 * 24),
 				),
+				'arategroup' => [ '$in' => $vfrateGroups],
 				'vf_count_days' => array(
 					'$gte' => $min_days,
 				),
+				'in_plan' => ['$gt'=>0]
 			),
 		);
 		
@@ -174,8 +185,9 @@ class Vfdays2Action extends Action_Base {
 			'$project' => array(
 				'sid' => 1,
 				'urt' => 1,
-				'type' => 1,    
-				'vf_count_days' => 1,			
+				'type' => 1,
+				'arategroup' => 1,
+				'vf_count_days' => 1,
 				'isr_time' => array(
 					'$cond' => array(
 						'if' => array(
@@ -209,11 +221,15 @@ class Vfdays2Action extends Action_Base {
 			'$group' => array(
 				'_id' => '$sid',
 				'count_days' => array(
-					'$max' => '$vf_count_days',
+					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
+				),
+				'count_days_addon' => array(
+					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
 				),
 				'last_usage_time' => array(
 					'$max' => '$isr_time',
 				),
+
 			)
 		);
 
@@ -222,6 +238,7 @@ class Vfdays2Action extends Action_Base {
 				'_id' => 0,
 				'sid' => '$_id',
 				'count_days' => '$count_days',
+				'count_days_addon' => 1,
 				'last_day' => array(
 					'$dayOfMonth' => array(
 						'$last_usage_time'
@@ -234,9 +251,6 @@ class Vfdays2Action extends Action_Base {
 				),
 				'min_days' => array(
 					'$literal' => $min_days,
-				),
-				'max_days' => array(
-					'$literal' => 45,
 				),
 			)
 		);
@@ -251,8 +265,9 @@ class Vfdays2Action extends Action_Base {
 				return $ele['sid'];
 			}, $list), $list);
 		foreach ($tap3_list as $subscriber) {
-			if (!isset($list[$subscriber['sid']]) || $list[$subscriber['sid']]['count_days'] < $subscriber['count_days']) {
-				$list[$subscriber['sid']] = $subscriber;
+			if (!isset($list[$subscriber['sid']]) ||
+				$list[$subscriber['sid']]['count_days']+$list[$subscriber['sid']]['count_days_addon'] < $subscriber['count_days']+$subscriber['count_days_adddon'] ) {
+					$list[$subscriber['sid']] = $subscriber;
 			}
 		}
 		return array_values($list);

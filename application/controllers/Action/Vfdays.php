@@ -34,22 +34,21 @@ class VfdaysAction extends Action_Base {
 		Billrun_Factory::log()->log("{$sid} - Quering : ".time(), Zend_Log::INFO);
 		$results = $this->count_days($sid, $year, $max_datetime);
 		Billrun_Factory::log()->log("{$sid} -  Quering Locally done : ".time(), Zend_Log::INFO);
-		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
+		$tap3_results = $this->count_days_tap3($sid, $year, $max_datetime);
 		Billrun_Factory::log()->log(" {$sid} - Quering remote done : ".time(), Zend_Log::INFO);
-		if (isset($results[0]["count"])) {
-			$days = $results[0]["count"];
-		} else {
-			$days = 0;
-		}
-		$max_days = ($tap3_count > $days) ? $tap3_count : $days;
+
+		$days = empty($results['VF']["count"]) ? 0 :$results['VF']["count"];
+		$tap3_vf_count = empty($tap3_results['VF']["day_sum"]) ? 0 :$tap3_results['VF']["day_sum"];
+		$addon_max_days = max(0,@$tap3_results['IRP_VF_10_DAYS']["day_sum"],@$results['IRP_VF_10_DAYS']["count"]);
+
+		$max_days = max($tap3_vf_count,$days);
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request->getRequest(),
 				'details' => array(
 					'days' => $max_days,
-					'min_day' => 45,
-					'max_day' => 45,
+					"days_addon"=>$addon_max_days
 				)
 		)));
 	}
@@ -64,6 +63,7 @@ class VfdaysAction extends Action_Base {
 
 //		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 //		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 
 		$match1 = array(
 			'$match' => array(
@@ -76,8 +76,7 @@ class VfdaysAction extends Action_Base {
 		$match2 = array(
 			'$match' => array(
 				'$or' => array(
-					array('arategroup' => 'VF'),
-					array('vf_count_days' => array('$exists' => 1)),
+					array('arategroup' => [ '$in' => $vfrateGroups] )
 				),
 				'record_opening_time' => new MongoRegex("/^$year/")
 //				'$or' => array(
@@ -115,30 +114,36 @@ class VfdaysAction extends Action_Base {
 
 		$group = array(
 			'$group' => array(
-				'_id' => array('$substr' =>
-					array(
-						'$record_opening_time',
-						4,
-						4
-					)
-				),
+				'_id' => [
+							'date' =>['$substr' => [
+								'$record_opening_time',
+								4,
+								4
+							]],
+							'arategroup' => '$arategroup'
+				],
 				'count' => array('$sum' => 1),
 			),
 		);
 
 		$group2 = array(
 			'$group' => array(
-				'_id' => null,
+				'_id' => '$_id.arategroup',
 				'count' => array('$sum' => 1),
 			),
 		);
 
-		$res = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
-		return $res;
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
+		$associatedResults = [];
+		foreach($results as $res) {
+			$associatedResults[$res['_id']] = $res;
+		}
+		return $associatedResults;
 	}
 
 	public function count_days_tap3($sid, $year = null, $max_datetime = null) {
 		try {
+			$vfRateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
 			$from = strtotime($year . '-01-01' . ' 00:00:00');
 			if (is_null($max_datetime)) {
 				$to = strtotime($year . '-12-31' . ' 23:59:59');
@@ -167,7 +172,7 @@ class VfdaysAction extends Action_Base {
 						array('type' => 'smsc'),
 					),
 					'plan' => array('$in' => $this->plans),
-					'arategroup' => "VF",
+					'arategroup' => ['$in'=> $vfRateGroups ],
 					'billrun' => array(
 						'$exists' => true,
 					),
@@ -218,12 +223,13 @@ class VfdaysAction extends Action_Base {
 						'month_key' => array(
 							'$month' => array('$isr_time'),
 						),
+						'arategroup' => '$arategroup'
 					),
 				),
 			);
 			$group2 = array(
 				'$group' => array(
-					'_id' => 'null',
+					'_id' => '$_id.arategroup',
 					'day_sum' => array(
 						'$sum' => 1,
 					),
@@ -235,7 +241,11 @@ class VfdaysAction extends Action_Base {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			Billrun_Factory::log('We will skip the billing fetch for this call.', Zend_Log::WARN);
 		}
-		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
+		$associatedResults = [];
+		foreach($results as $res) {
+			$associatedResults[$res['_id']] = $res;
+		}
+		return $associatedResults;
 	}
 
 }

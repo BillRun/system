@@ -21,6 +21,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $count_days;
 	protected $roamingSms = false;
 	protected $premium_ir_not_included = null;
+	protected $limit_count = [] ;
+	protected $usage_count = [] ;
+
+	
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
 		if (isset($row['type'])) {
@@ -40,7 +44,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$this->premium_ir_not_included = null;
 		}
-
+		$this->limit_count = [];
+		$this->usage_count = [];
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
@@ -48,6 +53,37 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
 		$this->count_days = NULL;
+		$this->limit_count = [];
+		$this->usage_count = [];
+	}
+
+	public function addDataToUpdate($balance,&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		$packageUsage = @$this->usage_count[$balance['service_id'].$balance['service_name'].$balance['from']->sec];
+		if(!empty($packageUsage)) {
+			$update['$max']['vf_count_days'] = $packageUsage;
+			$this->count_days = $packageUsage;
+		}
+	}
+
+	public function checkPackageRules(&$legitimate, $package, $row, $plan, $usageType, $rate, $subscriberBalance) {
+		$planPackage = $plan->get('include.groups.'.$package['service_name']);
+		if(empty($planPackage)) {
+			Billrun_Factory::log("VF plguin: couldn't find package : {$package['service_name']} in plan : {$plan->get('name')}");
+		}
+		//retrun is the package  valid for VF?
+		if( empty($planPackage) || empty($planPackage['limits']['vf'])|| empty($planPackage['limits']['days']) ) {
+			return;
+		}
+		$pckgKey = $package['id'].$package['service_name'].strtotime($package['balance_from_date']);
+		$sidDayCount = $this->getSidDaysCount($subscriberBalance['sid'], $planPackage['limits'], $plan, $package['service_name'],$pckgKey,['roaming_balances.package_id'=>$package['id']]);
+
+		$this->limit_count[$pckgKey] = $planPackage['limits']['days'];
+		$this->usage_count[$pckgKey] = $sidDayCount;
+// 		//$this->count_days += $this->usage_count[$pckgKey];
+
+		if ($sidDayCount > $planPackage['limits']['days']) {
+			$legitimate = false;
+		}
 	}
 
 	/**
@@ -100,7 +136,48 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
 	}
 
-	protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
+	protected function getSidDaysCount($sid, $limits, $plan, $groupSelected,$cacheID="VF",$furtherMatch = []) {
+		$line_year = substr($this->line_time, 0, 4);
+		$line_month = substr($this->line_time, 4, 2);
+		$line_day = substr($this->line_time, 6, 2);
+		$dayKey = $line_year . $line_month . $line_day;
+
+		$results = [];
+		if (!isset($this->cached_results[$cacheID][$sid][$line_year]) || !empty($furtherMatch) ) {
+			if(!isset($this->cached_results[$cacheID][$sid][$line_year])) {
+				$this->cached_results[$cacheID][$sid][$line_year] = [];
+			}
+			$queryResults = $this->loadSidLines($sid, $limits, $plan, $groupSelected,$furtherMatch);
+			if(!empty($queryResults)) {
+				foreach ($queryResults as $elem) {
+					if( !in_array($elem, $this->cached_results[$cacheID][$sid][$line_year])) {
+						$this->cached_results[$cacheID][$sid][$line_year][] = $elem;
+					}
+				}
+			}
+			$queryResults = $this->loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected,$furtherMatch);
+			if(!empty($queryResults)) {
+				foreach ($queryResults as $elem) {
+					if( !in_array($elem, $this->cached_results[$cacheID][$sid][$line_year])) {
+						$this->cached_results[$cacheID][$sid][$line_year][] = $elem;
+					}
+				}
+			}
+		}
+		if( !in_array($dayKey, $this->cached_results[$cacheID][$sid][$line_year])) {
+			$this->cached_results[$cacheID][$sid][$line_year][] = $dayKey;
+		}
+		foreach ($this->cached_results[$cacheID][$sid][$line_year] as $elem) {
+			if ($elem <= $dayKey) {
+				$results[] = $elem;
+			}
+		}
+
+		$results = array_unique($results);
+		return count($results);
+	}
+
+	protected function loadSidLines($sid, $limits, $plan, $groupSelected,$furtherMatch = []) {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
@@ -128,7 +205,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					array('type' => 'smsc'),
 				),
 				'plan' => $plan->getData()->get('name'),
-				'arategroup' => $groupSelected,
+				'$or' => [
+						['arategroup' => $groupSelected ],
+						['arategroups.service_name' =>  $groupSelected ]
+					],
 				'in_group' => array(
 					'$gt' => 0,
 				),
@@ -137,6 +217,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				),
 			),
 		);
+			
+		$filterMatch = [ '$match' => $furtherMatch ];
 			
 		$project = array(
 			'$project' => array(
@@ -207,11 +289,15 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				),
 			),
 		);
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
-		return $this->handleResultPadding($results);
+
+		if(empty($furtherMatch)) {
+			$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
+		} else {
+			$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $filterMatch, $project, $match2, $group, $match3);
+		}
 	}
 	
-	protected function loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected) {	
+	protected function loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected, $furtherMatch = []) {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
@@ -238,7 +324,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					'$in' => array('nrtrde', 'ggsn')
 				),
 				'plan' => $plan->getData()->get('name'),
-				'arategroup' => $groupSelected,
+				'$or' => [
+						['arategroup' => $groupSelected ],
+						['arategroups.service_name' =>  $groupSelected ]
+					],
 				'in_group' => array(
 					'$gt' => 0,
 				),
@@ -247,6 +336,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				),
 			),
 		);
+
+		$filterMatch = [ '$match' => $furtherMatch ];
 		
 
 		$project = array(
@@ -320,7 +411,12 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
+
+		if(empty($furtherMatch)) {
+			$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
+		} else {
+			$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $filterMatch, $project, $match2, $group, $match3);
+		}
 		return $this->handleResultPadding($results);
 	}
 	
