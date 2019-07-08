@@ -180,17 +180,17 @@ trait Billrun_Traits_ConditionsCheck {
 			$values = [$values];
 		}
 		
-		foreach ($range as $interval) {
-			foreach ($values as $value) {
-				if (!($interval['from'] <= $value && $interval['to'] >= $value)) {
-					return false;
+		foreach ($values as $value) {
+			foreach ($range as $interval) {
+				if ($interval['from'] <= $value && $interval['to'] >= $value) {
+					continue 2; // value in range
 				}
-				
-				return true;
 			}
+			
+			return false; // value not in any interval
 		}
 		
-		return false;
+		return true;
 	}
 
 	/**
