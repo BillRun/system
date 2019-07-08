@@ -152,7 +152,6 @@ class Billrun_DiscountManager {
 			$eligibilityDates = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			if (!empty($eligibilityDates)) {
 				$this->eligibleDiscounts[$discount['key']] = [
-					'discount' => $discount,
 					'eligibility' => $eligibilityDates,
 				];
 			}
@@ -378,7 +377,7 @@ class Billrun_DiscountManager {
 				$dayTo = strtotime('+1 day', $dayFrom);
 				foreach ($subsEligibility as $subEligibility) {
 					foreach ($subEligibility as $subEligibilityIntervals) {
-						if ($subEligibilityIntervals['from'] <= $day && $subEligibilityIntervals['to'] >= $day) {
+						if ($subEligibilityIntervals['from'] <= $day && $subEligibilityIntervals['to'] > $day) {
 							$eligibleSubsInDay++;
 							
 							if (!is_null($maxSubscribers) && $eligibleSubsInDay > $maxSubscribers) { // passed max subscribers in current day
