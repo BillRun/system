@@ -12,7 +12,7 @@ class Billrun_DiscountManager {
 	protected $eligibleDiscounts = [];
 	
 	protected static $discounts = [];
-	protected static $discountsFields = [];
+	protected static $discountsDateRangeFields = [];
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], $params = []) {
 		$this->billrunKey = Billrun_Util::getIn($params, 'billrun_key', '');
@@ -22,7 +22,121 @@ class Billrun_DiscountManager {
         }
 		$this->startTime = Billrun_Billingcycle::getStartTime($this->billrunKey);
 		$this->endTime = Billrun_Billingcycle::getEndTime($this->billrunKey);
+		$this->prepareRevisions($accountRevisions, $subscribersRevisions);
 		$this->loadEligibleDiscounts($accountRevisions, $subscribersRevisions);
+	}
+	
+	/**
+	 * prepare revisions for discount calculation
+	 * 
+	 * @param array $accountRevisions - by reference
+	 * @param array $subscribersRevisions - by reference
+	 */
+	protected function prepareRevisions(&$accountRevisions, &$subscribersRevisions) {
+		$accountRevisions = $this->getEntityRevisions($accountRevisions, 'account');
+		foreach ($subscribersRevisions as &$subscriberRevisions) {
+			$subscriberRevisions = $this->getEntityRevisions($subscriberRevisions, 'subscriber');
+		}
+	}
+	
+	/**
+	 * get revisions used for discount calculation
+	 * 
+	 * @param array $entityRevisions
+	 * @param string $type
+	 * @return array
+	 */
+	protected function getEntityRevisions($entityRevisions, $type) {
+		$ret = [];
+		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->billrunKey, $type);
+		if (empty($dateRangeDiscoutnsFields)) {
+			return $entityRevisions;
+		}
+		
+		foreach ($entityRevisions as $entityRevision) {
+			$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
+			$ret = array_merge($ret, $splittedRevisions);
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * split revision to revisions by given date range fields
+	 * 
+	 * @param array $revision
+	 * @param array $fields
+	 * @return array
+	 */
+	protected function splitRevisionByFields($revision, $fields) {
+		$ret = [];
+		$revisionFrom = $revision['from']->sec;
+		$revisionTo = $revision['to']->sec;
+		$froms = [$revisionFrom];
+		$tos = [$revisionTo];
+		
+		foreach ($fields as $field) {
+			if (!isset($revision[$field])) {
+				continue;
+			}
+			
+			foreach ($revision[$field] as $interval) {
+				$from = $interval['from'];
+				$to = $interval['to'];
+				
+				if ($from > $revisionFrom) {
+					$froms[] = $from;
+				}
+				
+				if ($to < $revisionTo) {
+					$tos[] = $to;
+				}
+			}
+		}
+		
+		$intervals = array_unique(array_merge($froms, $tos));
+		sort($intervals);
+		
+		for ($i = 1; $i < count($intervals); $i++) {
+			$newRevision = $revision;
+			$from = $intervals[$i - 1];
+			$to = $intervals[$i];
+			$newRevision['from'] = new MongoDate($from);
+			$newRevision['to'] = new MongoDate($to);
+			
+			foreach ($fields as $field) {
+				if (!isset($newRevision[$field])) {
+					continue;
+				}
+				
+				$oldIntervals = $newRevision[$field];
+				$newRevision[$field] = [];
+				
+				foreach ($oldIntervals as $interval) {
+					if (($interval['from'] <= $from && $interval['to'] > $from) ||
+							($interval['from'] <= $to && $interval['to'] > $to)) {
+						$newIntervalFrom = max($from, $interval['from']);
+						$newIntervalTo = min($to, $interval['to']);
+						if ($newIntervalTo > $newIntervalFrom) {
+							$newRevision[$field][] = [
+								'from' => $newIntervalFrom,
+								'to' => $newIntervalTo,
+							];
+							break;
+						}
+					}
+				}
+				
+				if (empty($newRevision[$field])) {
+					unset($newRevision[$field]);
+				}
+				
+			}
+			
+			$ret[] = $newRevision;
+		}
+		
+		return $ret;
 	}
 
 	/**
@@ -111,32 +225,41 @@ class Billrun_DiscountManager {
 	}
 
 	/**
-	 * get all fields used by discount for the given $type
+	 * get all date range fields used by discount for the given $type
 	 * uses internal static cache
 	 * 
 	 * @param string $billrunKey
 	 * @param string $type
 	 * @return array
 	 */
-	public static function getDiscountsFields($billrunKey, $type) {
-		if (empty(self::$discountsFields[$billrunKey][$type])) {
-			self::$discountsFields[$billrunKey][$type] = [];
+	public static function getDiscountsDateRangeFields($billrunKey, $type) {
+		if (empty(self::$discountsDateRangeFields[$billrunKey][$type])) {
+			self::$discountsDateRangeFields[$billrunKey][$type] = [];
 			foreach (self::getDiscounts($billrunKey) as $discount) {
 				foreach (Billrun_Util::getIn($discount, ['params', 'conditions'], []) as $condition) {
 					if (!isset($condition[$type])) {
 						continue;
 					}
 					
-					foreach (Billrun_Util::getIn($condition, [$type, 'fields'], []) as $field) {
-                        self::$discountsFields[$billrunKey][$type][] = $field['field'];
+					$typeConditions = Billrun_Util::getIn($condition, $type, []);
+					if (Billrun_Util::isAssoc($typeConditions)) { // handle account/subscriber structure
+						$typeConditions = [$typeConditions];
+					}
+					
+					foreach ($typeConditions as $typeCondition) {
+						foreach (Billrun_Util::getIn($typeCondition, 'fields', []) as $field) {
+							if (in_array($field['value'], ['isActive'])) {
+								self::$discountsDateRangeFields[$billrunKey][$type][] = $field['field'];
+							}
+						}
 					}
 				}
 			}
 			
-			self::$discountsFields[$billrunKey][$type] = array_unique(self::$discountsFields[$billrunKey][$type]);
+			self::$discountsDateRangeFields[$billrunKey][$type] = array_unique(self::$discountsDateRangeFields[$billrunKey][$type]);
 		}
 
-		return self::$discountsFields[$billrunKey][$type];
+		return self::$discountsDateRangeFields[$billrunKey][$type];
 	}
 	
 	/**
