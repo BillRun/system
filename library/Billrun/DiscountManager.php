@@ -199,6 +199,7 @@ class Billrun_DiscountManager {
 			];
             
             $sort = [
+				'priority' => -1,
                 'to' => -1,
             ];
 			
@@ -225,6 +226,9 @@ class Billrun_DiscountManager {
 	 * @param array $discounts
 	 */
 	public static function setDiscounts($discounts, $billrunKey) {
+		usort($discounts, function ($a, $b) {
+			return Billrun_Util::getIn($b, 'priority', 0) > Billrun_Util::getIn($a, 'priority', 0);
+		});
 		self::$discounts[$billrunKey] = $discounts;
 	}
 
