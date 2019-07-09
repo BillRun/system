@@ -274,7 +274,7 @@ class Vfdays2Action extends Action_Base {
 			}, $list), $list);
 		foreach ($tap3_list as $subscriber) {
 			if (!isset($list[$subscriber['sid']]) ||
-				$list[$subscriber['sid']]['count_days']+$list[$subscriber['sid']]['count_days_addon'] < $subscriber['count_days']+$subscriber['count_days_adddon'] ) {
+				$list[$subscriber['sid']]['count_days']+$list[$subscriber['sid']]['count_days_addon'] < $subscriber['count_days']+$subscriber['count_days_addon'] ) {
 					$list[$subscriber['sid']] = $subscriber;
 			}
 		}
