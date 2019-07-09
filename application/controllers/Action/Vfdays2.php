@@ -97,6 +97,9 @@ class Vfdays2Action extends Action_Base {
 				'count_days' => array(
 					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
 				),
+				'merged_count_days' => array(
+					'$max' => ['$cond'=> [['$in'=>['$arategroup',['IRP_VF_10_DAYS',"VF"]]],'$vf_count_days',0]],
+				),
 				'count_days_addon' => array(
 					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
 				),
@@ -112,6 +115,7 @@ class Vfdays2Action extends Action_Base {
 				'sid' => '$_id',
 				'count_days' => '$count_days',
 				'count_days_addon' => 1,
+				'merged_count_days' => 1,
 				'last_date' => array(
 					'$substr' => array(
 						'$last_usage_time', 4, 4,
@@ -124,7 +128,7 @@ class Vfdays2Action extends Action_Base {
 		);
 
 		$res = call_user_func_array(array(Billrun_Factory::db()->linesCollection(), 'aggregate'), $elements);
-		return $res;
+		return $this->mergeDaysCount($res);
 	}
 
 	protected function count_days_by_lines_tap3($min_days = 35, $datetime = null, $offset_days = 1) {
@@ -223,6 +227,9 @@ class Vfdays2Action extends Action_Base {
 				'count_days' => array(
 					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
 				),
+				'merged_count_days' => array(
+					'$max' => ['$cond'=> [['$in'=>['$arategroup',['IRP_VF_10_DAYS',"VF"]]],'$vf_count_days',0]],
+				),
 				'count_days_addon' => array(
 					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
 				),
@@ -239,6 +246,7 @@ class Vfdays2Action extends Action_Base {
 				'sid' => '$_id',
 				'count_days' => '$count_days',
 				'count_days_addon' => 1,
+				'merged_count_days' => 1,
 				'last_day' => array(
 					'$dayOfMonth' => array(
 						'$last_usage_time'
@@ -257,7 +265,7 @@ class Vfdays2Action extends Action_Base {
 		
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
 		$results = $billing_connection->aggregate($match, $match2 ,$project1, $match3, $group, $project2);
-		return $this->fixResultString($results);
+		return $this->mergeDaysCount($this->fixResultString($results));
 	}
 
 	protected function getMaxList($list, $tap3_list) {
@@ -266,7 +274,7 @@ class Vfdays2Action extends Action_Base {
 			}, $list), $list);
 		foreach ($tap3_list as $subscriber) {
 			if (!isset($list[$subscriber['sid']]) ||
-				$list[$subscriber['sid']]['count_days']+@$list[$subscriber['sid']]['count_days_addon'] < $subscriber['count_days']+@$subscriber['count_days_adddon'] ) {
+				$list[$subscriber['sid']]['count_days']+$list[$subscriber['sid']]['count_days_addon'] < $subscriber['count_days']+$subscriber['count_days_adddon'] ) {
 					$list[$subscriber['sid']] = $subscriber;
 			}
 		}
@@ -287,6 +295,20 @@ class Vfdays2Action extends Action_Base {
 			unset($results[$key]['last_day']);
 			unset($results[$key]['last_month']);
 		}
+		return $results;
+	}
+
+	protected function mergeDaysCount($results) {
+		foreach ($results as $key => $result) {
+			if(!empty($result['count_days_addon']) && $result['count_days_addon'] >= 46 ) {
+				$results[$key]['count_days_addon'] -= 46;
+			}
+			if( empty($result['count_days']) && !empty($result['merged_count_days'])  ) {
+				$results[$key]['count_days'] = $result['merged_count_days'];
+			}
+			unset($results[$key]['merged_count_days']);
+		}
+
 		return $results;
 	}
 
