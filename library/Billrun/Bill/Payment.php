@@ -928,12 +928,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return true;
 	}
 	
-	public function addUfFields($fields = array()) {
-		$userFields = array();
-		foreach ($fields as $key => $value) {			
-			$userFields[$key] = $value;
-		}
-		$this->data['uf'] = $userFields;
+	public function addUserFields($fields = array()) {
+		$this->data['uf'] = $fields;
 	}
 	
 
