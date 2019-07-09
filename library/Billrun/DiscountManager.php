@@ -76,11 +76,12 @@ class Billrun_DiscountManager {
 		$tos = [$revisionTo];
 		
 		foreach ($fields as $field) {
-			if (!isset($revision[$field])) {
+			$val = Billrun_Util::getIn($revision, $field, null);
+			if (is_null($val)) {
 				continue;
 			}
 			
-			foreach ($revision[$field] as $interval) {
+			foreach ($val as $interval) {
 				$from = $interval['from'];
 				$to = $interval['to'];
 				
@@ -105,12 +106,14 @@ class Billrun_DiscountManager {
 			$newRevision['to'] = new MongoDate($to);
 			
 			foreach ($fields as $field) {
-				if (!isset($newRevision[$field])) {
+				$val = Billrun_Util::getIn($newRevision, $field, null);
+				if (is_null($val)) {
 					continue;
 				}
 				
-				$oldIntervals = $newRevision[$field];
-				$newRevision[$field] = [];
+				$oldIntervals = $val;
+				Billrun_Util::setIn($newRevision, $field, []);
+				$newIntervals = [];
 				
 				foreach ($oldIntervals as $interval) {
 					if (($interval['from'] <= $from && $interval['to'] > $from) ||
@@ -118,7 +121,7 @@ class Billrun_DiscountManager {
 						$newIntervalFrom = max($from, $interval['from']);
 						$newIntervalTo = min($to, $interval['to']);
 						if ($newIntervalTo > $newIntervalFrom) {
-							$newRevision[$field][] = [
+							$newIntervals[] = [
 								'from' => $newIntervalFrom,
 								'to' => $newIntervalTo,
 							];
@@ -127,8 +130,10 @@ class Billrun_DiscountManager {
 					}
 				}
 				
-				if (empty($newRevision[$field])) {
-					unset($newRevision[$field]);
+				if (empty($newIntervals)) {
+					Billrun_Util::unsetIn($newRevision, $field);
+				} else {
+					Billrun_Util::setIn($newRevision, $field, $newIntervals);
 				}
 				
 			}
