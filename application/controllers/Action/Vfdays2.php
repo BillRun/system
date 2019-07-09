@@ -98,7 +98,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
 				),
 				'merged_count_days' => array(
-					'$max' => ['$cond'=> [['$in'=>['$arategroup',['IRP_VF_10_DAYS',"VF"]]],'$vf_count_days',0]],
+					'$max' => ['$cond'=> [ ['$or'=>[['$eq'=>['VF','$arategroup']],['$eq'=>['IRP_VF_10_DAYS','$arategroup']]]],'$vf_count_days',0]],
 				),
 				'count_days_addon' => array(
 					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
@@ -228,7 +228,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => ['$cond'=> [['$eq'=>['VF','$arategroup']],'$vf_count_days',0]],
 				),
 				'merged_count_days' => array(
-					'$max' => ['$cond'=> [['$in'=>['$arategroup',['IRP_VF_10_DAYS',"VF"]]],'$vf_count_days',0]],
+					'$max' => ['$cond'=> [ ['$or'=>[['$eq'=>['VF','$arategroup']],['$eq'=>['IRP_VF_10_DAYS','$arategroup']]]],'$vf_count_days',0]],
 				),
 				'count_days_addon' => array(
 					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
