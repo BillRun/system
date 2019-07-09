@@ -507,9 +507,11 @@ class Generator_Golanxml extends Billrun_Generator {
 
 						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
 					}
-					
+
+					$excludeFromGroupUsage = Billrun_Factory::config()->getConfigValue('golanxml.exclude_from_group_usage',['IRP_VF_10_DAYS']);
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
-						if (in_array($group_name, $servicesNameWithBalance) ) {
+						if (	in_array($group_name, $servicesNameWithBalance)
+								|| in_array($group_name,$excludeFromGroupUsage) ) {
 							continue;
 						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
@@ -572,9 +574,9 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
-							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
+							$this->writer->writeElement('DATA_CAPACITY', (($group_name == 'VF') || isset($group['limits']['vf'],$group['limits']['days'])) ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
 							if(isset($group['limits']['vf'],$group['limits']['days'])) {
-								$this->writer->writeElement('VF_DAYS_FREEUSAGE', $subscriber_group_usage_VF_DAYS);
+								$this->writer->writeElement('VF_DAYS_USAGE', isset($subscriber_group_usage_VF_DAYS) ? $subscriber_group_usage_VF_DAYS : 0 );
 								$this->writer->writeElement('VF_DAYS_CAPACITY', $group['limits']['days']);
 							}
 						}
