@@ -139,31 +139,47 @@ trait Billrun_Traits_ConditionsCheck {
 	 * @return array
 	 */
 	protected function getIsOperatorQuery($fieldName, $operator, $value, $entity = [], $params = []) {
-		if ($value == 'isActive') {
-			return [
-				$fieldName => [
-					'__callback' => [
-						'callback' => [
-							$this,
-							'inRange'
-						],
-						'arguments' => [
-							$entity['from']->sec,
-							$entity['to']->sec,
+		switch ($value) {
+			case 'isActive':
+				return [
+					$fieldName => [
+						'__callback' => [
+							'callback' => [
+								$this,
+								'inRange'
+							],
+							'arguments' => [
+								$entity['from']->sec,
+								$entity['to']->sec,
+							],
 						],
 					],
-				],
-			];
+				];
+			case 'isNotActive':
+				return [
+					$fieldName => [
+						'__callback' => [
+							'callback' => [
+								$this,
+								'notInRange'
+							],
+							'arguments' => [
+								$entity['from']->sec,
+								$entity['to']->sec,
+							],
+						],
+					],
+				];
+			default:
+				return [
+					$fieldName => [
+						'$exists' => true,
+						'$eq' => $value,
+					],
+				];
 		}
-		
-		return [
-			$fieldName => [
-				'$exists' => true,
-				'$eq' => $value,
-			],
-		];
 	}
-	
+
 	/**
 	 * assistance function that will be used by ArrayQuery to check if value/s are in date time range
 	 * 
@@ -191,6 +207,17 @@ trait Billrun_Traits_ConditionsCheck {
 		}
 		
 		return true;
+	}
+
+	/**
+	 * assistance function that will be used by ArrayQuery to check if value/s are not in date time range
+	 * 
+	 * @param array $range - date
+	 * @param array $values
+	 * @return boolean
+	 */
+	public function notInRange($range, $values) {
+		return !$this->inRange($range, $values);
 	}
 
 	/**
