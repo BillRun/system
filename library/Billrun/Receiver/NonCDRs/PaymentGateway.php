@@ -26,13 +26,13 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 	 * @var string
 	 */
 	protected $actionType;
-	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
 
 	public function __construct($options) {
 		if (!isset($options['receiver']['connection'])) {
 			throw new Exception('Missing connection details');
 		}
-		$this->loadConfig($this->configPath);
+		$configPath = APPLICATION_PATH . "/conf/PaymentGateways/" . $this->gatewayName . "/struct.ini";
+		$this->loadConfig($configPath);
 		$options = array_merge($options, $this->getAllReceiverDefinitions($this->actionType));
 		parent::__construct($options);
 	}

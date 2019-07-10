@@ -37,11 +37,11 @@ class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
 	protected $chargeOptions = array();
 	protected $startingString;
 	protected $endingString;
-	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
 
 	public function __construct($options) {
 		$this->initPaymentGatwayDetails();
-		$this->loadConfig($this->configPath);
+		$configPath = APPLICATION_PATH . "/conf/PaymentGateways/" . self::$type . "/struct.ini";
+		$this->loadConfig($configPath);
 		$options = array_merge($options, $this->getAllExportDefinitions());
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->extractionDateFormat = isset($this->exportDefinitions['extraction_date_format']) ? date($this->exportDefinitions['extraction_date_format']) : '';

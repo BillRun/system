@@ -34,11 +34,10 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 	protected $processorDefinitions;
 	protected $parserDefinitions;
 	protected $workspace;
-	protected $configPath = APPLICATION_PATH . "/conf/PaymentGateways/CreditGuard/struct.ini";
-
 
 	public function __construct($options) {
-		$this->loadConfig($this->configPath);
+		$configPath = APPLICATION_PATH . "/conf/PaymentGateways/" . $this->gatewayName . "/struct.ini";
+		$this->loadConfig($configPath);
 		$options = array_merge($options, $this->getProcessorDefinitions());
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
