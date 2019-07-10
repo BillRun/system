@@ -140,7 +140,7 @@ trait Billrun_Traits_ConditionsCheck {
 	 */
 	protected function getIsOperatorQuery($fieldName, $operator, $value, $entity = [], $params = []) {
 		switch ($value) {
-			case 'isActive':
+			case 'active':
 				return [
 					$fieldName => [
 						'__callback' => [
@@ -155,7 +155,7 @@ trait Billrun_Traits_ConditionsCheck {
 						],
 					],
 				];
-			case 'isNotActive':
+			case 'notActive':
 				return [
 					$fieldName => [
 						'__callback' => [
