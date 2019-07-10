@@ -12,6 +12,7 @@ class Billrun_DiscountManager {
 	protected $eligibleDiscounts = [];
 	
 	protected static $discounts = [];
+	protected static $subscribersDiscounts = [];
 	protected static $discountsDateRangeFields = [];
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], $params = []) {
@@ -230,6 +231,35 @@ class Billrun_DiscountManager {
 			return Billrun_Util::getIn($b, 'priority', 0) > Billrun_Util::getIn($a, 'priority', 0);
 		});
 		self::$discounts[$billrunKey] = $discounts;
+	}
+	
+	/**
+	 * manually set subscriber discount
+	 * 
+	 * @param array $discount
+	 * @param string $billrunKey
+	 */
+	protected static function setSubscriberDiscount($discount, $billrunKey) {
+		self::$subscribersDiscounts[$billrunKey][$discounts['key']] = $discount;
+	}
+	
+	/**
+	 * get discount object by key
+	 * 
+	 * @param string $discountKey
+	 * @param string $billrunKey
+	 * @return discount object if found, false otherwise
+	 */
+	public static function getDiscount($discountKey, $billrunKey) {
+		if (isset(self::$discounts[$billrunKey][$discountKey])) {
+			return self::$discounts[$billrunKey][$discountKey];
+		}
+
+		if (isset(self::$subscribersDiscounts[$billrunKey][$discountKey])) {
+			return self::$subscribersDiscounts[$billrunKey][$discountKey];
+		}
+		
+		return false;
 	}
 
 	/**
