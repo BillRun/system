@@ -84,18 +84,29 @@
 									} else {
 										$bill_mark = '';
 									}
+
+									$split_coll = explode('|', $coll_selection);
+									$coll = $split_coll[0];
+									$db = $split_coll[1];
+
 									echo	"<option value='" . 'lines' . "|" . 'billing' . "' $bill_mark>lines (billing)</option>";
-									$collections = LinesModel::getArchiveLinesCollections();
-									foreach($collections as $collection){
-										$split_coll = explode('|', $coll_selection);
-										$coll = $split_coll[0];
-										$db = $split_coll[1];
+									$archiveCollections = LinesModel::getArchiveLinesCollections();
+									foreach($archiveCollections as $collection){
 										if (($db == 'archive') && ($collection == $coll)){
 											$archive_mark = 'selected';
 										} else {
 											$archive_mark = '';
 										}
 										echo	"<option value='" . $collection . "|" . 'archive' . "' $archive_mark>$collection (archive)</option>";
+									}		
+									$historyArchiveCollections = LinesModel::getHistoryArchiveLinesCollections();
+									foreach($historyArchiveCollections as $collection){
+										if (($db == 'historyarchive') && ($collection == $coll)){
+											$archive_mark = 'selected';
+										} else {
+											$archive_mark = '';
+										}
+										echo	"<option value='" . $collection . "|" . 'historyarchive' . "' $archive_mark>$collection (archive)</option>";
 									}		
 								echo "</select>";
 							echo "</div>";
