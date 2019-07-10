@@ -25,7 +25,7 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
-		if (!$method && empty($action)) {
+		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
 		if (empty($action) && !(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
