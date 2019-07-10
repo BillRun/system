@@ -155,6 +155,37 @@ class Billrun_Utils_Time {
 		self::sortTimeIntervals($intervalsStack);
 		return $intervalsStack;
 	}
+	
+	/**
+	 * Get intersection of intervals
+	 * Will return only intervals that overlaps all intervals
+	 * 
+	 * @param array $intervals1 - every element must have from and to fields
+	 * @param array $intervals2 - every element must have from and to fields
+	 * @return array of intervals (objects with from and to) sorted by from field
+	 */
+	public static function getIntervalsIntersections($intervals1, $intervals2, $fromField = 'from', $toField = 'to') {
+ 		if (empty($intervals1) || empty($intervals2)) {
+			return [];
+		}
+
+		$ret = [];
+		
+		foreach ($intervals1 as $interval1) {
+			foreach ($intervals2 as $interval2) {
+				if ($interval1[$toField] <= $interval2[$fromField] || $interval1[$fromField] >= $interval2[$toField]) { // no intersection
+					continue;
+				}
+				
+				$ret[] = [
+					$fromField => max($interval1[$fromField], $interval2[$fromField]),
+					$toField => min($interval1[$toField], $interval2[$toField]),
+				];
+			}
+		}
+		
+		return self::mergeTimeIntervals($ret, $fromField, $toField);
+	}
 
 	/**
 	 * Sort given intervals (objects with from and to fields) array
