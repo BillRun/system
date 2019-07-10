@@ -202,12 +202,12 @@ class PayAction extends ApiAction {
 		if (!(($cancellationsArr = json_decode($cancellations, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($cancellationsArr))) {
 			return $this->setError('No cancellations found', $request->getPost());
 		}
-		$skipErrors = !empty($request->get('skip_errors')) ? $request->get('skip_errors') : false;
+		$ignoreErrors = !empty($request->get('ignore_errors')) ? $request->get('ignore_errors') : false;
 		$ufPerTxid = array();
 
 		try {
 			$paymentsToCancel = $this->verifyPaymentsCanBeCancelled($cancellationsArr, $ufPerTxid);
-			if (!$skipErrors && !empty($paymentsToCancel['errors'])) {
+			if (!$ignoreErrors && !empty($paymentsToCancel['errors'])) {
 				$this->getController()->setOutput(array(array(
 						'status' => 0,
 						'desc' => 'error',
