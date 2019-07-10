@@ -25,13 +25,13 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
-		if (!$method && $action != 'cancel_payments') {
+		if (!$method && empty($action)) {
 			return $this->setError('No method found', $request->getPost());
 		}
 		if (empty($action) && !(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
-		try {	
+		try {
 			switch ($action) {
 				case 'split_bill':
 					$this->executeSplitBill($request);
