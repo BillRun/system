@@ -155,11 +155,9 @@ class Billrun_DiscountManager {
 		$this->eligibleDiscounts = [];
 		
 		foreach (self::getDiscounts($this->billrunKey) as $discount) {
-			$eligibilityDates = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
-			if (!empty($eligibilityDates)) {
-				$this->eligibleDiscounts[$discount['key']] = [
-					'eligibility' => $eligibilityDates,
-				];
+			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
+			if (!empty($eligibility)) {
+				$this->eligibleDiscounts[$discount['key']] = $eligibility;
 			}
 		}
 	}
@@ -324,6 +322,7 @@ class Billrun_DiscountManager {
 		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 1);
 		$maxSubscribers = Billrun_Util::getIn($discount, 'params.max_subscribers', null);
 		$eligibility = [];
+		$servicesEligibility = [];
 		
 		if (count($subscribersRevisions) < $minSubscribers) { // skip conditions check if there are not enough subscribers
 			return false;
@@ -332,16 +331,47 @@ class Billrun_DiscountManager {
 		foreach ($conditions as $condition) { // OR logic
 			$conditionEligibility = $this->getConditionEligibility($condition, $accountRevisions, $subscribersRevisions, $minSubscribers, $maxSubscribers);
 			
-			if (empty($conditionEligibility)) {
+			if (empty($conditionEligibility) || empty($conditionEligibility['eligibility'])) {
 				continue;
 			}
 			
-			$eligibility = array_merge($eligibility, $conditionEligibility);
+			$eligibility = array_merge($eligibility, $conditionEligibility['eligibility']);
+			
+			foreach ($conditionEligibility['services'] as $sid => $subServicesEligibility) {
+				if (isset($servicesEligibility[$sid])) {
+					$servicesEligibility[$sid] = array_merge($servicesEligibility[$sid], $subServicesEligibility);
+				} else {
+					$servicesEligibility[$sid] = $subServicesEligibility;
+				}
+			}
 		}
 		
-		$eligibility = Billrun_Utils_Time::mergeTimeIntervals($eligibility);
+		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
 		
-		foreach ($eligibility as $i => &$eligibilityInterval) {
+		foreach ($servicesEligibility as &$subServicesEligibility) {
+			foreach ($subServicesEligibility as &$subServiceEligibility) {
+				$subServiceEligibility = $this->getFinalEligibility($subServiceEligibility, $discountFrom, $discountTo);
+			}
+		}
+		
+		return [
+			'eligibility' => $eligibility,
+			'services' => $servicesEligibility,
+		];
+	}
+	
+	/**
+	 * fix eligibility to be best represents by intervals + align from/to according to discount's from/to
+	 * 
+	 * @param array $eligibility
+	 * @param unixtimestamp $discountFrom
+	 * @param unixtimestamp $discountTo
+	 * @return array
+	 */
+	protected function getFinalEligibility($eligibility, $discountFrom, $discountTo) {
+		$finalEligibility = Billrun_Utils_Time::mergeTimeIntervals($eligibility);
+		
+		foreach ($finalEligibility as $i => &$eligibilityInterval) {
 			$eligibilityInterval['to']--; // intervals are calculated until start of next day so merge will be available
             
             // limit eligibility to discount revision (from/to)
@@ -361,7 +391,7 @@ class Billrun_DiscountManager {
             }
 		}
 		
-		return $eligibility;
+		return $finalEligibility;
 	}
 	
 	/**
@@ -377,6 +407,7 @@ class Billrun_DiscountManager {
 	protected function getConditionEligibility($condition, $accountRevisions, $subscribersRevisions = [], $minSubscribers = 1, $maxSubscribers = null) {
 		$accountEligibility = [];
 		$subsEligibility = [];
+		$servicesEligibility = [];
 		
 		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
 		
@@ -391,10 +422,12 @@ class Billrun_DiscountManager {
 		}
 		
 		$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
+		$subscribersServicesConditions = Billrun_Util::getIn($condition, 'subscriber.0.service.any', []); // currently supports 1 condtion's type
 
 		foreach ($subscribersRevisions as $subscriberRevisions) {
+			$sid = $subscriberRevisions[0]['sid'];
 			if (empty($subscribersConditions)) {
-				$subsEligibility[$subscriberRevisions[0]['sid']] = [
+				$subsEligibility[$sid] = [
 					$this->getAllCycleInterval(),
 				];
 			} else {			
@@ -402,32 +435,38 @@ class Billrun_DiscountManager {
 				if (empty($subEligibility)) {
 					continue; // if the current subscriber does not match, check other subscribers
 				}
-				$subsEligibility[$subscriberRevisions[0]['sid']] = Billrun_Utils_Time::mergeTimeIntervals($subEligibility);
+				
+				if (!empty($subscribersServicesConditions)) {
+					$subServicesEligibility = $this->getServicesEligibility($subscribersServicesConditions, $subscriberRevisions);
+					$servicesEligibilityIntervals = Billrun_Util::getIn($subServicesEligibility, 'eligibility', []);
+					if (empty($servicesEligibilityIntervals)) {
+						continue; // if the current subscriber's services does not match, check other subscribers
+					}
+
+					$subEligibility = Billrun_Utils_Time::getIntervalsIntersections($subEligibility, $servicesEligibilityIntervals); // reduce subscriber eligibility to services eligibility intersection
+					$servicesEligibility[$sid] = Billrun_Util::getIn($subServicesEligibility, 'services', []);
+				}
+				
+				$subsEligibility[$sid] = Billrun_Utils_Time::mergeTimeIntervals($subEligibility);
 			}
 		}
 		
-		$ret = [];
+		$totalEligibility = [];
+		$eligibilityBySubs = [];
+		
 		// goes only over accout's eligibility because it must met
 		foreach ($accountEligibility as $accountEligibilityInterval) {
 			// check eligibility day by day
 			for ($day = $accountEligibilityInterval['from']; $day <= $accountEligibilityInterval['to']; $day = strtotime('+1 day', $day)) {
-				$eligibleSubsInDay = 0;
+				$eligibleSubsInDay = [];
 				$dayFrom = strtotime('midnight', $day);
 				$dayTo = strtotime('+1 day', $dayFrom);
-				foreach ($subsEligibility as $subEligibility) {
+				foreach ($subsEligibility as $sid => $subEligibility) {
 					foreach ($subEligibility as $subEligibilityIntervals) {
 						if ($subEligibilityIntervals['from'] <= $day && $subEligibilityIntervals['to'] > $day) {
-							$eligibleSubsInDay++;
+							$eligibleSubsInDay[] = $sid;
 							
-							if (!is_null($maxSubscribers) && $eligibleSubsInDay > $maxSubscribers) { // passed max subscribers in current day
-								continue 3; // check next day
-							}
-							
-							if (is_null($maxSubscribers) && $eligibleSubsInDay >= $minSubscribers) { // passed min subscribers, and no max is defined
-								$ret[] = [
-									'from' => $dayFrom,
-									'to' => $dayTo,
-								];
+							if (!is_null($maxSubscribers) && count($eligibleSubsInDay) > $maxSubscribers) { // passed max subscribers in current day
 								continue 3; // check next day
 							}
 							
@@ -440,16 +479,35 @@ class Billrun_DiscountManager {
 					}
 				}
 				
-				if ($eligibleSubsInDay >= $minSubscribers) { // account is eligible for the discount in current day
-					$ret[] = [
+				if (count($eligibleSubsInDay) >= $minSubscribers) { // account is eligible for the discount in current day
+					$totalEligibility[] = [
 						'from' => $dayFrom,
 						'to' => $dayTo,
 					];
+					
+					foreach ($eligibleSubsInDay as $eligibleSubInDay) {
+						if (empty($eligibilityBySubs[$eligibleSubInDay])) {
+							$eligibilityBySubs[$eligibleSubInDay] = [];
+						}
+						$eligibilityBySubs[$eligibleSubInDay][] = [
+							'from' => $dayFrom,
+							'to' => $dayTo,
+						];
+					}
 				}
 			}
 		}
 		
-		return Billrun_Utils_Time::mergeTimeIntervals($ret);
+		foreach ($servicesEligibility as $sid => &$subServicesEligibility) {
+			foreach ($subServicesEligibility as $service => &$serviceEligibility) {
+				$serviceEligibility = Billrun_Utils_Time::getIntervalsIntersections($serviceEligibility, $eligibilityBySubs[$sid]);
+			}
+		}
+		
+		return [
+			'eligibility' => Billrun_Utils_Time::mergeTimeIntervals($totalEligibility),
+			'services' => $servicesEligibility,
+		];
 	}
 
 	/**
@@ -472,6 +530,67 @@ class Billrun_DiscountManager {
 		}
 		
 		return $eligibility;
+	}
+
+	/**
+	 * get array of intervals on which the entity meets the conditions
+	 * 
+	 * @param array $conditions
+	 * @param array $entityRevisions
+	 * @return array of intervals
+	 */
+	protected function getServicesEligibility($conditions, $subscriberRevisions) {
+		$eligibility = null;
+		$servicesEligibility = [];
+		
+		foreach ($conditions as $condition) { // AND logic
+			$conditionEligibility = [];
+			$conditionFields = Billrun_Util::getIn($condition, 'fields', []);
+			foreach ($subscriberRevisions as $subscriberRevision) { // OR logic
+				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
+					$serviceFrom = max($subscriberRevision['from']->sec, $subscriberService['from']->sec);
+					$serviceTo = min($subscriberRevision['to']->sec, $subscriberService['to']->sec);
+					if ($this->isConditionsMeet($subscriberService, $conditionFields)) {
+						$conditionEligibility[] = [
+							'from' => $serviceFrom,
+							'to' => $serviceTo,
+						];
+						if (empty($servicesEligibility[$subscriberService['key']])) {
+							$servicesEligibility[$subscriberService['key']] = [];
+						}
+						$servicesEligibility[$subscriberService['key']][] = [
+							'from' => $serviceFrom,
+							'to' => $serviceTo,
+						];
+					}
+				}
+			}
+			
+			if (empty($conditionEligibility)) { // one of the conditions does not meet
+				return [
+					'eligibility' => [],
+					'services' => [],
+				];
+			}
+			
+			if (is_null($eligibility)) { // empty is not good enough because intersection might cause empty array
+				$eligibility = $conditionEligibility;
+			} else {
+				$eligibility = Billrun_Utils_Time::getIntervalsIntersections($eligibility, $conditionEligibility);
+			}
+		}
+		
+		$eligibility = Billrun_Utils_Time::mergeTimeIntervals($eligibility);
+		
+		foreach ($servicesEligibility as &$serviceEligibility) {
+			$serviceEligibility = Billrun_Utils_Time::getIntervalsIntersections($eligibility, $serviceEligibility);
+			$serviceEligibility = Billrun_Utils_Time::mergeTimeIntervals($serviceEligibility);
+		}
+		
+		return [
+			'eligibility' => $eligibility,
+			'services' => $servicesEligibility,
+		];
 	}
 	
 	/**
