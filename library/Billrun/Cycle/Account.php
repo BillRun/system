@@ -21,6 +21,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected $invoice;
 	
 	/**
+	 * Hold all the discounts that are  applied to the account.
+	 * @var array
+	 */
+	protected $discounts= array();
+
+
+	/**
 	 * Aggregate the data, store the results in the billrun container.
 	 * @return array - Array of aggregated results
 	 */
@@ -44,8 +51,96 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$this->invoice->addSubscriber($subInvoice);
 		}
 		$this->invoice->updateTotals();
-		$this->invoice->applyDiscounts();
+		$this->applyDiscounts();
 		$this->invoice->close($min_id, $isFake, $customCollName);
+	}
+
+	public function getInvoice() {
+		return $this->invoice;
+	}
+
+	public function getAppliedDiscounts() {
+		return $this->discounts;
+	}
+
+	public function applyDiscounts() {
+		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
+		$dm = new Billrun_DiscountManager();
+
+		$subscribersRevisions= [];
+		Billrun_Factory::log(json_encode($this->records));
+		//Assuming this->records are sorted by 'from' field
+		$accountRevs =[];
+		foreach ($this->revisions as $subscriberRev) {
+			if($subscriberRev['sid'] == 0) {
+				$accountRevs[] = $subscriberRev;
+				continue;
+			}
+			array_merge( $subscribersRevisions,
+						$this->expandSubRevisions($subscriberRev,$this->cycleAggregator->getCycle()->start(),$this->cycleAggregator->getCycle()->end()) );
+		}
+		Billrun_Factory::log(json_encode($subscribersRevisions));
+
+		//$this->discounts = $dm->getEligibleDiscounts($this->invoice,$subscribersRevisions,$this->cycleAggregator->getCycle());
+		$this->invoice->applyDiscounts();
+	}
+
+	//---------------------------------- Protected ------------------------------------
+
+	protected function expandSubRevisions($revision, $minFrom, $maxTo) {
+		$retRevisions = [];
+		$cutDates = [];
+		$revision['from'] = max(new MongoDate($minFrom),$revision['from']);
+		$revision['to'] = min(new MongoDate($maxTo),$revision['to']);
+
+		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services']);
+		foreach($subRevisionsFields as $fielName) {
+			foreach($revision[$fieldName] as $subRev) {
+					 if($subRev['from'] > $maxTo || $subRev['to'] < $minFrom) {
+						continue;
+					 }
+					 $subRev['from'] = max($subRev['from'],$revision['from']);
+					 $subRev['to'] = min($subRev['to'],$revision['to']);
+					 $cutDates[$subRev['from']][$subRev['to']][$fieldName][] = $subRev;
+			}
+			unset($revision[$fieldName]);
+		}
+
+		if(empty($cutDates)) {
+			$retRevisions[] = $revision;
+		} else  {
+			$sortedDates =  usort($fieldCuts,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
+			$activeRev = $revision;
+			foreach($sortedDates as $from => $fromCuts) {
+				$sortedToDates =  usort($fromCuts,function($a,$b){ return $a['to']->sec - $b['to']->sec; });
+				foreach($sortedToDates as  $toCuts) {
+					foreach($toCuts as $fieldName => $fieldCuts) {
+						//should  we  breate the  revision
+						if($activeRev['to'] < $fieldCuts['from'] ) {
+							$activeRev['to'] = $fieldCuts['from'];
+						}
+						if($activeRev['to'] < $fieldCuts['to']) {
+							$activeRev['to'] = $fieldCuts['to'];
+							$fieldToUnset = true;
+						}
+						//add the service
+						unset($fieldCuts['from'],$fieldCuts['to']);
+						$activeRev[$fieldName][] = $fieldCuts;
+						//
+						if($activeRev['to'] < $revision['to']) {
+							$saveRevision  = $activeRev;
+							$retRevisions[] = $saveRevision;
+							$activeRev['from'] = $activeRev['to'];
+							$activeRev['to'] = $revision['to'];
+						}
+						if(!empty($fieldToUnset)) {
+							array_pop($activeRev[$fieldName]);
+						}
+					}
+				}
+			}
+		}
+		return $retRevisions;
 	}
 	
 	/**
@@ -66,6 +161,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function constructRecords($data) {
 		$this->invoice = $data['invoice'];
 		$this->records = array();
+		$this->revisions = $data['subscribers'];
 		$subscribers = $data['subscribers'];
 		$subsCount = count($subscribers);
 		$cycle = $this->cycleAggregator->getCycle();
@@ -121,15 +217,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		return $flatEntry;
 	}
-	
-	public function getInvoice() {
-		return $this->invoice;
-	}
-	
-	public function getAppliedDiscounts() {
-		return $this->invoice->getAppliedDiscounts();
-	}
-	
+
 	//--------------------------------------------------
 	
 	public function save() {
