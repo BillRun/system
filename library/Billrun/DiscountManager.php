@@ -156,10 +156,52 @@ class Billrun_DiscountManager {
 		
 		foreach (self::getDiscounts($this->billrunKey) as $discount) {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
-			if (!empty(Billrun_Util::getIn($eligibility, 'eligibility', []))) {
-				$this->eligibleDiscounts[$discount['key']] = $eligibility;
+			$this->setDiscountEligibility($discount, $eligibility);
+		}
+		
+		// handle subscribers' level revisions
+		foreach ($subscribersRevisions as $subscriberRevisions) {
+			foreach ($subscriberRevisions as $subscriberRevision) {
+				$subDiscounts = Billrun_Util::getIn($subscriberRevision, 'discounts', []);
+				foreach ($subDiscounts as $subDiscount) {
+					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevision]); // works only on current revision
+					$this->setDiscountEligibility($subDiscount, $eligibility);
+				}
 			}
 		}
+	}
+	
+	/**
+	 * set eligibility for discount
+	 * 
+	 * @param array $discount
+	 * @param array $eligibility
+	 */
+	protected function setDiscountEligibility($discount, $eligibility) {
+		if (empty(Billrun_Util::getIn($eligibility, 'eligibility', []))) {
+			return;
+		}
+		
+		$discountKey = $discount['key'];
+		if (isset($this->eligibleDiscounts[$discountKey])) {
+			$timeEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge($this->eligibleDiscounts[$discountKey]['eligibility']), Billrun_Util::getIn($eligibility, 'eligiblity', []));
+			$servicesEligibility = $this->eligibleDiscounts[$discountKey]['services'];
+			foreach (Billrun_Util::getIn($eligibility, 'services', []) as $serviceEligibility) {
+				foreach ($serviceEligibility as $sid => $subServiceEligibility) {
+					foreach ($subServiceEligibility as $serviceKey => $currServiceEligibility) {
+						$serviceNewEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge(Billrun_Util::getIn($this->eligibleDiscounts, [$discountKey, 'services', $sid, $serviceKey], []), $currServiceEligibility));
+						Billrun_Util::setIn($servicesEligibility, ['services', $sid, $serviceKey], $serviceNewEligibility);
+					}
+				}
+			}
+			
+			$eligibility = [
+				'eligibility' => $timeEligibility,
+				'services' => $servicesEligibility,
+			];
+		}
+		
+		$this->eligibleDiscounts[$discountKey] = $eligibility;
 	}
 
 	/**
