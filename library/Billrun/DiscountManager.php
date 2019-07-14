@@ -156,7 +156,7 @@ class Billrun_DiscountManager {
 		
 		foreach (self::getDiscounts($this->billrunKey) as $discount) {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
-			if (!empty($eligibility)) {
+			if (!empty(Billrun_Util::getIn($eligibility, 'eligibility', []))) {
 				$this->eligibleDiscounts[$discount['key']] = $eligibility;
 			}
 		}
@@ -312,10 +312,12 @@ class Billrun_DiscountManager {
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			return [
-                [
-                    'from' => $discountFrom,
-                    'to' => $discountTo,
-                ]
+                'eligibility' => [
+					[
+						'from' => $discountFrom,
+						'to' => $discountTo,
+					],
+                ],
             ];
         }
 		
