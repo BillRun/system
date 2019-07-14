@@ -164,8 +164,9 @@ class Billrun_DiscountManager {
 			foreach ($subscriberRevisions as $subscriberRevision) {
 				$subDiscounts = Billrun_Util::getIn($subscriberRevision, 'discounts', []);
 				foreach ($subDiscounts as $subDiscount) {
-					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevision]); // works only on current revision
+					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, $subscriberRevisions);
 					$this->setDiscountEligibility($subDiscount, $eligibility);
+					$this->setSubscriberDiscount($subDiscount, $this->billrunKey);
 				}
 			}
 		}
