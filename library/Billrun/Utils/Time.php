@@ -202,46 +202,56 @@ class Billrun_Utils_Time {
 			return $intervals1;
 		}
 		
-		$ret = [];
+		$froms = [];
+		$tos = [];
 		
 		foreach ($intervals1 as $interval1) {
+			$overlaps = false;
 			foreach ($intervals2 as $interval2) {
-				$intersects = false;
-				
-				// interval1 completely covered by interval2
 				if ($interval2[$fromField] <= $interval1[$fromField] &&
-						$interval2[$toField] >= $interval1[$toField]) {
-					$intersects = true;
-				}
-				
-				// interval2 starts inside interval1
-				if ($interval1[$fromField] < $interval2[$fromField] &&
-						$interval1[$toField] > $interval2[$fromField]) {
-					$ret[] = [
-						$fromField => $interval1[$fromField],
-						$toField => $interval2[$fromField],
-					];
-					$intersects = true;
-				}
-				
-				// interval2 ends inside interval1
-				if ($interval1[$fromField] < $interval2[$toField] &&
-						$interval1[$toField] > $interval2[$toField]) {
-					$ret[] = [
-						$fromField => $interval2[$toField],
-						$toField => $interval1[$toField],
-					];
-					$intersects = true;
-				}
-				
-				if ($intersects) {
-					continue 2;
+						$interval2[$toField] >= $interval1[$toField]) { // interval1 completely covered by interval2
+					$overlaps = true;
+				} else if ($interval1[$fromField] <= $interval2[$fromField] &&
+						$interval1[$toField] >= $interval2[$toField]) { // interval2 completely covered by interval1
+					$froms[] = $interval1[$fromField];
+					$froms[] = $interval2[$toField];
+					$tos[] = $interval1[$toField];
+					$tos[] = $interval2[$fromField];
+					$overlaps = true;
+				} else if ($interval1[$fromField] < $interval2[$fromField] &&
+						$interval1[$toField] > $interval2[$fromField]) { // interval2 starts inside interval1
+					$froms[] = $interval1[$fromField];
+					$tos[] = $interval2[$fromField];
+					$overlaps = true;
+				} else if ($interval1[$fromField] < $interval2[$toField] &&
+						$interval1[$toField] > $interval2[$toField]) { // interval2 ends inside interval1
+					$froms[] = $interval2[$toField];
+					$tos[] = $interval1[$toField];
+					$overlaps = true;
 				}
 			}
 			
+			if (!$overlaps) {
+				$froms[] = $interval1[$fromField];
+				$tos[] = $interval1[$toField];
+			}
+		}
+		
+		$ret = [];
+		$froms = array_unique($froms);
+		$tos = array_unique($tos);
+		sort($froms);
+		sort($tos);
+		
+		foreach ($froms as $i => $from) {
+			$to = $tos[$i];
+			if ($from == $to) {
+				continue;
+			}
+			
 			$ret[] = [
-				$fromField => $interval1[$fromField],
-				$toField => $interval1[$toField],
+				$fromField => $from,
+				$toField => $to,
 			];
 		}
 		
