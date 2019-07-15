@@ -6,6 +6,9 @@
 // =============================== Helper functions ============================
 
 function addFieldToConfig(lastConf, fieldConf, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		lastConf[entityName] = {'fields': []};
+	}
 	var fields = lastConf[entityName]['fields'];
 	var found = false;
 	for (var field_key in fields) {
@@ -527,6 +530,30 @@ if (discountFields) {
 		}
 	});
 	lastConfig['discounts']['fields'] = discountFields;
+}
+
+//BRCD-1942 : Add Charge fields 
+var chargeFields = [{
+	"field_name": "from",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+	}, {
+	"field_name": "to",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+	}, {
+	"field_name": "key",
+	"system": true,
+	"mandatory": true
+	}, {
+	"field_name": "description",
+	"system": true,
+	"mandatory": true
+}];
+for (var fieldIdx in chargeFields) {
+	lastConfig = addFieldToConfig(lastConfig, chargeFields[fieldIdx], 'charges');
 }
 
 db.config.insert(lastConfig);
