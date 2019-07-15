@@ -103,7 +103,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach($subRevisionsFields as $fieldName) {
 			if(empty($revision[$fieldName])) { continue; }
 			foreach($revision[$fieldName] as $subRev) {
-					 if($subRev['from']->sec > $maxTo || $subRev['to']->sec < $minFrom) {
+					 if($subRev['from']->sec > $maxTo || $subRev['to']->sec < $minFrom ||
+						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev,$minFrom,$maxTo) ) { // TODO fix hard coding
 						continue;
 					 }
 					 $subRev['from'] = max($subRev['from']->sec,$revision['from']);
@@ -184,6 +185,24 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		usort($retRevisions,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
 		return $retRevisions;
+	}
+
+	protected function isServiceTerminatedDueToConfig($subRev,$minFrom,$maxTo) {
+		$mongoServices = $this->cycleAggregator->getServices();
+		if( isset($mongoServices[$subRev['name']]) ) {
+			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
+			foreach($servicesArr as $service) {
+				if( $subRev['from'] >= $service['from'] && $maxTo < $service['to']->sec ) {
+					if(Billrun_Plans_Util::hasPriceWithinDates($service,$subRev['creation_time']->sec,$minFrom,$maxTo) &&
+					   Billrun_Plans_Util::balancePeriodWithInDates($service,$subRev['creation_time']->sec,$minFrom,$maxTo) ) {
+						return FALSE;
+					}
+				}
+			 }
+		}
+
+		return TRUE;
+
 	}
 
 	/**

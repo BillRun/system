@@ -25,6 +25,41 @@ class Billrun_Plans_Util {
 	}
 
 	/**
+	 * Check if a plan/service has a price  within given dates (relative to it activation date)
+	 */
+	public static function hasPriceWithinDates($planOrServiceConfig, $activation, $start, $end) {
+		$formatActivation = date(Billrun_Base::base_dateformat, $activation);
+		$formatStart = date(Billrun_Base::base_dateformat,  $start);
+		$formatEnd = date(Billrun_Base::base_dateformat, $end);
+
+		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
+		if(isset($planOrServiceConfig['price']))
+		foreach($planOrServiceConfig['price'] as $price) {
+			if($price['from']  <= $endOffset &&  $startOffset < $price['to'] ) {
+				return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * check if a given balance_period of a service is within  given date range
+	 */
+	public static function balancePeriodWithInDates($planOrServiceConfig, $activation, $start, $end) {
+		if(empty($planOrServiceConfig['balance_period'])) {
+			return TRUE;
+		}
+
+		$periodEnd = strtotime($planOrServiceConfig['balance_period'],$activation);
+
+		return $start < $periodEnd && $activation < $end;
+
+	}
+
+
+	/**
 	 * Check if the plan exists in the DB
 	 * @param string $planName - Plan name to find
 	 * @return boolean True if found
@@ -36,4 +71,5 @@ class Billrun_Plans_Util {
 		$count = $plansCol->query($query)->cursor()->count();
 		return $count > 0;
 	}
+
 }
