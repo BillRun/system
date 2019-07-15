@@ -186,6 +186,71 @@ class Billrun_Utils_Time {
 		
 		return self::mergeTimeIntervals($ret, $fromField, $toField);
 	}
+	
+	/**
+	 * returns intervals from $interval1 that are not in $intervals2
+	 * 
+	 * @param array $intervals1
+	 * @param array $intervals2
+	 */
+	public static function getIntervalsDifference($intervals1, $intervals2, $fromField = 'from', $toField = 'to') {
+		if (empty($intervals1)) {
+			return [];
+		}
+		
+		if (empty($intervals2)) {
+			return $intervals1;
+		}
+		
+		$ret = [];
+		
+		foreach ($intervals1 as $interval1) {
+			foreach ($intervals2 as $interval2) {
+				$intersects = false;
+				
+				// interval1 completely covered by interval2
+				if ($interval2[$fromField] <= $interval1[$fromField] &&
+						$interval2[$toField] >= $interval1[$toField]) {
+					$intersects = true;
+				}
+				
+				// interval2 starts inside interval1
+				if ($interval1[$fromField] < $interval2[$fromField] &&
+						$interval1[$toField] > $interval2[$fromField]) {
+					$ret[] = [
+						$fromField => $interval1[$fromField],
+						$toField => $interval2[$fromField],
+					];
+					$intersects = true;
+				}
+				
+				// interval2 ends inside interval1
+				if ($interval1[$fromField] < $interval2[$toField] &&
+						$interval1[$toField] > $interval2[$toField]) {
+					$ret[] = [
+						$fromField => $interval2[$toField],
+						$toField => $interval1[$toField],
+					];
+					$intersects = true;
+				}
+				
+				if ($intersects) {
+					continue 2;
+				}
+			}
+			
+			$ret[] = [
+				$fromField => $interval1[$fromField],
+				$toField => $interval1[$toField],
+			];
+		}
+		
+		return self::mergeTimeIntervals($ret, $fromField, $toField);
+	}
+	
+	public static function isIntervalOverlaps($interval1, $interval2, $fromField = 'from', $toField = 'to') {
+		
+	}
 
 	/**
 	 * Sort given intervals (objects with from and to fields) array
