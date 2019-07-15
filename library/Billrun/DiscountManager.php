@@ -363,7 +363,7 @@ class Billrun_DiscountManager {
 					
 					foreach ($typeConditions as $typeCondition) {
 						foreach (Billrun_Util::getIn($typeCondition, 'fields', []) as $field) {
-							if (in_array($field['value'], ['active'])) {
+							if (in_array($field['value'], ['active', 'notActive'])) {
 								self::$discountsDateRangeFields[$billrunKey][$type][] = $field['field'];
 							}
 						}
