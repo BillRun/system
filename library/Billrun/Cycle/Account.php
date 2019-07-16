@@ -45,13 +45,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * Write the invoice to the Billrun collection
 	 * @param int $min_id minimum invoice id to start from
 	 */
-	public function writeInvoice($min_id, $isFake = FALSE, $customCollName = FALSE) {
+	public function writeInvoice($min_id, $flatLines,  $isFake = FALSE, $customCollName = FALSE) {
 		foreach ($this->records as $subscriber) {
 			$subInvoice = $subscriber->getInvoice();
 			$this->invoice->addSubscriber($subInvoice);
 		}
 		$this->invoice->updateTotals();
-		$this->applyDiscounts();
+		$this->applyDiscounts($flatLines);
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
 
@@ -63,9 +63,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		return $this->discounts;
 	}
 
-	public function applyDiscounts() {
+	public function applyDiscounts($flatLines) {
 		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
-		$dm = new Billrun_DiscountManager();
 
 		$subscribersRevisions= [];
 		Billrun_Factory::log(json_encode($this->records));
@@ -85,8 +84,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		Billrun_Factory::log(json_encode($subscribersRevisions,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 		Billrun_Factory::log(json_encode($accountRevs, JSON_UNESCAPED_UNICODE));
-
-		$this->discounts = $dm->getEligibleDiscounts($this->invoice,$subscribersRevisions,$this->cycleAggregator->getCycle());
+		Billrun_Factory::log(json_encode($flatLines,JSON_PRETTY_PRINT |  JSON_UNESCAPED_UNICODE));
+		//$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
+		//$this->discounts = $dm->generateCdrs($flatLines);
 		$this->invoice->applyDiscounts($this->discounts);
 	}
 
@@ -97,7 +97,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function expandSubRevisions($revision, $minFrom, $maxTo) {
 		$retRevisions = [];
 		$cutDates = [];
-		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan']);
+		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan','plan_activation','plan_deactivation']);
 		$revision['from'] = max($minFrom,$revision['from']);
 		$revision['to'] = min($maxTo,$revision['to']);
 		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);

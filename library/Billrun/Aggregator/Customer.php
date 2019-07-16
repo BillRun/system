@@ -705,7 +705,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			if(!$this->isFakeCycle()) {
 				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id );
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
@@ -718,7 +718,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$aggregatedEntity->save();
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
-				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() );
+				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
