@@ -6,23 +6,15 @@
 class Billrun_DiscountManager {
 	use Billrun_Traits_ConditionsCheck;
 
-    protected $billrunKey = '';
-    protected $startTime = null;
-	protected $endTime = null;
+    protected $cycle = null;
 	protected $eligibleDiscounts = [];
 	
 	protected static $discounts = [];
 	protected $subscribersDiscounts = [];
 	protected static $discountsDateRangeFields = [];
 	
-	public function __construct($accountRevisions, $subscribersRevisions = [], $params = []) {
-		$this->billrunKey = Billrun_Util::getIn($params, 'billrun_key', '');
-        if (empty($this->billrunKey)) {
-            $time = Billrun_Util::getIn($params, 'time', time());
-            $this->billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($time);
-        }
-		$this->startTime = Billrun_Billingcycle::getStartTime($this->billrunKey);
-		$this->endTime = Billrun_Billingcycle::getEndTime($this->billrunKey);
+	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
+		$this->cycle = $cycle;
 		$this->prepareRevisions($accountRevisions, $subscribersRevisions);
 		$this->loadEligibleDiscounts($accountRevisions, $subscribersRevisions);
 	}
@@ -49,7 +41,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getEntityRevisions($entityRevisions, $type) {
 		$ret = [];
-		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->billrunKey, $type);
+		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->cycle->key(), $type);
 		if (empty($dateRangeDiscoutnsFields)) {
 			return $entityRevisions;
 		}
@@ -154,7 +146,7 @@ class Billrun_DiscountManager {
 	protected function loadEligibleDiscounts($accountRevisions, $subscribersRevisions = []) {
 		$this->eligibleDiscounts = [];
 		
-		foreach (self::getDiscounts($this->billrunKey) as $discount) {
+		foreach (self::getDiscounts($this->cycle->key()) as $discount) {
 			$eligibility = $this->getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions);
 			$this->setDiscountEligibility($discount, $eligibility);
 		}
@@ -166,7 +158,7 @@ class Billrun_DiscountManager {
 				foreach ($subDiscounts as $subDiscount) {
 					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, $subscriberRevisions);
 					$this->setDiscountEligibility($subDiscount, $eligibility);
-					$this->setSubscriberDiscount($subDiscount, $this->billrunKey);
+					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
 				}
 			}
 		}
@@ -212,7 +204,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function handleConflictingDiscounts() {
 		foreach ($this->eligibleDiscounts as $eligibleDiscount => $eligibilityData) {
-			$discount = $this->getDiscount($eligibleDiscount, $this->billrunKey);
+			$discount = $this->getDiscount($eligibleDiscount, $this->cycle->key());
 			foreach (Billrun_Util::getIn($discount, 'excludes', []) as $discountToExclude) {
 				if (isset($this->eligibleDiscounts[$discountToExclude])) {
 					$this->eligibleDiscounts[$discountToExclude]['eligibility'] = Billrun_Utils_Time::getIntervalsDifference($this->eligibleDiscounts[$discountToExclude]['eligibility'], $eligibilityData['eligibility']);
@@ -386,8 +378,8 @@ class Billrun_DiscountManager {
 	 * @return array of intervals
 	 */
 	protected function getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions = []) {
-        $discountFrom = max($discount['from']->sec, $this->startTime);
-        $discountTo = min($discount['to']->sec, $this->endTime);
+        $discountFrom = max($discount['from']->sec, $this->cycle->start());
+        $discountTo = min($discount['to']->sec, $this->cycle->end());
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			return [
@@ -685,8 +677,8 @@ class Billrun_DiscountManager {
 	 */
 	protected function getAllCycleInterval() {
 		return [
-			'from' => $this->startTime,
-			'to' => $this->endTime,
+			'from' => $this->cycle->start(),
+			'to' => $this->cycle->end(),
 		];
 	}
 	
@@ -696,10 +688,10 @@ class Billrun_DiscountManager {
 	public function getTranslationMapping($params = []) {
 		return [
 			'@cycle_end_date@' => [
-				'hard_coded' => $this->endTime,
+				'hard_coded' => $this->cycle->end(),
 			],
 			'@cycle_start_date@' => [
-				'hard_coded' => $this->startTime,
+				'hard_coded' => $this->cycle->start(),
 			],
 			'@plan_activation@' => [
 				'field' => 'plan_activation',
