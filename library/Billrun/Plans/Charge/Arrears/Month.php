@@ -47,8 +47,16 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatEnd = date(Billrun_Base::base_dateformat, min( (empty($this->deactivation) ? PHP_INT_MAX : $this->deactivation - 1), $this->cycle->end() - 1) );
 		
+		$isTerminated = min( (empty($this->deactivation) ? PHP_INT_MAX : $this->deactivation), $this->cycle->end()) <  $this->cycle->end();
+
 		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
 		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
+		if(!$this->proratedStart) {
+			$this->startOffset = floor($this->startOffset);
+		}
+		if(!$this->proratedEnd || !$this->proratedTermination && $isTerminated ) {
+			$this->endOffset = ceil($this->endOffset);
+		}
 	}
 	
 
