@@ -14,7 +14,7 @@ class Billrun_DiscountManager {
 	protected static $discounts = [];
 	protected $subscribersDiscounts = [];
 	protected static $discountsDateRangeFields = [];
-
+	
 	public function __construct($accountRevisions, $subscribersRevisions = [], $params = []) {
 		$this->billrunKey = Billrun_Util::getIn($params, 'billrun_key', '');
         if (empty($this->billrunKey)) {
@@ -681,6 +681,44 @@ class Billrun_DiscountManager {
 		return [
 			'from' => $this->startTime,
 			'to' => $this->endTime,
+		];
+	}
+	
+	/**
+	 * see Billrun_Traits_ValueTranslator::getTranslationMapping
+	 */
+	public function getTranslationMapping($params = []) {
+		return [
+			'@cycle_end_date@' => [
+				'hard_coded' => $this->endTime,
+			],
+			'@cycle_start_date@' => [
+				'hard_coded' => $this->startTime,
+			],
+			'@plan_activation@' => [
+				'field' => 'plan_activation',
+				'format' => [
+					'date' => 'unixtimestamp',
+				]
+			],
+			'@plan_deactivation@' => [
+				'field' => 'plan_deactivation',
+				'format' => [
+					'date' => 'unixtimestamp',
+				]
+			],
+			'@activation_date@' => [
+				'field' => 'activation_date',
+				'format' => [
+					'date' => 'unixtimestamp',
+				]
+			],
+			'@deactivation_date@' => [
+				'field' => 'deactivation_date',
+				'format' => [
+					'date' => 'unixtimestamp',
+				]
+			],
 		];
 	}
 

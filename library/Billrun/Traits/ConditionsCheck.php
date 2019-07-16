@@ -10,6 +10,7 @@
  * Validate conditions on given entitiy
  */
 trait Billrun_Traits_ConditionsCheck {
+	use Billrun_Traits_ValueTranslator;
 
 	/**
 	 * get matching entities for all categories by the specific conditions of every category
@@ -89,7 +90,17 @@ trait Billrun_Traits_ConditionsCheck {
 	 * @return string
 	 */
 	protected function getValueToCompare($condition, $entity = [], $params = []) {
-		return Billrun_Util::getIn($condition, 'value', '');
+		$value = Billrun_Util::getIn($condition, 'value', '');
+		return $this->translateValue($value, $entity);
+	}
+	
+	/**
+	 * see Billrun_Traits_ValueTranslator::getTranslationMapping
+	 * by default, no translation is used.
+	 * Can be overridden to support place-holders
+	 */
+	public function getTranslationMapping($params = []) {
+		return [];
 	}
 
 
