@@ -626,6 +626,12 @@ class Billrun_DiscountManager {
 			$conditionEligibility = [];
 			$conditionFields = Billrun_Util::getIn($condition, 'fields', []);
 			foreach ($subscriberRevisions as $subscriberRevision) { // OR logic
+				if (empty($conditionFields)) {
+					$conditionEligibility[] = [
+						'from' => $subscriberRevision['from']->sec,
+						'to' => $subscriberRevision['to']->sec,
+					];
+				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
 					$serviceFrom = max($subscriberRevision['from']->sec, $subscriberService['from']->sec);
 					$serviceTo = min($subscriberRevision['to']->sec, $subscriberService['to']->sec);
