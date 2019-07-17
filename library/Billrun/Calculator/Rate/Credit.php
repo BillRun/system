@@ -32,8 +32,8 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		$match = array_merge(
 			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec), array('key' => $row['rate'])
 		);
-		$group = $this->getBasicGroupRateQuery($row);
-		$sort = $this->getBasicSortRateQuery($row);
+		$group = $this->getBasicGroupQuery($row);
+		$sort = $this->getBasicSortQuery($row);
 
 		$sortQuery = array();
 		if (!empty($sort)) {
