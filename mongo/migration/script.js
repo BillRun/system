@@ -656,8 +656,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 			conditionObject["subscriber"]["fields"] = fieldsObject;
 		}
 		var serviceObject = {};
+		var serviceValue = [];
 		if (oldParams.service !== undefined) {
-			servicesValues = {"fields": [{"field": "name", "op": "in", "value":oldParams.service}]};
+			var serviceCondAmount = oldParams.service.length;
+			for (var i = 0; i < serviceCondAmount; i++) {
+				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+			}
+			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
 		}
