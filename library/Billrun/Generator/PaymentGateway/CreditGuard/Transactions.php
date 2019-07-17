@@ -21,7 +21,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @package  Billing
  * @since    5.0
  */
-class Billrun_Generator_CreditGuard extends Billrun_Generator_Csv {
+class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_Generator_Csv {
 	
 	protected static $type = 'CreditGuard';
 
