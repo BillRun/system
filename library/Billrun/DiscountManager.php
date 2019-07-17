@@ -156,7 +156,7 @@ class Billrun_DiscountManager {
 			foreach ($subscriberRevisions as $subscriberRevision) {
 				$subDiscounts = Billrun_Util::getIn($subscriberRevision, 'discounts', []);
 				foreach ($subDiscounts as $subDiscount) {
-					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, $subscriberRevisions);
+					$eligibility = $this->getDiscountEligibility($subDiscount, $accountRevisions, [$subscriberRevisions]);
 					$this->setDiscountEligibility($subDiscount, $eligibility);
 					$this->setSubscriberDiscount($subDiscount, $this->cycle->key());
 				}
@@ -309,7 +309,7 @@ class Billrun_DiscountManager {
 	 * @param string $billrunKey
 	 */
 	protected function setSubscriberDiscount($discount, $billrunKey) {
-		$this->subscribersDiscounts[$billrunKey][$discounts['key']] = $discount;
+		$this->subscribersDiscounts[$billrunKey][$discount['key']] = $discount;
 	}
 	
 	/**
@@ -394,6 +394,7 @@ class Billrun_DiscountManager {
 		
 		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 1);
 		$maxSubscribers = Billrun_Util::getIn($discount, 'params.max_subscribers', null);
+		$cycles = Billrun_Util::getIn($discount, 'params.cycles', null);
 		$eligibility = [];
 		$servicesEligibility = [];
 		
@@ -401,8 +402,14 @@ class Billrun_DiscountManager {
 			return false;
 		}
 		
+		$params = [
+			'min_subscribers' => $minSubscribers,
+			'max_subscribers' => $maxSubscribers,
+			'cycles' => $cycles,
+		];
+		
 		foreach ($conditions as $condition) { // OR logic
-			$conditionEligibility = $this->getConditionEligibility($condition, $accountRevisions, $subscribersRevisions, $minSubscribers, $maxSubscribers);
+			$conditionEligibility = $this->getConditionEligibility($condition, $accountRevisions, $subscribersRevisions, $params);
 			
 			if (empty($conditionEligibility) || empty($conditionEligibility['eligibility'])) {
 				continue;
@@ -471,14 +478,16 @@ class Billrun_DiscountManager {
 	 * @param array $conditions
 	 * @param array $accountRevisions
 	 * @param array $subscribersRevisions
-	 * @param int $minSubscribers
-	 * @param int $maxSubscribers - or null if no maximum is set
+	 * @param array $params
 	 * @return array of intervals
 	 */
-	protected function getConditionEligibility($condition, $accountRevisions, $subscribersRevisions = [], $minSubscribers = 1, $maxSubscribers = null) {
+	protected function getConditionEligibility($condition, $accountRevisions, $subscribersRevisions = [], $params = []) {
 		$accountEligibility = [];
 		$subsEligibility = [];
 		$servicesEligibility = [];
+		$minSubscribers = $params['min_subscribers'] ?? 1;
+		$maxSubscribers = $params['max_subscribers'] ?? null;
+		$cycles = $params['cycles'] ?? null;
 		
 		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
 		
@@ -494,6 +503,8 @@ class Billrun_DiscountManager {
 		
 		$subscribersConditions = Billrun_Util::getIn($condition, 'subscriber.0.fields', []); // currently supports 1 condtion's type
 		$subscribersServicesConditions = Billrun_Util::getIn($condition, 'subscriber.0.service.any', []); // currently supports 1 condtion's type
+		$hasPlanConditions = $this->hasPlanCondition($subscribersConditions);
+		$hasServiceConditions = $this->hasServicesCondition($subscribersServicesConditions);
 
 		foreach ($subscribersRevisions as $subscriberRevisions) {
 			$sid = $subscriberRevisions[0]['sid'];
@@ -501,14 +512,15 @@ class Billrun_DiscountManager {
 				$subsEligibility[$sid] = [
 					$this->getAllCycleInterval(),
 				];
-			} else {			
-				$subEligibility = $this->getConditionsEligibilityForEntity($subscribersConditions, $subscriberRevisions);
+			} else {
+				$subCycles = $hasServiceConditions ? null : $cycles; // in case of services conditions, will check as part of services eligibility
+				$subEligibility = $this->getConditionsEligibilityForEntity($subscribersConditions, $subscriberRevisions, $subCycles);
 				if (empty($subEligibility)) {
 					continue; // if the current subscriber does not match, check other subscribers
 				}
 				
 				if (!empty($subscribersServicesConditions)) {
-					$subServicesEligibility = $this->getServicesEligibility($subscribersServicesConditions, $subscriberRevisions);
+					$subServicesEligibility = $this->getServicesEligibility($subscribersServicesConditions, $subscriberRevisions, $hasPlanConditions, $cycles);
 					$servicesEligibilityIntervals = Billrun_Util::getIn($subServicesEligibility, 'eligibility', []);
 					if (empty($servicesEligibilityIntervals)) {
 						continue; // if the current subscriber's services does not match, check other subscribers
@@ -586,16 +598,32 @@ class Billrun_DiscountManager {
 	 * 
 	 * @param array $conditions
 	 * @param array $entityRevisions
+	 * @param int $cycles
 	 * @return array of intervals
 	 */
-	protected function getConditionsEligibilityForEntity($conditions, $entityRevisions) {
+	protected function getConditionsEligibilityForEntity($conditions, $entityRevisions, $cycles = null) {
 		$eligibility = [];
 		foreach ($entityRevisions as $entityRevision) {
+			$cyclesEligibilityEnd = !is_null($cycles) ? strtotime("+{$cycles} months", $entityRevision['plan_activation']->sec) : null;
+			
+			$from = $entityRevision['from']->sec;
+			$to = $entityRevision['to']->sec;
+			
+			if (!is_null($cyclesEligibilityEnd) && $cyclesEligibilityEnd < $from) {
+				continue;
+			}
+			
 			if ($this->isConditionsMeet($entityRevision, $conditions)) {
-				$eligibility[] = [
-					'from' => $entityRevision['from']->sec,
-					'to' => $entityRevision['to']->sec,
-				];
+				if (!is_null($cyclesEligibilityEnd) && $cyclesEligibilityEnd < $to) {
+					$to = $cyclesEligibilityEnd;
+				}
+				
+				if ($from < $to) {				
+					$eligibility[] = [
+						'from' => $from,
+						'to' => $to,
+					];
+				}
 			}
 				
 		}
@@ -607,10 +635,12 @@ class Billrun_DiscountManager {
 	 * get array of intervals on which the entity meets the conditions
 	 * 
 	 * @param array $conditions
-	 * @param array $entityRevisions
+	 * @param array $subscriberRevisions
+	 * @param bool $hasPlanConditions
+	 * @param int $cycles
 	 * @return array of intervals
 	 */
-	protected function getServicesEligibility($conditions, $subscriberRevisions) {
+	protected function getServicesEligibility($conditions, $subscriberRevisions, $hasPlanConditions = false, $cycles = null) {
 		$eligibility = null;
 		$servicesEligibility = [];
 		
@@ -623,22 +653,45 @@ class Billrun_DiscountManager {
 						'from' => $subscriberRevision['from']->sec,
 						'to' => $subscriberRevision['to']->sec,
 					];
+					continue;
 				}
+				if ($hasPlanConditions && !is_null($cycles)) {
+					$planEligibilityEnd = strtotime("+{$cycles} months", $subscriberRevision['plan_activation']->sec);
+				} else {
+					$planEligibilityEnd = null;
+				}
+				
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
 					$serviceFrom = max($subscriberRevision['from']->sec, $subscriberService['from']->sec);
 					$serviceTo = min($subscriberRevision['to']->sec, $subscriberService['to']->sec);
-					if ($this->isConditionsMeet($subscriberService, $conditionFields)) {
-						$conditionEligibility[] = [
-							'from' => $serviceFrom,
-							'to' => $serviceTo,
-						];
-						if (empty($servicesEligibility[$subscriberService['key']])) {
-							$servicesEligibility[$subscriberService['key']] = [];
+					if (!is_null($cycles)) {
+						$serviceEligibilityEnd = strtotime("+{$cycles} months", $subscriberService['service_activation']->sec);
+						if (!is_null($planEligibilityEnd)) {	
+							$serviceEligibilityEnd = max($planEligibilityEnd, $serviceEligibilityEnd);
 						}
-						$servicesEligibility[$subscriberService['key']][] = [
-							'from' => $serviceFrom,
-							'to' => $serviceTo,
-						];
+						
+						if ($serviceEligibilityEnd < $serviceFrom) {
+							continue 2;
+						}
+						
+						if ($serviceEligibilityEnd < $serviceTo) {
+							$serviceTo = $serviceEligibilityEnd;
+						}
+					}
+					if ($this->isConditionsMeet($subscriberService, $conditionFields)) {
+						if ($serviceFrom < $serviceTo) {
+							$conditionEligibility[] = [
+								'from' => $serviceFrom,
+								'to' => $serviceTo,
+							];
+							if (empty($servicesEligibility[$subscriberService['key']])) {
+								$servicesEligibility[$subscriberService['key']] = [];
+							}
+							$servicesEligibility[$subscriberService['key']][] = [
+								'from' => $serviceFrom,
+								'to' => $serviceTo,
+							];
+						}
 					}
 				}
 			}
@@ -668,6 +721,26 @@ class Billrun_DiscountManager {
 			'eligibility' => $eligibility,
 			'services' => $servicesEligibility,
 		];
+	}
+	
+	protected function hasPlanCondition($conditions) {
+		foreach ($conditions as $condition) {
+			if (in_array($condition['field'], ['plan', 'plan_activation', 'plan_deactivation'])) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	protected function hasServicesCondition($conditions) {
+		foreach ($conditions as $condition) {
+			if (!empty(Billrun_Util::getIn($condition, 'fields', []))) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	/**
