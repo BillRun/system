@@ -723,6 +723,12 @@ class Billrun_DiscountManager {
 		];
 	}
 	
+	/**
+	 * checks if conditions set has a condition on plan
+	 * 
+	 * @param array $conditions
+	 * @return boolean
+	 */
 	protected function hasPlanCondition($conditions) {
 		foreach ($conditions as $condition) {
 			if (in_array($condition['field'], ['plan', 'plan_activation', 'plan_deactivation'])) {
@@ -733,6 +739,12 @@ class Billrun_DiscountManager {
 		return false;
 	}
 	
+	/**
+	 * checks if conditions set has a condition on service
+	 * 
+	 * @param array $conditions
+	 * @return boolean
+	 */
 	protected function hasServicesCondition($conditions) {
 		foreach ($conditions as $condition) {
 			if (!empty(Billrun_Util::getIn($condition, 'fields', []))) {
