@@ -82,11 +82,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 							$this->expandSubRevisions($subscriberRev,$this->cycleAggregator->getCycle()->start(),$this->cycleAggregator->getCycle()->end()) );
 			}
 		}
-		Billrun_Factory::log(json_encode($subscribersRevisions,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-		Billrun_Factory::log(json_encode($accountRevs, JSON_UNESCAPED_UNICODE));
-		Billrun_Factory::log(json_encode($flatLines,JSON_PRETTY_PRINT |  JSON_UNESCAPED_UNICODE));
-		//$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
-		//$this->discounts = $dm->generateCdrs($flatLines);
+		//TODO remove debug lines (below)
+		//Billrun_Factory::log(json_encode($subscribersRevisions,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+		//Billrun_Factory::log(json_encode($accountRevs, JSON_UNESCAPED_UNICODE));
+		//Billrun_Factory::log(json_encode($flatLines,JSON_PRETTY_PRINT |  JSON_UNESCAPED_UNICODE));
+
+		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
+		$this->discounts = $dm->generateCdrs($flatLines);
 		$this->invoice->applyDiscounts($this->discounts);
 	}
 
@@ -134,13 +136,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($fromCuts as $toCuts) {
 					foreach($toCuts as $fieldName => $fieldCuts) {
 						foreach($fieldCuts as  $fieldCut) {
-							//should  we  break the  revision?
+							//should we break the revision?
 							if($activeRev['from'] < $fieldCut['from'] ) {
 								$activeRev['to'] = min($fieldCut['from'],$activeRev['to']);
 							}
 							if($activeRev['to'] > $fieldCut['to']) {
 								$fieldsEnded[] = $fieldCut;
 							}
+							//copy filds to the root of the revision if need
 							foreach($subRevCopyFields as $subRevField) {
 								if( empty($activeRev[$subRevField]) && !empty($fieldCut[$subRevField]) ) {
 									$activeRev[$subRevField] = $fieldCut[$subRevField];
