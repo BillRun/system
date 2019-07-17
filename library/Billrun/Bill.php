@@ -813,7 +813,7 @@ abstract class Billrun_Bill {
 						} else {
 							$paymentStatus = array(
 								'status' => $payment->getSinglePaymentStatus(),
-								'additional_params' => array()
+								'additional_params' => isset($options['additional_params']) ? $options['additional_params'] : array()
 							);
 							if (empty($paymentStatus['status'])) {
 								throw new Exception("Missing status from gateway for single payment");
