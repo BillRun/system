@@ -272,5 +272,22 @@ class Billrun_Utils_Time {
 			return $item1[$fromField] >= $item2[$fromField];
 		});
 	}
+	
+	/**
+	 * get time in unixtimestamp
+	 * 
+	 * @param mixed $value
+	 */
+	public static function getTime($value) {
+		if ($value instanceof MongoDate) {
+			return $value->sec;
+		}
+		
+		if (is_string($value)) {
+			return strtotime($time);
+		}
+		
+		return $value;
+	}
 
 }

@@ -160,8 +160,8 @@ trait Billrun_Traits_ConditionsCheck {
 								'inRange'
 							],
 							'arguments' => [
-								$entity['from']->sec,
-								$entity['to']->sec,
+								Billrun_Utils_Time::getTime($entity['from']),
+								Billrun_Utils_Time::getTime($entity['to']),
 							],
 						],
 					],
@@ -175,8 +175,8 @@ trait Billrun_Traits_ConditionsCheck {
 								'notInRange'
 							],
 							'arguments' => [
-								$entity['from']->sec,
-								$entity['to']->sec,
+								Billrun_Utils_Time::getTime($entity['from']),
+								Billrun_Utils_Time::getTime($entity['to']),
 							],
 						],
 					],
@@ -209,7 +209,9 @@ trait Billrun_Traits_ConditionsCheck {
 		
 		foreach ($values as $value) {
 			foreach ($range as $interval) {
-				if ($interval['from'] <= $value && $interval['to'] >= $value) {
+				$from = Billrun_Utils_Time::getTime($interval['from']);
+				$to = Billrun_Utils_Time::getTime($interval['to']);
+				if ($from <= $value && $to >= $value) {
 					continue 2; // value in range
 				}
 			}

@@ -63,8 +63,8 @@ class Billrun_DiscountManager {
 	 */
 	protected function splitRevisionByFields($revision, $fields) {
 		$ret = [];
-		$revisionFrom = $revision['from']->sec;
-		$revisionTo = $revision['to']->sec;
+		$revisionFrom = Billrun_Utils_Time::getTime($revision['from']);
+		$revisionTo = Billrun_Utils_Time::getTime($revision['to']);
 		$froms = [$revisionFrom];
 		$tos = [$revisionTo];
 		
@@ -75,8 +75,8 @@ class Billrun_DiscountManager {
 			}
 			
 			foreach ($val as $interval) {
-				$from = $interval['from'];
-				$to = $interval['to'];
+				$from = Billrun_Utils_Time::getTime($interval['from']);
+				$to = Billrun_Utils_Time::getTime($interval['to']);
 				
 				if ($from > $revisionFrom) {
 					$froms[] = $from;
@@ -109,14 +109,16 @@ class Billrun_DiscountManager {
 				$newIntervals = [];
 				
 				foreach ($oldIntervals as $interval) {
-					if (($interval['from'] <= $from && $interval['to'] > $from) ||
-							($interval['from'] <= $to && $interval['to'] > $to)) {
-						$newIntervalFrom = max($from, $interval['from']);
-						$newIntervalTo = min($to, $interval['to']);
+					$intervalFrom = Billrun_Utils_Time::getTime($interval['from']);
+					$intervalTo = Billrun_Utils_Time::getTime($interval['to']);
+					if (($intervalFrom <= $from && $intervalTo > $from) ||
+							($intervalFrom <= $to && $intervalTo > $to)) {
+						$newIntervalFrom = max($from, $intervalFrom);
+						$newIntervalTo = min($to, $intervalTo);
 						if ($newIntervalTo > $newIntervalFrom) {
 							$newIntervals[] = [
-								'from' => $newIntervalFrom,
-								'to' => $newIntervalTo,
+								'from' => new MongoDate($newIntervalFrom),
+								'to' => new MongoDate($newIntervalTo),
 							];
 							break;
 						}
@@ -390,8 +392,8 @@ class Billrun_DiscountManager {
 	 * @return array of intervals
 	 */
 	protected function getDiscountEligibility($discount, $accountRevisions, $subscribersRevisions = []) {
-        $discountFrom = max($discount['from']->sec, $this->cycle->start());
-        $discountTo = min($discount['to']->sec, $this->cycle->end());
+        $discountFrom = max(Billrun_Utils_Time::getTime($discount['from']), $this->cycle->start());
+        $discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			return [
@@ -645,8 +647,8 @@ class Billrun_DiscountManager {
 	protected function getAccountEligibility($conditions, $accountRevisions) {
 		$eligibility = [];
 		foreach ($accountRevisions as $accountRevision) {
-			$from = $accountRevision['from']->sec;
-			$to = $accountRevision['to']->sec;
+			$from = Billrun_Utils_Time::getTime($accountRevision['from']);
+			$to = Billrun_Utils_Time::getTime($accountRevision['to']);
 			
 			if ($this->isConditionsMeet($accountRevision, $conditions)) {
 				if ($from < $to) {				
@@ -676,10 +678,10 @@ class Billrun_DiscountManager {
 		$hasPlansConditions = $this->hasPlanCondition($conditions);
 		
 		foreach ($subscriberRevisions as $subscriberRevision) {
-			$cyclesEligibilityEnd = !is_null($cycles) ? strtotime("+{$cycles} months", $subscriberRevision['plan_activation']->sec) : null;
+			$cyclesEligibilityEnd = !is_null($cycles) ? strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberRevision['plan_activation'])) : null;
 			
-			$from = $subscriberRevision['from']->sec;
-			$to = $subscriberRevision['to']->sec;
+			$from = Billrun_Utils_Time::getTime($subscriberRevision['from']);
+			$to = Billrun_Utils_Time::getTime($subscriberRevision['to']);
 			
 			if (!is_null($cyclesEligibilityEnd) && $cyclesEligibilityEnd <= $from) {
 				continue;
@@ -736,22 +738,22 @@ class Billrun_DiscountManager {
 			foreach ($subscriberRevisions as $subscriberRevision) { // OR logic
 				if (empty($conditionFields)) {
 					$conditionEligibility[] = [
-						'from' => $subscriberRevision['from']->sec,
-						'to' => $subscriberRevision['to']->sec,
+						'from' => Billrun_Utils_Time::getTime($subscriberRevision['from']),
+						'to' => Billrun_Utils_Time::getTime($subscriberRevision['to']),
 					];
 					continue;
 				}
 				if ($hasPlanConditions && !is_null($cycles)) {
-					$planEligibilityEnd = strtotime("+{$cycles} months", $subscriberRevision['plan_activation']->sec);
+					$planEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberRevision['plan_activation']));
 				} else {
 					$planEligibilityEnd = null;
 				}
 				
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom = max($subscriberRevision['from']->sec, $subscriberService['from']->sec);
-					$serviceTo = min($subscriberRevision['to']->sec, $subscriberService['to']->sec);
+					$serviceFrom = max(Billrun_Utils_Time::getTime($subscriberRevision['from']), Billrun_Utils_Time::getTime($subscriberService['from']));
+					$serviceTo = min(Billrun_Utils_Time::getTime($subscriberRevision['to']), Billrun_Utils_Time::getTime($subscriberService['to']));
 					if (!is_null($cycles)) {
-						$serviceEligibilityEnd = strtotime("+{$cycles} months", $subscriberService['service_activation']->sec);
+						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
 						if (!is_null($planEligibilityEnd)) {	
 							$serviceEligibilityEnd = max($planEligibilityEnd, $serviceEligibilityEnd);
 						}
@@ -859,34 +861,22 @@ class Billrun_DiscountManager {
 	public function getTranslationMapping($params = []) {
 		return [
 			'@cycle_end_date@' => [
-				'hard_coded' => $this->cycle->end(),
+				'hard_coded' => new MongoDate($this->cycle->end()),
 			],
 			'@cycle_start_date@' => [
-				'hard_coded' => $this->cycle->start(),
+				'hard_coded' => new MongoDate($this->cycle->start()),
 			],
 			'@plan_activation@' => [
 				'field' => 'plan_activation',
-				'format' => [
-					'date' => 'unixtimestamp',
-				]
 			],
 			'@plan_deactivation@' => [
 				'field' => 'plan_deactivation',
-				'format' => [
-					'date' => 'unixtimestamp',
-				]
 			],
 			'@activation_date@' => [
 				'field' => 'activation_date',
-				'format' => [
-					'date' => 'unixtimestamp',
-				]
 			],
 			'@deactivation_date@' => [
 				'field' => 'deactivation_date',
-				'format' => [
-					'date' => 'unixtimestamp',
-				]
 			],
 		];
 	}
