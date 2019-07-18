@@ -240,7 +240,6 @@ trait Billrun_Traits_ConditionsCheck {
 	 * @return boolean
 	 */
 	public function isConditionMeet($entity, $query, $params = []) {
-		$entity = Billrun_Utils_Mongo::convertMongoDates($entity);
 		return Billrun_Utils_Arrayquery_Query::exists($entity, $query);
 	}
 

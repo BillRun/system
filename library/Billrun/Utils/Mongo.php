@@ -227,25 +227,6 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
-	 * convert all MongoDate objects in the data received into unixtimestamps
-	 * 
-	 * @param mixed $data
-	 * @return mixed $data with unixtimestamps
-	 */
-	public static function convertMongoDates($data) {
-		if ($data instanceof MongoDate) {
-			return $data->sec;
-		}
-		if (!is_array($data)) {
-			return $data;
-		}
-		foreach ($data as $key => $value) {
-			$data[$key] = self::convertMongoDates($value);
-		}
-		return $data;
-	}
-	
-	/**
 	 * Change the times of a mongo record
 	 * 
 	 * @param array $row - Record to change the times of.
