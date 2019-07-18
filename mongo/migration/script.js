@@ -585,3 +585,94 @@ db.createCollection('taxes');
 db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
 db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
+
+// BRCD-1936: Migrate old discount structure to new discount structure
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
+db.discounts.find({"discount_subject":{$exists: true}}).forEach(
+	function(obj) {
+		var subjectService;
+		if (obj.discount_subject.service !== undefined) {
+			subjectService = obj.discount_subject.service;
+		} else {
+			subjectService = {};
+		}
+		var subjectPlan;
+		if (obj.discount_subject.plan !== undefined) {
+			subjectPlan = obj.discount_subject.plan;
+		} else {
+			subjectPlan = {};
+		}
+		var oldParams = obj.params;
+		obj.type = obj.discount_type;
+		if (obj.prorated == false) {
+			obj.proration = "no";
+		} else {
+			obj.proration = "inherited";
+		}
+		var plansInSubject = {};
+		for (var planName in subjectPlan) {
+			if (subjectPlan[planName].value !== undefined) {
+				plansInSubject[planName] = subjectPlan[planName];
+			} else {
+				var plan = {};
+				plan[planName] = {"value": subjectPlan[planName]};
+				plansInSubject[planName] = {"value": subjectPlan[planName]};
+			}
+		}
+		var servicesInSubject = {};
+		for (var serviceName in subjectService) {
+			if (subjectService[serviceName].value !== undefined) {
+				servicesInSubject[serviceName] = subjectService[serviceName];
+			} else {
+				var service = {};
+				service[serviceName] = {"value": subjectService[serviceName]};
+				servicesInSubject[serviceName] = {"value": subjectService[serviceName]};
+			}
+		}
+		obj.subject = {};
+		if (isEmpty(plansInSubject) === false) {
+			obj.subject.plan = plansInSubject;
+		}
+		if (isEmpty(servicesInSubject) === false) {
+			obj.subject.service = servicesInSubject;
+		}
+		if (isEmpty(obj.subject)) {
+			delete obj.subject;
+		}
+		var conditionObject = {};
+		obj.params = {};
+		var fieldsObject = {};
+		var servicesValues = {};
+		conditionObject["subscriber"] = {};
+		if (oldParams.plan !== undefined) {
+			fieldsObject = [{"field": "plan", "op": "eq", "value": oldParams.plan}];
+			conditionObject["subscriber"]["fields"] = fieldsObject;
+		}
+		var serviceObject = {};
+		var serviceValue = [];
+		if (oldParams.service !== undefined) {
+			var serviceCondAmount = oldParams.service.length;
+			for (var i = 0; i < serviceCondAmount; i++) {
+				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+			}
+			servicesValues = {"fields": serviceValue};
+			serviceObject['any'] = [servicesValues];
+			conditionObject["subscriber"]["service"] = serviceObject;
+		}
+		if (isEmpty(fieldsObject) === false || isEmpty(serviceObject) === false) {
+			conditionObject["subscriber"] = [conditionObject["subscriber"]];
+			obj.params.conditions = [conditionObject];
+		}
+		delete obj.discount_type;
+		delete obj.discount_subject;
+		delete obj.prorated;
+		db.discounts.save(obj);
+	}
+)
