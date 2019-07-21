@@ -89,7 +89,6 @@ class Models_Discounts extends Models_Entity {
 					}
 				}
 			}
-			error_log("value : " . print_r($conditionsGroups, 1));
 			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Limited by cycles must include at least one condition on Plan or Service');
 		}
 		return true;
