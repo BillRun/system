@@ -26,7 +26,7 @@ class LinesModel extends TableModel {
 	protected $longQuery;
 	
 	public function __construct(array $params = array()) {
-		if ($params['db'] == 'archive') {
+		if ($params['db'] == 'archive' || $params['db'] == 'historyarchive') {
 			$params['collection'] = $params['collection'];
 		} else {
 			$params['collection'] = Billrun_Factory::db()->lines;
@@ -489,11 +489,22 @@ class LinesModel extends TableModel {
 		Billrun_Factory::db()->queueCollection()->remove($params);
 		return parent::remove($params);
 	}
-
+	
 	public static function getArchiveLinesCollections() {
 		try {
 			$archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 			$filtered_collections = $archiveDb->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
+			sort($filtered_collections);
+		} catch (Exception $ex) {
+			return array();
+		}
+		return $filtered_collections;
+	}
+	
+	public static function getHistoryArchiveLinesCollections() {
+		try {
+			$historyArchiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('historyarchive.db'));
+			$filtered_collections = $historyArchiveDb->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
 			sort($filtered_collections);
 		} catch (Exception $ex) {
 			return array();
