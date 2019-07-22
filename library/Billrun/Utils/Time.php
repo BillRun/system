@@ -289,5 +289,23 @@ class Billrun_Utils_Time {
 		
 		return $value;
 	}
+	
+	/**
+	 * Get number of days different between 2 dates
+	 * 
+	 * @param unixtimestamp $date1
+	 * @param unixtimestamp $date2
+	 * @return int
+	 */
+	public static function getDaysDiff($date1, $date2) {
+		if ($date1 > $date2) {
+			$datediff = $date1 - $date2;
+		} else {
+			$datediff = $date2 - $date1;
+		}
+		
+		
+		return round($datediff / (60 * 60 * 24));
+	}
 
 }
