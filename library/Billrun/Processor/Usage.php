@@ -77,6 +77,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type string
 	 */
 	protected $timeZone = null;
+	
+	/**
+	 * 
+	 * user fields to include in stamp calculation
+	 * @var array
+	 */
+	protected $stampFields = array();
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -152,7 +159,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		$row['usaget'] = $this->getLineUsageType($row['uf']);
+		$row['usaget'] = $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
 			return false;
@@ -163,7 +170,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			$row['prepriced'] = true;
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
-		$row['stamp'] = md5(serialize($row));
+		$row['stamp'] = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
 		$row['type'] = static::$type;
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
@@ -228,7 +235,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $trailer;
 	}
 
-	protected function getLineUsageType($userFields) {
+	protected function getLineUsageType($row) {
+		$userFields = $row['uf'];
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
 				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field']) && !isset($usagetMapping['conditions'])) {
@@ -267,6 +275,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
+					// set the fields that will be used for line stamp calaulation
+					$this->stampFields = $this->getStampFields($usagetMapping, $row);
 					return $usagetMapping['usaget'];
 				}
 			}
@@ -302,6 +312,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			}
 		}
 		return $volume;
+	}
+	
+	protected function getStampFields($usagetMapping = [], $row = []) {
+		$stampFields = array();
+		foreach (Billrun_Util::getIn($usagetMapping, 'stamp_fields', []) as $fieldPath) {
+			$fieldName = end(explode('.', $fieldPath));
+			$stampFields[$fieldName] = Billrun_Util::getIn($row, $fieldPath, []);
+		}
+		if (!empty($row['type'])) {			
+			$stampFields['type'] = $row['type'];
+		}
+		return $stampFields;
 	}
 	
 	/**
