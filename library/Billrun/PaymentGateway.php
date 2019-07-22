@@ -758,7 +758,7 @@ abstract class Billrun_PaymentGateway {
 		}
 		$paymentParams['dir'] = 'fc';
 		if (isset($retParams['payment_identifier'])) {
-			$options['additional_params'] = array('payment_identifier' => $retParams['payment_identifier']);
+			$options['additional_params']['payment_identifier'] = $retParams['payment_identifier'];
 		}
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
 		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
