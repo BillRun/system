@@ -67,19 +67,21 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
 
 		$subscribersRevisions= [];
-		Billrun_Factory::log(json_encode($this->records));
 		//Assuming this->records are sorted by 'from' field
 		$accountRevs =[];
-		foreach ($this->revisions as $subscriberRevArr) {
+		foreach ($this->revisions as $revSid => $subscriberRevArr) {
+			$subRevisions = [];
 			foreach ($subscriberRevArr as $subscriberRev) {
-				Billrun_Factory::log(json_encode($subscriberRev));
 				if($subscriberRev['sid'] == 0) {
 					//No need to expand  account revisions (no dated sub-fields )
 					$accountRevs[] = $subscriberRev;
 					continue;
 				}
-				$subscribersRevisions = array_merge( $subscribersRevisions,
+				$subRevisions = array_merge( $subRevisions,
 							$this->expandSubRevisions($subscriberRev,$this->cycleAggregator->getCycle()->start(),$this->cycleAggregator->getCycle()->end()) );
+			}
+			if(!empty($subRevisions)) {
+				$subscribersRevisions[$revSid] = $subRevisions;
 			}
 		}
 		//TODO remove debug lines (below)
