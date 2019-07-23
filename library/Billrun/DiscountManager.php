@@ -311,6 +311,9 @@ class Billrun_DiscountManager {
 		});
 
 		foreach ($discounts as $discount) {
+			if (!$discount instanceof Mongodloid_Entity) {
+				$discount = new Mongodloid_Entity($discount);
+			}
 			self::$discounts[$billrunKey][$discount['key']] = $discount;
 		}
 	}
@@ -891,7 +894,7 @@ class Billrun_DiscountManager {
 			return $cdrs;
 		}
 
-		foreach ($this->getEligibleDiscounts() as $discountKey => $eligibility) { // discounts are ordered by priority
+		foreach ($eligibleDiscounts as $discountKey => $eligibility) { // discounts are ordered by priority
 			$discount = $this->getDiscount($discountKey, $this->cycle->key());
 			if (!$discount) {
 				Billrun_Factory::log("Cannot get discount '{$discountKey}', CDR was not generated", Billrun_Log::ERR);
@@ -921,6 +924,8 @@ class Billrun_DiscountManager {
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
+			$discountedLineAmount = 0;
+			$lineAmountLimit = $line['full_price'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
@@ -930,14 +935,15 @@ class Billrun_DiscountManager {
 				$from = $eligibilityInterval['from'];
 				$to = $eligibilityInterval['to'];
 				$addToCdr = [
-					'discount_from' => $from,
-					'discount_to' => $to,
+					'discount_from' => new MongoDate($from),
+					'discount_to' => new MongoDate($to),
 				];
 				$discountAmount = $eligibilityInterval['amount'];
 
-				if ($discountedAmount + $discountAmount > $amountLimit) { // current discount reached limit
-					$addToCdr['orig_discount_amount'] = $discountAmount;
-					$discountAmount = $amountLimit - $discountedAmount;
+				if (($discountedAmount + $discountAmount > $amountLimit) ||
+						($discountedLineAmount + $discountAmount > $lineAmountLimit)) { // current discount reached limit
+					$addToCdr['orig_discount_amount'] = -$discountAmount;
+					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $discountAmount);
 				}
 				
 				if ($discountAmount > 0) {
@@ -947,6 +953,11 @@ class Billrun_DiscountManager {
 				$discountedAmount += $discountAmount;
 				if ($discountedAmount >= $amountLimit) { // discount reached amount limit
 					return $cdrs;
+				}
+				
+				$discountedLineAmount += $discountAmount;
+				if ($discountedLineAmount >= $lineAmountLimit) { // discount exceeds line price
+					continue 2;
 				}
 			}
 		}
@@ -965,20 +976,20 @@ class Billrun_DiscountManager {
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
 		$lineEligibility = $this->getLineFullEligibility($line);
-		$amountsEligibility = $this->getLineAmountsEligibility($line, $discount, $eligibility);
+		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
-		foreach ($amountsEligibility as $amountEligibility) {
-			$value = $amountEligibility['value'];
-			$currAmountEligibility = Billrun_Utils_Time::getIntervalsIntersections($lineEligibility, $amountEligibility);
-			$currAmountEligibility = Billrun_Utils_Time::getIntervalsDifference($currAmountEligibility, $ret);
-			foreach ($currAmountEligibility as $currAmountEligibilityInterval) {
-				$from = $currAmountEligibility['from'];
-				$to = $currAmountEligibility['to'];
+		foreach ($valuesEligibility as $valueEligibility) {
+			$value = $valueEligibility['value'];
+			$currValueEligibility = Billrun_Utils_Time::getIntervalsIntersections($lineEligibility, $valueEligibility['eligibility']);
+			$currValueEligibility = Billrun_Utils_Time::getIntervalsDifference($currValueEligibility, $ret);
+			foreach ($currValueEligibility as $currValueEligibilityInterval) {
+				$from = $currValueEligibilityInterval['from'];
+				$to = $currValueEligibilityInterval['to'];
 				if ($from < $to) {
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $this->calculateDiscountAmount($discount, $value, $from, $to),
+						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to),
 					];
 				}
 			}
@@ -1119,57 +1130,35 @@ class Billrun_DiscountManager {
 			'type' => 'credit',
 			'description' => $discount['description'],
 			'usaget' => 'discount',
-			'discount_type' => $discount['discount_type'],
-//			'urt' => new MongoDate($creationTime),
-//			'process_time' => new MongoDate($creationTime),
-//			'modifier' => $lineModifier,
-//			'orignal_modifier' => $orgModifier,
-//			'arate' => $discount->createRef(Billrun_Factory::db()->ratesCollection()),
-			'discount' => $discount->createRef(Billrun_Factory::db()->discountsCollection()),
+			'discount_type' => isset($discount['type']) ? $discount['type'] : 'percentage',
+			'urt' => new MongoDate($this->cycle->end()),
+			'process_time' => new MongoDate(),
+			'arate' => $discount->createRef(Billrun_Factory::db()->discountsCollection()),
+			'arate_key' => $discount['key'],
+			'eligible_line' => $eligibleLine['stamp'],
 			'aid' => $eligibleLine['aid'],
 			'source' => 'billrun',
 			'billrun' => $eligibleLine['billrun'],
-//			'usagev' => $quantity,
-//			'is_percent' => !$this->isMonetray(),
+			'usagev' => 1,
+			'amount' => -$discountAmount,
+			'aprice' => -$discountAmount,
 		);
-
-		foreach ($this->getOptionalCdrFields() as $field) {
-			if (isset($eligibleLine[$field])) {
-				$discountLine[$field] = $eligibleLine[$field];
-			}
-		}
-
-		if (!empty($discount['cycles'])) {
-			$discountLine['cycles'] = $discount['cycles'];
-		}
-
-//		foreach ($discount['discount_subject'] as $subjects) {
-//			foreach ($subjects as $key => $val) {
-//				$val = is_array($val) ? $val['value'] : $val; // Backward compatibility with amount/perecnt only discount subject.
-//				if ($this->isMonetray()) {
-//					$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;
-//				} else {
-//					$discountLine['discount'][$key]['value'] = $val;
-//				}
-//			}
-//			$discountLine['affected_sections'] = array_keys($this->discountableSections);
-//		}
-
-		if (!empty($discount['limit'])) {
-			$limit = 0 < $discount['limit'] ? -$discount['limit'] : $discount['limit'];
-			$discountLine['limit'] = $limit * $lineModifier;
-		}
-
-		$discountLine['process_time'] = new MongoDate();
-		if (!empty($accountInvoice)) {
-			$discountLine['received_count'] = static::countReceivedDiscountsOfKey(null, $discount['key'], $accountInvoice->getRawData()['aid']);
-		}
-
+		
+		$discountLine = $this->addTaxationData($discountLine);
+		
+		$discountLine = array_merge($discountLine, $addToCdr);
 		return $discountLine;
 	}
-
-	protected function getOptionalCdrFields() {
-		return [];
+	
+	/**
+	 * add taxation data to the given line
+	 * 
+	 * @param array $line
+	 * @return array
+	 */
+	protected function addTaxationData(&$line) {
+		$taxCalc = Billrun_Calculator::getInstance(['autoload' => false, 'type' => 'tax']);
+		return $taxCalc->updateRow($line);
 	}
 
 }
