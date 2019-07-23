@@ -1227,6 +1227,7 @@ class Billrun_DiscountManager {
 			'arate' => $discount->createRef($collection),
 			'arate_key' => $discount['key'],
 			'aid' => $eligibleLine['aid'],
+			'sid' => $eligibleLine['sid'],
 			'source' => 'billrun',
 			'billrun' => $eligibleLine['billrun'],
 			'usagev' => 1,
