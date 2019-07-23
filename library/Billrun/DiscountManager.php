@@ -1140,7 +1140,6 @@ class Billrun_DiscountManager {
 			'source' => 'billrun',
 			'billrun' => $eligibleLine['billrun'],
 			'usagev' => 1,
-			'amount' => -$discountAmount,
 			'aprice' => -$discountAmount,
 		);
 		
