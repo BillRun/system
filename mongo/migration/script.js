@@ -676,3 +676,12 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		db.discounts.save(obj);
 	}
 )
+
+// BRCD-1971 - update prorated field
+db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
+	plan.prorated_start = plan.prorated;
+	plan.prorated_end = plan.prorated;
+	plan.prorated_termination = plan.prorated;
+	delete plan.prorated;
+	db.plans.save(plan);
+});
