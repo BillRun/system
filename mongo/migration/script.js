@@ -554,6 +554,7 @@ if (discountFields) {
 	});
 	lastConfig['discounts']['fields'] = discountFields;
 }
+
 //BRCD-1942 : Add Charge fields 
 var chargeFields = [{
 	"field_name": "from",
