@@ -289,10 +289,10 @@ class Billrun_DiscountManager {
 					'$exists' => 1,
 				],
 				'from' => [
-					'$lte' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunKey)),
+					'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunKey)),
 				],
 				'to' => [
-					'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($billrunKey)),
+					'$gt' => new MongoDate(Billrun_Billingcycle::getStartTime($billrunKey)),
 				],
 			];
 
@@ -333,10 +333,10 @@ class Billrun_DiscountManager {
 					'$exists' => 1,
 				],
 				'from' => [
-					'$lte' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunKey)),
+					'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunKey)),
 				],
 				'to' => [
-					'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($billrunKey)),
+					'$gt' => new MongoDate(Billrun_Billingcycle::getStartTime($billrunKey)),
 				],
 			];
 
