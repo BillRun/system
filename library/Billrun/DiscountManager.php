@@ -1165,7 +1165,7 @@ class Billrun_DiscountManager {
 				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
 			}
 			if (isset($line['end'])) {
-				$from = min($to, Billrun_Utils_Time::getTime($line['end']));
+				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
 			}
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 			$cycleDays = $this->cycle->days();
