@@ -1033,7 +1033,7 @@ class Billrun_DiscountManager {
 				if (($discountedAmount + $discountAmount > $amountLimit) ||
 						($discountedLineAmount + $discountAmount > $lineAmountLimit)) { // current discount reached limit
 					$addToCdr['orig_discount_amount'] = -$discountAmount;
-					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $discountedAmount);
+					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $discountedLineAmount);
 				}
 				
 				if ($discountAmount > 0) {
