@@ -163,7 +163,7 @@ class Billrun_Cycle_Account_Invoice {
 		foreach($discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
 				if($subscriber->getData()['sid'] == $discount['sid']) {
-					$rawDiscount = $discount->getRawData();
+					$rawDiscount = ( $discount instanceof Mongodloid_Entity ) ? $discount->getRawData() : $discount ;
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
