@@ -14,6 +14,7 @@ class Billrun_DiscountManager {
 	protected static $charges = [];
 	protected $subscribersDiscounts = [];
 	protected static $discountsDateRangeFields = [];
+	protected $discountedLinesAmounts = [];
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
 		$this->cycle = $cycle;
@@ -972,6 +973,7 @@ class Billrun_DiscountManager {
 			return $cdrs;
 		}
 
+		$this->discountedLinesAmounts = [];
 		foreach (['discounts' => $this->eligibleDiscounts, 'charge' => $this->eligibleCharges] as $type => $eligibilities) {
 			foreach ($eligibilities as $key => $eligibility) { // discounts/charges are ordered by priority
 				$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : $this->getDiscount($key, $this->cycle->key());
@@ -1014,7 +1016,9 @@ class Billrun_DiscountManager {
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
-			$discountedLineAmount = 0;
+			if (!isset($this->discountedLinesAmounts[$line['stamp']])) {
+				$this->discountedLinesAmounts[$line['stamp']] = 0;
+			}
 			$lineAmountLimit = $line['full_price'];
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
@@ -1031,9 +1035,9 @@ class Billrun_DiscountManager {
 				$discountAmount = $eligibilityInterval['amount'];
 
 				if (($discountedAmount + $discountAmount > $amountLimit) ||
-						($discountedLineAmount + $discountAmount > $lineAmountLimit)) { // current discount reached limit
+						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) { // current discount reached limit
 					$addToCdr['orig_discount_amount'] = -$discountAmount;
-					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $discountedLineAmount);
+					$discountAmount = min($amountLimit - $discountedAmount, $lineAmountLimit - $this->discountedLinesAmounts[$line['stamp']]);
 				}
 				
 				if ($discountAmount > 0) {
@@ -1045,8 +1049,8 @@ class Billrun_DiscountManager {
 					return $cdrs;
 				}
 				
-				$discountedLineAmount += $discountAmount;
-				if ($discountedLineAmount >= $lineAmountLimit) { // discount exceeds line price
+				$this->discountedLinesAmounts[$line['stamp']] += $discountAmount;
+				if ($this->discountedLinesAmounts[$line['stamp']] >= $lineAmountLimit) { // discount exceeds line price
 					continue 2;
 				}
 			}
@@ -1157,6 +1161,12 @@ class Billrun_DiscountManager {
 		}
 		
 		if ($this->isDiscountProrated($discount, $line)) {
+			if (isset($line['start'])) {
+				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
+			}
+			if (isset($line['end'])) {
+				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
+			}
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 			$cycleDays = $this->cycle->days();
 			if ($discountDays > 0 && $discountDays < $cycleDays) {
@@ -1180,8 +1190,11 @@ class Billrun_DiscountManager {
 			return false;
 		}
 		
-		return (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
-			(isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
+		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
+		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
+		
+		return ($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
+			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
 	}
 	
 	/**
