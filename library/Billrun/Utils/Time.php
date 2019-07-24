@@ -257,10 +257,6 @@ class Billrun_Utils_Time {
 		
 		return self::mergeTimeIntervals($ret, $fromField, $toField);
 	}
-	
-	public static function isIntervalOverlaps($interval1, $interval2, $fromField = 'from', $toField = 'to') {
-		
-	}
 
 	/**
 	 * Sort given intervals (objects with from and to fields) array
