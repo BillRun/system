@@ -520,6 +520,29 @@ if (servicesFields) {
 	lastConfig['services']['fields'] = servicesFields;
 }
 
+// BRCD-1917 - add discount fields
+var discountsFields = [{
+	"field_name": "from",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+}, {
+	"field_name": "to",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+}, {
+	"field_name": "key",
+	"system": true,
+	"mandatory": true
+}, {
+	"field_name": "description",
+	"system": true,
+	"mandatory": true
+}];
+for (var fieldIdx in discountsFields) {
+	lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
+}
 // BRCD-1917 - add system flag true to discount system fields
 var discountFields = lastConfig['discounts']['fields'];
 if (discountFields) {
