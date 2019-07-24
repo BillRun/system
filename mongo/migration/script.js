@@ -521,8 +521,32 @@ if (servicesFields) {
 }
 
 // BRCD-1917 - add system flag true to discount system fields
-var discountFields = lastConfig['discounts']['fields'];
-if (discountFields) {
+if (typeof lastConfig['discounts'] === 'undefined' ||  typeof lastConfig['discounts']['fields'] === 'undefined') {
+	var discountsFields = [{
+		"field_name": "from",
+		"system": true,
+		"mandatory": true,
+		"type": "date"
+	}, {
+		"field_name": "to",
+		"system": true,
+		"mandatory": true,
+		"type": "date"
+	}, {
+		"field_name": "key",
+		"system": true,
+		"mandatory": true
+	}, {
+		"field_name": "description",
+		"system": true,
+		"mandatory": true
+	}];
+	for (var fieldIdx in discountsFields) {
+		lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
+	}
+} else {
+	var discountFields = lastConfig['discounts']['fields'];
+	if (discountFields) {
 	var discountsSystemFields = ['key', 'from', 'to', 'description'];
 	discountFields.forEach(function (field){
 		if (discountsSystemFields.includes(field['field_name']) && typeof field['system'] === 'undefined') {
