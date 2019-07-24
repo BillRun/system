@@ -1161,6 +1161,12 @@ class Billrun_DiscountManager {
 		}
 		
 		if ($this->isDiscountProrated($discount, $line)) {
+			if (isset($line['start'])) {
+				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
+			}
+			if (isset($line['end'])) {
+				$from = min($to, Billrun_Utils_Time::getTime($line['end']));
+			}
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 			$cycleDays = $this->cycle->days();
 			if ($discountDays > 0 && $discountDays < $cycleDays) {
@@ -1184,8 +1190,11 @@ class Billrun_DiscountManager {
 			return false;
 		}
 		
-		return (isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
-			(isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
+		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
+		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
+		
+		return ($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
+			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
 	}
 	
 	/**
