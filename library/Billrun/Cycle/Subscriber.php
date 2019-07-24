@@ -290,6 +290,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
 			$planData['line_stump'] = $stumpLine;
+			$planData['deactivation_date'] = $data['deactivation_date'];
 			$this->records['plans'][] = $planData;
 		}
 	}
@@ -463,7 +464,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach($services as $service) {
 				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
 				$service['end'] =  min($subend, $service['end']);
-				$service['start'] =  max($subscriber['activation_date'], $service['start']);
+				$service['start'] =  max($subscriber['activation_date']->sec, $service['start']);
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
 

@@ -12,6 +12,8 @@
 class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
+
+	protected  static $copyFromChargeData = ['prorated_start','prorated_end'];
 	
 	protected $plan = null;
 	protected $name = null;
@@ -52,6 +54,13 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['cycle'] = $chargeData['cycle'];
 		}
 		$entry['stamp'] = $this->generateLineStamp($entry);
+
+		foreach(self::$copyFromChargeData as $field) {
+			if( isset($chargeData[$field]) ) {
+				$entry[$field] = $chargeData[$field];
+			}
+		}
+
 		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
 			$entry['start'] = new MongoDate($chargeData['start']);
 		}
