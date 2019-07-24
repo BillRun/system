@@ -276,7 +276,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
 					// set the fields that will be used for line stamp calaulation
-					$this->stampFields = $this->getStampFields($usagetMapping, $row);
+					$stampFields = Billrun_Util::getIn($usagetMapping, 'stamp_fields', []);
+					$this->stampFields = $this->getStampFields($stampFields, $row);
 					return $usagetMapping['usaget'];
 				}
 			}
@@ -314,9 +315,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $volume;
 	}
 	
-	protected function getStampFields($usagetMapping = [], $row = []) {
+	protected function getStampFields($paths = [], $row = []) {
 		$stampFields = array();
-		foreach (Billrun_Util::getIn($usagetMapping, 'stamp_fields', []) as $fieldPath) {
+		foreach ($paths as $fieldPath) {
 			$fieldName = end(explode('.', $fieldPath));
 			$stampFields[$fieldName] = Billrun_Util::getIn($row, $fieldPath, []);
 		}
