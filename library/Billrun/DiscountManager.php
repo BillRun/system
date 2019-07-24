@@ -488,7 +488,9 @@ class Billrun_DiscountManager {
 		}
 
 		$minSubscribers = Billrun_Util::getIn($discount, 'params.min_subscribers', 1);
+		$minSubscribers = is_numeric($minSubscribers)? $minSubscribers : 1;
 		$maxSubscribers = Billrun_Util::getIn($discount, 'params.max_subscribers', null);
+		$maxSubscribers = is_numeric($maxSubscribers)? $maxSubscribers : null;
 		$cycles = Billrun_Util::getIn($discount, 'params.cycles', null);
 		$eligibility = [];
 		$servicesEligibility = [];
