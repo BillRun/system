@@ -91,6 +91,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
 		$this->discounts = $dm->generateCdrs($flatLines);
+		foreach ($this->discounts as &$cdr) {
+			$cdr = is_array($cdr) ? new Mongodloid_Entity($cdr) : $cdr;
+		}
 		$this->invoice->applyDiscounts($this->discounts);
 	}
 
