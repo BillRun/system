@@ -38,7 +38,7 @@ class Mongodloid_Connection {
 		// casting int values that are passed from config (string)
 		if (PHP_MAJOR_VERSION >= 7) {
 			foreach ($options as $key => &$option) {
-				if (is_int($option) && stripos($key, 'timeout') !== FALSE) { // TODO: this will not work with PHP 7, needs to be is_numeric($option) && ($option == intval($option))
+				if (is_numeric($option) && ($option == intval($option)) && stripos($key, 'timeout') !== FALSE) {
 					settype($option, 'int');
 				}
 			}

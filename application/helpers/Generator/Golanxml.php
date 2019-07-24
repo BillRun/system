@@ -463,10 +463,15 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->writer->startElement('SUBSCRIBER_SERVICE_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $serviceBalance['service_name']);
 						$this->writer->writeElement('GROUP_TYPE', $serviceBalance['service_name']);
-						$this->writer->writeElement('GROUP_ID', $serviceBalance['service_id']);	
-						$this->writer->writeElement('GROUP_START_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec));
-						$this->writer->writeElement('GROUP_END_DATE', date(Billrun_Base::base_dateformat, $serviceBalance['to']->sec));
+						$this->writer->writeElement('GROUP_ID', $serviceBalance['service_id']);
 						$usageInGroup = $planInCycle['include']['groups'][$serviceBalance['service_name']];
+						$this->writer->writeElement('GROUP_START_DATE',empty($usageInGroup['limits']['days']) ?
+							date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec) :
+							date(Billrun_Base::base_dateformat, $serviceBalance['from']->sec));
+						$this->writer->writeElement('GROUP_END_DATE', (empty($usageInGroup['limits']['days']) ||  $serviceBalance['to']->sec < Billrun_Util::getEndTime($billrun_key))  ?
+							date(Billrun_Base::base_dateformat,$serviceBalance['to']->sec) :
+							date('Y-12-31 23:59:59', $serviceBalance['to']->sec) );
+
 						
 						if (isset($usageInGroup['call'])) {
 							$callUsage += $balanceUsages['call']['usagev'];
@@ -477,24 +482,36 @@ class Generator_Golanxml extends Billrun_Generator {
 						if (isset($usageInGroup['call']) || isset($usageInGroup['incoming_call'])) {
 							$this->writer->writeElement('VOICE_USAGE', $callUsage);
 							$this->writer->writeElement('VOICE_CAPACITY', $usageInGroup['call']);
+							$this->writer->writeElement('VOICE_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['sms'])) {
 							$this->writer->writeElement('SMS_USAGE', $balanceUsages['sms']['usagev']);
 							$this->writer->writeElement('SMS_CAPACITY', $usageInGroup['sms']);
+							$this->writer->writeElement('SMS_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['data'])) {
 							$this->writer->writeElement('DATA_USAGE', $this->bytesToKB($balanceUsages['data']['usagev']));
-							$this->writer->writeElement('DATA_CAPACITY', $this->bytesToKB($usageInGroup['data']));
+							$this->writer->writeElement('DATA_CAPACITY', empty($usageInGroup['limits']['vf']) ?  $this->bytesToKB($usageInGroup['data']) : 6291456 );   // TODO When possible change to this to only use the in group usage
+							$this->writer->writeElement('DATA_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['mms'])) {
 							$this->writer->writeElement('MMS_USAGE', $balanceUsages['mms']['usagev']);
 							$this->writer->writeElement('MMS_CAPACITY', $usageInGroup['mms']);
+							$this->writer->writeElement('MMS_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
+						if (isset($usageInGroup['limits']['days'])) {
+							$this->writer->writeElement('VF_DAYS_USAGE', isset($serviceBalance['vf_count_days']) ? $serviceBalance['vf_count_days'] : 0 );
+							$this->writer->writeElement('VF_DAYS_CAPACITY', $usageInGroup['limits']['days']);
+							$this->writer->writeElement('VF_DAYS_CAPACITY_ACCUMULATIVE',  "TRUE");
+						}
+
 						$this->writer->endElement(); // end SUBSCRIBER_SERVICE_USAGE
 					}
-					
+
+					$excludeFromGroupUsage = Billrun_Factory::config()->getConfigValue('golanxml.exclude_from_group_usage',['IRP_VF_10_DAYS']);
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
-						if (in_array($group_name, $servicesNameWithBalance)) {
+						if (	in_array($group_name, $servicesNameWithBalance)
+								|| in_array($group_name,$excludeFromGroupUsage) ) {
 							continue;
 						}
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
@@ -531,8 +548,9 @@ class Generator_Golanxml extends Billrun_Generator {
 									$subscriber_group_usage_MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
 								} else if ($plan == 'in_plan') {
 									$subscriber_group_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-									if ($group_name == 'VF') {
+									if ($group_name == 'VF' || !empty($group['limits']['vf'])) {
 										$subscriber_group_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'incoming_call');
+										$subscriber_group_usage_VF_DAYS = Billrun_Util::getFieldVal($zone['totals']['vf_count_days'],0);
 									}
 									$subscriber_group_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
 									$subscriber_group_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
@@ -556,7 +574,11 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
-							$this->writer->writeElement('DATA_CAPACITY', ($group_name == 'VF') ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
+							$this->writer->writeElement('DATA_CAPACITY', (($group_name == 'VF') || isset($group['limits']['vf'],$group['limits']['days'])) ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
+							if(isset($group['limits']['vf'],$group['limits']['days'])) {
+								$this->writer->writeElement('VF_DAYS_USAGE', isset($subscriber_group_usage_VF_DAYS) ? $subscriber_group_usage_VF_DAYS : 0 );
+								$this->writer->writeElement('VF_DAYS_CAPACITY', $group['limits']['days']);
+							}
 						}
 						if (isset($group['mms'])) {
 							$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);

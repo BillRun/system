@@ -116,7 +116,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
-			if ($subscriber->isPrepaidAccount()) {
+			if ($subscriber && $subscriber->isPrepaidAccount()) {
 				$row['prepaid'] = $subscriber->{'prepaid'};
 				Billrun_Factory::log('Skipping prepaid line ' . $row->get('stamp'), Zend_Log::INFO);
 				return $row;
