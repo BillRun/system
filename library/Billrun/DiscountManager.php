@@ -1195,6 +1195,10 @@ class Billrun_DiscountManager {
 		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		
+		if ($proratedStart && $proratedEnd) {
+			return true;
+		}
+		
 		return ($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
 			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
 	}
