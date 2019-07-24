@@ -301,7 +301,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			return false;
 		}
 		
-		return $taxedPrice + $taxAmount;
+		return $untaxedPrice + $taxAmount;
 	}
 
 	/**
