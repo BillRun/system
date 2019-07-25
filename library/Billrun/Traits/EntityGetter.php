@@ -102,7 +102,7 @@ trait Billrun_Traits_EntityGetter {
 			return $this->afterEntityNotFound($row, $params);
 		}
 
-		Billrun_Factory::log('Entity found for row ' . $row['stamp'], Billrun_Log::DEBUG);
+		Billrun_Factory::log('Entity found for row ' . (isset($row['stamp']) ? $row['stamp']  :''), Billrun_Log::DEBUG);
 		$this->afterEntityFound($row, $entity, $category, $params);
 		return $entity;
 	}
