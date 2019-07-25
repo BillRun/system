@@ -101,7 +101,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => ['$cond'=> [ ['$or'=>[['$eq'=>['VF','$arategroup']],['$eq'=>['IRP_VF_10_DAYS','$arategroup']]]],'$vf_count_days',0]],
 				),
 				'count_days_addon' => array(
-					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
+					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_addon_days',0]],
 				),
 				'last_usage_time' => array(
 					'$max' => '$record_opening_time',
@@ -231,7 +231,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => ['$cond'=> [ ['$or'=>[['$eq'=>['VF','$arategroup']],['$eq'=>['IRP_VF_10_DAYS','$arategroup']]]],'$vf_count_days',0]],
 				),
 				'count_days_addon' => array(
-					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_count_days',0]],
+					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_addon_days',0]],
 				),
 				'last_usage_time' => array(
 					'$max' => '$isr_time',
