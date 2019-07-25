@@ -75,7 +75,7 @@ trait Billrun_Traits_ValueTranslator {
 			$this->translationMapping = $this->getTranslationMapping();
 		}
 		
-		return $this->translationMapping[$value] ?? false;
+		return Billrun_Util::getIn($this->translationMapping, $value, false);
 	}
 	
 	/**

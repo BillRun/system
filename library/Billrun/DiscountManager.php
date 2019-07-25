@@ -245,7 +245,8 @@ class Billrun_DiscountManager {
 						unset($this->eligibleDiscounts[$discountToExclude]);
 					}
 
-					foreach ($this->eligibleDiscounts[$discountToExclude]['services'] as $sid => $services) {
+                    $servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
+					foreach ($servicesToExclude as $sid => $services) {
 						foreach ($services as $serviceKey => $serviceEligibility) {
 							$this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey] = Billrun_Utils_Time::getIntervalsDifference($serviceEligibility, $eligibilityData['eligibility']);
 							if (empty($this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey])) {
@@ -348,7 +349,7 @@ class Billrun_DiscountManager {
 
 			$chargesColl = Billrun_Factory::db()->chargesCollection();
 			$loadedCharges = $chargesColl->query(array_merge($basicQuery, $query))->cursor()->sort($sort);
-			self::$charges = [];
+			self::$charges[$billrunKey] = [];
 
 			foreach ($loadedCharges as $charge) {
 				if (isset(self::$charges[$billrunKey][$charge['key']]) &&
@@ -709,7 +710,8 @@ class Billrun_DiscountManager {
 
 		foreach ($plansEligibility as $sid => &$subPlansEligibility) {
 			foreach ($subPlansEligibility as $plan => &$planEligibility) {
-				$planEligibility = Billrun_Utils_Time::getIntervalsIntersections($planEligibility, $eligibilityBySubs[$sid]);
+                $currSubEligibility = isset($eligibilityBySubs[$sid]) ? $eligibilityBySubs[$sid] : [];
+				$planEligibility = Billrun_Utils_Time::getIntervalsIntersections($planEligibility, $currSubEligibility);
 			}
 		}
 
