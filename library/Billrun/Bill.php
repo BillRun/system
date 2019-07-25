@@ -549,12 +549,10 @@ abstract class Billrun_Bill {
 		
 		if (!empty($aids)) {
 			$aidsQuery = array('aid' => array('$in' => $aids));			
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else if (!empty($exempted)){
 			$aidsQuery = array('aid' => array('$nin' => $aids));
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else {
-			$relevantAids = $billsColl->distinct('aid', $matchQuery);
+			$aidsQuery = array();
 		}
 		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
 		$currentAccounts = $account->getAccountsByQuery($accountQuery);
