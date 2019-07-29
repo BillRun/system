@@ -192,12 +192,17 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {
 		$credentials = $this->getGatewayCredentials();
+		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-		$aidStringVal = strval($addonData['aid']);
-		$addonData['aid'] = $this->addLeadingZero($aidStringVal);
-		if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
-			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
-		}
+		$ZParameter = '';
+		if (!empty($customParams['send_z_param'])) {
+			$aidStringVal = strval($addonData['aid']);
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+			if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+			}
+			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		}		
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -219,7 +224,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
 										<user>' . $addonData['txid'] . '</user>
-										<addonData>' . $addonData['aid'] . '</addonData>
+										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
 									</doDeal>
 								</request>
@@ -382,15 +387,20 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildSinglePaymentArray($params, $options) {
 		$credentials = $this->getGatewayCredentials();
+		$customParams = $this->getGatewayCustomParams();
 		$addonData = array();
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
 		$xmlParams['version'] = '1001';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
-		$aidStringVal = strval($addonData['aid']);
-		$addonData['aid'] = $this->addLeadingZero($aidStringVal);
-		if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
-			Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+		if (!empty($customParams['send_z_param'])) {
+			$aidStringVal = strval($addonData['aid']);
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+			if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+			}
+		} else {
+			unset($addonData['aid']);
 		}
 		$addonData['txid'] = $params['txid'];
 		$xmlParams['ok_page'] = $params['ok_page'];
@@ -465,6 +475,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
+		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		return array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -483,7 +494,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $installmentParams['amount'] . '</total>
 										  <user>' . $addonData['txid'] . '</user>
-									      <addonData>' . $addonData['aid'] . '</addonData>
+									      ' . $ZParameter . '
 										  <transactionType>Debit</transactionType>
 										  <creditType>Payments</creditType>
 										  <currency>ILS</currency>
