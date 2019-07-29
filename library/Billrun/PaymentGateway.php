@@ -764,5 +764,22 @@ abstract class Billrun_PaymentGateway {
 	public function getCompletionCodes() {
 		return $this->completionCodes;
 	}
+	
+	/**
+	 * Get the custom parameters of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	public function getGatewayCustomParams() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
+		return $customParams;
+	}
+	
 
 }
