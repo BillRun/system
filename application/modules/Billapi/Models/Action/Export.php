@@ -17,7 +17,7 @@
 class Models_Action_Export extends Models_Action {
 
 	public function execute() {
-		$output = array();
+		$output = [];
 		$mapper = $this->getCsvMapper();
 		if (Billrun_Util::getIn($this->options, 'headers', true)) {
 			$output[] = $this->getCsvHeaders($mapper);
@@ -28,9 +28,18 @@ class Models_Action_Export extends Models_Action {
 		}
 		return $output;
 	}
+	
+	protected function getCollection() {
+		return $this->$this->request['collection'];
+	}
+
+	protected function getFieldsConfig() {
+		$collection = $this->getCollection();
+		return Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
+	}
 
 	protected function getCsvMapper() {
-		$fields = Billrun_Factory::config()->getConfigValue('discounts.fields', array());
+		$fields = $this->getFieldsConfig();
 		$exportable_fields = array_filter($fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
 		});
@@ -82,7 +91,7 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function getRow($data, $mapper) {
-		$line = array();
+		$line = [];
 		foreach ($mapper as $path => $map) {
 			$line[$path] = $this->getRowValue($data, $path, $map);
 		}
