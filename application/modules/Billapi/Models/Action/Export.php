@@ -18,11 +18,14 @@ class Models_Action_Export extends Models_Action {
 
 	public function execute() {
 		$output = [];
-		$mapper = $this->getCsvMapper();
+		$query = $this->getExportQuery();
+		$entries = $this->getDataToExport($query);
+		$mapper = $this->getCsvMapper($entries);
+		// add headers
 		if (Billrun_Util::getIn($this->options, 'headers', true)) {
 			$output[] = $this->getCsvHeaders($mapper);
 		}
-		$entries = $this->getDataToExport($this->getExportQuery());
+		// add rows
 		foreach ($entries as $entry) {
 			$output[] = $this->getRow($entry, $mapper);
 		}
@@ -30,7 +33,7 @@ class Models_Action_Export extends Models_Action {
 	}
 	
 	protected function getCollection() {
-		return $this->$this->request['collection'];
+		return $this->request['collection'];
 	}
 
 	protected function getFieldsConfig() {
@@ -38,9 +41,19 @@ class Models_Action_Export extends Models_Action {
 		return Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
 	}
 
+	protected function getMapperConfig() {
+		$collection = $this->getCollection();
+		return Billrun_Factory::config()->getConfigValue("billapi.{$collection}.export.mapper", []);
+	}
+
 	protected function getCsvMapper() {
 		$fields = $this->getFieldsConfig();
-		$exportable_fields = array_filter($fields, function($field) {
+		$config = $this->getMapperConfig();
+		$exportable_fields = array_replace_recursive(
+			array_column($fields, null, 'field_name'),
+			array_column($config, null, 'field_name')
+		);
+		$exportable_fields = array_filter($exportable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
 		});
 		$mapper = array_reduce($exportable_fields, function ($acc, $field) {
@@ -54,37 +67,28 @@ class Models_Action_Export extends Models_Action {
 		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
 		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
+		if (empty($value) && $type !== 'boolean' && ![0, '0'].includes($value) ) {
+			return '';
+		}
 		switch ($type) {
 			case 'date':
 			case 'datetime':
-				return Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
+				return $this->formatDate($value);
 			case 'daterange':
-				$values = [];
-				if (empty($value)) {
-					return '';
-				}
-				foreach ($value as $range) {
-					$from = Billrun_Utils_Mongo::convertMongoDatesToReadable($range['from']);
-					$to = Billrun_Utils_Mongo::convertMongoDatesToReadable($range['to']);
-					$values[] = "{$from} - $to";
-				}
-				return implode(" ,", $values);
+				$value = $this->formatDate($value);
+				return $this->formatRanges($value);
 			case 'range':
-				$values = [];
-				if (!empty($value)) {
-					return '';
-				}
-				foreach ($value as $range) {
-					$values[] = "{$range['from']} - {$range['to']}";
-				}
-				return implode(" ,", $values);
+				return $this->formatRanges($value);
 			case 'percentage':
 				return ($value * 100) . '%';
 			case 'boolean':
-				return $value ? 'yes' : 'no';
+				return $this->formatBoolean($value);
 			default:
-				if (!empty($value) && Billrun_Util::getIn($params, 'multiple', false)) {
-					return implode(" ,", $value);
+				if (is_array($value) /*&& Billrun_Util::getIn($params, 'multiple', false)*/) {
+					return $this->formatArray($value);
+				}
+				if ($value instanceof MongoDate) {
+					return $this->formatDate($value);
 				}
 				return $value;
 		}
@@ -125,6 +129,31 @@ class Models_Action_Export extends Models_Action {
 			$records[] = $result->getRawData();
 		}
 		return $records;
+	}
+
+	protected function formatRanges($ranges) {
+		return $this->formatArray(array_map(function ($range) {
+			return $this->formatRange($range);
+		}, $ranges));
+	}
+
+	protected function formatRange($range) {
+		return "{$range['from']} - {$range['to']}";
+	}
+
+	protected function formatArray($values) {
+		return implode(", ", $values);
+	}
+
+	protected function formatDate($value) {
+		return Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
+	}
+
+	protected function formatBoolean($value) {
+		if (empty($value)) {
+			return 'no';
+		}
+		return ['false', 'FALSE', '0', 'null', 'NULL'].includes($value) ? 'no' : 'yes';
 	}
 
 }
