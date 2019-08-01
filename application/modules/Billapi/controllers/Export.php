@@ -18,7 +18,7 @@ class ExportController extends BillapiController {
 	protected function runOperation() {
 		$this->action = Models_Action::getInstance($this->params);
 		if (!$this->action) {
-			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
+			throw new Billrun_Exceptions_Api(999999, [], 'Action cannot be found');
 		}
 		$this->output->status = 1;
 		try {
