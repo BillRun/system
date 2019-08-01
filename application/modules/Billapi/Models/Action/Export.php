@@ -67,7 +67,7 @@ class Models_Action_Export extends Models_Action {
 		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
 		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
-		if (empty($value) && $type !== 'boolean' && ![0, '0'].includes($value) ) {
+		if (empty($value) && $type !== 'boolean' && !in_array($value, [0, '0']) ) {
 			return '';
 		}
 		switch ($type) {
@@ -80,15 +80,15 @@ class Models_Action_Export extends Models_Action {
 			case 'range':
 				return $this->formatRanges($value);
 			case 'percentage':
-				return ($value * 100) . '%';
+				return $this->formatPercentage($value);
 			case 'boolean':
 				return $this->formatBoolean($value);
 			default:
-				if (is_array($value) /*&& Billrun_Util::getIn($params, 'multiple', false)*/) {
-					return $this->formatArray($value);
-				}
 				if ($value instanceof MongoDate) {
 					return $this->formatDate($value);
+				}
+				if (is_array($value) /*&& Billrun_Util::getIn($params, 'multiple', false)*/) {
+					return $this->formatArray($value);
 				}
 				return $value;
 		}
@@ -153,7 +153,11 @@ class Models_Action_Export extends Models_Action {
 		if (empty($value)) {
 			return 'no';
 		}
-		return ['false', 'FALSE', '0', 'null', 'NULL'].includes($value) ? 'no' : 'yes';
+		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL']) ? 'no' : 'yes';
+	}
+
+	function formatPercentage($value) {
+		return ($value * 100) . '%';
 	}
 
 }
