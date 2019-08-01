@@ -42,7 +42,8 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function getRowValue($data, $path, $params) {
-		$value = Billrun_Util::getIn($data, explode('.', $path), null);
+		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
+		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
 		switch ($type) {
 			case 'date':
