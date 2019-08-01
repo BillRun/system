@@ -84,7 +84,7 @@ class Models_Action_Export extends Models_Action {
 	protected function getRow($data, $mapper) {
 		$line = array();
 		foreach ($mapper as $path => $map) {
-			$line[] = $this->getRowValue($data, $path, $map);
+			$line[$path] = $this->getRowValue($data, $path, $map);
 		}
 		return $line;
 	}
