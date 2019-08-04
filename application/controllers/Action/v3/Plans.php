@@ -110,7 +110,7 @@ class V3_PlansAction extends ApiAction {
 			$nonBillableOptions = [];
 			foreach ($services as $service) {
 				$serviceName = $service['name'];
-				$service['included'] = in_array($serviceName,  array_merge(Billrun_Util::getIn($plan, 'optional.services', []), Billrun_Util::getIn($plan, 'include.services', [])));
+				$service['included'] = in_array($serviceName, Billrun_Util::getIn($plan, 'include.services', []));
 				$service['price'] = isset($service['price']['0']['price']) ? $service['price']['0']['price'] : 0;
 				$billable = Billrun_Util::getIn($service, 'billable', true);
 				if ($billable) {
