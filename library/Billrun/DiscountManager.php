@@ -182,7 +182,7 @@ class Billrun_DiscountManager {
 
 		foreach (self::getCharges($this->cycle->key()) as $charge) {
 			$eligibility = $this->getDiscountEligibility($charge, $accountRevisions, $subscribersRevisions);
-			$this->setEligibility($this->eligibleCharges, $discount, $eligibility);
+			$this->setEligibility($this->eligibleCharges, $charge, $eligibility);
 		}
 	}
 
@@ -305,7 +305,7 @@ class Billrun_DiscountManager {
 
 			$discountColl = Billrun_Factory::db()->discountsCollection();
 			$loadedDiscounts = $discountColl->query(array_merge($basicQuery, $query))->cursor()->sort($sort);
-			self::$discounts = [];
+			self::$discounts[$billrunKey] = [];
 
 			foreach ($loadedDiscounts as $discount) {
 				if (isset(self::$discounts[$billrunKey][$discount['key']]) &&
