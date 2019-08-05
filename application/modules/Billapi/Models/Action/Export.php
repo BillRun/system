@@ -46,6 +46,31 @@ class Models_Action_Export extends Models_Action {
 		return Billrun_Factory::config()->getConfigValue("billapi.{$collection}.export.mapper", []);
 	}
 
+	protected function setCsvOrder($mapper) {
+		ksort($mapper); // sort field_name by alphabet and digits
+		return $mapper;
+	}
+
+	protected function createRecursionMapperKey($config, $configs = []) {
+		$max_array_count = 3; // TODO:: TEMP need to find a way how to calculate it from DB
+		$path = $config['field_name'];
+		$title = isset($config['title']) ? $config['title'] : false;
+		$matches = [];
+		preg_match('/{[0-9]+}/', $path, $matches);
+		if (empty($matches)) {
+			$configs[$path] = $config;
+			return $configs;
+		}
+		for ($idx = 0; $idx < $max_array_count; $idx++) {
+			$config['field_name'] = str_replace($matches[0], $idx, $path);
+			if ($title !== false) {
+				$config['title'] = str_replace($matches[0], $idx, $title);
+			}
+			$configs = $this->createRecursionMapperKey($config, $configs);
+		}
+		return $configs;
+	}
+
 	protected function getCsvMapper() {
 		$fields = $this->getFieldsConfig();
 		$config = $this->getMapperConfig();
@@ -57,9 +82,10 @@ class Models_Action_Export extends Models_Action {
 			return Billrun_Util::getIn($field, 'exportable', true);
 		});
 		$mapper = array_reduce($exportable_fields, function ($acc, $field) {
-			$acc[$field['field_name']] = $field;
+			$acc = array_merge($acc, $this->createRecursionMapperKey($field));
 			return $acc;
 		}, []);
+		$mapper = $this->setCsvOrder($mapper);
 		return $mapper;
 	}
 
