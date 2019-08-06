@@ -521,6 +521,48 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
 
+	/**
+	 * ip mapping controller of admin
+	 */
+	public function ipmappingAction() {
+		if (!$this->allowed('read'))
+			return false;
+
+		$request = $this->getRequest();
+		$coll_db = $request->get('collection');
+		if (empty($coll_db)){
+			$db_name = 'billing';
+			$collection_name = 'ipmapping';
+		} else {
+			$coll_array = explode('|', $coll_db);
+			$db_name = array_pop($coll_array);
+			$collection_name = array_pop($coll_array);
+		}
+		$table = 'ipmapping';
+		$sort = $this->applySort($table);
+		$longQuery = $this->isLongQuery($table);
+		$options = array(
+			'collection' => $collection_name,
+			'db' => $db_name,
+			'sort' => $sort,
+			'long_query' => $longQuery
+		);
+		self::initModel($table, $options);
+
+		$session = $this->getSession($table);
+		$query = $this->getLinesActionQuery($session, $table);
+		if(!$query) {
+			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
+			return false;
+		}
+
+		// this use for export
+		$this->getSetVar($session, $query, 'query', $query);
+		$this->getSetVar($session, 'collection', 'collectionSelect', 'ipmapping|billing');
+
+		$this->getView()->component = $this->buildTableComponent('ipmapping', $query);
+	}
+
 	public function queueAction() {
 		if (!$this->allowed('read'))
 			return false;
