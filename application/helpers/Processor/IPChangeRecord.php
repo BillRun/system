@@ -18,10 +18,11 @@ class Processor_IPChangeRecord extends Billrun_Processor
 
 	protected $data_structure = [
 							[
-								'match'=> '^\<134\>',
+								'match'=> '^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+',
 								'fields' => [
-												'datetime' => "^\<134\> \w (\d{4} \w{3,5} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2})",
-												'nat_type' => "\<134\> [ \d\w]+ - - ([\d\w]+) ",
+												'recording_entity' => '^\w+  \d+ \d+:\d+:\d+ ([\d\w\.]+)',
+												'datetime' => "^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w (\d{4} \w{3,5} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2})",
+												'nat_type' => "^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w [ \d\w]+ - - ([\d\w]+) ",
 												'changes' => "(\[Userbased[^]]+\])"
 								]
 							],
@@ -34,6 +35,14 @@ class Processor_IPChangeRecord extends Billrun_Processor
 	    if(!empty($options['regexes']) || !empty($options['parser']['regexes'])) {
 			$this->data_structure = Billrun_Util::getFieldVal($options['regexes'],Billrun_Util::getFieldVal($options['parser']['regexes'],$this->data_structure));
 	    }
+	}
+
+
+	public function process()
+	{
+		$this->data['header'] = $this->getFileLogData($this->filename,static::$type);
+	    $ret = parent::process();
+	    return $ret;
 	}
 
 
@@ -119,24 +128,16 @@ class Processor_IPChangeRecord extends Billrun_Processor
 
 		$lines = Billrun_Factory::db()->ipmappingCollection();
 		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
-// 		$queue_data = $this->getQueueData();
 		if ($this->bulkInsert) {
 			settype($this->bulkInsert, 'int');
 			if (!$this->bulkAddToCollection($lines)) {
 				return false;
 			}
-// 			Billrun_Factory::log()->log("Storing " . count($this->queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
-// 			if (!$this->bulkAddToQueue()) {
-// 				return false;
-// 			}
+
 		} else {
 			$this->addToCollection($lines);
-// 			Billrun_Factory::log()->log("Storing " . count($queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
-// 			$this->addToQueue($queue_data);
 		}
 
-//  		$queue_stamps = array_keys($queue_data);
-//  		$lines->update(array('stamp' => array('$in' => $queue_stamps)), array('$set' => array('in_queue' => true)), array("multiple" => true));
 		Billrun_Factory::log()->log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
 		return true;
 	}
