@@ -105,13 +105,13 @@ class IpmappingModel extends TableModel {
 
 	public function getTableColumns() {
 		$columns = array(
-			'type' => 'Type',
 			'external_ip' => 'External IP',
 			'internal_ip' => 'Internal IP',
 			'start_port' => 'Starting Port',
 			'end_port' => 'Ending Port',
 			'network' => 'Network ID',
 			'urt' => 'Time',
+			'recording_entity' => 'Recording Entity',
 		);
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
@@ -151,6 +151,22 @@ class IpmappingModel extends TableModel {
 				'input_type' => 'text',
 				'comparison' => 'contains',
 				'display' => 'External IP',
+				'default' => '',
+			),
+			'start_port' => array(
+				'key' => 'start_port',
+				'db_key' => 'start_port',
+				'input_type' => 'text',
+				'comparison' => '$gte',
+				'display' => 'Start Port',
+				'default' => '',
+			),
+			'end_port' => array(
+				'key' => 'end_port',
+				'db_key' => 'end_port',
+				'input_type' => 'text',
+				'comparison' => '$lte',
+				'display' => 'End Port',
 				'default' => '',
 			),
 			'from' => array(
@@ -226,6 +242,10 @@ class IpmappingModel extends TableModel {
 					'width' => 2,
 				),
 			),
+			1 => [
+				'start_port' => [	'width' => 2	],
+				'end_port' => 	[	'width' => 2	],
+			]
 		);
 		return $filter_field_order;
 	}
@@ -236,7 +256,8 @@ class IpmappingModel extends TableModel {
 			'urt' => 'Time',
 			'type' => 'Type',
 			'internal_ip' => 'Internal IP',
-			'external_ip' => 'External IP'
+			'start_port' => 'Start Port',
+			'end_port' => 'End Port',
 		);
 	}
 
