@@ -1203,6 +1203,7 @@ class Billrun_DiscountManager {
 			switch($operation['name']) {
 				case 'recurring_by_quantity':
 					$ret += $this->getRecurringByQuantityAmount($price, $line, $isPercentage, $value, $params);
+					break;
 				default:
 					Billrun_Factory::log("Discount operations: unknown operation {$operation['name']}", Billrun_Log::ERR);
 					$ret += $isPercentage ? $price * $value : $price;
