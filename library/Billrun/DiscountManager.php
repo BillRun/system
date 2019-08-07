@@ -384,6 +384,25 @@ class Billrun_DiscountManager {
 	}
 
 	/**
+	 * manually set charges
+	 * 
+	 * @param array $charges
+	 */
+	public static function setCharges($charges, $billrunKey) {
+		self::$charges[$billrunKey] = [];
+		usort($charges, function ($a, $b) {
+			return Billrun_Util::getIn($b, 'priority', 0) > Billrun_Util::getIn($a, 'priority', 0);
+		});
+
+		foreach ($charges as $charge) {
+			if (!$charge instanceof Mongodloid_Entity) {
+				$charge = new Mongodloid_Entity($charge);
+			}
+			self::$charges[$billrunKey][$charge['key']] = $charge;
+		}
+	}
+
+	/**
 	 * manually set subscriber discount
 	 * 
 	 * @param array $discount
