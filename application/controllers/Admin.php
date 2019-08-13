@@ -117,11 +117,20 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function editAction() {
 		if (!$this->allowed('read'))
 			return false;
+
+		$table = $this->getRequest()->get('coll');
+		$session = $this->getSession($table);
+		$options=[];
+		if (!empty($coll_db = $this->getSetVar($session, '', 'collectionSelect')) ) {
+			$dbCollPair = explode('|', $coll_db);
+			$options['db'] =  array_pop($dbCollPair);
+			$options['collection'] =  $table ? $table : array_pop($dbCollPair);
+		}
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::initModel($coll);
+		$model = self::initModel($coll,$options);
 		if ($type == 'new') {
 			$entity = $model->getEmptyItem();
 		} else {
@@ -142,6 +151,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function confirmAction() {
 		if (!$this->allowed('write'))
 			return false;
+
+		$table = $this->getRequest()->get('coll');
+		$session = $this->getSession($table);
+		if (!empty($coll_db = $this->getSetVar($session, '', 'collectionSelect')) ) {
+			if(countexplode('|', $coll_db) > 1) {
+				//Cannot change  document in other DBs  through the UI
+				return false;
+			}
+		}
+
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
@@ -222,6 +241,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function saveAction() {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
+
+		$table = $this->getRequest()->get('coll');
+		$session = $this->getSession($table);
+		if (!empty($coll_db = $this->getSetVar($session, '', 'collectionSelect')) ) {
+			if(countexplode('|', $coll_db) > 1) {
+				//Cannot change document in other DBs through the UI
+				die(json_encode(null));
+			}
+		}
 		$flatData = $this->getRequest()->get('data');
 		$patterns = array('/,null/', '/,{0,1}"\w+":\[\s*null\s*\]/', '/"\w+":\[\s*null\s*\],{0,1}/');
 		$stripNullChar = preg_replace($patterns, "", $flatData);
@@ -292,10 +320,20 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($collectionName);
 
 		if (!empty($session->query)) {
+			if(!empty($collDB = $this->getSetVar($session, '', 'collectionSelect')) )  {
+				$coll_array = explode('|', $collDB);
+				$dbName = array_pop($coll_array);
+				if( empty($collectionName) ) {
+					$collectionName = array_pop($coll_array);
+				}
+			}
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
 			);
+			if(!empty($dbName)) {
+				$options['db'] = $dbName;
+			}
 
 			// init model
 			self::initModel($collectionName, $options);
@@ -487,16 +525,17 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		
 		$request = $this->getRequest();
+		$table = 'lines';
+		$session = $this->getSession($table);
 		$coll_db = $request->get('collection');
-		if (empty($coll_db)){
-			$db_name = 'billing';
-			$collection_name = 'lines';
+		if (empty($coll_db) && empty($coll_db = $this->getSetVar($session, 'collection', 'collectionSelect')) ) {
+				$db_name = 'billing';
+				$collection_name = 'lines';
 		} else {
 			$coll_array = explode('|', $coll_db);
 			$db_name = array_pop($coll_array);
 			$collection_name = array_pop($coll_array);
 		}
-		$table = 'lines';
 		$sort = $this->applySort($table);
 		$longQuery = $this->isLongQuery($table);
 		$options = array(
@@ -507,7 +546,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		self::initModel($table, $options);
 
-		$session = $this->getSession($table);
 		$query = $this->getLinesActionQuery($session, $table);
 		if(!$query) {
 			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
