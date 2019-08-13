@@ -41,7 +41,7 @@
 			</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('read','ipmapping')) : ?>
-			<li<?php echo ($active == 'logs' ? ' class="active"' : ''); ?>>
+			<li<?php echo ($active == 'ipmapping' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/ipmapping">IP Mapping</a>
 			</li>
 		<?php endif; ?>

@@ -25,18 +25,16 @@ class Parser_RegexBased extends Billrun_Parser_Separator
 	public function parse()
 	{
 		$row=[];
-		foreach($this->structure as $regexVals) {
-			if(preg_match('/'.$regexVals['match'].'/',$this->line)) {
-				foreach($regexVals['fields'] as $fieldName => $fieldRegex) {
-					$matches = [];
-					if ( preg_match_all('/'.$fieldRegex.'/',$this->line,$matches) ) {
-						array_shift($matches);
-						$vals = reset($matches);
-						$row[$fieldName] =  count($vals) == 1 ? reset($vals) : $vals;
-					}
+		if(preg_match($this->structure['match'],$this->line)) {
+			foreach($this->structure['fields'] as $fieldName => $fieldRegex) {
+				$matches = [];
+				if ( preg_match_all($fieldRegex,$this->line,$matches) ) {
+					array_shift($matches);
+					$vals = reset($matches);
+					$row[$fieldName] =  count($vals) == 1 ? reset($vals) : $vals;
 				}
-				$row['stamp'] = md5(serialize($row));
 			}
+			$row['stamp'] = md5(serialize($row));
 		}
 		return $row;
 	}
