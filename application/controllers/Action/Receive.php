@@ -43,14 +43,27 @@ class ReceiveAction extends Action_Base {
 		// If not type all process normaly.
 		if(!$this->handleTypeAll($options)) {
 			$connectionsPerReceiverType = array();
-			$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);
-			$pgConnections = isset($paymentGatewayReceiver['connections']) ? $paymentGatewayReceiver['connections'] : [];
-			foreach ($pgConnections as $pgConnection) {
-				$pgOptions = $options;
-				$pgOptions['file_type'] = $options['type'];
-				$pgOptions['receiver']['connection'] = $pgConnection;
-				$pgOptions['receiver']['receiver_type'] = 'PaymentGateway_' . $options['payment_gateway'] . '_' . ucfirst($options['type']);
-				$this->loadReceiver($pgOptions);
+			if (isset($options['payment_gateway'])) {
+				$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);				
+				$pgConnections = isset($paymentGatewayReceiver['connections']) ? $paymentGatewayReceiver['connections'] : [];
+				foreach ($pgConnections as $pgConnection) {
+					$pgOptions = $options;
+					$pgOptions['file_type'] = $options['type'];
+					$pgOptions['receiver']['connection'] = $pgConnection;
+					$pgOptions['receiver']['receiver_type'] = 'PaymentGateway_' . $options['payment_gateway'] . '_' . ucfirst($options['type']);
+					$this->loadReceiver($pgOptions);
+				}
+				if (empty($paymentGatewayReceiver)) {
+					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
+					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
+						foreach ($fileTypeSettings['connections'] as $connectionDetails) {
+							$connectionDetails['file_type'] = $fileType;
+							$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+							$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
+							$connection->receive();
+						}
+					}
+				}
 			}
 			$inputProcessor = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);
 			$connections = isset($inputProcessor['receiver']['connections']) ? $inputProcessor['receiver']['connections'] : [];

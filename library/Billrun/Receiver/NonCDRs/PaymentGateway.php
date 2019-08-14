@@ -94,7 +94,7 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		$gateway = $options['payment_gateway'];
 		$pgReceiver = array();
 		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
-			return $paymentGateway['name'] === $gateway;
+			return ($paymentGateway['name'] === $gateway) && empty($paymentGateway['custom']);
 		});
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);

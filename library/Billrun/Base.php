@@ -173,6 +173,19 @@ abstract class Billrun_Base {
 			$class_type = $type;
 		} else {
 			$class_type = 'PaymentGateway_' . $args['payment_gateway'] . '_' . ucfirst($type);
+			$gatewayName = $args['payment_gateway'];
+			$typeInConfig = array_filter(Billrun_Factory::config()->payment_gateways->toArray(), function($pgSettings) use ($gatewayName) {
+				return $pgSettings['name'] === $gatewayName;
+			});
+			if ($typeInConfig) {
+				$typeInConfig = current($typeInConfig);
+			}
+			$instanceFieldName = $called_class::$type . '_type';
+			if (isset($typeInConfig[$instanceFieldName])) {
+				$args = array_merge($typeInConfig, $args);
+				$args['type'] = $type;
+				$class_type = 'PaymentGateway_' . ucfirst($typeInConfig[$instanceFieldName]) . '_' . str_replace('_', '', ucwords($type, '_'));
+			}
 		}
 		if ($config_type) {
 			if (is_object($config_type)) {
