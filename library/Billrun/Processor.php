@@ -590,6 +590,42 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	/**
+	 * Load the configuration structure
+	 * @param type $path
+	 */
+	protected function loadConfig($path) {
+		$this->configStruct = (new Yaf_Config_Ini($path))->toArray();
+	}
+
+	/**
+	 * Filter the record row data fields from the records
+	 * (The required field can be written in the config using <type>.fields_filter)
+	 * @param Array		$rawRow the full data record row.
+	 * @return Array	the record row with filtered only the requierd fields in it
+	 * 					or if no filter is defined in the configuration the full data record.
+	 */
+	protected function filterFields($rawRow) {
+		$stdFields = array('stamp');
+		$row = array();
+
+		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
+		if (!empty($requiredFields)) {
+			$passThruFields = array_merge($requiredFields, $stdFields);
+			foreach ($passThruFields as $field) {
+				if (isset($rawRow[$field])) {
+						$row[$field] = $rawRow[$field];
+				}
+
+			}
+		} else {
+			return $rawRow;
+		}
+
+		return $row;
+	}
+
+
+	/**
 	 * method to add advanced properties to row
 	 * 
 	 * @param Array $row data row from lines

@@ -372,6 +372,10 @@ class TableModel {
 					return array(
 						$filter_field['db_key'] => array('$regex' => strval($value)),
 					);
+				} else if (strpos($filter_field['comparison'],'$') === 0 ) {
+					return array(
+						$filter_field['db_key'] => array($filter_field['comparison'] => strval($value)),
+					);
 				}
 			}
 		} else if ($filter_field['input_type'] == 'date') {
