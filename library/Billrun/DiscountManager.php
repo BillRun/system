@@ -1078,6 +1078,7 @@ class Billrun_DiscountManager {
 		
 		foreach ($valuesEligibility as $valueEligibility) {
 			$value = $valueEligibility['value'];
+			$operations = $valueEligibility['operations'];
 			$currValueEligibility = Billrun_Utils_Time::getIntervalsIntersections($lineEligibility, $valueEligibility['eligibility']);
 			$currValueEligibility = Billrun_Utils_Time::getIntervalsDifference($currValueEligibility, $ret);
 			foreach ($currValueEligibility as $currValueEligibilityInterval) {
@@ -1087,7 +1088,7 @@ class Billrun_DiscountManager {
 					$ret[] = [
 						'from' => $from,
 						'to' => $to,
-						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to),
+						'amount' => $this->calculateDiscountAmount($discount, $line, $value, $from, $to, $operations),
 					];
 				}
 			}
@@ -1117,6 +1118,7 @@ class Billrun_DiscountManager {
 			$ret[] = [
 				'value' => $specificValue,
 				'eligibility' => $this->getLineFullEligibility($line),
+				'operations' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'operations'], []),
 			];
 		}
 		
@@ -1128,6 +1130,7 @@ class Billrun_DiscountManager {
 			$ret[] = [
 				'value' => $matchedValue,
 				'eligibility' => $matchedEligibility,
+				'operations' => Billrun_Util::getIn($discount, ['subject', "matched_{$eligibilityType}", 'operations'], []),
 			];
 		}
 		
@@ -1137,6 +1140,7 @@ class Billrun_DiscountManager {
 			$ret[] = [
 				'value' => $monthlyFeesValue,
 				'eligibility' => $this->getLineFullEligibility($line),
+				'operations' => Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'operations'], []),
 			];
 		}
 		
@@ -1155,15 +1159,11 @@ class Billrun_DiscountManager {
 	 * @param array $value
 	 * @param unixtimestamp $from
 	 * @param unixtimestamp $to
+	 * @param array $operations
 	 * @return float
 	 */
-	protected function calculateDiscountAmount($discount, $line, $value, $from, $to) {
-		if (Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage') {
-			$amount = $line['full_price'] * $value;
-		} else {
-			$amount = $value;
-		}
-		
+	protected function calculateDiscountAmount($discount, $line, $value, $from, $to, $operations = []) {
+		$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
 		if ($this->isDiscountProrated($discount, $line)) {
 			if (isset($line['start'])) {
 				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
@@ -1173,12 +1173,72 @@ class Billrun_DiscountManager {
 			}
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 			$cycleDays = $this->cycle->days();
-			if ($discountDays > 0 && $discountDays < $cycleDays) {
+			if ($discountDays < $cycleDays) {
 				$amount *= ($discountDays / $cycleDays);
 			}
 		}
 		
 		return $amount;
+	}
+	
+	/**
+	 * get the final amount (price) to discount
+	 * 
+	 * @param array $discount
+	 * @param array $line
+	 * @param flaot $value
+	 * @param array $operations
+	 * @return float
+	 */
+	protected function getDiscountAmount($discount, $line, $value, $operations) {
+		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
+		$price = $isPercentage ? $line['full_price'] : $value;
+		if (empty($operations)) {
+			$ret = $isPercentage ? $price * $value : $price;
+		} else {
+			$ret = 0;
+		}
+		foreach ($operations as $operation) {
+			$params = Billrun_Util::getIn($operation, 'params', []);
+			switch($operation['name']) {
+				case 'recurring_by_quantity':
+					$ret += $this->getRecurringByQuantityAmount($price, $line, $isPercentage, $value, $params);
+				default:
+					Billrun_Factory::log("Discount operations: unknown operation {$operation['name']}", Billrun_Log::ERR);
+					$ret += $isPercentage ? $price * $value : $price;
+			}
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * get amount on running recurring by quantity operator
+	 * 
+	 * @param float $price
+	 * @param array $line
+	 * @param boolean $isPercentage
+	 * @param float $percentage
+	 * @param array $params
+	 * @return float
+	 */
+	protected function getRecurringByQuantityAmount($price, $line, $isPercentage, $percentage, $params) {
+		$quantity = 1;
+		foreach ($params as $param) {
+			if ($param['name'] === 'quantity') {
+				$quantity = $param['value'];
+				break;
+			}
+		}
+		
+		$quantityMultiplier = floor($line['quantity'] / $quantity);
+		if (!$isPercentage) {
+			return  $price * $quantityMultiplier;
+		}
+		
+		$discountedQuantity = $quantity * $quantityMultiplier;
+		$discountedPrice = $price / $line['quantity'] * $discountedQuantity;
+		return $discountedPrice * $percentage;
 	}
 	
 	/**
