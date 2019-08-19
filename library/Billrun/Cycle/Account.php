@@ -193,7 +193,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 
 	/**
-	 * Check is a service is not active in a given date span  regardless of the service from/to fields.
+	 * Check is a service is not active in a given date span regardless of the service from/to fields.
 	 * @returns FALSE if the  service is active
 	 *			TRUE  if the service is terminated
 	 */
@@ -202,9 +202,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		if( isset($mongoServices[$subRev['name']]) ) {
 			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
 			foreach($servicesArr as $service) {
+				$creationTime = !empty($subRev['creation_time']) ? $subRev['creation_time'] : $subRev['from'];
 				if( $subRev['from'] >= $service['from'] && $maxTo < $service['to']->sec ) {
-					if(Billrun_Plans_Util::hasPriceWithinDates($service,$subRev['creation_time']->sec,$minFrom,$maxTo) &&
-					   Billrun_Plans_Util::balancePeriodWithInDates($service,$subRev['creation_time']->sec,$minFrom,$maxTo) ) {
+					if(Billrun_Plans_Util::hasPriceWithinDates($service,$creationTime->sec,$minFrom,$maxTo) &&
+					   Billrun_Plans_Util::balancePeriodWithInDates($service,$creationTime->sec,$minFrom,$maxTo) ) {
 						return FALSE;
 					}
 				}
