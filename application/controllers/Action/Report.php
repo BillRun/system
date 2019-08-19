@@ -75,7 +75,7 @@ class ReportAction extends ApiAction {
 		switch($params['sub_action']) {
 			case "usage" : return $this->fetchUsage($params);
 				break;
-			case "imapping" : return $this->fetchIpMapping($params);
+			case "ipmapping" : return $this->fetchIpMapping($params);
 				break;
 			default: $this->setError("Invalid action reuqested {$params['sub_action']}.", -3, 'E_INVALID_ACTION');
 		}
@@ -142,7 +142,7 @@ class ReportAction extends ApiAction {
 		return $retRows;
 	}
 
-	static $fieldMapping = [
+	static protected $fieldMapping = [
 		'duration' => ['$in'=>['duration']],
 		'usageType' => ['$in'=>['usaget']],
 		'sourcePhoneNumber' => ['$in'=>['calling_number']],
@@ -165,10 +165,10 @@ class ReportAction extends ApiAction {
 		'endLac' =>  ['$in'=>['called_subs_last_lac', 'callling_subs_last_lac']],
 //		'endSiteName' =>  ['$in'=>['']],
 //		'endSiteAddress' =>  ['$in'=>['']],
-		'sourceIp4' =>  ['$in'=>['ipmapping.ipv4']],
-		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
-		'startPort' =>  ['$gt'=> ['ipmapping.startPort']],
-		'endPort' =>  ['$lt'=> ['ipmapping.endPort']],
+		'sourceIp4' =>  ['$in'=>['ipmapping.external_ip']],
+//		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
+		'startPort' =>  ['$gte'=> 'ipmapping.start_port'],
+		'endPort' =>  ['$lte'=> 'ipmapping.end_port'],
 //		'counterpartCarrier' =>  ['$in'=>['']],
 		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
 	];
@@ -183,8 +183,12 @@ class ReportAction extends ApiAction {
 			if(!empty($input[$inputField])) {
 				$localOr = ['$or' => []];
 				foreach($toMap as $equalOp => $internalFields) {
-					foreach($internalFields as $internalField) {
-						$localOr['$or'][]  = [ $internalField => [$equalOp => is_array($input[$inputField]) ? $input[$inputField] : [$input[$inputField]] ] ];
+					if(is_array($internalFields)) {
+						foreach($internalFields as $internalField) {
+							$localOr['$or'][]  = [ $internalField => [$equalOp => is_array($input[$inputField]) ? $input[$inputField] : ["".$input[$inputField]] ] ];
+						}
+					} else {
+						$localOr['$or'][]  = [ $internalFields => [$equalOp => "".$input[$inputField]] ];
 					}
 				}
 				$query['$and'][] = $localOr;
