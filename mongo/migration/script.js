@@ -543,6 +543,15 @@ var discountsFields = [{
 for (var fieldIdx in discountsFields) {
 	lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
 }
+
+// BRCD-1969 - add account allowances field
+var accountField = {
+	"field_name": "allowances",
+	"system": true,
+	"display": false,
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], accountField, 'account');
+
 // BRCD-1917 - add system flag true to discount system fields
 var discountFields = lastConfig['discounts']['fields'];
 if (discountFields) {
