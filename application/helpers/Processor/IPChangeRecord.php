@@ -20,15 +20,13 @@ class Processor_IPChangeRecord extends Billrun_Processor
 	static protected $type = 'ip_change_records';
 
 	protected $data_structure = [
-							[
-								'match'=> '/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+/',
+								'match'=> '/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+.*NAT/',
 								'fields' => [
 												'recording_entity' => '/^\w+  \d+ \d+:\d+:\d+ ([\d\w\.]+)/',
 												'datetime' => "/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w (\d{4} \w{3,5} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2})/",
 												'nat_type' => "/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w [ \d\w:]+ - - ([\d\w]+) /",
 												'changes' => "/(\[\w+ [^]]+\])/"
-								]
-							],
+								],
 						];
 
 
@@ -62,17 +60,22 @@ class Processor_IPChangeRecord extends Billrun_Processor
 		}
 
 		while ($line = $this->fgetsIncrementLine($this->fileHandler)) {
-			$mergedRows = $this->buildData($line);
+			try {
+				$mergedRows = $this->buildData($line);
 
-			$explodedRows = $this->explodeIPChanges($mergedRows,$this->data_structure['sub_records']);
-			foreach($explodedRows as $row) {
-				if ($this->isValidDataRecord($row)) {
-					if(!$this->shouldFilterOutRecrod($row)) {
-						$this->data['data'][] = $this->filterFieldsByValue($this->filterFields($row));
+				$explodedRows = $this->explodeIPChanges($mergedRows,$this->data_structure['sub_records']);
+				foreach($explodedRows as $row) {
+					if ($this->isValidDataRecord($row)) {
+						if(!$this->shouldFilterOutRecrod($row)) {
+							$this->data['data'][] = $this->filterFieldsByValue($this->filterFields($row));
+						}
+					} else {
+						Billrun_Factory::log("invalid record :".json_encode($row),Zend_Log::WARN);
 					}
-				} else {
-					Billrun_Factory::log("invalid record :".json_encode($row),Zend_Log::WARN);
 				}
+			} catch(Throwable $tr) {
+				Billrun_Factory::log("Crashed on invalid record : {$line}",Zend_Log::WARN);
+				throw new Exception("Crashed on invalid record : {$line}");
 			}
 		}
 		return true;
@@ -83,6 +86,9 @@ class Processor_IPChangeRecord extends Billrun_Processor
 		$this->parser->setLine($line);
 		// @todo: trigger after row load (including $header, $row)
 		$row = $this->filterFields($this->parser->parse());
+		if($row == FALSE) {
+			return FALSE;
+		}
 		// @todo: trigger after row parse (including $header, $row)
 		$row['source'] = self::$type;
 		$row['type'] = static::$type;

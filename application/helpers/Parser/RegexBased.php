@@ -35,6 +35,9 @@ class Parser_RegexBased extends Billrun_Parser_Separator
 				}
 			}
 			$row['stamp'] = md5(serialize($row));
+		} else {
+			Billrun_Factory::log()->log("CDR lines  has invalide format : {$this->line}", Zend_Log::WARN);
+			return FALSE;
 		}
 		return $row;
 	}
