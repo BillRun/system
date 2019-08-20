@@ -16,7 +16,75 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class ReportAction extends ApiAction {
 
-		/**
+	protected $fieldMapping = [
+		'duration' => ['$in'=>['duration']],
+		'usageType' => ['$regex'=>'usaget'],
+		'sourcePhoneNumber' => ['$in'=>['calling_number']],
+		'targetPhoneNumber' => ['$in'=>['called_number']],
+		'sourceImei' => ['$in'=>[ 'imei' ]],
+//		'sourceEndpointType' =>  ['$in'=>['']],
+//		'targetEndpointType' =>  ['$in'=>['']],
+		'sourceImsi' =>  ['$in'=>['imsi']],
+		'targetImsi' =>  ['$in'=>['called_imsi']],
+		'serviceType' =>  ['$in'=>['basic_service_type']],
+		'startCellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci']],
+// 		'startSector' =>  ['$in'=>['']],
+//		'startCgi' =>  ['$in'=>['']],
+		'startLac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac']],
+		'startSiteName' =>  ['$in'=>['apnni']],
+		'startSiteAddress' =>  ['$in'=>['sgsn_address']],
+		'endCellId' =>  ['$in'=>['called_subs_last_ci','calling_subs_last_ci']],
+//		'endSector' =>  ['$in'=>['']],
+//		'endCgi' =>  ['$in'=>['']],
+		'endLac' =>  ['$in'=>['called_subs_last_lac', 'callling_subs_last_lac']],
+//		'endSiteName' =>  ['$in'=>['']],
+//		'endSiteAddress' =>  ['$in'=>['']],
+		'sourceIp4' =>  ['$in'=>['ipmapping.external_ip']],
+//		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
+		'startPort' =>  ['$gte'=> 'ipmapping.start_port'],
+		'endPort' =>  ['$lte'=> 'ipmapping.end_port'],
+//		'counterpartCarrier' =>  ['$in'=>['']],
+		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
+	];
+
+
+	protected $fieldReverseMapping = [
+		'duration' => 'duration',
+		'usagev' => 'duration',
+		'usaget' => 'usageType',
+		'calling_number' => 'sourcePhoneNumber',
+		'called_number' => 'targetPhoneNumber',
+		'imei'=>'sourceImei',
+// 		'' => 'sourceEndpointType',
+// 		'' => 'targetEndpointType',
+		'imsi'=>'sourceImsi',
+		'called_imsi'=>'targetImsi',
+		'basic_service_type' => 'serviceType',
+		'called_subs_first_ci'=> 'startCellId',
+		'calling_subs_first_ci' => 'startCellId',
+// 		''=>'startSector',
+//		''=>'startCgi',
+		'called_subs_first_lac'=>'startLac',
+		'callling_subs_first_lac'=>'startLac',
+		'apnni' => 'startSiteName',
+		'sgsn_address'=>'startSiteAddress',
+		'called_subs_last_ci' => 'endCellId',
+		'calling_subs_last_ci' => 'endCellId',
+//		'' => 'endSector',
+//		'' => 'endCgi',
+		'called_subs_last_lac'  => 'endLac',
+		'callling_subs_last_lac' => 'endLac',
+//		'' => 'endSiteName',
+//		'' => 'endSiteAddress',
+		'ipmapping.external_ip' => 'sourceIp4',
+//		'ipmapping.ipv6' => 'sourceIp6',
+		'ipmapping.start_port' => 'startPort',
+		'ipmapping.end_port' => 'endPort',
+//		'' => 'counterpartCarrier',
+		'serving_network' => 'countryOfOrigin',
+	];
+
+	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
@@ -35,6 +103,9 @@ class ReportAction extends ApiAction {
 		}
 
  		$actionType = Billrun_Util::regexFirstValue("/^\/api\/report\/(\w+)/",$this->getRequest()->getRequestUri());
+
+ 		$this->fieldMapping = Billrun_Factory::config()->getConfigValue('police_report.field_mapping',$this->fieldMapping);
+ 		$this->fieldReverseMapping = Billrun_Factory::config()->getConfigValue('police_report.field_reverse_mapping',$this->fieldReverseMapping);
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -70,7 +141,7 @@ class ReportAction extends ApiAction {
 	}
 
 
-	protected function fetchData(array $params)
+	protected function fetchData($params)
 	{
 		switch($params['sub_action']) {
 			case "usage" : return $this->fetchUsage($params);
@@ -106,11 +177,7 @@ class ReportAction extends ApiAction {
 			$cursor->skip(intval($input['limit']));
 		}
 
-		$retRows =[];
-		foreach($cursor as $row) {
-			$retRows[]= $row->getRawData();
-		}
-		return $retRows;
+		return $this->translateResults($cursor);
 	}
 
 	/**
@@ -135,43 +202,9 @@ class ReportAction extends ApiAction {
 			$cursor->skip(intval($input['limit']));
 		}
 
-		$retRows =[];
-		foreach($cursor as $row) {
-			$retRows[]= $row->getRawData();
-		}
-		return $retRows;
-	}
 
-	static protected $fieldMapping = [
-		'duration' => ['$in'=>['duration']],
-		'usageType' => ['$in'=>['usaget']],
-		'sourcePhoneNumber' => ['$in'=>['calling_number']],
-		'targetPhoneNumber' => ['$in'=>['called_number']],
-		'sourceImei' => ['$in'=>[ 'imei' ]],
-		'sourceEndpointType' =>  ['$in'=>['']],
-		'targetEndpointType' =>  ['$in'=>['']],
-		'sourceImsi' =>  ['$in'=>['imsi']],
-		'targetImsi' =>  ['$in'=>['called_imsi']],
-		'serviceType' =>  ['$in'=>['basic_service_type']],
-		'startCellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci']],
-// 		'startSector' =>  ['$in'=>['']],
-//		'startCgi' =>  ['$in'=>['']],
-		'startLac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac']],
-		'startSiteName' =>  ['$in'=>['apnni']],
-		'startSiteAddress' =>  ['$in'=>['sgsn_address']],
-		'endCellId' =>  ['$in'=>['called_subs_last_ci','calling_subs_last_ci']],
-//		'endSector' =>  ['$in'=>['']],
-//		'endCgi' =>  ['$in'=>['']],
-		'endLac' =>  ['$in'=>['called_subs_last_lac', 'callling_subs_last_lac']],
-//		'endSiteName' =>  ['$in'=>['']],
-//		'endSiteAddress' =>  ['$in'=>['']],
-		'sourceIp4' =>  ['$in'=>['ipmapping.external_ip']],
-//		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
-		'startPort' =>  ['$gte'=> 'ipmapping.start_port'],
-		'endPort' =>  ['$lte'=> 'ipmapping.end_port'],
-//		'counterpartCarrier' =>  ['$in'=>['']],
-		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
-	];
+		return $this->translateResults($cursor);
+	}
 
 	protected function getMongoQueryFromInput($input) {
 		$startDate =  preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate']);
@@ -179,7 +212,7 @@ class ReportAction extends ApiAction {
 		$query = [ 'urt'=> ['$gte' => new MongoDate($startDate),
 							'$lt' => new MongoDate($endDate) ]];
 
-		foreach(static::$fieldMapping as $inputField => $toMap) {
+		foreach($this->fieldMapping as $inputField => $toMap) {
 			if(!empty($input[$inputField])) {
 				$localOr = ['$or' => []];
 				foreach($toMap as $equalOp => $internalFields) {
@@ -208,6 +241,21 @@ class ReportAction extends ApiAction {
 		}
 
 		return $query;
+	}
+
+	protected function translateResults($results) {
+		$retRows =[];
+		foreach($results as $row) {
+			$retRow = $row->getRawData();
+			foreach($this->fieldReverseMapping as  $srcField => $dstField ) {
+				if(isset($retRow[$srcField])) {
+					$retRow[$dstField] = $retRow[$srcField];
+				}
+			}
+			$retRows[] = $retRow;
+		}
+
+		return $retRows;
 	}
 
 	protected function validateInput($input) {
