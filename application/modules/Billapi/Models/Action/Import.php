@@ -28,7 +28,25 @@ class Models_Action_Import extends Models_Action {
 		if (!empty($this->request['update'])) {
 			$this->update = (array) json_decode($this->request['update'], true);
 		}
-		return $this->runQuery();
+		
+		return $this->run();
+	}
+	
+	protected function run() {
+		$importType = $this->getImportType();
+		switch ($importType) {
+			case 'manual_mapping':
+				return $this->runQuery();
+			case 'predefined_mapping':
+				return $this->runPredefinedMappingQuery();
+			default:
+				$funcName = 'import' . ucfirst($this->getCollectionName());
+				return $this->runCustomQuery($funcName);
+		}
+	}
+	
+	protected function getImportType() {
+		return Billrun_Util::getIn($this->update, 'importType', 'manual_mapping');
 	}
 
 	protected function runQuery() {
@@ -132,6 +150,167 @@ class Models_Action_Import extends Models_Action {
 
 	protected function getEntityModel($params) {
 		return new Models_Entity($params);
+	}
+	
+	protected function runPredefinedMappingQuery() {
+		$ret = [];
+		
+		foreach ($_FILES as $file) {
+			$data = $this->getFileData($file);
+			$mapping = $this->getMapping();
+
+			foreach ($data as $key => $row) {
+				$ret["{$file['name'][0]}-{$key}"] = $this->importPredefinedMappingEntity($row, $mapping);
+			}
+		}
+		
+		return $ret;
+	}
+	
+	protected function getFileData($file) {
+		$data = array_map('str_getcsv', file($file['tmp_name'][0]));
+		$header = $this->getHeader($data, $params);
+		if (!empty($header)) {
+			array_walk($data, function(&$row) use ($header) {
+				$row = array_combine($header, $row);
+			});
+		}
+
+		return $data;
+	}
+	
+	protected function getHeader(&$data, $params = []) {
+		$header = $data[0];
+		array_shift($data); // remove column header
+		return $header;
+	}
+
+	protected function getMapping() {
+		$collection = $this->getCollectionName();
+		return Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
+	}
+	
+	protected function importPredefinedMappingEntity($row, $mapping) {
+		try {
+			$entityData = $this->getPredefinedMappingEntityData($row, $mapping);
+			$action = $this->getImportOperation();
+			$params = [
+				'collection' => $this->getCollectionName(),
+				'request' => array(
+					'action' => $action,
+					'query' => json_encode($this->getPredefinedMappingEntityQuery($entityData)),
+					'update' => json_encode($entityData),
+				),
+			];
+		
+			$entityModel = $this->getEntityModel($params);
+			$entityModel->{$action}();
+			return true;
+		} catch (Exception $ex) {
+			return $ex->getMessage();
+		}
+	}
+	
+	protected function getPredefinedMappingEntityData($row, $mapping) {
+		$ret = [];
+		foreach ($mapping as $fieldParams) {
+			$fieldName = $fieldParams['field_name'];
+			$ret[$fieldName] = $this->translateValue($row, $fieldParams);
+		}
+		
+		return $ret;
+	}
+	
+	protected function getPredefinedMappingEntityQuery($entityData) {
+		if(!$this->getImportOperation() == 'permanentchange') {
+			return [];
+		}
+		
+		$uniqueFields = ['key']; // TODO: get from config
+		$ret = [
+			'effective_date' => date('Y-m-d H:i:s'),
+		];
+		
+		foreach ($uniqueFields as $uniqueField) {
+			$val = Billrun_Util::getIn($entityData, $uniqueField, '');
+			if (empty($val)) {
+				// log error
+				return false;
+			}
+			$ret[$uniqueField] = $val;
+		}
+		
+		return $ret;
+	}
+
+	protected function translateValue($row, $params) {
+		$rowFieldName = Billrun_Util::getIn($params, 'title', $params['field_name']);
+		$type = Billrun_Util::getIn($params, 'type', 'string');
+		$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
+		
+		switch ($type) {
+			case 'date':
+			case 'datetime':
+				return $this->fromDate($value);
+			case 'daterange': //TODO: fix
+				$value = $this->fromDate($value);
+				return $this->fromRanges($value);
+			case 'range':
+				return $this->fromRanges($value);
+			case 'percentage':
+				return $this->fromPercentage($value);
+			case 'boolean':
+				return $this->fromBoolean($value);
+			case 'array':
+				return $this->fromArray($value);
+			case 'json':
+				return $this->fromJson($value);
+			default:
+				return $value;
+		}
+	}
+	
+	protected function fromRanges($ranges) {
+		return array_map(function() {
+			return $this->fromRange($range);
+		}, $this->fromArray($ranges));
+	}
+
+	protected function fromRange($range) {
+		$range = str_replace(' - ', '-', $range);
+		$range = explode('-', $range);
+		return [
+			'from' => $range[0],
+			'to' => $range[1],
+		];
+	}
+
+	protected function fromArray($value) {
+		$value = str_replace(', ', ',', $value);
+		return explode(",", $value);
+	}
+
+	protected function fromDate($value) {
+		return date('Y-m-d H:i:s', Billrun_Utils_Time::getTime($value));
+	}
+
+	protected function fromBoolean($value) {
+		if (empty($value)) {
+			return false;
+		}
+		return in_array($value, ['false', 'FALSE', '0', 'null', 'NULL', 'no']) ? false : true;
+	}
+
+	protected function fromJson($value) {	
+		return json_decode($value, JSON_OBJECT_AS_ARRAY);
+	}
+
+	function fromPercentage($value) {
+		$value = str_replace('%', '', $value);
+		return ($value / 100);
+	}
+
+	protected function runCustomQuery($customFunc) {
 	}
 
 }
