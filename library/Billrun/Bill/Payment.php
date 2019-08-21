@@ -103,6 +103,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
 			}
+			
+			if (isset($options['uf'])) {
+				$this->data['uf'] = $options['uf'];
+			}
 
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
@@ -923,5 +927,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
 	}
+	
+	public function addUserFields($fields = array()) {
+		$this->data['uf'] = $fields;
+	}
+	
 
 }

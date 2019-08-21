@@ -122,7 +122,20 @@ class Models_Action_Get extends Models_Action {
 	 * @return array
 	 */
 	protected function getDateFields() {
-		return array('from', 'to', 'creation_time');
+		$default = ['from', 'to', 'creation_time'];
+		$config_date_fields = [];
+		if (!empty($this->request['collection'])){
+			$data['collection'] = $this->request['collection'];
+			$data['no_init'] = true;
+			$entityModel = Models_Entity::getInstance($data);
+			$config = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}", array());
+			$config_fields = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($entityModel->getCustomFieldsPath(), [])), $config[$this->request['action']]);
+			$config_date_fields = array_column(array_filter($config_fields['fields'], function($field) {
+				return in_array($field['type'], ['date', 'daterange']);
+			}), 'field_name');
+		}
+		$date_fields_names = array_unique(array_merge($default, $config_date_fields));
+		return $date_fields_names;
 	}
 	
 	/**

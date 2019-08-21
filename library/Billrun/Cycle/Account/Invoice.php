@@ -52,11 +52,6 @@ class Billrun_Cycle_Account_Invoice {
 	 * @var boolean
 	 */
 	protected $overrideMode = true;
-	/**
-	 * Hold all the discounts that are  applied to the account.
-	 * @var array 
-	 */
-	protected $discounts= array();
 
 	protected $invoicedLines = array();
 
@@ -159,17 +154,17 @@ class Billrun_Cycle_Account_Invoice {
 	public function getBillrunKey() {
 		return $this->key;
 	}
-
-	public function applyDiscounts() {
-		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
-		$dm = new Billrun_DiscountManager();
-		$this->discounts = $dm->getEligibleDiscounts($this);
+	
+	/**
+	 * Apply discount added to the account to subscribers;
+	 */
+	public function applyDiscounts($discounts) {
 		$sidDiscounts = array();
-		foreach($this->discounts as $discount) {
+		foreach($discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
 				if($subscriber->getData()['sid'] == $discount['sid']) {
-					$rawDiscount = $discount->getRawData();
-					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
+					$rawDiscount = ( $discount instanceof Mongodloid_Entity ) ? $discount->getRawData() : $discount ;
+					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
 				}
@@ -184,8 +179,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array()));
 		$this->updateTotals();
 	}
-        
-	
+
 	/**
 	 * 
 	 * @param type $subLines
@@ -387,10 +381,6 @@ class Billrun_Cycle_Account_Invoice {
 
 	public function getTotals() {
 		return $this->data['totals'];
-	}
-
-	public function getAppliedDiscounts() {
-		return $this->discounts;
 	}
 	
 	public function getInvoicedLines() {
