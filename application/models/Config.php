@@ -146,6 +146,14 @@ class ConfigModel {
 			return $tokens;
 		} else if ($category == 'minimum_entity_start_date'){
 			return Models_Entity::getMinimumUpdateDate();
+		} else if ($category === 'plugin_actions') {
+			if (!empty($data['actions']) && is_array($data['actions'])) {
+				$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+				foreach ($data['actions'] as $methodName) {
+					$plugins[$methodName] = $dispatcherChain->getAvailableMethod($methodName);
+				}
+			}
+			return $plugins;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
