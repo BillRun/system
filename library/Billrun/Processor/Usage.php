@@ -236,6 +236,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 
 	protected function getLineUsageType($row) {
+		$this->stampFields = [];
 		$userFields = $row['uf'];
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
@@ -271,7 +272,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					}
 				}
 
-				if (($matchedConditions)) {
+				if ($matchedConditions) {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
@@ -317,12 +318,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	
 	protected function getStampFields($paths = [], $row = []) {
 		$stampFields = array();
-		foreach ($paths as $fieldPath) {
-			$fieldName = end(explode('.', $fieldPath));
-			$stampFields[$fieldName] = Billrun_Util::getIn($row, $fieldPath, []);
-		}
-		if (!empty($row['type'])) {			
-			$stampFields['type'] = $row['type'];
+		if ($paths) {
+			foreach ($paths as $fieldPath) {
+				$stampFields[$fieldPath] = Billrun_Util::getIn($row, $fieldPath, []);
+			}
+			if (!empty($row['type'])) {
+				$stampFields['type'] = $row['type'];
+			}
 		}
 		return $stampFields;
 	}
