@@ -67,10 +67,10 @@ class Models_Accounts extends Models_Entity {
 			$query["aid"] = ["\$ne" => $this->update['aid']];
 		}
 
-		$exists = $this->collection->query($query)->cursor()->limit(1)->current();
-		if (!empty($exists) && !$exists->isEmpty()) {
-			$account = $exists->getRawData();
-			$account_sids = array_reduce($account['allowances'], function($acc, $allowance) {
+		$account = new Billrun_Account_Db();
+		$account->load($query);
+		if (!$account->isEmpty()) {
+			$account_sids = array_reduce($account->allowances, function($acc, $allowance) {
 				$acc[] = $allowance['sid'];
 				return $acc;
 			}, []);
