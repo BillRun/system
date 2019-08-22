@@ -159,7 +159,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		$row['type'] = static::$type;
 		$row['usaget'] = $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
@@ -172,6 +171,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
+		$row['type'] = static::$type;
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
