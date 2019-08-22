@@ -215,7 +215,10 @@ class Models_Action_Import extends Models_Action {
 		$ret = [];
 		foreach ($mapping as $fieldParams) {
 			$fieldName = $fieldParams['field_name'];
-			$ret[$fieldName] = $this->translateValue($row, $fieldParams);
+			$value = $this->translateValue($row, $fieldParams);
+			if (!empty($value)) {
+				Billrun_Util::setIn($ret, $fieldName, $value);
+			}
 		}
 		
 		return $ret;
@@ -226,18 +229,12 @@ class Models_Action_Import extends Models_Action {
 			return [];
 		}
 		
-		$uniqueFields = ['key']; // TODO: get from config
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->getCollectionName()}.duplicate_check", []);
 		$ret = [
 			'effective_date' => date('Y-m-d H:i:s'),
 		];
-		
 		foreach ($uniqueFields as $uniqueField) {
-			$val = Billrun_Util::getIn($entityData, $uniqueField, '');
-			if (empty($val)) {
-				// log error
-				return false;
-			}
-			$ret[$uniqueField] = $val;
+			$ret[$uniqueField] = Billrun_Util::getIn($entityData, $uniqueField, '');
 		}
 		
 		return $ret;
@@ -249,6 +246,10 @@ class Models_Action_Import extends Models_Action {
 		$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
 		
 		switch ($type) {
+			case 'int':
+				return $this->fromInt($value);
+			case 'float':
+				return $this->fromFloat($value);
 			case 'date':
 			case 'datetime':
 				return $this->fromDate($value);
@@ -268,6 +269,14 @@ class Models_Action_Import extends Models_Action {
 			default:
 				return $value;
 		}
+	}
+	
+	protected function fromInt($value) {
+		return intval($value);
+	}
+	
+	protected function fromFloat($value) {
+		return floatval($value);
 	}
 	
 	protected function fromRanges($ranges) {
