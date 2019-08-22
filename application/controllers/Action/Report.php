@@ -40,6 +40,8 @@ class ReportAction extends ApiAction {
 //		'endSiteName' =>  ['$in'=>['']],
 //		'endSiteAddress' =>  ['$in'=>['']],
 		'sourceIp4' =>  ['$in'=>['ipmapping.external_ip']],
+		'externalIp4' =>  ['$in'=>['ipmapping.external_ip']],
+		'internalIp4' =>  ['$in'=>['ipmapping.internal_ip']],
 //		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
 		'startPort' =>  ['$gte'=> 'ipmapping.start_port'],
 		'endPort' =>  ['$lte'=> 'ipmapping.end_port'],
@@ -62,25 +64,28 @@ class ReportAction extends ApiAction {
 		'basic_service_type' => 'serviceType',
 		'called_subs_first_ci'=> 'startCellId',
 		'calling_subs_first_ci' => 'startCellId',
-// 		''=>'startSector',
-//		''=>'startCgi',
+// 		''=>'startSector',//not our responsibilty
+//		''=>'startCgi', //not our responsibilty
 		'called_subs_first_lac'=>'startLac',
 		'callling_subs_first_lac'=>'startLac',
-		'apnni' => 'startSiteName',
-		'sgsn_address'=>'startSiteAddress',
+//		'apnni' => 'startSiteName', //not our responsibilty
+//		'sgsn_address'=>'startSiteAddress', //not our responsibilty
 		'called_subs_last_ci' => 'endCellId',
 		'calling_subs_last_ci' => 'endCellId',
-//		'' => 'endSector',
-//		'' => 'endCgi',
+//		'' => 'endSector',//not our responsibilty
+//		'' => 'endCgi',//not our responsibilty
 		'called_subs_last_lac'  => 'endLac',
 		'callling_subs_last_lac' => 'endLac',
-//		'' => 'endSiteName',
-//		'' => 'endSiteAddress',
+//		'' => 'endSiteName',//not our responsibilty
+//		'' => 'endSiteAddress',//not our responsibilty
 		'ipmapping.external_ip' => 'sourceIp4',
-//		'ipmapping.ipv6' => 'sourceIp6',
+		'ipmapping.external_ip' => 'externalIp4',
+		'ipmapping.internal_ip' => 'internalIp4',
+//		'ipmapping.ipv6' => 'sourceIp6', // no ip6 in golan
 		'ipmapping.start_port' => 'startPort',
 		'ipmapping.end_port' => 'endPort',
-//		'' => 'counterpartCarrier',
+//		'incoming_circuit_group' => 'counterpartCarrier',
+//		'outgoiging_circuit_group' => 'counterpartCarrier',
 		'serving_network' => 'countryOfOrigin',
 	];
 
