@@ -45,17 +45,39 @@ class Billrun_DiscountManager {
 	 */
 	protected function getEntityRevisions($entityRevisions, $type) {
 		$ret = [];
+		
 		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->cycle->key(), $type);
-		if (empty($dateRangeDiscoutnsFields)) {
-			return $entityRevisions;
+		if (!empty($dateRangeDiscoutnsFields)) {
+			foreach ($entityRevisions as $entityRevision) {
+				$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
+				$ret = array_merge($ret, $splittedRevisions);
+			}
 		}
-
+		
+		$passthroughData = $this->getEntityPassthroughData($type);
 		foreach ($entityRevisions as $entityRevision) {
-			$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
-			$ret = array_merge($ret, $splittedRevisions);
+			$newEntityRevision = $entityRevision;
+			foreach ($passthroughData as $origFieldName => $fieldName) {
+				if (isset($entityRevision[$fieldName])) {
+					$newEntityRevision[$origFieldName] = $entityRevision[$fieldName];
+				}
+			}
+			$ret[] = $newEntityRevision;
 		}
 
 		return $ret;
+	}
+	
+	/**
+	 * get field mapping that the entity goes through in aggregation process to revert field name changes
+	 * 
+	 * @param string $type
+	 * @return array
+	 */
+	protected function getEntityPassthroughData($type) {
+		return array_merge(
+			Billrun_Factory::config()->getConfigValue('customer.aggregator.passthrough_data', []),
+			Billrun_Factory::config()->getConfigValue("customer.aggregator.{$type}.passthrough_data", []));
 	}
 
 	/**
