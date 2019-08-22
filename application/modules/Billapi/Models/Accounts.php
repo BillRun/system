@@ -53,10 +53,10 @@ class Models_Accounts extends Models_Entity {
 		foreach ($allowances as $allowance) {
 			$sid = $allowance['sid'];
 			if (floatval($allowance['allowance']) <= 0) {
-				throw new Billrun_Exceptions_Api(0, array(), "Allowance value for SID {$sid} must be a positive number greter than 0.");
+				throw new Billrun_Exceptions_Api(0, array(), "Allowance value for SID {$sid} must be a positive number greater than 0.");
 			}
 			if (in_array($sid, $sids)) {
-				throw new Billrun_Exceptions_Api(0, array(), "Allowance SID {$sid} can not be include multiple times.");
+				throw new Billrun_Exceptions_Api(0, array(), "Subscriber ID {$sid} could have only one allowance");
 			}
 			$sids[] = $sid;
 		}
@@ -75,7 +75,7 @@ class Models_Accounts extends Models_Entity {
 				return $acc;
 			}, []);
 			$sid_duplicate = implode(" ,", array_intersect($account_sids, $sids));
-			throw new Billrun_Exceptions_Api(0, array(), "Allowance SID's {$sid_duplicate} belong to other account.");
+			throw new Billrun_Exceptions_Api(0, array(), "Allowances for subscriber IDs {$sid_duplicate} belong to another account.");
 		}
 		return true;
 	}
