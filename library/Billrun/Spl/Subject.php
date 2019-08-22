@@ -65,7 +65,7 @@ class Billrun_Spl_Subject implements SplSubject {
 		}
 	}
 
-	public function getAvailableMethod($methodName) {
+	public function getImplementors($methodName) {
 		$plugins = [];
 		foreach ($this->observers as $observer) {
 			if(method_exists($observer, $methodName)) {

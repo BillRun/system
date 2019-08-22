@@ -150,7 +150,7 @@ class ConfigModel {
 			if (!empty($data['actions']) && is_array($data['actions'])) {
 				$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 				foreach ($data['actions'] as $methodName) {
-					$plugins[$methodName] = $dispatcherChain->getAvailableMethod($methodName);
+					$plugins[$methodName] = $dispatcherChain->getImplementors($methodName);
 				}
 			}
 			return $plugins;
