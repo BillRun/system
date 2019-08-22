@@ -152,23 +152,30 @@ class Models_Action_Import extends Models_Action {
 		return new Models_Entity($params);
 	}
 	
+	protected function getFiles() {
+		$files = [];
+		foreach ($_FILES['files']['name'] as $i => $fileName) {
+			$files[$fileName] = $_FILES['files']['tmp_name'][$i];
+		}
+		
+		return $files;
+	}
+	
 	protected function runPredefinedMappingQuery() {
 		$ret = [];
-		
-		foreach ($_FILES as $file) {
-			$data = $this->getFileData($file);
-			$mapping = $this->getMapping();
-
+		$mapping = $this->getMapping();
+		foreach ($this->getFiles() as $fileName => $filePath) {
+			$data = $this->getFileData($filePath);
 			foreach ($data as $key => $row) {
-				$ret["{$file['name'][0]}-{$key}"] = $this->importPredefinedMappingEntity($row, $mapping);
+				$ret["{$fileName}-{$key}"] = $this->importPredefinedMappingEntity($row, $mapping);
 			}
 		}
 		
 		return $ret;
 	}
 	
-	protected function getFileData($file) {
-		$data = array_map('str_getcsv', file($file['tmp_name'][0]));
+	protected function getFileData($filePath) {
+		$data = array_map('str_getcsv', file($filePath));
 		$header = $this->getHeader($data, $params);
 		if (!empty($header)) {
 			array_walk($data, function(&$row) use ($header) {
@@ -321,7 +328,7 @@ class Models_Action_Import extends Models_Action {
 
 	protected function runCustomQuery($customFunc) {
 		$result = Billrun_Factory::chain()->trigger($customFunc, []);
-		$importedEntities = Billrun_Util::getIn($result, 'imported_entities', []);
+		$importedEntities = Billrun_Util::getIn($result, 'imported_entities', [$this->getFiles()]);
 		$errors = Billrun_Util::getIn($result, 'errors', []);
 		if (!empty($errors)) {
 			$errorMessage = implode(', ', $errors);
