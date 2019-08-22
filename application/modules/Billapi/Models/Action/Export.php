@@ -52,7 +52,7 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function createRecursionMapperKey($config, $configs = []) {
-		$max_array_count = 3; // TODO:: TEMP need to find a way how to calculate it from DB
+		$max_array_count = 1; // TODO:: TEMP need to find a way how to calculate it from DB
 		$path = $config['field_name'];
 		$title = isset($config['title']) ? $config['title'] : false;
 		$matches = [];
@@ -97,6 +97,8 @@ class Models_Action_Export extends Models_Action {
 			return '';
 		}
 		switch ($type) {
+			case 'json':
+				return $this->formatJson($value);
 			case 'date':
 			case 'datetime':
 				return $this->formatDate($value);
@@ -140,7 +142,7 @@ class Models_Action_Export extends Models_Action {
 		$query = [];
 		foreach ($this->query as $key => $value) {
 			if ($key === 'from') {
-				$query[$key] = ['$gte' => $value];
+				$query['to'] = ['$gte' => $value];
 			} else {
 				$query[$key] = $value;
 			}
@@ -155,6 +157,13 @@ class Models_Action_Export extends Models_Action {
 			$records[] = $result->getRawData();
 		}
 		return $records;
+	}
+
+	protected function formatJson($data) {
+		if (empty($data)) {
+			return '';
+		}
+		return json_encode($data);
 	}
 
 	protected function formatRanges($ranges) {
