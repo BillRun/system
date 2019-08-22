@@ -280,7 +280,7 @@ class Billrun_Utils_Time {
 		}
 		
 		if (is_string($value)) {
-			return strtotime($time);
+			return strtotime($value);
 		}
 		
 		return $value;
