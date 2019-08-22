@@ -45,17 +45,39 @@ class Billrun_DiscountManager {
 	 */
 	protected function getEntityRevisions($entityRevisions, $type) {
 		$ret = [];
+		
 		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->cycle->key(), $type);
-		if (empty($dateRangeDiscoutnsFields)) {
-			return $entityRevisions;
+		if (!empty($dateRangeDiscoutnsFields)) {
+			foreach ($entityRevisions as $entityRevision) {
+				$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
+				$ret = array_merge($ret, $splittedRevisions);
+			}
 		}
-
+		
+		$passthroughData = $this->getEntityPassthroughData($type);
 		foreach ($entityRevisions as $entityRevision) {
-			$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
-			$ret = array_merge($ret, $splittedRevisions);
+			$newEntityRevision = $entityRevision;
+			foreach ($passthroughData as $origFieldName => $fieldName) {
+				if (isset($entityRevision[$fieldName])) {
+					$newEntityRevision[$origFieldName] = $entityRevision[$fieldName];
+				}
+			}
+			$ret[] = $newEntityRevision;
 		}
 
 		return $ret;
+	}
+	
+	/**
+	 * get field mapping that the entity goes through in aggregation process to revert field name changes
+	 * 
+	 * @param string $type
+	 * @return array
+	 */
+	protected function getEntityPassthroughData($type) {
+		return array_merge(
+			Billrun_Factory::config()->getConfigValue('customer.aggregator.passthrough_data', []),
+			Billrun_Factory::config()->getConfigValue("customer.aggregator.{$type}.passthrough_data", []));
 	}
 
 	/**
@@ -182,7 +204,7 @@ class Billrun_DiscountManager {
 
 		foreach (self::getCharges($this->cycle->key()) as $charge) {
 			$eligibility = $this->getDiscountEligibility($charge, $accountRevisions, $subscribersRevisions);
-			$this->setEligibility($this->eligibleCharges, $discount, $eligibility);
+			$this->setEligibility($this->eligibleCharges, $charge, $eligibility);
 		}
 	}
 
@@ -305,7 +327,7 @@ class Billrun_DiscountManager {
 
 			$discountColl = Billrun_Factory::db()->discountsCollection();
 			$loadedDiscounts = $discountColl->query(array_merge($basicQuery, $query))->cursor()->sort($sort);
-			self::$discounts = [];
+			self::$discounts[$billrunKey] = [];
 
 			foreach ($loadedDiscounts as $discount) {
 				if (isset(self::$discounts[$billrunKey][$discount['key']]) &&
@@ -380,6 +402,25 @@ class Billrun_DiscountManager {
 				$discount = new Mongodloid_Entity($discount);
 			}
 			self::$discounts[$billrunKey][$discount['key']] = $discount;
+		}
+	}
+
+	/**
+	 * manually set charges
+	 * 
+	 * @param array $charges
+	 */
+	public static function setCharges($charges, $billrunKey) {
+		self::$charges[$billrunKey] = [];
+		usort($charges, function ($a, $b) {
+			return Billrun_Util::getIn($b, 'priority', 0) > Billrun_Util::getIn($a, 'priority', 0);
+		});
+
+		foreach ($charges as $charge) {
+			if (!$charge instanceof Mongodloid_Entity) {
+				$charge = new Mongodloid_Entity($charge);
+			}
+			self::$charges[$billrunKey][$charge['key']] = $charge;
 		}
 	}
 
@@ -1203,6 +1244,7 @@ class Billrun_DiscountManager {
 			switch($operation['name']) {
 				case 'recurring_by_quantity':
 					$ret += $this->getRecurringByQuantityAmount($price, $line, $isPercentage, $value, $params);
+					break;
 				default:
 					Billrun_Factory::log("Discount operations: unknown operation {$operation['name']}", Billrun_Log::ERR);
 					$ret += $isPercentage ? $price * $value : $price;
