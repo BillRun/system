@@ -320,6 +320,15 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function runCustomQuery($customFunc) {
+		$result = Billrun_Factory::chain()->trigger($customFunc, []);
+		$importedEntities = Billrun_Util::getIn($result, 'imported_entities', []);
+		$errors = Billrun_Util::getIn($result, 'errors', []);
+		if (empty($errors)) {
+			return $importedEntities;
+		}
+
+		$errorMessage = implode(', ', $errors);
+		throw new Exception($errorMessage);
 	}
 
 }
