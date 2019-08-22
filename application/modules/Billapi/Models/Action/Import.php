@@ -323,12 +323,12 @@ class Models_Action_Import extends Models_Action {
 		$result = Billrun_Factory::chain()->trigger($customFunc, []);
 		$importedEntities = Billrun_Util::getIn($result, 'imported_entities', []);
 		$errors = Billrun_Util::getIn($result, 'errors', []);
-		if (empty($errors)) {
-			return $importedEntities;
+		if (!empty($errors)) {
+			$errorMessage = implode(', ', $errors);
+			throw new Exception($errorMessage);			
 		}
-
-		$errorMessage = implode(', ', $errors);
-		throw new Exception($errorMessage);
+		
+		return $importedEntities;
 	}
 
 }
