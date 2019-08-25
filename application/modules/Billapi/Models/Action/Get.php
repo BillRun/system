@@ -131,7 +131,7 @@ class Models_Action_Get extends Models_Action {
 			$config = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}", array());
 			$config_fields = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($entityModel->getCustomFieldsPath(), [])), $config[$this->request['action']]);
 			$config_date_fields = array_column(array_filter($config_fields['fields'], function($field) {
-				return in_array($field['type'], ['date', 'daterange']);
+				return in_array(@$field['type'], ['date', 'daterange']);
 			}), 'field_name');
 		}
 		$date_fields_names = array_unique(array_merge($default, $config_date_fields));
