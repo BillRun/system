@@ -30,6 +30,10 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 		return $newOptions;
 	}
 	
+	/**
+	 * Copy paid_by and paid objects from the original payment to the created denial.
+	 * @param $payment- the original payment.
+	 */
 	public function copyLinks($payment) {
 		$rawPayment = $payment->getRawData();
 		$this->data['linked_bills'] = isset($rawPayment['pays']) ? $rawPayment['pays'] : $rawPayment['paid_by'];

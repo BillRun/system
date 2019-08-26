@@ -937,6 +937,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return false;
 	}
 	
+	/**
+	 * Deny a payment
+	 * @param $denial- the information about the denied transaction.
+	 */
 	public function deny($denial) {
 		$txId = $denial->getId();
 		$deniedBy = array();
@@ -946,7 +950,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
 	}
 	
-	public function isPaymentDenied($denialAmount) {
+	public function isDenied($denialAmount) {
 		$alreadyDenied = 0;
 		if (isset($this->data['denied_amount'])) {
 			$alreadyDenied = $this->data['denied_amount'];

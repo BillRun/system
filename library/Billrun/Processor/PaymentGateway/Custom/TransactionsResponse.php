@@ -25,21 +25,11 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	public function __construct($options) {
 		parent::__construct($options);
 	}
-
-	protected function validateProcessorDefinitions($processorDefinition) {
-		if (empty($processorDefinition['processor']['token_field']) || empty($processorDefinition['processor']['amount_field']) ||
-			empty($processorDefinition['processor']['deal_status_field']) || empty($processorDefinition['processor']['transaction_identifier_field']) || 
-			empty($processorDefinition['processor']['valid_transaction_regex'])) {
-			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
-			return false;
-		}
-		return true;
-	}
 	
 	protected function updatePayments($row, $payment) {
 		$paymentResponse = $this->getPaymentResponse($row);
 		$payment->setPending(false);
-		Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $payment, $this->gatewayName);
+		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
 		if ($paymentResponse['stage'] == 'Completed') {
 			$payment->markApproved($paymentResponse['stage']);
 			$billData = $payment->getRawData();
@@ -61,12 +51,18 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		return array('status' => $row[$this->dealStatusField], 'stage' => $stage);
 	}
 	
-	protected function mapProcessorFields($processor) {
-		$this->tokenField = $processor['token_field'];
-		$this->amountField = $processor['amount_field'];
-		$this->tranIdentifierField = $processor['transaction_identifier_field'];
-		$this->dealStatusField = $processor['deal_status_field'];
-		$this->validTransacionRegex = $processor['valid_transaction_regex'];
+	protected function mapProcessorFields($processorDefinition) {
+		if (empty($processorDefinition['processor']['token_field']) || empty($processorDefinition['processor']['amount_field']) ||
+			empty($processorDefinition['processor']['deal_status_field']) || empty($processorDefinition['processor']['transaction_identifier_field']) || 
+			empty($processorDefinition['processor']['valid_transaction_regex'])) {
+			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
+			return false;
+		}
+		$this->tokenField = $processorDefinition['processor']['token_field'];
+		$this->amountField = $processorDefinition['processor']['amount_field'];
+		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
+		$this->dealStatusField = $processorDefinition['processor']['deal_status_field'];
+		$this->validTransacionRegex = $processorDefinition['processor']['valid_transaction_regex'];
 	}
 
 	protected function isValidTransaction($row) {
@@ -76,5 +72,33 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			return false;
 		}
 	}
+	
+	/**
+	 * Updating the payment status.
+	 * 
+	 * @param $response - the returned payment gateway status and stage of the payment.
+	 * @param Payment payment- the current payment.
+	 * 
+	 */
+	protected function updatePaymentAccordingTheResponse($response, $payment) {
+		if ($response['stage'] == "Completed") { // payment succeeded 
+			$payment->updateConfirmation();
+			$payment->setPaymentStatus($response, $this->gatewayName);
+		} else if ($response['stage'] == "Pending") { // handle pending
+			$payment->setPaymentStatus($response, $this->gatewayName);
+		} else { //handle rejections
+			if (!$payment->isRejected()) {
+				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+				$rejection = $payment->getRejectionPayment($response);
+				$rejection->setConfirmationStatus(false);
+				$rejection->save();
+				$payment->markRejected();
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
+			} else {
+				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
+			}
+		}
+	}
+	
 
 }

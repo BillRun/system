@@ -29,9 +29,14 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		return true;
 	}
 	
-	protected function mapProcessorFields($processor) {
-		$this->tranIdentifierField = $processor['transaction_identifier_field'];
-		$this->amountField = $processor['amount_field'];
+	protected function mapProcessorFields($processorDefinition) {
+		if (empty($processorDefinition['processor']['transaction_identifier_field']) || empty($processorDefinition['processor']['amount_field'])) {
+			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
+			return false;
+		}
+		
+		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
+		$this->amountField = $processorDefinition['processor']['amount_field'];
 	}
 	
 	protected function updatePayments($row, $payment = null) {
@@ -45,7 +50,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row[$this->tranIdentifierField], Zend_Log::ALERT);
 				return;
 			}
-			if ($payment->isPaymentDenied(abs($row[$this->amountField]))) {
+			if ($payment->isDenied(abs($row[$this->amountField]))) {
 				Billrun_Factory::log()->log("Payment " . $row[$this->tranIdentifierField] . " is already denied", Zend_Log::NOTICE);
 				return;
 			}

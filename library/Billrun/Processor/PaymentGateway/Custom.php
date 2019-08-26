@@ -11,17 +11,16 @@
  */
 class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater {
 	
-	protected $validProcessors;
+	protected $configByType;
 	protected $bills;
 	protected $fileType;
 	protected $receiverSource;
 	protected $gatewayName;
 
 	public function __construct($options) {
-		$configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
+		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
-		$this->validProcessors = $this->filterWrongDefinedProcessors($configByType);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
 
@@ -29,7 +28,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-		$currentProcessor = current(array_filter($this->validProcessors, function($settingsByType) {
+		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
 		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
@@ -37,7 +36,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		} else {
 			throw new Exception("Parser definition missing");
 		}
-		$this->mapProcessorFields($currentProcessor['processor']);
+		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
+			return false;
+		}
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		$parser = $this->getParser();
@@ -84,16 +85,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	
 	public function skipQueueCalculators() {
 		return true;
-	}
-
-	protected function filterWrongDefinedProcessors($configByType) {
-		$filtered = array();
-		foreach ($configByType as $key => $processorDefinition) {
-			if ($this->validateProcessorDefinitions($processorDefinition)) {
-				$filtered[] = $configByType[$key];
-			}
-		}
-		return $filtered;
 	}
 
 	protected function setPgFileType($fileType) {
