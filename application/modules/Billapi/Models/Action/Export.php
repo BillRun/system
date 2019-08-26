@@ -47,7 +47,7 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function setCsvOrder($mapper) {
-		ksort($mapper); // sort field_name by alphabet and digits
+		//ksort($mapper); // sort field_name by alphabet and digits
 		return $mapper;
 	}
 
@@ -162,6 +162,9 @@ class Models_Action_Export extends Models_Action {
 	protected function formatJson($data) {
 		if (empty($data)) {
 			return '';
+		}
+		foreach ($data as $index => $value) {
+			$data[$index] = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($value, ['value']);
 		}
 		return json_encode($data);
 	}
