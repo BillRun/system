@@ -9,14 +9,13 @@
 /**
  * Generator for payment gateways files
  */
-abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator_Csv{
+abstract class Billrun_Generator_PaymentGateway_Custom {
 
 	protected $configByType;
 	protected $exportDefinitions;
 	protected $generatorDefinitions;
 	protected $gatewayName;
 	protected $chargeOptions = array();
-	
 
 	public function __construct($options) {
 		if (!isset($options['file_type'])) {
@@ -30,8 +29,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator
 		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		
-//			$this->generateStructure = $structConfig['generator'];
-//			$this->exportDefinitions = $structConfig['export'];
+//		$this->generateStructure = $structConfig['generator'];
+//		$this->exportDefinitions = $structConfig['export'];
 			
 
 		
@@ -89,9 +88,19 @@ abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator
 	}
 	
 	public function generate() {
-		parent::generate();
-		$this->cgLogFile->setProcessTime();
-		$this->cgLogFile->save();
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		$generator = new $className($generatorOptions);
+		
+		$generator->generate();
+		
+		
+//		if (count($this->data)) {
+//			$this->writeHeaders();
+//			$this->writeRows();
+//		}
+	//	$this->cgLogFile->setProcessTime();
+	//	$this->cgLogFile->save();
 	}
 	
 	protected function getDataLine($params) {
@@ -102,81 +111,33 @@ abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator
 				Billrun_Factory::log("Exporter " . $this->configByType['file_type'] . " data structure is missing a path", Zend_Log::DEBUG);
 				continue;
 			}
+			if (isset($dataField['name']) && $dataField['name'] == 'transaction_id') {
+				$dataLine[$dataField['path']] = $params['txid'];
+			}
+			if (isset($dataField['name']) && $dataField['name'] == 'amount') {
+				$dataLine[$dataField['path']] = $params['amount'];
+			}
+			if (isset($dataField['name']) && $dataField['name'] == 'token') {
+				$dataLine[$dataField['path']] = $params['token'];
+			}
+			if (isset($dataField['name']) && $dataField['name'] == 'card_expiration') {
+				$dataLine[$dataField['path']] = $params['card_expiration'];
+			}
+			if (isset($dataField['name']) && $dataField['name'] == 'account_id') {
+				$dataLine[$dataField['path']] = $params['aid'];
+			}
 			if (isset($dataField['hard_coded_value'])) {
-				$dataField[$dataField['path']] = $dataField['hard_coded_value'];
+				$dataLine[$dataField['path']] = $dataField['hard_coded_value'];
 			}
-			
-			
-			
-			
-			if (isset($headerField['name']) && $headerField['name'] == 'unique_id') {
-				$headerLine[$headerField['path']] = $this->generateUniqueId();
+			if (isset($dataField['linked_entity']) && isset($params['aid']) && $dataField['linked_entity']['entity'] == 'account') {
+				$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params['aid'], $dataField['linked_entity']['field_name']);
 			}
-			if (isset($headerField['name']) && $headerField['name'] == 'unique_id') {
-				$headerLine[$headerField['path']] = $this->generateUniqueId();
-			}
-			if (isset($headerField['name']) && $headerField['name'] == 'unique_id') {
-				$headerLine[$headerField['path']] = $this->generateUniqueId();
-			}
-			if (isset($headerField['name']) && $headerField['name'] == 'unique_id') {
-				$headerLine[$headerField['path']] = $this->generateUniqueId();
-			}
-			
-			
-			
-			
-			
-			
-			
-			
 		}
 
-		
-		
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
 			ksort($dataLine);
 		}
 		return $dataLine;
-		
-		
-		
-		
-		
-		
-		
-		return array(
-			0 => '001',
-			1 => $this->gatewayCredentials['charging_terminal'],
-			2 => $params['amount'],
-			3 => 'ILS',
-			4 => $params['card_token'],
-			5 => $params['card_expiration'],
-			6 => $params['deal_type'],
-			7 => 1,
-			8 => '',
-			9 => $params['txid'],
-			10 => '',
-			11 => $params['aid'],
-			12 => 4,
-			13 => '',
-			14 => '',
-			15 => '',
-			16 => '',
-			17 => '',
-			18 => '',
-			19 => '',
-			20 => '',
-			21 => '',
-			22 => '',
-			23 => '',
-			24 => '',
-			25 => '',
-			26 => '',
-			27 => '',
-			28 => '',
-			29 => '',
-			30 => '',
-		);
 	}
 	
 	protected function getHeaderLine() {
@@ -199,7 +160,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator
 			}
 			if (isset($headerField['hard_coded_value'])) {
 				$headerLine[$headerField['path']] = $headerField['hard_coded_value'];
-			}
+			}		
 		}
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
 			ksort($headerLine);
@@ -246,9 +207,53 @@ abstract class Billrun_Generator_PaymentGateway_Custom extends Billrun_Generator
 			}
 			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
 		}
-			return $row_contents;
+		return $row_contents;
+	}
+	
+	public function shouldFileBeMoved() {
+		$localPath = $this->export_directory . '/' . $this->filename;
+		if (!empty(file_get_contents($localPath))) {
+			return true;
+		}
+		$this->removeEmptyFile();
+		return false;
+	}
+
+	protected function getLinkedEntityData($entity, $aid, $field) {
+		$account = Billrun_Factory::account();
+		$account->load(array('aid' => $aid));
+		$accountData = $account->getCustomerData();
+		if (!isset($accountData[$field])) {
+			Billrun_Factory::log("Field name $field does not exists under entity " . $entity, Zend_Log::DEBUG);
+		}
+		
+		return $accountData[$field];
+	}
+	
+	protected function buildGeneratorOptions() {
+		
+	}
+	
+	protected function getGeneratorClassName() {
+		if (!isset($this->configByType['generator']['type'])) {
+			throw new Exception('Missing generator type for ' . $this->configByType['file_type']);
+		} 
+		switch ($this->configByType['generator']['type']) {
+			case 'fixed':
+			case 'separator':
+				$generatorType = 'Csv';
+				break;
+			case 'xml':
+				$generatorType = 'Xml';
+				break;
+			default:
+				throw new Exception('Unknown generator type for ' . $this->configByType['file_type']);
+				break;
+		}
+		
+		$className = "Billrun_Generator_PaymentGateway_" . $generatorType;
+		return $className;
 	}
 	
 }
-
 

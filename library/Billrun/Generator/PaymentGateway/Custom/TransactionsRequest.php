@@ -109,7 +109,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$params['aid'] = $currentPayment->getAid();
 			$params['txid'] = $currentPayment->getId();
 			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			if (isset($account['payment_gateway']['active']['card_expiration'])) {
+				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
@@ -132,18 +134,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->cgLogFile->setStamp();
 	}
 	
-	protected function isGatewayActive($account) {
-		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
-	}
-	
-	public function shouldFileBeMoved() {
-		$localPath = $this->export_directory . '/' . $this->filename;
-		if (!empty(file_get_contents($localPath))) {
-			return true;
-		}
-		$this->removeEmptyFile();
-		return false;
-	}
 	
 	protected function getAllExportDefinitions() {
 		$exportDefinitions = array();
@@ -159,7 +149,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	
 	
-	
+	protected function isGatewayActive($account) {
+		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
+	}
 	
 
 	
