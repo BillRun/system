@@ -27,7 +27,8 @@ class Models_Action_Export extends Models_Action {
 		}
 		// add rows
 		foreach ($entries as $entry) {
-			$output[] = $this->getRow($entry, $mapper);
+			$rows = $this->getRow($entry, $mapper);
+			array_push($output, ...$rows);
 		}
 		return $output;
 	}
@@ -93,7 +94,7 @@ class Models_Action_Export extends Models_Action {
 		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
 		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
-		if (empty($value) && $type !== 'boolean' && !in_array($value, [0, '0']) ) {
+		if (empty($value) && $type !== 'boolean' && ($value === null || !in_array($value, [0, '0'])) ) {
 			return '';
 		}
 		switch ($type) {
@@ -122,10 +123,34 @@ class Models_Action_Export extends Models_Action {
 		}
 	}
 
+	protected function getMultiRowsKeys($mapper) {
+		$multiRowKeys = array_reduce($mapper, function ($acc, $field) {
+			$parts = explode(".[]", Billrun_Util::getIn($field, 'field_name', ''));
+			if (count($parts) === 1) {
+				return $acc;
+			}
+			if (!in_array($parts[0], $acc)) {
+				// support only one row breack per key
+				$acc[] = $parts[0];
+			}
+			return $acc;
+		}, []);
+		return $multiRowKeys;
+	}
+
 	protected function getRow($data, $mapper) {
 		$line = [];
-		foreach ($mapper as $path => $map) {
-			$line[$path] = $this->getRowValue($data, $path, $map);
+		$mapperWithRows = $this->getMultiRowsKeys($mapper);
+		foreach ($mapperWithRows as $key) {
+			$rowsPerKey = count(Billrun_Util::getIn($data, $key, []));
+			for ($index = 0; $index < $rowsPerKey; $index++) {
+				foreach ($mapper as $path => $map) {
+					if (Billrun_Util::startsWith($path, "{$key}.[]")) {
+						$path = str_replace("{$key}.[]","{$key}.{$index}",$path);
+					}
+					$line[$index][$path] = $this->getRowValue($data, $path, $map);
+				}
+			}
 		}
 		return $line;
 	}
