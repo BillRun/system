@@ -16,6 +16,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected $generatorDefinitions;
 	protected $gatewayName;
 	protected $chargeOptions = array();
+	protected $data = array();
+	protected $headers = array();
 
 	public function __construct($options) {
 		if (!isset($options['file_type'])) {
@@ -28,77 +30,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		}));
 		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
-		
-//		$this->generateStructure = $structConfig['generator'];
-//		$this->exportDefinitions = $structConfig['export'];
-			
-
-		
 	}
 
-	protected function buildHeader() {
-		$line = $this->getHeaderLine();
-		$this->headers[0] = $line;
-	}
-	
-	protected function setFilename() {
-		$this->filename = $this->startingString. $this->extractionDateFormat . $this->endingString;
-	}
-	
-	protected function writeHeaders() {
-		$fileContents = '';
-		$counter = 0;
-		foreach ($this->headers as $entity) {
-			$counter++;
-			if (!is_array($entity)) {
-				$entity = $entity->getRawData();
-			}
-			$padLength = $this->generateStructure['pad_length_header'];
-			$fileContents .= $this->getHeaderRowContent($entity, $padLength);
-			$fileContents .= PHP_EOL;
-			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
-				$fileContents = '';
-				$counter = 0;
-			}
-		}
-		$this->writeToFile($fileContents);
-	}
-		
-	protected function writeRows() {
-		$fileContents = '';
-		$counter = 0;
-		foreach ($this->data as $index => $entity) {
-			$counter++;
-			if (!is_array($entity)) {
-				$entity = $entity->getRawData();
-			}
-			$padLength = $this->generateStructure['pad_length_data'];
-			$fileContents .= $this->getRowContent($entity, $padLength);
-			if ($index < count($this->customers)-1){
-				$fileContents.= PHP_EOL;
-			}
-			if ($counter == 50000) {
-				$this->writeToFile($fileContents);
-				$fileContents = '';
-				$counter = 0;
-			}
-		}
-		$this->writeToFile($fileContents);
-	}
-	
 	public function generate() {
 		$className = $this->getGeneratorClassName();
 		$generatorOptions = $this->buildGeneratorOptions();
 		$generator = new $className($generatorOptions);
-		
 		$generator->generate();
 		
-		
-//		if (count($this->data)) {
-//			$this->writeHeaders();
-//			$this->writeRows();
-//		}
+
 	//	$this->cgLogFile->setProcessTime();
 	//	$this->cgLogFile->save();
 	}
@@ -132,6 +72,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($dataField['linked_entity']) && isset($params['aid']) && $dataField['linked_entity']['entity'] == 'account') {
 				$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params['aid'], $dataField['linked_entity']['field_name']);
 			}
+			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField);
 		}
 
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
@@ -160,7 +101,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			}
 			if (isset($headerField['hard_coded_value'])) {
 				$headerLine[$headerField['path']] = $headerField['hard_coded_value'];
-			}		
+			}
+			$headerLine[$headerField['path']] = $this->prepareLineForGenerate($headerLine[$headerField['path']], $headerField);
 		}
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
 			ksort($headerLine);
@@ -172,44 +114,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		return round(microtime(true) * 1000) . rand(100000, 999999);
 	}
 	
-	protected function getHeaderRowContent($entity,$pad_length = array()) {
-		$this->pad_type = STR_PAD_LEFT;
-		$row_contents = '';
-		if (!empty($pad_length)){
-			$this->pad_length = $pad_length;
-		}
-		$header_numeric_fields = $this->generateStructure['header']['numeric_fields'];
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key,$header_numeric_fields)){
-				$this->pad_string = '0';
-			}
-			else{
-				$this->pad_string = ' ';
-			}
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
-		}
-		return $row_contents;
-	}
-	
-	protected function getRowContent($entity,$pad_length = array()) {
-		$this->pad_type = STR_PAD_LEFT;
-		$row_contents = '';
-		if (!empty($pad_length)){
-			$this->pad_length = $pad_length;
-		}
-		$data_numeric_fields = $this->generateStructure['data']['numeric_fields'];
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key, $data_numeric_fields)){
-				$this->pad_string = '0';
-			}
-			else{
-				$this->pad_string = ' ';
-			}
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
-		}
-		return $row_contents;
-	}
-	
+
 	public function shouldFileBeMoved() {
 		$localPath = $this->export_directory . '/' . $this->filename;
 		if (!empty(file_get_contents($localPath))) {
@@ -231,7 +136,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 	
 	protected function buildGeneratorOptions() {
-		
+		$options['data'] = $this->data;
+		$options['headers'] = $this->headers;
+		$options['type'] = $this->configByType['generator']['type'];
+		$options['delimeter'] = $this->configByType['generator']['separator'];
+		$options['file_type'] = $this->configByType['file_type'];
+		$options['file_name'] = $this->getFilename();
+		return $options;
 	}
 	
 	protected function getGeneratorClassName() {
@@ -248,11 +159,24 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				break;
 			default:
 				throw new Exception('Unknown generator type for ' . $this->configByType['file_type']);
-				break;
 		}
 		
 		$className = "Billrun_Generator_PaymentGateway_" . $generatorType;
 		return $className;
+	}
+	
+	protected function getFilename() {
+		return $this->startingString. $this->extractionDateFormat . $this->endingString;
+	}
+	
+	protected function prepareLineForGenerate($lineValue, $addedData) {
+		$newLine = array();
+		$newLine['value'] = $lineValue;
+		$newLine['name'] = $addedData['name'];
+		if (isset($addedData['padding'])) {
+			$newLine['padding'] = $addedData['padding'];
+		}
+		return $newLine;
 	}
 	
 }

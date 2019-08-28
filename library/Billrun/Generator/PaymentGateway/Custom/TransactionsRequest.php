@@ -21,22 +21,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $tokenField = null;
 	protected $amountField = null;
 
-
 	public function __construct($options) {
 		parent::__construct($options);
-	
-		
-		
-		//$this->loadConfig($configPath);
-		//$options = array_merge($options, $this->getAllExportDefinitions());
-		//$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-	//	$this->extractionDateFormat = isset($this->exportDefinitions['extraction_date_format']) ? date($this->exportDefinitions['extraction_date_format']) : '';
-	//	$this->startingString = isset($this->exportDefinitions['file_starting_string']) ?$this->exportDefinitions['file_starting_string'] : '';
-//		$this->endingString = isset($this->exportDefinitions['file_ending_string']) ?$this->exportDefinitions['file_ending_string'] : '';
+		$this->extractionDateFormat = isset($this->configByType['export']['extraction_date_format']) ? date($this->configByType['export']['extraction_date_format']) : '';
+		$this->startingString = isset($this->configByType['export']['file_starting_string']) ? $this->configByType['export']['file_starting_string'] : '';
+		$this->endingString = isset($this->configByType['export']['file_ending_string']) ? $this->configByType['export']['file_ending_string'] : '';
 		$this->initChargeOptions($options);
 //		$this->initLogFile();
-	//	parent::__construct($options);
-		$this->export_dir = $options['export']['dir'];
+//		$this->export_dir = $options['export']['dir'];
 	}
 
 	public function load() {
@@ -54,11 +46,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
 		$accounts = $newAccount->getAccountsByQuery($accountQuery);
 		foreach ($accounts as $account){
-			$subscribers_in_array[$account['aid']] = $account;
+			$subscribersInArray[$account['aid']] = $account;
 		}
 		foreach ($this->customers as $customer) {
 			$paymentParams = array();
-			$account = $subscribers_in_array[$customer['aid']];
+			$account = $subscribersInArray[$customer['aid']];
 //			if (!$this->isGatewayActive($account)) {
 //				continue;
 //			}
@@ -115,45 +107,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
-		$this->buildHeader();
-	}
-	
-
-
-	
-	
-
-
-
-
-	protected function initLogFile() {
-		$this->cgLogFile = new Billrun_LogFile_CreditGuard($this->chargeOptions);
-		$this->cgLogFile->setSequenceNumber();
-		$this->setFilename();
-		$this->cgLogFile->setFileName($this->filename);
-		$this->cgLogFile->setStamp();
-	}
-	
-	
-	protected function getAllExportDefinitions() {
-		$exportDefinitions = array();
-		foreach ($this->exportDefinitions  as $key => $value) {
-			$exportDefinitions[$key] = $value;
-		}
-		$dbExportDefinitions = $this->gateway->getGatewayExport();
-		foreach ($dbExportDefinitions as $key => $value) { // db definitions ran over ini configuration + add new definitions
-			$exportDefinitions[$key] = $value;
-		}
-		return array('transactions_request' => $exportDefinitions);
+		$this->headers[0] = $this->getHeaderLine();
 	}
 
-	
-	
 	protected function isGatewayActive($account) {
 		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
 	}
-	
-
 	
 	protected function initChargeOptions($options) {
 		foreach ($options as $paramName => $option) {
@@ -171,6 +130,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
 	}
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	protected function removeEmptyFile() {
 		$ret = unlink($this->file_path);
 		if ($ret) {
@@ -179,5 +147,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		Billrun_Factory::log()->log('Failed removing empty file ' . $this->file_path, Zend_Log::INFO);
 	}
+	
+		
+	
+	protected function initLogFile() {
+		$this->cgLogFile = new Billrun_LogFile_CreditGuard($this->chargeOptions);
+		$this->cgLogFile->setSequenceNumber();
+		$this->setFilename();
+		$this->cgLogFile->setFileName($this->filename);
+		$this->cgLogFile->setStamp();
+	}
+
+
 	
 }
