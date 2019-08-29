@@ -27,8 +27,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->startingString = isset($this->configByType['export']['file_starting_string']) ? $this->configByType['export']['file_starting_string'] : '';
 		$this->endingString = isset($this->configByType['export']['file_ending_string']) ? $this->configByType['export']['file_ending_string'] : '';
 		$this->initChargeOptions($options);
-//		$this->initLogFile();
-//		$this->export_dir = $options['export']['dir'];
+		$this->initLogFile();
+		$this->localDir = $this->configByType['export']['export_directory'];
 	}
 
 	public function load() {
@@ -51,9 +51,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		foreach ($this->customers as $customer) {
 			$paymentParams = array();
 			$account = $subscribersInArray[$customer['aid']];
-//			if (!$this->isGatewayActive($account)) {
-//				continue;
-//			}
+			if (!$this->isGatewayActive($account)) {
+				continue;
+			}
 			$options = array('collect' => false, 'file_based_charge' => true);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
@@ -129,35 +129,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected function isChargeMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	protected function removeEmptyFile() {
-		$ret = unlink($this->file_path);
-		if ($ret) {
-			Billrun_Factory::log()->log('Empty file ' .  $this->file_path . ' was removed successfully', Zend_Log::INFO);
-			return;
-		}
-		Billrun_Factory::log()->log('Failed removing empty file ' . $this->file_path, Zend_Log::INFO);
-	}
-	
-		
-	
+
 	protected function initLogFile() {
-		$this->cgLogFile = new Billrun_LogFile_CreditGuard($this->chargeOptions);
-		$this->cgLogFile->setSequenceNumber();
-		$this->setFilename();
-		$this->cgLogFile->setFileName($this->filename);
-		$this->cgLogFile->setStamp();
+		$logOptions = $this->chargeOptions;
+		$logOptions['source'] = $this->gatewayName;
+		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
+		$this->logFile->setSequenceNumber();
+		$this->logFile->setFileName($this->getFilename());
+		$this->logFile->setStamp();
 	}
 
-
-	
 }

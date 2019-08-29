@@ -13,29 +13,34 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	protected $data = array();
 	protected $headers = array();
-	protected $delimeter = '';
+	protected $delimiter;
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
 	protected $padCharDef = '';
-	protected $fileName; 
+	protected $filePath;
 
 	public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->data = isset($options['data']) ? $options['data'] : $this->data;
 		$this->headers = isset($options['headers']) ? $options['headers'] : $this->headers;
-		$this->delimeter = isset($options['delimeter']) ? $options['delimeter'] : $this->delimeter;
-	//	if (!$this->validateOptions($options)) {
-	//		Billrun_Factory::log("Missing options when generating payment gateways csv file for file type " . $options['file_type'], Zend_Log::DEBUG);
-	//		return false;
-	//	}
-		$this->fileName = $options['file_name'];
+		if (isset($options['delimiter'])) {
+			$this->delimiter = $options['delimiter'];
+		} else if ($this->fixedWidth) {
+			$this->delimiter = '';
+		}
+		if (!$this->validateOptions($options)) {
+			Billrun_Factory::log("Missing options when generating payment gateways csv file for file type " . $options['file_type'], Zend_Log::DEBUG);
+			return false;
+		}
+		
+		$this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
 	}
 	
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
 			return false;
 		}
-		if (!isset($options['file_name'])) {
+		if (!isset($options['file_name']) || !isset($options['local_dir'])) {
 			return false;
 		}
 		if ($this->fixedWidth) {
@@ -45,7 +50,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 					return false;
 				}
 			}
-		}		
+		}
 		return true;
 	}
 	
@@ -58,21 +63,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function writeToFile($str) {
-		return file_put_contents($this->filePath, $str);
+		return file_put_contents($this->filePath, $str, FILE_APPEND);
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	protected function writeHeaders() {
 		$fileContents = '';
 		$counter = 0;
@@ -81,7 +74,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$fileContents .= $this->getHeaderRowContent($entity);
+			$fileContents .= $this->getRowContent($entity);
 			$fileContents .= PHP_EOL;
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
@@ -100,9 +93,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$padLength = $this->generateStructure['pad_length_data'];
-			$fileContents .= $this->getRowContent($entity, $padLength);
-			if ($index < count($this->customers)-1){
+			$fileContents .= $this->getRowContent($entity);
+			if ($index < count($this->data) - 1){
 				$fileContents.= PHP_EOL;
 			}
 			if ($counter == 50000) {
@@ -114,86 +106,35 @@ class Billrun_Generator_PaymentGateway_Csv {
 		$this->writeToFile($fileContents);
 	}
 	
-	protected function getHeaderRowContent($entity) {
-		$row_contents = '';
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
+	protected function getRowContent($entity) {
+		if (!$this->fixedWidth) {
+			return $this->getDelimetedLine($entity);
 		}
-		return $row_contents;
+		$rowContents = '';
+		for ($key = 0; $key < count($entity); $key++) {
+			$padDir = isset($entity[$key]['padding']['direction']) ? $this->getPadDirection($entity[$key]['padding']['direction']) : $this->padDirDef;
+			$padChar = isset($entity[$key]['padding']['character']) ? $entity[$key]['padding']['character'] : $this->padCharDef;
+			$length = isset($entity[$key]['padding']['length']) ? $entity[$key]['padding']['length'] : strlen($entity[$key]['value']);
+			$rowContents.=str_pad((isset($entity[$key]['value']) ? substr($entity[$key]['value'], 0, $length) : ''), $length, $padChar, $padDir);
+		}
+		return $rowContents;
+	}
+
+	protected function getPadDirection($dirStr) {
+		switch ($dirStr) {
+			case 'left':
+				return STR_PAD_LEFT;
+			case 'right':
+				return STR_PAD_RIGHT;
+			default:
+				return $this->padDirDef;
+		}
 	}
 	
-	protected function getRowContent($entity,$pad_length = array()) {
-		$this->pad_type = STR_PAD_LEFT;
-		$row_contents = '';
-		if (!empty($pad_length)){
-			$this->pad_length = $pad_length;
-		}
-		$data_numeric_fields = $this->generateStructure['data']['numeric_fields'];
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key, $data_numeric_fields)){
-				$this->pad_string = '0';
-			}
-			else{
-				$this->pad_string = ' ';
-			}
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
-		}
-		return $row_contents;
+	protected function getDelimetedLine($rowEntityDef) {
+		$rowValues = array_column($rowEntityDef, 'value');
+		return implode($this->delimiter, $rowValues);
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
-
-//	/**
-//	 * see parent::formatValue
-//	 */
-//	protected function formatData($row, $type = 'data') {
-//		if (!$this->fixedWidth) {
-//			return $row;
-//		}
-//
-//		switch ($type) {
-//			case 'header':
-//				$widthMappingField = 'header_mapping';
-//				break;
-//			case 'footer':
-//				$widthMappingField = 'footer_mapping';
-//				break;
-//			case 'data':
-//			default:
-//				$widthMappingField = 'fields_mapping';
-//				break;
-//		}
-//		foreach ($row as $field => $value) {
-//			$width = Billrun_Util::getIn($this->config, array('exporter', 'format', 'widths', $widthMappingField, $field), strlen($value));
-//			$row[$field] = str_pad($value, $width, ' ', STR_PAD_LEFT);
-//		}
-//		return $row;
-//	}
-//
-//	/**
-//	 * see parent::exportRowToFile
-//	 */
-//	protected function exportRowToFile($fp, $row, $type = 'data') {
-//		$rowToExport = $this->formatData($row, $type);
-//		fputs($fp, implode($rowToExport, $this->delimiter) . PHP_EOL);
-//	}
-
-//}
-
-
-	
-	
-	
 }
 

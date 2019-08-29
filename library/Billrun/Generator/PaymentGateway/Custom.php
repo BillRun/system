@@ -18,6 +18,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected $chargeOptions = array();
 	protected $data = array();
 	protected $headers = array();
+	protected $localDir;
+	protected $logFile;
 
 	public function __construct($options) {
 		if (!isset($options['file_type'])) {
@@ -38,9 +40,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$generator = new $className($generatorOptions);
 		$generator->generate();
 		
-
-	//	$this->cgLogFile->setProcessTime();
-	//	$this->cgLogFile->save();
+		if (!empty($logFile)) {
+			$this->logFile->setProcessTime();
+			$this->logFile->save();
+		}
 	}
 	
 	protected function getDataLine($params) {
@@ -113,16 +116,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected function generateUniqueId() {
 		return round(microtime(true) * 1000) . rand(100000, 999999);
 	}
-	
-
-	public function shouldFileBeMoved() {
-		$localPath = $this->export_directory . '/' . $this->filename;
-		if (!empty(file_get_contents($localPath))) {
-			return true;
-		}
-		$this->removeEmptyFile();
-		return false;
-	}
 
 	protected function getLinkedEntityData($entity, $aid, $field) {
 		$account = Billrun_Factory::account();
@@ -142,6 +135,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$options['delimeter'] = $this->configByType['generator']['separator'];
 		$options['file_type'] = $this->configByType['file_type'];
 		$options['file_name'] = $this->getFilename();
+		$options['local_dir'] = $this->localDir;
 		return $options;
 	}
 	
@@ -177,6 +171,31 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			$newLine['padding'] = $addedData['padding'];
 		}
 		return $newLine;
+	}
+	
+	public function shouldFileBeMoved() {
+		$localPath = $this->localDir . '/' . $this->getFilename();
+		if (!empty(file_get_contents($localPath))) {
+			return true;
+		}
+		$this->removeEmptyFile();
+		return false;
+	}
+	
+	protected function removeEmptyFile() {
+		$localPath = $this->localDir . '/' . $this->getFilename();
+		$ret = unlink($localPath);
+		if ($ret) {
+			Billrun_Factory::log()->log('Empty file ' .  $localPath . ' was removed successfully', Zend_Log::INFO);
+			return;
+		}
+		Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::INFO);
+	}
+	
+	public function move() {
+		$exportDetails = $this->configByType['export'];
+		$connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
+		$connection->export();
 	}
 	
 }
