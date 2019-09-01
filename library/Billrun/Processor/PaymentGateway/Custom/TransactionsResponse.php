@@ -63,6 +63,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
 		$this->dealStatusField = $processorDefinition['processor']['deal_status_field'];
 		$this->validTransacionRegex = $processorDefinition['processor']['valid_transaction_regex'];
+		return true;
 	}
 
 	protected function isValidTransaction($row) {

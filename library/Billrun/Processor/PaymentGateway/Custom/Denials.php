@@ -20,14 +20,6 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	public function __construct($options) {
 		parent::__construct($options);
 	}
-
-	protected function validateProcessorDefinitions($processorDefinition) {
-		if (empty($processorDefinition['processor']['amount_field']) || empty($processorDefinition['processor']['transaction_identifier_field'])) {
-			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
-			return false;
-		}
-		return true;
-	}
 	
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['transaction_identifier_field']) || empty($processorDefinition['processor']['amount_field'])) {
@@ -37,6 +29,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
 		$this->amountField = $processorDefinition['processor']['amount_field'];
+		return true;
 	}
 	
 	protected function updatePayments($row, $payment = null) {

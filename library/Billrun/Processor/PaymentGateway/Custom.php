@@ -68,8 +68,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function updateData() {
 		$data = $this->getData();
 		foreach ($data['data'] as $row) {
-			$bill = Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]);
-			if (is_null($bill)) {
+			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
