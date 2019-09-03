@@ -17,6 +17,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected $identifierField;
 	protected $amountField;
 	protected $method = 'cash';
+	protected $dbNumericValuesFields = array('invoice_id');
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -35,7 +36,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 
 	protected function updatePayments($row, $payment = null) {
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
-		if (empty($bill)) {
+		if (count($bill) == 0) {
 			Billrun_Factory::log("Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field", Zend_Log::ALERT);
 			return;
 		}
@@ -53,33 +54,17 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 		$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		try {
-			$paidRes = Billrun_Bill::pay('cash', array($paymentParams));
+			Billrun_Bill::pay('cash', array($paymentParams));
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Payment process was failed for payment: " . $e->getMessage(), Zend_Log::NOTICE);
 		}
-		
-		
-		
-		
-		
-//		if (!empty($paidRes)) {
-//			if (!is_null($payment)) {
-//				Billrun_Factory::log()->log("Denial was created successfully for payment: " . $row[$this->tranIdentifierField], Zend_Log::NOTICE);
-//				$payment->deny($denial);
-//				$paymentSaved = $payment->save();
-//				if (!$paymentSaved) {
-//					Billrun_Factory::log()->log("Denied flagging failed for rec " . $row[$this->tranIdentifierField], Zend_Log::ALERT);
-//				}
-//			} else {
-//				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
-//			}
-//		} else {
-//			Billrun_Factory::log()->log("Denial process was failed for payment: " . $row[$this->tranIdentifierField], Zend_Log::NOTICE);
-//		}
+		Billrun_Factory::log()->log("Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField], Zend_Log::INFO);
 	}
-	
 
 	protected function findBillByUniqueIdentifier($id) {
+		if (in_array($this->identifierField , $this->dbNumericValuesFields) && Billrun_Util::IsIntegerValue($id)) {
+			$id = intval($id);
+		}
 		return $this->bills->query(array($this->identifierField => $id))->cursor();
 	}
 }

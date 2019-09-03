@@ -66,14 +66,25 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	protected function updateData() {
+		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
 		$data = $this->getData();
-		foreach ($data['data'] as $row) {
-			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
-			if (is_null($bill) && static::$type != 'payments') {
-				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
-				continue;
+		if (!empty($fileStatus) && static::$type == 'transactions_response') {
+			switch ($fileStatus) {
+				case 'only_rejections':
+					$this->updateByRejectionsFiles($data);
+					break;
+				case 'only_acceptance':
+					$this->updateByAcceptanceFiles($data);
+					break;
+				case 'mixed':
+					$this->updatePaymentsByRows($data);
+					break;
+				default:
+					$this->updatePaymentsByRows($data);
+					break;
 			}
-			$this->updatePayments($row, $bill);
+		} else {			
+			$this->updatePaymentsByRows($data);
 		}
 	}
 
@@ -89,6 +100,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function setPgFileType($fileType) {
 		$this->fileType = $fileType;
+	}
+	
+	protected function updatePaymentsByRows($data) {
+		foreach ($data['data'] as $row) {
+			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			if (is_null($bill) && static::$type != 'payments') {
+				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+				continue;
+			}
+			$this->updatePayments($row, $bill);
+		}
 	}
 
 }

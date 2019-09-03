@@ -100,6 +100,15 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			}
 		}
 	}
-	
 
+	protected function updateByRejectionsFiles($data) {
+		$fileCount = isset($this->configByType['response_files_count']) ? $this->configByType['response_files_count'] : null;
+		
+		
+	}
+	
+	protected function updateByAcceptanceFiles($data) {
+		$fileCount = isset($this->configByType['response_files_count']) ? $this->configByType['response_files_count'] : null;
+		
+	}
 }
