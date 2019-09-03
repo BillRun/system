@@ -16,12 +16,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $fileType;
 	protected $receiverSource;
 	protected $gatewayName;
+	protected $headerRows;
+	protected $trailerRows;
 
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
+		$this->log = Billrun_Factory::db()->logCollection();
 	}
 
 /**
@@ -45,6 +48,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
 		$parser->parse($this->fileHandler);
+		$this->headerRows = $parser->getHeaderRows();
+		$this->trailerRows = $parser->getTrailerRows();
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 
@@ -66,24 +71,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	protected function updateData() {
-		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
 		$data = $this->getData();
-		if (!empty($fileStatus) && static::$type == 'transactions_response') {
-			switch ($fileStatus) {
-				case 'only_rejections':
-					$this->updateByRejectionsFiles($data);
-					break;
-				case 'only_acceptance':
-					$this->updateByAcceptanceFiles($data);
-					break;
-				case 'mixed':
-					$this->updatePaymentsByRows($data);
-					break;
-				default:
-					$this->updatePaymentsByRows($data);
-					break;
-			}
-		} else {			
+		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
+		$fileConfCount = isset($this->configByType['file_response_count']) ? $this->configByType['file_response_count'] : null;
+		$fileCorrelationObj = isset($this->configByType['correlation']) ? $this->configByType['correlation'] : null;
+		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance')) && (empty($fileConfCount) || empty($fileCorrelationObj))) {
+			throw new Exception('Missing file response definitions');
+		}
+		$currentFileCount = $this->getCurrentFileCount($fileCorrelationObj);
+		if (!empty($fileConfCount) && $currentFileCount == $fileConfCount) {
+			$this->updatePaymentsByFileStatus($data);
+		} else {
 			$this->updatePaymentsByRows($data);
 		}
 	}
@@ -100,6 +98,35 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function setPgFileType($fileType) {
 		$this->fileType = $fileType;
+	}
+	
+	protected function getCurrentFileCount($fileCorrelation) {
+		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
+		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
+		$logField = isset($fileCorrelation['file_field']) ? $fileCorrelation['file_field'] : null;
+		if (empty($source) || empty($correlationField) || empty($logField)) {
+			throw new Exception('Missing correlaction definitions');
+		}
+		$relevantRow = ($source == 'header') ? current($this->headerRows) : current($this->trailerRows); // TODO: support in more than one header/trailer
+		$query = array(
+			$logField => $relevantRow[$correlationField]
+		);
+		
+		return $this->log->query($query)->cursor()->count();
+	}
+	
+	protected function updatePaymentsByFileStatus($data) {
+		$originalFile = $this->getOriginalFile();
+		$originalFileData = '';  // parse the original file and get his data and header.
+		$originalFileHeader = '';
+		
+		foreach ($originalFileData as $dataRow) {
+			// search each payment in transferred data and if not exists and not rejected already accept it.
+		}
+	}
+	
+	protected function getOriginalFile() {
+		
 	}
 	
 	protected function updatePaymentsByRows($data) {

@@ -27,7 +27,8 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function updatePayments($row, $payment) {
-		$paymentResponse = $this->getPaymentResponse($row);
+		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
+		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row) : $this->getResponseByFileStatus($fileStatus);
 		$payment->setPending(false);
 		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
 		if ($paymentResponse['stage'] == 'Completed') {
@@ -101,14 +102,18 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		}
 	}
 
-	protected function updateByRejectionsFiles($data) {
-		$fileCount = isset($this->configByType['response_files_count']) ? $this->configByType['response_files_count'] : null;
-		
-		
+	protected function getResponseByFileStatus($fileStatus) {
+		switch ($fileStatus) {
+			case 'only_rejections':
+				return array('status' => 'only_rejections', 'stage' => 'Rejected');
+				break;
+			case 'only_acceptance':
+				return array('status' => 'only_acceptance', 'stage' => 'Completed');
+				break;
+			default:
+				throw new Exception('Unknown file status');
+				break;
+		}
 	}
-	
-	protected function updateByAcceptanceFiles($data) {
-		$fileCount = isset($this->configByType['response_files_count']) ? $this->configByType['response_files_count'] : null;
-		
-	}
+
 }
