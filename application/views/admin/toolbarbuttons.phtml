@@ -19,7 +19,7 @@
 			<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button"><i class="icon-remove"> </i>Remove</a></span>
 		<?php endif; ?>
 		<?php if ($active == 'lines' || $active == 'balances') : ?>
-			<span><a id='download' data-type="download" href="/admin/csvExport?collection=<?php echo $active; ?>" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+			<span><a id='download' data-type="download" href="/admin/csvExport?collection=<?php echo $session->collectionSelect ? reset(explode('|',$session->collectionSelect)) : $active; ?>&active_table=<?php echo $active ?>" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
 			<?php if ($active == 'lines' && AdminController::authorized('write')) : ?>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 			<?php endif; ?>
