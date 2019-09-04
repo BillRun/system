@@ -207,7 +207,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
-		$this->view->assign('details_keys', $this->getDetailsKeys());		
+		$this->view->assign('details_keys', $this->getDetailsKeys());
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
