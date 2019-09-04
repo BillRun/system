@@ -468,3 +468,11 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.insert(obj);
+		db.log.remove(obj._id);
+	}
+);

@@ -52,7 +52,7 @@ class Billrun_AuditTrail_Util {
 			
 			$logEntry = array_merge($basicLogEntry, $additionalParams);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
+			Billrun_Factory::db()->auditCollection()->save(new Mongodloid_Entity($logEntry));
 			return true;
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
