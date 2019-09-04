@@ -68,7 +68,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->ssh->getHost() , Zend_Log::INFO);
 			$connected = $this->ssh->connect($config['user']);
 			 if (!$connected){
-				 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
+				 Billrun_Factory::log()->log("SSH: Can't connect to $hostAndPort", Zend_Log::ALERT);
 				 return $ret;
 			 }
 			Billrun_Factory::log()->log("Success: Connected to: " . $this->ssh->getHost() , Zend_Log::INFO);

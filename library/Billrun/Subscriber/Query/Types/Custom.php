@@ -22,8 +22,7 @@ class Billrun_Subscriber_Query_Types_Custom extends Billrun_Subscriber_Query_Bas
 	 * name in the query.
 	 */
 	public function __construct() {
-		$config = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array());
-		$this->customFields = $config;
+		$this->customFields = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array());
 	}
 
 	protected function getKeyFields() {

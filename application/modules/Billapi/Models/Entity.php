@@ -190,6 +190,9 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+
+		//transalte all date fields
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	/**
@@ -1065,6 +1068,9 @@ class Models_Entity {
 		switch ($this->collectionName) {
 			case 'users':
 				return 'username';
+			case 'discounts':
+			case 'reports':
+			case 'taxes':
 			case 'rates':
 				return 'key';
 			case 'accounts':

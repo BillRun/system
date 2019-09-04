@@ -54,6 +54,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
+	
+	/**
+	 * Limit iterator
+	 * used to limit the count of files to process on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 10;
 
 	/**
 	 * flag indicate to make bulk insert into database

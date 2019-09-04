@@ -241,15 +241,10 @@ class Billrun_Util {
 	 * 
 	 * @return float the VAT at the current timestamp
 	 * @todo move to specific VAT object
+	 * @deprecated since version 5.9 - use Tax calculator
 	 */
 	public static function getVATAtDate($timestamp) {
-		$mongo_date = new MongoDate($timestamp);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+		return Billrun_Rates_Util::getVat(0.17, $timestamp);
 	}
 
 	/**
@@ -1652,7 +1647,7 @@ class Billrun_Util {
 	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
 	 * @param mixed $value - value to unset
 	 */
-	public static function unsetIn(&$arr, $keys, $value) {
+	public static function unsetIn(&$arr, $keys, $value = null) {
 		if (!is_array($arr)) {
 			return;
 		}
@@ -1663,9 +1658,13 @@ class Billrun_Util {
 		foreach($keys as $key) {
 			$current = &$current[$key];
 		}
-		unset($current[$value]);
+		
+		if (!is_null($value)) {
+			$current = &$current[$value];
+		}
+		
+		unset($current);
 	}
-
 
 	/**
 	 * Gets the value from an array.

@@ -12,12 +12,15 @@
 class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	use Billrun_Traits_ForeignFields;
+
+	protected  static $copyFromChargeData = ['prorated_start','prorated_end'];
 	
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
 	protected $end = PHP_INT_MAX;
 	protected $cycle;
+	protected $tax = [];
 	protected $foreignFields = array();
 
 	public function __construct(array $options) {
@@ -29,6 +32,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->name = $options['plan'];
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
+		$this->tax = Billrun_Util::getIn($options, 'tax', []);
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
 		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine);
@@ -45,10 +49,18 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$entry['aprice'] = $chargeData['value'];
 		$entry['full_price'] = $chargeData['full_price'];
 		$entry['charge_op'] = $chargeingKey;
+		$entry['tax'] = $this->tax;
 		if (isset($chargeData['cycle'])) {
 			$entry['cycle'] = $chargeData['cycle'];
 		}
 		$entry['stamp'] = $this->generateLineStamp($entry);
+
+		foreach(self::$copyFromChargeData as $field) {
+			if( isset($chargeData[$field]) ) {
+				$entry[$field] = $chargeData[$field];
+			}
+		}
+
 		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
 			$entry['start'] = new MongoDate($chargeData['start']);
 		}
@@ -56,8 +68,9 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['end'] = new MongoDate($chargeData['end']);
 		}
 
-		$entry = $this->addTaxationToLine($entry);
 		$entry = $this->addExternalFoerignFields($entry);
+		$entry = $this->addTaxationToLine($entry);
+		unset($entry['tax']);
 		
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;
