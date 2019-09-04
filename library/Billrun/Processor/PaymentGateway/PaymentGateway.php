@@ -74,13 +74,18 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 
 	protected function updateData() {
 		$data = $this->getData();
-		foreach ($data['data'] as $row) {
-			$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
-			if (is_null($bill)) {
-				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'] . ' in file ' . $this->filePath, Zend_Log::ALERT);
-				continue;
+		$filteredData = $this->filterData($data);
+		foreach ($filteredData as $row) {
+			if (!empty($row['transaction_id'])) {
+				$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
+				if (is_null($bill)) {
+					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
+					continue;
+				}
+				$this->updatePayments($row, $bill);
+			} else {
+				$this->updatePayments($row);
 			}
-			$this->updatePayments($row, $bill);
 		}
 	}
 

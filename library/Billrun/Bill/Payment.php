@@ -78,6 +78,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
+			if (isset($options['denial'])) {
+				$this->data['denial'] = $options['denial'];
+			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
 				if ($direction != 'fc') {
@@ -922,6 +925,37 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
+	}
+	
+	public static function createDenial($denialParams, $matchedPayment) {
+		$denial = new Billrun_Bill_Payment_Denial($denialParams);
+		if (!is_null($matchedPayment)) {
+			$denial->copyLinks($matchedPayment);
+		}
+		$denial->setTxid();
+		$res = $denial->save();
+		if ($res) {
+			return $denial;
+		}
+		return false;
+	}
+	
+	public function deny($denial) {
+		$txId = $denial->getId();
+		$deniedBy = array();
+		$amount = $denial->getAmount();
+		$deniedBy[$txId] = $amount;
+		$this->data['denied_by'] = isset($this->data['denied_by']) ? array_merge($this->data['denied_by'], $deniedBy) : $deniedBy;
+		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
+	}
+	
+	public function isPaymentDenied($denialAmount) {
+		$alreadyDenied = 0;
+		if (isset($this->data['denied_amount'])) {
+			$alreadyDenied = $this->data['denied_amount'];
+		}
+		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		return $totalAmountToDeny > $this->data['amount'];
 	}
 
 	public static function createDenial($denialParams, $matchedPayment) {
