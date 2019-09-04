@@ -460,6 +460,9 @@ if (servicesFields) {
 	lastConfig['services']['fields'] = servicesFields;
 }
 
+// BRCD-2021 - Invoice translations support
+lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+
 db.config.insert(lastConfig);
 
 // BRCD-1717

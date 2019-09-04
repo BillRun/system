@@ -122,6 +122,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details', TRUE));
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
+		Generator_Translations::load();
 	}
 
 	/**
@@ -206,7 +207,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
-		$this->view->assign('details_keys', $this->getDetailsKeys());
+		$this->view->assign('details_keys', $this->getDetailsKeys());		
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
