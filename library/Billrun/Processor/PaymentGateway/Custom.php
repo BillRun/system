@@ -75,11 +75,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
 		$fileConfCount = isset($this->configByType['file_response_count']) ? $this->configByType['file_response_count'] : null;
 		$fileCorrelationObj = isset($this->configByType['correlation']) ? $this->configByType['correlation'] : null;
-		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance')) && (empty($fileConfCount) || empty($fileCorrelationObj))) {
-			throw new Exception('Missing file response definitions');
+		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
+			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
+				throw new Exception('Missing file response definitions');
+			}
+			$currentFileCount = $this->getCurrentFileCount($fileCorrelationObj);
 		}
-		$currentFileCount = $this->getCurrentFileCount($fileCorrelationObj);
-		if (!empty($fileConfCount) && $currentFileCount == $fileConfCount) {
+		if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount == $fileConfCount) {
 			$this->updatePaymentsByFileStatus($data);
 		} else {
 			$this->updatePaymentsByRows($data);
@@ -126,6 +128,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function getOriginalFile() {
+		$fileType = $this->configByType['file_type'];
+		$correlationField = $fileCorrelation['field'];
+		$logField = $fileCorrelation['file_field'];
+		$query = array(
+			'pg_file_type' => $fileType,
+		);
+		$fileLog = $this->log->query($query)->cursor()->current();
 		
 	}
 	
