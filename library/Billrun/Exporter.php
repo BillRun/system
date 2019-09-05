@@ -553,8 +553,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			$query = array(
 				'source' => 'export',
 				'type' => static::$type,
+				'sequence_num' => array(
+					'$exists' => true,
+				),
 			);
 			$sort = array(
+				'sequence_num' => -1,
 				'export_start_time' => -1,
 			);
 			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
