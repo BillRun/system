@@ -23,7 +23,7 @@ class Processor_IPChangeRecord extends Billrun_Processor
 								'match'=> '/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+.*NAT/',
 								'fields' => [
 												'recording_entity' => '/^\w+  \d+ \d+:\d+:\d+ ([\d\w\.]+)/',
-												'datetime' => "/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w (\d{4} \w{3,5} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2})/",
+												'gmt_datetime' => "/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w (\d{4} \w{3,5} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2})/",
 												'nat_type' => "/^\w+  \d+ \d+:\d+:\d+ [\d\w\.]+  \w [ \d\w:]+ - - ([\d\w]+) /",
 												'changes' => "/(\[\w+ [^]]+\])/"
 								],
@@ -96,7 +96,7 @@ class Processor_IPChangeRecord extends Billrun_Processor
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
 		$date = DateTime::createFromFormat(	Billrun_Util::getFieldVal($this->configStruct['config']['date_format'],"Y M j H:i:s"),
-											$row['datetime'],
+											$row['gmt_datetime'],
 											new DateTimeZone(Billrun_Util::getFieldVal($this->configStruct['config']['timezone'],date_default_timezone_get())) );
 		$row['urt']= new MongoDate( $date->getTimestamp()  );
 		if ($this->line_numbers) {
