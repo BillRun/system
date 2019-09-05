@@ -81,6 +81,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
 			}
+			if (isset($options['generated_pg_file_log'])) {
+				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
+			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
 				if ($direction != 'fc') {

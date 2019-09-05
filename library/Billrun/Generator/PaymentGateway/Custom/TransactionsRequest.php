@@ -20,6 +20,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $exportDir;
 	protected $tokenField = null;
 	protected $amountField = null;
+	protected $generatedFileLog;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -54,7 +55,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isGatewayActive($account)) {
 				continue;
 			}
-			$options = array('collect' => false, 'file_based_charge' => true);
+			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedFileLog);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
 				continue;
@@ -132,11 +133,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	protected function initLogFile() {
 		$logOptions = $this->chargeOptions;
-		$logOptions['source'] = $this->gatewayName;
+		$logOptions['source'] = $this->gatewayName . str_replace('_', '', ucwords(static::$type, '_'));
 		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
 		$this->logFile->setSequenceNumber();
 		$this->logFile->setFileName($this->getFilename());
 		$this->logFile->setStamp();
+		$this->generatedFileLog = $this->logFile->getStamp();
+		$this->logFile->save();
 	}
 
 }

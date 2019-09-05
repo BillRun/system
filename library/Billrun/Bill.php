@@ -795,6 +795,9 @@ abstract class Billrun_Bill {
 					}
 				}
 				$involvedAccounts[] = $aid;
+				if (!empty($options['file_based_charge']) && isset($options['generated_pg_file_log'])) {
+					$rawPayment['generated_pg_file_log'] = $options['generated_pg_file_log'];
+				}
 				$payments[] = new $className($rawPayment);
 			}
 			$res = Billrun_Bill_Payment::savePayments($payments);

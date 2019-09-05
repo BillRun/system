@@ -70,4 +70,11 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		return md5(serialize($options));
 	}
 
+	public function getStamp() {
+		if (isset($this->data['stamp'])) {
+			return $this->data['stamp'];
+		}
+		return NULL;
+	}
+
 }

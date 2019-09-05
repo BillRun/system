@@ -18,7 +18,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $gatewayName;
 	protected $headerRows;
 	protected $trailerRows;
-
+	protected $correlatedValue;
+	
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
 		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
@@ -72,20 +73,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function updateData() {
 		$data = $this->getData();
-		$fileStatus = isset($this->configByType['file_status']) ? $this->configByType['file_status'] : null;
-		$fileConfCount = isset($this->configByType['file_response_count']) ? $this->configByType['file_response_count'] : null;
-		$fileCorrelationObj = isset($this->configByType['correlation']) ? $this->configByType['correlation'] : null;
+		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
+			return $settingsByType['file_type'] === $this->fileType;
+		}));
+		
+		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
+		$fileConfCount = isset($currentProcessor['file_response_count']) ? $currentProcessor['file_response_count'] : null;
+		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
 				throw new Exception('Missing file response definitions');
 			}
-			$currentFileCount = $this->getCurrentFileCount($fileCorrelationObj);
+			$this->updateLogCollection($fileCorrelationObj);
 		}
-		if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount == $fileConfCount) {
-			$this->updatePaymentsByFileStatus($data);
-		} else {
-			$this->updatePaymentsByRows($data);
-		}
+		$this->updatePaymentsByRows($data, $currentProcessor);
 	}
 
 	protected function getRowDateTime($dateStr) {
@@ -102,7 +103,80 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->fileType = $fileType;
 	}
 	
-	protected function getCurrentFileCount($fileCorrelation) {
+	protected function getCurrentFileCount() {
+		if (empty($this->correlatedValue)) {
+			throw new Exception("Missing correlated value");
+		}
+		$query = array(
+			'correlated_to' => $this->correlatedValue,
+			'process_time' => array('$exists' => true),
+		);
+		
+		return $this->log->query($query)->cursor()->count();
+	}
+	
+	protected function updateLeftPaymentsByFileStatus() {
+		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
+			return $settingsByType['file_type'] === $this->fileType;
+		}));
+		$currentFileCount = $this->getCurrentFileCount();
+		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
+		$fileConfCount = isset($currentProcessor['file_response_count']) ? $currentProcessor['file_response_count'] : null;
+		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
+		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
+			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
+				throw new Exception('Missing file response definitions');
+			}
+		}
+		$correlatedField =  $fileCorrelationObj['file_field'];
+		if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount == $fileConfCount) {
+			return;
+		}
+		$origFileStamp = $this->getOriginalFileStamp($correlatedField);
+		$relevantBills = $this->getOrigFileBills($origFileStamp);
+		foreach ($relevantBills as $bill) {
+			if ($fileStatus == 'only_rejections') {
+				$bill->markApproved('Completed');
+				$billData = $bill->getRawData();
+				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
+					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+				}
+				if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+				}
+			} else if ($fileStatus == 'only_acceptance') {
+				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
+				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
+				Billrun_Factory::log('Rejecting transaction  ' . $billToReject->getId(), Zend_Log::INFO);
+				$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
+				$rejection->setConfirmationStatus(false);
+				$rejection->save();
+				$billToReject->markRejected();
+			}
+		}
+	}
+	
+	protected function getOriginalFileStamp($correlatedField) {
+		$query = array(
+			$correlatedField => $this->correlatedValue,
+		);
+		$fileLog = $this->log->query($query)->cursor()->current();
+		$logData = $fileLog->getRawData();
+		return $logData['stamp'];
+	}
+	
+	protected function updatePaymentsByRows($data, $currentProcessor) {
+		foreach ($data['data'] as $row) {
+			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			if (is_null($bill) && static::$type != 'payments') {
+				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+				continue;
+			}
+			$this->updatePayments($row, $bill, $currentProcessor);
+		}
+	}
+	
+	protected function updateLogCollection($fileCorrelation) {
 		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
 		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
 		$logField = isset($fileCorrelation['file_field']) ? $fileCorrelation['file_field'] : null;
@@ -111,42 +185,25 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
 		$relevantRow = ($source == 'header') ? current($this->headerRows) : current($this->trailerRows); // TODO: support in more than one header/trailer
 		$query = array(
-			$logField => $relevantRow[$correlationField]
+			'stamp' => $this->getFileStamp()
 		);
 		
-		return $this->log->query($query)->cursor()->count();
+		$update = array (
+			'$set' => array(
+				'correlated_to' => $relevantRow[$correlationField]
+			)
+		);
+		$this->log->update($query, $update);
+		$this->correlatedValue = $relevantRow[$correlationField];
 	}
 	
-	protected function updatePaymentsByFileStatus($data) {
-		$originalFile = $this->getOriginalFile();
-		$originalFileData = '';  // parse the original file and get his data and header.
-		$originalFileHeader = '';
-		
-		foreach ($originalFileData as $dataRow) {
-			// search each payment in transferred data and if not exists and not rejected already accept it.
-		}
-	}
-	
-	protected function getOriginalFile() {
-		$fileType = $this->configByType['file_type'];
-		$correlationField = $fileCorrelation['field'];
-		$logField = $fileCorrelation['file_field'];
+	protected function getOrigFileBills($fileStamp) {
+		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query = array(
-			'pg_file_type' => $fileType,
+			'generated_pg_file_log' => $fileStamp,
 		);
-		$fileLog = $this->log->query($query)->cursor()->current();
-		
-	}
-	
-	protected function updatePaymentsByRows($data) {
-		foreach ($data['data'] as $row) {
-			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
-			if (is_null($bill) && static::$type != 'payments') {
-				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
-				continue;
-			}
-			$this->updatePayments($row, $bill);
-		}
+		$query = array_merge($query, $nonRejectedOrCanceled);
+		return $this->bills->query($query)->cursor();
 	}
 
 }
