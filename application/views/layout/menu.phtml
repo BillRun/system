@@ -10,29 +10,9 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/lines">Lines</a>
 			</li>
 		<?php endif; ?>
-		<?php if (AdminController::authorized('read', 'plans')) : ?>
-			<li<?php echo ($active == 'plans' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a>
-			</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('read', 'rates')) : ?>
-			<li<?php echo ($active == 'rates' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a>
-			</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('read', 'balances')) : ?>
-			<li<?php echo ($active == 'balances' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/balances">Balances</a>
-			</li>
-		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'queue')) : ?>
 			<li<?php echo ($active == 'queue' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/queue">Queue</a>
-			</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('read', 'events')) : ?>
-			<li<?php echo ($active == 'events' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/events">Events</a>
 			</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'logs')) : ?>
@@ -43,32 +23,6 @@
 		<?php if (AdminController::authorized('read','ipmapping')) : ?>
 			<li<?php echo ($active == 'ipmapping' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/ipmapping">IP Mapping</a>
-			</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('reports')) : ?>
-		<li<?php echo ($active == 'wholesale' ? ' class="active"' : ''); ?>>
-			<a href="<?php echo $this->baseUrl; ?>/admin/wholesale">Reports</a>
-		</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('admin')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
-				<a class="dropdown-toggle"
-				   data-toggle="dropdown"
-				   href="#">
-					Admin
-					<b class="caret"></b>
-				</a>
-				<ul class="dropdown-menu"> 
-					<li<?php echo ($active == 'config' ? ' class="active"' : ''); ?>>
-						<a href="<?php echo $this->baseUrl; ?>/admin/config">Config</a>
-					</li>
-					<li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
-						<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
-					</li>
-					<li<?php echo ($active == 'operations' ? ' class="active"' : ''); ?>>
-						<a href="<?php echo $this->baseUrl; ?>/admin/operations">Operations</a>
-					</li>
-				</ul>
 			</li>
 		<?php endif; ?>
 		<?php if (Billrun_Factory::user() === FALSE) : ?>
