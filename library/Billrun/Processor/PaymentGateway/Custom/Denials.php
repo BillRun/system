@@ -38,15 +38,13 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			return;
 		}
 		$row['aid'] = $payment->getAid();
-		if (!is_null($payment)) {
-			if (abs($row[$this->amountField]) > $payment->getAmount()) {
-				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row[$this->tranIdentifierField], Zend_Log::ALERT);
-				return;
-			}
-			if ($payment->isDenied(abs($row[$this->amountField]))) {
-				Billrun_Factory::log()->log("Payment " . $row[$this->tranIdentifierField] . " is already denied", Zend_Log::NOTICE);
-				return;
-			}
+		if (abs($row[$this->amountField]) > $payment->getAmount()) {
+			Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row[$this->tranIdentifierField], Zend_Log::ALERT);
+			return;
+		}
+		if ($payment->isDenied(abs($row[$this->amountField]))) {
+			Billrun_Factory::log()->log("Payment " . $row[$this->tranIdentifierField] . " is already denied", Zend_Log::NOTICE);
+			return;
 		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
 		if (!empty($denial)) {

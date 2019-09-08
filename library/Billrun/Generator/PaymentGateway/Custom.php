@@ -195,7 +195,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	public function move() {
 		$exportDetails = $this->configByType['export'];
 		$connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
-		$connection->export();
+		$fileName = $this->getFilename();
+		$connection->export($fileName);
 	}
 	
 }

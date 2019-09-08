@@ -130,16 +130,16 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	 * copy the file to the location defined
 	 * @since 5.0
 	 */
-	public function export(){
+	public function export($fileName){
 		if (!empty($this->connection)){
-			$local = $this->export_directory . '/' . $this->filename;
-			$remote = $this->export_dir . '/' . $this->filename;
+			$local = $this->localDir . '/' . $fileName;
+			$remote = $this->remoteDir . '/' . $fileName;
 			$this->connection->put($local, $remote);
 		}
 		else {
 			if ($this->move_exported) {
-				$source = $this->export_directory . '/' . $this->filename;
-				$dest = $this->export_dir . '/' . $this->filename;
+				$source = $this->localDir . '/' . $fileName;
+				$dest = $this->remoteDir . '/' . $fileName;
 				copy($source, $dest);
 			}
 		}

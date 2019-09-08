@@ -17,7 +17,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	
 	protected static $type = 'transactions_request';
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
-	protected $exportDir;
 	protected $tokenField = null;
 	protected $amountField = null;
 	protected $generatedFileLog;

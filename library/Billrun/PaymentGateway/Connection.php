@@ -25,6 +25,7 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $workspace;
 	protected $limit;
 	protected $fileType;
+	protected $localDir;
 
 	public function __construct($options) {
 		if (!isset($options['connection_type']) || !isset($options['host'])  || !isset($options['user']) ||
@@ -35,6 +36,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		$this->username = $options['user'];
 		$this->password = $options['password'];
 		$this->remoteDir = isset($options['remote_directory']) ? $options['remote_directory'] : '';
+		$this->localDir = isset($options['export_directory']) ? $options['export_directory'] : '';
 		$this->filenameRegex = !empty($options['filename_regex']) ? $options['filename_regex'] : '/.*/';
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 		if (isset($options['backup_path'])) {
@@ -101,6 +103,6 @@ abstract class Billrun_PaymentGateway_Connection {
 		return $pgReceivers;
 	}
 
-	abstract public function export();
+	abstract public function export($fileName);
 	abstract public function receive();
 }

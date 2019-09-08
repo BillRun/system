@@ -935,6 +935,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public static function createDenial($denialParams, $matchedPayment) {
+		$paymentAmount = $matchedPayment->getDue();
+		$denialParams['payment_amount'] = $paymentAmount;
 		$denial = new Billrun_Bill_Payment_Denial($denialParams);
 		if (!is_null($matchedPayment)) {
 			$denial->copyLinks($matchedPayment);

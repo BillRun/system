@@ -24,7 +24,7 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 	protected function adjustDenialOptions($options) {
 		$newOptions = array();
 		$newOptions['amount'] = abs($options['amount']);
-		$newOptions['due'] = -$options['amount'];
+		$newOptions['due'] = abs($options['amount']) * $this->getPaymentAmountMultiplier($options['payment_amount']);
 		$newOptions['aid'] = $options['aid'];
 		$newOptions['denial'] = $options;
 		return $newOptions;
@@ -38,6 +38,14 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 		$rawPayment = $payment->getRawData();
 		$this->data['linked_bills'] = isset($rawPayment['pays']) ? $rawPayment['pays'] : $rawPayment['paid_by'];
 		$this->data['linked_rec'] = $payment->getId();
+	}
+	
+	protected function getPaymentAmountMultiplier($amount) {
+		if ($amount > 0) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 	
 }
