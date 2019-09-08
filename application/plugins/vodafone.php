@@ -62,7 +62,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$packageUsage = @$this->usage_count[$balance['service_id'].$balance['service_name'].$balance['from']->sec];
 		if(!empty($packageUsage)) {
 			$update['$max']['vf_count_days'] = $packageUsage;
-			$this->count_days = $packageUsage;
+			$pricingData['vf_addon_days'] = $packageUsage + array_sum(Billrun_Util::getFieldVal($this->usage_count['completed'],[]));
 		}
 	}
 
@@ -84,6 +84,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		if ($sidDayCount > $planPackage['limits']['days']) {
 			$legitimate = false;
+			$this->usage_count['completed'][$pckgKey] = $sidDayCount;
 		}
 	}
 	
