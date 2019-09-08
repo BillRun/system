@@ -12,14 +12,13 @@
  * @since    5.10
  */
 class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billrun_Processor_PaymentGateway_Custom {
+	
+	use Billrun_Traits_ConditionsCheck;
 
 	protected static $type = 'transactions_response';
-	
 	protected $tokenField = null;
 	protected $amountField = null;
 	protected $tranIdentifierField = null;
-	protected $dealStatusField = null;
-	protected $validTransacionRegex;
 
 
 	public function __construct($options) {
@@ -28,7 +27,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
-		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row) : $this->getResponseByFileStatus($fileStatus);
+		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) || 1 ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
 		$payment->setPending(false);
 		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
 		if ($paymentResponse['stage'] == 'Completed') {
@@ -43,36 +42,44 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		}
 	}
 	
-	protected function getPaymentResponse($row) {
-		$stage = 'Rejected';
-		if ($this->isValidTransaction($row)) {
-			$stage = 'Completed';
+	protected function getPaymentResponse($row, $currentProcessor) {
+		if (!isset($currentProcessor['transaction_status'])) {
+			Billrun_Factory::log("Missing transaction_status for file type " . $this->fileType, Zend_Log::DEBUG);
 		}
-
-		return array('status' => $row[$this->dealStatusField], 'stage' => $stage);
+		$transactionStatusDef = $currentProcessor['processor']['transaction_status'];
+		if (!isset($currentProcessor['transaction_status']['success'])) {
+			Billrun_Factory::log("Missing transaction_status success definition for " . $this->fileType, Zend_Log::DEBUG);
+		}
+		$successConditions = $transactionStatusDef['success'];
+		$rejectionConditions = isset($transactionStatusDef['rejection']) ? $transactionStatusDef['rejection'] : array();
+		$stage = $this->getRowStageByConditions($row, $successConditions, $rejectionConditions);
+		return array('status' => 'mixed', 'stage' => $stage);
 	}
 	
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['token_field']) || empty($processorDefinition['processor']['amount_field']) ||
-			empty($processorDefinition['processor']['deal_status_field']) || empty($processorDefinition['processor']['transaction_identifier_field']) || 
-			empty($processorDefinition['processor']['valid_transaction_regex'])) {
+			empty($processorDefinition['processor']['transaction_identifier_field'])) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
 		$this->tokenField = $processorDefinition['processor']['token_field'];
 		$this->amountField = $processorDefinition['processor']['amount_field'];
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
-		$this->dealStatusField = $processorDefinition['processor']['deal_status_field'];
-		$this->validTransacionRegex = $processorDefinition['processor']['valid_transaction_regex'];
 		return true;
 	}
 
-	protected function isValidTransaction($row) {
-		if (preg_match($this->validTransacionRegex, $row[$this->dealStatusField])) {
-			return true;
-		} else {
-			return false;
+	protected function getRowStageByConditions($row, $sucessConditions, $rejectionConditions) {
+		$stage = false;
+		if ($this->isConditionsMeet($row, $sucessConditions)) {
+			$stage = 'Completed';
+		} else if (empty($rejectionConditions) || $this->isConditionsMeet($row, $rejectionConditions)) {
+			$stage = 'Rejected';
 		}
+		if (empty($stage)) {
+			throw new Exception("Can't define the transaction status for " . $this->fileType);
+		}
+		
+		return $stage;
 	}
 	
 	/**
