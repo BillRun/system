@@ -43,11 +43,11 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
-		if (!isset($currentProcessor['transaction_status'])) {
+		if (!isset($currentProcessor['processor']['transaction_status'])) {
 			Billrun_Factory::log("Missing transaction_status for file type " . $this->fileType, Zend_Log::DEBUG);
 		}
 		$transactionStatusDef = $currentProcessor['processor']['transaction_status'];
-		if (!isset($currentProcessor['transaction_status']['success'])) {
+		if (!isset($currentProcessor['processor']['transaction_status']['success'])) {
 			Billrun_Factory::log("Missing transaction_status success definition for " . $this->fileType, Zend_Log::DEBUG);
 		}
 		$successConditions = $transactionStatusDef['success'];

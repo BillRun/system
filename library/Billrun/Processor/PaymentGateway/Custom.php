@@ -108,7 +108,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			throw new Exception("Missing correlated value");
 		}
 		$query = array(
-			'correlated_to' => $this->correlatedValue,
+			'related_request_file' => $this->correlatedValue,
 			'process_time' => array('$exists' => true),
 		);
 		
@@ -190,7 +190,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		
 		$update = array (
 			'$set' => array(
-				'correlated_to' => $relevantRow[$correlationField]
+				'related_request_file' => $relevantRow[$correlationField],
+				'response_file' => true,
 			)
 		);
 		$this->log->update($query, $update);
