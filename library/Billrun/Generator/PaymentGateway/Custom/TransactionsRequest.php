@@ -15,11 +15,14 @@
 
 class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
 	
+	use Billrun_Traits_ConditionsCheck;
+	
 	protected static $type = 'transactions_request';
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
 	protected $tokenField = null;
 	protected $amountField = null;
 	protected $generatedFileLog;
+	protected $generatorFilters = array();
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -29,6 +32,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->initChargeOptions($options);
 		$this->initLogFile();
 		$this->localDir = $this->configByType['export']['export_directory'];
+		if (isset($this->configByType['generator']['filtration'])) {
+			$this->generatorFilters = $this->configByType['generator']['filtration'];
+		}
 	}
 
 	public function load() {
@@ -48,9 +54,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		foreach ($accounts as $account){
 			$subscribersInArray[$account['aid']] = $account;
 		}
+		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
 		foreach ($this->customers as $customer) {
+			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+				break;
+			}
 			$paymentParams = array();
 			$account = $subscribersInArray[$customer['aid']];
+			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
+			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
+				continue;
+			}
 			if (!$this->isGatewayActive($account)) {
 				continue;
 			}
@@ -89,6 +103,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['source'] = $customer['source'];
+			$placeHoldersConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['placeholders']) ? $this->generatorFilters['placeholders'] : array();
+			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
+				continue;
+			}
 			try {
 				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			} catch (Exception $e) {
@@ -106,6 +124,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
+			$countRecords = $countRecords + 1;
 		}
 		$this->headers[0] = $this->getHeaderLine();
 	}
@@ -139,6 +158,40 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->setStamp();
 		$this->generatedFileLog = $this->logFile->getStamp();
 		$this->logFile->save();
+	}
+	
+	protected function isPaymentUpholdPlaceholders($paymentDetails, $placeHoldersConditions) {
+		$res = true;
+		foreach ($placeHoldersConditions as $condition) {
+			switch ($condition['field']) {
+				case 'charge_amount':
+					$newCondition = array(
+						'field' => 'amount',
+						'op' => $condition['op'],
+						'value' => $condition['value']
+					);
+					if (!$this->isConditionsMeet($paymentDetails, array($newCondition))) {
+						$res = false;
+					}
+					break;
+
+				default:
+					Billrun_Factory::log()->log("Unknown placeholder for file type " .  $this->configByType['file_type'] , Zend_Log::INFO);
+					break;
+			}
+		}
+		
+		return $res;
+	}
+	
+	protected function isAccountUpholdConditions($account, $conditions) {
+		if (empty($conditions)) {
+			return true;
+		}
+		if ($this->isConditionsMeet($account, $conditions)) {
+			return true;
+		}
+		return false;
 	}
 
 }

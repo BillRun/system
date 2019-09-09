@@ -75,6 +75,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($dataField['linked_entity']) && isset($params['aid']) && $dataField['linked_entity']['entity'] == 'account') {
 				$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params['aid'], $dataField['linked_entity']['field_name']);
 			}
+			if (isset($dataField['type']) && $dataField['type'] == 'date') {
+				$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+				$date = strtotime($dataLine[$dataField['path']]);
+				if ($date) {
+					$dataLine[$dataField['path']] = date($dateFormat, $date);
+				} else {
+					Billrun_Factory::log("Couldn't covert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
+				}
+			}
 			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField);
 		}
 
