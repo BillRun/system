@@ -78,7 +78,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 					Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
 					continue;
 				}
-				if($fileData = $this->receiveFile($file,$type) === FALSE) {
+				if($fileData = $this->receiveFile($file ,$type, $path) === FALSE) {
 					continue;
 				}
 
@@ -91,7 +91,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		return $ret;
 	}
 
-	protected function receiveFile($file, $type) {
+	protected function receiveFile($file, $type, $path) {
 		if ( !$this->lockFileForReceive($file, $type) ) {
 			Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 			return FALSE;
