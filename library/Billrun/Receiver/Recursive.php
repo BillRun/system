@@ -88,7 +88,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 
 				$ret[] = $fileData;
 				if (( ++$this->receivedCount) >= $this->limit) {
-					break;
+					break 2;
 				}
 			}
 		}
