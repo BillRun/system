@@ -23,6 +23,8 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 
 
 	protected $depth = 2;
+
+	protected 	$receivedCount = 0;
 	/**
 	 * Flag to check if the relocate should moved the received files or copy them.
 	 * @var boolean defaults to FALSE
@@ -47,6 +49,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		Billrun_Factory::dispatcher()->trigger('beforeLocalFilesReceive', array($this));
 		$ret = array();
 		$type = static::$type;
+		$this->receivedCount=0;
 		$ret = $this->receiveRecursive($this->srcPath,$type);
 		Billrun_Factory::dispatcher()->trigger('afterLocalFilesReceived', array($this, $ret));
 
@@ -55,6 +58,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 
 	protected function receiveRecursive($paths, $type, $depth = 0) {
 		$ret = [];
+
 		foreach($paths as $dirPath) {
 			if (!file_exists($dirPath) ) {
 				if(!empty($resolvedDirPaths = glob($dirPath))) {//Support for glob escaped paths
@@ -66,7 +70,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 			}
 			$files = $this->getFiles($dirPath, $this->sort, $this->order);
 			$files = array_filter($files, function($i) { return $i != '.' && $i != '..';});
-			$receivedCount = 0;
+
 			foreach ($files as $file) {
 				$path = $dirPath . DIRECTORY_SEPARATOR . $file;
 				if(is_dir($path) && $this->depth > $depth) {
@@ -83,7 +87,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 				}
 
 				$ret[] = $fileData;
-				if (( ++$receivedCount) >= $this->limit) {
+				if (( ++$this->receivedCount) >= $this->limit) {
 					break;
 				}
 			}
