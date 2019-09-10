@@ -1343,7 +1343,6 @@ class Billrun_DiscountManager {
 			'usaget' =>  $isChargeLine ? 'conditional_charge' : 'discount',
 			'discount_type' => isset($discount['type']) ? $discount['type'] : 'percentage',
 			'urt' => new MongoDate($this->cycle->end()),
-			'process_time' => new MongoDate(),
 			'arate' => $discount->createRef($collection),
 			'arate_key' => $discount['key'],
 			'aid' => $eligibleLine['aid'],
@@ -1358,6 +1357,8 @@ class Billrun_DiscountManager {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
 		
+		$discountLine['stamp'] = Billrun_Util::generateArrayStamp($discountLine);
+		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
 		
 		$discountLine = array_merge($discountLine, $addToCdr);
