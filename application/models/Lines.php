@@ -238,16 +238,20 @@ class LinesModel extends TableModel {
 	public function getTableColumns() {
 		$columns = array(
 			'type' => 'Type',
-			'aid' => 'Account',
-			'sid' => 'Subscriber',
+			'imsi' => 'IMSI',
+			//'aid' => 'Account',
+			//'sid' => 'Subscriber',
 			'calling_number' => 'Calling',
 			'called_number' => 'Called',
-			'plan' => 'Plan',
+
+			//'plan' => 'Plan',
 			'usaget' => 'Usage',
 			'usagev' => 'Volume',
-			'arate' => 'Rate',
-			'aprice' => 'Charge',
-			'billrun' => 'Billrun',
+			'called_imei' => 'Called IMEI',
+			'calling_imei' => 'Calling IMEI',
+			//'arate' => 'Rate',
+			//'aprice' => 'Charge',
+			//'billrun' => 'Billrun',
 			'urt' => 'Time',
 		);
 		if (!empty($this->extra_columns)) {
