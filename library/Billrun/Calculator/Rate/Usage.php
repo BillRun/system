@@ -191,7 +191,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 	}
 
-	protected function getBasicMatchQuery($row, $category, $params = []) {
+	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
 
 		return array_merge(
@@ -201,7 +201,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		);
 	}
 
-	protected function getBasicGroupQuery($row, $category, $params = []) {
+	protected function getBasicGroupQuery($row, $category = '', $params = []) {
 		$query = $this->entityGetterGetBasicGroupQuery($row, $category, $params);
 		$query['key'] = [
 			'$first' => '$key',
