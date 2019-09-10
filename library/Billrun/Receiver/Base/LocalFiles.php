@@ -40,6 +40,13 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 */
 	protected $order = 'asc';
 
+	/**
+	 * Don't back up  the files on receive
+	 *
+	 * @var string
+	 */
+	protected $noBackup = FALSE;
+
 	public function __construct($options) {
 		parent::__construct($options);
 
@@ -59,6 +66,10 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		if (isset($options['receiver']['order'])) {
 			$this->order = $options['receiver']['order'];
+		}
+
+		if (isset($options['receiver']['no_backup'])) {
+			$this->noBackup = $options['receiver']['no_backup'];
 		}
 	}
 
