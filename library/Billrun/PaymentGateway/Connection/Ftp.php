@@ -65,8 +65,13 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		return $ret;
 	}
 	
-	public function export() {
-		
+	public function export($fileName) {
+		if (!empty($this->connection)) {
+			$local = $this->localDir . '/' . $fileName;
+			$remote = $this->remoteDir . '/' . $fileName;
+			$ftpResource = $this->connection->getConnection();
+			ftp_put($ftpResource, $remote, $local, FTP_BINARY);
+		}
 	}
 	
 	/**
