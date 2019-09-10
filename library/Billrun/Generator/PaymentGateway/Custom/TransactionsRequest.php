@@ -23,6 +23,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $amountField = null;
 	protected $generatedFileLog;
 	protected $generatorFilters = array();
+	protected $extraParamsDef = array();
+	protected $options = array();
+	protected $extraParamsNames = array();
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -35,9 +38,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if (isset($this->configByType['generator']['filtration'])) {
 			$this->generatorFilters = $this->configByType['generator']['filtration'];
 		}
+		if (isset($this->configByType['parameters'])) {
+			$this->extraParamsDef = $this->configByType['parameters'];
+		}
+		$this->options = $options;
 	}
 
 	public function load() {
+		if (!$this->validateExtraParams()) {
+			Billrun_Factory::log()->log("Parameters not validated for file type " .  $this->configByType['file_type'], Zend_Log::DEBUG);
+			return;
+		}
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
@@ -192,6 +203,40 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			return true;
 		}
 		return false;
+	}
+	
+	protected function validateExtraParams() {
+		$validated = true;
+		if (empty($this->extraParamsDef)) {
+			return $validated;
+		}
+		foreach ($this->extraParamsDef as $paramObj) {
+			if (!isset($paramObj['name'])) {
+				$validated = false;
+				break;
+			}
+			if ((!isset($paramObj['type']) || $paramObj['type'] == 'string') && isset($this->options[$paramObj['name']])) {
+				if (!is_string($this->options[$paramObj['name']])) {
+					$validated = false;
+					break;
+				}
+			}
+			if (!isset($paramObj['mandatory']) || !empty($paramObj['mandatory'])) {
+				if (!isset($this->options[$paramObj['name']])) {
+					$validated = false;
+					break;
+				}
+			}
+			if (isset($paramObj['regex']) && isset($this->options[$paramObj['name']])) {
+				if (!preg_match($paramObj['regex'], $this->options[$paramObj['name']])) {
+					$validated = false;
+					break;
+				}
+			}
+			$this->extraParamsNames[] = $paramObj['name'];
+		}
+		
+		return $validated;
 	}
 
 }

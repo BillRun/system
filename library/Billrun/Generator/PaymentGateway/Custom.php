@@ -75,6 +75,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($dataField['linked_entity']) && isset($params['aid']) && $dataField['linked_entity']['entity'] == 'account') {
 				$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params['aid'], $dataField['linked_entity']['field_name']);
 			}
+			if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
+				$dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
+			}
 			if (isset($dataField['type']) && $dataField['type'] == 'date') {
 				$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
 				$date = strtotime($dataLine[$dataField['path']]);
@@ -113,6 +116,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			}
 			if (isset($headerField['hard_coded_value'])) {
 				$headerLine[$headerField['path']] = $headerField['hard_coded_value'];
+			}
+			if (isset($headerField['parameter_name‎']) && in_array($headerField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$headerField['parameter_name‎']])) {
+				$headerLine[$headerField['path']] = $this->options[$headerField['parameter_name‎']];
 			}
 			$headerLine[$headerField['path']] = $this->prepareLineForGenerate($headerLine[$headerField['path']], $headerField);
 		}
