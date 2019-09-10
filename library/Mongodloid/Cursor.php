@@ -14,6 +14,7 @@
 class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
+	protected $getRaw = FALSE;
 	
 	public function __construct($cursor/*, $timeout = null*/) {
 		if ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor')) {
@@ -35,7 +36,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			$this->next();
 		}
 		
-		return new Mongodloid_Entity($this->_cursor->current());
+		return $this->getRaw ? $this->_cursor->current() :  new Mongodloid_Entity($this->_cursor->current());
 	}
 
 	public function key() {
@@ -146,6 +147,13 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	}
 
+	public function serverSideTimeout($ms) {
+		if (method_exists($this->_cursor, 'maxTimeMS')) {
+			$this->_cursor->maxTimeMS($ms);
+		}
+		return $this;
+	}
+
 	public function timeout($ms) {
 		if (method_exists($this->_cursor, 'timeout') && !extension_loaded('mongodb')) { // new driver does not support timeout
 			$this->_cursor->timeout($ms);
@@ -164,6 +172,12 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		if (method_exists($this->_cursor, 'fields')) {
 			$this->_cursor->fields($fields);
 		}
+		return $this;
+	}
+	
+	public function setRawReturn($enabled) {
+		$this->getRaw = $enabled;
+		
 		return $this;
 	}
 
