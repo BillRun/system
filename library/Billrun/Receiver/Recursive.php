@@ -109,7 +109,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 			Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 			return FALSE;
 		}
-		if(!empty($this->backupPaths)) {
+		if(!empty($this->backupPaths) && !$this->noBackup) {
 			$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
 			Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
 			$fileData['backed_to'] = $backedTo;

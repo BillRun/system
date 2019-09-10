@@ -134,6 +134,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType()));
 		}
+
+		if (isset($options['processor']['no_backup'])) {
+			$this->noBackup = $options['processor']['no_backup'];
+		}
 	}
 
 	/**

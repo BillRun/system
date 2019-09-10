@@ -33,6 +33,12 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected $backupPaths = array();
 
+
+	/**
+	 * A Flag that indicates that we should not backup the file to the backup paths
+	 */
+	protected $noBackup = FALSE;
+
 	/**
 	 *
 	 * @var boolean whether to preserve the modification timestamps of the received files
@@ -260,7 +266,7 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function removeFromWorkspace($filestamp) {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp' => $filestamp))->cursor()->limit(1)->current();
-		if (!$file->isEmpty()) {
+		if (!$file->isEmpty() && !$this->noBackup) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path', FALSE);
 			if (empty($file['backed_to'])) {
 				$backupPaths = !empty($this->backupPaths) ? (array) $this->backupPaths : (!empty($defaultBackup) ? (array) $defaultBackup : array('./backup/' . $this->getType()));
