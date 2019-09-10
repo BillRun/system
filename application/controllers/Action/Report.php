@@ -39,12 +39,12 @@ class ReportAction extends ApiAction {
 		'endLac' =>  ['$in'=>['called_subs_last_lac', 'callling_subs_last_lac']],
 //		'endSiteName' =>  ['$in'=>['']],
 //		'endSiteAddress' =>  ['$in'=>['']],
-		'sourceIp4' =>  ['$in'=>['ipmapping.external_ip']],
-		'externalIp4' =>  ['$in'=>['ipmapping.external_ip']],
-		'internalIp4' =>  ['$in'=>['ipmapping.internal_ip']],
+		'sourceIp4' =>  ['$in'=>['external_ip']],
+		'externalIp4' =>  ['$in'=>['external_ip']],
+		'internalIp4' =>  ['$in'=>['internal_ip']],
 //		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
-		'startPort' =>  ['$gte'=> 'ipmapping.start_port'],
-		'endPort' =>  ['$lte'=> 'ipmapping.end_port'],
+		'startPort' =>  ['$gte'=> 'start_port'],
+		'endPort' =>  ['$lte'=> 'end_port'],
 //		'counterpartCarrier' =>  ['$in'=>['']],
 		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
 	];
@@ -89,6 +89,16 @@ class ReportAction extends ApiAction {
 		'serving_network' => 'countryOfOrigin',
 	];
 
+	protected $ipmappingInputFields = [
+		'sourceIp4' => 1,
+		'externalIp4' =>  1,
+		'internalIp4' =>  1,
+		'startPort' =>  1,
+		'endPort' =>  1,
+	];
+
+	protected $ipMapFieldsToReturn = ['datetime'=>1,'internal_ip'=>1,'external_ip'=>1,'start_port'=>1,'end_port'=>1,'change_type'=>1,'network'=>1 ];
+
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -127,6 +137,7 @@ class ReportAction extends ApiAction {
 			}
 		} catch(\Exception $e) {
 			$this->setError('Internal Error : '.$e->getMessage(), $e->getCode(), 'E_INTERNAL_ERROR');
+			return;
 		}
 
 		Billrun_Factory::log()->log("balances usage report success", Zend_Log::INFO);
@@ -170,7 +181,7 @@ class ReportAction extends ApiAction {
 	protected function fetchUsage($params) {
 		$input = $params['input'];
 		$query = $this->getMongoQueryFromInput($input);
-		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor();
+		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
@@ -194,8 +205,28 @@ class ReportAction extends ApiAction {
 	 */
 	protected function fetchIpmapping($params) {
 		$input = $params['input'];
-		$query = $this->getMongoQueryFromInput($input);
-		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor();
+
+		$ipmappingInput = array_intersect_key($input,$this->ipmappingInputFields);
+		$linesInput = array_diff_key($input,$ipmappingInput);
+		$ipmappingInput['startDate'] = $input['startDate'];
+		$ipmappingInput['endDate'] = $input['endDate'];
+
+		$ipmQuery = $this->getMongoQueryFromInput($ipmappingInput);
+		$ipmCursor = Billrun_Factory::db()->ipmappingCollection()->query($ipmQuery)->cursor()->sort(['urt'=>-1])->setRawReturn(true);
+		$upto = PHP_INT_MAX;
+		$ipmappings = [];
+		foreach($ipmCursor as $mapping) {
+			$map = $mapping;
+			$map['end_map_date'] = $upto;
+			$upto = $mapping['urt']->sec;
+			$linesQuery = $this->getMongoQueryFromInput($linesInput);
+			$linesQuery['served_pdp_address'] = $mapping['internal_ip'];
+			$linesQuery['urt'] = ['$gt'=> $mapping['urt']];
+			$queries['$or'][] = $linesQuery;
+			$ipmappings[] = $map;
+		}
+
+		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
@@ -208,12 +239,12 @@ class ReportAction extends ApiAction {
 		}
 
 
-		return $this->translateResults($cursor);
+		return $this->translateResults($this->associateMapping($cursor, $ipmappings));
 	}
 
 	protected function getMongoQueryFromInput($input) {
 		$startDate =  preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate']);
-		$endDate =  preg_match("/^\d+$/",$input['startDate']) ? $input['endDate'] : strtotime($input['endDate']);
+		$endDate =  preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']);
 		$query = [ 'urt'=> ['$gte' => new MongoDate($startDate),
 							'$lt' => new MongoDate($endDate) ]];
 
@@ -251,13 +282,27 @@ class ReportAction extends ApiAction {
 	protected function translateResults($results) {
 		$retRows =[];
 		foreach($results as $row) {
-			$retRow = $row->getRawData();
+			$retRow = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
 			foreach($this->fieldReverseMapping as  $srcField => $dstField ) {
 				if(isset($retRow[$srcField])) {
 					$retRow[$dstField] = $retRow[$srcField];
 				}
 			}
 			$retRows[] = $retRow;
+		}
+
+		return $retRows;
+	}
+
+	protected function associateMapping( $results, $ipmapping) {
+		$retRows =[];
+		foreach($ipmapping as $mapping) {
+			foreach($results as $cdr) {
+				if($cdr['urt'] > $mapping['urt'] && $mapping['end_map_date'] > $cdr['urt']->sec) {
+					$cdr['ipmapping'] = array_intersect_key($mapping, $this->ipMapFieldsToReturn);
+					$retRows[] = $cdr;
+				}
+			}
 		}
 
 		return $retRows;
