@@ -26,12 +26,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $extraParamsDef = array();
 	protected $options = array();
 	protected $extraParamsNames = array();
+	protected $fileNameStructure;
+	protected $fileNameParams;
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->extractionDateFormat = isset($this->configByType['export']['extraction_date_format']) ? date($this->configByType['export']['extraction_date_format']) : '';
-		$this->startingString = isset($this->configByType['export']['file_starting_string']) ? $this->configByType['export']['file_starting_string'] : '';
-		$this->endingString = isset($this->configByType['export']['file_ending_string']) ? $this->configByType['export']['file_ending_string'] : '';
+		$this->fileNameParams = isset($this->configByType['filename_params']) ? $this->configByType['filename_params'] : '';
+		$this->fileNameStructure = isset($this->configByType['filename']) ? $this->configByType['filename'] : '';
 		$this->initChargeOptions($options);
 		$this->initLogFile();
 		$this->localDir = $this->configByType['export']['export_directory'];

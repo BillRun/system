@@ -175,7 +175,12 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 	
 	protected function getFilename() {
-		return $this->startingString. $this->extractionDateFormat . $this->endingString;
+		$translations = array();
+		foreach ($this->fileNameParams as $paramObj) {
+			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+		}
+		
+		return Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations);
 	}
 	
 	protected function prepareLineForGenerate($lineValue, $addedData) {
@@ -213,6 +218,47 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$fileName = $this->getFilename();
 		$connection->export($fileName);
 	}
+	
+	protected function getTranslationValue($paramObj) {
+		if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+			Billrun_Factory::log("Missing filename params definitions for file type " . $this->configByType['file_type'], Zend_Log::DEBUG);
+		}
+		switch ($paramObj['type']) {
+			case 'date':
+				$dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				return date($dateFormat, $dateValue);	
+			case 'autoinc':
+				if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
+					Billrun_Factory::log("Missing filename params definitions for file type " . $this->configByType['file_type'], Zend_Log::DEBUG);
+					return;
+				}
+				$minValue = $paramObj['min_value'];
+				$maxValue = $paramObj['max_value'];
+				$dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
+				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				$date = date($dateGroup, $dateValue);
+				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array("action" => 'transactions_request','file_type' => $this->configByType['file_type'], 'date_group' =>  $date), $minValue);
+				if ($seq > $maxValue) {
+					throw new Exception("Sequence exceeded max value when generating file for file type " . $this->configByType['file_type']);
+				}
+				if (isset($paramObj['padding'])) {
+					$this->padSequence($seq, $paramObj);
+				}
+				return $seq;
+			default:
+				Billrun_Factory::log("Unsupported filename_params type for file type " . $this->configByType['file_type'], Zend_Log::DEBUG);
+				break;
+		}
+	}
+	
+	protected function padSequence($seq, $padding) {
+			$padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
+			$padChar = isset($padding['character']) ? $padding['character'] : '';
+			$length = isset($padding['length']) ? $padding['length'] : strlen($seq);
+			return str_pad(substr($seq, 0, $length), $length, $padChar, $padDir);
+	}
+		
 	
 }
 
