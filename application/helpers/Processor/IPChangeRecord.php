@@ -30,6 +30,7 @@ class Processor_IPChangeRecord extends Billrun_Processor
 						];
 
 
+
 	public function __construct(array $options)
 	{
 	    parent::__construct($options);
@@ -143,6 +144,7 @@ class Processor_IPChangeRecord extends Billrun_Processor
 					$change = array_combine($translationRules['fields'] ,explode( $translationRules['separator'],	rtrim($subRow, "{$translationRules['separator']}\t\n\r\0\x0B"))) ;
 					$row = array_merge( $rowBase, $change	);
 					$row['stamp'] = Billrun_Util::generateArrayStamp([$change,$row['stamp']]);
+					$row = $this->convertFieldTypes($row,$this->configStruct['config']['field_convertions']);
 					$rows[] = $row;
 				}
 			}
@@ -196,6 +198,26 @@ class Processor_IPChangeRecord extends Billrun_Processor
 			}
 		}
 
+		return $row;
+	}
+
+	protected function convertFieldTypes($row,$convertionConfig) {
+		foreach($convertionConfig as $fieldName => $converstion) {
+			if(!isset($row[$fieldName])) {
+				continue;
+			}
+			switch ($converstion) {
+				case 'float':
+						$row[$fieldName] = floatval($row[$fieldName]);
+					break;
+				case 'numeric':
+				case 'number':
+				case 'int':
+						$row[$fieldName] = intval($row[$fieldName]);
+					break;
+			}
+
+		}
 		return $row;
 	}
 
