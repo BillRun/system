@@ -361,6 +361,10 @@ class TableModel {
 						);
 					}
 					return $ret;
+				} if (strpos($filter_field['comparison'],'$') === 0 ) {
+					return array(
+						$filter_field['db_key'] => array($filter_field['comparison'] => floatval($value)),
+					);
 				}
 			}
 		} else if ($filter_field['input_type'] == 'text') {

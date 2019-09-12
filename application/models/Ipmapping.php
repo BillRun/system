@@ -156,17 +156,17 @@ class IpmappingModel extends TableModel {
 			'start_port' => array(
 				'key' => 'start_port',
 				'db_key' => 'start_port',
-				'input_type' => 'text',
-				'comparison' => '$gte',
-				'display' => 'Start Port',
+				'input_type' => 'number',
+				'comparison' => '$lte',
+				'display' => 'Start Port Below',
 				'default' => '',
 			),
 			'end_port' => array(
 				'key' => 'end_port',
 				'db_key' => 'end_port',
-				'input_type' => 'text',
-				'comparison' => '$lte',
-				'display' => 'End Port',
+				'input_type' => 'number',
+				'comparison' => '$gte',
+				'display' => 'End Port Above',
 				'default' => '',
 			),
 			'from' => array(
