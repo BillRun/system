@@ -874,8 +874,12 @@ class Billrun_DiscountManager {
 				}
 
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom = max(Billrun_Utils_Time::getTime($subscriberRevision['from']), Billrun_Utils_Time::getTime($subscriberService['from']));
-					$serviceTo = min(Billrun_Utils_Time::getTime($subscriberRevision['to']), Billrun_Utils_Time::getTime($subscriberService['to']));
+					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
+					if (isset($subscriberService['creation_time'])) {
+						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
+					}
+					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
+
 					if (!is_null($cycles)) {
 						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
 						if (!is_null($planEligibilityEnd)) {
@@ -1334,6 +1338,9 @@ class Billrun_DiscountManager {
 	 */
 	protected function generateCdr($type, $discount, $discountAmount, $eligibleLine = [], $addToCdr = []) {
 		$isChargeLine = $type === 'charge';
+		if (!$discount instanceof Mongodloid_Entity) {
+			$discount = new Mongodloid_Entity($discount);
+		}
 		$collection = $isChargeLine ? Billrun_Factory::db()->chargesCollection() : Billrun_Factory::db()->discountsCollection();
 		$discountLine = array(
 			'key' => $discount['key'],
