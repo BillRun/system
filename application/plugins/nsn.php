@@ -92,6 +92,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$extraData['week'] = date('W', $file->extraData['date']);
 	}
 
+
+	/**
+	 * (dispatcher hook)
+	 * alter the file name on local file receiver to match the month the file was recevied to prevent duplicate files.
+	 */
+	public function beforeLocalFileReceived(&$filepath, $receiver, $hostName, &$extraData) {
+		if ($receiver->getType() != $this->getName()) {
+			return;
+		}
+		$extraData['month'] = date('Ym', filemtime($filepath));
+		$extraData['week'] = date('W', filemtime($filepath));
+	}
+
 //	/**
 //	 *  (dispatcher hook)
 //	 *  @param $query the query to prform on the DB to detect is the file was received.
