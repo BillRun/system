@@ -871,9 +871,36 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
 		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
-		return $ret;
+		return $hhis->enrichConfig($var,$ret);
 	}
-	
+
+	/**
+	 * Add unrelated fields/values to the  requested config
+	 */
+	protected function enrichConfig($var,$ret) {
+		$enrichmentMapping = Billrun_Factory::config()->getConfigValue('customer.aggregator.config_enrichment', [
+			'passthrough_data' => [
+				'subscribers.subscriber' => 'field_name',
+				'subscribers.account' => 'field_name'
+			],
+			'account.passthrough_data' => [
+				'subscribers.account' => 'field_name'
+			],
+			'subscriber.passthrough_data' => [
+				'subscribers.subscriber' => 'field_name',
+			]
+		]);
+		$enrichment = [];
+		if(!empty($enrichmentMapping[$var])) {
+			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
+						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
+				}
+			}
+		}
+		return array_merge($enrichment,$ret);
+	}
+
 	public function getData() {
 		return $this->data;
 	}
