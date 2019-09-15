@@ -34,7 +34,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ),
-					'prorated_end' =>  $this->proratedEnd && !(!$this->proratedTermination && $this->isTerminated),
+					'prorated_end' =>  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated),
 
 					'cycle' => $tariff['from'],
 					'full_price' => floatval($tariff['price']) );
@@ -53,8 +53,9 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 										date(Billrun_Base::base_dateformat,Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_dateformat,$this->activation)));
 
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
-		$this->isTerminated = min( (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation), $this->cycle->end()) <  $this->cycle->end();
-		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd || !$this->proratedTermination && $this->isTerminated ) ? $this->cycle->end() : $this->deactivation - 1);
+		$fakeSubDeactivation = min( (empty($this->subscriberDeactivation) ? PHP_INT_MAX : $this->subscriberDeactivation));
+		$this->isTerminated =  ($fakeDeactivation <= $this->deactivation || empty($this->deactivation) && $fakeSubDeactivation < $this->cycle->end());
+		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated || !$this->proratedTermination && $this->isTerminated ) ? $this->cycle->end() : $this->deactivation - 1);
 		$formatEnd = date(Billrun_Base::base_dateformat, min( $adjustedDeactivation, $this->cycle->end() - 1) );
 		
 
