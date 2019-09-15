@@ -180,11 +180,10 @@ abstract class Billrun_Base {
 			if ($typeInConfig) {
 				$typeInConfig = current($typeInConfig);
 			}
-			$instanceFieldName = $called_class::$type . '_type';
-			if (isset($typeInConfig[$instanceFieldName])) {
+			if (!empty($typeInConfig['custom'])) {
 				$args = array_merge($typeInConfig, $args);
 				$args['type'] = $type;
-				$class_type = 'PaymentGateway_' . ucfirst($typeInConfig[$instanceFieldName]) . '_' . str_replace('_', '', ucwords($type, '_'));
+				$class_type = 'PaymentGateway_Custom_' . str_replace('_', '', ucwords($type, '_'));
 			}
 		}
 		if ($config_type) {
