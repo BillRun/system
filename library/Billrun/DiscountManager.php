@@ -641,9 +641,9 @@ class Billrun_DiscountManager {
 		$subsEligibility = [];
 		$servicesEligibility = [];
 		$plansEligibility = [];
-		$minSubscribers = $params['min_subscribers'] ?? 1;
-		$maxSubscribers = $params['max_subscribers'] ?? null;
-		$cycles = $params['cycles'] ?? null;
+		$minSubscribers = isset($params['min_subscribers']) ? $params['min_subscribers'] : 1;
+		$maxSubscribers = isset($params['max_subscribers']) ? $params['max_subscribers'] : null;
+		$cycles = isset($params['cycles']) ? $params['cycles'] : null;
 
 		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
 
