@@ -579,7 +579,18 @@ for (var fieldIdx in chargeFields) {
 	lastConfig = addFieldToConfig(lastConfig, chargeFields[fieldIdx], 'charges');
 }
 
-db.config.insert(lastConfig);
+var formerPlanField ={
+					"system":true,
+					"select_list" : false,
+					"display" : false,
+					"editable" : false,
+					"multiple" : false,
+					"field_name" : "former_plan",
+					"unique" : false,
+					"title" : "Former plan",
+					"mandatory" : false,
+	};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
@@ -708,3 +719,5 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
+db.config.insert(lastConfig);
