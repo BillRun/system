@@ -878,6 +878,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * Add unrelated fields/values to the  requested config
 	 */
 	protected function enrichConfig($var,$ret) {
+		if(!is_array($ret)) {
+			return $ret;
+		}
 		$enrichmentMapping = Billrun_Factory::config()->getConfigValue('customer.aggregator.config_enrichment', [
 			'passthrough_data' => [
 				'subscribers.subscriber.fields' => 'field_name',
