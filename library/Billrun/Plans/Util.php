@@ -36,6 +36,9 @@ class Billrun_Plans_Util {
 		$endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
 		if(isset($planOrServiceConfig['price']))
 		foreach($planOrServiceConfig['price'] as $price) {
+			if ($price['to'] == 'UNLIMITED') {
+				$price['to'] = PHP_INT_MAX;
+			}
 			if($price['from']  <= $endOffset &&  $startOffset < $price['to'] ) {
 				return TRUE;
 			}
