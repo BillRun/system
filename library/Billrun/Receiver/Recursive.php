@@ -60,6 +60,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		$ret = [];
 
 		foreach($paths as $dirPath) {
+
 			if (!file_exists($dirPath) ) {
 				if(!empty($resolvedDirPaths = glob($dirPath))) {//Support for glob escaped paths
 					$ret = array_merge($ret,$this->receiveRecursive($resolvedDirPaths, $type, $depth));
@@ -73,6 +74,9 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 
 			foreach ($files as $file) {
 				$path = $dirPath . DIRECTORY_SEPARATOR . $file;
+				if ($this->receivedCount >= $this->limit) {
+					break 2;
+				}
 				if(is_dir($path) && $this->depth > $depth) {
 					$ret = array_merge($ret,$this->receiveRecursive([$path], $type, $depth+1));
 					continue;
@@ -96,13 +100,19 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 	}
 
 	protected function receiveFile($file, $type, $path) {
-		if ( !$this->lockFileForReceive($file, $type) ) {
+
+		$extraData = [];
+		Billrun_Factory::dispatcher()->trigger('beforeLocalFileReceived', array(&$path, $this, FALSE, &$extraData));
+
+		if ( !$this->lockFileForReceive($file, $type, $extraData) ) {
 			Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 			return FALSE;
 		}
 		Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
 
-		$fileData = $this->getFileLogData($file, $type);
+
+		$fileData = $this->getFileLogData($file, $type, $extraData);
+
 		$fileData['path'] = $this->handleFile($path, $file);
 
 		if (!$fileData['path']) {
