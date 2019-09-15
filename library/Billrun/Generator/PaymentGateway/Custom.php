@@ -20,6 +20,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected $headers = array();
 	protected $localDir;
 	protected $logFile;
+	protected $fileName;
 
 	public function __construct($options) {
 		if (!isset($options['file_type'])) {
@@ -119,6 +120,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			}
 			if (isset($headerField['parameter_name‎']) && in_array($headerField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$headerField['parameter_name‎']])) {
 				$headerLine[$headerField['path']] = $this->options[$headerField['parameter_name‎']];
+			}	
+			if (isset($headerField['type']) && $headerField['type'] == 'date') {
+				$dateFormat = isset($headerField['format']) ? $headerField['format'] : Billrun_Base::base_datetimeformat;
+				$date = strtotime($headerLine[$headerField['path']]);
+				if ($date) {
+					$headerLine[$headerField['path']] = date($dateFormat, $date);
+				} else {
+					Billrun_Factory::log("Couldn't covert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
+				}
 			}
 			$headerLine[$headerField['path']] = $this->prepareLineForGenerate($headerLine[$headerField['path']], $headerField);
 		}
@@ -175,12 +185,16 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 	
 	protected function getFilename() {
+		if (!empty($this->fileName)) {
+			return $this->fileName;
+		}
 		$translations = array();
 		foreach ($this->fileNameParams as $paramObj) {
 			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
 		}
 		
-		return Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations);
+		$this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
+		return $this->fileName;
 	}
 	
 	protected function prepareLineForGenerate($lineValue, $addedData) {
@@ -238,7 +252,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				$dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
 				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
 				$date = date($dateGroup, $dateValue);
-				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array("action" => 'transactions_request','file_type' => $this->configByType['file_type'], 'date_group' =>  $date), $minValue);
+				$action = 'transactions_request';
+				$fakeCollectionName = '$' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
+				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
 				if ($seq > $maxValue) {
 					throw new Exception("Sequence exceeded max value when generating file for file type " . $this->configByType['file_type']);
 				}
