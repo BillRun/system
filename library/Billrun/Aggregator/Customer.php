@@ -871,7 +871,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
 		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
-		return $hhis->enrichConfig($var,$ret);
+		return $this->enrichConfig($var,$ret);
 	}
 
 	/**
