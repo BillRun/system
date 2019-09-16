@@ -45,7 +45,7 @@ class ReportAction extends ApiAction {
 //		'sourceIp6' =>  ['$in'=>['ipmapping.ipv6']],
 		'startPort' =>  ['$gte'=> 'start_port'],
 		'endPort' =>  ['$lte'=> 'end_port'],
-//		'counterpartCarrier' =>  ['$in'=>['']],
+		'counterpartCarrier' =>  ['$in'=>['outgoiging_circuit_group','incoming_circuit_group']],
 		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
 	];
 
@@ -84,8 +84,8 @@ class ReportAction extends ApiAction {
 //		'ipmapping.ipv6' => 'sourceIp6', // no ip6 in golan
 		'ipmapping.start_port' => 'startPort',
 		'ipmapping.end_port' => 'endPort',
-//		'incoming_circuit_group' => 'counterpartCarrier',
-//		'outgoiging_circuit_group' => 'counterpartCarrier',
+		'incoming_circuit_group' => 'counterpartCarrier',
+		'outgoiging_circuit_group' => 'counterpartCarrier',
 		'serving_network' => 'countryOfOrigin',
 	];
 
@@ -221,7 +221,11 @@ class ReportAction extends ApiAction {
 			$upto = $mapping['urt']->sec;
 			$linesQuery = $this->getMongoQueryFromInput($linesInput);
 			$linesQuery['served_pdp_address'] = $mapping['internal_ip'];
-			$linesQuery['urt'] = ['$gt'=> $mapping['urt']];
+			if(!empty($linesQuery['urt']['$gte'])) {
+				$linesQuery['urt']['$gte'] = $mapping['urt'];
+			} else {
+				$linesQuery['urt'] = ['$gte' => $mapping['urt']];
+			}
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
 		}
