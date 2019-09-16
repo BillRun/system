@@ -555,6 +555,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 		$this->getSetVar($session, 'collection', 'collectionSelect', 'lines|billing');
+		session_write_close();
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
@@ -597,6 +598,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 		$this->getSetVar($session, 'collection', 'collectionSelect', 'ipmapping|billing');
+		session_write_close();
 
 		$this->getView()->component = $this->buildTableComponent('ipmapping', $query);
 	}
@@ -618,6 +620,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
+		session_write_close();
 
 		$this->getView()->component = $this->buildTableComponent('queue', $query);
 	}

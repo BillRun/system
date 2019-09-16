@@ -116,7 +116,7 @@ class ReportAction extends ApiAction {
 		if( !$this->validateInput($input) ) {
 			return;
 		}
-
+		session_write_close();
  		$actionType = Billrun_Util::regexFirstValue("/^\/api\/report\/(\w+)/",$this->getRequest()->getRequestUri());
 
  		$this->fieldMapping = Billrun_Factory::config()->getConfigValue('police_report.field_mapping',$this->fieldMapping);
