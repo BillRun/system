@@ -39,7 +39,7 @@ class Calculator_UsageClassifier extends Billrun_Calculator {
 
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
-		if(empty($usage_type) || $volume == FALSE) {
+		if(empty($usage_type) || $volume === FALSE) {
 			return FALSE;
 		}
 		$added_values = array(
