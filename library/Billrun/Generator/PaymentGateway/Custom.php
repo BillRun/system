@@ -199,7 +199,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	
 	protected function prepareLineForGenerate($lineValue, $addedData) {
 		$newLine = array();
-		$newLine['value'] = $lineValue;
+		$newLine['value'] = isset($addedData['number_format']['decimals']) && is_numeric($lineValue) ? number_format($lineValue, $addedData['number_format']['decimals']) : $lineValue;
 		$newLine['name'] = $addedData['name'];
 		if (isset($addedData['padding'])) {
 			$newLine['padding'] = $addedData['padding'];
