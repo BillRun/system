@@ -210,11 +210,14 @@ class ReportAction extends ApiAction {
 		$linesInput = array_diff_key($input,$ipmappingInput);
 		$ipmappingInput['startDate'] = $input['startDate'];
 		$ipmappingInput['endDate'] = $input['endDate'];
+		Billrun_Factory::log('Quering ipmapping...',Zend_log::DEBUG);
+
 
 		$ipmQuery = $this->getMongoQueryFromInput($ipmappingInput);
 		$ipmCursor = Billrun_Factory::db()->ipmappingCollection()->query($ipmQuery)->cursor()->sort(['urt'=>-1])->setRawReturn(true);
 		$upto = PHP_INT_MAX;
 		$ipmappings = [];
+		Billrun_Factory::log('loading ipmapping...',Zend_log::DEBUG);
 		foreach($ipmCursor as $mapping) {
 			$map = $mapping;
 			$map['end_map_date'] = $upto;
@@ -229,7 +232,7 @@ class ReportAction extends ApiAction {
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
 		}
-
+		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
@@ -300,6 +303,7 @@ class ReportAction extends ApiAction {
 
 	protected function associateMapping( $results, $ipmapping) {
 		$retRows =[];
+		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
 				if($cdr['urt'] > $mapping['urt'] && $mapping['end_map_date'] > $cdr['urt']->sec) {
