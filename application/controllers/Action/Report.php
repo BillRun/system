@@ -104,9 +104,11 @@ class ReportAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		header('Content-Type: application/json; charset=UTF-8');
 		Billrun_Factory::log()->log("Execute api usage report query", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		$input = json_decode($request['query'],JSON_OBJECT_AS_ARRAY);
+		$body = file_get_contents('php://input');
+		$input = json_decode(empty($body) ? $request['query'] : $body ,JSON_OBJECT_AS_ARRAY);
 		$met  = $this->getRequest()->getMethod();
 		if(empty($input)) {
 			$this->setError("Please provide a valid json query",-1,'E_INVALID_INPUT');
