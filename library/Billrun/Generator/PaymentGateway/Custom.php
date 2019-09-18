@@ -42,11 +42,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$generatorOptions = $this->buildGeneratorOptions();
 		$generator = new $className($generatorOptions);
 		$generator->generate();
-		
-		if (!empty($logFile)) {
-			$this->logFile->setProcessTime();
-			$this->logFile->save();
-		}
 	}
 	
 	protected function getDataLine($params) {
@@ -58,21 +53,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				Billrun_Factory::log("Exporter " . $this->configByType['file_type'] . " data structure is missing a path", Zend_Log::DEBUG);
 				continue;
 			}			
-			if (isset($dataField['name']) && $dataField['name'] == 'transaction_id') {
-				$dataLine[$dataField['path']] = $params['txid'];
-			}
-			if (isset($dataField['name']) && $dataField['name'] == 'amount') {
-				$dataLine[$dataField['path']] = $params['amount'];
-			}
-			if (isset($dataField['name']) && $dataField['name'] == 'token') {
-				$dataLine[$dataField['path']] = $params['token'];
-			}
-			if (isset($dataField['name']) && $dataField['name'] == 'card_expiration') {
-				$dataLine[$dataField['path']] = $params['card_expiration'];
-			}
-			if (isset($dataField['name']) && $dataField['name'] == 'account_id') {
-				$dataLine[$dataField['path']] = $params['aid'];
-			}
 			if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
 				$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
 				$dataLine[$dataField['path']] = date($dateFormat,  time());
@@ -97,7 +77,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			}
 			if (!isset($dataLine[$dataField['path']])) {
 				$configObj = $dataField['name'];
-				Billrun_Factory::log("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
+				throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
 			}
 			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField);
 		}
@@ -116,10 +96,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected function getTrailerLine() {
 		$trailerStructure = $this->configByType['generator']['trailer_structure'];
 		return $this->buildLineFromStructure($trailerStructure);
-	}
-
-	protected function generateUniqueId() {
-		return round(microtime(true) * 1000) . rand(100000, 999999);
 	}
 
 	protected function getLinkedEntityData($entity, $params, $field) {
@@ -204,10 +180,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	
 	public function shouldFileBeMoved() {
 		$localPath = $this->localDir . '/' . $this->getFilename();
-		if (!empty(file_get_contents($localPath))) {
+		if (file_exists($localPath) && !empty(file_get_contents($localPath))) {
 			return true;
 		}
-		$this->removeEmptyFile();
+		if (file_exists($localPath)) {
+			Billrun_Factory::log("Removing empty generated file", Zend_Log::DEBUG);
+			$this->removeEmptyFile();
+		}
 		return false;
 	}
 	
@@ -277,9 +256,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				Billrun_Factory::log("Exporter " . $this->configByType['file_type'] . " header/trailer structure is missing a path", Zend_Log::DEBUG);
 				continue;
 			}
-			if (isset($field['predefined_values']) && $field['predefined_values'] == 'unique_id') {
-				$line[$field['path']] = $this->generateUniqueId();
-			}
 			if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_num') {
 				$line[$field['path']] = count($this->customers);
 			}
@@ -307,7 +283,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			}	
 			if (!isset($line[$field['path']])) {
 				$configObj = $field['name'];
-				Billrun_Factory::log("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
+				throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
 			}
 			$line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field);
 		}

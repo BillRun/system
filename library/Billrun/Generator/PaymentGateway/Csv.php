@@ -17,7 +17,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $delimiter;
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
-	protected $padCharDef = '';
+	protected $padCharDef = ' ';
 	protected $filePath;
 
 	public function __construct($options) {
@@ -46,10 +46,12 @@ class Billrun_Generator_PaymentGateway_Csv {
 			return false;
 		}
 		if ($this->fixedWidth) {
-			foreach ($this->data as $dataObj) {
-				if (!isset($dataObj['padding']['length'])) {
-					Billrun_Factory::log("Missing padding length definitions for " . $options['file_type'], Zend_Log::DEBUG);
-					return false;
+			foreach ($this->data as $dataLine) {
+				foreach ($dataLine as $dataObj) {
+					if (!isset($dataObj['padding']['length'])) {
+						Billrun_Factory::log("Missing padding length definitions for " . $options['file_type'], Zend_Log::DEBUG);
+						return false;
+					}
 				}
 			}
 		}
@@ -125,6 +127,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$counter = 0;
 			}
 		}
+		if (!empty($this->trailers)) {
+			$fileContents.= PHP_EOL;
+		}
 		$this->writeToFile($fileContents);
 	}
 	
@@ -133,11 +138,12 @@ class Billrun_Generator_PaymentGateway_Csv {
 			return $this->getDelimetedLine($entity);
 		}
 		$rowContents = '';
-		for ($key = 0; $key < count($entity); $key++) {
-			$padDir = isset($entity[$key]['padding']['direction']) ? $this->getPadDirection($entity[$key]['padding']['direction']) : $this->padDirDef;
-			$padChar = isset($entity[$key]['padding']['character']) ? $entity[$key]['padding']['character'] : $this->padCharDef;
-			$length = isset($entity[$key]['padding']['length']) ? $entity[$key]['padding']['length'] : strlen($entity[$key]['value']);
-			$rowContents.=str_pad((isset($entity[$key]['value']) ? substr($entity[$key]['value'], 0, $length) : ''), $length, $padChar, $padDir);
+		
+		foreach ($entity as $entityObj) {
+			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
+			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
+			$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+			$rowContents.=str_pad((isset($entityObj['value']) ? substr($entityObj['value'], 0, $length) : ''), $length, $padChar, $padDir);
 		}
 		return $rowContents;
 	}
