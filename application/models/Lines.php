@@ -247,8 +247,6 @@ class LinesModel extends TableModel {
 			//'plan' => 'Plan',
 			'usaget' => 'Usage',
 			'usagev' => 'Volume',
-			'called_imei' => 'Called IMEI',
-			'calling_imei' => 'Calling IMEI',
 			//'arate' => 'Rate',
 			//'aprice' => 'Charge',
 			//'billrun' => 'Billrun',

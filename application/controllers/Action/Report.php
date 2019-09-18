@@ -104,9 +104,11 @@ class ReportAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		header('Content-Type: application/json; charset=UTF-8');
 		Billrun_Factory::log()->log("Execute api usage report query", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		$input = json_decode($request['query'],JSON_OBJECT_AS_ARRAY);
+		$body = file_get_contents('php://input');
+		$input = json_decode(empty($body) ? $request['query'] : $body ,JSON_OBJECT_AS_ARRAY);
 		$met  = $this->getRequest()->getMethod();
 		if(empty($input)) {
 			$this->setError("Please provide a valid json query",-1,'E_INVALID_INPUT');
@@ -210,11 +212,14 @@ class ReportAction extends ApiAction {
 		$linesInput = array_diff_key($input,$ipmappingInput);
 		$ipmappingInput['startDate'] = $input['startDate'];
 		$ipmappingInput['endDate'] = $input['endDate'];
+		Billrun_Factory::log('Quering ipmapping...',Zend_log::DEBUG);
+
 
 		$ipmQuery = $this->getMongoQueryFromInput($ipmappingInput);
 		$ipmCursor = Billrun_Factory::db()->ipmappingCollection()->query($ipmQuery)->cursor()->sort(['urt'=>-1])->setRawReturn(true);
 		$upto = PHP_INT_MAX;
 		$ipmappings = [];
+		Billrun_Factory::log('loading ipmapping...',Zend_log::DEBUG);
 		foreach($ipmCursor as $mapping) {
 			$map = $mapping;
 			$map['end_map_date'] = $upto;
@@ -229,7 +234,7 @@ class ReportAction extends ApiAction {
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
 		}
-
+		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
@@ -300,6 +305,7 @@ class ReportAction extends ApiAction {
 
 	protected function associateMapping( $results, $ipmapping) {
 		$retRows =[];
+		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
 				if($cdr['urt'] > $mapping['urt'] && $mapping['end_map_date'] > $cdr['urt']->sec) {
