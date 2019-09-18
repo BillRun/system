@@ -255,6 +255,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseQuery() {
+		$horizon =  strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.queue_horizon', "93 days"). " ago");
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
 		$queryData = array();
@@ -275,6 +276,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		$query = array();
 		$query['$and'][0]['calc_name'] = $previous_calculator;
+		$query['$and'][0]['urt'] = ['$gt'=> new MongoDate($horizon)];
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
 			array('calc_time' => array(
