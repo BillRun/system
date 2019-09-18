@@ -13,6 +13,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	protected $data = array();
 	protected $headers = array();
+	protected $trailers = array();
 	protected $delimiter;
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
@@ -23,6 +24,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->data = isset($options['data']) ? $options['data'] : $this->data;
 		$this->headers = isset($options['headers']) ? $options['headers'] : $this->headers;
+		$this->trailers = isset($options['trailers']) ? $options['trailers'] : $this->trailers;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
@@ -58,6 +60,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (count($this->data)) {
 			$this->writeHeaders();
 			$this->writeRows();
+			$this->writeTrailers();
 		}
 		return;
 	}
@@ -70,6 +73,25 @@ class Billrun_Generator_PaymentGateway_Csv {
 		$fileContents = '';
 		$counter = 0;
 		foreach ($this->headers as $entity) {
+			$counter++;
+			if (!is_array($entity)) {
+				$entity = $entity->getRawData();
+			}
+			$fileContents .= $this->getRowContent($entity);
+			$fileContents .= PHP_EOL;
+			if ($counter == 50000) {
+				$this->writeToFile($fileContents);
+				$fileContents = '';
+				$counter = 0;
+			}
+		}
+		$this->writeToFile($fileContents);
+	}
+	
+	protected function writeTrailers() {
+		$fileContents = '';
+		$counter = 0;
+		foreach ($this->trailers as $entity) {
 			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
