@@ -67,6 +67,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$subscribersInArray[$account['aid']] = $account;
 		}
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
+		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomGatewayFile', array(&$this->customers, $this->configByType['file_type']));
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
@@ -75,9 +76,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$account = $subscribersInArray[$customer['aid']];
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
-				continue;
-			}
-			if (!$this->isGatewayActive($account)) {
 				continue;
 			}
 			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedFileLog);
@@ -163,7 +161,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	protected function initLogFile() {
 		$logOptions = $this->chargeOptions;
-		$logOptions['source'] = $this->gatewayName . str_replace('_', '', ucwords(static::$type, '_'));
+		$logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
 		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
 		$this->logFile->setSequenceNumber();
 		$this->logFile->setFileName($this->getFilename());

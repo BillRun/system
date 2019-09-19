@@ -23,6 +23,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected $logFile;
 	protected $fileName;
 	protected $transactionsTotalAmount = 0;
+	protected $gatewayLogName;
 
 	public function __construct($options) {
 		if (!isset($options['file_type'])) {
@@ -33,7 +34,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$this->configByType = current(array_filter($configByType, function($settingsByType) use ($fileType) {
 			return $settingsByType['file_type'] === $fileType;
 		}));
-		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
+		$this->gatewayLogName = str_replace('_', '', ucwords($options['name'], '_'));
+		$this->gatewayName = $options['name'];
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
 
