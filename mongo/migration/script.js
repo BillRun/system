@@ -451,7 +451,6 @@ var subscriberServicesFieldIndex = lastConfig['subscribers']['subscriber']['fiel
 if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] === 'undefined') {
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
-
 // BRCD-1835: add default TAX key
 if (typeof lastConfig['taxation'] === 'undefined') {
 	lastConfig.taxation = {};
@@ -577,6 +576,26 @@ var chargeFields = [{
 }];
 for (var fieldIdx in chargeFields) {
 	lastConfig = addFieldToConfig(lastConfig, chargeFields[fieldIdx], 'charges');
+}
+
+//BRCD-1858 - UI for denials receiver for Credit Guard
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+			if (typeof lastConfig['payment_gateways'][i]['transactions'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['transactions'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['transactions']['receiver'] === 'undefined')	{
+				lastConfig["payment_gateways"][i]['transactions'].receiver = [];
+			}
+
+			if (typeof lastConfig['payment_gateways'][i]['denials'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['denials'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['denials']['receiver'] === 'undefined') {
+				lastConfig["payment_gateways"][i]['denials'].receiver = [];
+			}
+			delete(lastConfig['payment_gateways'][i]['receiver']);
+	}
 }
 
 db.config.insert(lastConfig);

@@ -23,7 +23,7 @@ class GenerateAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'stamp' => false,
+			'stamp' => true,
 			'page' => true,
 			'size' => true,
 		);

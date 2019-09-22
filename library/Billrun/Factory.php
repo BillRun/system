@@ -550,5 +550,14 @@ class Billrun_Factory {
 
 		return self::$collection;
 	}
+	
+	/**
+	 * method to retrieve a payment gateway by name
+	 * 
+	 * @return Billrun_PaymentGateway
+	 */
+	public static function paymentGatewayConnection($connectionDetails) {
+		return Billrun_PaymentGateway_Connection::getInstance($connectionDetails);
+	}
 
 }

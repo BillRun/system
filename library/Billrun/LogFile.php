@@ -71,6 +71,7 @@ class Billrun_LogFile {
 	public function setStamp() {
 		$newLog['key'] = $this->data['key'];
 		$newLog['source'] = $this->data['source'];
+		$newLog['start_process_time'] = $this->data['start_process_time'];
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
 	
