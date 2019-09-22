@@ -22,7 +22,7 @@ class GetController extends BillapiController {
 	}
 
 	protected function runOperation() {
-		$this->params['sort'] = json_decode($this->params['request']['sort'], TRUE);
+		$this->params['sort'] = json_decode(@$this->params['request']['sort'], TRUE);
 		$this->params['page'] = Billrun_Util::getIn($this->params, 'request.page', 0);
 		$this->params['size'] = Billrun_Util::getIn($this->params, 'request.size', 10);
 		if (!is_null($this->params['sort'])) {
