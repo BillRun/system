@@ -96,6 +96,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		$this->invoice->applyDiscounts($this->discounts);
 	}
+	
+	public function addConfigurableData() {
+		$this->invoice->addConfigurableData();
+	}
 
 	//---------------------------------- Protected ------------------------------------
 	/**
