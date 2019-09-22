@@ -250,7 +250,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skiping...",Zend_log::DEBUG);
+						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skipping...",Zend_log::DEBUG);
 						continue;
 					}
 					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
@@ -419,7 +419,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				}
 			}
 		}
-		Billrun_Factory::log('Finished aggreating into billrun object for SID : ' . $this->data['sid']);
+		Billrun_Factory::log('Finished aggregating into billrun object for SID : ' . $this->data['sid']);
 	}
 
 	/**
