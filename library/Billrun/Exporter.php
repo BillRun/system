@@ -364,16 +364,16 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * mark the lines which are about to be exported
 	 */
 	function beforeExport() {
-		$this->query['export_start'] = array(
+		$this->query['export_start.' . static::$type] = array(
 			'$exists' => false,
 		);
-		$this->query['export_stamp'] = array(
+		$this->query['export_stamp.' . static::$type] = array(
 			'$exists' => false,
 		);
 		$update = array(
 			'$set' => array(
-				'export_start' => new MongoDate(),
-				'export_stamp' => $this->exportStamp,
+				'export_start.' . static::$type => new MongoDate(),
+				'export_stamp.' . static::$type => $this->exportStamp,
 			),
 		);
 		$options = array(
@@ -382,8 +382,8 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		
 		$collection = $this->getCollection();
 		$collection->update($this->query, $update, $options);
-		unset($this->query['export_start']);
-		$this->query['export_stamp'] = $this->exportStamp;
+		unset($this->query['export_start.' . static::$type]);
+		$this->query['export_stamp.' . static::$type] = $this->exportStamp;
 		$this->createLogDB($this->getLogStamp());
 	}
 	
@@ -430,7 +430,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		);
 		$update = array(
 			'$set' => array(
-				'exported' => new MongoDate(),
+				'exported.' . static::$type => new MongoDate(),
 			),
 		);
 		$options = array(
@@ -548,7 +548,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * 
 	 * @return string - number in the range of 00001-99999
 	 */
-	protected function getSequenceNumber() {
+	protected function getSequenceNumber($row = array(), $mapping = array()) {
 		if (is_null($this->sequenceNum)) {
 			$query = array(
 				'source' => 'export',
@@ -563,8 +563,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			} else {
 				$nextSeq = $lastSeq + 1;
 			}
-			$this->sequenceNum = sprintf('%05d', $nextSeq % 100000);
+			
+			$this->sequenceNum = $nextSeq;
 		}
+		
+		$length = intval(Billrun_Util::getIn($mapping, 'func.length', 5));
+		$this->sequenceNum = sprintf('%0' . $length . 'd', $this->sequenceNum % pow(10, $length));
 		return $this->sequenceNum;
 	}
 	
