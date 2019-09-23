@@ -266,9 +266,9 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function removeFromWorkspace($filestamp) {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp' => $filestamp))->cursor()->limit(1)->current();
-		if (!$file->isEmpty() && !$this->noBackup) {
+		if (!$file->isEmpty() ) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path', FALSE);
-			if (empty($file['backed_to'])) {
+			if (empty($file['backed_to']) && !$this->noBackup ) {
 				$backupPaths = !empty($this->backupPaths) ? (array) $this->backupPaths : (!empty($defaultBackup) ? (array) $defaultBackup : array('./backup/' . $this->getType()));
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - " . implode(",", $backupPaths), Zend_Log::INFO);
 				$this->backup($file['path'], basename($file['path']), $backupPaths, $file['retrieved_from'], true);
