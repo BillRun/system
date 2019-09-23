@@ -399,7 +399,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param type $subLines
 	 */
 	public function aggregateLinesToBreakdown($subLines) {
-		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.subscriber.final_data',array());
+		$untranslatedAggregationConfig = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines', array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.subscriber.final_data',array());
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		Billrun_Factory::log('Updating billrun object with aggregated lines for SID : ' . $this->data['sid']);
