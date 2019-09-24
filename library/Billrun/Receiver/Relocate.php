@@ -32,6 +32,7 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 
 		if (isset($options['receiver']['move_received_files'])) {
 			$this->moveFiles = $options['receiver']['move_received_files'];
+			$this->noBackup = $this->noBackup && (!$this->moveFiles || $this->forceNoBackup);
 		}
 	}
 

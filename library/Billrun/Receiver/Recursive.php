@@ -59,6 +59,10 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 	protected function receiveRecursive($paths, $type, $depth = 0) {
 		$ret = [];
 
+		if($this->order == 'desc') {
+			$paths = array_reverse($paths);
+		}
+
 		foreach($paths as $dirPath) {
 
 			if (!file_exists($dirPath) ) {

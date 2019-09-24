@@ -158,7 +158,7 @@ class IpmappingModel extends TableModel {
 				'db_key' => 'start_port',
 				'input_type' => 'number',
 				'comparison' => '$lte',
-				'display' => 'Start Port Below',
+				'display' => 'Find CDRs Where  the Start Port below :',
 				'default' => '',
 			),
 			'end_port' => array(
@@ -166,7 +166,7 @@ class IpmappingModel extends TableModel {
 				'db_key' => 'end_port',
 				'input_type' => 'number',
 				'comparison' => '$gte',
-				'display' => 'End Port Above',
+				'display' => ' and the End Port is above :',
 				'default' => '',
 			),
 			'from' => array(
