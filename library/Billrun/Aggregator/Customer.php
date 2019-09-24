@@ -138,7 +138,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	protected $generatePdf = true;
-
+	
+	/**
+	 * If true don't aggregate usage lines. 
+	 * @var boolean
+	 */
+	public $ignoreUsage = false;
 
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -172,7 +177,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
 		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
-
+		$this->ignoreUsage = Billrun_Util::getFieldVal($options['aggregator']['ignore_usage'], Billrun_Util::getFieldVal($options['ignore_usage'], $this->ignoreUsage));
+		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;

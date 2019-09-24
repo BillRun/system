@@ -127,6 +127,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	public function loadSubscriberLines() {
 		$ret = array();
+		if ($this->cycleAggregator->ignoreUsage) {
+			return $ret;
+		}
 		$sid = $this->sid;
 		$aid = $this->aid;
 		$query = array(
