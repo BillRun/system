@@ -62,6 +62,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$row['row_number'] = ++$rowCount;
 			$this->addDataRow($row);
 		}
+		$this->data['header'] = array('header' => TRUE); //TODO
+               $this->data['trailer'] = array('trailer' => TRUE); //TODO
+
 		return true;
 	}
 
@@ -119,6 +122,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
 			return $settingsByType['file_type'] === $this->fileType;
 		}));
+		if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
 		$currentFileCount = $this->getCurrentFileCount();
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$fileConfCount = isset($currentProcessor['file_response_count']) ? $currentProcessor['file_response_count'] : null;
@@ -155,7 +159,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 		}
 	}
-	
+	}
 	protected function getOriginalFileStamp($correlatedField) {
 		$query = array(
 			$correlatedField => $this->correlatedValue,
