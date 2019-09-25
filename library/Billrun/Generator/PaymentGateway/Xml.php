@@ -49,6 +49,10 @@ class Billrun_Generator_PaymentGateway_Xml {
 
         $this->commonPathAsArray = explode($this->pathDelimiter, $this->commonPath);
         $firstTag = array_shift($this->commonPathAsArray);
+        if($this->commonPath === ""){
+            echo 'No common path was found - abort.' . PHP_EOL;
+            return;
+        }
         $rootNode = $doc->createElement($firstTag);
         $this->createXmlRoot($doc, $rootNode);
         $document = $doc->appendChild($rootNode);
