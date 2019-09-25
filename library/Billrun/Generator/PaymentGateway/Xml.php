@@ -29,7 +29,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->input_array['trailers'] = isset($options['trailers']) ? $options['trailers'] : null;
         $this->file_name = $options['file_name'];
         if (isset($options['local_dir'])) {
-            $this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
+            $this->file_path = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
         }
     }
 
@@ -69,7 +69,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                     $document->appendChild($node);
                 }
         }
-        $doc->saveXML($this->file_path);
+        $doc->save($this->file_path);
     }
 
     protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
