@@ -39,7 +39,7 @@ class Billrun_Parser_Xml {
      * method to set header structure of the parsed file
      * @param array $structure the structure of the parsed file
      *
-     * @return Billrun_Parser_Fixed self instance
+     * @return Billrun_Parser_Xml self instance
      */
     public function setHeaderStructure($structure) {
         $this->headerStructure = $structure;
@@ -61,14 +61,17 @@ class Billrun_Parser_Xml {
         if ($this->input_array['trailer'] !== null) {
             $this->hasFooter = true;
         }
-
-        $repeatedTags = $this->preXmlBuilding();
-        $commonPathAsArray = $this->pathAsArray($this->commonPath);
         try {
-            $GivenXml = simplexml_load_file($filename);
+            $repeatedTags = $this->preXmlBuilding();
         } catch (Exception $ex) {
             echo $ex . PHP_EOL;
-            return false;
+            return;
+        }
+        $commonPathAsArray = $this->pathAsArray($this->commonPath);
+        $GivenXml = simplexml_load_file($filename);
+        if ($GivenXml === false) {
+            echo "Couldnt open the xml file. Might missing '<' or '/'. Please check, and reprocess." . PHP_EOL;
+            return;
         }
 
         $xmlAsString = file_get_contents($filename);
@@ -132,8 +135,12 @@ class Billrun_Parser_Xml {
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($indexes); $a++) {
                 if (isset($this->input_array[$segment][$a])) {
-                    $this->pathes[] = $this->input_array[$segment][$a]['path'];
-                    $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
+                    if (isset($this->input_array[$segment][$a]['path'])) {
+                        $this->pathes[] = $this->input_array[$segment][$a]['path'];
+                        $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
+                    } else {
+                        throw "No path for one of the " . $segment . "'s entity. No parse was made." . PHP_EOL;
+                    }
                 }
             }
         }
@@ -185,7 +192,11 @@ class Billrun_Parser_Xml {
                     $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
                     $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                 } else {
-                    throw "No pathes in " . $segment . " segment";
+                    if ($segment === "data") {
+                        throw "No pathes in " . $segment . " segment. No parse was made." . PHP_EOL;
+                    } else {
+                        echo 'Warning: No pathes in ' . $segment . ' segment.' . PHP_EOL;
+                    }
                 }
             }
         }

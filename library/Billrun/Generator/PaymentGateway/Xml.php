@@ -34,18 +34,12 @@ class Billrun_Generator_PaymentGateway_Xml {
     }
 
     public function generate() {
-        try {
-            $result = $this->preXmlBuilding();
-        } catch (Exception $ex) {
-            echo $ex . PHP_EOL;
-        }
+        
+        $result = $this->preXmlBuilding();
 
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
         }
-
-        //$repeatedTag = $result['repeatedTag'];
-        //$fixedTag = $result['fixedTag'];
 
         $doc = new DOMDocument();
         $doc->encoding = 'utf-8';
@@ -58,20 +52,9 @@ class Billrun_Generator_PaymentGateway_Xml {
         $rootNode = $doc->createElement($firstTag);
         $this->createXmlRoot($doc, $rootNode);
         $document = $doc->appendChild($rootNode);
-      
-
-        //$document = $doc->appendChild($rootNode);
-        echo $document->ownerDocument->saveXML($document) . PHP_EOL;
 
         $flag = 0;
         foreach ($this->workingArray as $segment => $values) {
-//                $fixedNode = $doc->createElement($tags[$segment]['fixedTag']);
-//                $document = $document->appendChild($fixedNode);
-
-//        $fixedNode = $doc->createElement($fixedTag);
-//        $document = $document->appendChild($fixedNode);
-                ////echo $document->ownerDocument->saveXML($document) . PHP_EOL;
-
                 for ($a = 0; $a < count($values); $a++) {
                     $b = $doc->createElement($tags[$segment]['repeatedTag']);
                     $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
@@ -81,23 +64,8 @@ class Billrun_Generator_PaymentGateway_Xml {
 
                     $document->appendChild($node);
                 }
-
-//                if ($flag == 0) {
-//                    $flag = 1;
-//                    //$root = $doc->createElement('Document');
-//                }
-//                $root->appendChild($document);
-//            } else {
-//                $pathAsArray = $this->pathAsArray($segment, null, $a);
-//                $node = $doc->appendChild($doc->createElement(array_shift($pathAsArray)));
-//                $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
-//
-//                $document->appendChild($node);
-//            }
         }
-        echo $document->ownerDocument->saveXML($document) . PHP_EOL;
         $doc->saveXML($this->file_path);
-        echo '';
     }
 
     protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
@@ -135,7 +103,6 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($segment); $a++) {
-                //$this->pathes[$segment][] = array_keys($this->input_array[$segment][$a]);
                 if (isset($this->input_array[$segment][$a])) {
                     $curentPathes = array_keys($this->input_array[$segment][$a]);
                     for ($i = 0; $i < count($curentPathes); $i++) {
@@ -194,7 +161,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                     $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
                     $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                 } else {
-                    throw "No pathes in " . $segment . " segment";
+                    echo "No pathes in " . $segment . " segment";
                 }
             }
         }
