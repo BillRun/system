@@ -13,7 +13,7 @@ class Billrun_Parser_Xml {
     protected $pathes = [];
     protected $parents = [];
     protected $commonPath;
-    protected $delimiter = '.';
+    protected $pathDelimiter = '.';
     protected $headerStructure;
     protected $dataStructure;
     protected $hasHeader = false;
@@ -85,7 +85,7 @@ class Billrun_Parser_Xml {
                 if (isset($repeatedTags['header']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['header']['repeatedTag']) {
                         for ($i = 0; $i < count($this->input_array['header']); $i++) {
-                            $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->delimiter);
+                            $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
                             $headerSubPath = '//' . str_replace(".", "/", $headerSubPath);
                             $headerReturndValue = $data->xpath($headerSubPath);
                             if ($headerReturndValue) {
@@ -100,7 +100,7 @@ class Billrun_Parser_Xml {
                 if (isset($repeatedTags['data']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['data']['repeatedTag']) {
                         for ($j = 0; $j < count($this->input_array['data']); $j++) {
-                            $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$j]['path']), $this->delimiter);
+                            $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$j]['path']), $this->pathDelimiter);
                             $dataSubPath = '//' . str_replace(".", "/", $dataSubPath);
                             $dataReturndValue = $data->xpath($dataSubPath);
                             if ($dataReturndValue) {
@@ -115,7 +115,7 @@ class Billrun_Parser_Xml {
                 if (isset($repeatedTags['trailer']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
                         for ($k = 0; $k < count($this->input_array['trailer']); $k++) {
-                            $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$k]['path']), $this->delimiter);
+                            $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$k]['path']), $this->pathDelimiter);
                             $trailerSubPath = '//' . str_replace(".", "/", $trailerSubPath);
                             $trailerReturndValue = $data->xpath($trailerSubPath);
                             if ($trailerReturndValue) {
@@ -158,10 +158,10 @@ class Billrun_Parser_Xml {
                     break;
                 }
             }
-            $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+            $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
             $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-            $commonPrefix = rtrim($commonPrefix, $this->delimiter);
-            $this->parents = explode($this->delimiter, $commonPrefix);
+            $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+            $this->parents = explode($this->pathDelimiter, $commonPrefix);
             $this->commonPath = $commonPrefix;
         }
         foreach ($this->pathesBySegment as $segment => $paths) {
@@ -179,10 +179,10 @@ class Billrun_Parser_Xml {
                         break;
                     }
                 }
-                $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+                $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
                 $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-                $commonPrefix = rtrim($commonPrefix, $this->delimiter);
-                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->delimiter);
+                $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->pathDelimiter);
                 $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
             } else {
                 if (count($this->pathesBySegment[$segment]) == 1) {
@@ -204,11 +204,11 @@ class Billrun_Parser_Xml {
     }
 
     protected function pathAsArray($path) {
-        return $pathAsArray = explode($this->delimiter, $path);
+        return $pathAsArray = explode($this->pathDelimiter, $path);
     }
 
     protected function getParentNode(&$parentNode) {
-        $Xpath = '/' . str_replace($this->commonPath, '/', $this->delimiter);
+        $Xpath = '/' . str_replace($this->commonPath, '/', $this->pathDelimiter);
         return $parentNode->xpath($Xpath);
     }
 

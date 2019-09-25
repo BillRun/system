@@ -15,7 +15,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $workingArray = [];
     protected $pathes = [];
     protected $parents = [];
-    protected $delimiter = '.';
+    protected $pathDelimiter = '.';
     protected $file_name;
     protected $file_path;
     protected $SegmentsPathesAndValues;
@@ -47,7 +47,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $doc->formatOutput = true;
         $xml_file_name = $this->file_name;
 
-        $this->commonPathAsArray = explode($this->delimiter, $this->commonPath);
+        $this->commonPathAsArray = explode($this->pathDelimiter, $this->commonPath);
         $firstTag = array_shift($this->commonPathAsArray);
         $rootNode = $doc->createElement($firstTag);
         $this->createXmlRoot($doc, $rootNode);
@@ -90,7 +90,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected function pathAsArray($segment, $repeatedTag, $a) {
         $path = $this->workingArray[$segment][$a]['path'];
         $path = str_replace($this->commonPath, "", $path);
-        $pathAsArray = explode($this->delimiter, $path);
+        $pathAsArray = explode($this->pathDelimiter, $path);
         for ($i = 0; $i < count($pathAsArray); $i++) {
             if ($pathAsArray[$i] == $repeatedTag) {
                 $pathAsArray = array_slice($pathAsArray, $i, NULL, TRUE);
@@ -102,7 +102,7 @@ class Billrun_Generator_PaymentGateway_Xml {
 
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
-            for ($a = 0; $a < count($segment); $a++) {
+            for ($a = 0; $a < count($indexes); $a++) {
                 if (isset($this->input_array[$segment][$a])) {
                     $curentPathes = array_keys($this->input_array[$segment][$a]);
                     for ($i = 0; $i < count($curentPathes); $i++) {
@@ -127,10 +127,10 @@ class Billrun_Generator_PaymentGateway_Xml {
                     break;
                 }
             }
-            $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+            $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
             $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-            $commonPrefix = rtrim($commonPrefix, $this->delimiter);
-            $this->parents = explode($this->delimiter, $commonPrefix);
+            $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+            $this->parents = explode($this->pathDelimiter, $commonPrefix);
             $this->commonPath = $commonPrefix;
         }
         foreach ($this->pathesBySegment as $segment => $paths) {
@@ -148,10 +148,10 @@ class Billrun_Generator_PaymentGateway_Xml {
                         break;
                     }
                 }
-                $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+                $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
                 $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-                $commonPrefix = rtrim($commonPrefix, $this->delimiter);
-                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->delimiter);
+                $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->pathDelimiter);
                 $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
             } else {
                 if (count($this->pathesBySegment[$segment]) == 1) {
