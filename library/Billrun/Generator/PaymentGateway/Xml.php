@@ -161,7 +161,11 @@ class Billrun_Generator_PaymentGateway_Xml {
                     $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
                     $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                 } else {
-                    echo "No pathes in " . $segment . " segment";
+                    if ($segment === "data") {
+                        throw "No pathes in " . $segment . " segment. No generate was made." . PHP_EOL;
+                    } else {
+                        echo 'Warning: No pathes in ' . $segment . ' segment.' . PHP_EOL;
+                    }
                 }
             }
         }
