@@ -34,8 +34,13 @@ class Billrun_Generator_PaymentGateway_Xml {
     }
 
     public function generate() {
+        try{
+            $result = $this->preXmlBuilding();
+        }catch(\Exception $ex){
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ERR);
+            return;
+        }
         
-        $result = $this->preXmlBuilding();
 
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
@@ -50,7 +55,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->commonPathAsArray = explode($this->pathDelimiter, $this->commonPath);
         $firstTag = array_shift($this->commonPathAsArray);
         if($this->commonPath === ""){
-            echo 'No common path was found - abort.' . PHP_EOL;
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.' , Zend_Log::ERR);
             return;
         }
         $rootNode = $doc->createElement($firstTag);
@@ -168,7 +173,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                     if ($segment === "data") {
                         throw "No pathes in " . $segment . " segment. No generate was made." . PHP_EOL;
                     } else {
-                        echo 'Warning: No pathes in ' . $segment . ' segment.' . PHP_EOL;
+                        Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No pathes in ' . $segment . ' segment.' , Zend_Log::WARN);
                     }
                 }
             }

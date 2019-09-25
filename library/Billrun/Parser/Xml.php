@@ -64,13 +64,13 @@ class Billrun_Parser_Xml {
         try {
             $repeatedTags = $this->preXmlBuilding();
         } catch (Exception $ex) {
-            echo $ex . PHP_EOL;
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ERR);
             return;
         }
         $commonPathAsArray = $this->pathAsArray($this->commonPath);
         $GivenXml = simplexml_load_file($filename);
         if ($GivenXml === false) {
-            echo "Couldnt open the xml file. Might missing '<' or '/'. Please check, and reprocess." . PHP_EOL;
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldnt open the xml file. Might missing '<' or '/'. Please check, and reprocess.' . $ex, Zend_Log::ERR);
             return;
         }
 
@@ -195,7 +195,7 @@ class Billrun_Parser_Xml {
                     if ($segment === "data") {
                         throw "No pathes in " . $segment . " segment. No parse was made." . PHP_EOL;
                     } else {
-                        echo 'Warning: No pathes in ' . $segment . ' segment.' . PHP_EOL;
+                        Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No pathes in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
                     }
                 }
             }
