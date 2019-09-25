@@ -11,9 +11,207 @@
  */
 class Billrun_Generator_PaymentGateway_Xml {
 
-	public function __construct($options) {
-	
-	}
+    protected $input_array = [];
+    protected $workingArray = [];
+    protected $pathes = [];
+    protected $parents = [];
+    protected $delimiter = '.';
+    protected $file_name;
+    protected $file_path;
+    protected $SegmentsPathesAndValues;
+    protected $pathesBySegment;
+    protected $commonPath;
+    protected $commonPathAsArray;
+
+    public function __construct($options) {
+        $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
+        $this->input_array['data'] = isset($options['data']) ? $options['data'] : null;
+        $this->input_array['trailers'] = isset($options['trailers']) ? $options['trailers'] : null;
+        $this->file_name = $options['file_name'];
+        if (isset($options['local_dir'])) {
+            $this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
+        }
+    }
+
+    public function generate() {
+        try {
+            $result = $this->preXmlBuilding();
+        } catch (Exception $ex) {
+            echo $ex . PHP_EOL;
+        }
+
+        foreach ($result as $segment => $repeatedTag) {
+            $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
+        }
+
+        //$repeatedTag = $result['repeatedTag'];
+        //$fixedTag = $result['fixedTag'];
+
+        $doc = new DOMDocument();
+        $doc->encoding = 'utf-8';
+        $doc->xmlVersion = '1.0';
+        $doc->formatOutput = true;
+        $xml_file_name = $this->file_name;
+
+        $this->commonPathAsArray = explode($this->delimiter, $this->commonPath);
+        $firstTag = array_shift($this->commonPathAsArray);
+        $rootNode = $doc->createElement($firstTag);
+        $this->createXmlRoot($doc, $rootNode);
+        $document = $doc->appendChild($rootNode);
+      
+
+        //$document = $doc->appendChild($rootNode);
+        echo $document->ownerDocument->saveXML($document) . PHP_EOL;
+
+        $flag = 0;
+        foreach ($this->workingArray as $segment => $values) {
+//                $fixedNode = $doc->createElement($tags[$segment]['fixedTag']);
+//                $document = $document->appendChild($fixedNode);
+
+//        $fixedNode = $doc->createElement($fixedTag);
+//        $document = $document->appendChild($fixedNode);
+                ////echo $document->ownerDocument->saveXML($document) . PHP_EOL;
+
+                for ($a = 0; $a < count($values); $a++) {
+                    $b = $doc->createElement($tags[$segment]['repeatedTag']);
+                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
+
+                    $node = $doc->appendChild($doc->createElement(array_shift($pathAsArray)));
+                    $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
+
+                    $document->appendChild($node);
+                }
+
+//                if ($flag == 0) {
+//                    $flag = 1;
+//                    //$root = $doc->createElement('Document');
+//                }
+//                $root->appendChild($document);
+//            } else {
+//                $pathAsArray = $this->pathAsArray($segment, null, $a);
+//                $node = $doc->appendChild($doc->createElement(array_shift($pathAsArray)));
+//                $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
+//
+//                $document->appendChild($node);
+//            }
+        }
+        echo $document->ownerDocument->saveXML($document) . PHP_EOL;
+        $doc->saveXML($this->file_path);
+        echo '';
+    }
+
+    protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
+        if (count($pathAsArray) == 1) {
+            $currentTag = array_shift($pathAsArray);
+            $element = $doc->createElement($currentTag, $this->workingArray[$segment][$index]['value']);
+            if (isset($this->workingArray[$segment][$index]['attribute'])) {
+                $element->setAttribute($this->input_array[$segment][$index]['attribute']['name'], $this->input_array[$segment][$index]['attribute']['value']);
+            }
+            $node->appendChild($element);
+        } else {
+            if (count($pathAsArray) == 0) {
+                return;
+            }
+            $currentTag = array_shift($pathAsArray);
+            $element = $doc->createElement($currentTag);
+            $node->appendChild($element);
+        }
+        $this->buildNode($segment, $doc, $element, $pathAsArray, $index);
+    }
+
+    protected function pathAsArray($segment, $repeatedTag, $a) {
+        $path = $this->workingArray[$segment][$a]['path'];
+        $path = str_replace($this->commonPath, "", $path);
+        $pathAsArray = explode($this->delimiter, $path);
+        for ($i = 0; $i < count($pathAsArray); $i++) {
+            if ($pathAsArray[$i] == $repeatedTag) {
+                $pathAsArray = array_slice($pathAsArray, $i, NULL, TRUE);
+                break;
+            }
+        }
+        return $pathAsArray;
+    }
+
+    protected function preXmlBuilding() {
+        foreach ($this->input_array as $segment => $indexes) {
+            for ($a = 0; $a < count($segment); $a++) {
+                //$this->pathes[$segment][] = array_keys($this->input_array[$segment][$a]);
+                if (isset($this->input_array[$segment][$a])) {
+                    $curentPathes = array_keys($this->input_array[$segment][$a]);
+                    for ($i = 0; $i < count($curentPathes); $i++) {
+                        $this->workingArray[$segment][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value']);
+                        $this->pathes[] = $curentPathes[$i];
+                        $this->pathesBySegment[$segment][] = $curentPathes[$i];
+                    }
+                }
+            }
+        }
+        sort($this->pathes);
+        if (count($this->pathes) > 1) {
+            $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
+            $length = strlen($commonPrefix);
+            foreach ($this->pathes as $item) {
+                // check if there is a match; if not, decrease the prefix by one character at a time
+                while ($length && substr($item, 0, $length) !== $commonPrefix) {
+                    $length--;
+                    $commonPrefix = substr($commonPrefix, 0, -1);
+                }
+                if (!$length) {
+                    break;
+                }
+            }
+            $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+            $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
+            $commonPrefix = rtrim($commonPrefix, $this->delimiter);
+            $this->parents = explode($this->delimiter, $commonPrefix);
+            $this->commonPath = $commonPrefix;
+        }
+        foreach ($this->pathesBySegment as $segment => $paths) {
+            if (count($this->pathesBySegment[$segment]) > 1) {
+                sort($this->pathesBySegment[$segment]);
+                $commonPrefix = array_shift($this->pathesBySegment[$segment]);  // take the first item as initial prefix
+                $length = strlen($commonPrefix);
+                foreach ($this->pathesBySegment[$segment] as $item) {
+                    // check if there is a match; if not, decrease the prefix by one character at a time
+                    while ($length && substr($item, 0, $length) !== $commonPrefix) {
+                        $length--;
+                        $commonPrefix = substr($commonPrefix, 0, -1);
+                    }
+                    if (!$length) {
+                        break;
+                    }
+                }
+                $LastPointPosition = strrpos($commonPrefix, $this->delimiter, 0);
+                $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
+                $commonPrefix = rtrim($commonPrefix, $this->delimiter);
+                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->delimiter);
+                $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
+            } else {
+                if (count($this->pathesBySegment[$segment]) == 1) {
+                    $pathWithNoParents = str_replace($this->commonPath, "", $this->pathesBySegment[$segment][0]);
+                    $pathWithNoParents = trim($pathWithNoParents, '.');
+                    $firstPointPos = strpos($pathWithNoParents, '.');
+                    $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
+                    $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
+                } else {
+                    throw "No pathes in " . $segment . " segment";
+                }
+            }
+        }
+        return $returnedValue;
+    }
+
+    protected function createXmlRoot($doc, &$rootNode) {
+        if (count($this->commonPathAsArray) == 1) {
+            $currentTag = array_shift($this->commonPathAsArray);
+            $element = $doc->createElement($currentTag);
+            $rootNode->appendChild($element);
+        } else {
+            if (count($this->commonPathAsArray) == 0) {
+                return;
+            }
+        }
+        $this->createXmlRoot($doc, $element);
+    }
 
 }
-

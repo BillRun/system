@@ -130,7 +130,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$options['headers'] = $this->headers;
 		$options['trailers'] = $this->trailers;
 		$options['type'] = $this->configByType['generator']['type'];
-		$options['delimeter'] = $this->configByType['generator']['separator'];
+		$options['delimiter'] = $this->configByType['generator']['separator'];
 		$options['file_type'] = $this->configByType['file_type'];
 		$options['file_name'] = $this->getFilename();
 		$options['local_dir'] = $this->localDir;
