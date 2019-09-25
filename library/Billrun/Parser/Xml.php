@@ -70,7 +70,7 @@ class Billrun_Parser_Xml {
         $commonPathAsArray = $this->pathAsArray($this->commonPath);
         $GivenXml = simplexml_load_file($filename);
         if ($GivenXml === false) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldnt open the xml file. Might missing '<' or '/'. Please check, and reprocess.' . $ex, Zend_Log::ERR);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open the xml file. Might missing \'<\' or \'/\'. Please check, and reprocess.' . $ex, Zend_Log::ERR);
             return;
         }
 
