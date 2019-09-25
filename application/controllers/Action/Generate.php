@@ -72,5 +72,5 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Finished exporting");
 		}
 	}
-
+        
 }
