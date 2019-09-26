@@ -22,6 +22,8 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $pathesBySegment;
     protected $commonPath;
     protected $commonPathAsArray;
+    protected $name_space = "ns1";
+    protected $root_NS = "urn:iso:std:iso:20022:tech:xsd:pain.008.001.02";
 
     public function __construct($options) {
         $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
@@ -37,7 +39,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         try{
             $result = $this->preXmlBuilding();
         }catch(Exception $ex){
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ALERT);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
             return;
         }
         
@@ -58,29 +60,53 @@ class Billrun_Generator_PaymentGateway_Xml {
             Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.' , Zend_Log::ERR);
             return;
         }
-        $rootNode = $doc->createElement($firstTag);
-        $this->createXmlRoot($doc, $rootNode);
+        //$rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
+        //$rootNode->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
+        $rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
+        //$this->createXmlRoot($doc, $rootNode);
         $document = $doc->appendChild($rootNode);
-
+        //echo $document->ownerDocument->saveXML($document) . PHP_EOL . PHP_EOL;
         $flag = 0;
         foreach ($this->workingArray as $segment => $values) {
-                for ($a = 0; $a < count($values); $a++) {
-                    $b = $doc->createElement($tags[$segment]['repeatedTag']);
-                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
+                
+                    $b = $doc->createElement($this->name_space . ':' . $tags[$segment]['repeatedTag']);
+                    
+                    //echo $b->ownerDocument->saveXML($b) . PHP_EOL . PHP_EOL;
+                    for ($a = 0; $a < count($values); $a++) {
+                        $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
+                        
+                        if(count($pathAsArray) == 2){
+                            array_shift($pathAsArray);
+                            $node = $doc->createElement($this->name_space . ':' . array_shift($pathAsArray), $this->workingArray[$segment][$a]['value']);
+                        }else{
+                            array_shift($pathAsArray);
+                            $node = $doc->appendChild($doc->createElement($this->name_space . ':' . array_shift($pathAsArray)));
+                            $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
+                        }
+                        
+                    
+                        //echo $node->ownerDocument->saveXML($node) . PHP_EOL . PHP_EOL;
+                    
+                        
 
-                    $node = $doc->appendChild($doc->createElement(array_shift($pathAsArray)));
-                    $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
-
-                    $document->appendChild($node);
-                }
+                        $b->appendChild($node);
+                    
+                        //echo $b->ownerDocument->saveXML($b) . PHP_EOL . PHP_EOL;
+                    }
+                    $document->appendChild($b);
+                    //echo $document->ownerDocument->saveXML($document) . PHP_EOL . PHP_EOL;
         }
+        $root = $doc->createElement($this->name_space . ':' . $firstTag);
+        $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
+        $root->appendChild($document);
+        $doc->loadXML($root->ownerDocument->saveXML($root));
         $doc->save($this->file_path);
     }
 
     protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
         if (count($pathAsArray) == 1) {
             $currentTag = array_shift($pathAsArray);
-            $element = $doc->createElement($currentTag, $this->workingArray[$segment][$index]['value']);
+            $element = $doc->createElement($this->name_space . ':' . $currentTag, $this->workingArray[$segment][$index]['value']);
             if ((isset($this->workingArray[$segment][$index]['attributes'])) && (count($this->workingArray[$segment][$index]['attributes']) > 0)) {
                 for($i = 0; $i < count($this->workingArray[$segment][$index]['attributes']); $i++){
                     $element->setAttribute($this->workingArray[$segment][$index]['attributes'][$i]['key'], $this->workingArray[$segment][$index]['attributes'][$i]['value']);
@@ -92,7 +118,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                 return;
             }
             $currentTag = array_shift($pathAsArray);
-            $element = $doc->createElement($currentTag);
+            $element = $doc->createElement($this->name_space . ':' . $currentTag);
             $node->appendChild($element);
         }
         $this->buildNode($segment, $doc, $element, $pathAsArray, $index);
@@ -194,7 +220,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected function createXmlRoot($doc, &$rootNode) {
         if (count($this->commonPathAsArray) == 1) {
             $currentTag = array_shift($this->commonPathAsArray);
-            $element = $doc->createElement($currentTag);
+            $element = $doc->createElement($this->name_space . ':' .$currentTag);
             $rootNode->appendChild($element);
         } else {
             if (count($this->commonPathAsArray) == 0) {
