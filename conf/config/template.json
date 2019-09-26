@@ -157,6 +157,11 @@
     ]
   },
   "billrun" : {
+        "allowances" : {
+            "enabled": false,
+            "included_in_allowance": false,
+            "taxable_paid_first": false
+        },
 	"detailed_invoices":{
 		"v": false,
 		"t": "Boolean"

@@ -62,9 +62,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	}
 
 	protected function findBillByUniqueIdentifier($id) {
-		if (in_array($this->identifierField , $this->dbNumericValuesFields) && Billrun_Util::IsIntegerValue($id)) {
-			$id = intval($id);
-		}
-		return $this->bills->query(array($this->identifierField => $id))->cursor();
+//		if (in_array($this->identifierField , $this->dbNumericValuesFields) && Billrun_Util::IsIntegerValue($id)) {
+//			$id = intval($id);
+//		}
+		return $this->bills->query(array('type' => 'inv', 'invoice_id' => intval($id)))->cursor();
 	}
 }

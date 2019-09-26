@@ -451,6 +451,7 @@ var subscriberServicesFieldIndex = lastConfig['subscribers']['subscriber']['fiel
 if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] === 'undefined') {
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
+
 // BRCD-1835: add default TAX key
 if (typeof lastConfig['taxation'] === 'undefined') {
 	lastConfig.taxation = {};
@@ -542,6 +543,13 @@ var discountsFields = [{
 for (var fieldIdx in discountsFields) {
 	lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
 }
+// BRCD-1969 - add account allowances field
+var accountField = {
+	"field_name": "allowances",
+	"system": true,
+	"display": false,
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], accountField, 'account');
 // BRCD-1917 - add system flag true to discount system fields
 var discountFields = lastConfig['discounts']['fields'];
 if (discountFields) {
@@ -598,7 +606,18 @@ for (var i in lastConfig['payment_gateways']) {
 	}
 }
 
-db.config.insert(lastConfig);
+var formerPlanField ={
+					"system":true,
+					"select_list" : false,
+					"display" : false,
+					"editable" : false,
+					"multiple" : false,
+					"field_name" : "former_plan",
+					"unique" : false,
+					"title" : "Former plan",
+					"mandatory" : false,
+	};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
@@ -727,3 +746,4 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+db.config.insert(lastConfig);

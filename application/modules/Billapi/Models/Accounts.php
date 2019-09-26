@@ -18,6 +18,7 @@ class Models_Accounts extends Models_Entity {
 		parent::init($params);
 		$this->update['type'] = 'account';
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		$this->verifyAllowances();
 	}
 
 	public function get() {
@@ -38,6 +39,45 @@ class Models_Accounts extends Models_Entity {
 	
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".account.fields";
+	}
+
+	/**
+	 * validates that the allowances added to the account not added to other account
+	 */
+	protected function verifyAllowances() {
+		$allowances = isset($this->update['allowances']) ? $this->update['allowances'] : [];
+		if (empty($allowances)) {
+			return true;
+		}
+		$sids = [];
+		foreach ($allowances as $allowance) {
+			$sid = $allowance['sid'];
+			if (floatval($allowance['allowance']) <= 0) {
+				throw new Billrun_Exceptions_Api(0, array(), "Allowance value for SID {$sid} must be a positive number greater than 0.");
+			}
+			if (in_array($sid, $sids)) {
+				throw new Billrun_Exceptions_Api(0, array(), "Subscriber ID {$sid} could have only one allowance");
+			}
+			$sids[] = $sid;
+		}
+		$query = ["allowances.sid" => ["\$in" => $sids]];
+		if (!empty($this->query['_id'])) {
+			$query["_id"] = ["\$ne" => $this->query['_id']];
+		} else if (!empty($this->update['aid'])) {
+			$query["aid"] = ["\$ne" => $this->update['aid']];
+		}
+
+		$account = new Billrun_Account_Db();
+		$account->load($query);
+		if (!$account->isEmpty()) {
+			$account_sids = array_reduce($account->allowances, function($acc, $allowance) {
+				$acc[] = $allowance['sid'];
+				return $acc;
+			}, []);
+			$sid_duplicate = implode(" ,", array_intersect($account_sids, $sids));
+			throw new Billrun_Exceptions_Api(0, array(), "Allowances for subscriber IDs {$sid_duplicate} belong to another account.");
+		}
+		return true;
 	}
 
 }
