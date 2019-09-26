@@ -16,7 +16,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	use Billrun_Traits_ConditionsCheck;
 
 	protected static $type = 'transactions_response';
-	protected $tokenField = null;
 	protected $amountField = null;
 	protected $tranIdentifierField = null;
 
@@ -57,12 +56,11 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function mapProcessorFields($processorDefinition) {
-		if (empty($processorDefinition['processor']['token_field']) || empty($processorDefinition['processor']['amount_field']) ||
+		if (empty($processorDefinition['processor']['amount_field']) ||
 			empty($processorDefinition['processor']['transaction_identifier_field'])) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
-		$this->tokenField = $processorDefinition['processor']['token_field'];
 		$this->amountField = $processorDefinition['processor']['amount_field'];
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
 		return true;
