@@ -64,7 +64,7 @@ class Billrun_Parser_Xml {
         try {
             $repeatedTags = $this->preXmlBuilding();
         } catch (Exception $ex) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ALERT);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
             return;
         }
         $commonPathAsArray = $this->pathAsArray($this->commonPath);
