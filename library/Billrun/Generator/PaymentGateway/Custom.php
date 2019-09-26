@@ -131,7 +131,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$options['trailers'] = $this->trailers;
 		$options['type'] = $this->configByType['generator']['type'];
 		if (isset($this->configByType['generator']['separator'])) {
-			$options['delimeter'] = $this->configByType['generator']['separator'];
+			$options['delimiter'] = $this->configByType['generator']['separator'];
 		}
 		$options['file_type'] = $this->configByType['file_type'];
 		$options['file_name'] = $this->getFilename();
@@ -228,7 +228,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				$minValue = $paramObj['min_value'];
 				$maxValue = $paramObj['max_value'];
 				$dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
-				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
 				$date = date($dateGroup, $dateValue);
 				$action = 'transactions_request';
 				$fakeCollectionName = '$' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
