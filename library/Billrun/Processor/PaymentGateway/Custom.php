@@ -81,7 +81,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}));
 		
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
-		$fileConfCount = isset($currentProcessor['file_response_count']) ? $currentProcessor['file_response_count'] : null;
+		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
@@ -125,7 +125,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
 		$currentFileCount = $this->getCurrentFileCount();
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
-		$fileConfCount = isset($currentProcessor['file_response_count']) ? $currentProcessor['file_response_count'] : null;
+		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
@@ -139,6 +139,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$origFileStamp = $this->getOriginalFileStamp($correlatedField);
 		$relevantBills = $this->getOrigFileBills($origFileStamp);
 		foreach ($relevantBills as $bill) {
+			if (!($bill instanceof Billrun_Bill)) {
+				$bill = Billrun_Bill::getInstanceByData($bill);
+			} 
 			if ($fileStatus == 'only_rejections') {
 				$bill->markApproved('Completed');
 				$billData = $bill->getRawData();

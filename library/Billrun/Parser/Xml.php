@@ -80,10 +80,12 @@ class Billrun_Parser_Xml {
         $parentNode = $GivenXml;
         $this->getParentNode($parentNode);
         $xmlIterator = new SimpleXMLIterator($xmlAsString);
+		$headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
         for ($xmlIterator->rewind(); $xmlIterator->valid(); $xmlIterator->next()) {
             foreach ($xmlIterator->getChildren() as $currentChild => $data) {
                 if (isset($repeatedTags['header']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['header']['repeatedTag']) {
+						$headerRowsNum++;
                         for ($i = 0; $i < count($this->input_array['header']); $i++) {
                             $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
                             $headerSubPath = '//' . str_replace(".", "/", $headerSubPath);
@@ -93,12 +95,13 @@ class Billrun_Parser_Xml {
                             } else {
                                 $headerValue = '';
                             }
-                            $this->headerRows[$this->input_array['header'][$i]['name']][] = $headerValue;
+                            $this->headerRows[$headerRowsNum-1][$this->input_array['header'][$i]['name']] = $headerValue;
                         }
                     }
                 }
                 if (isset($repeatedTags['data']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['data']['repeatedTag']) {
+						$dataRowsNum++;
                         for ($j = 0; $j < count($this->input_array['data']); $j++) {
                             $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$j]['path']), $this->pathDelimiter);
                             $dataSubPath = '//' . str_replace(".", "/", $dataSubPath);
@@ -108,12 +111,13 @@ class Billrun_Parser_Xml {
                             } else {
                                 $dataValue = '';
                             }
-                            $this->dataRows[$this->input_array['data'][$j]['name']][] = $dataValue;
+                            $this->dataRows[$dataRowsNum-1][$this->input_array['data'][$j]['name']] = $dataValue;
                         }
                     }
                 }
                 if (isset($repeatedTags['trailer']['repeatedTag'])) {
                     if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
+						$trailerRowsNum++;
                         for ($k = 0; $k < count($this->input_array['trailer']); $k++) {
                             $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$k]['path']), $this->pathDelimiter);
                             $trailerSubPath = '//' . str_replace(".", "/", $trailerSubPath);
@@ -123,7 +127,7 @@ class Billrun_Parser_Xml {
                             } else {
                                 $trailerValue = '';
                             }
-                            $this->trailerRows[$this->input_array['trailer'][$k]['name']][] = $trailerValue;
+                            $this->trailerRows[$trailerRowsNum-1][$this->input_array['trailer'][$k]['name']] = $trailerValue;
                         }
                     }
                 }

@@ -243,7 +243,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
 				$date = date($dateGroup, $dateValue);
 				$action = 'transactions_request';
-				$fakeCollectionName = '$' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
+				$fakeCollectionName = '$pgf' . $this->gatewayName . '_' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
 				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
 				if ($seq > $maxValue) {
 					throw new Exception("Sequence exceeded max value when generating file for file type " . $this->configByType['file_type']);
