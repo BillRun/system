@@ -81,8 +81,10 @@ class Billrun_Generator_PaymentGateway_Xml {
         if (count($pathAsArray) == 1) {
             $currentTag = array_shift($pathAsArray);
             $element = $doc->createElement($currentTag, $this->workingArray[$segment][$index]['value']);
-            if (isset($this->workingArray[$segment][$index]['attribute'])) {
-                $element->setAttribute($this->input_array[$segment][$index]['attribute']['name'], $this->input_array[$segment][$index]['attribute']['value']);
+            if ((isset($this->workingArray[$segment][$index]['attributes'])) && (count($this->workingArray[$segment][$index]['attributes']) > 0)) {
+                for($i = 0; $i < count($this->workingArray[$segment][$index]['attributes']); $i++){
+                    $element->setAttribute($this->workingArray[$segment][$index]['attributes'][$i]['key'], $this->workingArray[$segment][$index]['attributes'][$i]['value']);
+                }
             }
             $node->appendChild($element);
         } else {
@@ -115,7 +117,15 @@ class Billrun_Generator_PaymentGateway_Xml {
                 if (isset($this->input_array[$segment][$a])) {
                     $curentPathes = array_keys($this->input_array[$segment][$a]);
                     for ($i = 0; $i < count($curentPathes); $i++) {
-                        $this->workingArray[$segment][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value']);
+                        if((array_key_exists('attributes', $this->input_array[$segment][$a][$curentPathes[$i]])) && (isset($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']))){
+                            for($b = 0; $b < count($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']); $b++){
+                                $attributes[] = $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b];
+                            }
+                        }else{
+                            $attributes = array();
+                        }    
+                        $this->workingArray[$segment][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value'], 'attributes' => $attributes);
+                        unset($attributes);
                         $this->pathes[] = $curentPathes[$i];
                         $this->pathesBySegment[$segment][] = $curentPathes[$i];
                     }
