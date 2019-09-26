@@ -139,6 +139,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$origFileStamp = $this->getOriginalFileStamp($correlatedField);
 		$relevantBills = $this->getOrigFileBills($origFileStamp);
 		foreach ($relevantBills as $bill) {
+			if (!($bill instanceof Billrun_Bill)) {
+				$bill = Billrun_Bill::getInstanceByData($bill);
+			} 
 			if ($fileStatus == 'only_rejections') {
 				$bill->markApproved('Completed');
 				$billData = $bill->getRawData();
