@@ -134,9 +134,6 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function getRowContent($entity) {
-//		if (!$this->fixedWidth) {
-//			return $this->getDelimetedLine($entity);
-//		}
 		$rowContents = '';
 		$flag = 0;
 		foreach ($entity as $entityObj) {
