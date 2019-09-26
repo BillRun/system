@@ -36,8 +36,8 @@ class Billrun_Generator_PaymentGateway_Xml {
     public function generate() {
         try{
             $result = $this->preXmlBuilding();
-        }catch(\Exception $ex){
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ERR);
+        }catch(Exception $ex){
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex, Zend_Log::ALERT);
             return;
         }
         
@@ -55,7 +55,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->commonPathAsArray = explode($this->pathDelimiter, $this->commonPath);
         $firstTag = array_shift($this->commonPathAsArray);
         if($this->commonPath === ""){
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.' , Zend_Log::ERR);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.' , Zend_Log::ALERT);
             return;
         }
         $rootNode = $doc->createElement($firstTag);
