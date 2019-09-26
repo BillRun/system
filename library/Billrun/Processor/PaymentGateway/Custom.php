@@ -145,6 +145,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			if ($fileStatus == 'only_rejections') {
 				$bill->markApproved('Completed');
 				$bill->setPending(false);
+				$bill->updateConfirmation();
 				$bill->save();
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
