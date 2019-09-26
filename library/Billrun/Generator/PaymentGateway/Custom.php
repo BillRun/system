@@ -77,11 +77,18 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 					Billrun_Factory::log("Couldn't convert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
 				}
 			}
+                        if(isset($dataField['attributes'])){
+                            for($i = 0; $i < count($dataField['attributes']); $i++){
+                                $attributes[] = $dataField['attributes'][$i];
+                            }                          
+                        }else{
+                            $attributes = [];
+                        }
 			if (!isset($dataLine[$dataField['path']])) {
 				$configObj = $dataField['name'];
 				throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
 			}
-			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField);
+			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
 		}
 
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
@@ -172,10 +179,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		return $this->fileName;
 	}
 	
-	protected function prepareLineForGenerate($lineValue, $addedData) {
+	protected function prepareLineForGenerate($lineValue, $addedData, $attributes) {
 		$newLine = array();
 		$newLine['value'] = isset($addedData['number_format']['decimals']) && is_numeric($lineValue) ? number_format($lineValue, $addedData['number_format']['decimals']) : $lineValue;
 		$newLine['name'] = $addedData['name'];
+                if(count($attributes) > 0){
+                    for($i = 0; $i<count($attributes); $i++){
+                        $newLine['attributes'][] = $attributes[$i];
+                    }
+                }
 		if (isset($addedData['padding'])) {
 			$newLine['padding'] = $addedData['padding'];
 		}
@@ -276,7 +288,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($field['parameter_name‎']) && in_array($field['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$field['parameter_name‎']])) {
 				$line[$field['path']] = $this->options[$field['parameter_name‎']];
 			}	
-			if (isset($field['type']) && $field['type'] == 'date') {
+			if ((isset($field['type']) && $field['type'] == 'date') && (!isset($field['predefined_values']) && $field['predefined_values'] !== 'now')) {
 				$dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
 				$date = strtotime($line[$field['path']]);
 				if ($date) {
@@ -289,7 +301,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				$configObj = $field['name'];
 				throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
 			}
-			$line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field);
+                        if(isset($dataField['attributes'])){
+                            for($i = 0; $i < count($dataField['attributes']); $i++){
+                                $attributes[] = $dataField['attributes'][$i];
+                            }                          
+                        }else{
+                            $attributes = [];
+                        }
+			$line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
 		}
 		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
 			ksort($line);
