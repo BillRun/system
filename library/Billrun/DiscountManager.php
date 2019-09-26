@@ -45,17 +45,39 @@ class Billrun_DiscountManager {
 	 */
 	protected function getEntityRevisions($entityRevisions, $type) {
 		$ret = [];
+		
 		$dateRangeDiscoutnsFields = self::getDiscountsDateRangeFields($this->cycle->key(), $type);
-		if (empty($dateRangeDiscoutnsFields)) {
-			return $entityRevisions;
+		if (!empty($dateRangeDiscoutnsFields)) {
+			foreach ($entityRevisions as $entityRevision) {
+				$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
+				$ret = array_merge($ret, $splittedRevisions);
+			}
 		}
-
+		
+		$passthroughData = $this->getEntityPassthroughData($type);
 		foreach ($entityRevisions as $entityRevision) {
-			$splittedRevisions = $this->splitRevisionByFields($entityRevision, $dateRangeDiscoutnsFields);
-			$ret = array_merge($ret, $splittedRevisions);
+			$newEntityRevision = $entityRevision;
+			foreach ($passthroughData as $origFieldName => $fieldName) {
+				if (isset($entityRevision[$fieldName])) {
+					$newEntityRevision[$origFieldName] = $entityRevision[$fieldName];
+				}
+			}
+			$ret[] = $newEntityRevision;
 		}
 
 		return $ret;
+	}
+	
+	/**
+	 * get field mapping that the entity goes through in aggregation process to revert field name changes
+	 * 
+	 * @param string $type
+	 * @return array
+	 */
+	protected function getEntityPassthroughData($type) {
+		return array_merge(
+			Billrun_Factory::config()->getConfigValue('customer.aggregator.passthrough_data', []),
+			Billrun_Factory::config()->getConfigValue("customer.aggregator.{$type}.passthrough_data", []));
 	}
 
 	/**
@@ -182,7 +204,7 @@ class Billrun_DiscountManager {
 
 		foreach (self::getCharges($this->cycle->key()) as $charge) {
 			$eligibility = $this->getDiscountEligibility($charge, $accountRevisions, $subscribersRevisions);
-			$this->setEligibility($this->eligibleCharges, $discount, $eligibility);
+			$this->setEligibility($this->eligibleCharges, $charge, $eligibility);
 		}
 	}
 
@@ -305,7 +327,7 @@ class Billrun_DiscountManager {
 
 			$discountColl = Billrun_Factory::db()->discountsCollection();
 			$loadedDiscounts = $discountColl->query(array_merge($basicQuery, $query))->cursor()->sort($sort);
-			self::$discounts = [];
+			self::$discounts[$billrunKey] = [];
 
 			foreach ($loadedDiscounts as $discount) {
 				if (isset(self::$discounts[$billrunKey][$discount['key']]) &&
@@ -380,6 +402,25 @@ class Billrun_DiscountManager {
 				$discount = new Mongodloid_Entity($discount);
 			}
 			self::$discounts[$billrunKey][$discount['key']] = $discount;
+		}
+	}
+
+	/**
+	 * manually set charges
+	 * 
+	 * @param array $charges
+	 */
+	public static function setCharges($charges, $billrunKey) {
+		self::$charges[$billrunKey] = [];
+		usort($charges, function ($a, $b) {
+			return Billrun_Util::getIn($b, 'priority', 0) > Billrun_Util::getIn($a, 'priority', 0);
+		});
+
+		foreach ($charges as $charge) {
+			if (!$charge instanceof Mongodloid_Entity) {
+				$charge = new Mongodloid_Entity($charge);
+			}
+			self::$charges[$billrunKey][$charge['key']] = $charge;
 		}
 	}
 
@@ -600,9 +641,9 @@ class Billrun_DiscountManager {
 		$subsEligibility = [];
 		$servicesEligibility = [];
 		$plansEligibility = [];
-		$minSubscribers = $params['min_subscribers'] ?? 1;
-		$maxSubscribers = $params['max_subscribers'] ?? null;
-		$cycles = $params['cycles'] ?? null;
+		$minSubscribers = isset($params['min_subscribers']) ? $params['min_subscribers'] : 1;
+		$maxSubscribers = isset($params['max_subscribers']) ? $params['max_subscribers'] : null;
+		$cycles = isset($params['cycles']) ? $params['cycles'] : null;
 
 		$accountConditions = Billrun_Util::getIn($condition, 'account.fields', []);
 
@@ -833,8 +874,12 @@ class Billrun_DiscountManager {
 				}
 
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
-					$serviceFrom = max(Billrun_Utils_Time::getTime($subscriberRevision['from']), Billrun_Utils_Time::getTime($subscriberService['from']));
-					$serviceTo = min(Billrun_Utils_Time::getTime($subscriberRevision['to']), Billrun_Utils_Time::getTime($subscriberService['to']));
+					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
+					if (isset($subscriberService['creation_time'])) {
+						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
+					}
+					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
+
 					if (!is_null($cycles)) {
 						$serviceEligibilityEnd = strtotime("+{$cycles} months", Billrun_Utils_Time::getTime($subscriberService['service_activation']));
 						if (!is_null($planEligibilityEnd)) {
@@ -1010,9 +1055,10 @@ class Billrun_DiscountManager {
 		$discountedAmount = 0;
 		
 		if ($type == 'charge' && $discount['type'] == 'monetary') { // monetary charge's subject can only be general
+			$eligibleLine = $this->getChargeEligibleLine($charge, $eligibility, $lines);
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
-				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount);
+				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
 			}
 			return $cdrs;
 		}
@@ -1061,6 +1107,31 @@ class Billrun_DiscountManager {
 		}
 		
 		return $cdrs;
+	}
+	
+	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
+		$aid = '';
+		$billrun = '';
+		$sid = 0;
+		if (!empty($eligibility['plans'])) {
+			$sid = array_keys($eligibility['plans'])[0];
+		} else if (!empty($eligibility['services'])) {
+			$sid = array_keys($eligibility['services'])[0];
+		}
+		
+		foreach ($lines as $line) {
+			if ($line['sid'] == $sid) {
+				$aid = $line['aid'];
+				$billrun = $line['billrun'];
+				break;
+			}
+		}
+		
+		return [
+			'aid' => $aid,
+			'sid' => $sid,
+			'billrun' => $billrun,
+		];
 	}
 	
 	/**
@@ -1203,6 +1274,7 @@ class Billrun_DiscountManager {
 			switch($operation['name']) {
 				case 'recurring_by_quantity':
 					$ret += $this->getRecurringByQuantityAmount($price, $line, $isPercentage, $value, $params);
+					break;
 				default:
 					Billrun_Factory::log("Discount operations: unknown operation {$operation['name']}", Billrun_Log::ERR);
 					$ret += $isPercentage ? $price * $value : $price;
@@ -1292,6 +1364,9 @@ class Billrun_DiscountManager {
 	 */
 	protected function generateCdr($type, $discount, $discountAmount, $eligibleLine = [], $addToCdr = []) {
 		$isChargeLine = $type === 'charge';
+		if (!$discount instanceof Mongodloid_Entity) {
+			$discount = new Mongodloid_Entity($discount);
+		}
 		$collection = $isChargeLine ? Billrun_Factory::db()->chargesCollection() : Billrun_Factory::db()->discountsCollection();
 		$discountLine = array(
 			'key' => $discount['key'],
@@ -1301,7 +1376,6 @@ class Billrun_DiscountManager {
 			'usaget' =>  $isChargeLine ? 'conditional_charge' : 'discount',
 			'discount_type' => isset($discount['type']) ? $discount['type'] : 'percentage',
 			'urt' => new MongoDate($this->cycle->end()),
-			'process_time' => new MongoDate(),
 			'arate' => $discount->createRef($collection),
 			'arate_key' => $discount['key'],
 			'aid' => $eligibleLine['aid'],
@@ -1316,6 +1390,8 @@ class Billrun_DiscountManager {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
 		
+		$discountLine['stamp'] = Billrun_Util::generateArrayStamp($discountLine);
+		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
 		
 		$discountLine = array_merge($discountLine, $addToCdr);

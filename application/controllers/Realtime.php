@@ -75,7 +75,6 @@ class RealtimeController extends ApiController {
 		if ($recordType != 'postpay_charge_request') {
 			$this->event['session_id'] = $this->getSessionId();
 		}
-		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $recordType;
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 
