@@ -134,17 +134,31 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function getRowContent($entity) {
-		if (!$this->fixedWidth) {
-                    
-			return $this->getDelimetedLine($entity);
-		}
 		$rowContents = '';
-		
+		$flag = 0;
 		foreach ($entity as $entityObj) {
 			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
-			$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
-			$rowContents.=str_pad((isset($entityObj['value']) ? substr($entityObj['value'], 0, $length) : ''), $length, $padChar, $padDir);
+                        if($this->fixedWidth){
+                            $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+                        }else{
+                            if(isset($entityObj['padding']['length'])){
+                                $length = $entityObj['padding']['length'];
+                            }else{
+                                $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
+                            }
+                        }
+                        if($this->fixedWidth){
+                            $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+                        }else{
+                            if($flag == 0){
+                                $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+                                $flag = 1;
+                            }else{
+                                $rowContents.= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+                            }
+                        }
+			
 		}
 		return $rowContents;
 	}
