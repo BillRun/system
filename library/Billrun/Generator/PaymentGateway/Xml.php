@@ -24,6 +24,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $commonPathAsArray;
     protected $name_space = "";
     protected $root_NS = "";
+    protected $attributes;
 
     public function __construct($options) {
         $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
@@ -45,14 +46,11 @@ class Billrun_Generator_PaymentGateway_Xml {
             return;
         }
 
-
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
         }
 
-        $doc = new DOMDocument();
-        $doc->encoding = 'utf-8';
-        $doc->xmlVersion = '1.0';
+        $doc = new DOMDocument('1.0', 'utf-8');
         $doc->formatOutput = true;
         $xml_file_name = $this->file_name;
 
@@ -62,29 +60,17 @@ class Billrun_Generator_PaymentGateway_Xml {
             Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.', Zend_Log::ERR);
             return;
         }
-        //$rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
-        //$rootNode->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
         $rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
-        //$this->createXmlRoot($doc, $rootNode);
         $document = $doc->appendChild($rootNode);
-        //echo $document->ownerDocument->saveXML($document) . PHP_EOL . PHP_EOL;
         $flag = 0;
         foreach ($this->workingArray as $segment => $values) {
 
-            //$b = $doc->createElement($this->name_space . ':' . $tags[$segment]['repeatedTag']);
-
-            //echo $b->ownerDocument->saveXML($b) . PHP_EOL . PHP_EOL;
             for ($a = 0; $a < count($values); $a++) {
                 if ($a == 0) {
                     $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
                     $val = $this->workingArray[$segment][$a]['value'];
                     $pathAndValueAsArr = array();
                     Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-//                    $pathAndValueAsArr = array($pathAsArray[count($pathAsArray) - 1] => $val);
-//                    unset($pathAsArray[count($pathAsArray) - 1]);
-//                    foreach (array_reverse($pathAsArray) as $elem) {
-//                        $pathAndValueAsArr = array($elem => $pathAndValueAsArr);
-//                    }
                     
                     $nodeArray = $pathAndValueAsArr;
                     continue 1;
@@ -94,38 +80,28 @@ class Billrun_Generator_PaymentGateway_Xml {
                 $val = $this->workingArray[$segment][$a]['value'];
                 $pathAndValueAsArr = array();
                 Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                $this->array_overwrite($nodeArray, $pathAndValueAsArr);
+                $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
 
-
-
-//                if (count($pathAsArray) == 2) {
-//                    array_shift($pathAsArray);
-//                    $node = $doc->createElement($this->name_space . ':' . array_shift($pathAsArray), $this->workingArray[$segment][$a]['value']);
-//                } else {
-//                    array_shift($pathAsArray);
-//                    $node = $doc->appendChild($doc->createElement($this->name_space . ':' . array_shift($pathAsArray)));
-//                    $this->buildNode($segment, $doc, $node, $pathAsArray, $a);
-//                }
-
-
-                //echo $node->ownerDocument->saveXML($node) . PHP_EOL . PHP_EOL;
-
-
-
-                //$b->appendChild($node);
-
-                //echo $b->ownerDocument->saveXML($b) . PHP_EOL . PHP_EOL;
             }
-            $this->node_create($nodeArray, $document, $doc);
-            echo $doc->saveXML($doc) . PHP_EOL;
-            //$document->appendChild($b);
-            //echo $document->ownerDocument->saveXML($document) . PHP_EOL . PHP_EOL;
+            $this->newNode($nodeArray, $document, $doc);
         }
         $root = $doc->createElement($this->name_space . ':' . $firstTag);
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
         $root->appendChild($document);
-        $doc->loadXML($doc->ownerDocument->saveXML($doc));
-        echo $doc->save($this->file_path);
+        $doc->loadXML($root->ownerDocument->saveXML($root));
+        echo $doc->saveXML($doc) . PHP_EOL;
+        $xpath = new DOMXpath($doc);
+        
+        foreach($this->attributes as $path => $attribute){
+            $query = '/' . $this->name_space . ':' . str_replace('.', '/' . $this->name_space . ':', $path);
+            
+            $elements = $xpath->query($query);
+                foreach($elements as $element){
+                    $element->setAttribute($attribute['key'], $attribute['value']);
+                }
+        }
+        
+        $doc->save($this->file_path);
     }
 
     protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
@@ -171,6 +147,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                         if ((array_key_exists('attributes', $this->input_array[$segment][$a][$curentPathes[$i]])) && (isset($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']))) {
                             for ($b = 0; $b < count($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']); $b++) {
                                 $attributes[] = $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b];
+                                $this->attributes[$curentPathes[$i]] = array('key' => $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b]['key'], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b]['value']);
                             }
                         } else {
                             $attributes = array();
@@ -255,35 +232,35 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->createXmlRoot($doc, $element);
     }
 
-    protected function array_overwrite(&$original, $overwrite) {
-        // Not included in function signature so we can return silently if not an array
-        if (!is_array($overwrite)) {
+    protected function set_in_without_override(&$base_array, $addition_array) {
+        //adding the "addition_array", aithout overriding nothing in "base_array".
+        if (!is_array($addition_array)) {
             return;
         }
-        if (!is_array($original)) {
-            $original = $overwrite;
+        if (!is_array($base_array)) {
+            $base_array = $addition_array;
         }
-        foreach ($overwrite as $key => $value) {
-            if (array_key_exists($key, $original) && is_array($value)) {
-                $this->array_overwrite($original[$key], $overwrite[$key]);
+        foreach ($addition_array as $key => $value) {
+            if (array_key_exists($key, $base_array) && is_array($value)) {
+                $this->set_in_without_override($base_array[$key], $addition_array[$key]);
             } else {
-                $original[$key] = $value;
+                $base_array[$key] = $value;
             }
         }
     }
 
-    protected function node_create($arr, $items,$doc) {
-        if (is_null($items)){
-            $items = $this->appendChild($this->name_space . ':' . $doc->createElement("items"));
+    protected function newNode($arr, $node, $doc) {
+        if (is_null($node)){
+            $node = $this->appendChild($this->name_space . ':' . $doc->createElement("items"));
         }
 
         foreach ($arr as $element => $value) {
             $element = is_numeric($element) ? "node" : $element;
-            $fragment = $doc->createElement($this->name_space . ':' . $element, (is_array($value) ? null : $value));
-            $items->appendChild($fragment);
+            $newElement = $doc->createElement($this->name_space . ':' . $element, (is_array($value) ? null : $value));
+            $node->appendChild($newElement);
 
             if (is_array($value)) {
-                self::node_create($value, $fragment,$doc);
+                self::newNode($value, $newElement,$doc);
             }
         }
     }
