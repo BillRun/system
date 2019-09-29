@@ -960,6 +960,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$deniedBy[$txId] = $amount;
 		$this->data['denied_by'] = isset($this->data['denied_by']) ? array_merge($this->data['denied_by'], $deniedBy) : $deniedBy;
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
+		$this->detachPaidBills();
+		$this->detachPayingBills();
 	}
 	
 	public function isDenied($denialAmount) {
