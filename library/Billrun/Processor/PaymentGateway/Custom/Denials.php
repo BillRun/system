@@ -46,6 +46,12 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			Billrun_Factory::log()->log("Payment " . $row[$this->tranIdentifierField] . " is already denied", Zend_Log::NOTICE);
 			return;
 		}
+		if (!empty($this->amountField) && !empty($row[$this->amountField])) {
+			$row['amount'] = $row[$this->amountField];
+		}
+		else {
+			$row['amount'] = $payment->getAmount();
+		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
 		if (!empty($denial)) {
 			if (!is_null($payment)) {
