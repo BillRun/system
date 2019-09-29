@@ -89,7 +89,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
         $root->appendChild($document);
         $doc->loadXML($root->ownerDocument->saveXML($root));
-        echo $doc->saveXML($doc) . PHP_EOL;
         $xpath = new DOMXpath($doc);
         
         foreach($this->attributes as $path => $attribute){
