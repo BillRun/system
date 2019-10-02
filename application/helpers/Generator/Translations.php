@@ -41,6 +41,6 @@ class Generator_Translations {
 	}
 	
 	public static function tr($slug, $values) {
-		call_user_func_array('printf',array_merge(static::$translations[static::$currentLang][$slug],$values));
+		call_user_func_array('printf',array_merge(static::$translations[static::$currentLang][$slug] ?: static::$translations[static::getDefaultLanguage()][$slug] ?: $slug, $values));
 	}
 }
