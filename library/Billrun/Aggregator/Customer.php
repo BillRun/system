@@ -564,7 +564,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
 		
-		if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
 			$this->handleInstallmentsPrepone($accounts);
 		}
 	}
@@ -574,7 +574,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * 
 	 * @param array $accounts
 	 */
-	protected function handleInstallmentsPrepone($accounts) {
+	public function handleInstallmentsPrepone($accounts) {
 		$cycleEndTime = $this->getCycle()->end();
 		$accountsToPrepone = [];
 		
@@ -609,7 +609,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (!empty($accountsToPrepone)) {
-			$this->preponeInstallments($accountsToPrepone);
+			return $this->preponeInstallments($accountsToPrepone);
 		}
 	}
 	
@@ -649,16 +649,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			];
 		}
 		
-		$hint = [
-			'billrun' => 1,
-			'usaget' => 1,
-			'type' => 1,
-		];
+//		$hint = [
+//			'billrun' => 1,
+//			'usaget' => 1,
+//			'type' => 1,
+//		];
 		
 		$linesCol = Billrun_Factory::db()->linesCollection();
-		$linesToUpdate = $linesCol->query($query)->cursor()->hint($hint);
+		$linesToUpdate = $linesCol->query($query)->cursor();//->hint($hint);
 		if (empty($linesToUpdate) || $linesToUpdate->count() == 0) {
 			return;
+		}
+		
+		if ($this->fakeCycle) {
+			return iterator_to_array($linesToUpdate);
 		}
 		
 		$ids = array_map(function($line) {
