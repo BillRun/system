@@ -649,14 +649,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			];
 		}
 		
-//		$hint = [
-//			'billrun' => 1,
-//			'usaget' => 1,
-//			'type' => 1,
-//		];
+		$hint = [
+			'billrun' => 1,
+			'usaget' => 1,
+			'type' => 1,
+		];
 		
 		$linesCol = Billrun_Factory::db()->linesCollection();
-		$linesToUpdate = $linesCol->query($query)->cursor();//->hint($hint);
+		$linesToUpdate = $linesCol->query($query)->cursor()->hint($hint);
 		if (empty($linesToUpdate) || $linesToUpdate->count() == 0) {
 			return;
 		}
