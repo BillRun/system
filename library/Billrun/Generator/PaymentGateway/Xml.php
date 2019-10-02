@@ -91,15 +91,16 @@ class Billrun_Generator_PaymentGateway_Xml {
         $doc->loadXML($root->ownerDocument->saveXML($root));
         $xpath = new DOMXpath($doc);
         
-        foreach($this->attributes as $path => $attribute){
-            $query = '/' . $this->name_space . ':' . str_replace('.', '/' . $this->name_space . ':', $path);
+        if(isset($this->attributes)){
+            foreach($this->attributes as $path => $attribute){
+                $query = '/' . $this->name_space . ':' . str_replace('.', '/' . $this->name_space . ':', $path);
             
-            $elements = $xpath->query($query);
-                foreach($elements as $element){
-                    $element->setAttribute($attribute['key'], $attribute['value']);
-                }
+                $elements = $xpath->query($query);
+                    foreach($elements as $element){
+                        $element->setAttribute($attribute['key'], $attribute['value']);
+                    }
+            }
         }
-        
         $doc->save($this->file_path);
     }
 
@@ -176,6 +177,11 @@ class Billrun_Generator_PaymentGateway_Xml {
             $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
             $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
             $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+            if((count($this->input_array['data']) == 0) || (count($this->input_array['headers']) == 0)){
+                $lastDelimiterPos = strrpos($commonPrefix, $this->pathDelimiter, 0);
+                $commonPrefix = substr($commonPrefix, 0, $lastDelimiterPos);
+                $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
+            }
             $this->parents = explode($this->pathDelimiter, $commonPrefix);
             $this->commonPath = $commonPrefix;
         }
