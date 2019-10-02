@@ -14,7 +14,7 @@
  */
 class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
 	
-	protected $data = [];
+	public $data = [];
 	protected $aid = null;
 	
 	public function __construct($options = array()) {
