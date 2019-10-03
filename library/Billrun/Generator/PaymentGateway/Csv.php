@@ -31,7 +31,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$this->delimiter = '';
 		}
 		if (!$this->validateOptions($options)) {
-			Billrun_Factory::log("Missing options when generating payment gateways csv file for file type " . $options['file_type'], Zend_Log::DEBUG);
+			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 			return false;
 		}
 		
