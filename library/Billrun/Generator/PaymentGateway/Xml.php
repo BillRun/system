@@ -26,6 +26,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $root_NS = "";
     protected $attributes;
     protected $repeatedTags;
+    protected $local_dir;
     
     public function __construct($options) {
         $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
@@ -38,10 +39,8 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
-        $this->file_name = $options['file_name'];
-        if (isset($options['local_dir'])) {
-            $this->file_path = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
-        }
+        //$this->file_name = $options['file_name'];
+        $this->local_dir = $options['local_dir'];
     }
 
     protected function validateOptions($options){
@@ -140,6 +139,7 @@ class Billrun_Generator_PaymentGateway_Xml {
 //            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
 //            return;
 //        }
+        $this->file_path = $this->local_dir . DIRECTORY_SEPARATOR . $this->file_name;
         $result = $this->repeatedTags;
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
@@ -233,92 +233,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         return $pathAsArray;
     }
 
-//    protected function preXmlBuilding() {
-//        foreach ($this->input_array as $segment => $indexes) {
-//            for ($a = 0; $a < count($indexes); $a++) {
-//                if (isset($this->input_array[$segment][$a])) {
-//                    $curentPathes = array_keys($this->input_array[$segment][$a]);
-//                    for ($i = 0; $i < count($curentPathes); $i++) {
-//                        if ((array_key_exists('attributes', $this->input_array[$segment][$a][$curentPathes[$i]])) && (isset($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']))) {
-//                            for ($b = 0; $b < count($this->input_array[$segment][$a][$curentPathes[$i]]['attributes']); $b++) {
-//                                $attributes[] = $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b];
-//                                $this->attributes[$curentPathes[$i]] = array('key' => $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b]['key'], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['attributes'][$b]['value']);
-//                            }
-//                        } else {
-//                            $attributes = array();
-//                        }
-//                        $this->workingArray[$segment][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value'], 'attributes' => $attributes);
-//                        unset($attributes);
-//                        $this->pathes[] = $curentPathes[$i];
-//                        $this->pathesBySegment[$segment][] = $curentPathes[$i];
-//                    }
-//                }
-//            }
-//        }
-//        sort($this->pathes);
-//        if (count($this->pathes) > 1) {
-//            $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
-//            $length = strlen($commonPrefix);
-//            foreach ($this->pathes as $item) {
-//                // check if there is a match; if not, decrease the prefix by one character at a time
-//                while ($length && substr($item, 0, $length) !== $commonPrefix) {
-//                    $length--;
-//                    $commonPrefix = substr($commonPrefix, 0, -1);
-//                }
-//                if (!$length) {
-//                    break;
-//                }
-//            }
-//            $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
-//            $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-//            $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
-//            if((count($this->input_array['data']) == 0) || (count($this->input_array['headers']) == 0)){
-//                $lastDelimiterPos = strrpos($commonPrefix, $this->pathDelimiter, 0);
-//                $commonPrefix = substr($commonPrefix, 0, $lastDelimiterPos);
-//                $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
-//            }
-//            $this->parents = explode($this->pathDelimiter, $commonPrefix);
-//            $this->commonPath = $commonPrefix;
-//        }
-//        foreach ($this->pathesBySegment as $segment => $paths) {
-//            if (count($this->pathesBySegment[$segment]) > 1) {
-//                sort($this->pathesBySegment[$segment]);
-//                $commonPrefix = array_shift($this->pathesBySegment[$segment]);  // take the first item as initial prefix
-//                $length = strlen($commonPrefix);
-//                foreach ($this->pathesBySegment[$segment] as $item) {
-//                    // check if there is a match; if not, decrease the prefix by one character at a time
-//                    while ($length && substr($item, 0, $length) !== $commonPrefix) {
-//                        $length--;
-//                        $commonPrefix = substr($commonPrefix, 0, -1);
-//                    }
-//                    if (!$length) {
-//                        break;
-//                    }
-//                }
-//                $LastPointPosition = strrpos($commonPrefix, $this->pathDelimiter, 0);
-//                $commonPrefix = substr($commonPrefix, 0, $LastPointPosition);
-//                $commonPrefix = rtrim($commonPrefix, $this->pathDelimiter);
-//                $repeatedPrefix = trim(str_replace($this->commonPath, "", $commonPrefix), $this->pathDelimiter);
-//                $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
-//            } else {
-//                if (count($this->pathesBySegment[$segment]) == 1) {
-//                    $pathWithNoParents = str_replace($this->commonPath, "", $this->pathesBySegment[$segment][0]);
-//                    $pathWithNoParents = trim($pathWithNoParents, '.');
-//                    $firstPointPos = strpos($pathWithNoParents, '.');
-//                    $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
-//                    $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
-//                } else {
-//                    if ($segment === "data") {
-//                        throw "No pathes in " . $segment . " segment. No generate was made." . PHP_EOL;
-//                    } else {
-//                        Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No pathes in ' . $segment . ' segment.', Zend_Log::WARN);
-//                    }
-//                }
-//            }
-//        }
-//        return $returnedValue;
-//    }
-
     protected function createXmlRoot($doc, &$rootNode) {
         if (count($this->commonPathAsArray) == 1) {
             $currentTag = array_shift($this->commonPathAsArray);
@@ -365,4 +279,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
     }
 
+    public function setFileName($fileName){
+        $this->file_name = $fileName;
+    }
 }
