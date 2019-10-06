@@ -135,6 +135,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
+                $numberOfRecordsToTreat = count($this->data);
+                Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}
