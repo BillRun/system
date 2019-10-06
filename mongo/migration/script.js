@@ -543,7 +543,6 @@ var discountsFields = [{
 for (var fieldIdx in discountsFields) {
 	lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
 }
-
 // BRCD-1969 - add account allowances field
 var accountField = {
 	"field_name": "allowances",
@@ -551,7 +550,6 @@ var accountField = {
 	"display": false,
 };
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], accountField, 'account');
-
 // BRCD-1917 - add system flag true to discount system fields
 var discountFields = lastConfig['discounts']['fields'];
 if (discountFields) {
@@ -586,6 +584,26 @@ var chargeFields = [{
 }];
 for (var fieldIdx in chargeFields) {
 	lastConfig = addFieldToConfig(lastConfig, chargeFields[fieldIdx], 'charges');
+}
+
+//BRCD-1858 - UI for denials receiver for Credit Guard
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+			if (typeof lastConfig['payment_gateways'][i]['transactions'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['transactions'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['transactions']['receiver'] === 'undefined')	{
+				lastConfig["payment_gateways"][i]['transactions'].receiver = [];
+			}
+
+			if (typeof lastConfig['payment_gateways'][i]['denials'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['denials'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['denials']['receiver'] === 'undefined') {
+				lastConfig["payment_gateways"][i]['denials'].receiver = [];
+			}
+			delete(lastConfig['payment_gateways'][i]['receiver']);
+	}
 }
 
 var formerPlanField ={
@@ -728,5 +746,4 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
-
 db.config.insert(lastConfig);

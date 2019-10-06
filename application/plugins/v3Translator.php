@@ -129,18 +129,21 @@ class v3TranslatorPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function afterTranslateCustomerAggregatorData($aggregator, &$translatedData) {
 		$ret = [];
 		$data = $aggregator->getData();
+		Billrun_Utils_Mongo::convertQueryMongoDates($data);
 		$aid = $aggregator->getAid() ?: -1;
 		$passthrough = $data['services'];
 		$passthrough['aid'] = $aid;
 		
 		foreach ($data['services'] as $sub) {
-			$planDates = [];
-			$services = [];
+			$planDates = $sub['plan_dates'] ?: [];
+			$services = $sub['id']['services'] ?: [];
 			$id = [
 				'aid' => $aid,
-				'sid' => $sub['sid'] ?: -1,
+				'first_name' => $sub['id']['first_name'],
+				'last_name' => $sub['id']['last_name'],
+				'sid' => $sub['id']['sid'] ? $sub['id']['sid'] : 0,
 				'plan' => $sub['next_plan'] ?: $sub['curr_plan'],
-				'type' => 'subscriber',
+				'type' => !empty($sub['id']['sid']) ? 'subscriber' : 'account',
 				'address' => $sub['address'] ?: '',
 				'services' => $services,
 			];

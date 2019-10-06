@@ -37,6 +37,10 @@ class GenerateExpectedAction extends ApiAction {
 		return Billrun_Util::getIn($this->params, 'generate_pdf', true);
 	}
 
+	protected function shouldIgnoreCdrs() {
+		return !empty($this->params['ignore_cdrs']);
+	}
+
 	protected function shouldDownloadPdf() {
 		if (!$this->shouldGeneratePdf()) {
 			return false;
@@ -61,6 +65,7 @@ class GenerateExpectedAction extends ApiAction {
 			'stamp' => $this->getStamp(),
 			'fake_cycle' => $this->isFakeCycle(),
 			'generate_pdf' => $this->shouldGeneratePdf(),
+			'ignore_cdrs' => $this->shouldIgnoreCdrs(),
 		];
 		
 		if (!empty($this->params['data'])) {

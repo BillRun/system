@@ -2,23 +2,29 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Processor for Credit Guard files.
+ * Processor for payment gateway files.
  * @package  Billing
- * @since    5.7
+ * @since    5.9
  */
-class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
+class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_Updater {
 
 	/**
-	 *
+	 * Name of the payment gateway in Billrun.
 	 * @var string
 	 */
-
-	protected static $type = 'CGfeedback';
+	protected $gatewayName;
+	
+	
+	/**
+	 * Name of the receiver related action.
+	 * @var string
+	 */
+	protected $actionType;
 
 	protected $structConfig;
 	protected $headerStructure;
@@ -29,9 +35,9 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 	protected $parserDefinitions;
 	protected $workspace;
 
-
 	public function __construct($options) {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.config_path'));
+		$configPath = APPLICATION_PATH . "/conf/PaymentGateways/" . $this->gatewayName . "/struct.ini";
+		$this->loadConfig($configPath);
 		$options = array_merge($options, $this->getProcessorDefinitions());
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
@@ -53,13 +59,11 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 			if (!$row){
 				return false;
 			}
-			$row['amount'] = $line['amount'];
-			$row['transaction_id'] = $line['deal_id'];
-			$row['ret_code'] = $line['deal_status'];
-			$row['row_number'] = ++$rowCount;
-			$this->addDataRow($row);
+			$newRow = array_merge($row, $this->addFields($row));
+			$newRow['row_number'] = ++$rowCount;
+			$this->addDataRow($newRow);
 		}
-		return true;		
+		return true;
 	}
 
 	protected function getBillRunLine($rawLine) {
@@ -70,16 +74,17 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 
 	protected function updateData() {
 		$data = $this->getData();
-		foreach ($data['data'] as $row) {
-			$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
-			if (is_null($bill)) {
-				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
-				continue;
-			}	
-			$paymentResponse = $this->getPaymentResponse($row);
-			Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $bill, 'CreditGuard');
-			if ($paymentResponse['stage'] == 'Completed') {
-				$bill->markApproved($paymentResponse['stage']);
+		$filteredData = $this->filterData($data);
+		foreach ($filteredData as $row) {
+			if (!empty($row['transaction_id'])) {
+				$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
+				if (is_null($bill)) {
+					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
+					continue;
+				}
+				$this->updatePayments($row, $bill);
+			} else {
+				$this->updatePayments($row);
 			}
 		}
 	}
@@ -90,35 +95,17 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 	 */
 	protected function loadConfig($path) {
 		$this->structConfig = (new Yaf_Config_Ini($path))->toArray();
-		$this->headerStructure = $this->structConfig['header'];
-		$this->dataStructure = $this->structConfig['data'];
-		$this->processorDefinitions = $this->structConfig['processor'];
-		$this->parserDefinitions = $this->structConfig['parser'];
+		$this->headerStructure = isset($this->structConfig['header'][$this->actionType]) ? $this->structConfig['header'][$this->actionType] : array();
+		$this->dataStructure = isset($this->structConfig['data'][$this->actionType]) ? $this->structConfig['data'][$this->actionType] : array();
+		$this->processorDefinitions = isset($this->structConfig['processor'][$this->actionType]) ? $this->structConfig['processor'][$this->actionType] : array();
+		$this->parserDefinitions = isset($this->structConfig['parser'][$this->actionType]) ? $this->structConfig['parser'][$this->actionType] : array();
 		$this->workspace = $this->structConfig['config']['workspace'];
-	}
-	
-	
-	protected function isValidTransaction($row){
-		if ($row['ret_code'] == '000') { // 000 - Good Deal
-			return true;
-		} else{
-			return false;
-		}
 	}
 	
 	protected function getRowDateTime($dateStr) {
 		$datetime = new DateTime();
 		$date = $datetime->createFromFormat('ymdHis', $dateStr);
 		return $date;
-	}
-
-	protected function getPaymentResponse($row) {
-		$stage = 'Rejected';
-		if ($this->isValidTransaction($row)) {
-			$stage = 'Completed';
-		}
-
-		return array('status' => $row['ret_code'], 'stage' => $stage);
 	}
 	
 	public function skipQueueCalculators() {

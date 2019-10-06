@@ -1773,10 +1773,10 @@ class Billrun_Util {
 	 * @param type $self
 	 * @return type
 	 */
-	public static function translateTemplateValue($str, $translations, $self = NULL) {
+	public static function translateTemplateValue($str, $translations, $self = NULL, $customGateway = false) {
 		foreach ($translations as $key => $translation) {
 			if(is_string($translation) || is_numeric($translation)) {
-				$replace = is_numeric($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
+				$replace = is_numeric($translation) && !$customGateway ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
 				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
