@@ -31,13 +31,18 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$this->delimiter = '';
 		}
 		if (!$this->validateOptions($options)) {
-			Billrun_Factory::log("Missing options when generating payment gateways csv file for file type " . $options['file_type'], Zend_Log::DEBUG);
-			return false;
+			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 		}
 		
 		$this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
 	}
-	
+        
+	/**
+	 * validate the config.
+	 *
+	 * @param  array   $options   Relevant params from the config
+	 * @return true in case all the expected config params exist, false otherwise.
+	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
 			return false;
