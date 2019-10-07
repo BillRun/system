@@ -48,7 +48,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
             return false;
         }
-        echo '';
         $fileName = $this->getFilename();
         $generator->setFileName($fileName);
         $generator->generate();
