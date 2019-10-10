@@ -51,7 +51,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $fileName = $this->getFilename();
         $generator->setFileName($fileName);
         $generator->generate();
-        self::initLogFile();
+        $this->initLogFile();
         return true;
     }
 
