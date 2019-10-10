@@ -190,9 +190,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			return $this->fileName;
 		}
 		$translations = array();
-		foreach ($this->fileNameParams as $paramObj) {
-			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
-		}
+                if(is_array($this->fileNameParams)){
+                    foreach ($this->fileNameParams as $paramObj) {
+                            $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+                    }      
+                }
 		
 		$this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
 		return $this->fileName;
