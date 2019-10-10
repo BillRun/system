@@ -83,6 +83,18 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 					Billrun_Factory::log("Couldn't convert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
 				}
 			}
+                        if (isset($dataField['number_format'])) {
+                            if((!empty($dataField['number_format']['dec_point']) && (empty($dataField['number_format']['thousands_sep']))) || (empty($dataField['number_format']['dec_point']) && (!empty($dataField['number_format']['thousands_sep'])))){
+                                Billrun_Factory::log("'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'], Zend_Log::WARN);
+                            }
+                            if (!empty($dataField['number_format']['dec_point']) && !empty($dataField['number_format']['thousands_sep']) && !empty($dataField['number_format']['decimals'])){
+                                    $dataLine[$dataField['path']] = number_format((float)$dataLine[$dataField['path']], $dataField['number_format']['decimals'], $dataField['number_format']['dec_point'], $dataField['number_format']['thousands_sep']);
+                            } else {
+                                    if (!empty($dataField['number_format']['decimals'])){
+                                        $dataLine[$dataField['path']] = number_format((float)$dataLine[$dataField['path']], $dataField['number_format']['decimals']); 
+                                }
+                            }
+                        }
                         if(isset($dataField['attributes'])){
                             for($i = 0; $i < count($dataField['attributes']); $i++){
                                 $attributes[] = $dataField['attributes'][$i];
