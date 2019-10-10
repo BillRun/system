@@ -176,7 +176,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-                $No_TxId_counter = 0;
+                $no_txid_counter = 0;
 		foreach ($data['data'] as $row) {
                     if($row[$this->tranIdentifierField] !== ""){
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
@@ -186,11 +186,11 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$this->updatePayments($row, $bill, $currentProcessor);
                     }else{
-                        $No_TxId_counter++;
+                        $no_txid_counter++;
                     }
 		}
-                if($No_TxId_counter > 0){
-                    Billrun_Factory::log()->log('In ' .$No_TxId_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+                if($no_txid_counter > 0){
+                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
                 }
 	}
 	
