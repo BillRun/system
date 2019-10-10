@@ -524,7 +524,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			'$in' => $customersAids
 		);
 		$query['type'] = "account";
-		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
+		$subscribers = Billrun_Factory::subscriber()->load($query);
 		foreach ($subscribers as $subscriber) {
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}

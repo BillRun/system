@@ -37,7 +37,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 			// Register all the query handlers.
 			// TODO: Move the list of query types to conf to be created here by reflection.
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
+				Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
@@ -78,19 +78,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$this->data = $data;
 		return true;
 	}
-
-	/**
-	 * Get the customer from the db.
-	 * @param array $params - Input params to get a subscriber by.
-	 * @return array Raw data of mongo raw. False if none found.
-	 */
-	protected function customerQueryDb($params) {
-		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = $coll->query($params)->cursor()->limit(1)->current();
-		if ($results->isEmpty()) {
-			return false;
-		}
-		return $results->getRawData();
+	
+	public function getSubscriberDetails($query = []) {
+		return Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
 	}
 
 	/**

@@ -140,7 +140,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		$subQuery[$field] = $identifier;
 		$subQuery['type'] = $subscriber_type;
 		
-		$sub = Billrun_Factory::db()->subscribersCollection()->query($subQuery)->cursor()->current(); // todo add revision from/to support
+		$sub = Billrun_Factory::subscriber()->load($subQuery)->current(); // todo add revision from/to support
 		if ($sub->isEmpty()) {
 			throw new Billrun_Exceptions_Api(0, array(), ucfirst($field) . ' not found on prepaid include update');
 		}

@@ -165,7 +165,18 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * 
 	 * @param array $params load by those params 
 	 */
-	abstract public function load($params);
+	protected function load($params) {
+		$results = $this->getSubscriberDetails($params);
+		if (!empty($results)) {
+			$res = [];
+			foreach ($results as $result) {
+				$res[] = $result->getRawData();
+			}
+			$this->data = $res;
+			return $res;
+		}
+		return [];
+	}
 
 	/**
 	 * method to save subsbscriber details
@@ -208,6 +219,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	abstract public function getCredits($billrun_key, $retEntity = false);
 
 	abstract public function getServices($billrun_key, $retEntity = false);
+	
+	abstract public function getSubscriberDetails($query = []);
 
 	/**
 	 * Returns field names to be saved when creating billrun
@@ -240,7 +253,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getCurrentPlans() {
 		return $this->plans;
 	}
-
+	
 	/**
 	 * 
 	 * @return Billrun_Plan
@@ -252,5 +265,9 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	
 	public function getSubscriberData() {
 		return $this->data;
+	}
+	
+	protected function customerQueryDb($params) {
+
 	}
 }
