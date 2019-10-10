@@ -200,7 +200,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	
 	protected function prepareLineForGenerate($lineValue, $addedData, $attributes) {
 		$newLine = array();
-		$newLine['value'] = isset($addedData['number_format']['decimals']) && is_numeric($lineValue) ? number_format($lineValue, $addedData['number_format']['decimals']) : $lineValue;
+		$newLine['value'] = $lineValue;
 		$newLine['name'] = $addedData['name'];
                 if(count($attributes) > 0){
                     for($i = 0; $i<count($attributes); $i++){
@@ -315,17 +315,29 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				} else {
 					Billrun_Factory::log("Couldn't convert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
 				}
-			}	
+			}
 			if (!isset($line[$field['path']])) {
 				$configObj = $field['name'];
 				throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
 			}
-                        if(isset($dataField['attributes'])){
-                            for($i = 0; $i < count($dataField['attributes']); $i++){
-                                $attributes[] = $dataField['attributes'][$i];
+                        if(isset($field['attributes'])){
+                            for($i = 0; $i < count($field['attributes']); $i++){
+                                $attributes[] = $field['attributes'][$i];
                             }                          
                         }else{
                             $attributes = [];
+                        }
+                        if (isset($field['number_format'])) {
+                            if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
+                                Billrun_Factory::log("'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'], Zend_Log::WARN);
+                            }
+                            if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
+                                    $line[$field['path']] = number_format((float)$dataLine[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
+                            } else {
+                                    if (isset($field['number_format']['decimals'])){
+                                        $line[$field['path']] = number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
+                                }
+                            }
                         }
 			$line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
 		}
