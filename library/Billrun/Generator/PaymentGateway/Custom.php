@@ -332,7 +332,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                                 Billrun_Factory::log("'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'], Zend_Log::WARN);
                             }
                             if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
-                                    $line[$field['path']] = number_format((float)$dataLine[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
+                                    $line[$field['path']] = number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
                             } else {
                                     if (isset($field['number_format']['decimals'])){
                                         $line[$field['path']] = number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
