@@ -31,7 +31,7 @@ class Billrun_Parser_Xml {
         $this->input_array['data'] = isset($options['data_structure']) ? $options['data_structure'] : null;
         $this->input_array['trailer'] = isset($options['trailer_structure']) ? $options['trailer_structure'] : null;
         $this->name_space_prefix = ((isset($options['name_space_prefix']) && $options['name_space_prefix'] !== "") ? $options['name_space_prefix'] : $this->name_space_prefix);
-        $this->name_space = ((isset($options['name_space']) && $options['name_space'] !== "") ? $options['name_space'] : $this->name_space);    
+        $this->name_space = ((isset($options['name_space']) && $options['name_space'] !== "") ? $options['name_space'] : $this->name_space);
     }
 
     public function setDataStructure($structure) {
@@ -90,107 +90,67 @@ class Billrun_Parser_Xml {
         $this->getParentNode($parentNode);
         $headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
 
-        if ($this->name_space_prefix !== "") {
-            $parentNode = $parentNode->children($this->name_space_prefix, true);
-            foreach ($parentNode->children($this->name_space_prefix, true) as $currentChild => $data) {
-                if (isset($repeatedTags['header']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['header']['repeatedTag']) {
-                        $headerRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['header']); $i++) {
-                            $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
-                            $headerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':' , $headerSubPath);
-                            $headerReturndValue = $data->xpath($headerSubPath);
-                            if ($headerReturndValue) {
-                                $headerValue = strval($headerReturndValue[0]);
-                            } else {
-                                $headerValue = '';
-                            }
-                            $this->headerRows[$headerRowsNum - 1][$this->input_array['header'][$i]['name']] = $headerValue;
+        for($i = 0; $i < count($commonPathAsArray); $i++){
+            $parentNode = $this->parentNodeWithNsOrNo($parentNode);
+        }
+        foreach ($parentNode as $currentChild => $data) {
+            if (isset($repeatedTags['header']['repeatedTag'])) {
+                if ($currentChild === $repeatedTags['header']['repeatedTag']) {
+                    $headerRowsNum++;
+                    for ($i = 0; $i < count($this->input_array['header']); $i++) {
+                        $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
+                        if($this->name_space_prefix === ""){
+                            $headerSubPath = '//' . str_replace(".", "/" , $headerSubPath);
+                        }else{
+                                $headerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $headerSubPath);
                         }
-                    }
-                }
-                if (isset($repeatedTags['data']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['data']['repeatedTag']) {
-                        $dataRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['data']); $i++) {
-                            $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$i]['path']), $this->pathDelimiter);
-                            $dataSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':' , $dataSubPath);
-                            $dataReturndValue = $data->xpath($dataSubPath);
-                            if ($dataReturndValue) {
-                                $dataValue = strval($dataReturndValue[0]);
-                            } else {
-                                $dataValue = '';
-                            }
-                            $this->dataRows[$dataRowsNum - 1][$this->input_array['data'][$i]['name']] = $dataValue;
+                        $headerReturndValue = $data->xpath($headerSubPath);
+                        if ($headerReturndValue) {
+                            $headerValue = strval($headerReturndValue[0]);
+                        } else {
+                            $headerValue = '';
                         }
-                    }
-                }
-                if (isset($repeatedTags['trailer']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
-                        $trailerRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['trailer']); $i++) {
-                            $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$i]['path']), $this->pathDelimiter);
-                            $trailerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':' , $trailerSubPath);
-                            $trailerReturndValue = $data->xpath($trailerSubPath);
-                            if ($trailerReturndValue) {
-                                $trailerValue = strval($trailerReturndValue[0]);
-                            } else {
-                                $trailerValue = '';
-                            }
-                            $this->trailerRows[$trailerRowsNum - 1][$this->input_array['trailer'][$i]['name']] = $trailerValue;
-                        }
+                        $this->headerRows[$headerRowsNum - 1][$this->input_array['header'][$i]['name']] = $headerValue;
                     }
                 }
             }
-        }else {
-            $parentNode = $parentNode->children();
-            foreach ($parentNode->children() as $currentChild => $data) {
-                if (isset($repeatedTags['header']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['header']['repeatedTag']) {
-                        $headerRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['header']); $i++) {
-                            $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
-                            $headerSubPath = '//' . str_replace(".", "/" , $headerSubPath);
-                            $headerReturndValue = $data->xpath($headerSubPath);
-                            if ($headerReturndValue) {
-                                $headerValue = strval($headerReturndValue[0]);
-                            } else {
-                                $headerValue = '';
-                            }
-                            $this->headerRows[$headerRowsNum - 1][$this->input_array['header'][$i]['name']] = $headerValue;
-                        }
-                    }
-                }
-                if (isset($repeatedTags['data']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['data']['repeatedTag']) {
-                        $dataRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['data']); $i++) {
-                            $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$i]['path']), $this->pathDelimiter);
+            if (isset($repeatedTags['data']['repeatedTag'])) {
+                if ($currentChild === $repeatedTags['data']['repeatedTag']) {
+                    $dataRowsNum++;
+                    for ($i = 0; $i < count($this->input_array['data']); $i++) {
+                        $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$i]['path']), $this->pathDelimiter);
+                        if($this->name_space_prefix === ""){
                             $dataSubPath = '//' . str_replace(".", "/" , $dataSubPath);
-                            $dataReturndValue = $data->xpath($dataSubPath);
-                            if ($dataReturndValue) {
-                                $dataValue = strval($dataReturndValue[0]);
-                            } else {
-                                $dataValue = '';
-                            }
-                            $this->dataRows[$dataRowsNum - 1][$this->input_array['data'][$i]['name']] = $dataValue;
+                        }else{
+                                $dataSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $dataSubPath);
                         }
+                        $dataReturndValue = $data->xpath($dataSubPath);
+                        if ($dataReturndValue) {
+                            $dataValue = strval($dataReturndValue[0]);
+                        } else {
+                            $dataValue = '';
+                        }
+                        $this->dataRows[$dataRowsNum - 1][$this->input_array['data'][$i]['name']] = $dataValue;
                     }
                 }
-                if (isset($repeatedTags['trailer']['repeatedTag'])) {
-                    if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
-                        $trailerRowsNum++;
-                        for ($i = 0; $i < count($this->input_array['trailer']); $i++) {
-                            $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$i]['path']), $this->pathDelimiter);
+            }
+            if (isset($repeatedTags['trailer']['repeatedTag'])) {
+                if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
+                    $trailerRowsNum++;
+                    for ($i = 0; $i < count($this->input_array['trailer']); $i++) {
+                        $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$i]['path']), $this->pathDelimiter);
+                        if($this->name_space_prefix === ""){
                             $trailerSubPath = '//' . str_replace(".", "/" , $trailerSubPath);
-                            $trailerReturndValue = $data->xpath($trailerSubPath);
-                            if ($trailerReturndValue) {
-                                $trailerValue = strval($trailerReturndValue[0]);
-                            } else {
-                                $trailerValue = '';
-                            }
-                            $this->trailerRows[$trailerRowsNum - 1][$this->input_array['trailer'][$i]['name']] = $trailerValue;
+                        }else{
+                                $trailerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $trailerSubPath);
                         }
+                        $trailerReturndValue = $data->xpath($trailerSubPath);
+                        if ($trailerReturndValue) {
+                            $trailerValue = strval($trailerReturndValue[0]);
+                        } else {
+                            $trailerValue = '';
+                        }
+                        $this->trailerRows[$trailerRowsNum - 1][$this->input_array['trailer'][$i]['name']] = $trailerValue;
                     }
                 }
             }
@@ -215,7 +175,7 @@ class Billrun_Parser_Xml {
             $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
             $length = strlen($commonPrefix);
             foreach ($this->pathes as $item) {
-// check if there is a match; if not, decrease the prefix by one character at a time
+            // check if there is a match; if not, decrease the prefix by one character at a time
                 while ($length && substr($item, 0, $length) !== $commonPrefix) {
                     $length--;
                     $commonPrefix = substr($commonPrefix, 0, -1);
@@ -236,7 +196,7 @@ class Billrun_Parser_Xml {
                 $commonPrefix = array_shift($this->pathesBySegment[$segment]);  // take the first item as initial prefix
                 $length = strlen($commonPrefix);
                 foreach ($this->pathesBySegment[$segment] as $item) {
-// check if there is a match; if not, decrease the prefix by one character at a time
+                // check if there is a match; if not, decrease the prefix by one character at a time
                     while ($length && substr($item, 0, $length) !== $commonPrefix) {
                         $length--;
                         $commonPrefix = substr($commonPrefix, 0, -1);
@@ -288,6 +248,14 @@ class Billrun_Parser_Xml {
 
     public function getTrailerRows() {
         return $this->trailerRows;
+    }
+
+    public function parentNodeWithNsOrNo($parentNode) {
+        if ($this->name_space_prefix !== "") {
+            return $parentNode->children($this->name_space_prefix, true);
+        } else {
+            return $parentNode->children();
+        }
     }
 
 }
