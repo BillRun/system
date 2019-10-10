@@ -37,7 +37,6 @@ class Billrun_Generator_PaymentGateway_Csv {
 			return false;
 		}
 		$this->local_dir = $options['local_dir'];
-		//$this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
 	}
 	
 	protected function validateOptions($options) {
