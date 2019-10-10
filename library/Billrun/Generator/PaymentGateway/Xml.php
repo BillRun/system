@@ -35,7 +35,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         $response = $this->validateOptions($options);
         if($response !== true){
             throw new Exception($response);
-            return false;
         }
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
@@ -43,6 +42,12 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->local_dir = $options['local_dir'];
     }
 
+    /**
+	 * validate the config.
+	 *
+	 * @param  array   $options   Relevant params from the config
+	 * @return true - in case all the expected config params exist, and if the config is built as expected, error message - otherwise.
+	 */ 
     protected function validateOptions($options){
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($indexes); $a++) {

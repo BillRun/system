@@ -134,7 +134,39 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			'sid' => $sid,
 			'billrun' => $this->cycleAggregator->getCycle()->key()
 		);
+		
+		// in case of expected invoice we might want to ignore usage lines
+		if ($this->cycleAggregator->ignoreCdrs) {
+			$query['type'] = 'credit';
+		}
+		
+		// in case of expected invoice for subscriber termintation we might want to prepone future installments
+		if ($this->cycleAggregator->isFakeCycle() && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+			$installmentLines = $this->cycleAggregator->handleInstallmentsPrepone($this->cycleAggregator->getData());
+			$futureCharges = [];
+			foreach ($installmentLines as $line	) {
+				if ($line['sid'] == $sid) {
+					$futureCharges[] = $line;
+				}
+			}
+		}
 
+		// in case of expected invoice we might want to ignore usage lines
+		if ($this->cycleAggregator->ignoreCdrs) {
+			$query['type'] = 'credit';
+		}
+		
+		// in case of expected invoice for subscriber termintation we might want to prepone future installments
+		if ($this->cycleAggregator->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+			$installmentLines = $this->cycleAggregator->handleInstallmentsPrepone($this->cycleAggregator->data);
+			$futureCharges = [];
+			foreach ($installmentLines as $line	) {
+				if ($line['sid'] == $sid) {
+					$futureCharges[] = $line;
+				}
+			}
+		}
+		
 		$requiredFields = array('aid' => 1, 'sid' => 1);
 		$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
 
@@ -156,6 +188,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
+		
+		// Add future installments to cycle
+		foreach ($futureCharges as $line) {
+			$ret[$line['stamp']] = 	$line->getRawData();
+		}
+		
 		Billrun_Factory::log('Finished querying for subscriber ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
 
 		return $ret;

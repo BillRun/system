@@ -26,7 +26,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
-		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) || 1 ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
+		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
 		$payment->setPending(false);
 		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
 		if ($paymentResponse['stage'] == 'Completed') {

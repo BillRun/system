@@ -56,7 +56,6 @@ class GenerateAction extends Action_Base {
 
         $this->_controller->addOutput("Generator loaded");
         $this->_controller->addOutput("Loading data to Generate...");
-        try {
             $generator->load();
             $this->_controller->addOutput("Starting to Generate. This action can take a while...");
             if ($generator->generate()) {
@@ -75,8 +74,5 @@ class GenerateAction extends Action_Base {
             } else {
                 $this->_controller->addOutput("Something went wrong, no file was genertaed.");
             }
-        } catch (Exception $ex) {
-            Billrun_Factory::log()->log($ex, Zend_Log::DEBUG);
-        }
     }
 }
