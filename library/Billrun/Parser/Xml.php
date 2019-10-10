@@ -78,7 +78,7 @@ class Billrun_Parser_Xml {
             $GivenXml = simplexml_load_file($filename);
         }
         if ($GivenXml === false) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. Might missing \'<\' or \'/\'. Please check, and reprocess.', Zend_Log::ALERT);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. Please open it with chrom browser to find the problem, and reprocess.', Zend_Log::ALERT);
             return;
         }
 
@@ -91,7 +91,7 @@ class Billrun_Parser_Xml {
         $headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
 
         for($i = 0; $i < count($commonPathAsArray); $i++){
-            $parentNode = $this->parentNodeWithNsOrNo($parentNode);
+            $parentNode = $this->getParentNodeAccordingToNameSpaceValue($parentNode);
         }
         foreach ($parentNode as $currentChild => $data) {
             if (isset($repeatedTags['header']['repeatedTag'])) {
@@ -250,7 +250,7 @@ class Billrun_Parser_Xml {
         return $this->trailerRows;
     }
 
-    public function parentNodeWithNsOrNo($parentNode) {
+    public function getParentNodeAccordingToNameSpaceValue($parentNode) {
         if ($this->name_space_prefix !== "") {
             return $parentNode->children($this->name_space_prefix, true);
         } else {
