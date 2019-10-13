@@ -51,14 +51,16 @@ abstract class Billrun_Balance_Update_Abstract {
 			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id (sid) is not define in input under prepaid include');
 		} else if (!$this->sharedBalance) {
 			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $params['sid']));
-			$entity = Billrun_Factory::subscriber()->load($query);
+			$entity = Billrun_Factory::subscriber();
+			$entity->load($query);
 		}
 		
 		if ($this->sharedBalance && !isset($params['aid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'On shared balance account id (aid) must be defined in the input');
 		} else if ($this->sharedBalance) {
 			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('aid' => $params['aid']));
-			$entity = Billrun_Factory::account()->getAccountDetails($query);
+			$entity = Billrun_Factory::account();
+			$entity->load($query);
 		}
 		
 		if ($this->entity->isEmpty()) {

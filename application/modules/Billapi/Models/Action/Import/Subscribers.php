@@ -32,7 +32,8 @@ class Models_Action_Import_Subscribers extends Models_Action_Import {
 			"type" => "account",
 			$entity['__LINKER__']['field'] => $entity['__LINKER__']['value'],
 		);			
-		$account = Billrun_Factory::account()->load($accountQuery);
+		$account = Billrun_Factory::account();
+		$account->load($accountQuery);
 		if(!$account || $account->isEmpty()) {
 			throw new Exception('Customer for subscriber does not exist');
 		}
