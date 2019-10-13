@@ -60,7 +60,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			}
 		} else {
 			$index = 0;
-			$account = new Billrun_Account_Db();
+			$account = Billrun_Factory::account();
 			$account->load(array('aid' => $request['aid']));
 			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];

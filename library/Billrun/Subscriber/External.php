@@ -48,10 +48,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $remote, Zend_Log::NOTICE);
 			return false;
 		}
-		foreach ($res as $sub) {
-			$subs[] = new Mongodloid_Entity($sub);
-		}
-		return $subs;
+		return new Mongodloid_Entity($res);
 	}
 	
 }

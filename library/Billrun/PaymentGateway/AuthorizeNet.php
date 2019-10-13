@@ -436,8 +436,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		if (empty($paymentProfileId)) {	
 			$index = 0;
-			$account = new Billrun_Account_Db();
-			$account->load(array('aid' => $aid));
+			$account = Billrun_Factory::account()->load(array('aid' => $aid));
 			$accountPg = $account->payment_gateway;
 			$setValues['payment_gateway']['active'] = array();
 			if (!isset($accountPg['former'])) { 

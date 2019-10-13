@@ -80,7 +80,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 	
 	public function getSubscriberDetails($query = []) {
-		return Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
+		return Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current();
 	}
 
 	/**
