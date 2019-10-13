@@ -23,6 +23,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @var boolean
 	 */
 	static $queriesLoaded = false;
+	
+	protected $collection;
 
 	/**
 	 * Construct a new subscriber DB instance.
@@ -42,6 +44,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
 		}
+		
+		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
 	/**
@@ -80,7 +84,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 	
 	public function getSubscriberDetails($query = []) {
-		return Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current();
+		return $this->collection->query($query)->cursor()->current();
 	}
 
 	/**
@@ -102,7 +106,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 
 	public function getSubscribersByParams($params, $availableFields) {
-		
+		return $this->collection->query($params)->cursor();
 	}
 
 	public function getList($startTime, $endTime, $page, $size, $aid = null) {
@@ -243,8 +247,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				'card_token' => 1,
 			)
 		);
-		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = iterator_to_array($coll->aggregate($pipelines));
+		$results = iterator_to_array($this->collection->aggregate($pipelines));
 		return $this->parseActiveSubscribersOutput($results, $startTime, $endTime);
 	}
 	
@@ -375,43 +378,6 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 	public function getCredits($billrun_key, $retEntity = false) {
 		return array();
-	}
-
-	/**
-	 * 
-	 * @param type $billrun_key
-	 * @param type $retEntity
-	 * @return \Billrun_DataTypes_Subscriberservice
-	 */
-	public function getServices($billrun_key, $retEntity = false) {
-		if(!isset($this->data['services'])) {
-			return array();
-		}
-		
-		$servicesEnitityList = array();
-		$services = $this->data['services'];
-		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		
-		foreach ($services as $service) {
-			if(!isset($service['name'])) {
-				continue;
-			}
-			
-			$serviceQuery = array('name' => $service['name']);
-			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
-			if($serviceEntity->isEmpty()) {
-				continue;
-			}
-			
-			$serviceData = array_merge($service, $serviceEntity->getRawData());
-			
-			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
-			if(!$serviceValue->isValid()) {
-				continue;
-			}
-			$servicesEnitityList[] = $serviceValue;
-		}
-		return $servicesEnitityList;
 	}
 	
 	protected function getPaymentDetails($details) {

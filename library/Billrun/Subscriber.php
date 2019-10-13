@@ -177,6 +177,43 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		return [];
 	}
+	
+	/**
+	 * 
+	 * @param type $billrun_key
+	 * @param type $retEntity
+	 * @return \Billrun_DataTypes_Subscriberservice
+	 */
+	public function getServices($billrun_key, $retEntity = false) {
+		if(!isset($this->data['services'])) {
+			return array();
+		}
+		
+		$servicesEnitityList = array();
+		$services = $this->data['services'];
+		$servicesColl = Billrun_Factory::db()->servicesCollection();
+		
+		foreach ($services as $service) {
+			if(!isset($service['name'])) {
+				continue;
+			}
+			
+			$serviceQuery = array('name' => $service['name']);
+			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
+			if($serviceEntity->isEmpty()) {
+				continue;
+			}
+			
+			$serviceData = array_merge($service, $serviceEntity->getRawData());
+			
+			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
+			if(!$serviceValue->isValid()) {
+				continue;
+			}
+			$servicesEnitityList[] = $serviceValue;
+		}
+		return $servicesEnitityList;
+	}
 
 	/**
 	 * method to save subsbscriber details
@@ -217,8 +254,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	abstract public function getSubscribersByParams($params, $availableFields);
 
 	abstract public function getCredits($billrun_key, $retEntity = false);
-
-	abstract public function getServices($billrun_key, $retEntity = false);
 	
 	abstract public function getSubscriberDetails($query = []);
 
