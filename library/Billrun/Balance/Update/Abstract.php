@@ -27,10 +27,10 @@ abstract class Billrun_Balance_Update_Abstract {
 	protected $sharedBalance = false;
 
 	/**
-	 * the subscriber entry
+	 * the subscriber/account entry
 	 * @var array
 	 */
-	protected $subscriber = array();
+	protected $entity = array();
 	
 	/**
 	 * additional parameters to be saved
@@ -50,20 +50,21 @@ abstract class Billrun_Balance_Update_Abstract {
 		if (!$this->sharedBalance && !isset($params['sid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id (sid) is not define in input under prepaid include');
 		} else if (!$this->sharedBalance) {
-			$identifier = $params['sid'];
-			$field = 'sid';
-			$subscriber_type = 'subscriber';
+			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $params['sid']));
+			$entity = Billrun_Factory::subscriber()->load($query);
 		}
 		
 		if ($this->sharedBalance && !isset($params['aid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'On shared balance account id (aid) must be defined in the input');
 		} else if ($this->sharedBalance) {
-			$identifier = $params['aid'];
-			$field = 'aid';
-			$subscriber_type = 'account';
+			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('aid' => $params['aid']));
+			$entity = Billrun_Factory::account()->getAccountDetails($query);
 		}
-
-		$this->loadSubscriber((int) $identifier, $field, $subscriber_type);
+		
+		if ($this->entity->isEmpty()) {
+			throw new Billrun_Exceptions_Api(0, array(), get_class() . 'Error loading entity');
+		}
+		$this->entity = $entity->getRawData();
 		
 		if (!empty($params['additional'])) {
 			$this->additional= $params['additional'];
@@ -140,10 +141,8 @@ abstract class Billrun_Balance_Update_Abstract {
 		$subQuery[$field] = $identifier;
 		$subQuery['type'] = $subscriber_type;
 		
-		$sub = Billrun_Factory::subscriber()->load($subQuery)->current(); // todo add revision from/to support
-		if ($sub->isEmpty()) {
-			throw new Billrun_Exceptions_Api(0, array(), ucfirst($field) . ' not found on prepaid include update');
-		}
+		$sub = Billrun_Factory::subscriber()->load($subQuery); // todo add revision from/to support
+
 		$this->subscriber = $sub->getRawData();
 	}
 	
