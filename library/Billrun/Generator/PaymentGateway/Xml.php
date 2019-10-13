@@ -26,7 +26,9 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $root_NS = "";
     protected $attributes;
     protected $repeatedTags;
-    
+    protected $encoding = 'utf-8';
+
+
     public function __construct($options) {
         $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
         $this->input_array['data'] = isset($options['data']) ? $options['data'] : null;
@@ -37,6 +39,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
+        $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
         $this->file_name = $options['file_name'];
         if (isset($options['local_dir'])) {
             $this->file_path = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
@@ -150,7 +153,7 @@ class Billrun_Generator_PaymentGateway_Xml {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
         }
 
-        $doc = new DOMDocument('1.0', 'utf-8');
+        $doc = new DOMDocument('1.0');
         $doc->formatOutput = true;
         $xml_file_name = $this->file_name;
 
@@ -201,6 +204,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                     }
             }
         }
+        $doc->encoding = $this->encoding;
         $doc->save($this->file_path);
     }
 
