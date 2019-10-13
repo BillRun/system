@@ -51,6 +51,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			throw new Exception($message);
 			return;
 		}
+                Billrun_Factory::log()->log('Parameters are valid for file type ' .  $this->configByType['file_type'] , Zend_Log::INFO);
+                Billrun_Factory::log()->log('Starting to pull entities..' , Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
@@ -120,6 +122,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			try {
 				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+                                Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
 				continue;
