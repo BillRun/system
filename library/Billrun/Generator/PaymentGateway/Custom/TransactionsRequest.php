@@ -47,7 +47,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	public function load() {
 		if (!$this->validateExtraParams()) {
-			Billrun_Factory::log()->log("Parameters not validated for file type " .  $this->configByType['file_type'], Zend_Log::DEBUG);
+			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.'; 
+			throw new Exception($message);
 			return;
 		}
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
@@ -135,6 +136,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
+                $numberOfRecordsToTreat = count($this->data);
+                Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}

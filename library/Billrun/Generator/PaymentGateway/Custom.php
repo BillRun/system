@@ -42,8 +42,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	public function generate() {
 		$className = $this->getGeneratorClassName();
 		$generatorOptions = $this->buildGeneratorOptions();
-		$generator = new $className($generatorOptions);
+                try{
+                    $generator = new $className($generatorOptions);
+                }catch(Exception $ex){
+                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
+                    return false;
+                }
 		$generator->generate();
+                return true;
 	}
 	
 	protected function getDataLine($params) {
