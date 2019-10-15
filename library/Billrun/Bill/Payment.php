@@ -109,11 +109,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
 			}
-			
+
 			if (isset($options['uf'])) {
 				$this->data['uf'] = $options['uf'];
 			}
-
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
@@ -144,8 +143,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['txid'] = $txid;
 		} else {
 			$this->data['_id'] = new MongoId();
-			$this->data->createAutoInc('txid');
-			$this->data['txid'] = str_pad($this->data['txid'], 13, '0', STR_PAD_LEFT);
+			$this->data['txid'] = isset($this->data['gateway_details']['txid']) ? $this->data['gateway_details']['txid'] : self::createTxid();
 		}
 	}
 
@@ -897,6 +895,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $pipelines;
 	}
 	
+	public static function createTxid() {
+		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
+		return str_pad($txid, 13, '0', STR_PAD_LEFT);
+	}
 	public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();

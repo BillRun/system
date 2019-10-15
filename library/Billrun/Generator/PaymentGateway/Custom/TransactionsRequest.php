@@ -34,7 +34,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->fileNameParams = isset($this->configByType['filename_params']) ? $this->configByType['filename_params'] : '';
 		$this->fileNameStructure = isset($this->configByType['filename']) ? $this->configByType['filename'] : '';
 		$this->initChargeOptions($options);
-		$this->initLogFile();
 		$this->localDir = $this->configByType['export']['export_directory'];
 		if (isset($this->configByType['generator']['filtration'])) {
 			$this->generatorFilters = $this->configByType['generator']['filtration'];
@@ -163,17 +162,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	protected function isChargeMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
-	}
-
-	protected function initLogFile() {
-		$logOptions = $this->chargeOptions;
-		$logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
-		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
-		$this->logFile->setSequenceNumber();
-		$this->logFile->setFileName($this->getFilename());
-		$this->logFile->setStamp();
-		$this->generatedFileLog = $this->logFile->getStamp();
-		$this->logFile->save();
 	}
 	
 	protected function isPaymentUpholdPlaceholders($paymentDetails, $placeHoldersConditions) {
