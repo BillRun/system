@@ -75,7 +75,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function writeToFile($str) {
-                $str = mb_convert_encoding($str, $this->encoding, 'utf-8');
+                $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
 		return file_put_contents($this->filePath, $str, FILE_APPEND);
 	}
 
