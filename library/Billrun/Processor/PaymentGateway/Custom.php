@@ -166,7 +166,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
 	}
 	}
-	protected function getOriginalFileStamp($correlatedField) {
+	
+        protected function getOriginalFileStamp($correlatedField) {
 		$query = array(
 			$correlatedField => $this->correlatedValue,
 		);
@@ -176,14 +177,22 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
+                $no_txid_counter = 0;
 		foreach ($data['data'] as $row) {
+                    if($row[$this->tranIdentifierField] !== ""){
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
 			$this->updatePayments($row, $bill, $currentProcessor);
+                    }else{
+                        $no_txid_counter++;
+                    }
 		}
+                if($no_txid_counter > 0){
+                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+                }
 	}
 	
 	protected function updateLogCollection($fileCorrelation) {
