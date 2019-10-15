@@ -35,8 +35,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!$this->validateOptions($options)) {
 			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 		}
-		
-		$this->filePath = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
+		$this->local_dir = $options['local_dir'];
 	}
         
 	/**
@@ -187,5 +186,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 		return implode($this->delimiter, $rowValues);
 	}
 
+        public function setFileName($fileName){
+            $this->file_name = $fileName;
+        }
 }
 

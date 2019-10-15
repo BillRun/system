@@ -110,7 +110,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		);
 	}
 
-	public function pay($gatewayDetails) {
+	public function pay($gatewayDetails, $addonData) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {

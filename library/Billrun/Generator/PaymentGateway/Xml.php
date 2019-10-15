@@ -142,12 +142,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         return true;    }
     
     public function generate() {
-//        try {
-//            $result = $this->preXmlBuilding();
-//        } catch (Exception $ex) {
-//            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
-//            return;
-//        }
+        $this->file_path = $this->local_dir . DIRECTORY_SEPARATOR . $this->file_name;
         $result = $this->repeatedTags;
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
@@ -159,10 +154,6 @@ class Billrun_Generator_PaymentGateway_Xml {
 
         $this->commonPathAsArray = explode($this->pathDelimiter, $this->commonPath);
         $firstTag = array_shift($this->commonPathAsArray);
-//        if ($this->commonPath === "") {
-//            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.', Zend_Log::ERR);
-//            return;
-//        }
         $rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
         $document = $doc->appendChild($rootNode);
         $flag = 0;
@@ -288,4 +279,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
     }
 
+    public function setFileName($fileName){
+        $this->file_name = $fileName;
+    }
 }
