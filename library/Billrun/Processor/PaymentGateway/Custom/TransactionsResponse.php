@@ -38,6 +38,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
 				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
 			}
+                    Billrun_Factory::log()->log('Successfully updated the payment of transaction : ' . $billData['txid'], Zend_Log::INFO);
 		}
 	}
 	
