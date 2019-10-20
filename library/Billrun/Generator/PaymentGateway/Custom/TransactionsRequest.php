@@ -50,8 +50,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			throw new Exception($message);
 			return;
 		}
-                Billrun_Factory::log()->log('Parameters are valid for file type ' .  $this->configByType['file_type'] , Zend_Log::INFO);
-                Billrun_Factory::log()->log('Starting to pull entities..' , Zend_Log::INFO);
+                Billrun_Factory::log()->log('Parameters are valid for file type ' .  $this->configByType['file_type'] . '. Starting to pull entities..' , Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
