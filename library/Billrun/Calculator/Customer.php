@@ -124,6 +124,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		} else {
 			if ($this->loadSubscriberForLine($row)) {
 				$subscriber = $this->subscriber;
+				
 			} else {
 				Billrun_Factory::log('Error loading subscriber for row ' . $row->get('stamp'), Zend_Log::NOTICE);
 				return false;
@@ -293,7 +294,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$this->subscriber->loadSubscribers($params, $this->subscriber->getAvailableFields());
-		$this->subscribers = $this->subscriber->get
+		$this->subscribers = $this->subscriber->getData();
 	}
 
 	/**
@@ -314,7 +315,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($params as $currParams) {
 			$currParams['time'] = $time;
 			$currParams['stamp'] = $row->get('stamp');
-			if ($this->subscriber->load($currParams)) {
+			if ($this->subscriber->loadSubscriber($currParams)) {
 				return true;
 			}
 		}

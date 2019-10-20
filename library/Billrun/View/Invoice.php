@@ -254,8 +254,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($this->data['invoice_date']->sec);
 		$query['sid'] = $sid;
 		$query['type'] = 'subscriber';
-		$sub = Billrun_Factory::subscriber()->load($query)->current();
-		$msgs = !$sub->isEmpty() && !empty($sub['invoice_messages']) ? $sub['invoice_messages'] : [];
+		$sub = Billrun_Factory::subscriber();
+		$sub->loadSubscriber($query);
+		$subData = $sub->getData();
+		$msgs = !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
 			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);

@@ -219,7 +219,7 @@ class BalancesModel extends TableModel {
 				$item['units'] = implode(',', $units);
 				$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $item['sid']));
 				$subscriberEntity = Billrun_Factory::subscriber();
-				$subscriberEntity->load($query);
+				$subscriberEntity->loadSubscriber($query);
 				$subscriber = $subscriberEntity->getData();
 				if (isset($subscriber['service_provider'])) {
 					$item['service_provider'] = $subscriber['service_provider'];

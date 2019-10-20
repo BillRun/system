@@ -67,9 +67,9 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$newAccount = Billrun_Factory::account();
-		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
-		$newAccount->load($accountQuery);
+		$account = Billrun_Factory::account();
+		$accountQuery = $account->getQueryActiveAccounts($customersAids);
+		$account->loadAccounts($accountQuery);
 		$accounts = $newAccount->getCustomerData();
 		foreach ($accounts as $account){
 			$subscribers_in_array[$account['aid']] = $account;

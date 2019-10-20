@@ -50,7 +50,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	
-	protected function getSubscribersDetails($query, $availableFields) {
+	protected function getSubscribersDetails($query, $availableFields = []) {
 		return $this->collection->query($query)->cursor();
 	}
 	

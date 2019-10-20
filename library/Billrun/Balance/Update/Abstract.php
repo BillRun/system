@@ -52,7 +52,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		} else if (!$this->sharedBalance) {
 			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $params['sid']));
 			$entity = Billrun_Factory::subscriber();
-			$entity->load($query);
+			$entity->loadSubscriber($query);
 		}
 		
 		if ($this->sharedBalance && !isset($params['aid'])) {
@@ -60,7 +60,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		} else if ($this->sharedBalance) {
 			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('aid' => $params['aid']));
 			$entity = Billrun_Factory::account();
-			$entity->load($query);
+			$entity->loadAccount($query);
 		}
 		
 		if ($this->entity->isEmpty()) {
@@ -143,9 +143,10 @@ abstract class Billrun_Balance_Update_Abstract {
 		$subQuery[$field] = $identifier;
 		$subQuery['type'] = $subscriber_type;
 		
-		$sub = Billrun_Factory::subscriber()->load($subQuery); // todo add revision from/to support
+		$sub = Billrun_Factory::subscriber();
+		$sub->loadSubscriber($subQuery);
 
-		$this->subscriber = $sub->getRawData();
+		$this->subscriber = $sub->getData();
 	}
 	
 	/**

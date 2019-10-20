@@ -161,21 +161,33 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
-	 * method to load subsbscriber details
+	 * method to load subscribers revisions
 	 * 
 	 * @param array $params load by those params 
 	 */
-	protected function load($params) {
-		$results = $this->getSubscriberDetails($params);
-		if (!empty($results)) {
-			$res = [];
-			foreach ($results as $result) {
-				$res[] = $result->getRawData();
-			}
-			$this->data = $res;
-			return $res;
+	public function loadSubscribers($params) {
+		$results = $this->getSubscribersDetails($params);
+		if (!$results) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
 		}
-		return [];
+		$this->data = $results;
+		return true;
+	}
+
+	/**
+	 * method to load subscriber revision
+	 * 
+	 * @param array $params load by those params 
+	 */
+	public function loadSubscriber($params) {
+		$result = $this->getSubscriberDetails($params);
+		if (!$result) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		$this->data = $result->getRawData();
+		return true;
 	}
 	
 	/**

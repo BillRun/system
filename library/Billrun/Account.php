@@ -150,7 +150,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $params load by those params 
 	 * @return true if successful.
 	 */
-	public function load($params) {
+	public function loadAccount($params) {
 		$query = $this->buildQuery($params);
 		$data = $this->getAccountDetails($query);
 		if (!$data) {
@@ -253,7 +253,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
 				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
-				if ($this->load($params)) {
+				if ($this->loadAccount($params)) {
 					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
 					$collectionSteps->createCollectionSteps($aid);
 					if ($this->closeAndNew($new_values)) {
@@ -268,7 +268,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
 				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
-				if ($this->load($params)) {
+				if ($this->loadAccount($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);
 					if ($this->closeAndNew(array(), $remove_values)) {

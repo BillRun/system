@@ -67,8 +67,8 @@ class Models_Accounts extends Models_Entity {
 			$query["aid"] = ["\$ne" => $this->update['aid']];
 		}
 
-		$account = new Billrun_Account_Db();
-		$account->load($query);
+		$account = Billrun_Factory::account();
+		$account->loadAccount($query);
 		if (!$account->isEmpty()) {
 			$account_sids = array_reduce($account->allowances, function($acc, $allowance) {
 				$acc[] = $allowance['sid'];

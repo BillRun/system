@@ -179,7 +179,7 @@ class PaymentGatewaysController extends ApiController {
 		// Get the accound object.
 		$query = $this->getAccountQuery($aid);
 		$accountEntity = Billrun_Factory::account();
-		$accountEntity->load($query);
+		$accountEntity->loadAccount($query);
 		$account = $accountEntity->getCustomerData();
 		if($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
 			// Check the payment gateway
