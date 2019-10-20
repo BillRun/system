@@ -78,7 +78,7 @@ class Billrun_Parser_Xml {
             $GivenXml = simplexml_load_file($filename);
         }
         if ($GivenXml === false) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. Please open it with chrom browser to find the problem, and reprocess.', Zend_Log::ALERT);
+            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
 
