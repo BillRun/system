@@ -19,14 +19,14 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $padDirDef = STR_PAD_LEFT;
 	protected $padCharDef = ' ';
 	protected $filePath;
-        protected $file_name;
-        protected $local_dir;
+        protected $encoding = 'utf-8';
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->data = isset($options['data']) ? $options['data'] : $this->data;
 		$this->headers = isset($options['headers']) ? $options['headers'] : $this->headers;
 		$this->trailers = isset($options['trailers']) ? $options['trailers'] : $this->trailers;
+                $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
@@ -74,7 +74,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function writeToFile($str) {
-                $this->filePath = $this->local_dir . DIRECTORY_SEPARATOR . $this->file_name;
+                $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
 		return file_put_contents($this->filePath, $str, FILE_APPEND);
 	}
 
