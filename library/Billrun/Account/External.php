@@ -21,14 +21,13 @@ class Billrun_Account_External extends Billrun_Account {
 	}
 	
 	/**
-	 * get accounts by params
-	 * @return array of mongodloid entities
+	 * Overrides parent abstract method
 	 */
-	public function getAccountsByQuery($query) {
+	protected function getAccountsDetails($query) {
 		$res = Billrun_Util::sendRequest($this->remote, json_encode($query));
 		$accounts = [];
 		if (!$res) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		foreach ($res as $account) {
@@ -37,13 +36,23 @@ class Billrun_Account_External extends Billrun_Account {
 		return $accounts;
 	}
 	
+	/**
+	 * Overrides parent abstract method
+	 */
 	protected function getAccountDetails($query) {
 		$res = Billrun_Util::sendRequest($this->remote, json_encode($query));
 		if (!$res) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return new Mongodloid_Entity($res);
+	}
+	
+	/** 
+	 * Method to Save as 'Close And New' item
+	 */
+	public function closeAndNew($set_values, $remove_values = array()) {
+		
 	}
 
 }

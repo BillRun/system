@@ -47,11 +47,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	/**
-	 * The instance of the Account collection.
-	 */
-	protected $collection;
-	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -60,7 +55,6 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
 		}
-		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
 	/**
@@ -110,11 +104,24 @@ abstract class Billrun_Account extends Billrun_Base {
 	abstract public function getList($page, $size, $time, $acc_id = null);
 	
 	/**
-	 * get account revisions by params
+	 * get account revision by params
+	 * @return mongodloid entity
+	 */
+	protected abstract function getAccountDetails($query);
+	
+	/**
+	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */
-	public abstract function getAccountsByQuery($query);
+	protected abstract function getAccountsDetails($query);
 	
+	/**
+	 * Method to Save as 'Close And New' item
+	 * @param Array $set_values Key value array with values to set
+	 * @param Array $remove_values Array with keys to unset
+	 */
+	public abstract function closeAndNew($set_values, $remove_values = array());
+
 	//	abstract public function markCollectionStepsCompleted($aids = array());
 
 	/**
@@ -154,11 +161,28 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
+	
+	/**
+	 * method to load accounts details
+	 * 
+	 * @param array $params load by those params 
+	 * @return true if successful.
+	 */
+	public function loadAccounts($params) {
+		$query = $this->buildQuery($params);
+		$data = $this->getAccountsDetails($query);
+		if (!$data) {
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+
+		$this->data = $data;
+		return true;
+	}
 
 	/**
-	 * Get the account from the db.
-	 * @param array $params - Input params to get a subscriber by.
-	 * @return array Raw data of mongo raw. False if none found.
+	 * @param array $params - Input params to get an account by.
+	 * @return array of query params.
 	 */
 	protected function buildQuery($params) {
 		$query = array('type' => 'account');
@@ -180,44 +204,15 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		return $query;
 	}
-	
-	/**
-	 * 
-	 * Method to Save as 'Close And New' item
-	 * @param Array $set_values Key value array with values to set
-	 * @param Array $remove_values Array with keys to unset
-	 */
-	public function closeAndNew($set_values, $remove_values = array()) {
-
-		// Updare old item
-		$update = array('to' => new MongoDate());
-		try {
-			$this->collection->update(array('_id' => $this->data['_id']), array('$set' => $update));
-		} catch (Exception $exc) {
-			Billrun_Factory::log("Unable to update (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
-			return FALSE;
-		}
-
-		// Save new item
-		if (!isset($set_values['from'])) {
-			$set_values['from'] = new MongoDate();
-		}
-		if (!isset($set_values['to'])) {
-			$set_values['to'] = new MongoDate(strtotime('+100 years'));
-		}
-		$newEntityData = array_merge($this->data, $set_values);
-		foreach ($remove_values as $remove_filed_name) {
-			unset($newEntityData[$remove_filed_name]);
-		}
-		unset($newEntityData['_id']);
-		$newEntity = new Mongodloid_Entity($newEntityData);
-		try {
-			$ret = $this->collection->insert($newEntity);
-			return !empty($ret['ok']);
-		} catch (Exception $exc) {
-			Billrun_Factory::log("Unable to insert (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
-			return FALSE;
-		}
+		
+	public function getQueryActiveAccounts($aids) {
+		$today = new MongoDate();
+		return array(
+			'aid' => array('$in' => $aids), 
+			'from' => array('$lte' => $today), 
+			'to' => array('$gte' => $today), 
+			'type' => "account"
+		);
 	}
 	
 	public function getInCollection($aids = array()) {
@@ -239,7 +234,8 @@ abstract class Billrun_Account extends Billrun_Base {
 			$params['aid']['$nin'] = $exempted;
 		}
 		$query = $this->buildQuery($params);
-		$cursor = $this->collection->query($query)->cursor();
+		$this->loadAccounts($params);
+		$cursor = $this->getCustomerData($query);
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
 		}

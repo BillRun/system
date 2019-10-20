@@ -251,11 +251,11 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getListFromFile($file_path, $time);
 
-	abstract public function getSubscribersByParams($params, $availableFields);
+	abstract protected function getSubscribersDetails($query, $availableFields);
 
-	abstract public function getCredits($billrun_key, $retEntity = false);
+	abstract protected function getSubscriberDetails($query);
 	
-	abstract public function getSubscriberDetails($query = []);
+	abstract public function getCredits($billrun_key, $retEntity = false);
 
 	/**
 	 * Returns field names to be saved when creating billrun
@@ -300,9 +300,5 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	
 	public function getSubscriberData() {
 		return $this->data;
-	}
-	
-	protected function customerQueryDb($params) {
-
 	}
 }

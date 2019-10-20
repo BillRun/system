@@ -63,7 +63,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		
 		$newAccount = Billrun_Factory::account();
 		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
-		$accounts = $newAccount->getAccountsByQuery($accountQuery);
+		$newAccount->loadAccounts($accountQuery);
+		$accounts = $newAccount->getCustomerData();
 		foreach ($accounts as $account){
 			$subscribersInArray[$account['aid']] = $account;
 		}

@@ -25,6 +25,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	static $queriesLoaded = false;
 	
 	protected $collection;
+	
+	static protected $type = 'db';
 
 	/**
 	 * Construct a new subscriber DB instance.
@@ -47,43 +49,12 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
-
-	/**
-	 * method to load subsbscriber details
-	 * 
-	 * @param array $params load by those params 
-	 * @return true if successful.
-	 */
-	public function load($params) {
-		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
-		if ($subscriberQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
-			return false;
-		}
-
-//		if (!isset($params['time'])) {
-//			$datetime = time();
-//		} else {
-//			$datetime = strtotime($params['time']);
-//		}
-//		$queryParams['from'] = array('$lt' => new MongoDate(strtotime($datetime)));
-//		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
-
-
-		if (isset($subscriberQuery['sid'])) {
-			settype($subscriberQuery['sid'], 'int');
-		}
-		$data = $this->customerQueryDb($subscriberQuery);
-		if (!$data) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
-			return false;
-		}
-
-		$this->data = $data;
-		return true;
+	
+	protected function getSubscribersDetails($query, $availableFields) {
+		return $this->collection->query($query)->cursor();
 	}
 	
-	public function getSubscriberDetails($query = []) {
+	protected function getSubscriberDetails($query) {
 		return $this->collection->query($query)->cursor()->current();
 	}
 
@@ -103,10 +74,6 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 	public function isValid() {
 		return true;
-	}
-
-	public function getSubscribersByParams($params, $availableFields) {
-		return $this->collection->query($params)->cursor();
 	}
 
 	public function getList($startTime, $endTime, $page, $size, $aid = null) {

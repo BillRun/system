@@ -560,7 +560,8 @@ abstract class Billrun_Bill {
 			$relevantAids = $billsColl->distinct('aid', $matchQuery);
 		}
 		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$account->loadAccounts($accountQuery);
+		$currentAccounts = $account->getCustomerData();
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {

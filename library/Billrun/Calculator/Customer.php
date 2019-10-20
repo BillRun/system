@@ -292,7 +292,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
-		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());
+		$this->subscriber->loadSubscribers($params, $this->subscriber->getAvailableFields());
+		$this->subscribers = $this->subscriber->get
 	}
 
 	/**

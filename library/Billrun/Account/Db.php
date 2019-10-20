@@ -14,6 +14,11 @@
  * @since    5.0
  */
 class Billrun_Account_Db extends Billrun_Account {
+	
+	/**
+	 * Instance of the subscribers collection.
+	 */
+	protected $collection;
 
 	/**
 	 * Construct a new account DB instance.
@@ -22,6 +27,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
 	public function getList($page, $size, $time, $acc_id = null) {
@@ -43,21 +49,17 @@ class Billrun_Account_Db extends Billrun_Account {
 	}
 	
 	/**
-	 * Get accounts by transferred query.
-	 * @param array $query - query.
+	 * Overrides parent abstract method
 	 */
-	public function getAccountsByQuery($query) {
+	protected function getAccountsDetails($query) {
 		return $this->collection->query($query)->cursor();
 	}
-	
-	public function getQueryActiveAccounts($aids) {
-		$today = new MongoDate();
-		return array(
-			'aid' => array('$in' => $aids), 
-			'from' => array('$lte' => $today), 
-			'to' => array('$gte' => $today), 
-			'type' => "account"
-		);
+		
+	/**
+	 * Overrides parent abstract method
+	 */
+	protected function getAccountDetails($query) {
+		return $this->collection->query($query)->cursor()->limit(1)->current();
 	}
 
 	public function permanentChange($query, $update) {
@@ -73,7 +75,43 @@ class Billrun_Account_Db extends Billrun_Account {
 		$entityModel->permanentchange();
 	}
 	
-	protected function getAccountDetails($query) {
-		return $this->collection->query($params)->cursor()->limit(1)->current();
+		
+	/**
+	 * 
+	 * Method to Save as 'Close And New' item
+	 * @param Array $set_values Key value array with values to set
+	 * @param Array $remove_values Array with keys to unset
+	 */
+	public function closeAndNew($set_values, $remove_values = array()) {
+
+		// Updare old item
+		$update = array('to' => new MongoDate());
+		try {
+			$this->collection->update(array('_id' => $this->data['_id']), array('$set' => $update));
+		} catch (Exception $exc) {
+			Billrun_Factory::log("Unable to update (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
+			return FALSE;
+		}
+
+		// Save new item
+		if (!isset($set_values['from'])) {
+			$set_values['from'] = new MongoDate();
+		}
+		if (!isset($set_values['to'])) {
+			$set_values['to'] = new MongoDate(strtotime('+100 years'));
+		}
+		$newEntityData = array_merge($this->data, $set_values);
+		foreach ($remove_values as $remove_filed_name) {
+			unset($newEntityData[$remove_filed_name]);
+		}
+		unset($newEntityData['_id']);
+		$newEntity = new Mongodloid_Entity($newEntityData);
+		try {
+			$ret = $this->collection->insert($newEntity);
+			return !empty($ret['ok']);
+		} catch (Exception $exc) {
+			Billrun_Factory::log("Unable to insert (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
+			return FALSE;
+		}
 	}
 }

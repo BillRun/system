@@ -307,7 +307,7 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the account instance
 	 * 
-	 * @return Billrun_Subscriber
+	 * @return Billrun_Account
 	 */
 	static public function account() {
 		if (!self::$account) {
