@@ -41,7 +41,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 			// Register all the query handlers.
 			// TODO: Move the list of query types to conf to be created here by reflection.
-				Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
@@ -55,7 +55,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 	
 	protected function getSubscriberDetails($query) {
-		return $this->collection->query($query)->cursor()->current();
+		return $this->collection->query($query)->cursor()->limit(1)->current();
 	}
 
 	/**

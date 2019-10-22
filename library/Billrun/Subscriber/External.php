@@ -12,6 +12,15 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		
+		if (!self::$queriesLoaded) {
+			self::$queriesLoaded = true;
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
+		}
+		
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscriber.fields.external', '');
 	}
 	
