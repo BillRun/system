@@ -51,7 +51,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 	
 	protected function getSubscribersDetails($query, $availableFields = []) {
-		return $this->collection->query($query)->cursor();
+		Billrun_Factory::log()->log(get_class() . ": unable to make query to DB under current configuration", Zend_Log::NOTICE);
+		throw new Exception("customer calculator configuration error");
 	}
 	
 	protected function getSubscriberDetails($query) {

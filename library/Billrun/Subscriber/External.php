@@ -8,6 +8,8 @@
 
 class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
+	static $queriesLoaded = false;
+	
 	static protected $type = 'external';
 		
 	public function __construct($options = array()) {
@@ -40,7 +42,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	}
 
-	protected function getSubscribersDetails($params, $availableFields) {
+	protected function getSubscribersDetails($params, $availableFields = []) {
 		$res = Billrun_Util::sendRequest($this->remote, json_encode($params));
 		$subscribers = [];
 		if (!$res) {
