@@ -878,7 +878,9 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+					if (!empty($gatewayDetails)) {
+						$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+					}
 					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
