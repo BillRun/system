@@ -517,11 +517,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
-		$query['type'] = "account";
 		$account = Billrun_Factory::account();
 		$account->loadAccounts($query);
 		$subscribers = $account->getCustomerData();

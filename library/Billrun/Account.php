@@ -174,6 +174,27 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
+	/**
+	 * 	$stamps = [];
+		$subsData = [];
+		foreach ($priorities as $priorityQueries) {
+			$queries = array_filter($priorityQueries, function($query) use ($stamps){
+				return !isset($stamps[$query['stamp']]);
+			});
+			$results = $this->getSubscribersDetails($queries);
+			if (!$results) {
+				Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($queries, 1), Zend_Log::NOTICE);
+				return false;
+			}
+			foreach ($results as $sub) {
+				$stamps[$sub['stamp']] = true;
+				$subsData[] = $results;
+			}
+		}
+		return array_map(function($data) {
+			return Billrun_Subscriber::getInstance($data);
+		}, $subsData);
+	 */
 
 	/**
 	 * @param array $params - Input params to get an account by.
@@ -181,22 +202,24 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected function buildQuery($params) {
 		$query = array('type' => 'account');
-		$queryExcludeParams = array('time', 'type', 'to', 'from');
-		
-		if (isset($params['time'])) {
-			$query['to']['$gt'] = new MongoDate(strtotime($params['time']));
-			$query['from']['$lte'] = new MongoDate(strtotime($params['time']));
-		} else {
-			$query = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
+		if (!isset($params['time'])) {
+			$params['time'] = date(Billrun_Base::base_datetimeformat);
 		}
-
 		foreach ($params as $key => $value) {
-			if (in_array($key, $queryExcludeParams)) {
-				continue;
+			switch ($key) {
+				case 'time':
+					$query = array_merge($query, $this->getTimeQuery($value));
+					break;
+				case 'stamp':
+					break;
+				default:
+					$query[$key] = $value;
 			}
-			$query[$key] = $value;
+			
 		}
-
+		if (isset($query['aid']) && !is_array($query['aid'])) {
+			settype($query['aid'], 'int');
+		}
 		return $query;
 	}
 		
@@ -212,7 +235,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	
 	public function getInCollection($aids = array()) {
 		$results = array();
-		$params = Billrun_Utils_Mongo::getDateBoundQuery();
 		$exempted = $this->getExcludedFromCollection($aids);
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
@@ -229,8 +251,8 @@ abstract class Billrun_Account extends Billrun_Base {
 			$params['aid']['$nin'] = $exempted;
 		}
 		$query = $this->buildQuery($params);
-		$this->loadAccounts($params);
-		$cursor = $this->getCustomerData($query);
+		$this->loadAccounts($query);
+		$cursor = $this->getCustomerData();
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
 		}

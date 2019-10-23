@@ -33,7 +33,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 		foreach($lines as $line) {
 			if(!$taxCalacualtor->isLineTaxable($line)) { continue; }
 			$subscriber = Billrun_Factory::subscriber();
-			$subscriber->loadSubscriber(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			$subscriber->loadSubscriberForQuery(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = Billrun_Factory::account();
 			$account->loadAccount(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			

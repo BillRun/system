@@ -28,7 +28,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData) {
 		$subscriber = Billrun_Factory::subscriber();
-		$subscriber->loadSubscriber($subscriberSearchData);
+		$subscriber->loadSubscriberForQuery($subscriberSearchData);
 		$account = Billrun_Factory::account();
 		$account->loadAccount($accountSearchData);
 

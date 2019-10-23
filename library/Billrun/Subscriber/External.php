@@ -14,15 +14,6 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
-		if (!self::$queriesLoaded) {
-			self::$queriesLoaded = true;
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
-		}
-		
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscriber.fields.external', '');
 	}
 	
@@ -52,12 +43,19 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	}
 	
 	protected function getSubscriberDetails($query) {
+		if (isset($query['EXTRAS'])) {
+			unset($query['EXTRAS']);
+		}
 		$res = Billrun_Util::sendRequest($this->remote, json_encode($query));
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		return new Mongodloid_Entity($res);
+		$subscribers = [];
+		foreach ($res as $sub) {
+			$subscribers[] = new Mongodloid_Entity($sub);
+		}
+		return $subscribers;
 	}
 
 	public function isValid() {

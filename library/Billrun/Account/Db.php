@@ -19,6 +19,8 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
+	
+	protected static $type = 'db';
 
 	/**
 	 * Construct a new account DB instance.
@@ -109,5 +111,9 @@ class Billrun_Account_Db extends Billrun_Account {
 			Billrun_Factory::log("Unable to insert (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
 			return FALSE;
 		}
+	}
+	
+	protected function getTimeQuery($time) {
+		return Billrun_Utils_Mongo::getDateBoundQuery();
 	}
 }

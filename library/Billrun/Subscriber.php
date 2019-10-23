@@ -65,7 +65,9 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var string
 	 */
 	protected $nextPlanActivation = null;
-
+	
+	protected static $allowedQueryKeys = ['time', 'stamp'];
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -163,13 +165,40 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function isEmpty() {
 		return empty($this->data);
 	}
+	
+	/**
+	 * 
+	 * @param array $queries
+	 * @return array of mongodloid entities containing subscriber data
+	 */
+	protected function load($queries = []) {
+		$subs = [];
+		foreach ($queries as $query) {
+			$subs = array_merge($subs, $this->getSubscriberDetails($query));
+		}
+		return $subs;
+	}
 
 	/**
-	 * method to load subscribers revisions
 	 * 
-	 * @param array $params load by those params 
+	 * @param array $queries to load one subscriber per query
+	 * @return array of subscriber instances
 	 */
-	public function loadSubscribers($priorities, $extraData = []) {
+	public function loadSubscriberForQueries($queries, $extraData = []) {
+		$limit = 1;
+		$query = [];
+		// build a single big query, using the passed params for each subquery
+		foreach($queries as $subQuery) {
+			$query[] = $this->buildQuery($subQuery, $limit);
+		}
+		$results = $this->load($query);
+		if (!$results) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		return $results;
+		
+		///
 		$stamps = [];
 		$subsData = [];
 		foreach ($priorities as $priorityQueries) {
@@ -192,28 +221,47 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
-	 * method to load subscriber revision
 	 * 
-	 * @param array $params load by those params 
+	 * @param $query array of params to load by
+	 * @return a single subscriber that match that query
 	 */
-	public function loadSubscriber($params) {
-		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
+	public function loadSubscriberForQuery($query) {
+		$limit = 1;
+		$subscriberQuery = $this->buildQuery($query, $limit);
 		if ($subscriberQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+
+		$result = $this->load([$subscriberQuery]);
+		if (!$result) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		$this->data = $result[0]->getRawData();
+		return $result;
+	}
+	
+	/**
+	 * 
+	 * @param $query array of params to load by
+	 * @return array of all subscribers that match that query
+	 */
+	public function loadSubscribersForQuery($query) {
+		$limit = 'unlimited';
+		$subscriberQuery = $this->buildQuery($query, $limit);
+		if ($subscriberQuery === false) {
+			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		
-		if (isset($subscriberQuery['sid'])) {
-			settype($subscriberQuery['sid'], 'int');
-		}
-
-		$result = $this->getSubscriberDetails($subscriberQuery);
+		$results = $this->load([$subscriberQuery]);
 		if (!$result) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
-		$this->data = $result->getRawData();
-		return true;
+		//$this->data = $result->getRawData();
+		return $result;
 	}
 	
 	/**
@@ -339,5 +387,28 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			return Billrun_Util::getTokenToDisplay($token);
 		}
 		return '';
+	}
+	
+	protected function buildQuery($params, $limit = 'unlimited') {
+		// validate that params are legal by configuration
+		$customFields = array_map(function ($customField) {
+			return $customField['field_name'];
+		}, Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array()));
+		$fields = array_combine($customFields, $customFields);
+		
+		$query = [];
+		if (!isset($params['time'])) {
+			$query['time'] = date(Billrun_Base::base_datetimeformat);
+		}
+		
+		foreach ($params as $key => $value) {
+			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
+				return false;
+			}
+			$query[$key] = $value;
+		}
+
+		$query['limit'] = $limit;
+		return $query;
 	}
 }

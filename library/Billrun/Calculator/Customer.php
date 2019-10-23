@@ -316,7 +316,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($params as $currParams) {
 			$currParams['time'] = $time;
 			$currParams['stamp'] = $row->get('stamp');
-			if ($this->subscriber->loadSubscriber($currParams)) {
+			if ($this->subscriber->loadSubscriberForQuery($currParams)) {
 				return true;
 			}
 		}

@@ -10,6 +10,8 @@ class Billrun_Account_External extends Billrun_Account {
 
 	protected $remote;
 	
+	protected static $type = 'external';
+	
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
@@ -69,6 +71,10 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 
 		return $query;
+	}
+	
+	protected function getTimeQuery($time) {
+		return array('time' => $time);
 	}
 
 }

@@ -50,9 +50,9 @@ abstract class Billrun_Balance_Update_Abstract {
 		if (!$this->sharedBalance && !isset($params['sid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id (sid) is not define in input under prepaid include');
 		} else if (!$this->sharedBalance) {
-			$query = array('sid' => (int)$params['sid']);
+			$query = array('sid' => $params['sid']);
 			$entity = Billrun_Factory::subscriber();
-			$entity->loadSubscriber($query);
+			$entity->loadSubscriberForQuery($query);
 			$this->subscriber = $entity->getData()->getRawData();
 		}
 		

@@ -157,7 +157,8 @@ class SubscribersModel extends TabledateModel {
 	}
 
 	public function getBySid($sid) {
-		$entity = $this->subscribers_coll->loadSubscriber(array('sid' => intval($sid), Billrun_Utils_Mongo::getDateBoundQuery()));
+		$this->subscribers_coll->loadSubscriberForQuery(array('sid' => intval($sid)));
+		$entity = $this->subscribers_coll->getData();
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
 		if ($entity['from'] && isset($entity['from']->sec))

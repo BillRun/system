@@ -33,20 +33,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @param array $options - Array of initialization parameters.
 	 */
 	public function __construct($options = array()) {
-		parent::__construct($options);
-
-		// Check that the queries are loaded.
-		if (!self::$queriesLoaded) {
-			self::$queriesLoaded = true;
-
-			// Register all the query handlers.
-			// TODO: Move the list of query types to conf to be created here by reflection.
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
-			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
-		}
-		
+		parent::__construct($options);	
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	
@@ -56,7 +43,36 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 	
 	protected function getSubscriberDetails($query) {
-		return $this->collection->query($query)->cursor()->limit(1)->current();
+		$query['type'] = 'subscriber';
+		
+		if (isset($query['time'])) {
+			$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+			$query = array_merge($query, $time);
+			unset($query['time']);
+		}
+		
+		if (isset($query['limit'])) {
+			$limit = $query['limit'];
+			unset($query['limit']);
+		}
+		
+		if (isset($query['stamp'])) {
+			unset($query['stamp']);
+		}
+		
+		if (isset($query['EXTRAS'])) {
+			unset($query['EXTRAS']);
+		}
+							
+		if (isset($query['sid'])) {
+			settype($query['sid'], 'int');
+		}
+		
+		$result = $this->collection->query($query)->cursor();
+		if (isset($limit) && $limit === 1) {
+			return [$result->limit(1)->current()];
+		}
+		return iterator_to_array($result);
 	}
 
 	/**
