@@ -30,10 +30,6 @@ class Billrun_Account_Db extends Billrun_Account {
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
-	public function getList($page, $size, $time, $acc_id = null) {
-		
-	}
-
 	/**
 	 * magic method for get cache value
 	 * 

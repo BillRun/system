@@ -197,7 +197,16 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @param array $params load by those params 
 	 */
 	public function loadSubscriber($params) {
-		$subscriberQuery = $this->buildRelevantQuery($params);
+		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
+		if ($subscriberQuery === false) {
+			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		
+		if (isset($subscriberQuery['sid'])) {
+			settype($subscriberQuery['sid'], 'int');
+		}
+
 		$result = $this->getSubscriberDetails($subscriberQuery);
 		if (!$result) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
@@ -242,19 +251,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			$servicesEnitityList[] = $serviceValue;
 		}
 		return $servicesEnitityList;
-	}
-	
-	protected function buildRelevantQuery($params) {
-		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
-		if ($subscriberQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
-			return false;
-		}
-		
-		if (isset($subscriberQuery['sid'])) {
-			settype($subscriberQuery['sid'], 'int');
-		}
-		return $subscriberQuery;
 	}
 
 	/**

@@ -15,10 +15,6 @@ class Billrun_Account_External extends Billrun_Account {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$this->remote = $this->getConfigValue('subscriber.fields.external', '');
 	}
-
-	public function getList($page, $size, $time, $acc_id = null) {
-		
-	}
 	
 	/**
 	 * Overrides parent abstract method
@@ -53,6 +49,26 @@ class Billrun_Account_External extends Billrun_Account {
 	 */
 	public function closeAndNew($set_values, $remove_values = array()) {
 		
+	}
+	
+	protected function buildQuery($params) {
+		$query = array('type' => 'account');
+		$queryExcludeParams = array('time', 'type', 'to', 'from');
+		
+		if (isset($params['time'])) {
+			$query['date'] = new MongoDate(strtotime($params['time']));
+		} else {
+			$query['date'] = new MongoDate();
+		}
+
+		foreach ($params as $key => $value) {
+			if (in_array($key, $queryExcludeParams)) {
+				continue;
+			}
+			$query[$key] = $value;
+		}
+
+		return $query;
 	}
 
 }

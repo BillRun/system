@@ -30,7 +30,7 @@ abstract class Billrun_Balance_Update_Abstract {
 	 * the subscriber/account entry
 	 * @var array
 	 */
-	protected $entity = array();
+	protected $subscriber = array();
 	
 	/**
 	 * additional parameters to be saved
@@ -50,17 +50,19 @@ abstract class Billrun_Balance_Update_Abstract {
 		if (!$this->sharedBalance && !isset($params['sid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id (sid) is not define in input under prepaid include');
 		} else if (!$this->sharedBalance) {
-			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $params['sid']));
+			$query = array('sid' => (int)$params['sid']);
 			$entity = Billrun_Factory::subscriber();
 			$entity->loadSubscriber($query);
+			$this->subscriber = $entity->getData()->getRawData();
 		}
 		
 		if ($this->sharedBalance && !isset($params['aid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'On shared balance account id (aid) must be defined in the input');
 		} else if ($this->sharedBalance) {
-			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('aid' => $params['aid']));
+			$query = array('aid' => (int)$params['aid']);
 			$entity = Billrun_Factory::account();
 			$entity->loadAccount($query);
+			$this->subscriber = $entity->getCustomerData()->getRawData();
 		}
 		
 		if ($this->entity->isEmpty()) {
@@ -129,24 +131,6 @@ abstract class Billrun_Balance_Update_Abstract {
 		$ret = true;
 		Billrun_Factory::dispatcher()->trigger('BillApiBalancePostValidate', array($this, &$ret));
 		return $ret;
-	}
-
-	/**
-	 * method to load subscriber details
-	 * @param type $sid
-	 * @throws Billrun_Exceptions_Api
-	 * @todo add connection type (limit to prepaid)
-	 * @return array subscriber details
-	 */
-	protected function loadSubscriber($identifier, $field, $subscriber_type) {
-		$subQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$subQuery[$field] = $identifier;
-		$subQuery['type'] = $subscriber_type;
-		
-		$sub = Billrun_Factory::subscriber();
-		$sub->loadSubscriber($subQuery);
-
-		$this->subscriber = $sub->getData();
 	}
 	
 	/**
