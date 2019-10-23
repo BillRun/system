@@ -48,7 +48,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
 			return false;
 		}
-		if (!isset($options['file_name']) || !isset($options['local_dir'])) {
+		if (!isset($options['local_dir'])) {
 			return false;
 		}
 		if ($this->fixedWidth) {
