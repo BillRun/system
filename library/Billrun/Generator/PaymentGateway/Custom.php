@@ -89,7 +89,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['number_format'])) {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
             }
-            $attributes = $this->setAttributes($dataField);
+            $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
@@ -310,7 +310,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
             }
             
-            $attributes = $this->setAttributes($field);
+            $attributes = $this->getLineAttributes($field);
             
             if (isset($field['number_format'])) {
                 $line[$field['path']] = $this->setNumberFormat($field, $line);
@@ -334,7 +334,12 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->logFile->save();
     }
     
-    protected function setAttributes($field){
+    /**
+     * Function returns line's attributes, if exists
+     * @param type $field
+     * @return array $attributes.
+     */
+    protected function getLineAttributes($field){
         if(isset($field['attributes'])){
             for($i = 0; $i < count($field['attributes']); $i++){
                 $attributes[] = $field['attributes'][$i];
