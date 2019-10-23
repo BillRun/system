@@ -340,19 +340,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		return $retData;
 	}
 
-	public function getListFromFile($file_path, $time) {
-		
-	}
-
 	public function getCredits($billrun_key, $retEntity = false) {
 		return array();
-	}
-	
-	protected function getPaymentDetails($details) {
-		if (!empty($token = $details['card_token'])) {
-			return Billrun_Util::getTokenToDisplay($token);
-		}
-		return '';
 	}
 
 }

@@ -38,10 +38,6 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	}
 
-	public function getListFromFile($file_path, $time) {
-		
-	}
-
 	protected function getSubscribersDetails($params, $availableFields = []) {
 		$res = Billrun_Util::sendRequest($this->remote, json_encode($params));
 		$subscribers = [];

@@ -284,11 +284,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
-	/**
-	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
-	 */
-	abstract public function getListFromFile($file_path, $time);
-
 	abstract protected function getSubscribersDetails($query, $availableFields);
 
 	abstract protected function getSubscriberDetails($query);
@@ -335,8 +330,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return $this->nextPlan;
 	}
 
-	
 	public function getSubscriberData() {
 		return $this->data;
+	}
+	
+	protected function getPaymentDetails($details) {
+		if (!empty($token = $details['card_token'])) {
+			return Billrun_Util::getTokenToDisplay($token);
+		}
+		return '';
 	}
 }
