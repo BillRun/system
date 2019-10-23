@@ -21,8 +21,11 @@ class Billrun_Parser_Xml {
     protected $pathesBySegment;
     protected $input_array;
     protected $dataRows;
+    protected $dataRowsNum = 0;
     protected $headerRows;
+    protected $headerRowsNum = 0;
     protected $trailerRows;
+    protected $trailerRowsNum = 0;
     protected $name_space_prefix = "";
     protected $name_space = "";
 
@@ -91,72 +94,46 @@ class Billrun_Parser_Xml {
         $headerRowsNum = $dataRowsNum = $trailerRowsNum = 0;
 
         for($i = 0; $i < count($commonPathAsArray); $i++){
-            $parentNode = $this->getParentNodeAccordingToNameSpaceValue($parentNode);
+            $parentNode = $this->getChildren($parentNode);
         }
         foreach ($parentNode as $currentChild => $data) {
             if (isset($repeatedTags['header']['repeatedTag'])) {
                 if ($currentChild === $repeatedTags['header']['repeatedTag']) {
-                    $headerRowsNum++;
-                    for ($i = 0; $i < count($this->input_array['header']); $i++) {
-                        $headerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['header'][$i]['path']), $this->pathDelimiter);
-                        if($this->name_space_prefix === ""){
-                            $headerSubPath = '//' . str_replace(".", "/" , $headerSubPath);
-                        }else{
-                                $headerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $headerSubPath);
-                        }
-                        $headerReturndValue = $data->xpath($headerSubPath);
-                        if ($headerReturndValue) {
-                            $headerValue = strval($headerReturndValue[0]);
-                        } else {
-                            $headerValue = '';
-                        }
-                        $this->headerRows[$headerRowsNum - 1][$this->input_array['header'][$i]['name']] = $headerValue;
-                    }
+                    $this->parseLine('header', $currentChild, $data);
                 }
             }
             if (isset($repeatedTags['data']['repeatedTag'])) {
                 if ($currentChild === $repeatedTags['data']['repeatedTag']) {
-                    $dataRowsNum++;
-                    for ($i = 0; $i < count($this->input_array['data']); $i++) {
-                        $dataSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['data'][$i]['path']), $this->pathDelimiter);
-                        if($this->name_space_prefix === ""){
-                            $dataSubPath = '//' . str_replace(".", "/" , $dataSubPath);
-                        }else{
-                                $dataSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $dataSubPath);
-                        }
-                        $dataReturndValue = $data->xpath($dataSubPath);
-                        if ($dataReturndValue) {
-                            $dataValue = strval($dataReturndValue[0]);
-                        } else {
-                            $dataValue = '';
-                        }
-                        $this->dataRows[$dataRowsNum - 1][$this->input_array['data'][$i]['name']] = $dataValue;
-                    }
+                    $this->parseLine('data', $currentChild, $data);
                 }
             }
             if (isset($repeatedTags['trailer']['repeatedTag'])) {
                 if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
-                    $trailerRowsNum++;
-                    for ($i = 0; $i < count($this->input_array['trailer']); $i++) {
-                        $trailerSubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array['trailer'][$i]['path']), $this->pathDelimiter);
-                        if($this->name_space_prefix === ""){
-                            $trailerSubPath = '//' . str_replace(".", "/" , $trailerSubPath);
-                        }else{
-                                $trailerSubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $trailerSubPath);
-                        }
-                        $trailerReturndValue = $data->xpath($trailerSubPath);
-                        if ($trailerReturndValue) {
-                            $trailerValue = strval($trailerReturndValue[0]);
-                        } else {
-                            $trailerValue = '';
-                        }
-                        $this->trailerRows[$trailerRowsNum - 1][$this->input_array['trailer'][$i]['name']] = $trailerValue;
-                    }
+                    $this->parseLine('trailer', $currentChild, $data);
                 }
             }
         }
     }
 
+    protected function parseLine($segment, $currentChild, $data) {
+        $this->{$segment.'RowsNum'}++;
+        for ($i = 0; $i < count($this->input_array[$segment]); $i++) {
+            $SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
+            if($this->name_space_prefix === ""){
+                $SubPath = '//' . str_replace(".", "/" , $SubPath);
+            }else{
+                $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+            }
+            $ReturndValue = $data->xpath($SubPath);
+            if ($ReturndValue) {
+                $Value = strval($ReturndValue[0]);
+            } else {
+                $Value = '';
+            }
+                $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;
+        }
+    }
+    
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($indexes); $a++) {
@@ -250,7 +227,13 @@ class Billrun_Parser_Xml {
         return $this->trailerRows;
     }
 
-    public function getParentNodeAccordingToNameSpaceValue($parentNode) {
+    /**
+     * method to get a list of node's children
+     * @param xmlNode $parentNode
+     *
+     * @return List of parent's children.
+     */
+    public function getChildren($parentNode) {
         if ($this->name_space_prefix !== "") {
             return $parentNode->children($this->name_space_prefix, true);
         } else {
