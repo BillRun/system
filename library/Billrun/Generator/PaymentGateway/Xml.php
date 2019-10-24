@@ -273,7 +273,7 @@ class Billrun_Generator_PaymentGateway_Xml {
             $node->appendChild($newElement);
 
             if (is_array($value)) {
-                self::newNode($value, $newElement,$doc);
+                $this->newNode($value, $newElement,$doc);
             }
         }
     }
