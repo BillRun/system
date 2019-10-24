@@ -125,7 +125,9 @@ class Billrun_Generator_PaymentGateway_Xml {
                     $pathWithNoParents = trim($pathWithNoParents, '.');
                     $firstPointPos = strpos($pathWithNoParents, '.');
                     $repeatedPrefix = substr_replace($pathWithNoParents, "", $firstPointPos);
-                    $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
+                    if($repeatedPrefix !== $this->commonPath){
+                        $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
+                    }
                 } else {
                     if ($segment === "data") {
                         return "No pathes in " . $segment . " segment. No generate was made." . PHP_EOL;
@@ -137,6 +139,11 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         if($this->commonPath == ""){
             return 'Billrun_Generator_PaymentGateway_Xml: No common path was found - abort.';
+        }
+        foreach($this->workingArray as $segment => $data){
+            if((count($this->workingArray[$segment]) !== 0) && ((!isset($returnedValue[$segment]) || (count($returnedValue[$segment]) == 0) || empty($returnedValue[$segment]['repeatedTag'])))){
+                return $segment . " segment has pathes, without repeated tag. XML file can't be generated.";
+            }
         }
         $this->repeatedTags = $returnedValue;
         return true;    }
