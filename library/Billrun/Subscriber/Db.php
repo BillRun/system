@@ -76,7 +76,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($limit) && $limit === 1) {
 				$sub = $result->limit(1)->current();
 				if ($sub->isEmpty()) {
-					return false;
+					continue;
 				}
 				if (isset($stamp)) {
 					$subs[] = $sub->set('stamp', $stamp);

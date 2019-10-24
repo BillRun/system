@@ -122,12 +122,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
-			$this->loadSubscriberForLine($row);
-			$subscriber = $this->subscriber;
-			if (empty($subscriber)) {
+			if(!$this->loadSubscriberForLine($row)) {
 				Billrun_Factory::log('Error loading subscriber for row ' . $row->get('stamp'), Zend_Log::NOTICE);
 				return false;
 			}
+			$subscriber = $this->subscriber;
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
 			if ($this->isOutgoingCall($row)) {
@@ -323,7 +322,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$priorities = $this->buildPriorities([$row]);
 		foreach ($priorities as $priority) {
 			if ($subscriber = $this->subscriber->loadSubscriberForQuery(array_values($priority)[0])) {
-				$this->subscriber = $subscriber;
 				return $subscriber;
 			}
 		}

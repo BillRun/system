@@ -188,7 +188,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		foreach($queries as $subQuery) {
 			$query[] = $this->buildQuery($subQuery, $limit);
 		}
-		$results = $this->load([$query]);
+		$results = $this->load($query);
 		if (!$results) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
