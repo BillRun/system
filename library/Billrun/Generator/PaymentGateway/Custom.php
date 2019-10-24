@@ -341,13 +341,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
      */
     protected function getLineAttributes($field){
         if(isset($field['attributes'])){
-            for($i = 0; $i < count($field['attributes']); $i++){
-                $attributes[] = $field['attributes'][$i];
-            }
+            return $field['attributes'];
         } else {
-            $attributes = [];
+            return [];
         }
-        return $attributes;
     }
     
     protected function setNumberFormat($field, $line) {
