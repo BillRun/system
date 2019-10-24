@@ -172,10 +172,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return array of mongodloid entities containing subscriber data
 	 */
 	protected function load($queries = []) {
-		$subs = [];
-		foreach ($queries as $query) {
-			$subs = array_merge($subs, $this->getSubscriberDetails($query));
-		}
+		$subs = $this->getSubscriberDetails($queries);
 		return $subs;
 	}
 
@@ -213,12 +210,12 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 
 		$result = $this->load([$subscriberQuery]);
-		if (!$result) {
+		if(empty($result)) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		$this->data = $result[0]->getRawData();
-		return $result;
+		return $result[0];
 	}
 	
 	/**

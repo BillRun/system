@@ -122,10 +122,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
-			if ($this->loadSubscriberForLine($row)) {
-				$subscriber = $this->subscriber;
-				
-			} else {
+			$this->loadSubscriberForLine($row);
+			$subscriber = $this->subscriber;
+			if (empty($subscriber)) {
 				Billrun_Factory::log('Error loading subscriber for row ' . $row->get('stamp'), Zend_Log::NOTICE);
 				return false;
 			}
@@ -321,18 +320,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		
 		$time = date(Billrun_Base::base_datetimeformat, $row->get('urt')->sec);
 		
-		foreach ($params as $currParams) {
-			$currParams['time'] = $time;
-			$currParams['stamp'] = $row->get('stamp');
-			if ($this->subscriber->loadSubscriberForQuery($currParams)) {
-				return true;
+		$priorities = $this->buildPriorities([$row]);
+		foreach ($priorities as $priority) {
+			if ($subscriber = $this->subscriber->loadSubscriberForQuery(array_values($priority)[0])) {
+				$this->subscriber = $subscriber;
+				return $subscriber;
 			}
 		}
-
 		return false;
 	}
 	
-	protected function buildPriorities($rows, $subscriber_extra_data) {
+	protected function buildPriorities($rows, $subscriber_extra_data = []) {
 		$priorities = [];
 		foreach ($rows as $row) {
 			if ($this->isLineLegitimate($row)) {
