@@ -961,7 +961,7 @@ class Billrun_Billrun {
 	 */
 	public static function getActiveBillrun() {
 		$query = array(
-			'attributes.invoice_type' => array('$ne' => 'immediate'),
+			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
 		$now = time();
 		$sort = array(
