@@ -50,6 +50,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         $fileName = $this->getFilename();
         $generator->setFileName($fileName);
+        $generator->setFilePath($generatorOptions['local_dir']);
         $generator->generate();
         $this->initLogFile();
         return true;
@@ -86,13 +87,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     Billrun_Factory::log("Couldn't convert date string when generating file type " . $this->configByType['file_type'], Zend_Log::NOTICE);
                 }
             }
-            if (isset($dataField['attributes'])) {
-                for ($i = 0; $i < count($dataField['attributes']); $i++) {
-                    $attributes[] = $dataField['attributes'][$i];
-                }
-            } else {
-                $attributes = [];
+            if (isset($dataField['number_format'])) {
+                $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
             }
+            $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
@@ -180,8 +178,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             return $this->fileName;
         }
         $translations = array();
-        foreach ($this->fileNameParams as $paramObj) {
-            $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+        if(is_array($this->fileNameParams)){
+            foreach ($this->fileNameParams as $paramObj) {
+                $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+            }
         }
 
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
@@ -190,7 +190,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 
     protected function prepareLineForGenerate($lineValue, $addedData, $attributes) {
         $newLine = array();
-        $newLine['value'] = isset($addedData['number_format']['decimals']) && is_numeric($lineValue) ? number_format($lineValue, $addedData['number_format']['decimals']) : $lineValue;
+		$newLine['value'] = $lineValue;
         $newLine['name'] = $addedData['name'];
         if (count($attributes) > 0) {
             for ($i = 0; $i < count($attributes); $i++) {
@@ -310,12 +310,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $configObj = $field['name'];
                 throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
             }
-            if (isset($dataField['attributes'])) {
-                for ($i = 0; $i < count($dataField['attributes']); $i++) {
-                    $attributes[] = $dataField['attributes'][$i];
-                }
-            } else {
-                $attributes = [];
+            
+            $attributes = $this->getLineAttributes($field);
+            
+            if (isset($field['number_format'])) {
+                $line[$field['path']] = $this->setNumberFormat($field, $line);
             }
             $line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
         }
@@ -335,5 +334,30 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->generatedFileLog = $this->logFile->getStamp();
         $this->logFile->save();
     }
-
+    
+    /**
+     * Function returns line's attributes, if exists
+     * @param type $field
+     * @return array $attributes.
+     */
+    protected function getLineAttributes($field){
+        if(isset($field['attributes'])){
+            return $field['attributes'];
+        } else {
+            return [];
+        }
+    }
+    
+    protected function setNumberFormat($field, $line) {
+        if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
+            Billrun_Factory::log("'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'], Zend_Log::WARN);
+        }
+        if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
+            return number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
+        } else {
+            if (isset($field['number_format']['decimals'])){
+                return number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
+            }
+        }
+    }
 }

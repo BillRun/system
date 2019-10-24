@@ -18,7 +18,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
 	protected $padCharDef = ' ';
-	protected $filePath;
+        protected $file_name;
+	protected $file_path;
+        protected $local_dir;
         protected $encoding = 'utf-8';
 
         public function __construct($options) {
@@ -35,7 +37,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!$this->validateOptions($options)) {
 			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 		}
-		$this->local_dir = $options['local_dir'];
+                if (isset($options['local_dir'])) {
+                    $this->local_dir = $options['local_dir'];
+                }
 	}
         
 	/**
@@ -48,7 +52,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
 			return false;
 		}
-		if (!isset($options['file_name']) || !isset($options['local_dir'])) {
+		if (!isset($options['local_dir'])) {
 			return false;
 		}
 		if ($this->fixedWidth) {
@@ -75,7 +79,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	protected function writeToFile($str) {
                 $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
-		return file_put_contents($this->filePath, $str, FILE_APPEND);
+		return file_put_contents($this->file_path, $str, FILE_APPEND);
 	}
 
 	protected function writeHeaders() {
@@ -188,6 +192,10 @@ class Billrun_Generator_PaymentGateway_Csv {
 
         public function setFileName($fileName){
             $this->file_name = $fileName;
+        }
+        
+        public function setFilePath($dir){
+            $this->file_path = $dir . '/' . $this->file_name;
         }
 }
 

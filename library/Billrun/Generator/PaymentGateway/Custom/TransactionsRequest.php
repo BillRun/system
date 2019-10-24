@@ -223,7 +223,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$validated = false;
 					break;
 				}
-			}
+			}         
 			$this->extraParamsNames[] = $paramObj['name'];
 		}
 		
