@@ -18,6 +18,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $pathDelimiter = '.';
     protected $file_name;
     protected $file_path;
+    protected $local_dir;
     protected $SegmentsPathesAndValues;
     protected $pathesBySegment;
     protected $commonPath;
@@ -40,9 +41,8 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
         $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
-        $this->file_name = $options['file_name'];
         if (isset($options['local_dir'])) {
-            $this->file_path = $options['local_dir'] . DIRECTORY_SEPARATOR . $options['file_name'];
+            $this->local_dir = $options['local_dir'];
         }
     }
 
@@ -142,7 +142,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         return true;    }
     
     public function generate() {
-        $this->file_path = $this->local_dir . DIRECTORY_SEPARATOR . $this->file_name;
         $result = $this->repeatedTags;
         foreach ($result as $segment => $repeatedTag) {
             $tags[$segment]['repeatedTag'] = $repeatedTag['repeatedTag'];
@@ -281,5 +280,9 @@ class Billrun_Generator_PaymentGateway_Xml {
 
     public function setFileName($fileName){
         $this->file_name = $fileName;
+    }
+    
+    public function setFilePath($dir){
+        $this->file_path = $dir . '/' . $this->file_name;
     }
 }

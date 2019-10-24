@@ -50,6 +50,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         $fileName = $this->getFilename();
         $generator->setFileName($fileName);
+        $generator->setFilePath($generatorOptions['local_dir']);
         $generator->generate();
         $this->initLogFile();
         return true;
@@ -180,8 +181,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             return $this->fileName;
         }
         $translations = array();
-        foreach ($this->fileNameParams as $paramObj) {
-            $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+        if(is_array($this->fileNameParams)){
+            foreach ($this->fileNameParams as $paramObj) {
+                $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+            }
         }
 
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
