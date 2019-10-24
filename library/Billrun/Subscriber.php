@@ -66,7 +66,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $nextPlanActivation = null;
 	
-	protected static $allowedQueryKeys = ['time', 'stamp'];
+	protected static $allowedQueryKeys = ['time', 'stamp', 'EXTRAS'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -191,33 +191,12 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		foreach($queries as $subQuery) {
 			$query[] = $this->buildQuery($subQuery, $limit);
 		}
-		$results = $this->load($query);
+		$results = $this->load([$query]);
 		if (!$results) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		return $results;
-		
-		///
-		$stamps = [];
-		$subsData = [];
-		foreach ($priorities as $priorityQueries) {
-			$queries = array_filter($priorityQueries, function($query) use ($stamps){
-				return !isset($stamps[$query['stamp']]);
-			});
-			$results = $this->getSubscribersDetails($queries);
-			if (!$results) {
-				Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($queries, 1), Zend_Log::NOTICE);
-				return false;
-			}
-			foreach ($results as $sub) {
-				$stamps[$sub['stamp']] = true;
-				$subsData[] = $results;
-			}
-		}
-		return array_map(function($data) {
-			return Billrun_Subscriber::getInstance($data);
-		}, $subsData);
 	}
 
 	/**

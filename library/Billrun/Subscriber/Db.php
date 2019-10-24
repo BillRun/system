@@ -42,37 +42,49 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		throw new Exception("customer calculator configuration error");
 	}
 	
-	protected function getSubscriberDetails($query) {
-		$query['type'] = 'subscriber';
-		
-		if (isset($query['time'])) {
-			$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
-			$query = array_merge($query, $time);
-			unset($query['time']);
+	protected function getSubscriberDetails($queries) {
+		$subs = [];
+		$type = 'subscriber';
+		foreach ($queries as $query) {
+			$query['type'] = $type;
+			
+			if (isset($query['time'])) {
+				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$query = array_merge($query, $time);
+				unset($query['time']);
+			}
+
+			if (isset($query['limit'])) {
+				$limit = $query['limit'];
+				unset($query['limit']);
+			}
+
+			if (isset($query['stamp'])) {
+				$stamp = $query['stamp'];
+				unset($query['stamp']);
+			}
+
+			if (isset($query['EXTRAS'])) {
+				unset($query['EXTRAS']);
+			}
+
+			if (isset($query['sid'])) {
+				settype($query['sid'], 'int');
+			}
+			
+			$result = $this->collection->query($query)->cursor();
+			if (isset($limit) && $limit === 1) {
+				$sub = $result->limit(1)->current();
+				if (isset($stamp)) {
+					$subs[] = $sub->set('stamp', $stamp);
+				} else {
+					$subs[] = $sub;
+				}
+			} else {
+				return iterator_to_array($result);
+			}
 		}
-		
-		if (isset($query['limit'])) {
-			$limit = $query['limit'];
-			unset($query['limit']);
-		}
-		
-		if (isset($query['stamp'])) {
-			unset($query['stamp']);
-		}
-		
-		if (isset($query['EXTRAS'])) {
-			unset($query['EXTRAS']);
-		}
-							
-		if (isset($query['sid'])) {
-			settype($query['sid'], 'int');
-		}
-		
-		$result = $this->collection->query($query)->cursor();
-		if (isset($limit) && $limit === 1) {
-			return [$result->limit(1)->current()];
-		}
-		return iterator_to_array($result);
+		return $subs;
 	}
 
 	/**
