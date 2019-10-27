@@ -153,7 +153,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $options;
     }
 
-    protected function getGeneratorClassName() {
+    public function getGeneratorClassName() {
         if (!isset($this->configByType['generator']['type'])) {
             throw new Exception('Missing generator type for ' . $this->configByType['file_type']);
         }
@@ -359,5 +359,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 return number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
             }
         }
+    }
+    
+    public function getConfigByType() {
+        return $this->configByType;
     }
 }

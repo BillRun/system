@@ -46,7 +46,10 @@ class GenerateAction extends Action_Base {
             $this->_controller->addOutput("Generator cannot be loaded");
             return;
         }
-
+        if($this->checkConfig($generator->getConfigByType(), $generator)){
+            $this->_controller->addOutput("Config validation passed successfully.");
+        }
+        
         if (method_exists($generator, 'lock')) {
             if (!$generator->lock()) {
                 $this->_controller->addOutput("Generator is already running");
@@ -74,5 +77,14 @@ class GenerateAction extends Action_Base {
             } else {
                 $this->_controller->addOutput("Something went wrong, no file was genertaed.");
             }
+    }
+    
+    protected function checkConfig($config, $generator){
+        $fileGenerator = $generator->getGeneratorClassName();
+        $response = $fileGenerator::validateOptions($config);
+        if($response !== true){
+            throw new Exception($response);
+        }
+        return true;
     }
 }
