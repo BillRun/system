@@ -97,7 +97,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
 			$subs_by_stamp = array();
 			foreach ($this->subscribers as $sub) {
-				$subs_by_stamp[$sub->getStamp()] = $sub;
+				$subData = $sub->getData();
+				$subs_by_stamp[$subData['id']] = $sub;
 			}
 			$this->subscribers = $subs_by_stamp;
 			$this->subscribers_by_stamp = true;
@@ -279,7 +280,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($priorities as $priorityQueries) {
 			// keep only queries that their previous priority was not found by the system
 			$priorityQueries = array_filter($priorityQueries, function($query) use ($matchedStamps){
-				return !isset($matchedStamps[$query['stamp']]);
+				return !isset($matchedStamps[$query['id']]);
 			});
 			if (empty($priorityQueries)) {
 				continue;
@@ -292,7 +293,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return false;
 			}
 			foreach ($results as $sub) {
-				$matchedStamps[$sub['stamp']] = true;
+				$matchedStamps[$sub['id']] = true;
 				$subsData[] = $sub;
 			}
 		}

@@ -56,8 +56,48 @@ class Billrun_Account_Db extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($query) {
-		return $this->collection->query($query)->cursor()->limit(1)->current();
+	protected function getAccountDetails($queries) {
+		$accounts = [];
+		$type = 'account';
+		
+		foreach ($queries as &$query) {
+			$query['type'] = $type;
+			
+			if (isset($query['time'])) {
+				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$query = array_merge($query, $time);
+				unset($query['time']);
+			}
+
+			if (isset($query['limit'])) {
+				$limit = $query['limit'];
+				unset($query['limit']);
+			}
+
+			if (isset($query['id'])) {
+				$id = $query['id'];
+				unset($query['id']);
+			}
+
+			if (isset($query['aid'])) {
+				settype($query['aid'], 'int');
+			}
+			
+			$result = $this->collection->query($query)->cursor();
+			if (isset($limit) && $limit === 1) {
+				$account = $result->limit(1)->current();
+				if ($account->isEmpty()) {
+					continue;
+				}
+				if (isset($id)) {
+					$account->set('id', $id);
+				}
+				$accounts[] = $account;
+			} else {
+				return iterator_to_array($result);
+			}
+		}
+		return $accounts;
 	}
 
 	public function permanentChange($query, $update) {

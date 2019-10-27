@@ -79,10 +79,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					continue;
 				}
 				if (isset($id)) {
-					$subs[] = $sub->set('id', $id);
-				} else {
-					$subs[] = $sub;
+					$sub->set('id', $id);
 				}
+				$subs[] = $sub;
 			} else {
 				return iterator_to_array($result);
 			}

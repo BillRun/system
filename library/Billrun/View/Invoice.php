@@ -253,9 +253,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getSubscriberMessages($sid) {
 		$query['time'] = date(Billrun_Base::base_datetimeformat, $this->data['invoice_date']->sec);
 		$query['sid'] = $sid;
-		$sub = Billrun_Factory::subscriber();
-		$sub->loadSubscriberForQuery($query);
-		$subData = $sub->getData();
+		$subData = Billrun_Factory::subscriber()->loadSubscriberForQuery($query);
 		$msgs = !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {

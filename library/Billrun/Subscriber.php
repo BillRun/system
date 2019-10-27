@@ -177,7 +177,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
-	 * 
 	 * @param array $queries to load one subscriber per query
 	 * @return array of subscriber instances
 	 */
@@ -197,9 +196,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
-	 * 
 	 * @param $query array of params to load by
-	 * @return a single subscriber that match that query
+	 * @return mongodloid entity - a single subscriber that match that query
 	 */
 	public function loadSubscriberForQuery($query) {
 		$limit = 1;
@@ -216,28 +214,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		$this->data = $result[0]->getRawData();
 		return $result[0];
-	}
-	
-	/**
-	 * 
-	 * @param $query array of params to load by
-	 * @return array of all subscribers that match that query
-	 */
-	public function loadSubscribersForQuery($query) {
-		$limit = 'unlimited';
-		$subscriberQuery = $this->buildQuery($query, $limit);
-		if ($subscriberQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($query, 1), Zend_Log::NOTICE);
-			return false;
-		}
-		
-		$results = $this->load([$subscriberQuery]);
-		if (!$result) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
-			return false;
-		}
-		//$this->data = $result->getRawData();
-		return $result;
 	}
 	
 	/**

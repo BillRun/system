@@ -219,8 +219,7 @@ class BalancesModel extends TableModel {
 				$item['units'] = implode(',', $units);
 				$query = array_merge(array('sid' => $item['sid']));
 				$subscriberEntity = Billrun_Factory::subscriber();
-				$subscriberEntity->loadSubscriberForQuery($query);
-				$subscriber = $subscriberEntity->getData();
+				$subscriber = $subscriberEntity->loadSubscriberForQuery($query)->getRawData();
 				if (isset($subscriber['service_provider'])) {
 					$item['service_provider'] = $subscriber['service_provider'];
 				}

@@ -61,7 +61,7 @@ class InternalPaypageController extends ExternalPaypageController {
 		} else {
 			$index = 0;
 			$account = Billrun_Factory::account();
-			$account->loadAccount(array('aid' => $request['aid']));
+			$account->loadAccountForQuery(array('aid' => $request['aid']));
 			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
 			if ($prevPgName != $request['payment_gateway']) {

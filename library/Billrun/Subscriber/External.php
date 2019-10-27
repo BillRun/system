@@ -11,6 +11,8 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	static $queriesLoaded = false;
 	
 	static protected $type = 'external';
+	
+	protected $queryBaseKeys = ['id', 'time', 'limit'];
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -43,32 +45,20 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	}
 	
 	protected function getSubscriberDetails($queries) {
-		$subs = [];
-		foreach ($queries as $query) {
-
-			if (isset($query['id'])) {
-				$id = $query['id'];
-				unset($query['id']);
-			}
-
-			if (isset($query['EXTRAS'])) {
-				unset($query['EXTRAS']);
-			}
-			
-			$result = Billrun_Util::sendRequest($this->remote, json_encode($query));
-			if (!$result) {
-				Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
-				return false;
-			}
-		  	foreach ($result as $sub) {
-				$subscriber = new Mongodloid_Entity($sub);
-				if (isset($id)) {
-					$subscriber->set('id', $id);
-				}
-				$subs[] = $subscriber;
-			}
+		$externalQuery = [];
+		foreach ($queries as &$query) {
+			$query = $this->buildParams($query);
+			$externalQuery[] = $query;
 		}
-		return $subs;
+		$results = Billrun_Util::sendRequest($this->remote, json_encode($externalQuery));
+		if (!$results) {
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			return false;
+		}
+		return array_reduce($results, function($acc, $currentSub) {
+			$acc[] = new Mongodloid_Entity($currentSub);
+			return $acc;
+		}, []);
 	}
 
 	public function isValid() {
@@ -77,6 +67,26 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 
 	public function save() {
 		return true;
+	}
+	
+	protected function buildParams(&$query) {
+
+		if (isset($query['EXTRAS'])) {
+			unset($query['EXTRAS']);
+		}
+		$params = [];
+		foreach ($query as $key => $value) {
+			if (!in_array($key, $this->queryBaseKeys)) {
+				$params[] = [
+					'key' => $key,
+					'operator' => 'equal',
+					'value' => $value
+					];
+				unset($query[$key]);
+			}
+		}
+		$query['params'] = $params;
+		return $query;
 	}
 	
 }

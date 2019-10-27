@@ -37,13 +37,21 @@ class Billrun_Account_External extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($query) {
-		$res = Billrun_Util::sendRequest($this->remote, json_encode($query));
-		if (!$res) {
+	protected function getAccountDetails($query) {		
+		$externalQuery = [];
+		foreach ($queries as &$query) {
+			$query = $this->buildParams($query);
+			$externalQuery[] = $query;
+		}
+		$results = Billrun_Util::sendRequest($this->remote, json_encode($externalQuery));
+		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		return new Mongodloid_Entity($res);
+		return array_reduce($results, function($acc, $currentSub) {
+			$acc[] = new Mongodloid_Entity($currentSub);
+			return $acc;
+		}, []);
 	}
 	
 	/** 
@@ -70,6 +78,26 @@ class Billrun_Account_External extends Billrun_Account {
 			$query[$key] = $value;
 		}
 
+		return $query;
+	}
+	
+	protected function buildParams(&$query) {
+
+		if (isset($query['EXTRAS'])) {
+			unset($query['EXTRAS']);
+		}
+		$params = [];
+		foreach ($query as $key => $value) {
+			if (!in_array($key, $this->queryBaseKeys)) {
+				$params[] = [
+					'key' => $key,
+					'operator' => 'equal',
+					'value' => $value
+					];
+				unset($query[$key]);
+			}
+		}
+		$query['params'] = $params;
 		return $query;
 	}
 	

@@ -47,6 +47,8 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
+	protected $allowedQueryKeys = ['id', 'time'];
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -139,22 +141,30 @@ abstract class Billrun_Account extends Billrun_Base {
 		return $this->data;
 	}
 	
+	protected function load($queries) {
+		$accounts = $this->getAccountDetails($queries);
+		return $accounts;
+	}
+	
 	/**
-	 * method to load account details
-	 * 
-	 * @param array $params load by those params 
-	 * @return true if successful.
+	 * @param $query array of params to load by
+	 * @return mongodloid entity - a single account that match that query
 	 */
-	public function loadAccount($params) {
-		$query = $this->buildQuery($params);
-		$data = $this->getAccountDetails($query);
-		if (!$data) {
-			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+	public function loadAccountForQuery($query) {
+		$limit = 1;
+		$accountQuery = $this->buildQuery($query, $limit);
+		if ($accountQuery === false) {
+			Billrun_Factory::log('Cannot identify account. Current parameters: ' . print_R($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
 
-		$this->data = $data;
-		return true;
+		$result = $this->load([$accountQuery]);
+		if(empty($result)) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		$this->data = $result[0]->getRawData();
+		return $result[0];
 	}
 	
 	/**
@@ -163,7 +173,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $params load by those params 
 	 * @return true if successful.
 	 */
-	public function loadAccounts($params) {
+	public function loadAccountsForQuery($params) {
 		$query = $this->buildQuery($params);
 		$data = $this->getAccountsDetails($query);
 		if (!$data) {
@@ -174,52 +184,53 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
+	
 	/**
-	 * 	$stamps = [];
-		$subsData = [];
-		foreach ($priorities as $priorityQueries) {
-			$queries = array_filter($priorityQueries, function($query) use ($stamps){
-				return !isset($stamps[$query['stamp']]);
-			});
-			$results = $this->getSubscribersDetails($queries);
-			if (!$results) {
-				Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($queries, 1), Zend_Log::NOTICE);
-				return false;
-			}
-			foreach ($results as $sub) {
-				$stamps[$sub['stamp']] = true;
-				$subsData[] = $results;
-			}
-		}
-		return array_map(function($data) {
-			return Billrun_Subscriber::getInstance($data);
-		}, $subsData);
+	 * @param array $queries to load one subscriber per query
+	 * @return array of account instances
 	 */
+	public function loadAccountForQueries($queries, $extraData = []) {
+		$limit = 1;
+		$query = [];
+		
+		// build a single big query, using the passed params for each subquery
+		foreach($queries as $subQuery) {
+			$query[] = $this->buildQuery($subQuery, $limit);
+		}
+		$data = $this->getAccountsDetails($query);
+		if (!$data) {
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+
+		$this->data = $data;
+		return true;
+	}
 
 	/**
 	 * @param array $params - Input params to get an account by.
 	 * @return array of query params.
 	 */
-	protected function buildQuery($params) {
-		$query = array('type' => 'account');
+	protected function buildQuery($params, $limit = false) {
+		// validate that params are legal by configuration
+		$customFields = array_map(function ($customField) {
+			return $customField['field_name'];
+		}, Billrun_Factory::config()->getConfigValue('subscribers.account.fields', array()));
+		$fields = array_combine($customFields, $customFields);
+		
+		$query = [];
 		if (!isset($params['time'])) {
-			$params['time'] = date(Billrun_Base::base_datetimeformat);
+			$query['time'] = date(Billrun_Base::base_datetimeformat);
 		}
+		
 		foreach ($params as $key => $value) {
-			switch ($key) {
-				case 'time':
-					$query = array_merge($query, $this->getTimeQuery($value));
-					break;
-				case 'stamp':
-					break;
-				default:
-					$query[$key] = $value;
+			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
+				return false;
 			}
-			
+			$query[$key] = $value;
 		}
-		if (isset($query['aid']) && !is_array($query['aid'])) {
-			settype($query['aid'], 'int');
-		}
+
+		$query['limit'] = $limit;
 		return $query;
 	}
 		
