@@ -131,7 +131,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	/**
 	 *  Is the run is fake (for example to get a current balance in the middle of the month)
 	 */
-	protected $fakeCycle = false;
+	public $fakeCycle = false;
 	
 	/**
 	 * If false don't automatically generate pdf. 

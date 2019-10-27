@@ -59,9 +59,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				unset($query['limit']);
 			}
 
-			if (isset($query['stamp'])) {
-				$stamp = $query['stamp'];
-				unset($query['stamp']);
+			if (isset($query['id'])) {
+				$id = $query['id'];
+				unset($query['id']);
 			}
 
 			if (isset($query['EXTRAS'])) {
@@ -78,8 +78,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				if ($sub->isEmpty()) {
 					continue;
 				}
-				if (isset($stamp)) {
-					$subs[] = $sub->set('stamp', $stamp);
+				if (isset($id)) {
+					$subs[] = $sub->set('id', $id);
 				} else {
 					$subs[] = $sub;
 				}

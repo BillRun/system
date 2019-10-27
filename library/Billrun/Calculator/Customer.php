@@ -310,19 +310,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function loadSubscriberForLine($row) {
-		$params = $this->getIdentityParams($row);
-
-		if (count($params) == 0) {
-			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::WARN);
-			return;
-		}
-		
-		$time = date(Billrun_Base::base_datetimeformat, $row->get('urt')->sec);
-		
 		$priorities = $this->buildPriorities([$row]);
 		foreach ($priorities as $priority) {
-			if ($subscriber = $this->subscriber->loadSubscriberForQuery(array_values($priority)[0])) {
-				return $subscriber;
+			if ($sub = $this->subscriber->loadSubscriberForQuery(array_values($priority)[0])) {
+				return $sub;
 			}
 		}
 		return false;
@@ -335,10 +326,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$line_params = $this->getIdentityParams($row);
 				if (count($line_params) == 0) {
 					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
+					return;
 				} else {
 					foreach ($line_params as $key => $currParams) {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);
-						$currParams['stamp'] = $row['stamp'];
+						$currParams['id'] = $row['stamp'];
 						$currParams['EXTRAS'] = 0;
 						foreach ($subscriber_extra_data as $key) {
 							if ($this->isExtraDataRelevant($row, $key)) {
@@ -346,7 +338,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 								break;
 							}
 						}
-						$priorities[$key][$currParams['stamp']] = $currParams;
+						$priorities[$key][$currParams['id']] = $currParams;
 					}
 				}
 			}

@@ -66,7 +66,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $nextPlanActivation = null;
 	
-	protected static $allowedQueryKeys = ['time', 'stamp', 'EXTRAS'];
+	protected static $allowedQueryKeys = ['time', 'id', 'EXTRAS'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -365,7 +365,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return '';
 	}
 	
-	protected function buildQuery($params, $limit = 'unlimited') {
+	protected function buildQuery($params, $limit = false) {
 		// validate that params are legal by configuration
 		$customFields = array_map(function ($customField) {
 			return $customField['field_name'];
