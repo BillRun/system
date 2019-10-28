@@ -52,7 +52,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $generator->setFileName($fileName);
         $generator->setFilePath($generatorOptions['local_dir']);
         $generator->generate();
-        $this->initLogFile();
         return true;
     }
 
@@ -324,7 +323,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $line;
     }
 
-    protected function initLogFile() {
+    public function initLogFile() {
         $logOptions = $this->chargeOptions;
         $logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
         $this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);

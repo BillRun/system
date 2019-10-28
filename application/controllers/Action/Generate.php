@@ -49,6 +49,8 @@ class GenerateAction extends Action_Base {
         if($this->checkConfig($generator->getConfigByType(), $generator)){
             $this->_controller->addOutput("Config validation passed successfully.");
         }
+        $generator->initLogFile();
+        $this->_controller->addOutput("Log file was generated.");
         
         if (method_exists($generator, 'lock')) {
             if (!$generator->lock()) {
