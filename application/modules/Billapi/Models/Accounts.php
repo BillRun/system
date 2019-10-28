@@ -68,7 +68,7 @@ class Models_Accounts extends Models_Entity {
 		}
 
 		$account = new Billrun_Account_Db();
-		$account->loadAccount($query);
+		$account->loadAccountForQuery($query);
 		if (!$account->getCustomerData()->isEmpty()) {
 			$account_sids = array_reduce($account->allowances, function($acc, $allowance) {
 				$acc[] = $allowance['sid'];

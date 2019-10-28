@@ -35,7 +35,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 			$subscriber = Billrun_Factory::subscriber();
 			$subscriber->loadSubscriberForQuery(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = Billrun_Factory::account();
-			$account->loadAccount(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			$account->loadAccountForQuery(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			
 			$singleData = $this->constructSingleRowData($line, $subscriber->getSubscriberData(), $account->getCustomerData());
 			$queryData[] = $singleData;
