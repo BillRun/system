@@ -157,7 +157,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		}
 		
 		// in case of expected invoice for subscriber termintation we might want to prepone future installments
-		if ($this->cycleAggregator->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+		if ($this->cycleAggregator->isFakeCycle() && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
 			$installmentLines = $this->cycleAggregator->handleInstallmentsPrepone($this->cycleAggregator->data);
 			$futureCharges = [];
 			foreach ($installmentLines as $line	) {
