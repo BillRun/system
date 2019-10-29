@@ -18,7 +18,7 @@ class ReportAction extends ApiAction {
 
 	protected $fieldMapping = [
 		'duration' => ['$in'=>['duration']],
-		'usageType' => ['$regex'=>'usaget'],
+		'usageType' => ['$in'=>['usaget']],
 		'sourcePhoneNumber' => ['$in'=>['calling_number']],
 		'targetPhoneNumber' => ['$in'=>['called_number']],
 		'sourceImei' => ['$in'=>[ 'imei' ]],
@@ -256,7 +256,27 @@ class ReportAction extends ApiAction {
 		$endDate =  preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']);
 		$query = [ 'urt'=> ['$gte' => new MongoDate($startDate),
 							'$lt' => new MongoDate($endDate) ]];
+		if(!empty($andQuery = $this->mapToFields($input))) {
+			$query = array_merge($query,['$and' => $andQuery]);
+		}
 
+		if(!empty($input['searchColumns'])) {
+			$query['$or'] = [];
+			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
+			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
+			foreach($input['searchColumns'] as  $field) {
+				foreach($input['searchValue'] as $value) {
+					$query['$or'][] = reset($this->mapToFields([$field => $value]));
+				}
+
+			}
+		}
+		//Billrun_Factory::log(json_encode($query));
+		return $query;
+	}
+
+	protected function mapToFields($input) {
+		$query=[];
 		foreach($this->fieldMapping as $inputField => $toMap) {
 			if(!empty($input[$inputField])) {
 				$localOr = ['$or' => []];
@@ -269,22 +289,9 @@ class ReportAction extends ApiAction {
 						$localOr['$or'][]  = [ $internalFields => [$equalOp => "".$input[$inputField]] ];
 					}
 				}
-				$query['$and'][] = $localOr;
+				$query[] = $localOr;
 			}
 		}
-
-		if(!empty($input['searchColumns'])) {
-			$query['$or'] = [];
-			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
-			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
-			foreach($input['searchColumns'] as  $field) {
-				foreach($input['searchValue'] as $value) {
-					$query['$or'][] = [$field => $value];
-				}
-
-			}
-		}
-
 		return $query;
 	}
 
