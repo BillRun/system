@@ -60,12 +60,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$newAccount = Billrun_Factory::account();
-		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
-		$newAccount->loadAccounts($accountQuery);
-		$accounts = $newAccount->getCustomerData();
+		$account = Billrun_Factory::account();
+		$accountQuery = array('aid' => array('$in' => $aids));
+		$accounts = $account->loadAccountsForQuery($accountQuery);
 		foreach ($accounts as $account){
-			$subscribersInArray[$account['aid']] = $account;
+			$accountsInArray[$account['aid']] = $account;
 		}
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
@@ -74,7 +73,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				break;
 			}
 			$paymentParams = array();
-			$account = $subscribersInArray[$customer['aid']];
+			$account = $accountsInArray[$customer['aid']];
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
 				continue;

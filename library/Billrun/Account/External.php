@@ -12,6 +12,8 @@ class Billrun_Account_External extends Billrun_Account {
 	
 	protected static $type = 'external';
 	
+	protected static $queryBaseKeys = ['id', 'time', 'limit'];
+	
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
@@ -88,12 +90,22 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$params = [];
 		foreach ($query as $key => $value) {
-			if (!in_array($key, $this->queryBaseKeys)) {
-				$params[] = [
-					'key' => $key,
-					'operator' => 'equal',
-					'value' => $value
-					];
+			if (!in_array($key, static::$queryBaseKeys)) {
+				if (is_array($value)) {
+					foreach ($value as $currKey => $currVal) {
+						$params[] = [
+						'key' => $key,
+						'operator' => $currKey,
+						'value' => $currVal
+						];
+					}
+				} else {
+					$params[] = [
+						'key' => $key,
+						'operator' => 'equal',
+						'value' => $value
+						];
+				}
 				unset($query[$key]);
 			}
 		}

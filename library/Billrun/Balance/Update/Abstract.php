@@ -60,7 +60,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		} else if ($this->sharedBalance) {
 			$query = array('aid' => (int)$params['aid']);
 			$accountEntity = Billrun_Factory::account();
-			$this->subscriber = $accountEntity->loadAccount($query)->getRawData();
+			$this->subscriber = $accountEntity->loadAccountForQuery($query)->getRawData();
 		}
 		
 		if ($this->entity->isEmpty()) {

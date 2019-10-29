@@ -520,11 +520,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
-		$account = Billrun_Factory::account();
-		$account->loadAccounts($query);
-		$subscribers = $account->getCustomerData();
-		foreach ($subscribers as $subscriber) {
-			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		foreach ($accounts as $account) {
+			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
@@ -532,7 +530,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
-				$subscriber = $subscribers_in_array[$billDetails['aid']];
+				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = $subscriber['payment_gateway']['active'];
 				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);

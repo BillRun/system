@@ -168,21 +168,21 @@ abstract class Billrun_Account extends Billrun_Base {
 	}
 	
 	/**
-	 * method to load accounts details
-	 * 
 	 * @param array $params load by those params 
-	 * @return true if successful.
+	 * @return array of account instances
 	 */
 	public function loadAccountsForQuery($params) {
-		$query = $this->buildQuery($params);
-		$data = $this->getAccountsDetails($query);
-		if (!$data) {
-			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+		$accountsQuery = $this->buildQuery($params);
+		if ($accountsQuery === false) {
+			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
-
-		$this->data = $data;
-		return true;
+		$result = $this->load([$accountsQuery]);
+		if(empty($result)) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		return $result;
 	}
 	
 	/**
@@ -295,8 +295,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
-				if ($this->loadAccount($params)) {
+				$params = array('aid' => $aid, 'time' => date('c'));
+				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);
 					if ($this->closeAndNew(array(), $remove_values)) {

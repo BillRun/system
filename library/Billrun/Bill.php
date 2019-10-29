@@ -533,8 +533,6 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		// white list exists but aids not included
@@ -552,15 +550,14 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$aidsQuery = array('aid' => array('$in' => $aids));			
+			$accountQuery = array('aid' => array('$in' => $aids));			
 		} else if (!empty($exempted)){
-			$aidsQuery = array('aid' => array('$nin' => $aids));
+			$accountQuery = array('aid' => array('$nin' => $aids));
 		} else {
-			$aidsQuery = array();
+			$accountQuery = array();
 		}
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$account->loadAccounts($accountQuery);
-		$currentAccounts = $account->getCustomerData();
+		
+		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {

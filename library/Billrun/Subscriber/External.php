@@ -12,7 +12,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static protected $type = 'external';
 	
-	protected $queryBaseKeys = ['id', 'time', 'limit'];
+	protected static $queryBaseKeys = ['id', 'time', 'limit'];
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -76,7 +76,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		}
 		$params = [];
 		foreach ($query as $key => $value) {
-			if (!in_array($key, $this->queryBaseKeys)) {
+			if (!in_array($key, static::$queryBaseKeys)) {
 				$params[] = [
 					'key' => $key,
 					'operator' => 'equal',

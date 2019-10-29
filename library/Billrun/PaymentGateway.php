@@ -734,7 +734,7 @@ abstract class Billrun_PaymentGateway {
 	protected function paySinglePayment($retParams) {
 		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
 		$account = Billrun_Factory::account();
-		$account->loadAccount(array('aid' => $this->saveDetails['aid']));
+		$account->loadAccountForQuery(array('aid' => $this->saveDetails['aid']));
 		$accountGateway = $account->payment_gateway;
 		$gatewayDetails = !empty($accountGateway) ? $accountGateway['active'] : array();
 		$accountId = $account->aid;
