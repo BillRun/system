@@ -21,6 +21,8 @@ class Billrun_Account_Db extends Billrun_Account {
 	protected $collection;
 	
 	protected static $type = 'db';
+	
+	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
 
 	/**
 	 * Construct a new account DB instance.
@@ -61,28 +63,20 @@ class Billrun_Account_Db extends Billrun_Account {
 		$type = 'account';
 		
 		foreach ($queries as &$query) {
-			$query['type'] = $type;
-			
-			if (isset($query['time'])) {
+			$query = $this->buildParams($query);
+			if(isset($query['limit'])) {
+				$limit = $query['limit'];
+				unset($query['limit']);
+			}
+			if(isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
-
-			if (isset($query['limit'])) {
-				$limit = $query['limit'];
-				unset($query['limit']);
-			}
-
-			if (isset($query['id'])) {
+			if(isset($query['id'])) {
 				$id = $query['id'];
 				unset($query['id']);
 			}
-
-			if (isset($query['aid'])) {
-				settype($query['aid'], 'int');
-			}
-			
 			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
 				$account = $result->limit(1)->current();
@@ -155,5 +149,20 @@ class Billrun_Account_Db extends Billrun_Account {
 	
 	protected function getTimeQuery($time) {
 		return Billrun_Utils_Mongo::getDateBoundQuery();
+	}
+	
+	protected function buildParams($query) {
+		$type = 'account';
+		$query['type'] = $type;
+		foreach ($query as $key => $value) {
+			if (!in_array($key, static::$queryBaseKeys)) {
+				$query[$key] = $value;
+				continue;
+			}
+			switch ($key) {
+				default:
+			}
+		}
+		return $query;
 	}
 }
