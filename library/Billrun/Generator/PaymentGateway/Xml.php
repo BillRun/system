@@ -62,7 +62,8 @@ class Billrun_Generator_PaymentGateway_Xml {
                         if ((in_array('attributes', $curentPathes)) && (isset($structuresArray[$segment][$a]['attributes']))) {
                             for ($b = 0; $b < count($structuresArray[$segment][$a]['attributes']); $b++) {
                                 if(empty($structuresArray[$segment][$a]['attributes'][$b]['key']) || empty($structuresArray[$segment][$a]['attributes'][$b]['value'])){
-                                    return "One of the attributes's key/value is missing.";
+                                    Billrun_Factory::log("One of the attributes's key/value is missing. No generate was made.", Zend_Log::ALERT);
+                                    return false;
                                 }
                             }
                         }
@@ -127,17 +128,20 @@ class Billrun_Generator_PaymentGateway_Xml {
                     }
                 } else {
                     if ($segment === "data_structure") {
-                        return "No paths in data segment. No generate was made.";
+                        Billrun_Factory::log("No paths in data segment. No generate was made.", Zend_Log::ALERT);
+                        return false;
                     }
                 }
             }
         }
         if($commonPath == ""){
-            return 'Billrun_Generator_PaymentGateway_Xml: No common path was found';
+            Billrun_Factory::log("Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.", Zend_Log::ALERT);
+            return false;
         }
         foreach($structuresArray as $segment => $data){
             if((count($structuresArray[$segment]) !== 0) && ((!isset($returnedValue[$segment]) || (count($returnedValue[$segment]) == 0) || empty($returnedValue[$segment]['repeatedTag'])))){
-                return $segment . " segment has paths, without repeated tag. XML file can't be generated.";
+                Billrun_Factory::log($segment . " segment has paths, without repeated tag. No generate was made.", Zend_Log::ALERT);
+                return false;
             }
         }
         return true;    

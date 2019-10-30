@@ -47,16 +47,19 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	public static function validateOptions($config) {
 		if (isset($config['generator']['type']) && !in_array($config['generator']['type'], array('fixed', 'separator'))) {
-			return "File type isn't fixed/separator";
+                        Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
+			return false;
 		}
 		if (!isset($config['export']['export_directory'])) {
-			return "File's local_dir is undefined";
+                        Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
+			return false;
 		}
 		if ($config['generator']['type'] === 'fixed') {
                   if(count($config['generator']['data_structure']) > 0){
 			foreach ($config['generator']['data_structure'] as $dataLine) {
                                 if (!isset($dataLine['padding']['length'])) {
-                                    return "Missing padding length definitions for " . $config['generator']['type'];
+                                    Billrun_Factory::log("Missing padding length definitions for " . $config['generator']['type'], Zend_Log::ALERT);
+                                    return false;
                                 }
 			}
                   }
