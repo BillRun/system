@@ -29,11 +29,12 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $repeatedTags;
     protected $encoding = 'utf-8';
 
-
+    
     public function __construct($options) {
-        $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
-        $this->input_array['data'] = isset($options['data']) ? $options['data'] : null;
-        $this->input_array['trailers'] = isset($options['trailers']) ? $options['trailers'] : null;
+        $response = $this->validateOptions($options['configByType']);
+        if($response !== true){
+            throw new Exception($response);
+        }
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
         $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
@@ -48,7 +49,7 @@ class Billrun_Generator_PaymentGateway_Xml {
 	 * @param  array   $options   Relevant params from the config
 	 * @return true - in case all the expected config params exist, and if the config is built as expected, error message - otherwise.
 	 */ 
-    public static function validateOptions($config){
+    protected static function validateOptions($config){
         $structures = ['header_structure', 'data_structure', 'trailer_structure'];
         $structuresArray = array();
         for($i = 0; $i < count($structures); $i++){
@@ -146,6 +147,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         return true;    
     }
+
     
     public function generate() {
         $this->preXmlBuilding();
@@ -285,14 +287,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
     }
 
-    public function setFileName($fileName){
-        $this->file_name = $fileName;
-    }
-    
-    public function setFilePath($dir){
-        $this->file_path = $dir . '/' . $this->file_name;
-    }
-    
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($indexes); $a++) {
@@ -375,5 +369,26 @@ class Billrun_Generator_PaymentGateway_Xml {
             }
         }
         $this->repeatedTags = $returnedValue;
+    }
+
+    
+    public function setFileName($fileName){
+        $this->file_name = $fileName;
+    }
+    
+    public function setFilePath($dir){
+        $this->file_path = $dir . '/' . $this->file_name;
+    }
+    
+    public function setDataRows($data) {
+        $this->input_array['data'] = $data;
+    }
+    
+    public function setHeaderRows($header) {
+        $this->input_array['headers'] = $header;
+    }
+    
+    public function settrailerRows($trailer) {
+        $this->input_array['trailers'] = $trailer;
     }
 }
