@@ -1,6 +1,7 @@
 <div class="toolbar toolbar-<?php echo $active; ?>">
 	<form id="search-criteria" action="<?php echo $baseUrl . $requestUrl; ?>" method="POST" class="form-vertical">
 		<input type="hidden" id="queryType" name="queryType" value="find" />
+		<input type="hidden" id="active_table" name="active_table" value=<?php echo $active ?> />
 		<?php
 //		print_R($this->filter_fields_order);
 //		print_R($this->filter_fields);die;
