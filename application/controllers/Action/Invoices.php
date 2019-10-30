@@ -38,8 +38,8 @@ class AccountInvoicesAction extends ApiAction {
 					'input' => $request->getRequest()
 			)));
 		} catch (Exception $ex) {
+			Billrun_Factory::log('AccountInvoices Error: ' . print_r(array('input' => $request->getPost(), 'error'=> $ex->getMessage(), 'trace' => $ex->getTraceAsString()),1),Zend_Log::ERR);
 			$this->setError($ex->getMessage(), $request->getPost());
-			Billrun_Factory::log(print_r(array('error'=> $ex->getMessage(), 'input' => $request->getPost()),1),Zend_Log::ERR);
 			return;
 		}
 	}
