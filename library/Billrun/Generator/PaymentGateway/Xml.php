@@ -29,7 +29,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $repeatedTags;
     protected $encoding = 'utf-8';
 
-
+    
     public function __construct($options) {
         $this->input_array['headers'] = isset($options['headers']) ? $options['headers'] : null;
         $this->input_array['data'] = isset($options['data']) ? $options['data'] : null;
