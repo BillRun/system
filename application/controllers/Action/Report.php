@@ -123,6 +123,7 @@ class ReportAction extends ApiAction {
 
  		$this->fieldMapping = Billrun_Factory::config()->getConfigValue('police_report.field_mapping',$this->fieldMapping);
  		$this->fieldReverseMapping = Billrun_Factory::config()->getConfigValue('police_report.field_reverse_mapping',$this->fieldReverseMapping);
+ 		$this->ipMapppingTimeDelay = Billrun_Factory::config()->getConfigValue('police_report.ipmapping_time_delay',3600);
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -227,9 +228,9 @@ class ReportAction extends ApiAction {
 			$linesQuery = $this->getMongoQueryFromInput($linesInput);
 			$linesQuery['served_pdp_address'] = $mapping['internal_ip'];
 			if(!empty($linesQuery['urt']['$gte'])) {
-				$linesQuery['urt']['$gte'] = $mapping['urt'];
+				$linesQuery['urt']['$gte'] = new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay);
 			} else {
-				$linesQuery['urt'] = ['$gte' => $mapping['urt']];
+				$linesQuery['urt'] = ['$gte' => new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay) ];
 			}
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
@@ -315,7 +316,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
-				if($cdr['urt'] > $mapping['urt'] && $mapping['end_map_date'] > $cdr['urt']->sec) {
+				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec) {
 					$cdr['ipmapping'] = array_intersect_key($mapping, $this->ipMapFieldsToReturn);
 					$retRows[] = $cdr;
 				}
