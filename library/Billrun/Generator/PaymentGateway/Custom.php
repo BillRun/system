@@ -24,7 +24,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $fileName;
     protected $transactionsTotalAmount = 0;
     protected $gatewayLogName;
-
+    protected $fileGenerator;
+    
     public function __construct($options) {
         if (!isset($options['file_type'])) {
             throw new Exception('Missing file type');
@@ -40,20 +41,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     }
 
     public function generate() {
-        $className = $this->getGeneratorClassName();
-        $generatorOptions = $this->buildGeneratorOptions();
-        try {
-            $generator = new $className($generatorOptions);
-        } catch (Exception $ex) {
-            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
-            return false;
-        }
         $fileName = $this->getFilename();
-        $generator->setFileName($fileName);
-        $generator->setFilePath($generatorOptions['local_dir']);
-        $generator->generate();
+        $this->fileGenerator->setFileName($fileName);
+        $this->fileGenerator->setFilePath($this->localDir);
+        $this->fileGenerator->setDataRows($this->data);
+        $this->fileGenerator->setHeaderRows($this->headers);
+        $this->fileGenerator->settrailerRows($this->trailers);
+        $this->fileGenerator->generate();
         $this->initLogFile();
-        return true;
     }
 
     protected function getDataLine($params) {
