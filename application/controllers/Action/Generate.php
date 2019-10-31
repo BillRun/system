@@ -58,7 +58,7 @@ class GenerateAction extends Action_Base {
         $this->_controller->addOutput("Loading data to Generate...");
             $generator->load();
             $this->_controller->addOutput("Starting to Generate. This action can take a while...");
-            if ($generator->generate()) {
+            $generator->generate();
                 $this->_controller->addOutput("Finished generating.");
                 if (method_exists($generator, 'release')) {
                     if (!$generator->release()) {
@@ -71,8 +71,5 @@ class GenerateAction extends Action_Base {
                     $generator->move();
                     $this->_controller->addOutput("Finished exporting");
                 }
-            } else {
-                $this->_controller->addOutput("Something went wrong, no file was genertaed.");
-            }
     }
 }
