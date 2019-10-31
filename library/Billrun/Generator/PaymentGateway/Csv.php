@@ -18,14 +18,13 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
 	protected $padCharDef = ' ';
-	protected $filePath;
+        protected $file_name;
+	protected $file_path;
+        protected $local_dir;
         protected $encoding = 'utf-8';
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
-		$this->data = isset($options['data']) ? $options['data'] : $this->data;
-		$this->headers = isset($options['headers']) ? $options['headers'] : $this->headers;
-		$this->trailers = isset($options['trailers']) ? $options['trailers'] : $this->trailers;
                 $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
@@ -35,7 +34,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (!$this->validateOptions($options)) {
 			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 		}
-		$this->local_dir = $options['local_dir'];
+                if (isset($options['local_dir'])) {
+                    $this->local_dir = $options['local_dir'];
+                }
 	}
         
 	/**
@@ -46,9 +47,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
+                        Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
 			return false;
 		}
-		if (!isset($options['file_name']) || !isset($options['local_dir'])) {
+		if (!isset($options['local_dir'])) {
+                        Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
 			return false;
 		}
 		if ($this->fixedWidth) {
@@ -75,7 +78,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	
 	protected function writeToFile($str) {
                 $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
-		return file_put_contents($this->filePath, $str, FILE_APPEND);
+		return file_put_contents($this->file_path, $str, FILE_APPEND);
 	}
 
 	protected function writeHeaders() {
@@ -189,5 +192,20 @@ class Billrun_Generator_PaymentGateway_Csv {
         public function setFileName($fileName){
             $this->file_name = $fileName;
         }
+        
+        public function setFilePath($dir){
+            $this->file_path = $dir . '/' . $this->file_name;
+        }
+        
+        public function setDataRows($data) {
+            $this->data = $data;
+        }
+    
+        public function setHeaderRows($header) {
+            $this->headers = $header;
+        }
+    
+        public function settrailerRows($trailer) {
+            $this->trailers = $trailer;
+        }
 }
-
