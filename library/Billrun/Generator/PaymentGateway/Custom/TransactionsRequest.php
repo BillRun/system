@@ -77,6 +77,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				break;
 			}
 			$paymentParams = array();
+                        if(isset($subscribersInArray[$customer['aid']])){
 			$account = $subscribersInArray[$customer['aid']];
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
@@ -138,6 +139,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
+                }
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
