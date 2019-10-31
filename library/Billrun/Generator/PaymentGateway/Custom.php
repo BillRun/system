@@ -48,7 +48,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setHeaderRows($this->headers);
         $this->fileGenerator->settrailerRows($this->trailers);
         $this->fileGenerator->generate();
-        $this->initLogFile();
     }
 
     protected function getDataLine($params) {

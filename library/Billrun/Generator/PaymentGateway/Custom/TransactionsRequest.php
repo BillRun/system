@@ -45,6 +45,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $className = $this->getGeneratorClassName();
                 $generatorOptions = $this->buildGeneratorOptions();
                 $this->fileGenerator = new $className($generatorOptions);
+                $this->initLogFile();
 	}
 
 	public function load() {
