@@ -13,10 +13,13 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	static protected $type = 'external';
 	
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
+	
+	protected $remote;
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscriber.fields.external', '');
+//		$this->remote = Billrun_Factory::config()->getConfigValue('subscriber.fields.external', '');
+		$this->remote = 'http://billrun/api/test';
 	}
 	
 	public function delete() {
@@ -30,19 +33,6 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	public function getList($startTime, $endTime, $page, $size, $aid = null) {
 		
 	}
-
-	protected function getSubscribersDetails($params, $availableFields = []) {
-		$res = Billrun_Util::sendRequest($this->remote, json_encode($params));
-		$subscribers = [];
-		if (!$res) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
-			return false;
-		}
-		foreach ($res as $sub) {
-			$subscribers[] = new Mongodloid_Entity($sub);
-		}
-		return $subscribers;
-	}
 	
 	protected function getSubscriberDetails($queries) {
 		$externalQuery = [];
@@ -50,7 +40,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			$query = $this->buildParams($query);
 			$externalQuery[] = $query;
 		}
-		$results = Billrun_Util::sendRequest($this->remote, json_encode($externalQuery));
+		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;

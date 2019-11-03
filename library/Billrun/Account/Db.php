@@ -59,9 +59,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Overrides parent abstract method
 	 */
 	protected function getAccountDetails($queries) {
-		$accounts = [];
-		$type = 'account';
-		
+		$accounts = [];		
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
 			if(isset($query['limit'])) {

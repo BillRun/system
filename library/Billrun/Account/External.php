@@ -7,17 +7,14 @@
  */
 
 class Billrun_Account_External extends Billrun_Account {
-
-	protected $remote;
 	
 	protected static $type = 'external';
 	
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
-	
+		
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-		$this->remote = $this->getConfigValue('subscriber.fields.external', '');
 	}
 	
 	/**
@@ -39,13 +36,13 @@ class Billrun_Account_External extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($query) {		
+	protected function getAccountDetails($queries) {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
 			$externalQuery[] = $query;
 		}
-		$results = Billrun_Util::sendRequest($this->remote, json_encode($externalQuery));
+		$results = json_decode(Billrun_Util::sendRequest('http://billrun/api/test', json_encode($externalQuery)), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -63,26 +60,26 @@ class Billrun_Account_External extends Billrun_Account {
 		
 	}
 	
-	protected function buildQuery($params) {
-		$query = array('type' => 'account');
-		$queryExcludeParams = array('time', 'type', 'to', 'from');
-		
-		if (isset($params['time'])) {
-			$query['date'] = new MongoDate(strtotime($params['time']));
-		} else {
-			$query['date'] = new MongoDate();
-		}
-
-		foreach ($params as $key => $value) {
-			if (in_array($key, $queryExcludeParams)) {
-				continue;
-			}
-			$query[$key] = $value;
-		}
-
-		return $query;
-	}
-	
+//	protected function buildQuery($params) {
+//		$query = array('type' => 'account');
+//		$queryExcludeParams = array('time', 'type', 'to', 'from');
+//		
+//		if (isset($params['time'])) {
+//			$query['date'] = new MongoDate(strtotime($params['time']));
+//		} else {
+//			$query['date'] = new MongoDate();
+//		}
+//
+//		foreach ($params as $key => $value) {
+//			if (in_array($key, $queryExcludeParams)) {
+//				continue;
+//			}
+//			$query[$key] = $value;
+//		}
+//
+//		return $query;
+//	}
+//	
 	protected function buildParams(&$query) {
 
 		if (isset($query['EXTRAS'])) {

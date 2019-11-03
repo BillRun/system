@@ -284,8 +284,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
-	abstract protected function getSubscribersDetails($query, $availableFields);
-
 	abstract protected function getSubscriberDetails($query);
 	
 	abstract public function getCredits($billrun_key, $retEntity = false);
