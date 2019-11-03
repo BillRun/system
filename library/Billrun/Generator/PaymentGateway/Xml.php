@@ -165,27 +165,28 @@ class Billrun_Generator_PaymentGateway_Xml {
         $rootNode = $doc->createElement($this->name_space . ':' . $this->commonPathAsArray[count($this->commonPathAsArray) - 1]);
         $document = $doc->appendChild($rootNode);
         $flag = 0;
-        foreach ($this->workingArray as $segment => $values) {
+        foreach ($this->workingArray as $segment => $indexes) {
+            foreach($indexes as $nodeIndex => $values){
+                for ($a = 0; $a < count($values); $a++) {
+                    if ($a == 0) {
+                        $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
+                        $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
+                        $pathAndValueAsArr = array();
+                        Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
+                    
+                        $nodeArray = $pathAndValueAsArr;
+                        continue 1;
+                    }
 
-            for ($a = 0; $a < count($values); $a++) {
-                if ($a == 0) {
-                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
-                    $val = $this->workingArray[$segment][$a]['value'];
+                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
+                    $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
                     $pathAndValueAsArr = array();
                     Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                    
-                    $nodeArray = $pathAndValueAsArr;
-                    continue 1;
+                    $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
+
                 }
-
-                $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $a);
-                $val = $this->workingArray[$segment][$a]['value'];
-                $pathAndValueAsArr = array();
-                Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
-
+                $this->newNode($nodeArray, $document, $doc);
             }
-            $this->newNode($nodeArray, $document, $doc);
         }
         $root = $doc->createElement($this->name_space . ':' . $firstTag);
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
@@ -228,8 +229,8 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->buildNode($segment, $doc, $element, $pathAsArray, $index);
     }
 
-    protected function pathAsArray($segment, $repeatedTag, $a) {
-        $path = $this->workingArray[$segment][$a]['path'];
+    protected function pathAsArray($segment, $repeatedTag, $nodeIndex, $a) {
+        $path = $this->workingArray[$segment][$nodeIndex][$a]['path'];
         $path = str_replace($this->commonPath, "", $path);
         $pathAsArray = explode($this->pathDelimiter, $path);
         for ($i = 0; $i < count($pathAsArray); $i++) {
@@ -301,7 +302,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                         } else {
                             $attributes = array();
                         }
-                        $this->workingArray[$segment][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value'], 'attributes' => $attributes);
+                        $this->workingArray[$segment][$a][] = array('path' => $curentPathes[$i], 'value' => $this->input_array[$segment][$a][$curentPathes[$i]]['value'], 'attributes' => $attributes);
                         unset($attributes);
                         $this->pathes[] = $curentPathes[$i];
                         $this->pathesBySegment[$segment][] = $curentPathes[$i];
