@@ -208,29 +208,16 @@ class Billrun_Generator_PaymentGateway_Xml {
         $doc->save($this->file_path);
     }
 
-    protected function buildNode($segment, $doc, &$node, $pathAsArray, $index) {
-        if (count($pathAsArray) == 1) {
-            $currentTag = array_shift($pathAsArray);
-            $element = $doc->createElement($this->name_space . ':' . $currentTag, $this->workingArray[$segment][$index]['value']);
-            if ((isset($this->workingArray[$segment][$index]['attributes'])) && (count($this->workingArray[$segment][$index]['attributes']) > 0)) {
-                for ($i = 0; $i < count($this->workingArray[$segment][$index]['attributes']); $i++) {
-                    $element->setAttribute($this->workingArray[$segment][$index]['attributes'][$i]['key'], $this->workingArray[$segment][$index]['attributes'][$i]['value']);
-                }
-            }
-            $node->appendChild($element);
-        } else {
-            if (count($pathAsArray) == 0) {
-                return;
-            }
-            $currentTag = array_shift($pathAsArray);
-            $element = $doc->createElement($this->name_space . ':' . $currentTag);
-            $node->appendChild($element);
-        }
-        $this->buildNode($segment, $doc, $element, $pathAsArray, $index);
-    }
-
-    protected function pathAsArray($segment, $repeatedTag, $nodeIndex, $a) {
-        $path = $this->workingArray[$segment][$nodeIndex][$a]['path'];
+    /**
+     * 
+     * @param string $segment - headers/data/trailer.
+     * @param string $repeatedTag - the tag that repeats itself in the given segment. 
+     * @param int $nodeIndex - the index of the segment's row.
+     * @param int $currentDataFieldIndex - current field index.
+     * @return the relative path (from the repeated tag) of this field in the file.
+     */
+    protected function pathAsArray($segment, $repeatedTag, $nodeIndex, $currentDataFieldIndex) {
+        $path = $this->workingArray[$segment][$nodeIndex][$currentDataFieldIndex]['path'];
         $path = str_replace($this->commonPath, "", $path);
         $pathAsArray = explode($this->pathDelimiter, $path);
         for ($i = 0; $i < count($pathAsArray); $i++) {
@@ -271,7 +258,14 @@ class Billrun_Generator_PaymentGateway_Xml {
             }
         }
     }
-
+    
+    /**
+     * 
+     * @param array $arr - xml node as array.
+     * @param DomElement $node - xml node, to add the $arr to - as xml node.
+     * @param DomDocument $doc - to use Dom's functions.
+     * The function creates new xml node, according to the array that is given.
+     */
     protected function newNode($arr, $node, $doc) {
         if (is_null($node)){
             $node = $this->appendChild($this->name_space . ':' . $doc->createElement("items"));
@@ -287,7 +281,12 @@ class Billrun_Generator_PaymentGateway_Xml {
             }
         }
     }
-
+    
+    /**
+     * Preparation function:
+     * Function that pulls out all the information from the input data, like attributes,
+     * parents tags, repeated tags.
+     */
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
             for ($a = 0; $a < count($indexes); $a++) {
