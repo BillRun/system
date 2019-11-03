@@ -222,7 +222,13 @@ class Billrun_DiscountManager {
 
 		$discountKey = $discount['key'];
 		if (isset($eligibilityEntity[$discountKey])) {
-			$timeEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge($$eligibilityEntity[$discountKey]['eligibility']), Billrun_Util::getIn($eligibility, 'eligiblity', []));
+			$timeEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge($eligibilityEntity[$discountKey]['eligibility']), Billrun_Util::getIn($eligibility, 'eligiblity', []));
+			
+			$subsEligibility = $eligibilityEntity[$discountKey]['subs'];
+			foreach (Billrun_Util::getIn($eligibility, 'subs', []) as $sid => $subEligibility) {
+				$subNewEligibility = Billrun_Utils_Time::mergeTimeIntervals(array_merge(Billrun_Util::getIn($eligibilityEntity, [$discountKey, 'subs', $sid], []), $subEligibility));
+				Billrun_Util::setIn($subsEligibility, $sid, $subNewEligibility);
+			}
 
 			$servicesEligibility = $eligibilityEntity[$discountKey]['services'];
 			foreach (Billrun_Util::getIn($eligibility, 'services', []) as $serviceEligibility) {
@@ -246,6 +252,7 @@ class Billrun_DiscountManager {
 
 			$eligibility = [
 				'eligibility' => $timeEligibility,
+				'subs' => $subsEligibility,
 				'services' => $servicesEligibility,
 				'plans' => $plansEligibility,
 			];
@@ -267,10 +274,18 @@ class Billrun_DiscountManager {
 						unset($this->eligibleDiscounts[$discountToExclude]);
 					}
 
-                    $servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
+                    $subsToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'subs'], []);
+					foreach ($subsToExclude as $sid => $subEligibility) {
+						$this->eligibleDiscounts[$discountToExclude]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference($subEligibility, $eligibilityData['subs'][$sid]);
+						if (empty($this->eligibleDiscounts[$discountToExclude]['subs'][$sid])) {
+							unset($this->eligibleDiscounts[$discountToExclude]['subs'][$sid]);
+						}
+					}
+                    
+					$servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
 					foreach ($servicesToExclude as $sid => $services) {
 						foreach ($services as $serviceKey => $serviceEligibility) {
-							$this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey] = Billrun_Utils_Time::getIntervalsDifference($serviceEligibility, $eligibilityData['eligibility']);
+							$this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey] = Billrun_Utils_Time::getIntervalsDifference($serviceEligibility, $eligibilityData['subs'][$sid]);
 							if (empty($this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey])) {
 								unset($this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey]);
 							}
@@ -278,6 +293,20 @@ class Billrun_DiscountManager {
 
 						if (empty($this->eligibleDiscounts[$discountToExclude]['services'][$sid])) {
 							unset($this->eligibleDiscounts[$discountToExclude]['services'][$sid]);
+						}
+					}
+                    
+					$plansToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'plans'], []);
+					foreach ($plansToExclude as $sid => $plans) {
+						foreach ($plans as $planKey => $planEligibility) {
+							$this->eligibleDiscounts[$discountToExclude]['plans'][$sid][$planKey] = Billrun_Utils_Time::getIntervalsDifference($planEligibility, $eligibilityData['subs'][$sid]);
+							if (empty($this->eligibleDiscounts[$discountToExclude]['plans'][$sid][$planKey])) {
+								unset($this->eligibleDiscounts[$discountToExclude]['plans'][$sid][$planKey]);
+							}
+						}
+
+						if (empty($this->eligibleDiscounts[$discountToExclude]['plans'][$sid])) {
+							unset($this->eligibleDiscounts[$discountToExclude]['plans'][$sid]);
 						}
 					}
 				}
@@ -519,13 +548,20 @@ class Billrun_DiscountManager {
 		$discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
-			return [
-				'eligibility' => [
-					[
-						'from' => $discountFrom,
-						'to' => $discountTo,
-					],
+			$eligibility = [
+				[
+					'from' => $discountFrom,
+					'to' => $discountTo,
 				],
+			];
+			$subscribersEligibility = [];
+			$sids = $this->getSids($subscribersRevisions);
+			foreach ($sids as $sid) {
+				$subscribersEligibility[$sid] = $eligibility;
+			}
+			return [
+				'eligibility' => $eligibility,
+				'subs' => $subscribersEligibility,
 			];
 		}
 
@@ -535,6 +571,7 @@ class Billrun_DiscountManager {
 		$maxSubscribers = is_numeric($maxSubscribers)? $maxSubscribers : null;
 		$cycles = Billrun_Util::getIn($discount, 'params.cycles', null);
 		$eligibility = [];
+		$subsEligibility = [];
 		$servicesEligibility = [];
 		$plansEligibility = [];
 
@@ -556,6 +593,14 @@ class Billrun_DiscountManager {
 			}
 
 			$eligibility = array_merge($eligibility, $conditionEligibility['eligibility']);
+			
+			foreach ($conditionEligibility['subs'] as $sid => $subEligibility) {
+				if (isset($subsEligibility[$sid])) {
+					$subsEligibility[$sid] = array_merge($subsEligibility[$sid], $subEligibility);
+				} else {
+					$subsEligibility[$sid] = $subEligibility;
+				}
+			}
 
 			foreach ($conditionEligibility['services'] as $sid => $subServicesEligibility) {
 				if (isset($servicesEligibility[$sid])) {
@@ -576,6 +621,10 @@ class Billrun_DiscountManager {
 
 		$eligibility = $this->getFinalEligibility($eligibility, $discountFrom, $discountTo);
 
+		foreach ($subsEligibility as &$subEligibility) {
+			$subEligibility = $this->getFinalEligibility($subEligibility, $discountFrom, $discountTo);
+		}
+
 		foreach ($servicesEligibility as &$subServicesEligibility) {
 			foreach ($subServicesEligibility as &$subServiceEligibility) {
 				$subServiceEligibility = $this->getFinalEligibility($subServiceEligibility, $discountFrom, $discountTo);
@@ -590,6 +639,7 @@ class Billrun_DiscountManager {
 
 		return [
 			'eligibility' => $eligibility,
+			'subs' => $subsEligibility,
 			'services' => $servicesEligibility,
 			'plans' => $plansEligibility,
 		];
@@ -758,6 +808,7 @@ class Billrun_DiscountManager {
 
 		return [
 			'eligibility' => Billrun_Utils_Time::mergeTimeIntervals($totalEligibility),
+			'subs' => $eligibilityBySubs,
 			'services' => $servicesEligibility,
 			'plans' => $plansEligibility,
 		];
@@ -1407,6 +1458,21 @@ class Billrun_DiscountManager {
 	protected function addTaxationData(&$line) {
 		$taxCalc = Billrun_Calculator::getInstance(['autoload' => false, 'type' => 'tax']);
 		return $taxCalc->updateRow($line);
+	}
+	
+	/**
+	 * get unique SIDs from subscribers revisions
+	 * 
+	 * @param array $subscribersRevisions
+	 * @return array
+	 */
+	protected function getSids($subscribersRevisions) {
+		$sids = [];
+		foreach ($subscribersRevisions as $subscriberRevisions) {
+			$sids = array_merge($sids, array_column($subscriberRevisions, 'sid'));
+		}
+		
+		return array_unique($sids);
 	}
 
 }
