@@ -1195,7 +1195,10 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
-		$lineEligibility = $this->getLineFullEligibility($line);
+		$lineEligibility = $this->getLineEligibilityForDiscount($line, $eligibility);
+		if (empty($lineEligibility)) {
+			return $ret;
+		}
 		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
 		foreach ($valuesEligibility as $valueEligibility) {
@@ -1408,6 +1411,22 @@ class Billrun_DiscountManager {
 				'to' => isset($line['end']) ? Billrun_Utils_Time::getTime($line['end']) : $this->cycle->end(),
 			],
 		];
+	}
+	
+	/**
+	 * get subscriber's eligibility for the given discount
+	 * 
+	 * @param array $line
+	 * @param array $eligibility
+	 * @return array
+	 */
+	protected function getLineEligibilityForDiscount($line, $eligibility) {
+		$sid = $line['sid'] ?? false;
+		if ($sid === false) { // account line
+			return Billrun_Util::getIn($eligibility, 'eligibility', []);
+		}
+		
+		return Billrun_Util::getIn($eligibility, ['subs', $sid], []);
 	}
 
 	/**
