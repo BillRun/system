@@ -52,7 +52,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		} else if (!$this->sharedBalance) {
 			$query = array('sid' => $params['sid']);
 			$subscriberEntity = Billrun_Factory::subscriber();
-			$this->subscriber = $subscriberEntity->loadSubscriberForQuery($query)->getRawData();
+			$this->subscriber = $subscriberEntity->loadSubscriberForQuery($query);
 		}
 		
 		if ($this->sharedBalance && !isset($params['aid'])) {
@@ -60,13 +60,13 @@ abstract class Billrun_Balance_Update_Abstract {
 		} else if ($this->sharedBalance) {
 			$query = array('aid' => (int)$params['aid']);
 			$accountEntity = Billrun_Factory::account();
-			$this->subscriber = $accountEntity->loadAccountForQuery($query)->getRawData();
+			$this->subscriber = $accountEntity->loadAccountForQuery($query);
 		}
 		
-		if ($this->entity->isEmpty()) {
+		if ($this->subscriber->isEmpty()) {
 			throw new Billrun_Exceptions_Api(0, array(), get_class() . 'Error loading entity');
 		}
-		$this->entity = $entity->getRawData();
+		$this->entity = $this->subscriber->getRawData();
 		
 		if (!empty($params['additional'])) {
 			$this->additional= $params['additional'];

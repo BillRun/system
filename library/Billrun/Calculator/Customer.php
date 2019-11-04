@@ -320,6 +320,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return false;
 	}
 	
+	// method for building priorities to perform customer calculation by
 	protected function buildPriorities($rows, $subscriber_extra_data = []) {
 		$priorities = [];
 		foreach ($rows as $row) {
