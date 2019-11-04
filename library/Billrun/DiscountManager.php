@@ -58,8 +58,12 @@ class Billrun_DiscountManager {
 		foreach ($entityRevisions as $entityRevision) {
 			$newEntityRevision = $entityRevision;
 			foreach ($passthroughData as $origFieldName => $fieldName) {
-				if (isset($entityRevision[$fieldName])) {
-					$newEntityRevision[$origFieldName] = $entityRevision[$fieldName];
+				if (is_array($fieldName)) {
+					if (method_exists($this, $fieldName['func'])) {
+						$newEntityRevision[$origFieldName] = $this->{$fieldName['func']}($entityRevision, $fieldName);
+					}
+				} else if (!is_null($val = Billrun_Util::getIn($entityRevision, $fieldName, null))) {
+					$newEntityRevision[$origFieldName] = $val;
 				}
 			}
 			$ret[] = $newEntityRevision;
@@ -1195,10 +1199,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function getLineEligibility($line, $discount, $eligibility) {
 		$ret = [];
-		$lineEligibility = $this->getLineEligibilityForDiscount($line, $eligibility);
-		if (empty($lineEligibility)) {
-			return $ret;
-		}
+		$lineEligibility = $this->getLineFullEligibility($line);
 		$valuesEligibility = $this->getLineValueEligibility($line, $discount, $eligibility);
 		
 		foreach ($valuesEligibility as $valueEligibility) {
@@ -1236,13 +1237,14 @@ class Billrun_DiscountManager {
 
 		$type = $this->getLineType($line);
 		$key = $line[$type]; // plan/service name
+		$lineEligibility = $this->getLineEligibilityForDiscount($line, $eligibility);
 		
 		// specific plan/service
 		$specificValue = Billrun_Util::getIn($discount, ['subject', $type, $key, 'value'], 0);
-		if ($specificValue > 0) {
+		if ($specificValue > 0 && !empty($lineEligibility)) {
 			$ret[] = [
 				'value' => $specificValue,
-				'eligibility' => $this->getLineFullEligibility($line),
+				'eligibility' => $lineEligibility,
 				'operations' => Billrun_Util::getIn($discount, ['subject', $type, $key, 'operations'], []),
 			];
 		}
@@ -1261,10 +1263,10 @@ class Billrun_DiscountManager {
 		
 		// monthly fees (fallback)
 		$monthlyFeesValue = Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'value'], 0);
-		if ($monthlyFeesValue > 0) {
+		if ($monthlyFeesValue > 0 && !empty($lineEligibility)) {
 			$ret[] = [
 				'value' => $monthlyFeesValue,
-				'eligibility' => $this->getLineFullEligibility($line),
+				'eligibility' => $lineEligibility,
 				'operations' => Billrun_Util::getIn($discount, ['subject', 'monthly_fees', 'operations'], []),
 			];
 		}
