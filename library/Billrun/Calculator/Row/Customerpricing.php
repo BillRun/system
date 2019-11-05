@@ -325,7 +325,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
-				Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
+				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 				return false;
 			}
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
@@ -362,7 +362,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this));
 				$ret = $balance->update($query, $update);
 				if ($ret === FALSE) {
-					Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
+					Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 					return false;
 				}
 				Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
@@ -519,14 +519,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceSettings = array(
 				'service_id' => $serviceId,
 				'name' => $serviceName,
-				'time' => $time
+				'time' => $time,
+				'disableCache' => true
 			);
 			
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
 			
-			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
+			if (!($serviceObject = Billrun_Factory::service($serviceSettings))) {
 				continue;
 			}
 			
@@ -1004,7 +1005,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$aprice *= $apriceMult;
 			}
 			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
-				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice);
+				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice, $this->row);
 			}
 			return $aprice;
 		}

@@ -56,7 +56,7 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('taxation.vat', 0.18);
+		$this->vat = Billrun_Rates_Util::getVat(0.18); // TODO: this should not be in use since there is no single TAX
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];

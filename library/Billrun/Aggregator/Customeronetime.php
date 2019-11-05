@@ -54,7 +54,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$customCollName = Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['collection_name'], 'billrun');
 			if(!$this->isFakeCycle()) {
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id, FALSE, $customCollName );
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id, $aggregatedResults, FALSE, $customCollName );
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				$this->saveLines($aggregatedResults);
@@ -63,7 +63,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 				//Save the billrun document
 				$aggregatedEntity->save();
 			} else {
-				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() , $customCollName  );
+				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() , $customCollName  );
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;

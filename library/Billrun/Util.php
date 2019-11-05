@@ -241,15 +241,10 @@ class Billrun_Util {
 	 * 
 	 * @return float the VAT at the current timestamp
 	 * @todo move to specific VAT object
+	 * @deprecated since version 5.9 - use Tax calculator
 	 */
 	public static function getVATAtDate($timestamp) {
-		$mongo_date = new MongoDate($timestamp);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+		return Billrun_Rates_Util::getVat(0.17, $timestamp);
 	}
 
 	/**
@@ -1652,7 +1647,7 @@ class Billrun_Util {
 	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
 	 * @param mixed $value - value to unset
 	 */
-	public static function unsetIn(&$arr, $keys, $value) {
+	public static function unsetIn(&$arr, $keys, $value = null) {
 		if (!is_array($arr)) {
 			return;
 		}
@@ -1663,9 +1658,13 @@ class Billrun_Util {
 		foreach($keys as $key) {
 			$current = &$current[$key];
 		}
-		unset($current[$value]);
+		
+		if (!is_null($value)) {
+			$current = &$current[$value];
+		}
+		
+		unset($current);
 	}
-
 
 	/**
 	 * Gets the value from an array.
@@ -1774,10 +1773,10 @@ class Billrun_Util {
 	 * @param type $self
 	 * @return type
 	 */
-	public static function translateTemplateValue($str, $translations, $self = NULL) {
+	public static function translateTemplateValue($str, $translations, $self = NULL, $customGateway = false) {
 		foreach ($translations as $key => $translation) {
 			if(is_string($translation) || is_numeric($translation)) {
-				$replace = is_numeric($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
+				$replace = is_numeric($translation) && !$customGateway ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
 				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
@@ -1835,4 +1834,44 @@ class Billrun_Util {
 		}	
 		return $pid;
 	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function findInArray($array, $fields, $defaultVal = null, $retArr = FALSE) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField, $attr);
+		if (!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=", Billrun_Util::getFieldVal($attr[1], FALSE));
+		}
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField);
+		$aggregate = $retArr && ($field == '*');
+		$keys = ($field != "*") ? array($field) : array_keys($array);
+
+		$retVal = $aggregate ? array() : $defaultVal;
+		foreach ($keys as $key) {
+			if (isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] )) {
+				if (!$aggregate) {
+					$retVal[$key] = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($retVal[$key] === $defaultVal) {
+						unset($retVal[$key]);
+					}
+					break;
+				} else {
+					$tmpRet = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($tmpRet !== $defaultVal) {
+						$retVal[$key] = $tmpRet;
+					}
+				}
+			}
+		}
+
+		return $retVal;
+	}
+
 }

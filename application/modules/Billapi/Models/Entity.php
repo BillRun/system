@@ -190,6 +190,9 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+
+		//transalte all date fields
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	/**
@@ -1065,6 +1068,9 @@ class Models_Entity {
 		switch ($this->collectionName) {
 			case 'users':
 				return 'username';
+			case 'discounts':
+			case 'reports':
+			case 'taxes':
 			case 'rates':
 				return 'key';
 			case 'accounts':
@@ -1180,12 +1186,14 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		$queryCreation = array(
-			$keyField => $this->before[$keyField],
-		);
-		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-		if ($this->update['_id'] == strval($firstRevision->getId())) {
-			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		if(isset($this->update['_id'])) {
+			$queryCreation = array(
+				$keyField => $this->before[$keyField],
+			);
+			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+			if ($this->update['_id'] == strval($firstRevision->getId())) {
+				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+			}
 		}
 	}
 
