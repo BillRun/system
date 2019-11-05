@@ -317,7 +317,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 
 		$collectionName = $this->getRequest()->get("collection");
-		$session = $this->getSession($collectionName);
+		$table = $this->getRequest()->get('active_table') ? $this->getRequest()->get('active_table') : "lines";
+		$session = $this->getSession($table);
 
 		if (!empty($session->query)) {
 			if(!empty($collDB = $this->getSetVar($session, '', 'collectionSelect')) )  {
@@ -336,7 +337,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 
 			// init model
-			self::initModel($collectionName, $options);
+			self::initModel($table, $options);
 
 			$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
