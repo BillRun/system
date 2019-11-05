@@ -62,6 +62,11 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 */
 	protected $move_exported;
 
+        /**
+         * file name config - in case of customized file name.
+         * @var array
+         */
+        protected $file_name_config;
 	/**
 	 * constructor
 	 * 
@@ -116,6 +121,14 @@ abstract class Billrun_Generator extends Billrun_Base {
 			$this->defineSshConnection($user, $password, $server);
 		}
 		
+                if (isset($options['file_name']) && !empty($options['file_name'])){
+                    foreach($options['file_name'] as $index => $config){
+                        $this->file_name_config[$index]['conditions'] = $config['conditions'];
+                        $this->file_name_config[$index]['pattern'] = $config['pattern'];
+                        $this->file_name_config[$index]['params'] = $config['params'];
+                    }
+                }
+                
 		if (isset($options['export']['dir'])) {
 			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath($options['export']['dir']);
 		} else {
@@ -192,4 +205,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 		return true;
 	}
 	
+        public function getFileNameConfig(){
+            return $this->file_name_config;
+        }
 }

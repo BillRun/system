@@ -165,16 +165,69 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function generate($lines = FALSE) {
-
 		$this->prepereView();
-
+                $customizedFileName = 0;
+                if(!empty($fileNameConfig = $this->getFileNameConfig())){
+                    $customizedFileName = 1;
+                }
 		foreach ($this->billrun_data as $object) {
+                        if($customizedFileName){
+                            $fileName = $this->getFileName($object, $fileNameConfig);
+                            $this->setFileName($object, $fileName);
+                        }
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
 	}
 
+        public function getFileName($billrunObject, $fileNameConfig) {
+            if ($billrunObject instanceof Mongodloid_Entity){
+                $doesntMeetConditions = 0;
+                $billrun = $billrunObject->getRawData();
+                foreach ($fileNameConfig as $index => $currentConfig){
+                    foreach ($currentConfig['conditions'] as $condition){
+                        if (!Billrun_Util::isConditionMet($billrun, $condition)){
+                            $doesntMeetConditions = 1;
+                        }
+                    }
+                    if ($doesntMeetConditions === 0){
+                        foreach ($currentConfig['params'] as $paramObj){
+                            $translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $billrun);
+                        }
+                        if (!in_array(-1, $translations)){
+                            return Billrun_Util::translateTemplateValue($currentConfig['pattern'], $translations, null, true);
+                        }else{
+                            return $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'];
+                        }
+                    }
+                }
+                return $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'];
+            }
+        }
+        
+        public function setFileName($billrunObject, $fileName) {
+            $billrunObject->set('file_name', $fileName);
+        }
+        
+        public function getTranslationValue($paramObj, $billrunObject) {
+            if(isset($paramObj['linked_entity'])){
+                return $billrunObject[$paramObj['linked_entity']['field_name']];
+            }else{
+                if(isset($paramObj['type']) && $paramObj['type'] === "date"){
+                    if($paramObj['value'] === "now"){
+                        $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                        return date($dateFormat, time());
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'], Zend_Log::ERR);
+                    }
+                }else{
+                    Billrun_Factory::log("Unsupported filename_params for param: " . $paramObj['param'], Zend_Log::ERR);
+                    return -1;
+                }
+            }
+        }
+        
 	/*
 	 * load billrun objects from billrun collection  
 	 */
@@ -217,9 +270,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'].$account['aid'] . 'tmp_footer.html',
 		);
-		
-		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
-		$pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
+                $file_name = $account['file_name'] . ".html";
+                $pdf_name = $account['file_name'] . ".pdf";
 		$html = $this->paths['html'] . $file_name;
 		$pdf = $this->paths['pdf'] . $pdf_name;
 
