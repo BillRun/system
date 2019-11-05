@@ -41,7 +41,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     }
 
     public function generate() {
-        try{
             $fileName = $this->getFilename();
             $this->fileGenerator->setFileName($fileName);
             $this->fileGenerator->setFilePath($this->localDir);
@@ -49,17 +48,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             $this->fileGenerator->setDataRows($this->data);
             $this->fileGenerator->settrailerRows($this->trailers);
             $this->fileGenerator->generate();
-        } catch(Exception $ex){
-            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-        }
     }
 
     protected function getDataLine($params) {
         $dataLine = array();
-        try {
-            $this->transactionsTotalAmount += $params['amount'];
-            $dataStructure = $this->configByType['generator']['data_structure'];
-            foreach ($dataStructure as $dataField) {
+        $this->transactionsTotalAmount += $params['amount'];
+        $dataStructure = $this->configByType['generator']['data_structure'];
+        foreach ($dataStructure as $dataField) {
+            try{
                 if (!isset($dataField['path'])) {
                     Billrun_Factory::log("Exporter " . $this->configByType['file_type'] . " data structure is missing a path", Zend_Log::ERR);
                     continue;
@@ -95,13 +91,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     throw new Exception("Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type']);
                 }
                 $dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+            } catch(Exception $ex){
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                continue;
             }
-
-            if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
-                ksort($dataLine);
-            }
-        } catch(Exception $ex){
-            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+        }
+        if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
+            ksort($dataLine);
         }
         return $dataLine;
     }

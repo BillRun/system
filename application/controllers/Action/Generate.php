@@ -56,9 +56,23 @@ class GenerateAction extends Action_Base {
 
         $this->_controller->addOutput("Generator loaded");
         $this->_controller->addOutput("Loading data to Generate...");
+        try{
+            $loadedSuccessfully = 1;
             $generator->load();
+        } catch(Exception $ex){
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            $loadedSuccessfully = 0;
+        }
+        if($loadedSuccessfully){
             $this->_controller->addOutput("Starting to Generate. This action can take a while...");
-            $generator->generate();
+            try{
+                $generatedSuccessfully = 1;
+                $generator->generate();
+            } catch(Exception $ex){
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                $generatedSuccessfully = 0;
+            }
+            if($generatedSuccessfully){
                 $this->_controller->addOutput("Finished generating.");
                 if (method_exists($generator, 'release')) {
                     if (!$generator->release()) {
@@ -71,5 +85,7 @@ class GenerateAction extends Action_Base {
                     $generator->move();
                     $this->_controller->addOutput("Finished exporting");
                 }
+            }
+        }
     }
 }
