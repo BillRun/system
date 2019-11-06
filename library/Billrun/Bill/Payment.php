@@ -978,4 +978,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
 	}
+	
+	public function isPaymentDenied($denialAmount) {
+		$alreadyDenied = 0;
+		if (isset($this->data['denied_amount'])) {
+			$alreadyDenied = $this->data['denied_amount'];
+		}
+		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		return $totalAmountToDeny > $this->data['amount'];
+	}
 }
