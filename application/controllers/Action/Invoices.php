@@ -91,9 +91,13 @@ class AccountInvoicesAction extends ApiAction {
 			}
 		}
 		$invoiceId = $invoice['invoice_id'];
-		
+		$invoiceData = $invoice->getRawData();
 		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
+                if (isset($invoiceData['file_name']) && !empty($invoiceData['file_name'])){
+                    $file_name = $invoiceData['file_name'];
+                }else{
+                    $file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
+                }
 		$pdf = $files_path . $billrun_key . '/pdf/' . $file_name;
 
 		if( $request->get('detailed') ) {
