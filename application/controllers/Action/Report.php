@@ -184,6 +184,13 @@ class ReportAction extends ApiAction {
 	protected function fetchUsage($params) {
 		$input = $params['input'];
 		$query = $this->getMongoQueryFromInput($input);
+		if(!empty($input['endDate']) && !empty($input['startDate'])) {
+			$query['$and'][] = ['charging_end_time' => ['$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
+														'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))]];
+			$query['$and'][] = ['urt' => $query['urt']];
+			unset($query['urt']);
+		}
+
 		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
@@ -229,8 +236,9 @@ class ReportAction extends ApiAction {
 			$linesQuery['served_pdp_address'] = $mapping['internal_ip'];
 			if(!empty($linesQuery['urt']['$gte'])) {
 				$linesQuery['urt']['$gte'] = new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay);
+				$linesQuery['urt']['$lt'] = new MongoDate($mapping['urt']->sec + $this->ipMapppingTimeDelay);
 			} else {
-				$linesQuery['urt'] = ['$gte' => new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay) ];
+				$linesQuery['urt'] = ['$gte' => new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay) , '$lt'=>new MongoDate($mapping['urt']->sec + $this->ipMapppingTimeDelay) ];
 			}
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
