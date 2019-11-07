@@ -27,18 +27,22 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
-		$payment->setPending(false);
-		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
-		if ($paymentResponse['stage'] == 'Completed') {
-			$payment->markApproved($paymentResponse['stage']);
-			$billData = $payment->getRawData();
-			if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
-			}
-			if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
-			}
-		}
+                if($payment->isPendingPayment()){
+                    $payment->setPending(false);
+                    $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
+                    if ($paymentResponse['stage'] == 'Completed') {
+                            $payment->markApproved($paymentResponse['stage']);
+                            $billData = $payment->getRawData();
+                            if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
+                                    Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+                            }
+                            if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+                                    Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+                            }
+                    }
+                }else{
+                    Billrun_Factory::log("Transaction " . $payment->getId() . " isn't pending, so no change was made on it.", Zend_Log::NOTICE);
+                }
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
