@@ -125,7 +125,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	/**
-	 * Prepre the invoice view for invoice  generation.
+	 * Prepare the invoice view for invoice  generation.
 	 * @param type $params 
 	 */
 	public function prepereView($params = FALSE) {
@@ -174,6 +174,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                         if($customizedFileName){
                             $fileName = $this->getFileName($object, $fileNameConfig);
                             $this->setFileName($object, $fileName);
+                        }else{
+                            $fileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
+                            $this->setFileName($object, $fileName);
                         }
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
@@ -198,11 +201,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                         if (!in_array(-1, $translations)){
                             return Billrun_Util::translateTemplateValue($currentConfig['pattern'], $translations, null, true);
                         }else{
-                            return $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'];
+                            return $billrun['billrun_key'] . "_" . $billrun['aid'] . "_" . $billrun['invoice_id'] . ".pdf";
                         }
                     }
                 }
-                return $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'];
+                return $billrun['billrun_key'] . "_" . $billrun['aid'] . "_" . $billrun['invoice_id'] . ".pdf";
             }
         }
         
@@ -212,18 +215,39 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
         
         public function getTranslationValue($paramObj, $billrunObject) {
             if(isset($paramObj['linked_entity'])){
-                return $billrunObject[$paramObj['linked_entity']['field_name']];
-            }else{
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
+                    $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                    $date = $billrunObject[$paramObj['linked_entity']['field_name']];
+                    if($date instanceof MongoDate){
+                        $date = strtotime($date->__toString());
+                        return date($dateFormat, $date);
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Wanted field isn't a date field. 'now' was chosen instead.", Zend_Log::ERR);
+                        return date($dateFormat, time());
+                    }
+                }else{
+                    if(isset($paramObj['type']) && $paramObj['type'] === "string"){
+                        return $billrunObject[$paramObj['linked_entity']['field_name']];
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
+                    }
+                }
+            } else{
+                if((isset($paramObj['type']) && $paramObj['type'] === "date") && !(isset($paramObj['linked_entity']))){
                     if($paramObj['value'] === "now"){
                         $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                         return date($dateFormat, time());
                     }else{
-                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'], Zend_Log::ERR);
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Date's value isn't 'now'. 'now' was chsen.", Zend_Log::ERR);
+                        return date($dateFormat, time());
                     }
                 }else{
-                    Billrun_Factory::log("Unsupported filename_params for param: " . $paramObj['param'], Zend_Log::ERR);
-                    return -1;
+                    if((isset($paramObj['type']) && $paramObj['type'] === "string") && !(isset($paramObj['linked_entity']))){
+                        return $paramObj['value'];
+                    }else{
+                        Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Missing 'linked entity, and the type isn't date/string.  None customized file name was chosen.", Zend_Log::ERR);
+                        return -1;
+                    }
                 }
             }
         }
@@ -270,8 +294,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'].$account['aid'] . 'tmp_footer.html',
 		);
-                $file_name = $account['file_name'] . ".html";
-                $pdf_name = $account['file_name'] . ".pdf";
+                $file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
+                if(isset($account['file_name']) & !empty($account['file_name'])){
+                    $pdf_name = $account['file_name'];
+                }else{
+                    $pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
+                }
 		$html = $this->paths['html'] . $file_name;
 		$pdf = $this->paths['pdf'] . $pdf_name;
 
