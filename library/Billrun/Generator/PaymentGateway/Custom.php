@@ -325,7 +325,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->logFile->setSequenceNumber();
         $this->logFile->setFileName($this->getFilename());
         $this->logFile->setStamp();
-        $this->generatedFileLog = $this->logFile->getStamp();
+        $this->generatedLogFileStamp = $this->logFile->getStamp();
         $this->logFile->save();
     }
     

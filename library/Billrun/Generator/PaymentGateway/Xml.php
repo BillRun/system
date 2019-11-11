@@ -64,6 +64,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                             for ($b = 0; $b < count($structuresArray[$segment][$a]['attributes']); $b++) {
                                 if(empty($structuresArray[$segment][$a]['attributes'][$b]['key']) || empty($structuresArray[$segment][$a]['attributes'][$b]['value'])){
                                     Billrun_Factory::log("One of the attributes's key/value is missing. No generate was made.", Zend_Log::ALERT);
+                                    $this->logFile->updateLogFileField('errors', "One of the attributes's key/value is missing. No generate was made.");
                                     return false;
                                 }
                             }
@@ -130,6 +131,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                 } else {
                     if ($segment === "data_structure") {
                         Billrun_Factory::log("No paths in data segment. No generate was made.", Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', "No paths in data segment. No generate was made.");
                         return false;
                     }
                 }
@@ -137,11 +139,13 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         if($commonPath == ""){
             Billrun_Factory::log("Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.", Zend_Log::ALERT);
+            $this->logFile->updateLogFileField('errors', "Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.");
             return false;
         }
         foreach($structuresArray as $segment => $data){
             if((count($structuresArray[$segment]) !== 0) && ((!isset($returnedValue[$segment]) || (count($returnedValue[$segment]) == 0) || empty($returnedValue[$segment]['repeatedTag'])))){
                 Billrun_Factory::log($segment . " segment has paths, without repeated tag. No generate was made.", Zend_Log::ALERT);
+                $this->logFile->updateLogFileField('errors', $segment . " segment has paths, without repeated tag. No generate was made.");
                 return false;
             }
         }
@@ -365,6 +369,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                     }
                 } else {
                         Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No paths in ' . $segment . ' segment.', Zend_Log::WARN);
+                        $this->logFile->updateLogFileField('warnings', 'Billrun_Generator_PaymentGateway_Xml: No paths in ' . $segment . ' segment.');
                 }
             }
         }

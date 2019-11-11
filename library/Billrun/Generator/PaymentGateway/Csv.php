@@ -32,6 +32,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$this->delimiter = '';
 		}
 		if (!$this->validateOptions($options)) {
+                        $this->logFile->updateLogFileField('errors', "Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
 		}
                 if (isset($options['local_dir'])) {
@@ -48,10 +49,12 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
                         Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', "File type isn't fixed/separator. No generate was made.");
 			return false;
 		}
 		if (!isset($options['local_dir'])) {
                         Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', "File's local_dir is undefined. No generate was made.");
 			return false;
 		}
 		if ($this->fixedWidth) {
@@ -59,6 +62,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
 						Billrun_Factory::log("Missing padding length definitions for " . $options['file_type'], Zend_Log::DEBUG);
+                                                $this->logFile->updateLogFileField('errors', "Missing padding length definitions for " . $options['file_type']);
 						return false;
 					}
 				}

@@ -21,7 +21,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
 	protected $tokenField = null;
 	protected $amountField = null;
-	protected $generatedFileLog;
+	protected $generatedLogFileStamp;
 	protected $generatorFilters = array();
 	protected $extraParamsDef = array();
 	protected $options = array();
@@ -46,11 +46,24 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $generatorOptions = $this->buildGeneratorOptions();
                 $this->fileGenerator = new $className($generatorOptions);
                 $this->initLogFile();
+                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+                $this->logFile->updateLogFileField('type', 'generated');
+                $parametersString = "";
+                if (isset($options['collection_date']) && !empty($options['collection_date'])){
+                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
+                }
+                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
+                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
+                }
+                $parametersString = trim($parametersString, ",");
+                $this->logFile->updateLogFileField('parameters_string', $parametersString);
+                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
 		if (!$this->validateExtraParams()) {
-			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.'; 
+			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.';
+                        $this->logFile->updateLogFileField('errors', "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.');
 			throw new Exception($message);
 			return;
 		}
@@ -58,6 +71,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', 'generator entities loaded: ' . count($this->customers));
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 		$this->data = array();
 		$customersAids = array_map(function($ele){
@@ -82,13 +96,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
 				continue;
 			}
-			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedFileLog);
+			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid']);
 				continue;
 			}
 			if (Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'], Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid']);
 				continue;
 			} else if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision)) {
 				$paymentParams['amount'] = $customer['left_to_pay'];
@@ -125,6 +141,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage());
 				continue;
 			}
 			$currentPayment = $payment[0];
@@ -143,6 +160,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', 'generator entities treated: ' . $numberOfRecordsToTreat);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}
