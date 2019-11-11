@@ -135,11 +135,11 @@ class Billrun_Cycle_Account_Invoice {
 	protected function generateDueDate($billrunDate) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
-			if ($this->isConditionsMeet($this->data, $option['conditions']) && $option['anchor_field'] == 'invoice_date') {
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
 				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
 			}
 		}
-		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $aid . ', using default configuration', Zend_Log::NOTICE);
+		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'));
 	}
 

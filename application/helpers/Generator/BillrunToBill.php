@@ -15,11 +15,13 @@
 class Generator_BillrunToBill extends Billrun_Generator {
 	
 	use Billrun_Traits_Api_OperationsLock;
+	use Billrun_Traits_ConditionsCheck;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
 	protected $billrunColl;
 	protected $logo = null;
+	protected $confirmDate;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -28,6 +30,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
+		$this->confirmDate = time();
 	}
 
 	public function load() {
@@ -69,7 +72,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'invoice_id' => $invoice['invoice_id'],
 				'aid' => $invoice['aid'],
 				'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
-				'due_date' => $invoice['due_date'],
+				'due_date' => $this->updateDueDate($invoice),
 				'due' => $invoice['totals']['after_vat_rounded'],
 				'due_before_vat' => $invoice['totals']['before_vat'],
 				'customer_status' => 'open',//$invoice['attributes']['account_status'],
@@ -194,6 +197,16 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'invoices' => $invoices,
 		);
 		Billrun_Factory::emailSenderManager($options)->notify();
+	}
+	
+	protected function updateDueDate($invoice) {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
+				return new MongoDate(strtotime($option['relative_time'], $this->confirmDate));
+			}
+		}
+		return $invoice['due_date'];
 	}
 	
 }
