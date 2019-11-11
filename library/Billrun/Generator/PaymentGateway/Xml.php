@@ -28,6 +28,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $attributes;
     protected $repeatedTags;
     protected $encoding = 'utf-8';
+    protected $transactionsCounter = 0;
 
     
     public function __construct($options) {
@@ -190,6 +191,9 @@ class Billrun_Generator_PaymentGateway_Xml {
 
             }
             $this->newNode($nodeArray, $document, $doc);
+            if($segment === "data"){
+                $this->transactionsCounter++;
+            }
         }
         $root = $doc->createElement($this->name_space . ':' . $firstTag);
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . $this->name_space, $this->root_NS);
@@ -395,5 +399,9 @@ class Billrun_Generator_PaymentGateway_Xml {
     
     public function settrailerRows($trailer) {
         $this->input_array['trailers'] = $trailer;
+    }
+    
+    public function getTransactionsCounter (){
+        return $this->transactionsCounter;
     }
 }

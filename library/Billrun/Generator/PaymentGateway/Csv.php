@@ -22,6 +22,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $file_path;
         protected $local_dir;
         protected $encoding = 'utf-8';
+        protected $transactionsCounter = 0;
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
@@ -140,6 +141,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents = '';
 				$counter = 0;
 			}
+                        $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;
@@ -211,5 +213,9 @@ class Billrun_Generator_PaymentGateway_Csv {
     
         public function settrailerRows($trailer) {
             $this->trailers = $trailer;
+        }
+        
+        public function getTransactionsCounter (){
+            return $this->transactionsCounter;
         }
 }
