@@ -70,6 +70,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'aid' => $invoice['aid'],
 				'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
 				'due_date' => $invoice['due_date'],
+				'charge' => ['not_before' => $this->updateChargeDate($invoice)],
 				'due' => $invoice['totals']['after_vat_rounded'],
 				'due_before_vat' => $invoice['totals']['before_vat'],
 				'customer_status' => 'open',//$invoice['attributes']['account_status'],
@@ -196,4 +197,19 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 	
+	protected function updateChargeDate($invoice) {
+		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
+		$invoiceType = @$invoice['attributes']['invoice_type'];
+		foreach ($options as $option) {
+			$anchorField = $option['anchorfield'];
+			if ($anchorField == 'confirm_date' && $invoiceType == 'immediate') {
+				return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_charge_date_interval', "+0 seconds"), $invoiceDate->sec - 1));
+			}
+			if ($anchorField == 'confirm_date' && (is_null($invoiceType) || $invoiceType == 'regular')) {
+				return new MongoDate(strtotime($option['relative_time'], $this->confirmDate));
+			}
+		}
+		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+	}
 }

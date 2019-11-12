@@ -236,8 +236,8 @@ abstract class Billrun_Bill {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
 			$query['$or'] = array(
-				array('due_date' => array('$lte' => new MongoDate(strtotime($date)))),
-				array('due_date' => array('$exists' => false)),
+				array('charge' => array('not_before' => array('$lte' => new MongoDate(strtotime($date))))),
+				array('charge' => array('not_before' => array('$exists' => false))),
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
@@ -983,14 +983,14 @@ abstract class Billrun_Bill {
 			);
 		}
 		$match['$match']['$or'] = array(
-				array('due_date' => array('$exists' => false)),
-				array('due_date' => array('$lt' => new MongoDate())),
+				array('charge.not_before' => array('$exists' => false)),
+				array('charge.not_before' => array('$lt' => new MongoDate())),
 		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
-				'due_date' => -1,
+				'charge.not_before' => -1,
 			),
 		);
 		$pipelines[] = array(
@@ -1017,6 +1017,7 @@ abstract class Billrun_Bill {
 				'bill_unit' => 1,
 				'bank_name' => 1,
 				'due_date'=> 1,
+				'charge.not_before'=> 1,
 				'source' => 1,
 				'currency' => 1,
 				'invoices' => 1,

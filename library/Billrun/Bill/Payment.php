@@ -75,6 +75,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['due_date'])) {
 				$this->data['due_date'] = $options['due_date'];
 			} 
+			if (isset($options['charge'])) {
+				$this->data['charge'] = ['not_before' => $options['charge']['not_before']];
+			} 
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}

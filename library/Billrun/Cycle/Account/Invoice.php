@@ -13,6 +13,7 @@
  * @since    5.2
  */
 class Billrun_Cycle_Account_Invoice {
+	use Billrun_Traits_ConditionsCheck;
 	
 	protected $aid;
 	protected $key;
@@ -358,6 +359,7 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 
 										strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1) :
 										strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData['charge'] = ['not_before' => $this->generateChargeDate($options, $initData['invoice_date'])];
 		$this->data->setRawData($initData);
 	}
         
@@ -392,5 +394,21 @@ class Billrun_Cycle_Account_Invoice {
 			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
+	}
+	
+	protected function generateChargeDate($invoice, $invoiceDate) {
+		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
+		$invoiceType = @$invoice['attributes']['invoice_type'];
+		foreach ($options as $option) {
+			$anchorField = $option['anchorfield'];
+			if ($anchorField == 'invoice_date' && $invoiceType == 'immediate') {
+				return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_charge_date_interval', "+0 seconds"), $invoiceDate->sec - 1));
+			}
+			if ($anchorField == 'invoice_date' && (is_null($invoiceType) || $invoiceType == 'regular')) {
+				return new MongoDate(strtotime($option['relative_time'], $invoiceDate));
+			}
+		}
+		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $invoiceDate));
 	}
 }

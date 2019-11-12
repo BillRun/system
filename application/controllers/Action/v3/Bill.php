@@ -81,7 +81,7 @@ class V3_billAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['due_date'] = array('$lt' => new MongoDate());
+				$query['charge'] = array('not_before' => array('$lt' => new MongoDate()));
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
