@@ -397,7 +397,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->input_array['headers'] = $header;
     }
     
-    public function settrailerRows($trailer) {
+    public function setTrailerRows($trailer) {
         $this->input_array['trailers'] = $trailer;
     }
     

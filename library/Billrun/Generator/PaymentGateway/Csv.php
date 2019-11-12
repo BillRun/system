@@ -211,7 +211,7 @@ class Billrun_Generator_PaymentGateway_Csv {
             $this->headers = $header;
         }
     
-        public function settrailerRows($trailer) {
+        public function setTrailerRows($trailer) {
             $this->trailers = $trailer;
         }
         

@@ -46,7 +46,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setFilePath($this->localDir);
         $this->fileGenerator->setHeaderRows($this->headers);
         $this->fileGenerator->setDataRows($this->data);
-        $this->fileGenerator->settrailerRows($this->trailers);
+        $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
     }
