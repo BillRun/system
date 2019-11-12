@@ -19,6 +19,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $headerRows;
 	protected $trailerRows;
 	protected $correlatedValue;
+        protected $informationArray = [];
+        
+        
 	
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
@@ -26,6 +29,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
+                $this->informationArray['transactions']['confirmed'] = 0;
+                $this->informationArray['transactions']['rejected'] = 0;
+                $this->informationArray['transactions']['denied'] = 0;
 	}
 
 /**
@@ -38,6 +44,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
 			$this->setParser($currentProcessor['parser']);
 		} else {
+                        $this->informationArray['errors'][] = "Parser definition missing";
 			throw new Exception("Parser definition missing");
 		}
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
@@ -90,6 +97,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->updateLogCollection($fileCorrelationObj);
 		}
 		$this->updatePaymentsByRows($data, $currentProcessor);
+                $this->updateLogFile();
 	}
 
 	protected function getRowDateTime($dateStr) {
@@ -147,6 +155,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
+                                $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
@@ -162,6 +171,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
+                                $this->informationArray['transactions']['rejected']++;
 			}
 		}
 	}
@@ -211,6 +221,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			'$set' => array(
 				'related_request_file' => $relevantRow[$correlationField],
 				'response_file' => true,
+                                'file_count' => $this->getCurrentFileCount(),
 			)
 		);
 		$this->log->update($query, $update);
@@ -226,4 +237,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $this->bills->query($query)->cursor();
 	}
 
+        protected function updateLogFile(){
+            $query = array(
+			'stamp' => $this->getFileStamp()
+		);
+            $update = array(
+                        '$set' => $this->informationArray
+            );
+            $this->log->update($query, $update);
+        }
 }

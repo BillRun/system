@@ -44,10 +44,12 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function getPaymentResponse($row, $currentProcessor) {
 		if (!isset($currentProcessor['processor']['transaction_status'])) {
 			Billrun_Factory::log("Missing transaction_status for file type " . $this->fileType, Zend_Log::DEBUG);
+                        $this->informationArray['info'][] = "Missing transaction_status for file type " . $this->fileType;
 		}
 		$transactionStatusDef = $currentProcessor['processor']['transaction_status'];
 		if (!isset($currentProcessor['processor']['transaction_status']['success'])) {
 			Billrun_Factory::log("Missing transaction_status success definition for " . $this->fileType, Zend_Log::DEBUG);
+                        $this->informationArray['info'][] = "Missing transaction_status success definition for " . $this->fileType;
 		}
 		$successConditions = $transactionStatusDef['success'];
 		$rejectionConditions = isset($transactionStatusDef['rejection']) ? $transactionStatusDef['rejection'] : array();
@@ -59,6 +61,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		if (empty($processorDefinition['processor']['amount_field']) ||
 			empty($processorDefinition['processor']['transaction_identifier_field'])) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
+                        $this->informationArray['errors'][] = "Missing definitions for file type " . $processorDefinition['file_type'];
 			return false;
 		}
 		$this->amountField = $processorDefinition['processor']['amount_field'];
@@ -74,6 +77,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			$stage = 'Rejected';
 		}
 		if (empty($stage)) {
+                        $this->informationArray['errors'][] = "Can't define the transaction status for " . $this->fileType;
 			throw new Exception("Can't define the transaction status for " . $this->fileType);
 		}
 		
@@ -91,18 +95,22 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		if ($response['stage'] == "Completed") { // payment succeeded 
 			$payment->updateConfirmation();
 			$payment->setPaymentStatus($response, $this->gatewayName);
+                        $this->informationArray['transactions']['confirmed']++;
 		} else if ($response['stage'] == "Pending") { // handle pending
 			$payment->setPaymentStatus($response, $this->gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+                                $this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
+                                $this->informationArray['transactions']['rejected']++;
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
 				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
+                                $this->informationArray['info'][] = 'Transaction ' . $payment->getId() . ' already rejected';
 			}
 		}
 	}
@@ -116,6 +124,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				return array('status' => 'only_acceptance', 'stage' => 'Completed');
 				break;
 			default:
+                                $this->informationArray['errors'][] = 'Unknown file status';
 				throw new Exception('Unknown file status');
 				break;
 		}

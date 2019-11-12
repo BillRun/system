@@ -38,10 +38,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
 		if (count($bill) == 0) {
 			Billrun_Factory::log("Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field", Zend_Log::ALERT);
+                        $this->informationArray['errors'][] = "Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field";
 			return;
 		}
 		if (count($bill) > 1) {
 			Billrun_Factory::log($this->identifierField . " field isn't unique", Zend_Log::ALERT);
+                        $this->informationArray['errors'][] = $this->identifierField . " field isn't unique";
 			return;
 		}
 		$billData = $bill->current()->getRawData();
@@ -57,7 +59,10 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			Billrun_Bill::pay('cash', array($paymentParams));
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Payment process was failed for payment: " . $e->getMessage(), Zend_Log::NOTICE);
+                        $this->informationArray['warnings'][] = "Payment process was failed for payment: " . $e->getMessage();
 		}
+                $this->informationArray['transactions']['confirmed']++;
+                $this->informationArray['warnings'][] = "Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField];
 		Billrun_Factory::log()->log("Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField], Zend_Log::INFO);
 	}
 
