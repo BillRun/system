@@ -728,6 +728,12 @@ class Generator_Golanxml extends Billrun_Generator {
 					$offerId = substr($planUniqueId, 0, -10);
 					$this->writer->writeElement('OFFER_ID', $offerId);
 					$offerStartDate = substr($planUniqueId, -10);
+					if ($offerStartDate < Billrun_Util::getStartTime($billrun_key)) {
+						$lateCharges = 1;
+					} else {
+						$lateCharges = 0;
+					}
+					$this->writer->writeElement('LATE_CHARGES', $lateCharges);
 					$offerUniqueId = $sid . '_' . $offerId . '_' . $offerStartDate;
 					$this->writer->writeElement('OFFER_UNIQUE_ID', $offerUniqueId);
 					$this->writer->startElement('BREAKDOWN_TOPIC');
@@ -1874,7 +1880,7 @@ EOI;
 	}
 
 	protected function getInvoiceId($row) {
-		return $row['invoice_id'];
+		return '00000000000';
 	}
 
 	public function __destruct() {
