@@ -20,6 +20,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $invoices;
 	protected $billrunColl;
 	protected $logo = null;
+	protected $confirmDate;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -28,6 +29,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
+		$this->confirmDate = time();
 	}
 
 	public function load() {
@@ -200,16 +202,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected function updateChargeDate($invoice) {
 		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
 		$invoiceType = @$invoice['attributes']['invoice_type'];
+		
+		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
-			$anchorField = $option['anchorfield'];
-			if ($anchorField == 'confirm_date' && $invoiceType == 'immediate') {
-				return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_charge_date_interval', "+0 seconds"), $invoiceDate->sec - 1));
-			}
-			if ($anchorField == 'confirm_date' && (is_null($invoiceType) || $invoiceType == 'regular')) {
+			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {
 				return new MongoDate(strtotime($option['relative_time'], $this->confirmDate));
 			}
 		}
-		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		
+		// if no config option was matched this could be an on-confirmation invoice - use invoice 'due_date' field
+		if (!empty($invoice['due_date'])) {
+			return $invoice['due_date'];
+		}
+		
+		// else - get config default value or temporerily use 'invoice_date' with offset
+		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
 	}
 }
