@@ -18,7 +18,7 @@ class ReportAction extends ApiAction {
 
 	protected $fieldMapping = [
 		'duration' => ['$in'=>['duration']],
-		'usageType' => ['$regex'=>'usaget'],
+		'usageType' => ['$in'=>['usaget']],
 		'sourcePhoneNumber' => ['$in'=>['calling_number']],
 		'targetPhoneNumber' => ['$in'=>['called_number']],
 		'sourceImei' => ['$in'=>[ 'imei' ]],
@@ -123,6 +123,7 @@ class ReportAction extends ApiAction {
 
  		$this->fieldMapping = Billrun_Factory::config()->getConfigValue('police_report.field_mapping',$this->fieldMapping);
  		$this->fieldReverseMapping = Billrun_Factory::config()->getConfigValue('police_report.field_reverse_mapping',$this->fieldReverseMapping);
+ 		$this->ipMapppingTimeDelay = Billrun_Factory::config()->getConfigValue('police_report.ipmapping_time_delay',3600);
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -183,6 +184,13 @@ class ReportAction extends ApiAction {
 	protected function fetchUsage($params) {
 		$input = $params['input'];
 		$query = $this->getMongoQueryFromInput($input);
+		if(!empty($input['endDate']) && !empty($input['startDate'])) {
+			$query['$and'][] = ['charging_end_time' => ['$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
+														'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))]];
+			$query['$and'][] = ['urt' => $query['urt']];
+			unset($query['urt']);
+		}
+
 		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
 
 		if(!empty($input['sortColumn'])) {
@@ -227,9 +235,10 @@ class ReportAction extends ApiAction {
 			$linesQuery = $this->getMongoQueryFromInput($linesInput);
 			$linesQuery['served_pdp_address'] = $mapping['internal_ip'];
 			if(!empty($linesQuery['urt']['$gte'])) {
-				$linesQuery['urt']['$gte'] = $mapping['urt'];
+				$linesQuery['urt']['$gte'] = new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay);
+				$linesQuery['urt']['$lt'] = new MongoDate($mapping['urt']->sec + $this->ipMapppingTimeDelay);
 			} else {
-				$linesQuery['urt'] = ['$gte' => $mapping['urt']];
+				$linesQuery['urt'] = ['$gte' => new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay) , '$lt'=>new MongoDate($mapping['urt']->sec + $this->ipMapppingTimeDelay) ];
 			}
 			$queries['$or'][] = $linesQuery;
 			$ipmappings[] = $map;
@@ -256,7 +265,27 @@ class ReportAction extends ApiAction {
 		$endDate =  preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']);
 		$query = [ 'urt'=> ['$gte' => new MongoDate($startDate),
 							'$lt' => new MongoDate($endDate) ]];
+		if(!empty($andQuery = $this->mapToFields($input))) {
+			$query = array_merge($query,['$and' => $andQuery]);
+		}
 
+		if(!empty($input['searchColumns'])) {
+			$query['$or'] = [];
+			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
+			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
+			foreach($input['searchColumns'] as  $field) {
+				foreach($input['searchValue'] as $value) {
+					$query['$or'][] = reset($this->mapToFields([$field => $value]));
+				}
+
+			}
+		}
+		//Billrun_Factory::log(json_encode($query));
+		return $query;
+	}
+
+	protected function mapToFields($input) {
+		$query=[];
 		foreach($this->fieldMapping as $inputField => $toMap) {
 			if(!empty($input[$inputField])) {
 				$localOr = ['$or' => []];
@@ -269,22 +298,9 @@ class ReportAction extends ApiAction {
 						$localOr['$or'][]  = [ $internalFields => [$equalOp => "".$input[$inputField]] ];
 					}
 				}
-				$query['$and'][] = $localOr;
+				$query[] = $localOr;
 			}
 		}
-
-		if(!empty($input['searchColumns'])) {
-			$query['$or'] = [];
-			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
-			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
-			foreach($input['searchColumns'] as  $field) {
-				foreach($input['searchValue'] as $value) {
-					$query['$or'][] = [$field => $value];
-				}
-
-			}
-		}
-
 		return $query;
 	}
 
@@ -308,7 +324,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
-				if($cdr['urt'] > $mapping['urt'] && $mapping['end_map_date'] > $cdr['urt']->sec) {
+				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec) {
 					$cdr['ipmapping'] = array_intersect_key($mapping, $this->ipMapFieldsToReturn);
 					$retRows[] = $cdr;
 				}
