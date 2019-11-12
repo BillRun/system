@@ -1880,7 +1880,7 @@ EOI;
 	}
 
 	protected function getInvoiceId($row) {
-		return '00000000000';
+		return $row['invoice_id'];
 	}
 
 	public function __destruct() {
