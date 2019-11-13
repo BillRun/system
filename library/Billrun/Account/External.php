@@ -11,10 +11,13 @@ class Billrun_Account_External extends Billrun_Account {
 	protected static $type = 'external';
 	
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
-		
+	
+	protected $remote;
+
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
 	}
 	
 	/**
@@ -42,7 +45,7 @@ class Billrun_Account_External extends Billrun_Account {
 			$query = $this->buildParams($query);
 			$externalQuery[] = $query;
 		}
-		$results = json_decode(Billrun_Util::sendRequest('http://billrun/api/test', json_encode($externalQuery)), true);
+		$results = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($externalQuery)), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;

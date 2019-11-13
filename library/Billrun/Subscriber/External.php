@@ -18,8 +18,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-//		$this->remote = Billrun_Factory::config()->getConfigValue('subscriber.fields.external', '');
-		$this->remote = 'http://billrun/api/test';
+		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
 	}
 	
 	public function delete() {
