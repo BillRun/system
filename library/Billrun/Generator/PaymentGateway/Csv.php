@@ -25,9 +25,6 @@ class Billrun_Generator_PaymentGateway_Csv {
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
-		$this->data = isset($options['data']) ? $options['data'] : $this->data;
-		$this->headers = isset($options['headers']) ? $options['headers'] : $this->headers;
-		$this->trailers = isset($options['trailers']) ? $options['trailers'] : $this->trailers;
                 $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
@@ -50,9 +47,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
+                        Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
 			return false;
 		}
 		if (!isset($options['local_dir'])) {
+                        Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
 			return false;
 		}
 		if ($this->fixedWidth) {
@@ -197,5 +196,16 @@ class Billrun_Generator_PaymentGateway_Csv {
         public function setFilePath($dir){
             $this->file_path = $dir . '/' . $this->file_name;
         }
+        
+        public function setDataRows($data) {
+            $this->data = $data;
+        }
+    
+        public function setHeaderRows($header) {
+            $this->headers = $header;
+        }
+    
+        public function settrailerRows($trailer) {
+            $this->trailers = $trailer;
+        }
 }
-
