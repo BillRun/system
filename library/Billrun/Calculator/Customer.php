@@ -118,6 +118,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$row->collection($this->lines_coll);
+		
+		if ($this->isAccountLevelLine($row)) {
+			$row = $this->enrichWithSubscriberInformation($row);
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+			return $row;
+		}
+		
 		if ($this->isBulk()) {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
@@ -296,6 +303,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
+	 * Checks if the current line supposed to be on account's level, means no subscriber should be loaded
+	 * @param array $row
+	 * @return boolean
+	 */
+	protected function isAccountLevelLine($row) {
+		return Billrun_Util::getIn($row, 'account_level', false);
+	}
+
+	/**
 	 * Load a subscriber for a given CDR line.
 	 * @param type $row
 	 * @return type
@@ -435,21 +451,28 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $customerIdentificationTranslation;
 	}
 
-	protected function enrichWithSubscriberInformation($row, $subscriber) {
+	protected function enrichWithSubscriberInformation($row, $subscriber = null) {
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
-		$enrinchmentMapping = array_merge( Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array()) , static::REQUIRED_ROW_ENRICHMENT_MAPPING );
-		foreach($enrinchmentMapping as $mapping ) {
-			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
+		if (!is_null($subscriber)) {
+			$enrinchmentMapping = array_merge( Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array()) , static::REQUIRED_ROW_ENRICHMENT_MAPPING );
+			foreach($enrinchmentMapping as $mapping ) {
+				$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
+			}
 		}
 		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
 		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
-		if(!empty($enrichedData)) {
+		if((!is_null($subscriber) || !empty($enrichedData)) ||
+				is_null($subscriber) || !empty($foreignData)) {
 			if($row instanceof Mongodloid_Entity) {
-				$rowData['subscriber'] = $enrichedData;
+				if (!is_null($subscriber)) {
+					$rowData['subscriber'] = $enrichedData;
+				}
 				$row->setRawData(array_merge($rowData, $foreignData, $enrichedData));
 			} else {
-				$row['subscriber'] = $enrichedData;
+				if (!is_null($subscriber)) {
+					$row['subscriber'] = $enrichedData;
+				}
 				$row = array_merge($row,$foreignData, $enrichedData);
 			}
 		}
