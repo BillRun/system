@@ -65,7 +65,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		);
 	}
 
-	public function pay($gatewayDetails) {
+	public function pay($gatewayDetails, $addonData) {
 		$credentials = $this->getGatewayCredentials();
 		$this->setApiKey($credentials['secret_key']);
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);

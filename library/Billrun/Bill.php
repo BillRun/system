@@ -546,12 +546,10 @@ abstract class Billrun_Bill {
 		
 		if (!empty($aids)) {
 			$aidsQuery = array('aid' => array('$in' => $aids));			
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else if (!empty($exempted)){
 			$aidsQuery = array('aid' => array('$nin' => $aids));
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else {
-			$relevantAids = $billsColl->distinct('aid', $matchQuery);
+			$aidsQuery = array();
 		}
 		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
 		$currentAccounts = $account->getAccountsByQuery($accountQuery);
@@ -809,7 +807,8 @@ abstract class Billrun_Bill {
 						if (empty($options['single_payment_gateway'])) {
 							try {
 								$payment->setPending(true);
-								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+								$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
 							} catch (Exception $e) {
 								$payment->setGatewayChargeFailure($e->getMessage());
 								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
@@ -819,7 +818,7 @@ abstract class Billrun_Bill {
 						} else {
 							$paymentStatus = array(
 								'status' => $payment->getSinglePaymentStatus(),
-								'additional_params' => array()
+								'additional_params' => isset($options['additional_params']) ? $options['additional_params'] : array()
 							);
 							if (empty($paymentStatus['status'])) {
 								throw new Exception("Missing status from gateway for single payment");
@@ -869,10 +868,11 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+					$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 					if (is_null($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
