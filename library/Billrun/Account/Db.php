@@ -145,10 +145,6 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 	}
 	
-	protected function getTimeQuery($time) {
-		return Billrun_Utils_Mongo::getDateBoundQuery();
-	}
-	
 	protected function buildParams($query) {
 		$type = 'account';
 		$query['type'] = $type;

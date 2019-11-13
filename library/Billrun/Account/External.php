@@ -92,10 +92,6 @@ class Billrun_Account_External extends Billrun_Account {
 		$query['params'] = $params;
 		return $query;
 	}
-	
-	protected function getTimeQuery($time) {
-		return array('time' => $time);
-	}
 
 }
 

@@ -233,16 +233,6 @@ abstract class Billrun_Account extends Billrun_Base {
 		$query['limit'] = $limit;
 		return $query;
 	}
-		
-	public function getQueryActiveAccounts($aids) {
-		$today = new MongoDate();
-		return array(
-			'aid' => array('$in' => $aids), 
-			'from' => array('$lte' => $today), 
-			'to' => array('$gte' => $today), 
-			'type' => "account"
-		);
-	}
 	
 	public function getInCollection($aids = array()) {
 		$results = array();
