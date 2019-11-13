@@ -746,4 +746,10 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
+// BRCD-2070 - GSD - getSubscriberDetails
+if (!lastConfig.subscribers.type) {
+	lastConfig.subscribers.type = 'db';
+}
+
 db.config.insert(lastConfig);
