@@ -209,7 +209,8 @@ class Billrun_Generator_PaymentGateway_Xml {
     }
 
     /**
-     * 
+     * The function gets an xml node's path (a.b.c...), and return it as array, whose values are the tags. 
+     * Also, slice the file's common path, and the segment's repeated tag.
      * @param string $segment - headers/data/trailer.
      * @param string $repeatedTag - the tag that repeats itself in the given segment. 
      * @param int $nodeIndex - the index of the segment's row.
@@ -260,11 +261,11 @@ class Billrun_Generator_PaymentGateway_Xml {
     }
     
     /**
-     * 
+     * The function creates new xml node, according to the array that is given.
      * @param array $arr - xml node as array.
      * @param DomElement $node - xml node, to add the $arr to - as xml node.
      * @param DomDocument $doc - to use Dom's functions.
-     * The function creates new xml node, according to the array that is given.
+     * 
      */
     protected function newNode($arr, $node, $doc) {
         if (is_null($node)){
