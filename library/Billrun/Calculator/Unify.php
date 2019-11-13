@@ -101,6 +101,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
 	}
 
+	
+	/**
+	 * Sets unified line urt to 12pm
+	 * @deprecated since version 5.11
+	 */
 	protected function setUnifiedLineDefaults(&$line) {
 		$line['urt'] = new MongoDate(strtotime(date('Ymd 12:00:00', $line['urt']->sec)));
 	}
@@ -113,9 +118,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRow;
 		// we aligned the urt to one main timestamp to avoid DST issues; effect only unified data
-		$this->setUnifiedLineDefaults($newRow);
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
-
 		$rawRow['u_s'] = $updatedRowStamp;
 		$this->archivedLines[$newRow['stamp']] = $rawRow->getRawData();
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
@@ -268,6 +271,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$type = $newRow['type'];
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
+			$this->setMinUrt($newRow, $existingRow);
+			if (!empty($newRow['arategroups'])) {
+				$this->unifyArateGroups($newRow, $existingRow);
+			}
 			foreach ($typeFields['$inc'] as $field) {
 				$newVal = Billrun_Util::getIn($newRow, $field, null);
 				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
@@ -303,6 +310,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function getLineUnifiedLineStamp($newRow) {
 		$typeData = $this->unificationFields[$newRow['type']];
 		$serialize_array = array();
+		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $field) {
 			$newVal = Billrun_Util::getIn($newRow, $field, null);
 			if (!is_null($newVal)) {
@@ -316,6 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (($dateSeparationValue = $this->getDateSeparation($newRow, $typeData)) !== FALSE) {
 			$serialize_array['dateSeperation'] = $dateSeparationValue;
 		}
+		Billrun_Util::setIn($serialize_array, 'arategroups', $arategroupsCount);
 		return Billrun_Util::generateArrayStamp($serialize_array);
 	}
 
@@ -419,7 +428,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit');
+		$types = array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit', 'epg');
 		return $this->getQueuedLines(array('type' => array('$in' => $types)));
 	}
 
@@ -473,5 +482,59 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function prepareData($lines) {
 		
 	}
-
+	
+	/**
+	 * Unify arategroups arrays
+	 * @param array $newRow the  new line to unify.
+	 * @param array $existingRow the already unified value.
+	 */
+	protected function unifyArateGroups($newRow, &$existingRow) { // the assumption is that were dealing 
+		$arategroupsArray = array();
+		$newArategroups = current(Billrun_Util::getIn($newRow, 'arategroups', null)); // only with arategroups from size 1 array
+		$existingArategroups = current(Billrun_Util::getIn($existingRow, 'arategroups', null));
+		foreach ($newArategroups as $field => $value) {
+			$arategroupsArray[$field] = $this->calcValueByField($field, $newArategroups[$field], $existingArategroups[$field]);
+		}
+		$existingRow['arategroups'] = array($arategroupsArray);
+	}
+	
+	protected function setMinUrt($newRow, &$existingRow) {
+		$newVal = Billrun_Util::getIn($newRow, 'urt', null);
+		$existingVal = Billrun_Util::getIn($existingRow, 'urt', null);
+		if (!is_null($newVal) && !is_null($existingVal) && ($newVal->sec < $existingVal->sec)) {
+			Billrun_Util::setIn($existingRow, 'urt', $newVal);
+		}
+	}
+	
+	/**
+	 * Limit the size of arategroups array in line
+	 * @param array $line the line to unify.
+	 * return false if arategroups array size is more than 1.
+	 */
+	protected function limitArategroupsSize($line) {
+		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
+		if (count($arategroups) > 1) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Calcs value by the field name
+	 * @param array $field the field name.
+	 * @param array $newVal new value.
+	 * @param array $existingVal the existing value.
+	 * returns the unified value of a given field
+	 */
+	protected function calcValueByField($field, $newVal, $existingVal) {
+		switch ($field) {
+			case 'usagev':
+				return $newVal + $existingVal;
+			case 'left':
+			case 'usagesb':
+				return ($newVal < $existingVal) ? $newVal : $existingVal;
+			default:
+				return $newVal;
+		}
+	}
 }
