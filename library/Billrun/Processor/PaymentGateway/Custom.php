@@ -32,6 +32,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $this->informationArray['transactions']['confirmed'] = 0;
                 $this->informationArray['transactions']['rejected'] = 0;
                 $this->informationArray['transactions']['denied'] = 0;
+                $this->informationArray['transactions']['pending'] = 0;
 	}
 
 /**
@@ -189,16 +190,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function updatePaymentsByRows($data, $currentProcessor) {
                 $no_txid_counter = 0;
 		foreach ($data['data'] as $row) {
-                    if($row[$this->tranIdentifierField] !== ""){
-			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
-			if (is_null($bill) && static::$type != 'payments') {
-				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
-				continue;
-			}
-			$this->updatePayments($row, $bill, $currentProcessor);
-                    }else{
-                        $no_txid_counter++;
+                    if(isset($this->tranIdentifierField)){
+                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+                            $no_txid_counter++;
+                            continue;
+                        }
                     }
+                    $bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+                    if (is_null($bill) && static::$type != 'payments') {
+			Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+			continue;
+                    }
+                    $this->updatePayments($row, $bill, $currentProcessor);
 		}
                 if($no_txid_counter > 0){
                     Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
@@ -221,7 +224,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			'$set' => array(
 				'related_request_file' => $relevantRow[$correlationField],
 				'response_file' => true,
-                                'file_count' => $this->getCurrentFileCount(),
 			)
 		);
 		$this->log->update($query, $update);

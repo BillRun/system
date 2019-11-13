@@ -59,11 +59,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			Billrun_Bill::pay('cash', array($paymentParams));
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Payment process was failed for payment: " . $e->getMessage(), Zend_Log::NOTICE);
-                        $this->informationArray['warnings'][] = "Payment process was failed for payment: " . $e->getMessage();
+                        $this->informationArray['errors'][] = "Payment process was failed for payment: " . $e->getMessage();
+                        return;
 		}
                 $this->informationArray['transactions']['confirmed']++;
-                $this->informationArray['warnings'][] = "Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField];
 		Billrun_Factory::log()->log("Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField], Zend_Log::INFO);
+                $this->informationArray['info'][] = "Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField];
 	}
 
 	protected function findBillByUniqueIdentifier($id) {

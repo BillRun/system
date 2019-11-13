@@ -98,6 +98,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                         $this->informationArray['transactions']['confirmed']++;
 		} else if ($response['stage'] == "Pending") { // handle pending
 			$payment->setPaymentStatus($response, $this->gatewayName);
+                        $this->informationArray['transactions']['pending']++;
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
