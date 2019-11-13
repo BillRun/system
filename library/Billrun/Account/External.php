@@ -59,27 +59,7 @@ class Billrun_Account_External extends Billrun_Account {
 	public function closeAndNew($set_values, $remove_values = array()) {
 		
 	}
-	
-//	protected function buildQuery($params) {
-//		$query = array('type' => 'account');
-//		$queryExcludeParams = array('time', 'type', 'to', 'from');
-//		
-//		if (isset($params['time'])) {
-//			$query['date'] = new MongoDate(strtotime($params['time']));
-//		} else {
-//			$query['date'] = new MongoDate();
-//		}
-//
-//		foreach ($params as $key => $value) {
-//			if (in_array($key, $queryExcludeParams)) {
-//				continue;
-//			}
-//			$query[$key] = $value;
-//		}
-//
-//		return $query;
-//	}
-//	
+
 	protected function buildParams(&$query) {
 
 		if (isset($query['EXTRAS'])) {
