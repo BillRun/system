@@ -282,7 +282,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
-	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
 	abstract protected function getSubscriberDetails($query);
 	

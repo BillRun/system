@@ -30,10 +30,6 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		return array();
 	}
 
-	public function getList($startTime, $endTime, $page, $size, $aid = null) {
-		
-	}
-	
 	protected function getSubscriberDetails($queries) {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
