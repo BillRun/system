@@ -324,7 +324,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (($dateSeparationValue = $this->getDateSeparation($newRow, $typeData)) !== FALSE) {
 			$serialize_array['dateSeperation'] = $dateSeparationValue;
 		}
-		Billrun_Util::setIn($serialize_array, 'arategroups', $arategroupsCount);
+		if (isset($newRow['arategroups']) && $arategroupsCount > 0) {
+			$currentArategroup = current($newRow['arategroups']);
+			$arategroupsArray = array('name' => $currentArategroup['name'], 'count' => $arategroupsCount);
+			Billrun_Util::setIn($serialize_array, 'arategroups', $arategroupsArray);
+		}
 		return Billrun_Util::generateArrayStamp($serialize_array);
 	}
 
