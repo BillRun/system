@@ -979,6 +979,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
+	
+	/**
+	 * Checkes if possible to deny a requested amount according to the bill amount.
+	 * @param $denialAmount- the amount to deny.
+	 * 
+	 * return true when the sum of denied amount is larger than the bill amount
+	 */
 	public function isPaymentDenied($denialAmount) {
 		$alreadyDenied = 0;
 		if (isset($this->data['denied_amount'])) {
