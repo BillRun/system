@@ -16,7 +16,6 @@ class Billrun_Account_External extends Billrun_Account {
 
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
 	}
 	

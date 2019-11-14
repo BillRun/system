@@ -30,7 +30,6 @@ class Billrun_Account_Db extends Billrun_Account {
 	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
