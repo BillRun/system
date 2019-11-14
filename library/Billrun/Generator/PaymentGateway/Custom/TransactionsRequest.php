@@ -47,7 +47,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $this->fileGenerator = new $className($generatorOptions);
                 $this->initLogFile();
                 $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'generated');
+                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+                $this->logFile->updateLogFileField('fileType', 'generated');
                 $parametersString = "";
                 if (isset($options['collection_date']) && !empty($options['collection_date'])){
                     $parametersString.= "collection_date=" . $options['collection_date'] . ",";
