@@ -40,7 +40,7 @@ class Generator_Translations {
 		return Billrun_Factory::config()->getConfigValue(static::$defaultLanguagePath);
 	}
 	
-	public static function tr($slug, $values) {
+	public static function translate($slug, $values) {
 		call_user_func_array('printf',array_merge(static::$translations[static::$currentLang][$slug] ?: static::$translations[static::getDefaultLanguage()][$slug] ?: $slug, $values));
 	}
 }

@@ -461,7 +461,21 @@ if (servicesFields) {
 }
 
 // BRCD-2021 - Invoice translations support
-lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+const invoices = lastConfig['billrun']['invoices'];
+if (invoices) {
+	const language = invoices['language'];
+	if (language) {
+		const def = language['default'];
+		if (!def) {
+			lastConfig.billrun.invoices.language.default = 'en_GB';
+		}
+	} else {
+		lastConfig.billrun.invoices.language = {'default': 'en_GB'};
+	}
+} else {
+	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+}
+
 
 db.config.insert(lastConfig);
 
