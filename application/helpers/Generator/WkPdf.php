@@ -165,15 +165,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function generate($lines = FALSE) {
-                $existExportPaths = 0;
 		$this->prepereView();
                 if(count($this->getExportPaths()) > 0){
                     $exportPaths = $this->getExportPaths();
-                    $existExportPaths = 1;
                 }
                 
 		foreach ($this->billrun_data as $object) {
-                        if($existExportPaths){
+                        if(count($this->getExportPaths()) > 0){
                             $path = $this->getBillrunExportPath($object, $exportPaths);
                             $this->setBillrunExportPath($object, $path);
                         }
@@ -192,15 +190,15 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
         public function getBillrunExportPath($billrunObject, $exportPaths) {
             if ($billrunObject instanceof Mongodloid_Entity) {
-                    $doesntMeetConditions = 0;
+                    $meetConditions = 1;
                     $billrun = $billrunObject->getRawData();
                     foreach ($exportPaths as $path => $conditions){
                         foreach($conditions as $condition){
                             if (!Billrun_Util::isConditionMet ($billrun, $condition)){
-                                $doesntMeetConditions = 1;
+                                $meetConditions = 0;
                             }
                         }
-                    if($doesntMeetConditions === 0){
+                    if($meetConditions){
                         return Billrun_Util::getBillRunSharedFolderPath($path);
                     }
                 }
@@ -478,8 +476,4 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($merged, $this->filePermissions);
 	}
         
-        public function getBillrunData() {
-            return $this->billrun_data;
-        }
-
 }
