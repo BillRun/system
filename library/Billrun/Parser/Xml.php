@@ -68,12 +68,7 @@ class Billrun_Parser_Xml {
         if ($this->input_array['trailer'] !== null) {
             $this->hasFooter = true;
         }
-        try {
-            $repeatedTags = $this->preXmlBuilding();
-        } catch (Exception $ex) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
-            return;
-        }
+        $repeatedTags = $this->preXmlBuilding();
         $commonPathAsArray = $this->pathAsArray($this->commonPath);
         if ($this->name_space_prefix !== "") {
             $GivenXml = simplexml_load_file($filename, 'SimpleXMLElement', 0, $this->name_space_prefix, TRUE);
@@ -81,8 +76,7 @@ class Billrun_Parser_Xml {
             $GivenXml = simplexml_load_file($filename);
         }
         if ($GivenXml === false) {
-            Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
-            return;
+            throw new Exception('Billrun_Parser_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. No process was made.');
         }
 
         $GivenXml->registerXPathNamespace($this->name_space_prefix, $this->name_space);
@@ -142,7 +136,7 @@ class Billrun_Parser_Xml {
                         $this->pathes[] = $this->input_array[$segment][$a]['path'];
                         $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
                     } else {
-                        throw "No path for one of the " . $segment . "'s entity. No parse was made." . PHP_EOL;
+                        throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
                     }
                 }
             }
@@ -196,7 +190,7 @@ class Billrun_Parser_Xml {
                     $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                 } else {
                     if ($segment === "data") {
-                        throw "No pathes in " . $segment . " segment. No parse was made." . PHP_EOL;
+                        throw new Exception("No pathes in " . $segment . " segment. No parse was made.");
                     } else {
                         Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No pathes in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
                     }
