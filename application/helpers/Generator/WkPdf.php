@@ -171,41 +171,41 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     $customizedFileName = 1;
                 }
 		foreach ($this->billrun_data as $object) {
+                        $defaultFileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
                         if($customizedFileName){
-                            $fileName = $this->getFileName($object, $fileNameConfig);
-                            $this->setFileName($object, $fileName);
+                            $fileName = $this->getFileName($object, $fileNameConfig, $defaultFileName);
                         }else{
-                            $fileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
-                            $this->setFileName($object, $fileName);
+                            $fileName = $defaultFileName;
                         }
+                        $this->setFileName($object, $fileName);
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
 	}
 
-        public function getFileName($billrunObject, $fileNameConfig) {
+        public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
             if ($billrunObject instanceof Mongodloid_Entity){
-                $doesntMeetConditions = 0;
+                $meetConditions = 1;
                 $billrun = $billrunObject->getRawData();
                 foreach ($fileNameConfig as $index => $currentConfig){
                     foreach ($currentConfig['conditions'] as $condition){
                         if (!Billrun_Util::isConditionMet($billrun, $condition)){
-                            $doesntMeetConditions = 1;
+                            $meetConditions = 0;
                         }
                     }
-                    if ($doesntMeetConditions === 0){
+                    if ($meetConditions){
                         foreach ($currentConfig['params'] as $paramObj){
                             $translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $billrun);
                         }
                         if (!in_array(-1, $translations)){
                             return Billrun_Util::translateTemplateValue($currentConfig['pattern'], $translations, null, true);
                         }else{
-                            return $billrun['billrun_key'] . "_" . $billrun['aid'] . "_" . $billrun['invoice_id'] . ".pdf";
+                            return $defaultFileName;
                         }
                     }
                 }
-                return $billrun['billrun_key'] . "_" . $billrun['aid'] . "_" . $billrun['invoice_id'] . ".pdf";
+                return $defaultFileName;
             }
         }
         
@@ -219,7 +219,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
                     if($date instanceof MongoDate){
-                        $date = strtotime($date->__toString());
+                        $date = strval($date);
                         return date($dateFormat, $date);
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Wanted field isn't a date field. 'now' was chosen instead.", Zend_Log::ERR);
