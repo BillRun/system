@@ -35,6 +35,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $this->informationArray['transactions']['rejected'] = 0;
                 $this->informationArray['transactions']['denied'] = 0;
                 $this->informationArray['transactions']['pending'] = 0;
+                $this->informationArray['last_file'] = false;
 	}
 
 /**
@@ -101,9 +102,14 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
                 if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
                     $currentFileCount = $this->getCurrentFileCount();
+                    $this->informationArray['file_count'] = $currentFileCount;
                     if (($currentFileCount + 1) > $fileConfCount){
                         Billrun_Factory::log('Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.' , Zend_Log::ALERT);
                         return False;
+                    }else{
+                        if(($currentFileCount + 1) === $fileConfCount){
+                            $this->informationArray['last_file'] = true;
+                        }
                     }
                 }
 		$this->updatePaymentsByRows($data, $currentProcessor);
