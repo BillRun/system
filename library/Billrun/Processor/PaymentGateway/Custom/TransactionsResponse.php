@@ -92,7 +92,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                             $payment->setPending(false);
                             $payment->updateConfirmation();
                             $payment->setPaymentStatus($response, $this->gatewayName);
-                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::NOTICE);
+                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
                         }else{
                             Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
                         }
