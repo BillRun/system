@@ -390,9 +390,15 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		foreach ($this->forceAccountIds as $accountId) {
 			if (Billrun_Bill_Invoice::isInvoiceConfirmed($accountId, $mongoCycle->key())) {
+				Billrun_Factory::log("Invoice already confirmed for aid: " . $accountId, Zend_Log::NOTICE);
 				continue;
 			}
 			$accountIds[] = intval($accountId);
+		}
+		
+		if (empty($accountIds)) {
+			$result['data'] = array();
+			return $result;
 		}
 		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
 		$result['data'] = $data;

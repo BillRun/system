@@ -99,6 +99,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
+                if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
+                    $currentFileCount = $this->getCurrentFileCount();
+                    if (($currentFileCount + 1) > $fileConfCount){
+                        Billrun_Factory::log('Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.' , Zend_Log::ALERT);
+                        return False;
+                    }
+                }
 		$this->updatePaymentsByRows($data, $currentProcessor);
                 $this->updateLogFile();
 	}
