@@ -1,6 +1,6 @@
 
 var accounts = db.collection_steps.aggregate({$match: {"returned_value.success": {$ne: true}, trigger_date: {$lt: ISODate()}}}, {$group: {_id: "$extra_params.aid", count: {$sum: 1}}}, {$match: {count: {$gte: 1}}});
-var accounts_per_day = 100000; //'UNLIMITED';
+var accounts_per_day = 1000000; //'UNLIMITED';
 var multiplier = 1;
 var acc_arr =[];
 var acc_array_per_day =[];
@@ -14,7 +14,8 @@ var acc_sum = acc_arr.length;
 
 function calcDaysOfOperation(acc_sum){
     var sum =0;
-   for (var i = 1; i <=acc_sum; i+=(accounts_per_day)*(multiplier)) {
+   for (var i = 1; i <=acc_sum; i=i+((accounts_per_day)*(multiplier))) {
+       print("whata " +i);
         sum++;
     }
     return sum;
