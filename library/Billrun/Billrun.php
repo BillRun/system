@@ -1065,6 +1065,30 @@ class Billrun_Billrun {
 	public function getInvoiceID() {
 		return @$this->data['invoice_id'];
 	}
+        
+        /**
+         * Function gets start + end time, as Unix Timestamp, and aid, and returns an array of this aid's immediate invoices, between those the dates.
+         * @param string $startTime
+         * @param string $endTime
+         * @param type $aid
+         */
+        public static function getImmediateInvoicesInRange($startTime, $endTime, $aid){
+            $convertedStartTime = date('YmdHis', $startTime);
+            $convertedEndTime = date('YmdHis', $endTime);
+            $query = array(
+                        'aid' => $aid,
+			'attributes.invoice_type' => array('$eq' => 'immediate'),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
+		);
+            $sort = array(
+			'billrun_key' => -1,
+		);
+            $fields = array(
+			'billrun_key' => 1,
+                );
+            $billruns = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort);
+            return iterator_to_array($billruns, true);
+        }
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
