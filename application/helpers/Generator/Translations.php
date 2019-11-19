@@ -31,16 +31,23 @@ class Generator_Translations {
 	protected static function setTranslation($lang, $paths) {
 		$tr = [];
 		foreach ($paths as $path) {
-			$tr = array_merge($tr, parse_ini_file(APPLICATION_PATH . $path));
+			$slugs = parse_ini_file(APPLICATION_PATH . $path);
+			$tr = array_merge($tr, $slugs ?: []);
 		}
 		static::$translations[$lang] = $tr;
 	}
 	
 	public static function getDefaultLanguage() {
-		return Billrun_Factory::config()->getConfigValue(static::$defaultLanguagePath);
+		return Billrun_Factory::config()->getConfigValue(static::$defaultLangPath);
 	}
 	
-	public static function translate($slug, $values) {
-		call_user_func_array('printf',array_merge(static::$translations[static::$currentLang][$slug] ?: static::$translations[static::getDefaultLanguage()][$slug] ?: $slug, $values));
+	public static function translate($slug, $args = []) {
+		if (!is_array($args)) {
+			$args = [$args];
+		}
+		$currentLangTranslation = static::$translations[static::$currentLang][$slug];
+		$defaultLangTranslation = static::$translations[static::getDefaultLanguage()][$slug];
+		$translation = $currentLangTranslation ?: $defaultLangTranslation ?: $slug;
+		call_user_func_array('printf',array_merge([$translation], $args));
 	}
 }
