@@ -8,7 +8,7 @@ accounts.forEach(function (acc) {
 acc_arr.push(acc);
 });
 var acc_sum = acc_arr.length;
-var accounts_per_day = acc_sum; //DEFAULT ALL ACCOUNTS - CAN INSERT ANY NUMBER;
+var accounts_per_day = acc_sum; //DEFAULT ALL ACCOUNTS - CAN INSERT ANY NUMBER LOWER THIS ACC_SUM;
 
 
 function calcDaysOfOperation(acc_sum){
