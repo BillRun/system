@@ -123,6 +123,8 @@ class Billrun_DiscountManager {
 				@$totalTaxData['taxes'][$taxKey]['amount'] += $tax['amount'];
 				@$totalTaxData['taxes'][$taxKey]['tax'] += $tax['tax'];
 				@$totalTaxData['taxes'][$taxKey]['description'] = $tax['description'];
+				@$totalTaxData['taxes'][$taxKey]['key'] = $tax['key'];
+				@$totalTaxData['taxes'][$taxKey]['type'] = $tax['type'];
 				@$totalTaxData['taxes'][$taxKey]['pass_to_customer'] = $tax['pass_to_customer'];
 			}
 		}

@@ -89,7 +89,9 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 		$spceialQueries = array(
 			'$exists' => array('$exists' => 1),
-			'$existsFalse' => array('$exists' => 0),
+			'$existsFalse' => array('$exists' => 1),
+			'$isTrue' => array('$exists' => true, '$eq' => true),
+			'$isFalse' => array('$exists' => true, '$eq' => false),
 		);
 		$computedType = Billrun_Util::getIn($this->params, array('computed', 'type'), 'regex');
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
@@ -115,9 +117,11 @@ class Billrun_EntityGetter_Filters_Base {
 		);
 		if (!empty($spceialQueries[$operator]) ) {
 			$data = $row;
-			$query = array('$or' => [
-					[$firstValKey => $spceialQueries['$exists']],
-					['uf.'.$firstValKey => $spceialQueries['$exists']],
+			$op = in_array($operator, []) ? '$and' : '$or';
+			$query = array(
+				$op => [
+					[$firstValKey => $spceialQueries[$operator]],
+					['uf.'.$firstValKey => $spceialQueries[$operator]],
 				]
 			);
 		}

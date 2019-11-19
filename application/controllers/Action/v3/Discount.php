@@ -15,13 +15,18 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class V3_discountAction extends ApiAction {
+	
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
 		$request = $this->getRequest();
 		$accountJson = json_decode($request->get("data"), TRUE);
 		$aid = $request->get("aid");
 		$action = $request->get("action");
-		
+		if (!empty($action) && $action == 'remove') {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+		}
+		$this->allowed();
 		$actualAid = empty($aid) ? (empty($accountJson['aid']) ? -1 : $accountJson['aid']) : $aid;
 		Billrun_Factory::log()->log("Execute discount api call to " . $actualAid, Zend_Log::INFO);
 		
@@ -68,6 +73,10 @@ class V3_discountAction extends ApiAction {
 
 		Billrun_Discount::remove($data);
 		return $data;
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }
