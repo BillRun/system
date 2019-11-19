@@ -9,15 +9,19 @@
 class Generator_Translations {
 	
 	protected static $defaultLangPath = 'billrun.invoices.language.default';
+	protected static $defaultLang;
 	protected static $currentLang;
 	protected static $languages = [];
 	protected static $translations = [];
 	
 	public static function load() {
-		if (!empty($defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath))) {
-			static::setLanguage($defaultLang);
-		} else {
-			Billrun_Factory::log()->log('Generator_Translations: Missing Default invoice language in config', Zend_Log::DEBUG);
+		if (!static::$defaultLang) {
+			if (!empty($defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath))) {
+				static::$defaultLang = $defaultLang;
+				static::setLanguage($defaultLang);
+			} else {
+				Billrun_Factory::log()->log('Generator_Translations: Missing Default invoice language in config', Zend_Log::DEBUG);
+			}
 		}
 	}
 	
