@@ -1,5 +1,6 @@
 
 var accounts = db.collection_steps.aggregate({$match: {"returned_value.success": {$ne: true}, trigger_date: {$lt: ISODate()}}}, {$group: {_id: "$extra_params.aid", count: {$sum: 1}}}, {$match: {count: {$gte: 1}}});
+var accounts_per_day = 100000; //'UNLIMITED';
 var multiplier = 1;
 var acc_arr =[];
 var acc_array_per_day =[];
@@ -7,19 +8,36 @@ var acc_array_per_day =[];
 accounts.forEach(function (acc) {
 acc_arr.push(acc);
 });
+
 var acc_sum = acc_arr.length;
-var accounts_per_day = acc_sum; //DEFAULT ALL ACCOUNTS - CAN INSERT ANY NUMBER LOWER THAN ACC_SUM;
 
 
 function calcDaysOfOperation(acc_sum){
     var sum =0;
-    for (var i = 1; i <=acc_sum; i=(accounts_per_day)*(multiplier)) {
+   for (var i = 1; i <=acc_sum; i+=(accounts_per_day)*(multiplier)) {
         sum++;
-        multiplier = multiplier*2;
-        acc_array_per_day.push(i);
     }
     return sum;
 }
+
+function arrCreator(num_days,mul,acc_per_day){
+    total = mul*acc_per_day;
+    acc_amounts = acc_sum;
+    for (var i = 0; i < num_days; i++) {
+        for (var j = 0; i < total; i++) {
+            if(total>acc_amounts){
+            acc_array_per_day.push(acc_amounts);
+        }else{
+            acc_array_per_day.push(total);
+            acc_amounts = acc_amounts - total;
+        }        
+    } 
+}}
+
+var num_of_days = calcDaysOfOperation(acc_sum);
+
+arrCreator(num_of_days,multiplier,accounts_per_day);
+
 function setAlert(stepId, cur_date, type, stepcode) {
 
     var data = new Date(cur_date.getTime() + type * 24 * 60 * 60000);
@@ -52,13 +70,15 @@ function DaysToSkip(type) {
     }
 }
 
-var num_of_days = calcDaysOfOperation(acc_sum);
 
 var pivot = 0;
 
 for (var cur_day = 0; cur_day < num_of_days; cur_day++) {
 
     var day_delay = (cur_day+1);
+     
+     //
+     print("sdsdssdsdsd"+acc_array_per_day[cur_day]);
      
     for (cur_acc=0; cur_acc < ((acc_array_per_day[cur_day])); cur_acc++) {
         if(pivot<acc_sum){
