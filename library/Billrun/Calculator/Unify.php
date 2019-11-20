@@ -324,7 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		}
 
-		foreach ($typeData['stamp']['value']['uf'] as $fieldName) {
+		foreach ($typeData['stamp']['value']['custom_value'] as $fieldName) {
 			$field = 'uf.' . $fieldName;
 			$newVal = Billrun_Util::getIn($newRow, $field, null);
 			if (!is_null($newVal)) {
@@ -531,7 +531,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	
 	protected function enrichOptionsWithUserFields($options) {
 		$configByType = array();
-		$fileTypes = Billrun_Factory::config()->file_types->toArray();
+		$fileTypes = Billrun_Factory::config()->getAllFileTypesSettings(true);
 		foreach ($fileTypes as $fileType) {
 			if (empty($fileType['unify'])) {
 				continue;
@@ -541,7 +541,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		foreach ($configByType['file_types'] as $type => &$unifyDef) {
 			$uf = Billrun_Util::getCustomerAndRateUf($type);
-			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.uf', $uf);
+			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.custom_value', $uf);
 			foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
 				foreach ($fields['update'] as &$setOnInsertDef) {
 					if ($setOnInsertDef['operation'] != '$setOnInsert') {

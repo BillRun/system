@@ -483,4 +483,19 @@ class Billrun_Config {
 		}
 		return 'string';
 	}
+	
+	/**
+	 * method to get all input processors settings
+	 * 
+	 * @param boolean $enabledOnly - indicates if input processor enabled or not
+	 * @return array - input processors settings
+	 */
+	public function getAllFileTypesSettings($enabledOnly = false) {		
+		$fileTypes = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($enabledOnly) {
+			return (!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
+		});
+
+		return $fileTypes;
+	}
+
 }
