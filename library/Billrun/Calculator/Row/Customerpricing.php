@@ -559,7 +559,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		
 		ksort($ret);
 		ksort($servicesIds);
-		$this->servicesIds = array_keys($servicesIds);
+		$this->servicesIds = array_values($servicesIds);
 
 		return array_values($ret); // array of service objects
 	}
