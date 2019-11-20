@@ -15,7 +15,6 @@ var acc_sum = acc_arr.length;
 function calcDaysOfOperation(acc_sum){
     var sum =0;
    for (var i = 1; i <=acc_sum; i=i+((accounts_per_day)*(multiplier))) {
-       print("whata " +i);
         sum++;
     }
     return sum;
@@ -76,11 +75,10 @@ var pivot = 0;
 
 for (var cur_day = 0; cur_day < num_of_days; cur_day++) {
 
-    var day_delay = (cur_day+1);
-     
-     //
-     print("sdsdssdsdsd"+acc_array_per_day[cur_day]);
-     
+    //var day_delay = (cur_day+1);
+    var day_delay = (cur_day);
+
+          
     for (cur_acc=0; cur_acc < ((acc_array_per_day[cur_day])); cur_acc++) {
         if(pivot<acc_sum){
         operateOnacc(acc_arr[pivot]._id,day_delay);
