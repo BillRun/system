@@ -50,12 +50,16 @@ class Billrun_Cycle_AggregatePipeline {
 				'plan' => '$name',
 				'upfront' => 1,
 				'prorated' => 1,
+				'prorated_start' => 1,
+				'prorated_end' => 1,
+				'prorated_termination' => 1,
 				'vatable' => 1,
 				'price' => 1,
 				'recurrence.periodicity' => 1,
 				'plan_activation' => 1,
 				'plan_deactivation' => 1,
-				'include' => 1
+				'include' => 1,
+				'tax' => 1,
 			)
 		);
 	}
