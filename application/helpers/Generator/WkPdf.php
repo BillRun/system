@@ -26,6 +26,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
+        protected $invoice_extra_params = [];
 	
 
 	/**
@@ -442,4 +443,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($merged, $this->filePermissions);
 	}
 
+        /**
+         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+         * @param sring $key
+         * @param type $value
+         */
+        public function setInvoiceExtraParams($key, $value) {
+            $this->invoice_extra_params[$key] = $value;
+        }
 }
