@@ -82,6 +82,7 @@ class Calculator_UsageClassifier extends Billrun_Calculator {
 		if($row['type'] == 'nsn') {
 			switch ($row['record_type']) {
 				case '08':
+					return 'incoming_sms';
 				case '09':
 					return 'sms';
 

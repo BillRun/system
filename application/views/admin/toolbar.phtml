@@ -76,7 +76,7 @@
 
 							echo '</div>';
 							echo '<br>';
-							echo "<div id='databases'>Select table to fetch from: ";
+							echo "<div id='databases' class='hide' >Select table to fetch from: ";
 								echo "<select class='form-control multiselect'  name='collection'>";
 									$coll_selection = $this->session->collectionSelect;
 									if ($coll_selection == 'lines|billing'){

@@ -273,7 +273,9 @@ trait Billrun_Traits_FileActions {
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - " . implode(",", $backupPaths), Zend_Log::INFO);
 				$this->backup($file['path'], basename($file['path']), $backupPaths, $file['retrieved_from'], true);
 			} else {
-				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :" . implode(",", $file['backed_to']), Zend_Log::INFO);
+				if(!$this->noBackup) {
+					Billrun_Factory::log()->log("File {$file['path']}  already backed up to :" . @implode(",", $file['backed_to']), Zend_Log::INFO);
+				}
 				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
 				unlink($file['path']);
 			}
