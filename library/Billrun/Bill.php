@@ -623,8 +623,57 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
+        
+        public static function getAllTheContractorsInCollection() {
+                $billsColl = Billrun_Factory::db()->billsCollection();
+                $minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
+                
+                $matchQuery = array(
+			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
+			'paid' => array('$in' => array(false, '0', 0)),
+                        'type' => 'inv',
+                        'past_rejections' => array('$exists' => true, '$ne' => []),
+		);
+                
+                $match = array(
+			'$match' => $matchQuery,
+		);
+                
+                $project = array(
+			'$project' => array(
+				'aid' => 1,
+				'left_to_pay' => 1
+			)
+		);
+                
+                $group = array(
+			'$group' => array(
+				'_id' => '$aid',
+				'total_collection_debt' => array(
+					'$sum' => array(
+						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+					),
+				),
+                            ),
+                    );
+                
+                $match2 = array(
+			'$match' => array(
+				'total_collection_debt' => array(
+					'$gte' => $minBalance
+				)
+			)
+		);
+                
+                $results = iterator_to_array($billsColl->aggregate($match, $project, $group, $match2));
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
+                
+                
+        }
 
-	public function getDueBeforeVat() {
+        public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
