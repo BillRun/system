@@ -1068,9 +1068,9 @@ class Billrun_Billrun {
         
                 /**
          * Function gets start + end time, as Unix Timestamp,aid, and invoice type, and returns an array of this aid's relevant invoices, between those dates.
+         * @param type $aid
          * @param string $startTime
          * @param string $endTime
-         * @param type $aid
          * @param string $type
          */
         public static function getInvoicesInRange($aid, $startTime, $endTime, $type) {
@@ -1078,21 +1078,32 @@ class Billrun_Billrun {
                 Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
                 return [];
             }
-            $convertedStartTime = date('YmdHis', $startTime);
-            $convertedEndTime = date('YmdHis', $endTime);
-            $query = array(
+            if($type === 'immediate'){
+                $convertedStartTime = date('YmdHis', $startTime);
+                $convertedEndTime = date('YmdHis', $endTime);
+                $query = array(
                         'aid' => $aid,
 			'invoice_type' => array('$eq' => $type),
                         'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
 		);
+            }else {
+                $convertedStartTime = date('Ym', $startTime);
+                $convertedEndTime = date('Ym', $endTime);
+                $query = array(
+                        'aid' => $aid,
+			'invoice_type' => array('$in' => array(null, $type)),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
+		);
+            }
+
             $sort = array(
 			'billrun_key' => -1,
 		);
             $fields = array(
 			'billrun_key' => 1,
                 );  
-            $billruns = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
-            return iterator_to_array($billruns, true);
+            $bills = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
+            return iterator_to_array($bills, true);
         }
 }
 
