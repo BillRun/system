@@ -1065,6 +1065,35 @@ class Billrun_Billrun {
 	public function getInvoiceID() {
 		return @$this->data['invoice_id'];
 	}
+        
+                /**
+         * Function gets start + end time, as Unix Timestamp,aid, and invoice type, and returns an array of this aid's relevant invoices, between those dates.
+         * @param string $startTime
+         * @param string $endTime
+         * @param type $aid
+         * @param string $type
+         */
+        public static function getInvoicesInRange($aid, $startTime, $endTime, $type) {
+            if(!in_array($type, ['immediate', 'regular'])) {
+                Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
+                return [];
+            }
+            $convertedStartTime = date('YmdHis', $startTime);
+            $convertedEndTime = date('YmdHis', $endTime);
+            $query = array(
+                        'aid' => $aid,
+			'invoice_type' => array('$eq' => $type),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
+		);
+            $sort = array(
+			'billrun_key' => -1,
+		);
+            $fields = array(
+			'billrun_key' => 1,
+                );  
+            $billruns = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
+            return iterator_to_array($billruns, true);
+        }
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
