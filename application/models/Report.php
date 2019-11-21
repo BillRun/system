@@ -431,6 +431,9 @@ class ReportModel {
 	protected function formatInputMatchValue($condition, $field, $type) {
 		$value = $condition['value'];
 		$op = $condition['op'];
+		if ($type === 'daterange') {
+			return new MongoDate(strtotime($value));
+		}
 		// search by op
 		switch ($op) {
 			case 'last_hours':

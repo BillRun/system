@@ -30,7 +30,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 		}
 		foreach ($this->structure as $struct) {
 			$key = $struct['name'];
-			$length = $struct['width'];
+			$length = isset($struct['padding']['length'])? $struct['padding']['length'] : $struct['width'];
 			$ar_line[$key] = trim(substr($line, $pointer, $length), "\n\r ");
 			$pointer += $length;
 		}
