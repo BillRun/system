@@ -37,8 +37,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
 				return;
 			}
-			if ($payment->isPaymentDenied(abs($row['amount']))) {
-				Billrun_Factory::log()->log("Payment " . $row['transaction_id'] . " is already denied", Zend_Log::NOTICE);
+			if ($payment->isAmountDeniable(abs($row['amount']))) {
+				Billrun_Factory::log()->log("The amount is too large to deny for Payment " . $row['transaction_id'], Zend_Log::NOTICE);
 				return;
 			}
 		}

@@ -986,7 +986,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * 
 	 * return true when the sum of denied amount is larger than the bill amount
 	 */
-	public function isPaymentDenied($denialAmount) {
+	public function isAmountDeniable($denialAmount) {
 		$alreadyDenied = 0;
 		if (isset($this->data['denied_amount'])) {
 			$alreadyDenied = $this->data['denied_amount'];
