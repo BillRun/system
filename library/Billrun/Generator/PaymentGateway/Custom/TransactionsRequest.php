@@ -64,15 +64,16 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	public function load() {
 		if (!$this->validateExtraParams()) {
 			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.';
-                        $this->logFile->updateLogFileField('errors', "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.');
+                        $this->logFile->updateLogFileField('errors', $message);
 			throw new Exception($message);
 			return;
 		}
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
-		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
-                $this->logFile->updateLogFileField('info', 'generator entities loaded: ' . count($this->customers));
+                $message = 'generator entities loaded: ' . count($this->customers);
+		Billrun_Factory::log()->log($message, Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', $message);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 		$this->data = array();
 		$customersAids = array_map(function($ele){
@@ -99,13 +100,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
-                                $this->logFile->updateLogFileField('errors', "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid']);
+                                $message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
+				Billrun_Factory::log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			}
 			if (Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'], Zend_Log::ALERT);
-                                $this->logFile->updateLogFileField('errors', "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid']);
+                                $message = "Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'];
+				Billrun_Factory::log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			} else if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision)) {
 				$paymentParams['amount'] = $customer['left_to_pay'];
@@ -141,8 +144,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			try {
 				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
-                                $this->logFile->updateLogFileField('errors', 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage());
+                                $message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
+				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			}
 			$currentPayment = $payment[0];
@@ -160,8 +164,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$this->data[] = $line;
 		}
                 $numberOfRecordsToTreat = count($this->data);
-                Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
-                $this->logFile->updateLogFileField('info', 'generator entities treated: ' . $numberOfRecordsToTreat);
+                $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
+                Billrun_Factory::log()->log($message, Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', $message);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}

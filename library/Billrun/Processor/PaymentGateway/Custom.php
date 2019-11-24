@@ -48,8 +48,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
 			$this->setParser($currentProcessor['parser']);
 		} else {
-                        $this->informationArray['errors'][] = "Parser definition missing";
-			throw new Exception("Parser definition missing");
+                        $message = "Parser definition missing";
+                        $this->informationArray['errors'][] = $message;
+			throw new Exception($message);
 		}
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
@@ -104,7 +105,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                     $currentFileCount = $this->getCurrentFileCount();
                     $this->informationArray['file_count'] = $currentFileCount;
                     if (($currentFileCount + 1) > $fileConfCount){
-                        Billrun_Factory::log('Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.' , Zend_Log::ALERT);
+                        $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+                        Billrun_Factory::log($message , Zend_Log::ALERT);
+                        $this->informationArray['errors'] = $message;
                         return False;
                     }else{
                         if(($currentFileCount + 1) === $fileConfCount){

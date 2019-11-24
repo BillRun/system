@@ -43,13 +43,15 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
 		if (!isset($currentProcessor['processor']['transaction_status'])) {
-			Billrun_Factory::log("Missing transaction_status for file type " . $this->fileType, Zend_Log::DEBUG);
-                        $this->informationArray['info'][] = "Missing transaction_status for file type " . $this->fileType;
+                        $message = "Missing transaction_status for file type " . $this->fileType;
+			Billrun_Factory::log($message, Zend_Log::DEBUG);
+                        $this->informationArray['info'][] = $message;
 		}
 		$transactionStatusDef = $currentProcessor['processor']['transaction_status'];
 		if (!isset($currentProcessor['processor']['transaction_status']['success'])) {
-			Billrun_Factory::log("Missing transaction_status success definition for " . $this->fileType, Zend_Log::DEBUG);
-                        $this->informationArray['info'][] = "Missing transaction_status success definition for " . $this->fileType;
+                        $message = "Missing transaction_status success definition for " . $this->fileType;
+			Billrun_Factory::log($message, Zend_Log::DEBUG);
+                        $this->informationArray['info'][] = $message;
 		}
 		$successConditions = $transactionStatusDef['success'];
 		$rejectionConditions = isset($transactionStatusDef['rejection']) ? $transactionStatusDef['rejection'] : array();
@@ -60,8 +62,9 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['amount_field']) ||
 			empty($processorDefinition['processor']['transaction_identifier_field'])) {
-			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
-                        $this->informationArray['errors'][] = "Missing definitions for file type " . $processorDefinition['file_type'];
+                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
+			Billrun_Factory::log($message, Zend_Log::DEBUG);
+                        $this->informationArray['errors'][] = $message;
 			return false;
 		}
 		$this->amountField = $processorDefinition['processor']['amount_field'];
@@ -77,8 +80,9 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			$stage = 'Rejected';
 		}
 		if (empty($stage)) {
-                        $this->informationArray['errors'][] = "Can't define the transaction status for " . $this->fileType;
-			throw new Exception("Can't define the transaction status for " . $this->fileType);
+                        $message = "Can't define the transaction status for " . $this->fileType;
+                        $this->informationArray['errors'][] = $message;
+			throw new Exception($message);
 		}
 		
 		return $stage;
@@ -110,8 +114,9 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                                 $this->informationArray['transactions']['rejected']++;
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
-				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
-                                $this->informationArray['info'][] = 'Transaction ' . $payment->getId() . ' already rejected';
+                                $message = 'Transaction ' . $payment->getId() . ' already rejected';
+				Billrun_Factory::log($message, Zend_Log::NOTICE);
+                                $this->informationArray['info'][] = $message;
 			}
 		}
 	}
