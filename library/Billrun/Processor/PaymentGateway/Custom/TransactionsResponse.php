@@ -27,18 +27,17 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
-		$payment->setPending(false);
-		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
-		if ($paymentResponse['stage'] == 'Completed') {
-			$payment->markApproved($paymentResponse['stage']);
-			$billData = $payment->getRawData();
-			if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
-			}
-			if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
-			}
-		}
+                $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
+                if ($paymentResponse['stage'] == 'Completed') {
+                        $payment->markApproved($paymentResponse['stage']);
+                        $billData = $payment->getRawData();
+                        if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
+                                Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+                        }
+                        if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+                                Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+                        }
+                }
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
@@ -89,12 +88,17 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	 */
 	protected function updatePaymentAccordingTheResponse($response, $payment) {
 		if ($response['stage'] == "Completed") { // payment succeeded 
-			$payment->updateConfirmation();
-			$payment->setPaymentStatus($response, $this->gatewayName);
-		} else if ($response['stage'] == "Pending") { // handle pending
-			$payment->setPaymentStatus($response, $this->gatewayName);
+                        if ($payment->isPendingPayment()){
+                            $payment->setPending(false);
+                            $payment->updateConfirmation();
+                            $payment->setPaymentStatus($response, $this->gatewayName);
+                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
+                        }else{
+                            Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
+                        }
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
+                                $payment->setPending(false);
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
