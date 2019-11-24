@@ -328,14 +328,34 @@ class Models_Action_Import extends Models_Action {
 
 	protected function runCustomQuery($customFunc) {
 		$result = Billrun_Factory::chain()->trigger($customFunc, [$this->getFiles()]);
-		$importedEntities = Billrun_Util::getIn($result, 'imported_entities', []);
 		$errors = Billrun_Util::getIn($result, 'errors', []);
 		if (!empty($errors)) {
 			$errorMessage = implode(', ', $errors);
 			throw new Exception($errorMessage);			
 		}
 		
-		return $importedEntities;
+		$details = [];
+		$imported_entities = Billrun_Util::getIn($result, 'imported_entities', null);
+		if (!is_null($imported_entities)) {
+			$details['imported_entities'] = $imported_entities;
+		}
+		$general_errors = Billrun_Util::getIn($result, 'general_errors', null);
+		if (!is_null($general_errors)) {
+			$details['general_errors'] = $general_errors;
+		}
+		$general_warnings = Billrun_Util::getIn($result, 'general_warnings', null);
+		if (!is_null($general_warnings)) {
+			$details['general_warnings'] = $general_warnings;
+		}
+		$created = Billrun_Util::getIn($result, 'created', null);
+		if (!is_null($created)) {
+			$details['created'] = $created;
+		}
+		$updated = Billrun_Util::getIn($result, 'updated', null);
+		if (!is_null($updated)) {
+			$details['updated'] = $updated;
+		}
+		return $details;
 	}
 
 }
