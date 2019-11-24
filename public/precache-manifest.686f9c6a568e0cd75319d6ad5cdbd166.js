@@ -4,7 +4,7 @@ self.__precacheManifest = [
     "url": "/static/media/billRun-cloud-logo.1f38670a.png"
   },
   {
-    "revision": "4ad8c1ebb5a2ebc8acd6",
+    "revision": "2853674c1b1c8f160ca7",
     "url": "/static/css/main.1db798e7.chunk.css"
   },
   {
@@ -28,8 +28,8 @@ self.__precacheManifest = [
     "url": "/static/js/4.dc87a627.chunk.js"
   },
   {
-    "revision": "4ad8c1ebb5a2ebc8acd6",
-    "url": "/static/js/main.6603ab44.chunk.js"
+    "revision": "2853674c1b1c8f160ca7",
+    "url": "/static/js/main.408c944d.chunk.js"
   },
   {
     "revision": "1f38670a7d7ae21d3c7e2099513f5114",
@@ -56,7 +56,7 @@ self.__precacheManifest = [
     "url": "/static/css/2.70f54954.chunk.css"
   },
   {
-    "revision": "540befc852372fdff51091b7f439952a",
+    "revision": "b54577f8eb7ff32c1ba5e36b7f05d2fb",
     "url": "/index.html"
   }
 ];
