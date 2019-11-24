@@ -176,28 +176,39 @@ class Billrun_Cycle_Account_Invoice {
 				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
 			}
 		}
-		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array()));
+		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data',array());
+		$this->aggregateIntoInvoice($configValue, $this->data->getRawData());
 		$this->updateTotals();
+	}
+	
+	public function addConfigurableData() {
+		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()), [$this->data->getRawData()]);
 	}
 
 	/**
 	 * 
 	 * @param type $subLines
 	 */
-	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
-		$translations = array('BillrunKey' => $this->data['billrun_key'], 'Aid'=>$this->data['aid']);
+	public function aggregateIntoInvoice($untranslatedAggregationConfig, $data) {
+		$translations = array('BillrunKey' => $data['billrun_key'], 'Aid'=> $data['aid']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
-		$rawData = $this->data->getRawData();
+		$invoiceData = $this->data->getRawData();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
-				$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($aggregateConf['pipeline'])->setRawReturn(true);
+			foreach ($aggregateConf['pipelines'] as $pipeline) {
+				if (empty($aggregateConf['use_db'])) {
+					$aggrResults = $aggregate->aggregate($pipeline, $data);
+				} else {
+					$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($pipeline)->setRawReturn(true);
+				}
 				if($aggrResults) {
 					foreach($aggrResults as $aggregateValue) {
-						$rawData['added_data'][$addedvalueKey][] = $aggregateValue;
+						$invoiceData['added_data'][$addedvalueKey][] = $aggregateValue;
 					}
+				}
 			}
 		}
-		$this->data->setRawData($rawData);
+		$this->data->setRawData($invoiceData);
 	}
 	
 	/**
