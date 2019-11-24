@@ -32,39 +32,44 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-			return $settingsByType['file_type'] === $this->fileType;
-		}));
-		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
-			$this->setParser($currentProcessor['parser']);
-		} else {
-			throw new Exception("Parser definition missing");
-		}
-		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
-			return false;
-		}
-		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
-		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
-		$parser = $this->getParser();
-		$parser->setHeaderStructure($headerStructure);
-		$parser->setDataStructure($dataStructure);
-		$parser->parse($this->fileHandler);
-		$this->headerRows = $parser->getHeaderRows();
-		$this->trailerRows = $parser->getTrailerRows();
-		$parsedData = $parser->getDataRows();
-		$rowCount = 0;
+                $currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
+                        return $settingsByType['file_type'] === $this->fileType;
+                }));
+                if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
+                    $this->setParser($currentProcessor['parser']);
+                } else {
+                        throw new Exception("Parser definition missing");
+                }
+                if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
+                        return false;
+                }
+                $headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
+                $dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
+                $parser = $this->getParser();
+                $parser->setHeaderStructure($headerStructure);
+                $parser->setDataStructure($dataStructure);
+                try{
+                    $parser->parse($this->fileHandler);
+                } catch(Exception $ex){
+                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                    Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
+                    return false;
+                } 
+                $this->headerRows = $parser->getHeaderRows();
+                $this->trailerRows = $parser->getTrailerRows();
+                $parsedData = $parser->getDataRows();
+                $rowCount = 0;
 
-		foreach ($parsedData as $line) {
-			$row = $this->getBillRunLine($line);
-			if (!$row){
-				return false;
-			}
-			$row['row_number'] = ++$rowCount;
-			$this->addDataRow($row);
-		}
-		$this->data['header'] = array('header' => TRUE); //TODO
-               $this->data['trailer'] = array('trailer' => TRUE); //TODO
-
+                foreach ($parsedData as $line) {
+                        $row = $this->getBillRunLine($line);
+                        if (!$row){
+                            return false;
+                        }
+                        $row['row_number'] = ++$rowCount;
+                        $this->addDataRow($row);
+                }
+                $this->data['header'] = array('header' => TRUE); //TODO
+                $this->data['trailer'] = array('trailer' => TRUE); //TODO
 		return true;
 	}
 

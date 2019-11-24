@@ -35,30 +35,30 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	}
 
 	protected function updatePayments($row, $payment = null) {
-		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
-		if (count($bill) == 0) {
-			Billrun_Factory::log("Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field", Zend_Log::ALERT);
-			return;
-		}
-		if (count($bill) > 1) {
-			Billrun_Factory::log($this->identifierField . " field isn't unique", Zend_Log::ALERT);
-			return;
-		}
-		$billData = $bill->current()->getRawData();
-		$billAmount = !empty($this->amountField) ? $row[$this->amountField] : $billData['amount'];
-		$paymentParams['amount'] = $billAmount;
-		$paymentParams['dir'] = 'fc';
-		$paymentParams['aid'] = $billData['aid'];
-		$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
-		$amount = $billAmount;
-		$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
-		$paymentParams[$payDir][$billData['type']][$id] = $amount;
-		try {
-			Billrun_Bill::pay('cash', array($paymentParams));
-		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Payment process was failed for payment: " . $e->getMessage(), Zend_Log::NOTICE);
-		}
-		Billrun_Factory::log()->log("Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField], Zend_Log::INFO);
+                $bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
+                if (count($bill) == 0) {
+                        Billrun_Factory::log("Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field", Zend_Log::ALERT);
+                        return;
+                }
+                if (count($bill) > 1) {
+                        Billrun_Factory::log($this->identifierField . " field isn't unique", Zend_Log::ALERT);
+                        return;
+                }
+                $billData = $bill->current()->getRawData();
+                $billAmount = !empty($this->amountField) ? $row[$this->amountField] : $billData['amount'];
+                $paymentParams['amount'] = $billAmount;
+                $paymentParams['dir'] = 'fc';
+                $paymentParams['aid'] = $billData['aid'];
+                $id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
+                $amount = $billAmount;
+                $payDir = isset($billData['left']) ? 'paid_by' : 'pays';
+                $paymentParams[$payDir][$billData['type']][$id] = $amount;
+                try {
+                        Billrun_Bill::pay('cash', array($paymentParams));
+                } catch (Exception $e) {
+                        Billrun_Factory::log()->log("Payment process was failed for payment: " . $e->getMessage(), Zend_Log::NOTICE);
+                }
+                Billrun_Factory::log()->log("Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField], Zend_Log::INFO);
 	}
 
 	protected function findBillByUniqueIdentifier($id) {
