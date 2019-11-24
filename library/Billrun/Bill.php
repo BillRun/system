@@ -651,7 +651,7 @@ abstract class Billrun_Bill {
 				'_id' => '$aid',
 				'total_collection_debt' => array(
 					'$sum' => array(
-						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+						'$cond' => array(array('$ne' => array('$past_rejections', false)), '$left_to_pay', 0)
 					),
 				),
                             ),
