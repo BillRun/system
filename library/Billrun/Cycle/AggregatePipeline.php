@@ -172,8 +172,8 @@ class Billrun_Cycle_AggregatePipeline {
 				'passthrough' => $addedPassthroughFields['project'],
 			)
 		);
-		
-		return $pipelines;
+		$collection = Billrun_Factory::db()->subscribersCollection();
+		return $this->aggregatePipelines($pipelines,$collection);
 	}
 	
 	//--------------------------------------------------------------
@@ -256,5 +256,15 @@ class Billrun_Cycle_AggregatePipeline {
 				'plan_dates.from' => 1,
 			),
 		);
+	}
+
+	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
+		$cursor = $collection->aggregateWithOptions($pipelines,['allowDiskUse'=> true]);
+		$results = iterator_to_array($cursor);
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
 	}
 }

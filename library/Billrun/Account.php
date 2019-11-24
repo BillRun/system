@@ -101,6 +101,11 @@ abstract class Billrun_Account extends Billrun_Base {
 	}
 
 	/**
+	 * TODO document
+	 */
+	public abstract function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $size, $aids = []);
+
+	/**
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
