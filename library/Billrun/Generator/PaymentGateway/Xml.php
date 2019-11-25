@@ -218,6 +218,7 @@ class Billrun_Generator_PaymentGateway_Xml {
         $doc->encoding = $this->encoding;
         $doc->save($this->file_path);
     }
+    }
 
     /**
      * The function gets an xml node's path (a.b.c...), and return it as array, whose values are the tags. 

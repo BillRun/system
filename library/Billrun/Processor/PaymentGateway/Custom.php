@@ -226,9 +226,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				continue;
 			}
 			$this->updatePayments($row, $bill, $currentProcessor);
-                    }else{
-                        $no_txid_counter++;
-                    }
 		}
                 if($no_txid_counter > 0){
                     Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
@@ -267,12 +264,14 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
         protected function updateLogFile(){
-            $query = array(
-			'stamp' => $this->getFileStamp()
-		);
-            $update = array(
-                        '$set' => $this->informationArray
-            );
-            $this->log->update($query, $update);
+            $current_stamp = $this->getStamp();
+            $log = Billrun_Factory::db()->logCollection();
+            if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+                $resource = $log->findOne($current_stamp);
+                $entityData = $resource->getRawData();
+                $data = array_merge($entityData, $this->informationArray);
+                $resource->setRawData($data);
+                $log->save($resource);
+            }
         }
 }
