@@ -57,6 +57,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
         foreach ($dataStructure as $dataField) {
+            try{
             if (!isset($dataField['path'])) {
                 $message = "Exporter " . $this->configByType['file_type'] . " data structure is missing a path";
                 Billrun_Factory::log($message, Zend_Log::ERR);
@@ -98,8 +99,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 throw new Exception($message);
             }
             $dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+            } catch(Exception $ex){
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                continue;
         }
-
+        }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);
         }

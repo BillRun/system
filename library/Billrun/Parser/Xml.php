@@ -142,7 +142,7 @@ class Billrun_Parser_Xml {
                         $this->pathes[] = $this->input_array[$segment][$a]['path'];
                         $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
                     } else {
-                        throw "No path for one of the " . $segment . "'s entity. No parse was made." . PHP_EOL;
+                        throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
                     }
                 }
             }
@@ -196,7 +196,7 @@ class Billrun_Parser_Xml {
                     $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                 } else {
                     if ($segment === "data") {
-                        throw "No pathes in " . $segment . " segment. No parse was made." . PHP_EOL;
+                        throw new Exception("No pathes in " . $segment . " segment. No parse was made.");
                     } else {
                         Billrun_Factory::log('Billrun_Parser_Xml: No pathes in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
                     }

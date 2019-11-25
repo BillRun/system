@@ -60,7 +60,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parser = $this->getParser();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
+                try{
 		$parser->parse($this->fileHandler);
+                } catch(Exception $ex){
+                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                    Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
+                    return false;
+                } 
 		$this->headerRows = $parser->getHeaderRows();
 		$this->trailerRows = $parser->getTrailerRows();
 		$parsedData = $parser->getDataRows();
@@ -214,12 +220,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                             continue;
                         }
                     }
-                    $bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
-                    if (is_null($bill) && static::$type != 'payments') {
-			Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
-			continue;
+			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
+			if (is_null($bill) && static::$type != 'payments') {
+				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
+				continue;
+			}
+			$this->updatePayments($row, $bill, $currentProcessor);
+                    }else{
+                        $no_txid_counter++;
                     }
-                    $this->updatePayments($row, $bill, $currentProcessor);
 		}
                 if($no_txid_counter > 0){
                     Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
