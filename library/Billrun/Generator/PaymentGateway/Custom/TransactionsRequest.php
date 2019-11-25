@@ -63,7 +63,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 
 	public function load() {
 		if (!$this->validateExtraParams()) {
-			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.';
+			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.'; 
                         $this->logFile->updateLogFileField('errors', $message);
 			throw new Exception($message);
 			return;
@@ -93,6 +93,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				break;
 			}
 			$paymentParams = array();
+                        if (isset($subscribersInArray[$customer['aid']])){
 			$account = $subscribersInArray[$customer['aid']];
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
@@ -162,6 +163,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
+                    }
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
