@@ -62,7 +62,7 @@ class policePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function removeDuplicates($processor) {
 		Billrun_Factory::log('Plugin police remove duplicates', Zend_Log::INFO);
-		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$lines_coll = Billrun_Factory::db()->linesCollection()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$data = &$processor->getData();
 		$stamps = array();
 		foreach ($data['data'] as $key => $line) {
