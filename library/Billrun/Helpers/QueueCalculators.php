@@ -167,6 +167,7 @@ class Billrun_Helpers_QueueCalculators {
 		$queue_data = $processor->getQueueData();
 		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+		$this->unifyCalc->prepareData($data['data']);
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->shouldSkipCalc($line, 'unify')) {
 				if ($this->shouldRemoveFromQueue($line)) {
@@ -174,7 +175,6 @@ class Billrun_Helpers_QueueCalculators {
 				}
 				continue;
 			}
-			$this->unifyCalc->prepareData($data['data']);
 			if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'] , array('pricing', 'tax'))) {
 				$entity = new Mongodloid_Entity($line);
 				if ($this->unifyCalc->isLineLegitimate($entity)) {

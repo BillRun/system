@@ -352,7 +352,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]);
+		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]) && $this->limitArategroupsSize($line);
 
 		if ($matched) {
 			$requirements = $this->unificationFields[$line['type']]['unification_fields']['required'];
@@ -531,7 +531,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	
 	protected function enrichOptionsWithUserFields($options) {
 		$configByType = array();
-		$fileTypes = Billrun_Factory::config()->getAllFileTypesSettings(true);
+		$fileTypes = Billrun_Factory::config()->getFileTypesSettings(true);
 		foreach ($fileTypes as $fileType) {
 			if (empty($fileType['unify'])) {
 				continue;
