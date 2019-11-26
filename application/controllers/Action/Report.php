@@ -185,9 +185,11 @@ class ReportAction extends ApiAction {
 		$input = $params['input'];
 		$query = $this->getMongoQueryFromInput($input);
 		if(!empty($input['endDate']) && !empty($input['startDate'])) {
-			$query['$and'][] = ['charging_end_time' => ['$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
-														'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))]];
-			$query['$and'][] = ['urt' => $query['urt']];
+			$query['$and'][] = ['$or' => [
+				['charging_end_time' => [	'$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
+											'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))] ],
+				['urt' => $query['urt']]
+			]];
 			unset($query['urt']);
 		}
 
