@@ -176,28 +176,28 @@ class Billrun_Cycle_Account_Invoice {
 				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
 			}
 		}
-		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data',array());
+		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
 		$this->aggregateIntoInvoice($configValue, $this->data->getRawData());
 		$this->updateTotals();
 	}
 	
 	public function addConfigurableData() {
-		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()), [$this->data->getRawData()]);
+		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
 	}
 
 	/**
 	 * 
 	 * @param type $subLines
 	 */
-	public function aggregateIntoInvoice($untranslatedAggregationConfig, $data) {
-		$translations = array('BillrunKey' => $data['billrun_key'], 'Aid'=> $data['aid']);
+	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
+		$invoiceData = $this->data->getRawData();
+		$translations = array('BillrunKey' => $invoiceData['billrun_key'], 'Aid'=> $invoiceData['aid']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
-		$invoiceData = $this->data->getRawData();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
 				if (empty($aggregateConf['use_db'])) {
-					$aggrResults = $aggregate->aggregate($pipeline, $data);
+					$aggrResults = $aggregate->aggregate($pipeline, [$invoiceData]);
 				} else {
 					$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($pipeline)->setRawReturn(true);
 				}
