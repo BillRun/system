@@ -27,11 +27,12 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	}
 
 	protected function updatePayments($row, $payment = null) {
-		if (is_null($payment) && empty($row['addon_data'])) {
+		$addonData = !empty($row['addon_data']) ? intval($row['addon_data']) : '';
+		if (is_null($payment) && empty($addonData)) {
 			Billrun_Factory::log('None matching payment and missing Z parameter for ' . $row['stamp'], Zend_Log::ALERT);
 			return;
 		}
-		$row['aid'] = !is_null($payment) ? $payment->getAid() : $row['addon_data'];
+		$row['aid'] = !is_null($payment) ? $payment->getAid() : $addonData;
 		if (!is_null($payment)) {
 			if (abs($row['amount']) > $payment->getAmount()) {
 				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
@@ -45,7 +46,6 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		$newRow = $this->adjustRowDetails($row);
 		$denial = Billrun_Bill_Payment::createDenial($newRow, $payment);
 		if (!empty($denial)) {
-			Billrun_Factory::dispatcher()->trigger('afterDenial', array($newRow));
 			if (!is_null($payment)) {
 				Billrun_Factory::log()->log("Denial was created successfully for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
 				$payment->deny($denial);
@@ -56,6 +56,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
 			}
+			Billrun_Factory::dispatcher()->trigger('afterDenial', array($newRow));
 		} else {
 			Billrun_Factory::log()->log("Denial process was failed for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
 		}
@@ -73,6 +74,12 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	}
 	
 	protected function filterData($data) {
+		foreach ($data['data'] as &$row) {
+			$row = array_map(function($fieldName) {
+				return trim($fieldName);
+			}, $row);
+		}
+		
 		return array_filter($data['data'], function ($denial) {
 			return $denial['status'] != 1; 			
 		});
