@@ -177,7 +177,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 		}
 		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
-		$this->aggregateIntoInvoice($configValue, $this->data->getRawData());
+		$this->aggregateIntoInvoice($configValue);
 		$this->updateTotals();
 	}
 	
@@ -191,7 +191,7 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
 		$invoiceData = $this->data->getRawData();
-		$translations = array('BillrunKey' => $invoiceData['billrun_key'], 'Aid'=> $invoiceData['aid']);
+		$translations = array('BillrunKey' => $invoiceData['billrun_key'], 'Aid'=> $invoiceData['aid'], 'StartTime' => $invoiceData['start_date']->sec, 'EndTime' => $invoiceData['end_date']->sec);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {

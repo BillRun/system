@@ -52,6 +52,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		$this->invoice->updateTotals();
 		$this->applyDiscounts($flatLines);
+		$this->invoice->addConfigurableData();
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
 
@@ -95,10 +96,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$cdr = is_array($cdr) ? new Mongodloid_Entity($cdr) : $cdr;
 		}
 		$this->invoice->applyDiscounts($this->discounts);
-	}
-	
-	public function addConfigurableData() {
-		$this->invoice->addConfigurableData();
 	}
 
 	//---------------------------------- Protected ------------------------------------
