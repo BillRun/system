@@ -205,10 +205,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
-		if(!isset($this->rates[$id_str])) {
+		$col_str = strval($raw_rate['$ref']);
+		if(!isset($this->rates[$col_str][$id_str])) {
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
 			return null;
 		}
-		return $this->rates[$id_str];
+		return $this->rates[$col_str][$id_str];
 	}
 	
 	/**
