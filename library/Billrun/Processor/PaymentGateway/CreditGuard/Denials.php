@@ -17,6 +17,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	protected $gatewayName = 'CreditGuard';
 	protected $actionType = 'denials';
 	protected $vendorFieldNames = array('cg_clearing_by', 'terminal_number', 'inquiry_desc', 'supplier_num', 'rikuz', 'shovar_num', 'status', 'addon_data');
+	protected $unmatchedRows = array();
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -30,6 +31,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		$addonData = !empty($row['addon_data']) ? intval($row['addon_data']) : '';
 		if (is_null($payment) && empty($addonData)) {
 			Billrun_Factory::log('None matching payment and missing Z parameter for ' . $row['stamp'], Zend_Log::ALERT);
+			$this->unmatchedRows[] = $row;
 			return;
 		}
 		$row['aid'] = !is_null($payment) ? $payment->getAid() : $addonData;
@@ -42,6 +44,10 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				Billrun_Factory::log()->log("The amount is too large to deny for Payment " . $row['transaction_id'], Zend_Log::NOTICE);
 				return;
 			}
+		} else { // in this case there's aid identifier
+			Billrun_Factory::log('None matching payment for aid ' . $row['aid'] . ' with stamp ' . $row['stamp'], Zend_Log::ALERT);
+			$this->unmatchedRows[] = $row;
+			return;
 		}
 		$newRow = $this->adjustRowDetails($row);
 		$denial = Billrun_Bill_Payment::createDenial($newRow, $payment);
@@ -83,6 +89,25 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		return array_filter($data['data'], function ($denial) {
 			return $denial['status'] != 1; 			
 		});
+	}
+	
+	protected function afterUpdateData() {
+		$path = 'Unmacthed_Denials_' . time();
+		$filename = Billrun_Util::getBillRunSharedFolderPath($path);
+		Billrun_Factory::log('Writing unmatched denials rows to file ' . $filename, Zend_Log::DEBUG);
+		foreach ($this->unmatchedRows as $key => $row) {
+			if ($key == 0) { // write header
+				$header = implode(',', array_keys($row)) . PHP_EOL;
+				file_put_contents($filename, $header);
+			}
+			$unmatchedRow = implode(',', $row) . PHP_EOL;
+			if (!file_put_contents($filename, $unmatchedRow, FILE_APPEND)) {
+				Billrun_Factory::log('Failed writing row to file ' . print_r($row, true), Zend_Log::ALERT);
+			}
+			if (!file_put_contents($filename, $unmatchedRow, FILE_APPEND)) {
+				Billrun_Factory::log('Failed writing row to file ' . print_r($row, true), Zend_Log::ALERT);
+			}
+		}
 	}
 
 }
