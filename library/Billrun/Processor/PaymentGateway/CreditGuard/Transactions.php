@@ -53,7 +53,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$paymentResponse = $this->getPaymentResponse($row);
 		$payment->setPending(false);
 		if ($paymentResponse['stage'] == 'Rejected') {
-			Billrun_Bill::updatePastRejectionsOnProcessingFiles($payment);
+			$payment->updatePastRejectionsOnProcessingFiles();
 		}
 		Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $payment, $this->gatewayName);
 		if ($paymentResponse['stage'] == 'Completed') {
