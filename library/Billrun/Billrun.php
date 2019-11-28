@@ -1070,13 +1070,14 @@ class Billrun_Billrun {
          * Function gets start + end time, as Unix Timestamp,aid, and invoice type, and returns an array of this aid's relevant invoices, between those dates.
          * @param string $startTime
          * @param string $endTime
-         * @param type $aid
+         * @param integer $aid
          * @param string $type
+         * @return array of the wanted account's invoices, from the requested type, and in the time rang. 
          */
         public static function getInvoicesInRange($aid, $startTime, $endTime, $type) {
             if(!in_array($type, ['immediate', 'regular'])) {
                 Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
-                return [];
+                return false;
             }
             $convertedStartTime = date('YmdHis', $startTime);
             $convertedEndTime = date('YmdHis', $endTime);
