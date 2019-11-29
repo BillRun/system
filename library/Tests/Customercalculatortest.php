@@ -50,16 +50,16 @@ class Tests_CustomerCalculator extends UnitTestCase {
 			'expected' => array('notExists'=>1 )),
 	];
 
-	public function __construct($label = false) {
+	public function __construct($label = 'customr calculator') {
 		parent::__construct("test customer calculator");
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->servicesCol = Billrun_Factory::db()->servicesCollection();
-		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customer', 'autoload' => false));
-		$this->construct(basename(__FILE__, '.php'),[]);
+	    $this->construct(basename(__FILE__, '.php'), []);
 		$this->setColletions();
 		$this->loadDbConfig();
+		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customer', 'autoload' => false));
 	}
 
 	public function loadDbConfig() {
