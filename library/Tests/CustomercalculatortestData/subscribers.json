@@ -1,0 +1,246 @@
+{
+	"collection": "subscribersCollection",
+	"data":
+			[
+				{
+	"OBJID":"5ddf8c724be86533ad7154c6",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"firstname" : "d",
+	"lastname" : "d",
+	"email" : "d",
+	"country" : "d",
+	"address" : "d",
+	"zip_code" : "d",
+	"salutation" : "d",
+	"invoice_shipping_method" : "email",
+	"invoice_detailed" : false,
+	"type" : "account",
+	"to" : "time*2168-11-28T08:59:30Z",
+	"creation_time" : "time*2019-11-28T00:00:00Z"
+},
+{
+	"OBJID":"5ddf8ccb8e9a8742f4192a54",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 2,
+	"plan" : "PLAN_A",
+	"services" : [
+		{
+			"name" : "SERVICE_A",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:00:04Z",
+			"service_id" :"1651435539882454",
+			"creation_time" : "time*2019-11-28T09:00:59.614Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "s",
+	"lastname" : "s",
+	"address" : "s",
+	"country" : "s",
+	"ndcsn" : "123",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2168-11-28T09:00:59Z",
+	"deactivation_date" : "time*2168-11-28T09:00:59Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:00:59Z"
+},
+{
+	"OBJID":"5ddf903a16ccbf31497b0be3",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 3,
+	"plan" : "PLAN_A",
+	"services" : [
+		{
+			"name" : "SERVICE_A",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:15:33Z",
+			"service_id" :"1651436461646613",
+			"creation_time" : "time*2019-11-28T09:15:38Z"
+		},
+		{
+			"name" : "SERVICE_B",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:15:34Z",
+			"service_id" :"1651436461646736",
+			"creation_time" : "time*2019-11-28T09:15:38Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "y",
+	"lastname" : "y",
+	"address" : "y",
+	"country" : "y",
+	"ndcsn" : "789",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2168-11-28T09:15:38Z",
+	"deactivation_date" : "time*2168-11-28T09:15:38Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:15:38Z"
+},
+{
+	"OBJID":"5ddf90a41da67f6569426df3",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 4,
+	"plan" : "PLAN_B",
+	"services" : [
+		{
+			"name" : "SERVICE_A",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:17:20Z",
+			"service_id" :"1651436572170505",
+			"creation_time" : "time*2019-11-28T09:17:24.055Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "r",
+	"lastname" : "r",
+	"address" : "r",
+	"country" : "r",
+	"ndcsn" : "456",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2168-11-28T09:17:24Z",
+	"deactivation_date" : "time*2168-11-28T09:17:24Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:17:24Z"
+},
+{
+	"OBJID":"5ddf90d0b4220a565139e285",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 5,
+	"plan" : "PLAN_A",
+	"services" : [
+		{
+			"name" : "SERVICE_A",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:17:53Z",
+			"service_id" :"1651436618552622",
+			"creation_time" : "time*2019-11-28T09:18:08.300Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "e",
+	"lastname" : "e",
+	"address" : "e",
+	"country" : "e",
+	"ndcsn" : "111",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2019-11-29T00:00:00Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:18:08Z",
+	"deactivation_date" : "time*2168-11-28T09:18:08Z"
+},
+{
+	"OBJID":"5ddf90dcda55906d47760474",
+	"from" : "time*2019-11-29T00:00:00Z",
+	"aid" : 1,
+	"sid" : 5,
+	"plan" : "PLAN_A",
+	"services" : [
+		{
+			"name" : "SERVICE_B",
+			"from" : "time*2019-11-29T00:00:00Z",
+			"to" : "time*2168-11-28T09:18:08Z",
+			"service_id" :"1651436630993706",
+			"creation_time" : "time*2019-11-28T09:18:20.158Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "e",
+	"lastname" : "e",
+	"address" : "e",
+	"country" : "e",
+	"ndcsn" : "111",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2168-11-28T09:18:08Z",
+	"deactivation_date" : "time*2168-11-28T09:18:08Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:18:08Z"
+},
+{
+	"OBJID":"5ddf913967970e08802ce443",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 6,
+	"plan" : "PLAN_A",
+	"services" : [
+		{
+			"name" : "SERVICE_A",
+			"from" : "time*2018-11-28T00:00:00Z",
+			"to" : "time*2119-11-28T09:19:44Z",
+			"service_id" :"1651436728966341",
+			"creation_time" : "time*2019-11-28T09:19:53.613Z"
+		}
+	],
+	"play" : "Default",
+	"firstname" : "k",
+	"lastname" : "k",
+	"address" : "h",
+	"country" : "h",
+	"ndcsn" : "555",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2019-11-20T00:00:00Z",
+	"deactivation_date" : "time*2019-11-20T00:00:00Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2019-11-20T00:00:00Z"
+},
+{
+	"OBJID":"5ddf91aa67356146081d3356",
+	"from" : "time*2018-11-28T00:00:00Z",
+	"aid" : 1,
+	"sid" : 7,
+	"plan" : "PLAN_A",
+	"services" : [ ],
+	"play" : "Default",
+	"firstname" : "j",
+	"lastname" : "j",
+	"address" : "j",
+	"country" : "j",
+	"ndcsn" : "123456",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2019-11-29T00:00:00Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:21:46Z",
+	"deactivation_date" : "time*2168-11-28T09:21:46Z"
+},
+{
+	"OBJID":"5ddf91b75043b70c3772f492",
+	"from" : "time*2019-11-29T00:00:00Z",
+	"aid" : 1,
+	"sid" : 7,
+	"plan" : "PLAN_A",
+	"play" : "Default",
+	"firstname" : "ggg",
+	"lastname" : "ggggj",
+	"address" : "gggj",
+	"country" : "jggg",
+	"ndcsn" : "123456",
+	"type" : "subscriber",
+	"plan_activation" : "time*2018-11-28T00:00:00Z",
+	"to" : "time*2168-11-28T09:21:46Z",
+	"deactivation_date" : "time*2168-11-28T09:21:46Z",
+	"creation_time" : "time*2018-11-28T00:00:00Z",
+	"activation_date" : "time*2018-11-28T00:00:00Z",
+	"plan_deactivation" : "time*2168-11-28T09:21:46Z"
+}
+
+			]
+}
