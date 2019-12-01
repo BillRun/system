@@ -276,22 +276,22 @@ class LinesModel extends TableModel {
 // 		arsort($billruns);
 
 		$filter_fields = array(
-			'aid' => array(
-				'key' => 'aid',
-				'db_key' => 'aid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Account id',
-				'default' => '',
-			),
-			'sid' => array(
-				'key' => 'sid',
-				'db_key' => 'sid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Subscriber id',
-				'default' => '',
-			),
+// 			'aid' => array(
+// 				'key' => 'aid',
+// 				'db_key' => 'aid',
+// 				'input_type' => 'number',
+// 				'comparison' => 'equals',
+// 				'display' => 'Account id',
+// 				'default' => '',
+// 			),
+// 			'sid' => array(
+// 				'key' => 'sid',
+// 				'db_key' => 'sid',
+// 				'input_type' => 'number',
+// 				'comparison' => 'equals',
+// 				'display' => 'Subscriber id',
+// 				'default' => '',
+// 			),
 			'from' => array(
 				'key' => 'from',
 				'db_key' => 'urt',
