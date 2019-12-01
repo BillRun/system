@@ -92,19 +92,21 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	}
 	
 	protected function afterUpdateData() {
-		$path = 'Unmacthed_Denials_' . time();
-		$filename = Billrun_Util::getBillRunSharedFolderPath($path);
-		Billrun_Factory::log('Writing unmatched denials rows to file ' . $filename, Zend_Log::DEBUG);
+		$fileName = 'Denials/Unmacthed_Denials_' . time();
+		$folderName = 'Denials';
+		$filePath = Billrun_Util::getBillRunSharedFolderPath($fileName);
+		$folderPath = Billrun_Util::getBillRunSharedFolderPath($folderName);
+		if (!file_exists($folderPath)) {
+			 mkdir($folderPath, 0777, true);
+		}	
+		Billrun_Factory::log('Writing unmatched denials rows to file ' . $filePath, Zend_Log::DEBUG);
 		foreach ($this->unmatchedRows as $key => $row) {
 			if ($key == 0) { // write header
 				$header = implode(',', array_keys($row)) . PHP_EOL;
-				file_put_contents($filename, $header);
+				file_put_contents($filePath, $header);
 			}
 			$unmatchedRow = implode(',', $row) . PHP_EOL;
-			if (!file_put_contents($filename, $unmatchedRow, FILE_APPEND)) {
-				Billrun_Factory::log('Failed writing row to file ' . print_r($row, true), Zend_Log::ALERT);
-			}
-			if (!file_put_contents($filename, $unmatchedRow, FILE_APPEND)) {
+			if (!file_put_contents($filePath, $unmatchedRow, FILE_APPEND)) {
 				Billrun_Factory::log('Failed writing row to file ' . print_r($row, true), Zend_Log::ALERT);
 			}
 		}
