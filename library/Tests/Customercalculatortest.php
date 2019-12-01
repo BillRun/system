@@ -26,23 +26,23 @@ class Tests_CustomerCalculator extends UnitTestCase {
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [
-			array('row' => array('stamp' => '1', 'uf'=>['sid'=>2,'ndcsn'=>'123','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
+		array('row' => array('stamp' => '1', 'uf'=>['sid'=>2,'ndcsn'=>'123','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>2,'plan'=>"PLAN_A",'firstname'=>'s','lastname'=>'s','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651435539882454']])),
-			array('row' => array('stamp' => '2', 'uf'=>['sid'=>3,'ndcsn'=>'972789','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
+		array('row' => array('stamp' => '2', 'uf'=>['sid'=>3,'ndcsn'=>'972789','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>3,'plan'=>"PLAN_A" ,'services'=>['SERVICE_A','SERVICE_B'],
-				'firstname'=>'y','lastname'=>'y','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651436461646613'],['name'=>'SERVICE_B','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651436461646736']]
+				'firstname'=>'y','lastname'=>'y','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T00:00:00",'service_id'=>'1651436461646613'],['name'=>'SERVICE_B','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T00:00:00",'service_id'=>'1651436461646736']]
 				)),
 		array('row' => array('stamp' => '3', 'uf'=>['sid'=>4,'ndcsn'=>'456','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>4,'plan'=>"PLAN_B" ,'services'=>['SERVICE_A','SERVICE_B'],
-				'firstname'=>'r','lastname'=>'r','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651436572170505'],['name'=>'SERVICE_B','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04"]]
+				'firstname'=>'r','lastname'=>'r','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T00:00:00",'service_id'=>'1651436572170505'],['name'=>'SERVICE_B','from'=>"2018-11-28T00:00:00","to"=>"2168-11-28T09:17:24"]]
 				)),
 		array('row' => array('stamp' => '4', 'uf'=>['sid'=>5,'ndcsn'=>'111','date'=>'2019-11-27 10:39:00'],'urt'=>'2019-11-27 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>5,'plan'=>"PLAN_A" ,'services'=>['SERVICE_A'],
-				'firstname'=>'e','lastname'=>'e','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651436618552622']]
+				'firstname'=>'e','lastname'=>'e','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:17:53",'service_id'=>'1651436618552622']]
 				)),
 		array('row' => array('stamp' => '5', 'uf'=>['sid'=>6,'ndcsn'=>'555','date'=>'2019-11-10 10:39:00'],'urt'=>'2019-11-10 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>6,'plan'=>"PLAN_A" ,'services'=>['SERVICE_A'],
-				'firstname'=>'k','lastname'=>'k','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:00:04",'service_id'=>'1651436728966341']]
+				'firstname'=>'k','lastname'=>'k','services_data'=>[['name'=>'SERVICE_A','from'=>"2018-11-28T00:00:00","to"=>"2119-11-28T09:19:44Z",'service_id'=>'1651436728966341']]
 				)),
 		array('row' => array('stamp' => '6', 'uf'=>['sid'=>7,'ndcsn'=>'123456','date'=>'2019-11-10 10:39:00'],'urt'=>'2019-11-10 10:39:00',"usaget" =>"call","type" => "a","source"=>"a"),
 			'expected' => array('aid'=>1,'sid'=>7,'plan'=>"PLAN_A" ,'firstname'=>'j','lastname'=>'j')),
@@ -60,6 +60,7 @@ class Tests_CustomerCalculator extends UnitTestCase {
 		$this->setColletions();
 		$this->loadDbConfig();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customer', 'autoload' => false));
+		
 	}
 
 	public function loadDbConfig() {
@@ -102,8 +103,8 @@ class Tests_CustomerCalculator extends UnitTestCase {
 		$this->message.="<br>customer aid <b>{$testFields['aid']}</b> identification<br>";
 		if(isset($row['expected']['notExists'])){
 				if(isset($returnRow['aid']) || isset($returnRow['sid'])){
-					return false;
 					$this->message.= " find no existng subscriber" .$this->fail;		
+					return false;
 				} else {
 					$this->message.= " Dont  find no existng subscriber" .$this->pass;	
 					return true;
@@ -147,14 +148,15 @@ class Tests_CustomerCalculator extends UnitTestCase {
 			
 		}
 		
+	
+		
+		if($services_data){
 		$sort = function ($a,$b){
 			if ($a==$b) return 0;
 			return ($a<$b)?-1:1;
 		};
-		@usort($services_data,$sort);
+		usort($services_data,$sort);
 		usort($returnRow['services_data'],$sort);
-		
-		if($services_data){
 			foreach ($services_data as $service_data){
 				$checkService = current(array_filter($returnRow['services_data'], function(array $ser) use ($service_data) {
 					if (isset($service_data['service_id'])){
@@ -163,8 +165,6 @@ class Tests_CustomerCalculator extends UnitTestCase {
 					return $ser['name'] === $service_data['name'];
 				}));
 				if($checkService){
-					 $checkService['to'] = $checkService['to']->toDateTime();
-					 $checkService['from'] = $checkService['from']->toDateTime();
 					foreach ($service_data as $key => $data){
 					if($key != 'from' && $key != 'to'){
 						if($service_data[$key]!==$checkService[$key]){
@@ -174,17 +174,16 @@ class Tests_CustomerCalculator extends UnitTestCase {
 					} else {
 						$date = new DateTime($data);
 					    $data= $date->getTimestamp();
-						@$checkService['to'] = new DateTime( $checkService['to']->date);
-					    $checkService['to'] = $date->getTimestamp();
-						@$checkService['from'] = new DateTime( $checkService['from']->date);
-					    $checkService['from'] = $date->getTimestamp();
-						if($data !=  $checkService[$key]){
+						if($data !=  $checkService[$key]->sec){
 							$pass = false;
-							$this->message.="services_data wrong for {$service_data['name']} ,expected $key => $data , result $key => $checkService[$key] ".$this->fail;
+							$this->message.="services_data wrong for {$service_data['name']} ,expected $key => ";
+							$this->message.= date('m/d/Y H:i:s', $data) ;
+							$this->message.= ", result $key => ";
+							$this->message.= date('m/d/Y H:i:s', $checkService[$key]->sec) ;
+							$this->message.= $this->fail;
 						}
 					}
-				}
-				
+					}
 				} else {
 					$pass = false;
 					$this->message.="services_data not fount for {$service_data['name']} ".$this->fail;

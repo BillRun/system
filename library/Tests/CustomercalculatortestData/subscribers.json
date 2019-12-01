@@ -58,14 +58,14 @@
 		{
 			"name" : "SERVICE_A",
 			"from" : "time*2018-11-28T00:00:00Z",
-			"to" : "time*2119-11-28T09:15:33Z",
+			"to" : "time*2119-11-28T00:00:00Z",
 			"service_id" :"1651436461646613",
-			"creation_time" : "time*2019-11-28T09:15:38Z"
+			"creation_time" : "time*2019-11-28T00:00:00Z"
 		},
 		{
 			"name" : "SERVICE_B",
 			"from" : "time*2018-11-28T00:00:00Z",
-			"to" : "time*2119-11-28T09:15:34Z",
+			"to" : "time*2119-11-28T00:00:00Z",
 			"service_id" :"1651436461646736",
 			"creation_time" : "time*2019-11-28T09:15:38Z"
 		}
@@ -94,7 +94,7 @@
 		{
 			"name" : "SERVICE_A",
 			"from" : "time*2018-11-28T00:00:00Z",
-			"to" : "time*2119-11-28T09:17:20Z",
+			"to" : "time*2119-11-28T00:00:00Z",
 			"service_id" :"1651436572170505",
 			"creation_time" : "time*2019-11-28T09:17:24.055Z"
 		}
