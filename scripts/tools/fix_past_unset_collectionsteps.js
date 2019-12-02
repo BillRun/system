@@ -1,6 +1,6 @@
 
 var accounts = db.collection_steps.aggregate({$match: {"returned_value.success": {$ne: true}, trigger_date: {$lt: ISODate()}}}, {$group: {_id: "$extra_params.aid", count: {$sum: 1}}}, {$match: {count: {$gte: 1}}});
-var accounts_per_day = 1000000; //'UNLIMITED';
+var accounts_per_day = 1500; //'UNLIMITED';
 var multiplier = 1;
 var acc_arr = [];
 var acc_array_per_day = [];
@@ -100,7 +100,7 @@ for (var cur_day = 0; cur_day < num_of_days; cur_day++) {
 }
 
 function operateOnacc(account, day_delay) {
-
+    
     print("setting steps for account: " + account);
 
     var currnet_acc = db.collection_steps.find({"returned_value.success": {$ne: true}, "extra_params.aid": account}).sort({step_code: 1});
@@ -109,7 +109,7 @@ function operateOnacc(account, day_delay) {
     var flag = false;
 
     currnet_acc.forEach(function (step) {
-
+        
         newDate = ISODate();
         var prevDate = new Date(newDate.getTime() + day_delay * 24 * 60 * 60000);
         var nextSkip;
@@ -117,7 +117,7 @@ function operateOnacc(account, day_delay) {
         var id = step["_id"];
         if (first === true) {
             nextSkip = 0;
-            prevDate = new Date(newDate.getTime());
+            var prevDate = new Date(newDate.getTime() + day_delay * 24 * 60 * 60000);
             first = false;
             pivot = 0;
             if (stepcode !== "HTTP step 1") {
