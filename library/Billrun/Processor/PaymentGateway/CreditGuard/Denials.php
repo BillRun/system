@@ -58,6 +58,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				$paymentSaved = $payment->save();
 				if (!$paymentSaved) {
 					Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
+				} else {
+					$payment->updatePastRejectionsOnProcessingFiles();
 				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
@@ -92,6 +94,9 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	}
 	
 	protected function afterUpdateData() {
+		if (empty($this->unmatchedRows)) {
+			return;
+		}
 		$fileName = 'Denials/Unmacthed_Denials_' . time();
 		$folderName = 'Denials';
 		$filePath = Billrun_Util::getBillRunSharedFolderPath($fileName);
