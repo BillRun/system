@@ -99,6 +99,8 @@ class ReportAction extends ApiAction {
 		'endPort' =>  1,
 	];
 
+	protected $hintMapping = [];
+
 	protected $ipMapFieldsToReturn = ['datetime'=>1,'internal_ip'=>1,'external_ip'=>1,'start_port'=>1,'end_port'=>1,'change_type'=>1,'network'=>1 ];
 
 	/**
@@ -126,6 +128,7 @@ class ReportAction extends ApiAction {
  		$this->fieldMapping = Billrun_Factory::config()->getConfigValue('police_report.field_mapping',$this->fieldMapping);
  		$this->fieldReverseMapping = Billrun_Factory::config()->getConfigValue('police_report.field_reverse_mapping',$this->fieldReverseMapping);
  		$this->ipMapppingTimeDelay = Billrun_Factory::config()->getConfigValue('police_report.ipmapping_time_delay',3600);
+ 		$this->hintMapping = Billrun_Factory::config()->getConfigValue('police_report.hint_mapping',[]);
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -187,9 +190,11 @@ class ReportAction extends ApiAction {
 		$input = $params['input'];
 		$query = $this->getMongoQueryFromInput($input);
 		if(!empty($input['endDate']) && !empty($input['startDate'])) {
-			$query['$and'][] = ['charging_end_time' => ['$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
-														'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))]];
-			$query['$and'][] = ['urt' => $query['urt']];
+			$query['$and'][] = ['$or' => [
+				['charging_end_time' => [	'$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
+											'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))] ],
+				['urt' => $query['urt']]
+			]];
 			unset($query['urt']);
 		}
 
@@ -247,6 +252,11 @@ class ReportAction extends ApiAction {
 		}
 		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
+
+		$hint = $this->getHintForQuery($query, $this->hintMapping);
+		if(!empty($hint)) {
+			$cursor->hint($hint);
+		}
 
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
@@ -357,4 +367,14 @@ class ReportAction extends ApiAction {
 		return;
 	}
 
+	protected function getHintForQuery($query, $hintMapping) {
+
+		foreach($hintMapping as $hintMap ) {
+			if( empty(array_diff($hintMap['field_requirements'],array_keys($query))) ) {
+				return $hintMap['hint'];
+			}
+		}
+
+		return FALSE;
+	}
 }
