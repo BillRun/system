@@ -29,6 +29,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
+                $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
                 $this->informationArray['type'] = 'custom_payment_gateway';
                 $this->informationArray['fileType'] = 'received';
                 $this->informationArray['transactions']['confirmed'] = 0;
