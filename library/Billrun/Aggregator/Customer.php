@@ -740,6 +740,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save configurable data
+				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();

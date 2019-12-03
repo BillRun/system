@@ -176,7 +176,16 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	//==================================== Programatic extenstions logic (Unsupported by mongo) =======================
 	
 	protected function _callback($data, $expression, $pastValue = FALSE) {
-		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],array($data,$expression['arguments'],$pastValue));
+		$arr = [];
+		foreach ($expression['arguments'] as $arg) {
+			if (in_array($arg, array_keys($data))) {
+				$arr[] = $data[$arg];
+			}
+		}
+		foreach ($expression['extra_params'] as $key => $value) {
+			$arr[] = $value;
+		}
+		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],$arr);
 	}
 	
 	protected function _aggregate($data, $expression, $pastValue) {

@@ -1106,4 +1106,56 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
+	
+	public static function getInvoicesInRange($aid, $startTime, $endTime, $type = 'regular') {
+		if(!in_array($type, ['immediate', 'regular'])) {
+			Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
+			return false;
+		}
+		if($type === 'immediate'){
+			$convertedStartTime = date('YmdHis', $startTime);
+			$convertedEndTime = date('YmdHis', $endTime);
+			$query = array(
+					'aid' => $aid,
+		'invoice_type' => array('$eq' => $type),
+					'billrun_key' => array('$gte' => $convertedStartTime, '$lte' => $convertedEndTime)
+	);
+		}else {
+			$convertedStartTime = date('Ym', $startTime->sec);
+			$convertedEndTime = date('Ym', $endTime->sec);
+			$query = array(
+					'aid' => $aid,
+		'invoice_type' => array('$in' => array(null, $type)),
+					'billrun_key' => array('$gte' => $convertedStartTime, '$lte' => $convertedEndTime)
+	);
+		}
+
+		$sort = array(
+		'billrun_key' => -1,
+	);
+		$fields = array(
+		'billrun_key' => 1,
+			);  
+		$bills = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
+		return iterator_to_array($bills, true);
+	}
+	
+	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type, $method = false, $remaining = false) {
+		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
+		$query['type'] = $type;
+		$query['aid'] = $aid;
+		if ($remaining) {
+			$query['due_date'] = ['$gt' => new MongoDate($billrun->end())];
+		} else {
+			$query['$and'] = [
+				['due_date' => ['$gt' => new MongoDate($billrun->start())]],
+				['due_date' => ['$lt' => new MongoDate($billrun->end())]]
+			];
+		}
+		if ($method) {
+			$query['method'] = $method;
+		}
+		return self::getBills($query);
+	}
+
 }

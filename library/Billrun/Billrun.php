@@ -1065,6 +1065,12 @@ class Billrun_Billrun {
 	public function getInvoiceID() {
 		return @$this->data['invoice_id'];
 	}
+	
+	public static function getLastBillrun($aid, $currentBillrunKey) {
+		$query['aid'] = $aid;
+		$query['billrun_key'] = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
+		return Billrun_Factory::db()->getCollection('billrun')->query($query)->cursor()->current();
+	}
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
