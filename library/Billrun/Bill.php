@@ -1119,22 +1119,19 @@ abstract class Billrun_Bill {
                 Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
                 return false;
             }
+            $query = array(
+                        'aid' => $aid
+		);
             if($type === 'immediate'){
                 $convertedStartTime = date('YmdHis', $startTime);
                 $convertedEndTime = date('YmdHis', $endTime);
-                $query = array(
-                        'aid' => $aid,
-			'invoice_type' => array('$eq' => $type),
-                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
-		);
+                $query['invoice_type'] = array('$eq' => $type);
+                $query['billrun_key'] = array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime);
             }else {
-                $convertedStartTime = date('Ym', $startTime);
-                $convertedEndTime = date('Ym', $endTime);
-                $query = array(
-                        'aid' => $aid,
-			'invoice_type' => array('$in' => array(null, $type)),
-                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
-		);
+                $convertedStartTime = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+                $convertedEndTime = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime);
+                $query['invoice_type'] = array('$in' => array(null, $type));
+                $query['billrun_key'] = array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime);
             }
 
             $sort = array(
