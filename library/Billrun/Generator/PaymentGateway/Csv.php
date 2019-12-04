@@ -22,6 +22,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $file_path;
         protected $local_dir;
         protected $encoding = 'utf-8';
+        protected $transactionsCounter = 0;
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
@@ -32,7 +33,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$this->delimiter = '';
 		}
 		if (!$this->validateOptions($options)) {
-			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
+                        $message = "Missing options when generating payment gateways csv file for file type " . $options['file_type'];
+                        $this->logFile->updateLogFileField('errors', $message);
+			throw new Exception($message);
 		}
                 if (isset($options['local_dir'])) {
                     $this->local_dir = $options['local_dir'];
@@ -47,18 +50,24 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
-                        Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
+                        $message = "File type isn't fixed/separator. No generate was made.";
+                        Billrun_Factory::log($message, Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', $message);
 			return false;
 		}
 		if (!isset($options['local_dir'])) {
-                        Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
+                        $message = "File's local_dir is undefined. No generate was made.";
+                        Billrun_Factory::log($message, Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', $message);
 			return false;
 		}
 		if ($this->fixedWidth) {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-						Billrun_Factory::log("Missing padding length definitions for " . $options['file_type'], Zend_Log::DEBUG);
+                                                $message = "Missing padding length definitions for " . $options['file_type'];
+						Billrun_Factory::log($message, Zend_Log::DEBUG);
+                                                $this->logFile->updateLogFileField('errors', $message);
 						return false;
 					}
 				}
@@ -136,6 +145,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents = '';
 				$counter = 0;
 			}
+                        $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;
@@ -205,7 +215,11 @@ class Billrun_Generator_PaymentGateway_Csv {
             $this->headers = $header;
         }
     
-        public function settrailerRows($trailer) {
+        public function setTrailerRows($trailer) {
             $this->trailers = $trailer;
+        }
+        
+        public function getTransactionsCounter (){
+            return $this->transactionsCounter;
         }
 }
