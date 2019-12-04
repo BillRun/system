@@ -406,7 +406,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-										'plan' => $subscriber['plan'],
+										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 										'start'=> max($tmpService['from']->sec, $activationDate),
 										'end'=> min($tmpService['to']->sec, $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
@@ -471,6 +471,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$subend = 0;
 		foreach ($current as $subscriber) {
 			if(!$this->hasPlans($subscriber)) {
+				if ($subscriber['sid'] == 0) {
+					$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
+					$subend = max($subscriber['sto'], $subend);
+					$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
+				}
 				continue;
 			}
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
@@ -511,9 +516,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function handleSubscriberDates($subscriber, $endTime) {
-		$to = $subscriber['to'];
-		$from = $subscriber['from'];
-
+		if ($subscriber['sid'] == 0) {
+			$to = $subscriber['to']->sec;
+			$from = $subscriber['from']->sec;
+		} else {
+			$to = $subscriber['to'];
+			$from = $subscriber['from'];
+		}
 		if($to > $endTime) {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);
