@@ -265,13 +265,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$subscriber->setBillrunKey($billrun_key);
 					$offers = $this->getAccountPlan($subscriber);
 				}
-				if (is_null($offers)) {
+				if (is_null($offers) || strtotime($lastOffer['end_date']) < Billrun_Util::getStartTime($billrun_key)) {
 					Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
 					$subscriber_status = "closed";
 					$deactivated_subscribers[] = array("sid" => $sid);
 				} 
 				
-				if (!empty($offers)) {
+				if (!empty($offers) && strtotime($lastOffer['end_date']) >= Billrun_Util::getStartTime($billrun_key)) {
 					$subscriber_status = "open";
 					$subscriber->setBillrunKey($billrun_key);
 					foreach ($offers as $offer) {
