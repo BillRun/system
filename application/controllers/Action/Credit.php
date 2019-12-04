@@ -182,9 +182,6 @@ class CreditAction extends ApiAction {
 	
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if(!empty($row['aid']) && $row['sid'] == '0') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
-            $skipArray[] = 'customer';
-		}
 		return $skipArray;
 	}
 	
