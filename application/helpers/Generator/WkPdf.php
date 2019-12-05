@@ -220,6 +220,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
                     if($date instanceof MongoDate){
                         $date = strval($date);
+                        if (isset($paramObj['offset'])){
+                            $date = $this->getDateWithOffset($paramObj['offset'], $date);
+                        }
                         return date($dateFormat, $date);
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Wanted field isn't a date field. 'now' was chosen instead.", Zend_Log::ERR);
@@ -236,6 +239,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 if((isset($paramObj['type']) && $paramObj['type'] === "date") && !(isset($paramObj['linked_entity']))){
                     if($paramObj['value'] === "now"){
                         $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                        if (isset($paramObj['offset'])){
+                            $date = $this->getDateWithOffset($paramObj['offset'], "now");
+                        }
                         return date($dateFormat, time());
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Date's value isn't 'now'. 'now' was chsen.", Zend_Log::ERR);
@@ -250,6 +256,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }
             }
+        }
+        
+        public function getDateWithOffset($offset, $date){
+            try{
+                $shiftedDate = strtotime($offset . " " . date(Y-m-d, $date));
+                $date = $shiftedDate;
+            }catch(Exception $ex){
+                Billrun_Factory::log($offset . " - wrong offset syntex. Date was taken without offset.", Zend_Log::ERR);  
+            }
+            return $date;
         }
         
 	/*
