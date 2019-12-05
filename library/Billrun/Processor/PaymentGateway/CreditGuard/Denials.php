@@ -36,8 +36,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		}
 		$row['aid'] = !is_null($payment) ? $payment->getAid() : $addonData;
 		if (!is_null($payment)) {
-			if (abs($row['amount']) > $payment->getAmount()) {
-				Billrun_Factory::log("Amount sent is bigger than the amount of the payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
+			if (abs($row['amount']) != $payment->getAmount()) {
+				Billrun_Factory::log("Amount isn't equal to payment for payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
 				return;
 			}
 			if ($payment->isAmountDeniable(abs($row['amount']))) {

@@ -80,6 +80,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
+				if ($this->data['due'] >= 0) {
+					$this->data['left_to_pay'] = 0; 
+				} else {
+					$this->data['left'] = 0;
+				}
 			}
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
@@ -199,7 +204,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getCancellationPayment() {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['due'] = $rawData['due'] * -1;
@@ -211,17 +216,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return 'Billrun_Bill_Payment_' . str_replace(' ', '', ucwords(str_replace('_', ' ', $paymentMethod)));
 	}
 
-	public function getPaymentMethod() {
-		return $this->method;
-	}
-
 	/**
 	 * 
 	 * @param array $rejection
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getRejectionPayment($response) {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
