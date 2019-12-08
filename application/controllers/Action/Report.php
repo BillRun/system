@@ -376,7 +376,7 @@ class ReportAction extends ApiAction {
 
 		foreach($hintMapping as $hintMap ) {
 			if( empty(array_diff($hintMap['field_requirements'],array_keys($input))) ) {
-				return $hintMap['hint'];
+				return Billrun_Util::verify_array($hintMap['hint'],'int');
 			}
 		}
 
