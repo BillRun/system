@@ -256,9 +256,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			if (isset($data['calling_number'])) {
 				$data['calling_number'] = Billrun_Util::msisdn($data['calling_number']);
 			}
-			if(isset($data['calling_subs_ci']) ||isset($data['called_subs_ci']) ) {
+			if(isset($this->lastFileHeader['format_version'], $this->nsnConfig['version_specific_fields'])) {
+				foreach($this->nsnConfig['version_specific_fields'] as $sf => $vers ) {
+					if(	is_array($vers) &&
+						!in_array($this->lastFileHeader['format_version'], $vers)) {
+
+							unset($data[$sf]);
+					}
+				}
+			}
+
+			if(isset($data['calling_subs_ci']) || isset($data['called_subs_ci']) ) {
 				foreach( ['calling_subs_ci'=> 1,'called_subs_ci'=> 1,'served_subs_ci_ext' => 0x10000] as $f => $mul) {
-					if(isset($data[$f])) {
+					if( isset($data[$f]) ) {
 						@$data['merged_subs_ci'] += $data[$f] * $mul;
 					}
 				}
@@ -481,7 +491,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$bytes = null;
 
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);
-		$header = $processor->getParser()->parseHeader($headerData);
+		$this->lastFileHeader = $header = $processor->getParser()->parseHeader($headerData);
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH);
 		}
