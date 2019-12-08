@@ -198,6 +198,11 @@ class ReportAction extends ApiAction {
 
 		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
 
+		$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
+		if(!empty($hint)) {
+			$cursor->hint($hint);
+		}
+
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
 		}
@@ -251,7 +256,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
-		$hint = $this->getHintForQuery($query, $this->hintMapping);
+		$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
 		if(!empty($hint)) {
 			$cursor->hint($hint);
 		}
@@ -365,10 +370,10 @@ class ReportAction extends ApiAction {
 		return;
 	}
 
-	protected function getHintForQuery($query, $hintMapping) {
+	protected function getHintForInput($input, $hintMapping) {
 
 		foreach($hintMapping as $hintMap ) {
-			if( empty(array_diff($hintMap['field_requirements'],array_keys($query))) ) {
+			if( empty(array_diff($hintMap['field_requirements'],array_keys($input))) ) {
 				return $hintMap['hint'];
 			}
 		}
