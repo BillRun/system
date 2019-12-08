@@ -1137,7 +1137,7 @@ abstract class Billrun_Bill {
             return iterator_to_array($bills, true);
         }
 	
-	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type, $method = false, $remaining = false) {
+	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type = 'rec', $method = false, $remaining = false) {
 		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
 		$query['type'] = $type;
 		$query['aid'] = $aid;
