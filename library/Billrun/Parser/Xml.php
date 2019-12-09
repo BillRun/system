@@ -68,7 +68,17 @@ class Billrun_Parser_Xml {
         if ($this->input_array['trailer'] !== null) {
             $this->hasFooter = true;
         }
-        $repeatedTags = $this->preXmlBuilding();
+        try {
+            $repeatedTags = $this->preXmlBuilding();
+            foreach($repeatedTags as $segment => $tags){
+                if(strpos($tags['repeatedTag'], '.') !== false){
+                    $repeatedTags[$segment]['repeatedTag'] = explode('.', $tags['repeatedTag']);
+                }
+            }
+        } catch (Exception $ex) {
+            Billrun_Factory::log('Billrun_Parser_Xml: ' . $ex->getMessage(), Zend_Log::ALERT);
+            return;
+        }
         $commonPathAsArray = $this->pathAsArray($this->commonPath);
         if ($this->name_space_prefix !== "") {
             $GivenXml = simplexml_load_file($filename, 'SimpleXMLElement', 0, $this->name_space_prefix, TRUE);
@@ -76,7 +86,8 @@ class Billrun_Parser_Xml {
             $GivenXml = simplexml_load_file($filename);
         }
         if ($GivenXml === false) {
-            throw new Exception('Billrun_Parser_PaymentGateway_Xml: Couldn\'t open ' . $filename . ' file. No process was made.');
+            Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
+            return;
         }
 
         $GivenXml->registerXPathNamespace($this->name_space_prefix, $this->name_space);
@@ -90,25 +101,92 @@ class Billrun_Parser_Xml {
         for($i = 0; $i < count($commonPathAsArray); $i++){
             $parentNode = $this->getChildren($parentNode);
         }
+        $dataWasProcessed = $headerWasProcessed = $trailerWasProcessed = 0;
         foreach ($parentNode as $currentChild => $data) {
             if (isset($repeatedTags['header']['repeatedTag'])) {
-                if ($currentChild === $repeatedTags['header']['repeatedTag']) {
+                if (is_array($repeatedTags['header']['repeatedTag'])){
+                    if($currentChild === $repeatedTags['header']['repeatedTag'][0]){
+                        if(!$headerWasProcessed){
+                            $this->parseNestedLine('header', $repeatedTags, $currentChild, $data);
+                            $headerWasProcessed = 1;
+                        }
+                    }
+                }
+                else if ($currentChild === $repeatedTags['header']['repeatedTag']) {
                     $this->parseLine('header', $currentChild, $data);
                 }
             }
             if (isset($repeatedTags['data']['repeatedTag'])) {
-                if ($currentChild === $repeatedTags['data']['repeatedTag']) {
+                if (is_array($repeatedTags['data']['repeatedTag'])){
+                    if($currentChild === $repeatedTags['data']['repeatedTag'][0]){
+                        if(!$dataWasProcessed){
+                            $this->parseNestedLine('data', $repeatedTags, $currentChild, $data);
+                            $dataWasProcessed = 1;
+                        }
+                    }
+                }
+                else if ($currentChild === $repeatedTags['data']['repeatedTag']) {
                     $this->parseLine('data', $currentChild, $data);
                 }
             }
             if (isset($repeatedTags['trailer']['repeatedTag'])) {
-                if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
+                if (is_array($repeatedTags['trailer']['repeatedTag'])){
+                    if($currentChild === $repeatedTags['trailer']['repeatedTag'][0]){
+                        if(!$trailerWasProcessed){
+                            $this->parseNestedLine('trailer', $repeatedTags, $currentChild, $data);
+                            $trailerWasProcessed = 1;
+                        }
+                    }
+                }
+                else if ($currentChild === $repeatedTags['trailer']['repeatedTag']) {
                     $this->parseLine('trailer', $currentChild, $data);
                 }
             }
         }
     }
-
+    
+     protected function parseNestedLine($segment, $repeatedTags, $currentChild ,$data){
+        $repeatedString = implode('.', $repeatedTags[$segment]['repeatedTag']);
+        $data = $this->getSegmentFixedTag($segment, $repeatedTags, $currentChild ,$data);
+        $numberOfChildren = count($this->getChildren($data));
+        $counter = 0;
+        foreach($data as $child => $childData){
+            ${'Counter'.$child} = 0;
+        }
+        foreach($data as $child => $childData){
+            $counter++;
+            if ($counter <= $numberOfChildren){
+                if (in_array($child, $repeatedTags[$segment]['repeatedTag'])){
+                    $this->{$segment.'RowsNum'}++;
+                    for($i = 0; $i < count($this->input_array[$segment]); $i++){
+                        $SubPath = trim(str_replace(($this->commonPath . '.' . $repeatedString), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
+                        if($this->name_space_prefix === ""){
+                            $SubPath = '//' . str_replace(".", "/" , $SubPath);
+                        }else{
+                            $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+                        }
+                        $ReturndValue = $data->xpath($SubPath);
+                        if ($ReturndValue) {
+                            $Value = strval($ReturndValue[$this->{$segment.'RowsNum'} - 1]);
+                        } else {
+                            $Value = '';
+                        }
+                        $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;    
+                    }
+                }
+            }
+            ${'Counter'.$child}++;
+        }
+    }
+    
+    protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild ,$data){
+        foreach($this->getChildren($data) as $child => $childData){
+            if ($child === $repeatedTags[$segment]['repeatedTag'][count($repeatedTags[$segment]['repeatedTag']) - 1]){
+                return $data;
+            }
+        }
+    }
+    
     protected function parseLine($segment, $currentChild, $data) {
         $this->{$segment.'RowsNum'}++;
         for ($i = 0; $i < count($this->input_array[$segment]); $i++) {
@@ -192,7 +270,7 @@ class Billrun_Parser_Xml {
                     if ($segment === "data") {
                         throw new Exception("No pathes in " . $segment . " segment. No parse was made.");
                     } else {
-                        Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No pathes in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
+                        Billrun_Factory::log('Billrun_Parser_Xml: No pathes in ' . $segment . ' segment.' . $ex, Zend_Log::WARN);
                     }
                 }
             }

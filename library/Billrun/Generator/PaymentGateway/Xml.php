@@ -28,6 +28,7 @@ class Billrun_Generator_PaymentGateway_Xml {
     protected $attributes;
     protected $repeatedTags;
     protected $encoding = 'utf-8';
+    protected $transactionsCounter = 0;
 
     
     public function __construct($options) {
@@ -63,7 +64,9 @@ class Billrun_Generator_PaymentGateway_Xml {
                         if ((in_array('attributes', $curentPathes)) && (isset($structuresArray[$segment][$a]['attributes']))) {
                             for ($b = 0; $b < count($structuresArray[$segment][$a]['attributes']); $b++) {
                                 if(empty($structuresArray[$segment][$a]['attributes'][$b]['key']) || empty($structuresArray[$segment][$a]['attributes'][$b]['value'])){
-                                    Billrun_Factory::log("One of the attributes's key/value is missing. No generate was made.", Zend_Log::ALERT);
+                                    $message = "One of the attributes's key/value is missing. No generate was made.";
+                                    Billrun_Factory::log($message, Zend_Log::ALERT);
+                                    $this->logFile->updateLogFileField('errors', $message);
                                     return false;
                                 }
                             }
@@ -129,19 +132,25 @@ class Billrun_Generator_PaymentGateway_Xml {
                     }
                 } else {
                     if ($segment === "data_structure") {
-                        Billrun_Factory::log("No paths in data segment. No generate was made.", Zend_Log::ALERT);
+                        $message = "No paths in data segment. No generate was made.";
+                        Billrun_Factory::log($message, Zend_Log::ALERT);
+                        $this->logFile->updateLogFileField('errors', $message);
                         return false;
                     }
                 }
             }
         }
         if($commonPath == ""){
-            Billrun_Factory::log("Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.", Zend_Log::ALERT);
+            $message = "Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.";
+            Billrun_Factory::log($message, Zend_Log::ALERT);
+            $this->logFile->updateLogFileField('errors', $message);
             return false;
         }
         foreach($structuresArray as $segment => $data){
             if((count($structuresArray[$segment]) !== 0) && ((!isset($returnedValue[$segment]) || (count($returnedValue[$segment]) == 0) || empty($returnedValue[$segment]['repeatedTag'])))){
-                Billrun_Factory::log($segment . " segment has paths, without repeated tag. No generate was made.", Zend_Log::ALERT);
+                $message = $segment . " segment has paths, without repeated tag. No generate was made.";
+                Billrun_Factory::log($message, Zend_Log::ALERT);
+                $this->logFile->updateLogFileField('errors', $message);
                 return false;
             }
         }
@@ -169,23 +178,26 @@ class Billrun_Generator_PaymentGateway_Xml {
             foreach($indexes as $nodeIndex => $values){
                 for ($a = 0; $a < count($values); $a++) {
                     if ($a == 0) {
-                        $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
-                        $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
+                            $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
+                            $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
                         $pathAndValueAsArr = array();
                         Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                    
+
                         $nodeArray = $pathAndValueAsArr;
                         continue 1;
                     }
 
-                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
-                    $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
+                        $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
+                        $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
                     $pathAndValueAsArr = array();
                     Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
                     $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
 
                 }
                 $this->newNode($nodeArray, $document, $doc);
+                if($segment === "data"){
+                    $this->transactionsCounter++;
+                }
             }
         }
         $root = $doc->createElement($this->name_space . ':' . $firstTag);
@@ -259,7 +271,7 @@ class Billrun_Generator_PaymentGateway_Xml {
             }
         }
     }
-    
+
     /**
      * The function creates new xml node, according to the array that is given.
      * @param array $arr - xml node as array.
@@ -282,7 +294,7 @@ class Billrun_Generator_PaymentGateway_Xml {
             }
         }
     }
-    
+
     /**
      * Preparation function:
      * Function that pulls out all the information from the input data, like attributes,
@@ -365,7 +377,9 @@ class Billrun_Generator_PaymentGateway_Xml {
                         $returnedValue[$segment] = ['repeatedTag' => $repeatedPrefix];
                     }
                 } else {
-                        Billrun_Factory::log('Billrun_Generator_PaymentGateway_Xml: No paths in ' . $segment . ' segment.', Zend_Log::WARN);
+                        $message = 'Billrun_Generator_PaymentGateway_Xml: No paths in ' . $segment . ' segment.';
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+                        $this->logFile->updateLogFileField('warnings', $message);
                 }
             }
         }
@@ -389,7 +403,11 @@ class Billrun_Generator_PaymentGateway_Xml {
         $this->input_array['headers'] = $header;
     }
     
-    public function settrailerRows($trailer) {
+    public function setTrailerRows($trailer) {
         $this->input_array['trailers'] = $trailer;
+    }
+    
+    public function getTransactionsCounter (){
+        return $this->transactionsCounter;
     }
 }

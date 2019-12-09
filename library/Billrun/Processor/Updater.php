@@ -7,7 +7,7 @@
  */
 
 /**
- * This defines an empty processor that pass the processing action to extarnal plugin.
+ * This defines an empty processor that pass the processing action to external plugin.
  */
 abstract class Billrun_Processor_Updater extends Billrun_Processor {
 

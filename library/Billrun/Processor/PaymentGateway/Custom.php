@@ -19,6 +19,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $headerRows;
 	protected $trailerRows;
 	protected $correlatedValue;
+        protected $informationArray = [];
+        
+        
 	
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
@@ -26,50 +29,61 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
+                $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
+                $this->informationArray['type'] = 'custom_payment_gateway';
+                $this->informationArray['fileType'] = 'received';
+                $this->informationArray['transactions']['confirmed'] = 0;
+                $this->informationArray['transactions']['rejected'] = 0;
+                $this->informationArray['transactions']['denied'] = 0;
+                $this->informationArray['transactions']['pending'] = 0;
+                $this->informationArray['last_file'] = false;
 	}
 
 /**
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-                $currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-                        return $settingsByType['file_type'] === $this->fileType;
-                }));
-                if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
-                    $this->setParser($currentProcessor['parser']);
-                } else {
-                        throw new Exception("Parser definition missing");
-                }
-                if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
-                        return false;
-                }
-                $headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
-                $dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
-                $parser = $this->getParser();
-                $parser->setHeaderStructure($headerStructure);
-                $parser->setDataStructure($dataStructure);
+		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
+			return $settingsByType['file_type'] === $this->fileType;
+		}));
+		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
+			$this->setParser($currentProcessor['parser']);
+		} else {
+                        $message = "Parser definition missing";
+                        $this->informationArray['errors'][] = $message;
+			throw new Exception($message);
+		}
+		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
+			return false;
+		}
+		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
+		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
+		$parser = $this->getParser();
+		$parser->setHeaderStructure($headerStructure);
+		$parser->setDataStructure($dataStructure);
                 try{
-                    $parser->parse($this->fileHandler);
+		$parser->parse($this->fileHandler);
                 } catch(Exception $ex){
                     Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                     Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
                     return false;
                 } 
-                $this->headerRows = $parser->getHeaderRows();
-                $this->trailerRows = $parser->getTrailerRows();
-                $parsedData = $parser->getDataRows();
-                $rowCount = 0;
+		$this->headerRows = $parser->getHeaderRows();
+		$this->trailerRows = $parser->getTrailerRows();
+		$parsedData = $parser->getDataRows();
+		$rowCount = 0;
 
-                foreach ($parsedData as $line) {
-                        $row = $this->getBillRunLine($line);
-                        if (!$row){
-                            return false;
-                        }
-                        $row['row_number'] = ++$rowCount;
-                        $this->addDataRow($row);
-                }
-                $this->data['header'] = array('header' => TRUE); //TODO
-                $this->data['trailer'] = array('trailer' => TRUE); //TODO
+		foreach ($parsedData as $line) {
+			$row = $this->getBillRunLine($line);
+			if (!$row){
+				return false;
+			}
+			$row['row_number'] = ++$rowCount;
+			$this->addDataRow($row);
+		}
+		$this->data['header'] = array('header' => TRUE); //TODO
+               $this->data['trailer'] = array('trailer' => TRUE); //TODO
+
 		return true;
 	}
 
@@ -96,12 +110,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		}
                 if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
                     $currentFileCount = $this->getCurrentFileCount();
+                    $this->informationArray['file_count'] = $currentFileCount;
                     if (($currentFileCount + 1) > $fileConfCount){
-                        Billrun_Factory::log('Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.' , Zend_Log::ALERT);
+                        $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+                        Billrun_Factory::log($message , Zend_Log::ALERT);
+                        $this->informationArray['errors'] = $message;
                         return False;
+                    }else{
+                        if(($currentFileCount + 1) === $fileConfCount){
+                            $this->informationArray['last_file'] = true;
+                        }
                     }
                 }
 		$this->updatePaymentsByRows($data, $currentProcessor);
+                $this->updateLogFile();
 	}
 
 	protected function getRowDateTime($dateStr) {
@@ -159,6 +181,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
+                                $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
@@ -174,6 +197,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
+                                $this->informationArray['transactions']['rejected']++;
 			}
 		}
 	}
@@ -191,16 +215,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function updatePaymentsByRows($data, $currentProcessor) {
                 $no_txid_counter = 0;
 		foreach ($data['data'] as $row) {
-                    if($row[$this->tranIdentifierField] !== ""){
+                    if(isset($this->tranIdentifierField)){
+                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+                            $no_txid_counter++;
+                            continue;
+                        }
+                    }
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
 			$this->updatePayments($row, $bill, $currentProcessor);
-                    }else{
-                        $no_txid_counter++;
-                    }
 		}
                 if($no_txid_counter > 0){
                     Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
@@ -238,4 +264,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $this->bills->query($query)->cursor();
 	}
 
+        protected function updateLogFile(){
+            $current_stamp = $this->getStamp();
+            $log = Billrun_Factory::db()->logCollection();
+            if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+                $resource = $log->findOne($current_stamp);
+                $entityData = $resource->getRawData();
+                $data = array_merge($entityData, $this->informationArray);
+                $resource->setRawData($data);
+                $log->save($resource);
+            }
+        }
 }
