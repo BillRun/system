@@ -27,8 +27,12 @@ class Models_Action_Get_Bills extends Models_Action_Get {
 	
 	protected function enrichWithBillrunData(&$bills) {
 		$addedFields = array('email_sent');
+		$project = array_fill_keys($addedFields, 1);
 		foreach ($bills as &$bill) {
-			$billrunData = Billrun_Billrun::getBillrunData($bill['aid'], $bill['billrun_key']);
+			if ($bill['type'] !== 'inv') {
+				continue;
+			}
+			$billrunData = Billrun_Billrun::getBillrunData($bill['aid'], $bill['billrun_key'], true, $project);
 			foreach ($addedFields as $addedField) {
 				if (isset($billrunData[$addedField])) {
 					$bill[$addedField] = $billrunData[$addedField];
