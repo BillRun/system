@@ -224,7 +224,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$pdf = $this->paths['pdf'] . $pdf_name;
 
 		$this->accountSpecificViewParams($account);
-
+		
+		Generator_Translations::load();
+		Generator_Translations::setLanguage($account['attributes']['invoice_language']);
+		
 		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
 		chmod($html, $this->filePermissions);
 

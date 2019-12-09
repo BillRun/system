@@ -45,6 +45,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $className = $this->getGeneratorClassName();
                 $generatorOptions = $this->buildGeneratorOptions();
                 $this->fileGenerator = new $className($generatorOptions);
+                $this->initLogFile();
 	}
 
 	public function load() {
@@ -131,7 +132,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$params['amount'] = $paymentParams['amount'];
 			$params['aid'] = $currentPayment->getAid();
 			$params['txid'] = $currentPayment->getId();
-			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
+                        if(isset($account['payment_gateway']['active']['card_token'])){
+                            $params['card_token'] = $account['payment_gateway']['active']['card_token'];
+                        }
 			if (isset($account['payment_gateway']['active']['card_expiration'])) {
 				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
 			}
