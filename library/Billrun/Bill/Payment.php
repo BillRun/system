@@ -109,6 +109,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
 			}
+			if (isset($options['bills_merged'])) {
+				$this->data['bills_merged'] = $options['bills_merged'];
+			}
 
 			if (isset($options['uf'])) {
 				$this->data['uf'] = $options['uf'];
@@ -977,5 +980,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
+	}
+	
+	public static function mergeSpllitedInstallments($params) {
+		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
+		return $mergedInstallmentsObj->merge();
 	}
 }

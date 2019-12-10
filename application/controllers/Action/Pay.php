@@ -41,6 +41,9 @@ class PayAction extends ApiAction {
 					return;
 				case 'cancel_payments': 
 					$this->cancelPayments($request);
+					return;					
+				case 'merge_installments': 
+					$this->mergeInstallments($request);
 					return;
 				default:
 					break;
@@ -287,5 +290,25 @@ class PayAction extends ApiAction {
 			$errors[] = "$missingTxidCounter payments was transferred without txid";
 		}
 		return array('payments' => $payments, 'errors' => $errors);
+	}
+
+	protected function mergeInstallments($request) {
+		$params['split_bill_id'] = !empty($request->get('split_bill_id')) ? intval($request->get('split_bill_id')) : '';
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		if (empty($params['split_bill_id']) || empty($params['aid'])) {
+			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
+		}
+		if (!empty($request->get('due_date'))) {
+			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+		}
+		$params['autoload'] = true;
+		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);
+		
+		$this->getController()->setOutput(array(array(
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? '' : 'failure',
+			'input' => $request->getPost(),
+			'details' => $success ? 'merged installments successfully' : 'failed merging installments',
+		)));
 	}
 }
