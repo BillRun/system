@@ -281,6 +281,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			if (!empty($newRow['arategroups'])) {
 				$this->unifyArateGroups($newRow, $existingRow);
 			}
+			if (!empty($newRow['tax_data'])) {
+				$this->unifyTaxData($newRow, $existingRow);
+			}
 			foreach ($typeFields['$inc'] as $field) {
 				$newVal = Billrun_Util::getIn($newRow, $field, null);
 				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
@@ -352,7 +355,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]) && $this->limitArategroupsSize($line);
+		$matched = $line['source'] != 'unify' && isset($this->unificationFields[$line['type']]) && $this->limitGroupsSize($line);
 
 		if ($matched) {
 			$requirements = $this->unificationFields[$line['type']]['unification_fields']['required'];
@@ -498,13 +501,14 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 	
 	/**
-	 * Limit the size of arategroups array in line
+	 * Limit the size of arategroups and taxes arrays in line
 	 * @param array $line the line to unify.
-	 * return false if arategroups array size is more than 1.
+	 * return false if arategroups or taxes array size is more than 1.
 	 */
-	protected function limitArategroupsSize($line) {
+	protected function limitGroupsSize($line) {
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
-		if (count($arategroups) > 1) {
+		$taxes = isset($line['tax_data']['taxes']) ? $line['tax_data']['taxes'] : array();
+		if (count($arategroups) > 1 || count($taxes) > 1) {
 			return false;
 		}
 		return true;
@@ -520,6 +524,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function calcValueByField($field, $newVal, $existingVal) {
 		switch ($field) {
 			case 'usagev':
+			case 'total_amount':
+			case 'amount':
 				return $newVal + $existingVal;
 			case 'left':
 			case 'usagesb':
@@ -556,6 +562,23 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 
 		return array_merge($options, $configByType);
+	}
+	
+	protected function unifyTaxData($newRow, &$existingRow) {
+		$taxArray = array();
+		$newTaxData = Billrun_Util::getIn($newRow, 'tax_data', null);
+		$existingTaxData = Billrun_Util::getIn($existingRow, 'tax_data', null);
+		$taxData['total_amount'] = $this->calcValueByField('total_amount', $newTaxData['total_amount'], $existingTaxData['total_amount']);
+		$taxData['total_tax'] = $this->calcValueByField('total_tax', $newTaxData['total_tax'], $existingTaxData['total_tax']);
+		$newTaxes = isset($newTaxData['taxes']) ? current($newTaxData['taxes']) : array();
+		$existingTaxes = isset($existingTaxData['taxes']) ? current($existingTaxData['taxes']) : array();
+		foreach ($newTaxes as $field => $value) {
+			$taxArray[$field] = $this->calcValueByField($field, $newTaxes[$field], $existingTaxes[$field]);
+		}
+		foreach ($taxData as $key => $value) {
+			$existingRow['tax_data'][$key] = $value;
+		}
+		$existingRow['tax_data']['taxes'] = array($taxArray);
 	}
 
 }
