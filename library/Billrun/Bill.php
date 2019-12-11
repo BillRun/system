@@ -1106,41 +1106,4 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
-         /**
-         * Function gets start + end time, as Unix Timestamp,aid, and invoice type, and returns an array of this aid's relevant bills, between those dates.
-         * @param string $startTime
-         * @param string $endTime
-         * @param integer $aid
-         * @param string $type
-         * @return array of the wanted account's invoices, from the requested type, and in the time rang.
-         */
-        public static function getBillsInRangeByInvoiceType($aid, $startTime, $endTime, $type) {
-            if(!in_array($type, ['immediate', 'regular'])) {
-                Billrun_Factory::log()->log($type . " isn't a valid value of invoice type.", Zend_Log::ERR);
-                return false;
-            }
-            $query = array(
-                        'aid' => $aid
-		);
-            if($type === 'immediate'){
-                $convertedStartTime = date('YmdHis', $startTime);
-                $convertedEndTime = date('YmdHis', $endTime);
-                $query['invoice_type'] = array('$eq' => $type);
-                $query['billrun_key'] = array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime);
-            }else {
-                $convertedStartTime = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
-                $convertedEndTime = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime);
-                $query['invoice_type'] = array('$in' => array(null, $type));
-                $query['billrun_key'] = array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime);
-            }
-
-            $sort = array(
-			'billrun_key' => -1,
-		);
-            $fields = array(
-			'billrun_key' => 1,
-                );  
-            $bills = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
-            return iterator_to_array($bills, true);
-        }
 }
