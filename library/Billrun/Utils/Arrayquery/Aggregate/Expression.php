@@ -178,9 +178,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	protected function _callback($data, $expression, $pastValue = FALSE) {
 		$arr = [];
 		foreach ($expression['arguments'] as $arg) {
-			//if (in_array($arg, array_keys($data))) {
-				$arr[] = $arg;
-		//	}
+			$arr[] = $arg;
 		}
 		foreach ($expression['extra_params'] as $key => $value) {
 			$arr[] = $value;
