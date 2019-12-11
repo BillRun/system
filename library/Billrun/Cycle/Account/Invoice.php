@@ -140,7 +140,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'));
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	/**

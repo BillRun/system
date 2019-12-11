@@ -1061,7 +1061,7 @@ class Billrun_Billrun {
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'));
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	protected function getVatFromRow($row,$rate) {
