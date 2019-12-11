@@ -56,20 +56,31 @@ class GenerateAction extends Action_Base {
 
         $this->_controller->addOutput("Generator loaded");
         $this->_controller->addOutput("Loading data to Generate...");
+        try{
             $generator->load();
-            $this->_controller->addOutput("Starting to Generate. This action can take a while...");
+        } catch(Exception $ex){
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log('Something went wrong while loading. No generate was made.', Zend_Log::ALERT);
+            return;
+        }
+        $this->_controller->addOutput("Starting to Generate. This action can take a while...");
+        try{
             $generator->generate();
-                $this->_controller->addOutput("Finished generating.");
-                if (method_exists($generator, 'release')) {
-                    if (!$generator->release()) {
-                        $this->_controller->addOutput("Problem in releasing operation");
-                        return;
-                    }
-                }
-                if ($generator->shouldFileBeMoved()) {
-                    $this->_controller->addOutput("Exporting the file");
-                    $generator->move();
-                    $this->_controller->addOutput("Finished exporting");
-                }
+        } catch(Exception $ex){
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log('Something went wrong while generating. Please pay attention.', Zend_Log::ERR);
+        }
+        $this->_controller->addOutput("Finished generating.");
+        if (method_exists($generator, 'release')) {
+            if (!$generator->release()) {
+                $this->_controller->addOutput("Problem in releasing operation");
+                return;
+            }
+        }
+        if ($generator->shouldFileBeMoved()) {
+            $this->_controller->addOutput("Exporting the file");
+            $generator->move();
+            $this->_controller->addOutput("Finished exporting");
+        }
     }
 }
