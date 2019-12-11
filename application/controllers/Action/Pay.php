@@ -166,6 +166,10 @@ class PayAction extends ApiAction {
 			if (!empty($amountsArray) && !Billrun_Util::isEqual(array_sum($amountsArray), $params['amount'], Billrun_Bill::precision)) {				
 				throw new Exception('Sum of amounts in installments array must be equal to total amount');
 			}
+			$dueDateArray = array_column($params['installments_agreement'], 'due_date');
+			if (count($dueDateArray) != count($params['installments_agreement'])) {
+				throw new Exception('Due date field is mandatory for all installments');
+			}
 		}
 		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
 		$note = $request->get('note');
@@ -178,8 +182,8 @@ class PayAction extends ApiAction {
 		if (!empty($params['installments_agreement']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
 			throw new Exception('Passed parameters in contradiction');
 		}
-		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
-			throw new Exception("installment_num and first_due_date parameters must be passed together");
+		if (empty($params['installments_num']) && !empty($params['first_due_date'])) {
+			throw new Exception("Can't pass first_due_date withouh passing installments_num");
 		}
 		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
 		if ($params['amount'] > $customerDebt['without_waiting']) {

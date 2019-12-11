@@ -20,6 +20,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected $id;
 	protected $totalAmount;
 	protected $firstDueDate;
+	protected $attachDueDateToCycleEnd = false;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -35,18 +36,24 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$this->data['payment_agreement.installment_index'] = $options['installment_index'];
 		}
 		
-		if (!empty($options['installments_num']) && !empty($options['first_due_date']) && !empty($options['amount'])) {
+		if ((!empty($options['installments_num']) || !empty($options['first_due_date'])) && !empty($options['amount'])) {
 			if (!Billrun_Util::IsIntegerValue($options['installments_num'])) {
 				throw new Exception('installments_num parameter must be numeric value');
 			}
 			$this->installmentsNum = $this->data['payment_agreement.installments_num'] = intval($options['installments_num']);
 			$this->data['amount'] = floatval($options['amount']);
 			$this->totalAmount = $this->data['payment_agreement.total_amount'] = !empty($options['total_amount']) ? $options['total_amount'] : floatval($options['amount']);
+			$this->attachDueDateToCycleEnd = !empty($options['cycle_attached_date']) ? $options['cycle_attached_date'] : $this->attachDueDateToCycleEnd;
 			$firstDueDate = strtotime($options['first_due_date']);
 			if ($firstDueDate) {
 				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new MongoDate($firstDueDate);
 			} else {
-				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = $options['first_due_date'];
+				if (!empty($options['first_due_date'])) {
+					$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = $options['first_due_date'];
+				} else {
+					$this->attachDueDateToCycleEnd = true;
+					$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new MongoDate(Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp()) - 1);
+				}
 			}
 		} else if (!empty($options['installments_agreement']) && !empty($options['amount'])) {
 			$this->data['amount'] = floatval($options['amount']);
@@ -71,6 +78,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		));
 		if (!empty($this->data['note'])) {
 			$paymentsArr[0]['note'] = $this->data['note'];
+		}
+		if (!empty($this->attachDueDateToCycleEnd)) {
+			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
@@ -145,8 +155,16 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (empty($this->installmentsNum) || empty($this->totalAmount)) {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
+		$currentBillrun = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		for ($index = 0; $index < $this->installmentsNum; $index++) {
-			$this->installments[$index] = array('due_date' => date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec)));
+			$dueDate = date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec));
+			if ($this->attachDueDateToCycleEnd) {
+				$secondBeforeCycleEnd = Billrun_Billingcycle::getEndTime($currentBillrun) - 1;		
+				$dueDate = date(Billrun_Base::base_datetimeformat, $secondBeforeCycleEnd);
+			}
+			$this->installments[$index] = array('due_date' => $dueDate);
+			$followingBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
+			$currentBillrun = $followingBillrun;
 		}
 		$amountsArray = array_column($this->installments, 'amount');
 		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
