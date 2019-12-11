@@ -28,12 +28,6 @@ class Billrun_Service {
 	protected $strongestGroup = null;
 	protected static $cache = array();
 	protected static $cacheType = 'services';
-	/**
-	 * service internal id
-	 * 
-	 * @var int
-	 */
-	protected $service_id = 0;
 	
 	
 	/**
@@ -63,9 +57,6 @@ class Billrun_Service {
 			$this->load($params['name'], $time, 'name');
 		}
 		
-		if (isset($params['service_id'])) {
-			$this->data['service_id'] = $params['service_id'];
-		}
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}

@@ -624,7 +624,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-	public function getDueBeforeVat() {
+        public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 

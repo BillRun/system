@@ -33,6 +33,9 @@ class BillAction extends ApiAction {
 				case 'collection_debt' :
 					$response = $this->getCollectionDebt($request);
 					break;
+                                case 'all_collection_debts' :
+                                        $response = $this->getAllCollectionDebts($request);
+					break;
 				case 'search_invoice' :
 				default :
 					$response = $this->getBalanceFor($request);
@@ -149,4 +152,12 @@ class BillAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
+        protected function getAllCollectionDebts($request) {
+                $contractors= Billrun_Bill::getContractorsInCollection($aids);
+		$result = array();
+		foreach ($contractors as $contractor) {
+			$result[$contractor['aid']] = current($contractor);
+		}	
+		return $result;
+        }
 }
