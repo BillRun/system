@@ -227,17 +227,33 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			'taxes' => [],
 		];
 	}
-	
+
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+			$rate = $this->getRateByRef($line['arate'])->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ?
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
 				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
 			$rate = $flatRate->getData();
 		}
-		return $rate;			
+		return $rate;
 	}
+	//TODO ====   Temporary HACK 20191212 : this should be moved to Billrun_Util::getRateByRef($rate_ref) ==========
+	protected $ratesCache=[];
+	/**
+	 * Get a rate by reference
+	 * @param type $rate_ref
+	 * @return type
+	 */
+	public function getRateByRef($rate_ref) {
+		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
+		if(!isset($this->ratesCache[$refStr])) {
+			$rates_coll = Billrun_Factory::db()->ratesCollection();
+			$this->ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
+		}
+		return $this->ratesCache[$refStr];
+	}
+	//======================
 }
