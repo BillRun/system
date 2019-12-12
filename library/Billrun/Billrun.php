@@ -1066,7 +1066,7 @@ class Billrun_Billrun {
 		return @$this->data['invoice_id'];
 	}
 	
-	public static function getLastBillrun($aid, $currentBillrunKey) {
+	public static function getAccountLastBillrun($aid, $currentBillrunKey) {
 		$query['aid'] = $aid;
 		$query['billrun_key'] = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
 		return Billrun_Factory::db()->getCollection('billrun')->query($query)->cursor()->current();
