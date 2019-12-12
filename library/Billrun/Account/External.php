@@ -35,7 +35,33 @@ class Billrun_Account_External extends Billrun_Account {
 			}
 			//Actually  do the request
 			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+			$results = [[
+				"aid"=>132,
+				"from" => "2019-01-01 09:00:00",
+				"to" => "2019-10-01 09:00:00",
+				"country" => "united_states",
+				"email" => "a@gmail.com",
+				"zip_code" => "4229652",
+				"invoice_shipping_method" => "post"
+				,"invoice_detailed"=>false
+				,"address" => "xxxxxxxx",
+				"custom_field1" => "123",
+				"tenant_return_url" => "http://abs.com",
+				"payment_gateway"=>[
+					"active"=>[
+						"name" => "xxx",
+						"card_token" => "1234",
+						"card_expiration" => "2019-01-01 09:00:00",
+						"personal_id" => "xxxxxx",
+						"transaction_exhausted"=>false,
+						"generate_token_time" => "2019-01-01 09:00:00",
+						"auth_number" => "xxxxx",
+						"four_digits" => "1234"
 
+					]],
+				"creation_time" => "2019-09-01 10:00:00",
+				"subscription_revisions"=>[]
+			]];
 			//Check for errors
 			if(!empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results  for billable, remote returned no data.',Zend::WARN);

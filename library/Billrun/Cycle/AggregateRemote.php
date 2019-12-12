@@ -87,7 +87,7 @@ class Billrun_Cycle_AggregateRemote {
 	
 
 	/**
-	 * 
+	 *
 	 * @param Billrun_DataTypes_MongoCycleTime $mongoCycle
 	 * @return type
 	 */
@@ -130,7 +130,7 @@ class Billrun_Cycle_AggregateRemote {
 
 		return $match;
 	}
-	
+
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
