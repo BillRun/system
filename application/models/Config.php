@@ -1108,7 +1108,7 @@ class ConfigModel {
 							}
 
 							if (isset($fileSettings['unify'])) {
-								$updatedFileSettings['unify'] = $fileSettings['unify'];
+								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
 							
 							if (isset($fileSettings['filters'])) {
@@ -1701,6 +1701,18 @@ class ConfigModel {
 		return array_column(array_filter($parserStructure, function($field) {
 				return isset($field['checked']) && $field['checked'] === true;
 			}),'name');
+	}
+	
+	protected function getUnifyConfig($config, $unifyConfig) {
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+			$unifyConfig = $this->getPrepaidUnifyConfig();
+		}
+		
+		return $unifyConfig;
+	}
+	
+	protected function getPrepaidUnifyConfig() {
+		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
 
 }
