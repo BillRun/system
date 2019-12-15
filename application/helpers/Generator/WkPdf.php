@@ -232,7 +232,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     if ($meetConditions){
                         foreach ($currentConfig['params'] as $paramObj){
                             $translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $billrun);
-                            if($translations[$paramObj['param']] === ""){
+                            if(empty($translations[$paramObj['param']])){
                                 $translations[$paramObj['param']] = "No_" . $paramObj['linked_entity']['field_name'];
                             }
                         }
