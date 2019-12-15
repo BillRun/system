@@ -6,8 +6,10 @@
  * @package  Controller
  * @since    5
  */
-class ErrorController extends Yaf_Controller_Abstract {
+class Billrun_Utils_ErrorHandler {
 	
+    
+        public function __construct() {}
 	/** 
 	 * you can also call to Yaf_Request_Abstract::getException to get the 
 	 * un-caught exception.
@@ -35,7 +37,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	/**
 	 * Get the output from the exception to be displayed to the user
 	 * @param Exception $exception
-	 * @return json enecoded array
+	 * @return json encoded array
 	 */
 	protected function getExceptionOutput(Exception $exception) {
 	   // Get exception output

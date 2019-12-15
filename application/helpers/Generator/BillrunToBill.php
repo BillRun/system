@@ -87,6 +87,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
+                                'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];

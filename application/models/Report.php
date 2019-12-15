@@ -631,15 +631,34 @@ class ReportModel {
 				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
 			case 'logFile':
-				$defaultEntityMatch[]['file_name'] = array(
-					"\$exists" => true
-				);
+				$defaultEntityMatch[]['file_name'] = [
+					"\$exists" => true,
+				];
+				$defaultEntityMatch[]['type'] = [
+					"\$ne" => 'custom_payment_gateway',
+				];
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsRequest':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_request';
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsResponse':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_response';
+				return $defaultEntityMatch;
+			case 'paymentDenials':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'denials';
+				return $defaultEntityMatch;
+			case 'paymentsFiles':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'payments';
 				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
 		}
 	}
-	
+
 	protected function getCollection() {
 		$entity = $this->getReportEntity();
 		if(empty($entity)) {
@@ -668,6 +687,10 @@ class ReportModel {
 			case 'event':
 				return 'events';
 			case 'logFile':
+			case 'paymentsTransactionsRequest':
+			case 'paymentsTransactionsResponse':
+			case 'paymentDenials':
+			case 'paymentsFiles':
 				return 'log';
 			case 'bills':
 				return 'bills';
