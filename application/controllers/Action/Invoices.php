@@ -155,7 +155,7 @@ class AccountInvoicesAction extends ApiAction {
 	
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		Billrun_Plan::initPlans();
+		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
 			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);
