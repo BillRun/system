@@ -166,20 +166,59 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function generate($lines = FALSE) {
-
 		$this->prepereView();
-
+                if(count($this->getExportPaths()) > 0){
+                    $exportPaths = $this->getExportPaths();
+                }
+                
 		foreach ($this->billrun_data as $object) {
+                    if(!$this->isOnetime()){
+                        if(count($this->getExportPaths()) > 0){
+                            $paths = $this->getBillrunExportPath($object, $exportPaths);
+                            $this->setBillrunExportPath($object, $paths);
+                        }
+                    }
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
 			}
 		}
 	}
 
-	/*
+	/**
+         * 
+         * @param Mongodloid_Entity $billrunObject 
+         * @param type $exportPaths array - contains 'path' => [conditions to get this path]
+         * @return $path - invoice export path
+         */
+
+        public function getBillrunExportPath($billrunObject, $exportPaths) {
+            if ($billrunObject instanceof Mongodloid_Entity) {
+                    $meetConditions = 0;
+                    $billrun = $billrunObject->getRawData();
+                    foreach ($exportPaths as $path => $conditions){
+                        foreach($conditions as $condition){
+                            if (Billrun_Util::isConditionMet ($billrun, $condition)){
+                                $meetConditions = 1;
+                            }
+                        }
+                    if($meetConditions){
+                        $relative_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp . DIRECTORY_SEPARATOR . $path);
+                        $this->paths['pdf'] = $relative_path . "pdf/";
+                        $this->paths['html'] = $relative_path . "html/";
+                        return $this->paths;
+                    }
+                }
+                return $this->paths;
+            }
+        }
+        
+        public function setBillrunExportPath($object, $paths) {
+            $object->set('export_path', $paths);
+        }
+        
+        /*
 	 * load billrun objects from billrun collection  
 	 */
-
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
