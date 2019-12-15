@@ -665,7 +665,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			];
 		}
 	
-	$hint = [
+		$hint = [
 			'billrun' => 1,
 			'usaget' => 1,
 			'type' => 1,
