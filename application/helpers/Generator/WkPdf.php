@@ -172,10 +172,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 }
                 
 		foreach ($this->billrun_data as $object) {
+                    if(!$this->isOnetime()){
                         if(count($this->getExportPaths()) > 0){
                             $paths = $this->getBillrunExportPath($object, $exportPaths);
                             $this->setBillrunExportPath($object, $paths);
                         }
+                    }
 			if (isset($object['invoice_id'])) {
 				$this->generateAccountInvoices($object, $lines);
 			}
