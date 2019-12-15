@@ -91,15 +91,19 @@ class AccountInvoicesAction extends ApiAction {
 			}
 		}
 		$invoiceId = $invoice['invoice_id'];
-                $file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
-                
-                if (isset($invoice['export_path']) && !empty($invoice['export_path'])){
+		$invoiceData = $invoice->getRawData();
+		if (isset($invoice['export_path']) && !empty($invoice['export_path'])){
                     $files_path = $invoice['export_path'];
-                    $pdf = $files_path . $file_name;
+		}else{
+			$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+		}                
+		if (isset($invoiceData['file_name']) && !empty($invoiceData['file_name'])){
+                    $file_name = $invoiceData['file_name'];
                 } else{
-                    $files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-                    $pdf = $files_path . $billrun_key . '/pdf/' . $file_name;
-                }
+		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
+		}
+		$pdf = $files_path . DIRECTORY_SEPARATOR . $file_name;
+
 		if( $request->get('detailed') ) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
 			$generator->load();
