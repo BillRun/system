@@ -1423,7 +1423,7 @@ class Billrun_DiscountManager {
 	 * @return array
 	 */
 	protected function getLineEligibilityForDiscount($line, $eligibility) {
-		$sid = $line['sid'] ?? false;
+		$sid =  isset($line['sid']) ? $line['sid'] : FALSE;;
 		if ($sid === false) { // account line
 			return Billrun_Util::getIn($eligibility, 'eligibility', []);
 		}
