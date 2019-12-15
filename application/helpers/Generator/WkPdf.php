@@ -190,12 +190,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
         public function getBillrunExportPath($billrunObject, $exportPaths) {
             if ($billrunObject instanceof Mongodloid_Entity) {
-                    $meetConditions = 1;
+                    $meetConditions = 0;
                     $billrun = $billrunObject->getRawData();
                     foreach ($exportPaths as $path => $conditions){
                         foreach($conditions as $condition){
-                            if (!Billrun_Util::isConditionMet ($billrun, $condition)){
-                                $meetConditions = 0;
+                            if (Billrun_Util::isConditionMet ($billrun, $condition)){
+                                $meetConditions = 1;
                             }
                         }
                     if($meetConditions){
