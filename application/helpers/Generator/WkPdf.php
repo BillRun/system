@@ -186,12 +186,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
         public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
             if ($billrunObject instanceof Mongodloid_Entity){
-                $meetConditions = 1;
+                $meetConditions = 0;
                 $billrun = $billrunObject->getRawData();
                 foreach ($fileNameConfig as $index => $currentConfig){
                     foreach ($currentConfig['conditions'] as $condition){
-                        if (!Billrun_Util::isConditionMet($billrun, $condition)){
-                            $meetConditions = 0;
+                        if (Billrun_Util::isConditionMet($billrun, $condition)){
+                            $meetConditions = 1;
                         }
                     }
                     if ($meetConditions){
@@ -219,7 +219,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
                     if($date instanceof MongoDate){
-                        $date = strval($date);
+                        $date = $date->sec;
                         if (isset($paramObj['offset'])){
                             $date = $this->getDateWithOffset($paramObj['offset'], $date);
                         }
@@ -230,7 +230,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if(isset($paramObj['type']) && $paramObj['type'] === "string"){
-                        return $billrunObject[$paramObj['linked_entity']['field_name']];
+                        return Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name'], "00000");
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
                     }
@@ -260,7 +260,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
         
         public function getDateWithOffset($offset, $date){
             try{
-                $shiftedDate = strtotime($offset . " " . date(Y-m-d, $date));
+                $shiftedDate = strtotime($offset . " " . date("Y-m-d", $date));
                 $date = $shiftedDate;
             }catch(Exception $ex){
                 Billrun_Factory::log($offset . " - wrong offset syntex. Date was taken without offset.", Zend_Log::ERR);  
@@ -326,7 +326,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		$this->updateHtmlDynamicData($account);
 		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
-		Billrun_Factory::log('Generating invoice ' . $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . " to : $pdf", Zend_Log::INFO);
+		Billrun_Factory::log('Generating invoice ' . $pdf_name . " to : $pdf", Zend_Log::INFO);
 		exec($this->wkpdf_exec . " {$ExporterFlagsString} --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 
 		if (Billrun_Factory::config()->getConfigValue(self::$type . '.exclude_pages')) {
