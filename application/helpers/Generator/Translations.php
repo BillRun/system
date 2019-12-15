@@ -22,7 +22,7 @@ class Generator_Translations {
 		}
 	}
 	
-	public static function setLanguage($lang) {
+	public static function setLanguage($lang = 'en_GB') {
 		if(!static::$languages[$lang]++)  {
 			static::setTranslation($lang, ['/conf/translations/'.$lang.'.ini' , '/conf/translations/overrides/'.$lang.'.ini']);
 		}
