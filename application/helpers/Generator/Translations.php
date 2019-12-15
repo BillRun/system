@@ -16,12 +16,9 @@ class Generator_Translations {
 	
 	public static function load() {
 		if (!static::$defaultLang) {
-			if (!empty($defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath))) {
-				static::$defaultLang = $defaultLang;
-				static::setLanguage($defaultLang);
-			} else {
-				Billrun_Factory::log()->log('Generator_Translations: Missing Default invoice language in config', Zend_Log::DEBUG);
-			}
+			$defaultLang = Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
+			static::$defaultLang = $defaultLang;
+			static::setLanguage($defaultLang);
 		}
 	}
 	
