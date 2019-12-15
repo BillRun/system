@@ -13,6 +13,7 @@
  * @since    5.2
  */
 class Billrun_Cycle_Account_Invoice {
+	use Billrun_Traits_ConditionsCheck;
 	
 	protected $aid;
 	protected $key;
@@ -124,6 +125,22 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * 
+	 * @param string $billrunDate
+	 * @return \MongoDate
+	 */
+	protected function generateDueDate($billrunDate) {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
+				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
+			}
+		}
+		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	/**
@@ -355,12 +372,12 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 
-										strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1) :
-										strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
+								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
+								$this->generateDueDate($billrunDate);
 		$this->data->setRawData($initData);
 	}
-        
+	
     //======================================================
     
 	function isAccountActive() {

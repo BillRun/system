@@ -13,6 +13,7 @@
  * @since    0.5
  */
 class Billrun_Billrun {
+	use Billrun_Traits_ConditionsCheck;
 
 	static public $accountsLines = array();
 	protected $aid;
@@ -1044,7 +1045,23 @@ class Billrun_Billrun {
 		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$this->data['end_date'] = new MongoDate($billrunDate);
 		$this->data['start_date'] = new MongoDate(self::getStartTime($this->getBillrunKey()));
-		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$this->data['due_date'] = $this->generateDueDate($billrunDate);
+	}
+	
+	/**
+	 * 
+	 * @param string $billrunDate
+	 * @return \MongoDate
+	 */
+	protected function generateDueDate($billrunDate) {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
+				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
+			}
+		}
+		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	protected function getVatFromRow($row,$rate) {
