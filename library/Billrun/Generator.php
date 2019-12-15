@@ -122,9 +122,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 		}
 		
                 if (isset($options['file_name']) && !empty($options['file_name'])){
-                    foreach($options['file_name'] as $index => $config){
-                        $this->file_name_config[$index] = $config;
-                    }
+                        $this->file_name_config = $options['file_name'];
                 }
                 
 		if (isset($options['export']['dir'])) {
