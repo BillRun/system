@@ -232,6 +232,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     if ($meetConditions){
                         foreach ($currentConfig['params'] as $paramObj){
                             $translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $billrun);
+                            if($translations[$paramObj['param']] === ""){
+                                $translations[$paramObj['param']] = "No_" . $paramObj['linked_entity']['field_name'];
+                            }
                         }
                         if (!in_array(-1, $translations)){
                             return Billrun_Util::translateTemplateValue($currentConfig['pattern'], $translations, null, true);
@@ -265,7 +268,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if(isset($paramObj['type']) && $paramObj['type'] === "string"){
-                        return Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name'], "00000");
+                        return Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']);
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
                     }
