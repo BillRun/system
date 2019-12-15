@@ -295,7 +295,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
         
         public function getDateWithOffset($offset, $date){
             try{
-                $shiftedDate = strtotime($offset . " " . date("Y-m-d", $date));
+                $shiftedDate = strtotime($offset, $date);
                 $date = $shiftedDate;
             }catch(Exception $ex){
                 Billrun_Factory::log($offset . " - wrong offset syntex. Date was taken without offset.", Zend_Log::ERR);  
