@@ -62,11 +62,16 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 */
 	protected $move_exported;
 
-        /**
+	/**
          * file name config - in case of customized file name.
          * @var array
          */
         protected $file_name_config;
+/**
+	 * invoice file location paths, according to conditions on billrun object.
+	 * @var array
+	 */
+        protected $export_paths = [];
 	/**
 	 * constructor
 	 * 
@@ -120,11 +125,19 @@ abstract class Billrun_Generator extends Billrun_Base {
 			}
 			$this->defineSshConnection($user, $password, $server);
 		}
-		
                 if (isset($options['file_name']) && !empty($options['file_name'])){
                         $this->file_name_config = $options['file_name'];
                 }
-                
+                if(!empty($options['export_paths'])){
+                    foreach($options['export_paths'] as $pathIndex => $data){
+                        if(!empty($options['export_paths'][$pathIndex]['conditions'])){
+                            foreach ($options['export_paths'][$pathIndex]['conditions'] as $index => $condition){
+                                $this->export_paths[$options['export_paths'][$pathIndex]['path']][] = $condition;
+                            }
+                        }
+                    }
+		}
+		
 		if (isset($options['export']['dir'])) {
 			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath($options['export']['dir']);
 		} else {
@@ -201,7 +214,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 		return true;
 	}
 	
-        public function getFileNameConfig(){
+        public function getExportPaths() {
+            return $this->export_paths;
+        }
+public function getFileNameConfig(){
             return $this->file_name_config;
         }
 }

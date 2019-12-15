@@ -125,7 +125,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	/**
-	 * Prepare the invoice view for invoice  generation.
+	 * Prepre the invoice view for invoice  generation.
 	 * @param type $params 
 	 */
 	public function prepereView($params = FALSE) {
@@ -166,24 +166,59 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 	public function generate($lines = FALSE) {
 		$this->prepereView();
-                $customizedFileName = 0;
+		$customizedFileName = 0;
                 if(!empty($fileNameConfig = $this->getFileNameConfig())){
                     $customizedFileName = 1;
                 }
+                if(count($this->getExportPaths()) > 0){
+                    $exportPaths = $this->getExportPaths();
+                }
 		foreach ($this->billrun_data as $object) {
-                        $defaultFileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
-                        if($customizedFileName){
-                            $fileName = $this->getFileName($object, $fileNameConfig, $defaultFileName);
-                        }else{
-                            $fileName = $defaultFileName;
-                        }
-                        $this->setFileName($object, $fileName);
-			if (isset($object['invoice_id'])) {
-				$this->generateAccountInvoices($object, $lines);
-			}
-		}
-	}
+		    $defaultFileName = $object['billrun_key'] . "_" . $object['aid'] . "_" . $object['invoice_id'] . ".pdf";
+                    if($customizedFileName){
+                        $fileName = $this->getFileName($object, $fileNameConfig, $defaultFileName);
+                    }else{
+                        $fileName = $defaultFileName;
+                    }
+                    $this->setFileName($object, $fileName);
+                    if(!$this->isOnetime()){
+                        if(count($this->getExportPaths()) > 0){
+                            $paths = $this->getBillrunExportPath($object, $exportPaths);
+                            $this->setBillrunExportPath($object, $paths);
+                	}
+		     }
+                    if (isset($object['invoice_id'])) {
+                        $this->generateAccountInvoices($object, $lines);
+                    }
+                }
+        }
+/**
+         * 
+         * @param Mongodloid_Entity $billrunObject 
+         * @param type $exportPaths array - contains 'path' => [conditions to get this path]
+         * @return $path - invoice export path
+         */
 
+        public function getBillrunExportPath($billrunObject, $exportPaths) {
+            if ($billrunObject instanceof Mongodloid_Entity) {
+                    $meetConditions = 0;
+                    $billrun = $billrunObject->getRawData();
+                    foreach ($exportPaths as $path => $conditions){
+                        foreach($conditions as $condition){
+                            if (Billrun_Util::isConditionMet ($billrun, $condition)){
+                                $meetConditions = 1;
+                            }
+                        }
+                    if($meetConditions){
+                        $relative_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp . DIRECTORY_SEPARATOR . $path);
+                        $this->paths['pdf'] = $relative_path . "pdf/";
+                        $this->paths['html'] = $relative_path . "html/";
+                        return $this->paths;
+                    }
+                }
+                return $this->paths;
+            }
+        }
         public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
             if ($billrunObject instanceof Mongodloid_Entity){
                 $meetConditions = 0;
@@ -310,7 +345,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'].$account['aid'] . 'tmp_footer.html',
 		);
-                $file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
+		
+		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
                 if(isset($account['file_name']) & !empty($account['file_name'])){
                     $pdf_name = $account['file_name'];
                 }else{
@@ -321,6 +357,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		$this->accountSpecificViewParams($account);
 
+		Generator_Translations::load();
+		Generator_Translations::setLanguage($account['attributes']['invoice_language']);
+		
 		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
 		chmod($html, $this->filePermissions);
 
@@ -537,5 +576,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//exec("pdftk  $pdf $lastPagePdf cat output $merged");
 		chmod($merged, $this->filePermissions);
 	}
+
+        /**
+         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+         * @param sring $key
+         * @param type $value
+         */
+        public function setInvoiceExtraParams($key, $value) {
+            $this->invoice_extra_params[$key] = $value;
+        }
+        
+        public function setBillrunExportPath($object, $paths) {
+            $object->set('export_path', $paths);
+        }
 
 }
