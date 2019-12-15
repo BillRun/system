@@ -26,6 +26,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
+        protected $invoice_extra_params = [];
 	
 
 	/**
@@ -258,7 +259,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$pdf = $account['export_path'] . $pdf_name;
 
 		$this->accountSpecificViewParams($account);
-
+		
+		Generator_Translations::load();
+		Generator_Translations::setLanguage($account['attributes']['invoice_language']);
+		
 		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
 		chmod($html, $this->filePermissions);
 
@@ -475,5 +479,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//exec("pdftk  $pdf $lastPagePdf cat output $merged");
 		chmod($merged, $this->filePermissions);
 	}
-        
+
+        /**
+         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+         * @param sring $key
+         * @param type $value
+         */
+        public function setInvoiceExtraParams($key, $value) {
+            $this->invoice_extra_params[$key] = $value;
+        }
 }
