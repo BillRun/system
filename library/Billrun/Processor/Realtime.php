@@ -136,5 +136,17 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$this->data['data'][] = $row;
 		return true;
 	}
+	
+	public function unsetRow($stamp) {
+		foreach ($this->data['data'] as $i => $row) {
+			if ($row['stamp'] === $stamp) {
+				$this->doNotSaveLines[$stamp] = $this->data['data'][$i];
+				unset($this->data['data'][$i]);
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 }
