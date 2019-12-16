@@ -1703,6 +1703,13 @@ class ConfigModel {
 			}),'name');
 	}
 	
+	/**
+	 * Get final unify configuration 
+	 * 
+	 * @param array $config - current configuration
+	 * @param array $unifyConfig - unify configuration received
+	 * @return array
+	 */
 	protected function getUnifyConfig($config, $unifyConfig) {
 		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
 			$unifyConfig = $this->getPrepaidUnifyConfig();
@@ -1711,6 +1718,11 @@ class ConfigModel {
 		return $unifyConfig;
 	}
 	
+	/**
+	 * Get's unify configuration for prepaid input processors (taken from global unify configuration)
+	 * 
+	 * @return array
+	 */
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
