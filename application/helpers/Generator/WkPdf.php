@@ -206,8 +206,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
+
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
+
+		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
+
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
@@ -446,12 +450,20 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($merged, $this->filePermissions);
 	}
 
-        /**
-         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
-         * @param sring $key
-         * @param type $value
-         */
-        public function setInvoiceExtraParams($key, $value) {
-            $this->invoice_extra_params[$key] = $value;
-        }
+	/**
+		* Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+		* @param sring $key
+		* @param type $value
+		*/
+	public function setInvoiceExtraParams($key, $value) {
+		$this->invoice_extra_params[$key] = $value;
+	}
+
+	protected function addExtraParamsToCurrentView($extraParams) {
+		if(!empty($extraParams)) {
+			foreach($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_'.$paramKey, $paramVal);
+			}
+		}
+	}
 }
