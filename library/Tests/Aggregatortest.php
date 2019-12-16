@@ -307,6 +307,11 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('invoice_id' => 136, 'billrun_key' => '201904', 'aid' => 82, 'after_vat' => array("83" => 18.870967742))),
 			'line' => array('types' => array('flat','service')),
 		),
+		array('test' => array('test_number' => 42, "aid" => 84, 'sid' => 85, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202001", "force_accounts" => array(84))),
+			'expected' => array('billrun' => array('invoice_id' => 137, 'billrun_key' => '202001', 'aid' => 84, 'after_vat' => array("85" => 117))),
+			'line' => array('types' => array('flat','service')),
+			'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-2093'
+		),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 38,),
