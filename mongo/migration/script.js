@@ -472,7 +472,7 @@ db.subscribers.getIndexes().forEach(function(index){
 // Migrate audit records in log collection into separated audit collection
 db.log.find({"source":"audit"}).forEach(
 	function(obj) {
-		db.audit.insert(obj);
+		db.audit.save(obj);
 		db.log.remove(obj._id);
 	}
 );
