@@ -77,6 +77,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
 			}
+                        $this->informationArray['total_denied_amount']+=$payment->getAmount();
 		} else {
                         $message = "Denial process was failed for payment: " . $row[$this->tranIdentifierField];
                         $this->informationArray['warnings'][] = $message;
