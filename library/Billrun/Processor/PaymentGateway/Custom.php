@@ -88,7 +88,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
 
-        protected function reprocessData($parsedData, $dataStructure){
+        protected function reprocessData(&$parsedData, $dataStructure){
             foreach($dataStructure as $index => $paramObj){
                 if(isset($paramObj['decimals'])){
                     for($i = 0; $i < count($parsedData); $i++){
