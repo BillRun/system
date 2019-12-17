@@ -38,7 +38,7 @@ class Billrun_EventsManager {
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
-
+	protected $eventsSettingsCache = [];
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -62,11 +62,12 @@ class Billrun_EventsManager {
 		if(empty($this->eventsSettingsCache[$cacheKey])) {
 			$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
 			if (!$activeOnly) {
-				return $events;
+				$this->eventsSettingsCache[$cacheKey] = $events;
+			} else {
+				$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
+					return isset($event['active']) ? !empty($event['active']) : true;
+				});
 			}
-			$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
-				return isset($event['active']) ? !empty($event['active']) : true;
-			});
 		}
 		return $this->eventsSettingsCache[$cacheKey];
 	}
