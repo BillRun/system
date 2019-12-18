@@ -41,7 +41,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				return;
 			}
 			if ($payment->isAmountDeniable(abs($row['amount']))) {
-				Billrun_Factory::log()->log("The amount is too large to deny for Payment " . $row['transaction_id'], Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("The amount is too large to deny for Payment " . $row['transaction_id'], Zend_Log::ALERT);
 				return;
 			}
 		} else { // in this case there's aid identifier

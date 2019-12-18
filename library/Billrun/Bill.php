@@ -410,7 +410,10 @@ abstract class Billrun_Bill {
 	}
 
 	protected function recalculatePaymentFields($billId = null, $status = null) {
-		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
+		if ($this->getBillMethod() == 'denial') {
+			return $this;
+		}
+		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
 				$amount += array_sum($this->data['paid_by']['inv']);
@@ -426,8 +429,7 @@ abstract class Billrun_Bill {
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
-				
-		} else if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
+		} else if ($this->getDue() < 0) {
 			$amount = 0;
 			if (isset($this->data['pays']['inv'])) {
 				$amount += array_sum($this->data['pays']['inv']);
