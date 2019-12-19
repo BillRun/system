@@ -1462,6 +1462,10 @@ class Billrun_DiscountManager {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
 		
+		if (isset($eligibleLine['tax_data'])) {
+			$discountLine['taxes'] = Billrun_Calculator_Tax_Usage::taxDataToTaxes($eligibleLine['tax_data']);
+		}
+		
 		$discountLine['stamp'] = Billrun_Util::generateArrayStamp($discountLine);
 		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
