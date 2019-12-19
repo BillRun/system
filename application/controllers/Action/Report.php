@@ -201,7 +201,7 @@ class ReportAction extends ApiAction {
 			Billrun_Factory::log(json_encode($query));
 			$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
 
-			$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
+			$hint = $this->getHintForQuery($query, $this->hintMapping);
 			if(!empty($hint)) {
 				$cursor->hint($hint);
 			}
@@ -415,8 +415,24 @@ class ReportAction extends ApiAction {
 
 	protected function getHintForInput($input, $hintMapping) {
 
-		foreach($hintMapping as $hintMap ) {
+		foreach($hintMapping['by_input'] as $hintMap ) {
 			if( empty(array_diff($hintMap['field_requirements'],array_keys($input))) ) {
+				return Billrun_Util::verify_array($hintMap['hint'],'int');
+			}
+		}
+
+		return FALSE;
+	}
+
+	protected function getHintForQuery($query, $hintMapping) {
+		$queryFields = array_keys($query);
+		foreach($query['$or'] as $orQuery) {
+			$queryFields = array_merge($queryFields,array_keys($orQuery));
+		}
+
+		foreach($hintMapping['by_query'] as $hintMap ) {
+			if( empty(array_diff($hintMap['field_requirements'],$queryFields)) ) {
+				Billrun_Factory::log('Found Hint : '.json_encode($hintMap['hint']));
 				return Billrun_Util::verify_array($hintMap['hint'],'int');
 			}
 		}
