@@ -188,34 +188,37 @@ class ReportAction extends ApiAction {
 	 */
 	protected function fetchUsage($params) {
 		$input = $params['input'];
-		$query = $this->getMongoQueryFromInput($input);
-		if(!empty($input['endDate']) && !empty($input['startDate'])) {
-			$query['$and'][] = ['$or' => [
-				['charging_end_time' => [	'$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
-											'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))] ],
-				['urt' => $query['urt']]
-			]];
-			unset($query['urt']);
+		$queries = $this->getMultiMongoQueriesFromInput($input);
+		$results = [];
+		foreach($queries as $query) {
+			if(!empty($input['endDate']) && !empty($input['startDate'])) {
+				$endDateQuery = array_merge($query, ['charging_end_time' => [
+														'$gte'=> date('YmdHis',preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate'])),
+														'$lte'=> date('YmdHis',preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']))] ]);
+				unset($endDateQuery['urt']);
+				$queries[] = $endDateQuery;
+			}
+			Billrun_Factory::log(json_encode($query));
+			$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
+
+			$hint = $this->getHintForQuery($query, $this->hintMapping);
+			if(!empty($hint)) {
+				$cursor->hint($hint);
+			}
+
+			if(!empty($input['sortColumn'])) {
+				$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
+			}
+			if(!empty($input['skip'])) {
+				$cursor->skip(intval($input['skip']));
+			}
+			if(!empty($input['limit'])) {
+				$cursor->skip(intval($input['limit']));
+			}
+			$results= array_merge($results , iterator_to_array($cursor));
 		}
 
-		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->setRawReturn(true);
-
-		$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
-		if(!empty($hint)) {
-			$cursor->hint($hint);
-		}
-
-		if(!empty($input['sortColumn'])) {
-			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
-		}
-		if(!empty($input['skip'])) {
-			$cursor->skip(intval($input['skip']));
-		}
-		if(!empty($input['limit'])) {
-			$cursor->skip(intval($input['limit']));
-		}
-
-		return $this->translateResults($cursor);
+		return $this->translateResults($results);
 	}
 
 	/**
@@ -301,6 +304,44 @@ class ReportAction extends ApiAction {
 		return $query;
 	}
 
+	protected function getMultiMongoQueriesFromInput($input) {
+		$startDate =  preg_match("/^\d+$/",$input['startDate']) ? $input['startDate'] : strtotime($input['startDate']);
+		$endDate =  preg_match("/^\d+$/",$input['endDate']) ? $input['endDate'] : strtotime($input['endDate']);
+		$querybase = [ 'urt'=> ['$gte' => new MongoDate($startDate),
+							'$lt' => new MongoDate($endDate) ]];
+		$queries=[];
+		if(!empty($andQueries = $this->mapToFields($input))) {
+			foreach($andQueries as $andQuery) {
+				$orQueries = $andQuery['$or'];
+				unset($andQuery['$or']);
+				foreach($orQueries as $orQuery) {
+					$queries[] = array_merge($querybase,$orQuery,$andQuery);
+				}
+			}
+		}
+		if(empty($queries)) {
+			$queries[] = $querybase;
+		}
+		if(!empty($input['searchColumns'])) {
+			$retQueries= [];
+			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
+			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
+			foreach($queries as  $query) {
+				foreach($input['searchColumns'] as  $field) {
+					foreach($input['searchValue'] as $value) {
+						foreach($this->mapToFields([$field => $value]) as $mappedQuery) {
+														$retQueries[] = array_merge($query,  $mappedQuery);
+						}
+					}
+				}
+			}
+		} else {
+			$retQueries = $queries;
+		}
+
+		return $retQueries;
+	}
+
 	protected function mapToFields($input) {
 		$query=[];
 		foreach($this->fieldMapping as $inputField => $toMap) {
@@ -374,8 +415,24 @@ class ReportAction extends ApiAction {
 
 	protected function getHintForInput($input, $hintMapping) {
 
-		foreach($hintMapping as $hintMap ) {
+		foreach($hintMapping['by_input'] as $hintMap ) {
 			if( empty(array_diff($hintMap['field_requirements'],array_keys($input))) ) {
+				return Billrun_Util::verify_array($hintMap['hint'],'int');
+			}
+		}
+
+		return FALSE;
+	}
+
+	protected function getHintForQuery($query, $hintMapping) {
+		$queryFields = array_keys($query);
+		foreach($query['$or'] as $orQuery) {
+			$queryFields = array_merge($queryFields,array_keys($orQuery));
+		}
+
+		foreach($hintMapping['by_query'] as $hintMap ) {
+			if( empty(array_diff($hintMap['field_requirements'],$queryFields)) ) {
+				Billrun_Factory::log('Found Hint : '.json_encode($hintMap['hint']));
 				return Billrun_Util::verify_array($hintMap['hint'],'int');
 			}
 		}
