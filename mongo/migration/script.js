@@ -635,6 +635,21 @@ if (invoices) {
 	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
 }
 
+// BRCD - 2129: add embed_tax field
+if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+	var embedTaxField = {
+		"field_name": "embed_tax",
+		"system": true,
+		"title": "Embed Tax",
+		"mandatory": true,
+		"type": "boolean",
+		"editable": true,
+		"display": true,
+		"description": "In case the tax should be embedded (included in the customer price), please check the box"
+	};
+	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
