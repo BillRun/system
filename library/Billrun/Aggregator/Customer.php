@@ -220,7 +220,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$aggregateOptions['exclusion_query'] = $this->billrun->existingAccountsQuery();
 		}
 		//This class will define the account/subscriber/plans aggregation logic for the cycle
-		$this->aggregationLogic = new Billrun_Cycle_AggregateRemote($aggregateOptions);
+		$this->aggregationLogic = Billrun_Account::getAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
 	}

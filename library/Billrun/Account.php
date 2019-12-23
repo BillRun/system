@@ -330,4 +330,20 @@ abstract class Billrun_Account extends Billrun_Base {
 		return array_intersect($aids, $includeIds);
 	}
 
+	//============================ Static function =========================
+
+	public static function getAggregationLogic($params) {
+		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscribers.type','db'));
+		switch($subscribersType) {
+			case "external":
+				return new Billrun_Cycle_AggregateRemote($params);
+				break;
+			case 'db' :
+				return new Billrun_Cycle_AggregatePipeline($params);
+				break;
+		}
+
+		throw new Exception("No subscriber aggregation identified");
+	}
+
 }
