@@ -54,6 +54,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->applyDiscounts($flatLines);
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
+	
+	public function addConfigurableData() {
+		$this->invoice->addConfigurableData();
+	}
 
 	public function getInvoice() {
 		return $this->invoice;

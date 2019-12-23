@@ -622,7 +622,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-	public function getDueBeforeVat() {
+        public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
@@ -1104,4 +1104,23 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
+	
+	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type = 'rec', $method = false, $remaining = false) {
+		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
+		$query['type'] = $type;
+		$query['aid'] = $aid;
+		if ($remaining) {
+			$query['due_date'] = ['$gt' => new MongoDate($billrun->end())];
+		} else {
+			$query['$and'] = [
+				['due_date' => ['$gt' => new MongoDate($billrun->start())]],
+				['due_date' => ['$lt' => new MongoDate($billrun->end())]]
+			];
+		}
+		if ($method) {
+			$query['method'] = $method;
+		}
+		return self::getBills($query);
+	}
+
 }
