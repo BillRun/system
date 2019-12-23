@@ -342,7 +342,12 @@ class Models_Subscribers extends Models_Entity {
 			$this->update['deactivation_date'] = $this->update['to'];
 		}
 		if (Billrun_Utils_Plays::isPlaysInUse() && empty($this->update['play'])) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Mandatory update parameter play missing');
+			if ($defaultPlay = Billrun_Utils_Plays::getDefaultPlay()) {
+				$this->update['play'] = $defaultPlay['name'];
+			}
+			else {
+				throw new Billrun_Exceptions_Api(0, array(), 'Mandatory update parameter play missing');
+			}
 		}
 		
 		parent::create();
