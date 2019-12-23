@@ -797,7 +797,15 @@ abstract class Billrun_Bill {
 				if (!empty($options['file_based_charge']) && isset($options['generated_pg_file_log'])) {
 					$rawPayment['generated_pg_file_log'] = $options['generated_pg_file_log'];
 				}
-				$payments[] = new $className($rawPayment);
+                                if (isset($rawPayment['source']) && ($configSources = Billrun_Config::getInstance()->getConfigValue("payments.offline.sources")) !== null){
+                                    if(in_array($rawPayment['source'], $configSources)){
+                                        $payments[] = new $className($rawPayment);
+                                    } else {
+                                        Billrun_Factory::log("Undefined payment source: " . $rawPayment['source'] . ", for account id: " . $rawPayment['aid'] . ", amount: " . $rawPayment['amount'] . ". This payment wasn't saved." , Zend_Log::ALERT);
+                                    }
+                                }else{
+                                    $payments[] = new $className($rawPayment);
+                                }
 			}
 			$res = Billrun_Bill_Payment::savePayments($payments);
 			if ($res && isset($res['ok']) && $res['ok']) {
