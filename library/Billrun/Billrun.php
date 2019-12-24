@@ -256,8 +256,20 @@ class Billrun_Billrun {
 	 * @param int $min_id minimum invoice id to start from
 	 */
 	public function close($min_id) {
-		$billrun_entity = $this->getRawData();
-		if (is_null($ret = $billrun_entity->createAutoInc("invoice_id", $min_id))) {
+		$billrunEntity = $this->getRawData();
+		$invoiceIdStructure = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_pattern', '');
+		if (empty($invoiceIdStructure)) {
+			Billrun_Factory::log()->log("Missing invoice id structure", Zend_Log::ALERT);
+		}
+		$invoiceIdParams = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_params', array());
+		$translations = array();
+		$totalAmount = $billrunEntity['totals']['after_vat'];
+		$invoiceGroup = $totalAmount < 0 ? '29' : '21';
+		foreach ($invoiceIdParams as $paramObj) {
+			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
+		}
+		$ret = Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
+		if (is_null($ret)) {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
@@ -931,7 +943,44 @@ class Billrun_Billrun {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
-
+	
+	protected function getTranslationValue($paramObj, $invoiceGroup, $formerTranslations) {
+		if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+			Billrun_Factory::log("Missing invoice_id params definitions when generating invoice id", Zend_Log::DEBUG);
+		}
+		switch ($paramObj['type']) {
+			case 'date':
+				$dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				return date($dateFormat, $dateValue);	
+			case 'autoinc':
+				if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
+					Billrun_Factory::log("Missing range when generating invoice id", Zend_Log::DEBUG);
+					return;
+				}
+				if (!isset($formerTranslations['param1_date']) && !isset($formerTranslations['param2_id'])) {
+					Billrun_Factory::log("Missing group value params when generating invoice id", Zend_Log::DEBUG);
+					return;
+				}
+				$minValue = intval($paramObj['min_value']);
+				$maxValue = intval($paramObj['max_value']);		
+				$group = $formerTranslations['param1_date'] . $formerTranslations['param2_id'];
+				$fakeCollectionName = '$invoice_id_generation_' . $group;
+				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+				if ($seq > $maxValue) {
+					throw new Exception("Sequence exceeded max value when generating invoice id");
+				}		
+				return str_pad($seq, $paramObj['length'], '0', STR_PAD_LEFT);
+			case 'identifier':
+				if ($paramObj['value'] == 'by_type') {
+					$padLength = $paramObj['length'];
+					return str_pad($invoiceGroup, $padLength, '0', STR_PAD_LEFT);
+				}
+			default:
+				Billrun_Factory::log("Unsupported invoice_id params", Zend_Log::DEBUG);
+				break;
+		}
+	}
 }
 
 Billrun_Billrun::loadRates();

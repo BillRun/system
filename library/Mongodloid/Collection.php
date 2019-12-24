@@ -343,10 +343,10 @@ class Mongodloid_Collection {
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1) {
+	public function createAutoInc($oid, $init_id = 1, $collName = FALSE) {
 
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
+		$collection_name = !empty($collName) ? $collName : $this->getName();
 
 		// try to set last seq
 		while (1) {

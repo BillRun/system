@@ -158,7 +158,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 */
 	public function createXmlInvoice($row, $lines = null) {
 		$invoice_id = $row->get('invoice_id');
-		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
+		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 20, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
 		if (!is_writable($this->export_directory)) {
 			Billrun_Factory::log('Couldn\'t create invoice file for account ' . $row['aid'] . ' for billrun ' . $row['billrun_key'], Zend_log::ALERT);
