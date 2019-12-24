@@ -1874,4 +1874,30 @@ class Billrun_Util {
 		return $retVal;
 	}
 
+	/**
+	 *  Get all user fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user fields names
+	 */
+	public static function getCustomerAndRateUf($type) {
+		$fieldNames = array();
+		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
+		foreach ($customerIdentificationFields as $fields) {
+			$customerFieldNames = array_column($fields, 'src_key');
+			$fieldNames = array_merge($fieldNames, $customerFieldNames);
+		}
+		$rateCalculators = $fileTypeConfig['rate_calculators'];
+		foreach ($rateCalculators as $rateByUsaget) {
+			foreach ($rateByUsaget as $priorityByUsaget) {
+				foreach ($priorityByUsaget as $priority) {
+					$rateFieldNames = array_column($priority, 'line_key');
+					$fieldNames = array_merge($fieldNames, $rateFieldNames);
+				}
+			}
+		}
+
+		return array_unique($fieldNames);
+	}
+
 }
