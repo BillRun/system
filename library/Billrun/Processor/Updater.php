@@ -7,7 +7,7 @@
  */
 
 /**
- * This defines an empty processor that pass the processing action to extarnal plugin.
+ * This defines an empty processor that pass the processing action to external plugin.
  */
 abstract class Billrun_Processor_Updater extends Billrun_Processor {
 
@@ -57,6 +57,9 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
+		}
+		if ($this->getType() == 'transactions_response') {
+			$this->updateLeftPaymentsByFileStatus();
 		}
 
 		$this->removefromWorkspace($this->getFileStamp());

@@ -14,50 +14,29 @@
  * @package  Billapi
  * @since    5.5
  */
-class Models_Action_Import_Subscribers extends Models_Action {
+class Models_Action_Import_Subscribers extends Models_Action_Import {
 
-	protected function runQuery() {
-		$output = array();
-		foreach ($this->update as $key => $item) {
-			if(empty($item['__LINKER__'])) {
-				$output[$key] = 'Mandatory update parameter linker missing';
-			} else {
-				$accountQuery = array(
-					"type" => "account",
-					$item['__LINKER__']['field'] => $item['__LINKER__']['value'],
-				);			
-				$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
-				if(!$account || $account->isEmpty()) {
-					$output[$key] = "Customer for subscriber does not exist";
-				} else {
-					unset($item['__LINKER__']);
-					$item['aid'] = $account->get('aid');			
-					$params = array(
-						'collection' => 'subscribers',
-						'request' => array(
-							'action' => 'create',
-							'update' => json_encode($item),
-						),
-					);
-					try {
-						$entityModel = new Models_Subscribers($params);
-						$entityModel->create();
-						$output[$key] = true;
-					} catch (Exception $exc) {
-						$output[$key] = $exc->getMessage();
-					}
-				}
-			}
-		}
-		return $output;
-
+	protected function getCollectionName() {
+		return 'subscribers';
 	}
-
-	public function execute() {
-		if (!empty($this->request['update'])) {
-			$this->update = (array) json_decode($this->request['update'], true);
-		}
-		return $this->runQuery();
+	
+	protected function getEntityModel($params) {
+		return new Models_Subscribers($params);
 	}
-
+	
+	protected function getEntityData($entity) {
+		if(empty($entity['__LINKER__'])) {
+			throw new Exception('Missing mandatory update parameter linker');
+		}
+		$accountQuery = array(
+			"type" => "account",
+			$entity['__LINKER__']['field'] => $entity['__LINKER__']['value'],
+		);			
+		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		if(!$account || $account->isEmpty()) {
+			throw new Exception('Customer for subscriber does not exist');
+		}
+		$entity['aid'] = $account->get('aid');
+		return parent::getEntityData($entity);
+	}
 }

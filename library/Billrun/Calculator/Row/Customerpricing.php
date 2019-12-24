@@ -80,6 +80,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected $services = array();
 
 	/**
+	 * row services IDs (keys matching $services array)
+	 * 
+	 * @param array Array of integers
+	 */
+	protected $servicesIds = array();
+
+	/**
 	 * End time of the active billrun (unix timestamp)
 	 * @var int
 	 */
@@ -513,11 +520,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function loadSubscriberServices($services, $time) {
 		$ret = array();
+		$servicesIds = [];
 		foreach ($services as $service) {
 			$serviceId = isset($service['service_id']) ? $service['service_id'] : 0;
 			$serviceName = isset($service['name']) ? $service['name'] : $service;
 			$serviceSettings = array(
-				'service_id' => $serviceId,
 				'name' => $serviceName,
 				'time' => $time,
 				'disableCache' => true
@@ -547,9 +554,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			
 			$ret[$sortKey] = $serviceObject;
+			$servicesIds[$sortKey] = $serviceId;
 		}
 		
 		ksort($ret);
+		ksort($servicesIds);
+		$this->servicesIds = array_values($servicesIds);
 
 		return array_values($ret); // array of service objects
 	}
@@ -588,7 +598,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function usageLeftInServicesGroups($rate, $usageType, $services, $required, &$arategroups) {
 		$keyRequired = key($required);
 		$valueRequired = current($required);
-		foreach ($services as $service) {
+		foreach ($services as $key => $service) {
 			if ($valueRequired < 0) {
 				break;
 			}
@@ -599,7 +609,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
-					'service_id' => $service->get('service_id'),
+					'service_id' => $this->servicesIds[$key],
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
 					'service_start_date' => $service->get('service_start_date'),
 				);
@@ -1005,7 +1015,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$aprice *= $apriceMult;
 			}
 			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
-				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice);
+				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice, $this->row);
 			}
 			return $aprice;
 		}

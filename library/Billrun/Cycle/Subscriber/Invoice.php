@@ -205,10 +205,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
-		if(!isset($this->rates[$id_str])) {
+		$col_str = strval($raw_rate['$ref']);
+		if(!isset($this->rates[$col_str][$id_str])) {
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
 			return null;
 		}
-		return $this->rates[$id_str];
+		return $this->rates[$col_str][$id_str];
 	}
 	
 	/**
@@ -310,8 +314,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			$vat =  Billrun_Rates_Util::getVat();
-			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];

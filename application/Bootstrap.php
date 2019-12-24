@@ -46,6 +46,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 
 		if (isset($config->chains)) {
 			$chains = $config->chains->toArray();
+			$definedChains = Billrun_Factory::config()->getConfigValue('chains');
+			if (isset($definedChains) && is_array($definedChains)) {
+				$allChains = array_merge($definedChains, $chains);
+				$chains = array_unique($allChains);
+			}
 			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 
 			foreach ($chains as $chain) {
