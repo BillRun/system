@@ -115,6 +115,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		$totalTax = 0;
 		$totalAmount = 0;
+		$totalEmbeddedAmount = 0;
 		$taxesData = [];
 
 		foreach ($taxes as $taxCategory => $tax) {
@@ -133,6 +134,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			if ($isEmbedTax) {
 				$taxData['embedded_amount'] = $taxAmount;
 				$line['aprice'] += $taxAmount;
+				$totalEmbeddedAmount += $taxAmount;
 			} else {
 				$totalAmount += $taxAmount;
 				$totalTax += $taxFactor;
@@ -140,12 +142,18 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			
 			$taxesData[] = $taxData;
 		}
-
-		return [
+		
+		$ret = [
 			'total_amount' => $totalAmount,
 			'total_tax' => $totalTax,
 			'taxes' => $taxesData,
 		];
+		
+		if ($totalEmbeddedAmount > 0) {
+			$ret['total_embedded_amount'] = $totalEmbeddedAmount;
+		}
+
+		return $ret;
 	}
 	
 	/**
