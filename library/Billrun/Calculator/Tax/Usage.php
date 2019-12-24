@@ -119,19 +119,19 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		$taxesData = [];
 
 		foreach ($taxes as $taxCategory => $tax) {
-			$isEmbedTax = $tax['embed_tax'] ?? false;
+			$isTaxEmbedded = $tax['embed_tax'] ?? false;
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
 			$taxData = [
 				'tax' => $taxFactor,
-				'amount' => !$isEmbedTax ? $taxAmount : 0,
+				'amount' => !$isTaxEmbedded ? $taxAmount : 0,
 				'description' => $tax['description'] ?: 'VAT',
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
 			];
 			
-			if ($isEmbedTax) {
+			if ($isTaxEmbedded) {
 				$taxData['embedded_amount'] = $taxAmount;
 				$line['aprice'] += $taxAmount;
 				$totalEmbeddedAmount += $taxAmount;
