@@ -14,6 +14,11 @@
  */
 class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
+	use Billrun_Traits_EntityGetter {
+		getFullEntityDataQuery as entityGetterGetFullEntityDataQuery;
+		getBasicGroupQuery as entityGetterGetBasicGroupQuery;
+		getBasicMatchQuery as entityGetterGetBasicMatchQuery;
+	}
 	static protected $usaget;
 
 	public function __construct($options = array()) {
@@ -111,37 +116,17 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$usaget = $row['usaget'];
 		$type = $row['type'];
-		$customFilters = $this->getRateCustomFilters($type);
-		if (empty($customFilters)) {
-			Billrun_Factory::log('No custom filters found for type ' . $type . '. Stamp was ' . $row['stamp']);
-			Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
-			return false;
-		}
-		// goes over all rate mappings for every tariff categories
-		foreach ($customFilters as $tariffCategory => $categoryFilters) {
-			$filters = Billrun_Util::getIn($categoryFilters, array($usaget), array());
-			if (empty($filters)) {
-				Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
-				Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
-				return false;
-			}
+		$params = [
+			'type' => $type,
+			'usaget' => $usaget,
+		];
 			
-			$rate = $this->getLineRate($row, $usaget, $type, $tariffCategory, $filters);
-			if (!$this->isRateLegitimate($rate)) {
+		$rates = $this->getMatchingEntitiesByCategories($row, $params);
+		if (empty($rates)) {
 				Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
 				return false;
 			}
 
-			// TODO: Create the ref using the collection, not the entity object.
-			$rate->collection(Billrun_Factory::db()->ratesCollection());		
-			$current = $row->getRawData();
-			$newData = array_merge($current, $this->getForeignFields(array('rate' => $rate), $current), $this->getAddedValues($tariffCategory, $rate, $row));
-			if (!isset($newData['rates'])) {
-				$newData['rates'] = array();
-			}
-			$newData['rates'][] = $this->getRateData($tariffCategory, $rate);
-			$row->setRawData($newData);
-		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
@@ -190,107 +175,87 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
 	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
-		$matchedRate = null;
-		foreach ($filters as $currentPriorityFilters) {
-			$query = $this->getRateQuery($row, $usaget, $type, $tariffCategory, $currentPriorityFilters);
-			if (!$query) {
-				continue;
-			}
-			Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
-			$rates_coll = Billrun_Factory::db()->ratesCollection();
-			$matchedRate = $rates_coll->aggregate($query)->current();
-			if (!$matchedRate->isEmpty()) {
-				break;
-			}
+		$params = [
+			'type' => $type,
+			'usaget' => $usaget,
+		];
+
+		return $this->getEntityByFilters($row, $filters, $tariffCategory, $params);
 		}
 
-		if (empty($matchedRate) || $matchedRate->isEmpty()) {
-			return false;
-		}
+	//------------------- Entity Getter functions ----------------------------------------------------
 
-		return $this->findRateByMatchedRate($matchedRate, $rates_coll);
-	}
-
-	/**
-	 * Builds aggregate query from config
-	 * 
-	 * @return string mongo query
-	 */
-	protected function getRateQuery($row, $usaget, $type, $tariffCategory, $filters) {
-		$match = $this->getBasicMatchRateQuery($row, $usaget, $tariffCategory);
-		$additional = array();
-		$group = $this->getBasicGroupRateQuery($row);
-		$additionalAfterGroup = array();
-		$sort = $this->getBasicSortRateQuery($row);
-		if (!$filters) {
-			Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
-			return FALSE;
-		}
-		foreach ($filters as $filter) {
-			$handlerClass = Billrun_Calculator_Rate_Filters_Manager::getFilterHandler($filter);
-			if (!$handlerClass) {
-				Billrun_Factory::log('getRateQuery: cannot find filter hander. Details: ' . print_r($filter, 1));
-				continue;
+	protected function getCollection($params = []) {
+		return Billrun_Factory::db()->ratesCollection();
 			}
 			
-			$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
-			if (!$handlerClass->canHandle()) {
-				return FALSE;
-			}
-		}
-	
-		$sortQuery = array();
-		if (!empty($sort)) {
-			$sortQuery = array(array('$sort' => $sort));
-		}
-		return array_merge(array(array('$match' => $match)), $additional, array(array('$group' => $group)), $additionalAfterGroup, $sortQuery, array(array('$limit' => 1)));
-	}
-	
-	protected function getBasicMatchRateQuery($row, $usaget, $tariffCategory) {
-		$sec = $row['urt']->sec;
-		$usec = $row['urt']->usec;
-		return array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
-			array('rates.' . $usaget => array('$exists' => true)),
-			array('tariff_category' => $tariffCategory)
-		);
-	}
-	
-	protected function getBasicGroupRateQuery($row) {
-		return array(
-			'_id' => array(
-				"_id" => '$_id'
-			),
-			'key' => array('$first' => '$key')
-		);
-	}
-	
-	protected function getBasicSortRateQuery($row) {
-		return array();
-	}
-	
-	/**
-	 * Gets the rate mapping calculators
-	 * 
-	 * @param string $type
-	 * @return array of rate calculators (by priority)
-	 */
-	protected function getRateCustomFilters($type) {
+	protected function getFilters($row = [], $params = []) {
+		$type = $params['type'] ?: '';
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
+		}
+	
+	protected function getBasicMatchQuery($row, $category = '', $params = []) {
+		$usaget = $params['usaget'];
+	
+		$query = array_merge(
+			$this->entityGetterGetBasicMatchQuery($row, $category, $params),
+			['rates.' . $usaget => ['$exists' => true]],
+			['tariff_category' => $category]
+		);
+		if (Billrun_Utils_Plays::isPlaysInUse()) {
+			$play = Billrun_Util::getIn($row, 'subscriber.play', Billrun_Util::getIn(Billrun_Utils_Plays::getDefaultPlay(), 'name', ''));
+			$query['play'] = [
+				'$in' => [null, $play],
+			];
+		}
+
+		return $query;
 	}
 	
-	protected function findRateByMatchedRate($rate, $ratesColl) {
-		$rawData = $rate->getRawData();
+	protected function getBasicGroupQuery($row, $category = '', $params = []) {
+		$query = $this->entityGetterGetBasicGroupQuery($row, $category, $params);
+		$query['key'] = [
+			'$first' => '$key',
+		];
 		
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+		return $query;
+	}
+	
+	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+		$usaget = $params['usaget'] ?: '';
+		return Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
+	}
+	
+	protected function getConditionEntityKey($params = []) {
+		return 'rate_key';
+	}
+	
+	protected function afterEntityFound(&$row, $entity, $category = '', $params = []) {
+		// TODO: Create the ref using the collection, not the entity object.
+		$entity->collection(Billrun_Factory::db()->ratesCollection());
+		$current = $row->getRawData();
+		$newData = array_merge(
+			$current,
+			$this->getForeignFields(['rate' => $entity], $current),
+			$this->getAddedValues($category, $entity, $row)
+		);
+		
+		if (!isset($newData['rates'])) {
+			$newData['rates'] = [];
+		}
+		$newData['rates'][] = $this->getRateData($category, $entity);
+		$row->setRawData($newData);
+	}
+	
+	protected function getFullEntityDataQuery($rawEntity) {
+		$query = $this->entityGetterGetFullEntityDataQuery($rawEntity);
+		if (!$query || !isset($rawEntity['key'])) {
  			return false;	
  		}
- 		$idQuery = array(
- 			"key" => $rawData['key'], // this is for sharding purpose
- 			"_id" => $rawData['_id']['_id'],
- 		);
  		
- 		return $ratesColl->query($idQuery)->cursor()->current();
+		$query['key'] = $rawEntity['key']; // this is for sharding purpose
+		return $query;
 	}
 
+	//------------------- Entity Getter functions - END ----------------------------------------------
 }

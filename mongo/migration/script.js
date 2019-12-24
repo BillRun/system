@@ -6,6 +6,9 @@
 // =============================== Helper functions ============================
 
 function addFieldToConfig(lastConf, fieldConf, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		lastConf[entityName] = {'fields': []};
+	}
 	var fields = lastConf[entityName]['fields'];
 	var found = false;
 	for (var field_key in fields) {
@@ -449,6 +452,63 @@ if (typeof lastConfig['subscribers']['subscriber']['fields'][subscriberServicesF
     lastConfig['subscribers']['subscriber']['fields'][subscriberServicesFieldIndex]["multiple"] = true;
 }
 
+// BRCD-1835: add default TAX key
+if (typeof lastConfig['taxation'] === 'undefined') {
+	lastConfig.taxation = {};
+}
+if (typeof lastConfig['taxation']['default'] === 'undefined') {
+	lastConfig.taxation.default = {};
+}
+if (typeof lastConfig['taxation']['default']['key'] === 'undefined') {
+	lastConfig.taxation.default.key = "DEFAULT_TAX";
+}
+
+// BRCD-1837: convert legacy VAT taxation to default taxation rate
+if (lastConfig['taxation']['tax_type'] == 'vat') {
+	var vatRate = lastConfig['taxation']['vat']['v'];
+	var vatLabel = typeof lastConfig['taxation']['vat_label'] !== 'undefined' ? lastConfig['taxation']['vat_label'] : "Vat";
+	
+	lastConfig.taxation = {
+		"tax_type": "usage",
+		"default": {
+			"key": "DEFAULT_VAT"
+		}
+	};
+	
+	var vatFrom = new Date('2019-01-01');
+	var vatTo = new Date('2119-01-01');
+	var vat = {
+		key: "DEFAULT_VAT",
+		from: vatFrom,
+		creation_time: vatFrom,
+		to: vatTo,
+		description: vatLabel,
+		rate: vatRate,
+		params: {}
+	};
+	
+	db.taxes.insert(vat);
+}
+
+//BRCD-1834 : Add tax field
+var taxField ={
+    "system":true,
+    "field_name" : "tax"
+};
+lastConfig = addFieldToConfig(lastConfig, taxField, 'rates');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'plans');
+lastConfig = addFieldToConfig(lastConfig, taxField, 'services');
+//BRCD-1832 - Dummy priorities 
+var defaultVatMapping = {
+    vat: {
+			  "priorities": [],
+        "default_fallback": true
+    }
+};
+if (typeof lastConfig['taxation']['mapping'] === 'undefined') {
+    lastConfig['taxation']['mapping'] = defaultVatMapping;
+}
+
 // BRCD-1843 - Service is taxable but shown as non-taxable
 var servicesFields = lastConfig['services']['fields'];
 if (servicesFields) {
@@ -460,7 +520,104 @@ if (servicesFields) {
 	lastConfig['services']['fields'] = servicesFields;
 }
 
-db.config.insert(lastConfig);
+// BRCD-1917 - add discount fields
+var discountsFields = [{
+	"field_name": "from",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+}, {
+	"field_name": "to",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+}, {
+	"field_name": "key",
+	"system": true,
+	"mandatory": true
+}, {
+	"field_name": "description",
+	"system": true,
+	"mandatory": true
+}];
+for (var fieldIdx in discountsFields) {
+	lastConfig = addFieldToConfig(lastConfig, discountsFields[fieldIdx], 'discounts');
+}
+// BRCD-1969 - add account allowances field
+var accountField = {
+	"field_name": "allowances",
+	"system": true,
+	"display": false,
+};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], accountField, 'account');
+// BRCD-1917 - add system flag true to discount system fields
+var discountFields = lastConfig['discounts']['fields'];
+if (discountFields) {
+	var discountsSystemFields = ['key', 'from', 'to', 'description'];
+	discountFields.forEach(function (field){
+		if (discountsSystemFields.includes(field['field_name']) && typeof field['system'] === 'undefined') {
+			field['system'] = true;
+		}
+	});
+	lastConfig['discounts']['fields'] = discountFields;
+}
+
+//BRCD-1942 : Add Charge fields 
+var chargeFields = [{
+	"field_name": "from",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+	}, {
+	"field_name": "to",
+	"system": true,
+	"mandatory": true,
+	"type": "date"
+	}, {
+	"field_name": "key",
+	"system": true,
+	"mandatory": true
+	}, {
+	"field_name": "description",
+	"system": true,
+	"mandatory": true
+}];
+for (var fieldIdx in chargeFields) {
+	lastConfig = addFieldToConfig(lastConfig, chargeFields[fieldIdx], 'charges');
+}
+
+//BRCD-1858 - UI for denials receiver for Credit Guard
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+			if (typeof lastConfig['payment_gateways'][i]['transactions'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['transactions'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['transactions']['receiver'] === 'undefined')	{
+				lastConfig["payment_gateways"][i]['transactions'].receiver = [];
+			}
+
+			if (typeof lastConfig['payment_gateways'][i]['denials'] === 'undefined') {
+					lastConfig['payment_gateways'][i]['denials'] = {};
+			}
+			if (typeof lastConfig['payment_gateways'][i]['denials']['receiver'] === 'undefined') {
+				lastConfig["payment_gateways"][i]['denials'].receiver = [];
+			}
+			delete(lastConfig['payment_gateways'][i]['receiver']);
+	}
+}
+
+var formerPlanField ={
+					"system":true,
+					"select_list" : false,
+					"display" : false,
+					"editable" : false,
+					"multiple" : false,
+					"field_name" : "former_plan",
+					"unique" : false,
+					"title" : "Former plan",
+					"mandatory" : false,
+	};
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
@@ -479,3 +636,124 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// BRCD-1837: convert rates' "vatable" field to new tax mapping
+db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+
+// taxes collection indexes
+db.createCollection('taxes');
+db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
+db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
+db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
+
+// BRCD-1936: Migrate old discount structure to new discount structure
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
+db.discounts.find({"discount_subject":{$exists: true}}).forEach(
+	function(obj) {
+		var subjectService;
+		if (obj.discount_subject.service !== undefined) {
+			subjectService = obj.discount_subject.service;
+		} else {
+			subjectService = {};
+		}
+		var subjectPlan;
+		if (obj.discount_subject.plan !== undefined) {
+			subjectPlan = obj.discount_subject.plan;
+		} else {
+			subjectPlan = {};
+		}
+		var oldParams = obj.params;
+		obj.type = obj.discount_type;
+		if (obj.prorated == false) {
+			obj.proration = "no";
+		} else {
+			obj.proration = "inherited";
+		}
+		var plansInSubject = {};
+		for (var planName in subjectPlan) {
+			if (subjectPlan[planName].value !== undefined) {
+				plansInSubject[planName] = subjectPlan[planName];
+			} else {
+				var plan = {};
+				plan[planName] = {"value": subjectPlan[planName]};
+				plansInSubject[planName] = {"value": subjectPlan[planName]};
+			}
+		}
+		var servicesInSubject = {};
+		for (var serviceName in subjectService) {
+			if (subjectService[serviceName].value !== undefined) {
+				servicesInSubject[serviceName] = subjectService[serviceName];
+			} else {
+				var service = {};
+				service[serviceName] = {"value": subjectService[serviceName]};
+				servicesInSubject[serviceName] = {"value": subjectService[serviceName]};
+			}
+		}
+		obj.subject = {};
+		if (isEmpty(plansInSubject) === false) {
+			obj.subject.plan = plansInSubject;
+		}
+		if (isEmpty(servicesInSubject) === false) {
+			obj.subject.service = servicesInSubject;
+		}
+		if (isEmpty(obj.subject)) {
+			delete obj.subject;
+		}
+		var conditionObject = {};
+		obj.params = {};
+		var fieldsObject = {};
+		var servicesValues = {};
+		conditionObject["subscriber"] = {};
+		if (oldParams.plan !== undefined) {
+			fieldsObject = [{"field": "plan", "op": "eq", "value": oldParams.plan}];
+			conditionObject["subscriber"]["fields"] = fieldsObject;
+		}
+		var serviceObject = {};
+		var serviceValue = [];
+		if (oldParams.service !== undefined) {
+			var serviceCondAmount = oldParams.service.length;
+			for (var i = 0; i < serviceCondAmount; i++) {
+				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+			}
+			servicesValues = {"fields": serviceValue};
+			serviceObject['any'] = [servicesValues];
+			conditionObject["subscriber"]["service"] = serviceObject;
+		}
+		if (isEmpty(fieldsObject) === false || isEmpty(serviceObject) === false) {
+			conditionObject["subscriber"] = [conditionObject["subscriber"]];
+			obj.params.conditions = [conditionObject];
+		}
+		delete obj.discount_type;
+		delete obj.discount_subject;
+		delete obj.prorated;
+		db.discounts.save(obj);
+	}
+)
+
+// BRCD-1971 - update prorated field
+db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
+	plan.prorated_start = plan.prorated;
+	plan.prorated_end = plan.prorated;
+	plan.prorated_termination = plan.prorated;
+	delete plan.prorated;
+	db.plans.save(plan);
+});
+db.config.insert(lastConfig);
+
+db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
+db.archive.dropIndex('session_id_1_request_num_-1')
+db.archive.dropIndex('sid_1_call_reference_1')
+db.archive.dropIndex('call_reference_1')
+if (db.serverStatus().ok == 0) {
+	print('Cannot shard archive collection - no permission')
+} else if (db.serverStatus().process == 'mongos') {
+	sh.shardCollection("billing.archive", {"stamp": 1});
+}

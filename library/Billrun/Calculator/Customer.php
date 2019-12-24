@@ -452,6 +452,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$row['subscriber'] = $enrichedData;
 				$row = array_merge($row,$foreignData, $enrichedData);
 			}
+			
+			if (Billrun_Utils_Plays::isPlaysInUse() && !isset($row['subscriber']['play'])) {
+				$newRowSubscriber = $row['subscriber'];
+				$newRowSubscriber['play'] = Billrun_Utils_Plays::getDefaultPlay()['name'];
+				$row['subscriber'] = $newRowSubscriber;
+			}
 		}
 		return $row;
 	}

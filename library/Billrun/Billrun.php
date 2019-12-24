@@ -56,7 +56,7 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('taxation.vat', 0.18);
+		$this->vat = Billrun_Rates_Util::getVat(0.18); // TODO: this should not be in use since there is no single TAX
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
@@ -224,13 +224,13 @@ class Billrun_Billrun {
 	 * @param boolean $rawData
 	 * @return array
 	 */
-	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
+	public static function getBillrunData($aid, $billrun_key, $rawData = true, $project = []) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
 				))
-				->cursor()->limit(1)->current();
+				->project($project)->cursor()->limit(1)->current();
 		return $rawData ? $data->getRawData() : $data;
 	}
 
@@ -961,7 +961,7 @@ class Billrun_Billrun {
 	 */
 	public static function getActiveBillrun() {
 		$query = array(
-			'attributes.invoice_type' => array('$ne' => 'immediate'),
+			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
 		$now = time();
 		$sort = array(

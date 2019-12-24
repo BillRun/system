@@ -14,12 +14,12 @@
  */
 class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
 	
-	protected $data = [];
+	public $data = [];
 	protected $aid = null;
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->data = $options['data'] ?: [];
+		$this->data = $options['data'] ? json_decode($options['data'], true) : [];
 		$this->aid = $options['aid'] ?: null;
 	}
 	
