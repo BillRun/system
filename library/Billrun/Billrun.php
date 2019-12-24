@@ -273,6 +273,7 @@ class Billrun_Billrun {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
+			$billrunEntity->set('invoice_id', $ret);
 		}
 	}
 
