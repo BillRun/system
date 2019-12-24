@@ -58,7 +58,7 @@ class Billrun_DiscountManager {
 		foreach ($entityRevisions as $entityRevision) {
 			$newEntityRevision = $entityRevision;
 			foreach ($passthroughData as $origFieldName => $fieldName) {
-				if (isset($entityRevision[$fieldName])) {
+				if (@isset($entityRevision[$fieldName])) {
 					$newEntityRevision[$origFieldName] = $entityRevision[$fieldName];
 				}
 			}

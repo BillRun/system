@@ -1,30 +1,9 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+trait Billrun_Cycle_Aggregation_Common {
 
-/**
- * Description of CycleAggregatePipeline
- *
- * @author eran
- */
-class Billrun_Cycle_AggregateRemote {
-	
-	protected $exclusionQuery = array();
-	protected $passthroughFields = array();
-	protected $subsPassthroughFields = array();
-	
-	public function __construct($options = array()) {
-		$this->exclusionQuery = Billrun_Util::getFieldVal($options['exclusion_query'], $this->exclusionQuery);
-		$this->passthroughFields = Billrun_Util::getFieldVal($options['passthrough_fields'], $this->passthroughFields);
-		$this->subsPassthroughFields = Billrun_Util::getFieldVal($options['subs_passthrough_fields'], $this->subsPassthroughFields);
-	}
-	
 	/**
-	 * 
+	 *
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle
 	 * @return type
 	 */
@@ -42,7 +21,7 @@ class Billrun_Cycle_AggregateRemote {
 				)
 			);
 	}
-	
+
 	// TODO: Move this function to a "collection aggregator class"
 	public function getPlansProjectPipeline() {
 		return array(
@@ -63,28 +42,6 @@ class Billrun_Cycle_AggregateRemote {
 			)
 		);
 	}
-	
-	/**
-	 * Aggregate mongo with a query
-	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
-	 * @param int $page - page
-	 * @param int $size - size
-	 * @param int $aids - Account ids, null by deafault
-	 * @return array 
-	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
-		if (is_null($page)) {
-			$page = 0;
-		}
-
-		if (empty($size)) {
-			$size = 100;
-		}
-		return Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
-	}
-	
-	//--------------------------------------------------------------
-	
 
 	/**
 	 *
@@ -131,15 +88,17 @@ class Billrun_Cycle_AggregateRemote {
 		return $match;
 	}
 
-	protected function getSortPipeline() {
-		return array(
-			'$sort' => array(
-				'_id.aid' => 1,
-				'_id.sid' => 1,
-				'_id.type' => -1,
-				'_id.plan' => 1,
-				'plan_dates.from' => 1,
-			),
-		);
+	/**
+	 *
+	 */
+	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
+		$cursor = $collection->aggregateWithOptions($pipelines,['allowDiskUse'=> true]);
+		$results = iterator_to_array($cursor);
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
 	}
+
 }

@@ -41,12 +41,23 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log('Failed to retrive valid results  for billable, remote returned no data.',Zend_Log::WARN);
 				return [];
 			}
-			if(empty($results['status'])) {
+			if( empty($results['status']) || !isset($results['data']) ) {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams),Zend::WARN);
 				return [];
 			}
+
 			// Preform translation if needed and return results
-			return array_map(function($item){ return ['id'=> $item];}, $results['data']);
+			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
+			foreach($results['data'] as &$rev) {
+				Billrun_Utils_Mongo::convertQueryMongoDates($rev,'/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/');
+				foreach($fieldMapping as $srcField => $dstField) {
+					if(isset($rev[$srcField])) {
+						$rev[$dstField] = $rev[$srcField];
+					}
+				}
+
+			}
+			return $results['data'];
 	}
 
 
