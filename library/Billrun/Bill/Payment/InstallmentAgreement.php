@@ -78,7 +78,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			return $success;
 		}
 		
-		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
+		Billrun_Factory::log("Failed creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
 	

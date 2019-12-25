@@ -12,7 +12,7 @@
  * @package  Billrun
  * @since    5.11
  */
-class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
+class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 
 	protected $method = 'merge_installments';
 	protected $splitBills = array();
@@ -69,7 +69,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 			return $success;
 		}
 		
-		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
+		Billrun_Factory::log("Failed creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
 	

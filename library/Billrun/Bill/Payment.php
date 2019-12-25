@@ -983,7 +983,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	public static function mergeSpllitedInstallments($params) {
-		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
+		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergedInstallments($params);
 		return $mergedInstallmentsObj->merge();
 	}
 }
