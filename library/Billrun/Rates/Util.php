@@ -23,12 +23,14 @@ class Billrun_Rates_Util {
 	 * @param type $rate_ref
 	 * @return type
 	 */
-	public function getRateByRef($rate_ref) {
+	public function getRateByRef($rate_ref, $useCache = FALSE) {
 		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
 
-		if(!isset(static::$ratesCache[$refStr])) {
-			$rates_coll = Billrun_Factory::db()->ratesCollection();
+		if($useCache && !isset(static::$ratesCache[$refStr])) {
 			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
+		} else {
+			return $rates_coll->getRef($rate_ref);
 		}
 
 		return static::$ratesCache[$refStr];
