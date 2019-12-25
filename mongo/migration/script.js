@@ -765,3 +765,13 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	db.plans.save(plan);
 });
 db.config.insert(lastConfig);
+
+db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
+db.archive.dropIndex('session_id_1_request_num_-1')
+db.archive.dropIndex('sid_1_call_reference_1')
+db.archive.dropIndex('call_reference_1')
+if (db.serverStatus().ok == 0) {
+	print('Cannot shard archive collection - no permission')
+} else if (db.serverStatus().process == 'mongos') {
+	sh.shardCollection("billing.archive", {"stamp": 1});
+}
