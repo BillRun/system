@@ -413,7 +413,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'billrun_key' => $this->getCycle()->key(),
 			'autoload' => !empty($this->overrideMode)
 			);
-		Billrun_Factory::log(json_encode($outputArr,JSON_PRETTY_PRINT));
+
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];

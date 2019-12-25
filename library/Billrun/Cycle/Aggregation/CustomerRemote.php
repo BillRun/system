@@ -44,12 +44,13 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		$billableResults = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
-		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services','activation_date'];
+		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services'];
 		foreach($billableResults as $revision) {
 			if(!in_array($revision['aid'],$this->exclusionQuery)) {
 				$revStamp = @Billrun_Util::generateArrayStamp($revision, $idFields);
-				$retResults[$revStamp]  = $revision;
-				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
+				if(empty($retResults[$revStamp])) {
+					$retResults[$revStamp] = [];
+				}
 				if(!empty($revision['plan'])) {
 					$retResults[$revStamp]['plan_dates'][] = [
 						'plan' => $revision['plan'],
@@ -58,7 +59,13 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 						'plan_activation' => @$revision['plan_activation'],
 						'plan_deactivation' => @$revision['plan_deactivation'],
 					];
+				} else {
+					$retResults[$revStamp]['plan_dates'][] = [
+						'from' => $revision['from'],
+						'to' => $revision['to']
+					];
 				}
+				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
 					if(isset($revision[$passthroughField])) {
@@ -67,6 +74,8 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 				}
 			}
 		}
+
+		usort($billableResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		return array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults));
 
