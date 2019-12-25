@@ -119,7 +119,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		$taxesData = [];
 
 		foreach ($taxes as $taxCategory => $tax) {
-			$isTaxEmbedded = $tax['embed_tax'] ?? false;
+			$isTaxEmbedded = isset($tax['embed_tax']) ? $tax['embed_tax'] : false;
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
 			$taxData = [
