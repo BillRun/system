@@ -257,18 +257,7 @@ class Billrun_Billrun {
 	 */
 	public function close($min_id) {
 		$billrunEntity = $this->getRawData();
-		$invoiceIdStructure = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_pattern', '');
-		if (empty($invoiceIdStructure)) {
-			Billrun_Factory::log()->log("Missing invoice id structure", Zend_Log::ALERT);
-		}
-		$invoiceIdParams = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_params', array());
-		$translations = array();
-		$totalAmount = $billrunEntity['totals']['after_vat'];
-		$invoiceGroup = $totalAmount < 0 ? '29' : '21';
-		foreach ($invoiceIdParams as $paramObj) {
-			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
-		}
-		$ret = Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
+		$ret = $this->getInvoiceId($billrunEntity['totals']['after_vat']);
 		if (is_null($ret)) {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
@@ -981,6 +970,20 @@ class Billrun_Billrun {
 				Billrun_Factory::log("Unsupported invoice_id params", Zend_Log::DEBUG);
 				break;
 		}
+	}
+	
+	protected function getInvoiceId($totalAmount) {
+		$invoiceIdStructure = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_pattern', '');
+		if (empty($invoiceIdStructure)) {
+			Billrun_Factory::log()->log("Missing invoice id structure", Zend_Log::ALERT);
+		}
+		$invoiceIdParams = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_params', array());
+		$translations = array();
+		$invoiceGroup = $totalAmount < 0 ? '29' : '21';
+		foreach ($invoiceIdParams as $paramObj) {
+			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
+		}
+		return Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
 	}
 }
 
