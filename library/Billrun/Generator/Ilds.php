@@ -137,10 +137,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
-			$this->setLinesInvoiceId($stamps, $invoice_id);
-			// update billrun with the invoice id
-			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
+
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('first day of previous month'));
@@ -162,11 +159,18 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * $this->vat;
 				$total += $total_ild_cost;
 			}
+			$totalVat = $total * $this->vat;
+			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat));
+			$this->setLinesInvoiceId($stamps, $invoice_id);
+			// update billrun with the invoice id
+			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;			
+			
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total * $this->vat;
+			$invoice_sumup->TOTAL_INCL_VAT = $totalVat;
 			//$row->{'xml'} = $xml->asXML();
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
-			$this->createXml($invoice_id, $xml->asXML());
+			$fileName = $row->get('stamp') . '_' . str_pad($row->get('account_id'), 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 20, '0', STR_PAD_LEFT);
+			$this->createXml($fileName, $xml->asXML());
 			if ($add_header) {
 				$this->addRowToCsv(null, null, null, null, $add_header);
 				$add_header = false;
@@ -256,17 +260,24 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$lines->update($where, $update, array("multiple" => true));
 	}
 
-	protected function createInvoiceId() {
-		$invoices = Billrun_Factory::db()->billrunCollection();
-		// @TODO: need to the level of the invoice type
-		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
-		foreach ($resource as $e) {
-			// demi loop
+	protected function createInvoiceId($totalAmount) {
+		$invoiceIdStructure = Billrun_Config::getInstance()->getConfigValue('ilds.generator.invoice_id_pattern', '');
+		if (empty($invoiceIdStructure)) {
+			Billrun_Factory::log()->log("Missing invoice id structure", Zend_Log::ALERT);
 		}
-		if (isset($e['invoice_id'])) {
-			return (string) ($e['invoice_id'] + 1); // convert to string cause mongo cannot store bigint
+		$invoiceIdParams = Billrun_Config::getInstance()->getConfigValue('ilds.generator.invoice_id_params', array());
+		$translations = array();
+		$invoiceGroup = $totalAmount < 0 ? '30' : '25';
+		foreach ($invoiceIdParams as $paramObj) {
+			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
 		}
-		return '3100000000';
+		$ret = Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
+		if (is_null($ret)) {
+			Billrun_Factory::log()->log("Failed to generate invoice for account", Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log()->log("Failed to generate invoice for account", Zend_Log::INFO);
+			return $ret;
+		}
 	}
 
 	protected function addIldLineXML(&$billing_record, $line) {
@@ -336,5 +347,42 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 EOI;
 		return simplexml_load_string($xml);
 	}
-
+	
+	protected function getTranslationValue($paramObj, $invoiceGroup, $formerTranslations) {
+		if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+			Billrun_Factory::log("Missing invoice_id params definitions when generating invoice id", Zend_Log::DEBUG);
+		}
+		switch ($paramObj['type']) {
+			case 'date':
+				$dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+				return date($dateFormat, $dateValue);	
+			case 'autoinc':
+				if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
+					Billrun_Factory::log("Missing range when generating invoice id", Zend_Log::DEBUG);
+					return;
+				}
+				if (!isset($formerTranslations['param1_date']) && !isset($formerTranslations['param2_id'])) {
+					Billrun_Factory::log("Missing group value params when generating invoice id", Zend_Log::DEBUG);
+					return;
+				}
+				$minValue = intval($paramObj['min_value']);
+				$maxValue = intval($paramObj['max_value']);		
+				$group = $formerTranslations['param1_date'] . $formerTranslations['param2_id'];
+				$fakeCollectionName = '$invoice_id_generation_' . $group;
+				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+				if ($seq > $maxValue) {
+					throw new Exception("Sequence exceeded max value when generating invoice id");
+				}		
+				return str_pad($seq, $paramObj['length'], '0', STR_PAD_LEFT);
+			case 'identifier':
+				if ($paramObj['value'] == 'by_type') {
+					$padLength = $paramObj['length'];
+					return str_pad($invoiceGroup, $padLength, '0', STR_PAD_LEFT);
+				}
+			default:
+				Billrun_Factory::log("Unsupported invoice_id params", Zend_Log::DEBUG);
+				break;
+		}
+	}
 }

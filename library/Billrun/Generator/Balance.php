@@ -112,8 +112,6 @@ class Billrun_Generator_Balance extends Billrun_Generator_Ilds {
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
-			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('first day of previous month'));
@@ -135,8 +133,11 @@ class Billrun_Generator_Balance extends Billrun_Generator_Ilds {
 				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * $this->vat;
 				$total += $total_ild_cost;
 			}
+			$totalVat = $total * $this->vat;
+			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat));
+			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total * $this->vat;
+			$invoice_sumup->TOTAL_INCL_VAT = $totalVat;
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			return $xml->asXML();
 		}
