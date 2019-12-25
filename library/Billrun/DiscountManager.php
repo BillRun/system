@@ -1339,13 +1339,14 @@ class Billrun_DiscountManager {
 			}
 		}
 		
-		$quantityMultiplier = floor($line['quantity'] / $quantity);
+		$lineQuantity = $line['usagev'];
+		$quantityMultiplier = floor($lineQuantity / $quantity);
 		if (!$isPercentage) {
 			return  $price * $quantityMultiplier;
 		}
 		
 		$discountedQuantity = $quantity * $quantityMultiplier;
-		$discountedPrice = $price / $line['quantity'] * $discountedQuantity;
+		$discountedPrice = $price / $lineQuantity * $discountedQuantity;
 		return $discountedPrice * $percentage;
 	}
 	
