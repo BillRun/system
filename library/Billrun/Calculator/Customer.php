@@ -306,7 +306,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		return array_map(function($data) {
-			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscriber.type', 'db'));
+			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
 			$options = array('data' => $data->getRawData());
 			$subscriber = Billrun_Subscriber::getInstance(array_merge($data->getRawData(), $options, $type));
 			return $subscriber;
