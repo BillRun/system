@@ -297,7 +297,7 @@ class Billrun_Factory {
 	 */
 	static public function subscriber() {
 		if (!self::$subscriber) {
-			$subscriberSettings = self::config()->getConfigValue('subscriber.subscriber', array());
+			$subscriberSettings = self::config()->getConfigValue('subscribers.subscriber', array());
 			self::$subscriber = Billrun_Subscriber::getInstance($subscriberSettings);
 		}
 
