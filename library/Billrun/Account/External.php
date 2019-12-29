@@ -17,8 +17,50 @@ class Billrun_Account_External extends Billrun_Account {
 	public function __consrtuct($options = []) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
+		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
 	}
 	
+
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+			// Prepare request
+			$requestParams = [
+				'start_date' => date('Y-m-d',$cycle->start()->sec),
+				'end_date' => date('Y-m-d',$cycle->end()->sec),
+				'page' => $page,
+				'size' => $size
+			];
+
+			if(!empty($aids)) {
+				$requestParams['aids'] = $aids;
+			}
+			//Actually  do the request
+			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+
+			//Check for errors
+			if(empty($results)) {
+				Billrun_Factory::log('Failed to retrive valid results  for billable, remote returned no data.',Zend_Log::WARN);
+				return [];
+			}
+			if( empty($results['status']) || !isset($results['data']) ) {
+				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams),Zend::WARN);
+				return [];
+			}
+
+			// Preform translation if needed and return results
+			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
+			foreach($results['data'] as &$rev) {
+				Billrun_Utils_Mongo::convertQueryMongoDates($rev,'/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/');
+				foreach($fieldMapping as $srcField => $dstField) {
+					if(isset($rev[$srcField])) {
+						$rev[$dstField] = $rev[$srcField];
+					}
+				}
+
+			}
+			return $results['data'];
+	}
+
+
 	/**
 	 * Overrides parent abstract method
 	 */
@@ -54,6 +96,8 @@ class Billrun_Account_External extends Billrun_Account {
 			return $acc;
 		}, []);
 	}
+
+
 	
 	/** 
 	 * Method to Save as 'Close And New' item

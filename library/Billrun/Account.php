@@ -101,6 +101,11 @@ abstract class Billrun_Account extends Billrun_Base {
 	}
 
 	/**
+	 * TODO document
+	 */
+	public abstract function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $size, $aids = []);
+
+	/**
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
@@ -323,6 +328,22 @@ abstract class Billrun_Account extends Billrun_Base {
 			return $includeIds;
 		}	
 		return array_intersect($aids, $includeIds);
+	}
+
+	//============================ Static function =========================
+
+	public static function getAccountAggregationLogic($params) {
+		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscribers.type','db'));
+		switch($subscribersType) {
+			case "external":
+				return new Billrun_Cycle_Aggregation_CustomerRemote($params);
+				break;
+			case 'db' :
+				return new Billrun_Cycle_Aggregation_CustomerDb($params);
+				break;
+		}
+
+		throw new Exception("No subscriber aggregation identified");
 	}
 
 }
