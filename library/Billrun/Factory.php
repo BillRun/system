@@ -297,7 +297,7 @@ class Billrun_Factory {
 	 */
 	static public function subscriber() {
 		if (!self::$subscriber) {
-			$subscriberSettings = self::config()->getConfigValue('subscriber', array());
+			$subscriberSettings = self::config()->getConfigValue('subscribers.subscriber', array());
 			self::$subscriber = Billrun_Subscriber::getInstance($subscriberSettings);
 		}
 
@@ -307,11 +307,11 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the account instance
 	 * 
-	 * @return Billrun_Subscriber
+	 * @return Billrun_Account
 	 */
 	static public function account() {
 		if (!self::$account) {
-			$settings = self::config()->getConfigValue('account', array());
+			$settings = self::config()->getConfigValue('subscriber', array());
 			self::$account = Billrun_Account::getInstance($settings);
 		}
 

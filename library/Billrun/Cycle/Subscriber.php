@@ -150,7 +150,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				}
 			}
 		}
-		
+
 		$requiredFields = array('aid' => 1, 'sid' => 1);
 		$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
 

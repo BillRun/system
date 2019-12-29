@@ -127,7 +127,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     throw new Exception('Missing account id');
                 }
                 $account = Billrun_Factory::account();
-                $account->load(array('aid' => $params['aid']));
+                $account->loadAccountForQuery(array('aid' => $params['aid']));
                 $accountData = $account->getCustomerData();
                 if (!isset($accountData[$field])) {
                     $message = "Field name $field does not exists under entity " . $entity;
