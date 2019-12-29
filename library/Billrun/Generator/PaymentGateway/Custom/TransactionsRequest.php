@@ -21,7 +21,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
 	protected $tokenField = null;
 	protected $amountField = null;
-	protected $generatedFileLog;
+	protected $generatedLogFileStamp;
 	protected $generatorFilters = array();
 	protected $extraParamsDef = array();
 	protected $options = array();
@@ -45,18 +45,36 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $className = $this->getGeneratorClassName();
                 $generatorOptions = $this->buildGeneratorOptions();
                 $this->fileGenerator = new $className($generatorOptions);
+                $this->initLogFile();
+                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
+                $parametersString = "";
+                if (isset($options['collection_date']) && !empty($options['collection_date'])){
+                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
+                }
+                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
+                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
+                }
+                $parametersString = trim($parametersString, ",");
+                $this->logFile->updateLogFileField('parameters_string', $parametersString);
+                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
 		if (!$this->validateExtraParams()) {
 			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.'; 
+                        $this->logFile->updateLogFileField('errors', $message);
 			throw new Exception($message);
 			return;
 		}
+                Billrun_Factory::log()->log('Parameters are valid for file type ' .  $this->configByType['file_type'] . '. Starting to pull entities..' , Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
-		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
+                $message = 'generator entities loaded: ' . count($this->customers);
+		Billrun_Factory::log()->log($message, Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', $message);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 		$this->data = array();
 		$customersAids = array_map(function($ele){
@@ -131,15 +149,20 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$params['amount'] = $paymentParams['amount'];
 			$params['aid'] = $currentPayment->getAid();
 			$params['txid'] = $currentPayment->getId();
-			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			if (isset($account['payment_gateway']['active']['card_expiration'])) {
-				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
-			}
-			$line = $this->getDataLine($params);
-			$this->data[] = $line;
+                        if(isset($account['payment_gateway']['active']['card_token'])){
+                            $params['card_token'] = $account['payment_gateway']['active']['card_token'];
+                        }
+                            if (isset($account['payment_gateway']['active']['card_expiration'])) {
+                                    $params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+                            }
+                            $line = $this->getDataLine($params);
+                            $this->data[] = $line;
+                    }
 		}
                 $numberOfRecordsToTreat = count($this->data);
-                Billrun_Factory::log()->log('generator entities treated: ' . $numberOfRecordsToTreat, Zend_Log::INFO);
+                $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
+                Billrun_Factory::log()->log($message, Zend_Log::INFO);
+                $this->logFile->updateLogFileField('info', $message);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}

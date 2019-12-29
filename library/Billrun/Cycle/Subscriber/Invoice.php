@@ -205,10 +205,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
-		if(!isset($this->rates[$id_str])) {
+		$col_str = strval($raw_rate['$ref']);
+		if(!isset($this->rates[$col_str][$id_str])) {
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
 			return null;
 		}
-		return $this->rates[$id_str];
+		return $this->rates[$col_str][$id_str];
 	}
 	
 	/**
@@ -399,13 +403,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param type $subLines
 	 */
 	public function aggregateLinesToBreakdown($subLines) {
-		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines',array());
+		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines', Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.subscriber.final_data',array()));
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		Billrun_Factory::log('Updating billrun object with aggregated lines for SID : ' . $this->data['sid']);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
-			foreach($brkdownConfigs as $breakdownConfig) {
+			foreach($brkdownConfigs['pipelines'] as $breakdownConfig) {
 				$aggrResults = $aggregate->aggregate($breakdownConfig, $subLines);
 				if($aggrResults) {
 					foreach($aggrResults as $aggregateValue) {

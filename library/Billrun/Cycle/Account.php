@@ -54,6 +54,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->applyDiscounts($flatLines);
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
+	
+	public function addConfigurableData() {
+		$this->invoice->addConfigurableData();
+	}
 
 	public function getInvoice() {
 		return $this->invoice;
@@ -287,7 +291,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
 
-		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
+		$data = [
+			'rates' => $this->cycleAggregator->getRates(),
+			'discounts' => $this->cycleAggregator->getDiscounts(),
+		];
+		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
 		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );

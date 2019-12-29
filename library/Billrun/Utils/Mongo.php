@@ -213,8 +213,11 @@ class Billrun_Utils_Mongo {
 	 * @param mixed $data
 	 * @return mixed $data with ISO dates
 	 */
-	public static function convertMongoDatesToReadable($data) {
+	public static function convertMongoDatesToReadable($data, $format = false) {
 		if ($data instanceof MongoDate) {
+			if ($format) {
+				return date($format, $data->sec);
+			}
 			return date(DATE_ISO8601, $data->sec);
 		}
 		if (!is_array($data)) {
