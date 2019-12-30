@@ -18,6 +18,7 @@
  class Tests_CustomerCalculator extends UnitTestCase {
 
      use Tests_SetUp;
+     /* ['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T0900:04", 'service_id' => '1651435539882454'] */
 
      protected $message = '';
      protected $linesCol;
@@ -27,18 +28,21 @@
      protected $rows = [
          /* Find subscriber by field (imsi/ndcsn etc...) -IP a */
          array('row' => array('stamp' => 'ct1', 'uf' => ['sid' => 2, 'ndcsn' => '123', 'date' => '2019-11-27 10:39:00'], 'urt' => '2019-11-27 10:39:00', "usaget" => "call", "type" => "a", "source" => "a"),
-             'expected' => array('aid' => 1, 'sid' => 2, 'plan' => "PLAN_A", 'firstname' => 's', 'lastname' => 's', 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T09:                00:04", 'service_id' => '1651435539882454']])),
+             'expected' => array('aid' => 1, 'sid' => 2, 'plan' => "PLAN_A", 'firstname' => 's', 'lastname' => 's',
+                 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T09:00:04", 'service_id' => '1651435539882454']])),
          /* Find subscriber by field with regx - IP a */
          /* Subscriber with 2 active services - both will write to line - sid 3 */
          array('row' => array('stamp' => 'ct2', 'uf' => ['sid' => 3, 'ndcsn' => '972789', 'date' => '2019-11-27 10:39:00'], 'urt' => '2019-11-27 10:39:00', "usaget" => "call", "type" => "a", "source" => "a"),
              'expected' => array('aid' => 1, 'sid' => 3, 'plan' => "PLAN_A", 'services' => ['SERVICE_A', 'SERVICE_B'],
-                 'firstname' => 'y', 'lastname' => 'y', 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436461646613'], ['name' => '                       SERVICE_B', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436461646736']]
+                 'firstname' => 'y', 'lastname' => 'y', 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436461646613'],
+                     ['name' => 'SERVICE_B', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436461646736']]
              )),
          /* Find subscriber by field with 2 priorities and the subscriber meet only one / both - IP a */
          /* Subscriber with service included in plan + regular service - both will write to line sid 4 */
          array('row' => array('stamp' => 'ct3', 'uf' => ['sid' => 4, 'ndcsn' => '456', 'date' => '2019-11-27 10:39:00'], 'urt' => '2019-11-27 10:39:00', "usaget" => "call", "type" => "a", "source" => "a"),
              'expected' => array('aid' => 1, 'sid' => 4, 'plan' => "PLAN_B", 'services' => ['SERVICE_A', 'SERVICE_B'],
-                 'firstname' => 'r', 'lastname' => 'r', 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436572170505'], ['name' => 'SERVICE_B', 'from' => "2018-11-28T00:00:00", "to" => "2168-11-28T09:17:24"]]
+                 'firstname' => 'r', 'lastname' => 'r', 'services_data' => [['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T00:00:00", 'service_id' => '1651436572170505'],
+                     ['name' => 'SERVICE_B', 'from' => "2018-11-28T00:00:00", "to" => "2168-11-28T09:17:24"]]
              )),
          /* Subscriber with active service - write to line all these fields from subscriber : sid 2
            aid,sid,firstname,lastname,plan,plan_ref,services

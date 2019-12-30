@@ -204,8 +204,7 @@
 					"unique" : true,
 					"mandatory" : true
 						}
-					],
-			"type":"db"		
+					]		
 				},
 		"account" : {
 			"fields" : [
