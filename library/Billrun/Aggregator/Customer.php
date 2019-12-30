@@ -223,6 +223,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
+                $this->merge_credit_installments = [];
 	}
 
 	public function getCycle() {
@@ -624,6 +625,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 		}
 		
+                if(!empty($this->merge_credit_installments)){
+                    return $this->preponeInstallments($this->merge_credit_installments);
+                }
+                
 		if (!empty($accountsToPrepone)) {
 			return $this->preponeInstallments($accountsToPrepone);
 		}
@@ -787,7 +792,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return array
 	 */
 	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
-		return $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+                $result = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+                if(isset($result['options']['merge_credit_installments'])){
+                    $this->merge_credit_installments = $result['options']['merge_credit_installments'];
+                }
+		return $result['data'];
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {

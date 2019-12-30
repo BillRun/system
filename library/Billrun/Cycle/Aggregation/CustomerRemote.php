@@ -41,7 +41,8 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		if (empty($size)) {
 			$size = 100;
 		}
-		$billableResults = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
+		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
+                $billableResults = $result['data'];
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
 		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services'];
@@ -77,7 +78,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 
 		usort($billableResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
-		return array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults));
+		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => $result['options']];
 
 	}
 	

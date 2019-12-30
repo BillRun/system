@@ -134,7 +134,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			)
 		);
 		$collection = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines,$collection);
+		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.passthrough_data.options.merge_credit_installments", [])];
 	}
 	
 
