@@ -101,7 +101,11 @@ abstract class Billrun_Account extends Billrun_Base {
 	}
 
 	/**
-	 * TODO document
+	 * Retrive billable accounts and the're  subscribers revisions for a given cycle period
+	 * @param $cycle the cycle period
+	 * @param $page the page to retrive
+	 * @param $size the size of the  page to return
+	 * @param $aids aids array  to only return contained aids
 	 */
 	public abstract function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $size, $aids = []);
 
