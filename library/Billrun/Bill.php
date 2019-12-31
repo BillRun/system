@@ -1106,4 +1106,15 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
+	
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
+
 }
