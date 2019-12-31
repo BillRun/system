@@ -6,6 +6,7 @@
 class Billrun_DiscountManager {
 
 	use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_ForeignFields;
 
 	protected $cycle = null;
 	protected $eligibleDiscounts = [];
@@ -1444,7 +1445,7 @@ class Billrun_DiscountManager {
 		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
 		
-		$discountLine = array_merge($discountLine, $addToCdr);
+		$discountLine = array_merge($discountLine, $this->getForeignFields([], array_merge($eligibleLine, $discountLine), true), $addToCdr);
 		return $discountLine;
 	}
 
