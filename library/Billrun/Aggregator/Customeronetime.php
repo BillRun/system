@@ -40,7 +40,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		}
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
-		$this->aggregationLogic = new Billrun_Cycle_Onetime_AggregatePipeline($aggregateOptions);
+		//This class will define the account/subscriber/plans aggregation logic for the cycle
+		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
+
 		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
 	}
 	
