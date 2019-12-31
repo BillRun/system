@@ -64,9 +64,32 @@ trait Billrun_Traits_FraudAggregation {
 					$project['$project'][$eventQuery['name']] = $eventQuery['value'];
 					$query['project'] = $project;
 
+					if(empty($query['group']['$group'][substr($eventQuery['value'],1)]) && $eventQuery['value'][0] == '$') {
+						$addValField =substr($eventQuery['value'],1);
+						$query['group']['$group'][$addValField] = ['$sum' => $eventQuery['value']];
+						if(empty($query['translate']['$project'][$addValField])) {
+							if(!empty($eventQuery['translate_operation'])) {
+								$tOperation = [];
+								foreach($eventQuery['translate_operation'] as $op => $opValues) {
+									foreach($opValues as  &$opValue) {
+										if(is_numeric($opValue)) {
+											$opValue = floatval($opValue);
+										}
+									}
+
+									$tOperation['$'.$op] = $opValues;
+								}
+								$query['translate']['$project'][$addValField] = $tOperation;
+							} else {
+								$query['translate']['$project'][$addValField] = 1;
+							}
+
+						}
+					}
+
 					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
 					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
-					
+					//Billrun_Factory::log(json_encode(array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch)));
 					$ret = $this->fraudCollection->aggregate( array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch), array("allowDiskUse" => true) );
 
 					if ($ret = $this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
@@ -94,6 +117,9 @@ trait Billrun_Traits_FraudAggregation {
 						break;
 					case 'boolean':
 						$value = (boolean) $parameter['value'];
+						break;
+					case 'exists':
+						$value = array('$exists' => intval($parameter['value']));
 						break;
 				}
 			} else {
