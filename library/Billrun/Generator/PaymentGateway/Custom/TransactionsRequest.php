@@ -157,7 +157,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                             }
                             $line = $this->getDataLine($params);
                             $this->data[] = $line;
-                    }
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
