@@ -89,12 +89,12 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];
-
+			$invalidAccountFunctions = ['getActivePlan','getPlanNextTeirDate','getPlay'];
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				$raw = $subscriberPlan['id'];
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
-					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
+					if(is_array($srcField) && method_exists($this, $srcField['func']) && !in_array($srcField['func'],$invalidAccountFunctions)) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
