@@ -69,7 +69,7 @@ class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 			return $success;
 		}
 		
-		Billrun_Factory::log("Failed creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
+		Billrun_Factory::log("Failed merging installments for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
 	
