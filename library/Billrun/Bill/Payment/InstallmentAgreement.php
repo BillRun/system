@@ -156,15 +156,23 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
 		$currentBillrun = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$previousMonth = 0;
 		for ($index = 0; $index < $this->installmentsNum; $index++) {
-			$dueDate = date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec));
+			$dueDateTime = strtotime("$index  month", $this->firstDueDate->sec);
+			$dueDate = date(Billrun_Base::base_datetimeformat, $dueDateTime);
+			$currentMonth = intval(date('m', $dueDateTime));
+			$correctMonth = ($previousMonth + 1) % 12;
+			if (!empty($previousMonth) && $currentMonth != $correctMonth) {
+				$dueDate = $this->correctMonthMiscalculation($dueDateTime, $previousMonth);
+				$currentMonth = $correctMonth;
+			}
+			$previousMonth = $currentMonth;
 			if ($this->attachDueDateToCycleEnd) {
 				$secondBeforeCycleEnd = Billrun_Billingcycle::getEndTime($currentBillrun) - 1;		
 				$dueDate = date(Billrun_Base::base_datetimeformat, $secondBeforeCycleEnd);
 			}
 			$this->installments[$index] = array('due_date' => $dueDate);
-			$followingBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
-			$currentBillrun = $followingBillrun;
+			$currentBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
 		}
 		$amountsArray = array_column($this->installments, 'amount');
 		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
@@ -189,5 +197,12 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
 		return $installment;
+	}
+	
+	protected function correctMonthMiscalculation($date, $prevMonth) {
+		$year = date('Y', $date);
+		$month = $prevMonth + 1;
+		$monthDays = date('t', strtotime($year . '/' . $month . '/1'));
+		return date(Billrun_Base::base_datetimeformat, strtotime($year . '/' . $month . '/' . $monthDays));
 	}
 }

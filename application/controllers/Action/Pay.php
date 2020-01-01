@@ -185,6 +185,9 @@ class PayAction extends ApiAction {
 		if (empty($params['installments_num']) && !empty($params['first_due_date'])) {
 			throw new Exception("Can't pass first_due_date withouh passing installments_num");
 		}
+		if (!empty($params['installments_num']) && $params['installments_num'] > $params['amount']) {
+			throw new Exception("Number of installments can't be larger than the passed amount");
+		}
 		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
