@@ -74,7 +74,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				continue;
 			}
 
-			if (isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers'])) {
+			if (isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers']) || !empty($item['prepaid'])) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
 				//mark line as excluded.
 				$item['billrun_excluded'] = true;
@@ -130,7 +130,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$resource = $billrun->query()
 			//->exists("subscriber.{$subscriber['id']}")
 			->equals('account_id', $subscriber['account_id'])
-			->equals('stamp', $this->getStamp());
+			->equals('stamp', $this->getStamp())->notIn('prepaid',[1,true]);
 
 		if ($resource && $resource->count()) {
 			foreach ($resource as $entity) {
@@ -230,6 +230,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		$min_time = (string) date('Ymd000000', strtotime('7 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
+
 		$this->data = $lines->query(array(
 					'$or' => array(
 						array('source' => array('$in' => array('ilds', 'premium'))), //premium or ilds!!!

@@ -86,6 +86,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$data = $this->request($params);
 
 		if (is_array($data)) {
+			Billrun_Factory::log()->log(json_encode($data),Zend_Log::DEBUG);
 			$this->data = $data;
 		} else {
 			Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
@@ -121,7 +122,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
 		$path = 'http://' . $host . '/' . $url;
-		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
+		Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
+		Billrun_Factory::log()->log(json_encode(array($params)), Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = $this->send($path, json_encode(array($params)));
 

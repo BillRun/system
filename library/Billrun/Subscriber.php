@@ -152,4 +152,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return $this->customerExtraData;
 	}
 
+	
+	public function getSubscriberData() {
+		return $this->data;
+	}
 }

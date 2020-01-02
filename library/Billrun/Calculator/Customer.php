@@ -34,6 +34,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $lines->query(array(
 				'source' => array('$in' => array('ilds', 'premium')),
 				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-7 months'))),
+				'prepaid' => array('$exists' => 0),
 				'$or' => array(
 					array('account_id' => array('$exists' => false)),
 					array('subscriber_id' => array('$exists' => false))
@@ -71,18 +72,26 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		$current = $row->getRawData();
 
+		if(!empty($subsriber_details->getSubscriberData()['prepaid'])) {
+			$newData = array_merge($current, array('prepaid' => $subsriber_details->getSubscriberData()['prepaid']));
+			$row->setRawData($newData);
+			return true;
+		}
+
 		if (!isset($subscriber['subscriber_id']) || !isset($subscriber['account_id'])) {
 			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
 		
-		if (empty($subscriber['plan'])) {
+//		if (empty($subscriber['plan'])) {
+		$current_plan = $subsriber_details->getCurrentPlanName();
+		if (empty($current_plan)) {
 			Billrun_Factory::log()->log("subscriber is not active. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
 
 		Billrun_Factory::log()->log("update line: " . $row->get('stamp') . " subscriber_id: " . $subscriber['subscriber_id'] . ", account_id: " . $subscriber['account_id'], Zend_Log::INFO);
-		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id'], 'plan' => $subscriber['plan']);
+		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id'], 'plan' => $current_plan);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		return true;
