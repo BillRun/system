@@ -30,7 +30,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 	protected function updatePayments($row, $payment = null) {
 		$addonData = !empty($row['addon_data']) ? intval($row['addon_data']) : '';
 		if (is_null($payment) && empty($addonData)) {
-			Billrun_Factory::log('None matching payment and missing Z parameter for ' . $row['stamp'], Zend_Log::ALERT);
+			Billrun_Factory::log('None matching payment and missing Z parameter for row number ' . $row['row_number'] . ' in file ' . $this->filename, Zend_Log::ALERT);
 			$this->unmatchedRows[] = $row;
 			return;
 		}
@@ -41,7 +41,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				return;
 			}
 			if ($payment->isAmountDeniable(abs($row['amount']))) {
-				Billrun_Factory::log()->log("The amount is too large to deny for Payment " . $row['transaction_id'], Zend_Log::ALERT);
+				Billrun_Factory::log()->log("Payment " . $row['transaction_id'] .  " has already been denied", Zend_Log::ALERT);
 				return;
 			}
 		} else { // in this case there's aid identifier
