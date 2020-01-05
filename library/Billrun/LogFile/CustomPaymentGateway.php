@@ -50,6 +50,9 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data->collection($this->collection);
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
+                        $this->data['errors'] = [];
+                        $this->data['warnings'] = [];
+                        $this->data['info'] = [];
 			$this->setStartProcessTime();
 			$this->save();
 		}
@@ -76,5 +79,18 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		}
 		return NULL;
 	}
-
+        
+        public function updateLogFileField($field_name, $value) {
+            if(in_array($field_name, ['errors', 'warnings', 'info'])){
+                $array = $this->data[$field_name];
+                array_push($array, $value);
+                $this->data[$field_name] = $array;
+            }else{
+                $this->data[$field_name] = $value;
+            }
+        }
+        
+        public function saveLogFileFields(){
+            $this->data->save();
+        }
 }
