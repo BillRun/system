@@ -30,8 +30,9 @@ abstract class Billrun_EmailSender_Base {
 			Billrun_Factory::log('sendEmail - emails should not be sent');
 			return false;
 		}
-		foreach ($this->getData() as $data) {
-			$this->sendEmail($data, $callback);
+                $invoicesCursor = $this->getData();
+		foreach ($invoicesCursor as $data) {
+			$this->sendEmail($data->getRawData(), $callback);
 		}
 		Billrun_Factory::log('sendEmail - done sending email for type ' . $this->type);
 	}
@@ -57,7 +58,7 @@ abstract class Billrun_EmailSender_Base {
 	/**
 	 * gets data/emails to send
 	 * 
-	 * @return array emails to send
+	 * @return cursor to the emails to send
 	 */
 	public abstract function getData();
 	
