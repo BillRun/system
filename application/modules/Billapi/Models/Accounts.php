@@ -39,5 +39,14 @@ class Models_Accounts extends Models_Entity {
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".account.fields";
 	}
+	
+	/**
+	 * Return the key field
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		return 'aid';
+	}
 
 }
