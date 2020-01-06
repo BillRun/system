@@ -1076,8 +1076,6 @@ class Models_Entity {
 			case 'taxes':
 			case 'rates':
 				return 'key';
-			case 'accounts':
-				return 'aid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
