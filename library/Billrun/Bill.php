@@ -1110,12 +1110,9 @@ abstract class Billrun_Bill {
 		$query['type'] = $type;
 		$query['aid'] = $aid;
 		if ($remaining) {
-			$query['due_date'] = ['$gt' => new MongoDate($billrun->end())];
+			$query['urt'] = ['$gt' => new MongoDate($billrun->end())];
 		} else {
-			$query['$and'] = [
-				['due_date' => ['$gt' => new MongoDate($billrun->start())]],
-				['due_date' => ['$lt' => new MongoDate($billrun->end())]]
-			];
+                    $query['urt'] = array('$gte' => new MongoDate($billrun->start()), '$lt' => new MongoDate($billrun->end()));
 		}
 		if ($method) {
 			$query['method'] = $method;
@@ -1123,4 +1120,27 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 
+        /**
+         * Function that brings back account's installments, according to the input params.
+         * @param int $aid - wanted account id.
+         * @param string $urt_start_billrun - urt time from this billrun (inclusive).
+         * @param string $urt_end_billrun - urt time to this billrun (inclusive).
+         * @param string $ct_start_billrun - creation time from this billrun (inclusive).
+         * @param string $ct_end_billrun - creation time to this billrun (exclusive).
+         * @return array of relevant installments
+         */
+        public static function getInstallments ($aid, $urt_start_billrun = "197101", $urt_end_billrun = "210001", $ct_start_billrun = "197101", $ct_end_billrun = "210001"){
+            $query['aid'] = $aid;
+            $query = array(
+                'aid' => $aid,
+                'method' => "installment_agreement",
+                'creation_time' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_start_billrun)),
+                                         '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_end_billrun))
+                                        ),
+                'urt' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_start_billrun)),
+                               '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_end_billrun))
+                                        ),
+            );
+            return static::getBills($query);
+        }
 }

@@ -141,6 +141,18 @@ class Billrun_Billingcycle {
 		$ret = date("Ym", $month_before);
 		return $ret;
 	}
+        
+        /**
+	 * Get the previous billrun key
+	 * @param string $key - Current key
+	 * @return string The next key
+	 */
+        public static function getNextBillrunKey($key) {
+                $datetime = $key . "01000000";
+		$next_month = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $next_month);
+		return $ret;
+        }
 	
 	/**
 	 * method to get the last closed billing cycle
