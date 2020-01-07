@@ -191,7 +191,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getRawDataLength() + self::RECORD_PADDING);
+		$parser->setLastParseLength($asnObject->getRawDataLength() + static::RECORD_PADDING);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -210,7 +210,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			else {
 				$cdrLine['callEventStartTimeStamp'] = $cdrLine['record_opening_time'];
 			}
-			if (is_array($cdrLine['rating_group'])) {
+			if (isset($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
@@ -225,7 +225,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 				$cdrLine['rating_group'] = 0;
-			} else if ($cdrLine['rating_group'] == 10) {
+			} else if (isset($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 				return false;
 			}
 		} else {
@@ -350,14 +350,15 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			return FALSE;
 		}
 		$processedData = &$processor->getData();
-		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
+		$header = static::HEADER_LENGTH > 0 ? fread($fileHandle, static::HEADER_LENGTH) : '';
+		$processedData['header'] = $processor->buildHeader($header);
 
 		$bytes = null;
 		while (true) {
-			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
-				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
+			if (!feof($fileHandle) && !isset($bytes[static::MAX_CHUNKLENGTH_LENGTH])) {
+				$bytes .= fread($fileHandle, static::FILE_READ_AHEAD_LENGTH);
 			}
-			if (!isset($bytes[self::HEADER_LENGTH])) {
+			if (!isset($bytes[static::HEADER_LENGTH])) {
 				break;
 			}
 			$row = $processor->buildDataRow($bytes);

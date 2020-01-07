@@ -995,5 +995,96 @@ class Billrun_Util {
 		}
 		return false;
 	}
+	
+	/**
+	 * Deeply sets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to set
+	 * @param mixed $value - new value to set
+	 */
+	public static function setIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$current = &$arr;
+		foreach($keys as $key) {
+			if (!isset($current[$key])) {
+				$current[$key] = null;
+			}
+			$current = &$current[$key];
+		}
+		
+		$current = $value;
+	}
+	
+	/**
+	 * Gets the value from an array.
+	 * Also supports deep fetch (for nested arrays)
+	 * 
+	 * @param array $arr
+	 * @param array/string $keys  - array of keys, or string of keys separated by "."
+	 * @param any $defaultValue - returns in case one the fields is not found
+	 * @return the value in the array, default value if one of the keys is not found
+	 */
+	public static function getIn($arr, $keys, $defaultValue = null) {
+		if (!$arr) {
+			return $defaultValue;
+		}
+		
+		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return $arr[$keys];
+			}
+			$keys = explode('.', $keys);
+		}
+		
+		$ret = $arr;
+		foreach ($keys as $key) {
+			if (!isset($ret[$key])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$key];
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * decompressed archived (zipped) file
+	 * 
+	 * @param string $file - file path of the zipped file
+	 * @param string $compressType one of: zip/gz/tar/bz2/lzf/rar
+	 * @param string $target - folder path to locate unzipped file (by default it will be the same folder as the zipped file)
+	 * @return boolean
+	 */
+	public static function decompress($file, $compressType = 'zip', $target = null) {
+		if (is_null($target)) {
+			$target = dirname($file);
+		}
+		$decompressClass = 'Zend_Filter_Compress_' . ucfirst($compressType);
+		//Create filter object
+		$filter = new Zend_Filter_Decompress(
+			array(
+			'adapter' => $decompressClass,
+			'options' => array(
+				'target' => $target,
+			)
+		));
+
+		$ret = $filter->filter($file);
+		if (strtolower($compressType) == 'gz') {
+			$fileName = pathinfo($file)['filename'];
+			$targetPath = $target . '/' . $fileName;
+			file_put_contents($targetPath, $ret);
+		}
+		return true;
+	}
+
 }
 

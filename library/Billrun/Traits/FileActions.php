@@ -111,7 +111,7 @@ trait Billrun_Traits_FileActions {
 			'$setOnInsert' => $logData
 		);
 		try {
-			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
+			$result = $log->update($query, $update, array('upsert' => true, 'w' => true)); // TODO: this will not work with PHP 7 (needs to be true instead of 1)
 		} catch (Exception $e) {
 			if ($e->getCode() == 11000) {
 				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
@@ -120,7 +120,7 @@ trait Billrun_Traits_FileActions {
 			}
 			return FALSE;
 		}
-		return $result['n'] == 1 && $result['ok'] == 1;
+		return $result['ok'] == 1; // TODO: this will not work with PHP 7 (there is no 'n' in the response)
 	}
 
 	/**
