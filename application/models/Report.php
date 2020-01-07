@@ -211,6 +211,19 @@ class ReportModel {
 				$formats[] = $formatter;
 			}
 		}
+//		$field_names = array_column($this->report['columns'], 'field_name', 'key');
+//		// if field is subscriber.play forse add default empty value formater to be default Play
+//		if($field_names[$key] === 'subscriber.play') {
+//			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+//			if(!empty($defaultPlay['name'])) {
+//				$defaultEmptyPlayformat = [
+//					'field' => $key,
+//					'op' => 'default_empty',
+//					'value' => $defaultPlay['name'],
+//				];
+//				array_unshift($formats, $defaultEmptyPlayformat);
+//			}
+//		}
 		return $formats;
 	}
 	
@@ -391,8 +404,6 @@ class ReportModel {
 		return $this->currentTime;
 	}
 
-
-	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
 		$value = $condition['value'];
@@ -411,6 +422,14 @@ class ReportModel {
 					return 'in';
 				default:
 					return $op;
+			}
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if ($op === 'nin' || ($op === 'in' && in_array($defaultPlay['name'], $values))) {
+				return 'and';
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -448,6 +467,47 @@ class ReportModel {
 					'from' => date("c", strtotime("{$days} day midnight")),
 					'to' => date("c", strtotime("today") - 1)
 				);
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			$withDefault = in_array($defaultPlay['name'], $values);
+			// IN + DEFAULT
+			if ($op === 'in' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$or' => [
+						['subscriber.play' => ['$exists' => false]],
+						['subscriber.play' => ['$in' => $values]],
+					]]
+				];
+			}
+			// NIN + DEFAULT
+			if ($op === 'nin' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$and' => [
+						['subscriber.play' => ['$exists' => true]],
+						['subscriber.play' => ['$nin' => $values]],
+					]]
+				];
+			}
+			// NIN + NO DEFAULT
+			if ($op === 'nin' && !$withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['subscriber.play' => ['$nin' => $values]],
+				];
+			}
+			// IN + NO DEFAULT
+			// Nornal case return only [] value
 		}
 		// search by field_name
 		if($field === 'billrun') {
@@ -952,8 +1012,10 @@ class ReportModel {
 					"\${$op}" => (bool) $value
 				);
 				break;
-			case 'and': // for complex queries
-				$field = '$and';
+			case 'and':
+			case 'or':
+				// for complex queries
+				$field = "\${$op}";
 				$formatedExpression = $value;
 				break;
 			default:

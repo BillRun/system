@@ -542,7 +542,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			if (empty($fileType['unify'])) {
 				continue;
 			}
-			$configByType['file_types'] = array($fileType['file_type'] => $fileType['unify']);
+			$configByType['file_types'][$fileType['file_type']] = $fileType['unify'];
 		}
 
 		foreach ($configByType['file_types'] as $type => &$unifyDef) {
