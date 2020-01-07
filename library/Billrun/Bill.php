@@ -556,7 +556,6 @@ abstract class Billrun_Bill {
 		} else {
 			$accountQuery = array();
 		}
-		
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
@@ -622,7 +621,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-        public function getDueBeforeVat() {
+	public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
@@ -1104,7 +1103,6 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
-	
 	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type = 'rec', $method = false, $remaining = false) {
 		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
 		$query['type'] = $type;
@@ -1123,4 +1121,13 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
 }

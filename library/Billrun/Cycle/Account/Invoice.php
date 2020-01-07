@@ -126,7 +126,7 @@ class Billrun_Cycle_Account_Invoice {
 		
 		return true;
 	}
-	
+
 	/**
 	 * 
 	 * @param string $billrunDate
@@ -179,8 +179,12 @@ class Billrun_Cycle_Account_Invoice {
 		$sidDiscounts = array();
 		foreach($discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
-				if($subscriber->getData()['sid'] == $discount['sid']) {
+				$subscriberData = $subscriber->getData();
+				if($subscriberData['sid'] == $discount['sid']) {
 					$rawDiscount = ( $discount instanceof Mongodloid_Entity ) ? $discount->getRawData() : $discount ;
+					if (Billrun_Utils_Plays::isPlaysInUse()) {
+						$discount['subscriber'] = array('play' => isset($subscriberData['play']) ? $subscriberData['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+					}
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
@@ -197,11 +201,10 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aggregateIntoInvoice($configValue);
 		$this->updateTotals();
 	}
-	
+
 	public function addConfigurableData() {
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
 	}
-
 	/**
 	 * 
 	 * @param type $subLines
@@ -227,8 +230,8 @@ class Billrun_Cycle_Account_Invoice {
 					foreach($aggrResults as $aggregateValue) {
 						$invoiceData['added_data'][$addedvalueKey][] = $aggregateValue;
 					}
-				}
 			}
+		}
 		}
 		$this->data->setRawData($invoiceData);
 	}
@@ -393,7 +396,7 @@ class Billrun_Cycle_Account_Invoice {
 								$this->generateDueDate($billrunDate);
 		$this->data->setRawData($initData);
 	}
-	
+        
     //======================================================
     
 	function isAccountActive() {

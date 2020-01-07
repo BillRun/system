@@ -117,8 +117,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
 			foreach($matchedDocs as $matchedDoc ) {
-				foreach($matchedDoc as $matchedType ) {
+				foreach($matchedDoc as $type => $matchedType ) {
 					foreach($matchedType as $matched) {
+						if ($type == 'flat' && !empty($matched['name']) && !empty($this->discountData['params']['plan']) && $this->discountData['params']['plan'] != $matched['name']) {
+							continue;
+						}
+						if ($type == 'service' && !empty($matched['name']) && !empty($this->discountData['params']['service']) && !in_array($matched['name'], $this->discountData['params']['service'])) {
+							continue;
+						}
 						if(!empty($matched['start']) && $cover['start'] < $matched['start'] && $cover['end'] > $matched['start']) {
 							$cover['start'] = $matched['start'];
 						}
