@@ -44,7 +44,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->options = $options;
                 $className = $this->getGeneratorClassName();
                 $generatorOptions = $this->buildGeneratorOptions();
-                $this->fileGenerator = new $className($generatorOptions);
+                try{
+                    $this->fileGenerator = new $className($generatorOptions);
+                }catch(Exception $ex){
+                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
+                    throw new Exception($ex->getMessage());
+                }
                 $this->initLogFile();
                 $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
                 $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
