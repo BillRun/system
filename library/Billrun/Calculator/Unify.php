@@ -542,7 +542,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		$update['$set']['lcount'] = $row['lcount'];
 		$ret = $this->linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
-		$success = !empty($ret['ok']) && !empty($ret['upserted']);
+		$success = !empty($ret['ok']) && empty($ret['updatedExisting']);
 		if (!$success) {
 			if (!$this->tryUpdatingExistingRecord($query, $incUpdate)) {
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
