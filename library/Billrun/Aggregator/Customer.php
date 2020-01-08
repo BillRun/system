@@ -742,13 +742,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
-                                if(!empty($aggregatedResults)){
-                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
-                                }
 			} else {
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
 			}
+                        if(!empty($aggregatedResults)){
+                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+                        }
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
