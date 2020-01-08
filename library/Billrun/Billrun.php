@@ -248,6 +248,7 @@ class Billrun_Billrun {
 			),
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 

@@ -148,6 +148,7 @@ class Billrun_Cycle_Account_Invoice {
 			),
 			'vat' => $vat, //TODO remove 2017-01-29
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
