@@ -940,9 +940,8 @@ class Billrun_Billrun {
 		}
 		switch ($paramObj['type']) {
 			case 'date':
-				$dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
-				return date($dateFormat, $dateValue);	
+				$dateValue = ($paramObj['value'] == 'cycle') ? $this->getBillrunKey() : (($paramObj['value'] == 'now') ?  time() : strtotime($paramObj['value']));
+				return substr($dateValue, 0, 4);	
 			case 'autoinc':
 				if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
 					Billrun_Factory::log("Missing range when generating invoice id", Zend_Log::DEBUG);
@@ -956,7 +955,8 @@ class Billrun_Billrun {
 				$maxValue = intval($paramObj['max_value']);		
 				$group = $formerTranslations['param1_date'] . $formerTranslations['param2_id'];
 				$fakeCollectionName = '$invoice_id_generation_' . $group;
-				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+				$oid = $group . $this->getAccountId();
+				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc($oid, $minValue, $fakeCollectionName);
 				if ($seq > $maxValue) {
 					throw new Exception("Sequence exceeded max value when generating invoice id");
 				}		
@@ -984,6 +984,10 @@ class Billrun_Billrun {
 			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
 		}
 		return Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
+	}
+	
+	protected function getAccountId() {
+		return $this->aid;
 	}
 }
 
