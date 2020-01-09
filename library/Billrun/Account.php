@@ -337,7 +337,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	//============================ Static function =========================
 
 	public static function getAccountAggregationLogic($params) {
-		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscriber.type','db'));
+		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscribers.account.type','db'));
 		switch($subscribersType) {
 			case "external":
 				return new Billrun_Cycle_Aggregation_CustomerRemote($params);

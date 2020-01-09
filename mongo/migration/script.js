@@ -771,6 +771,9 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 if (!lastConfig.subscribers.subscriber.type) {
 	lastConfig.subscribers.subscriber.type = 'db';
 }
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
+}
 
 db.config.insert(lastConfig);
 
