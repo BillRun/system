@@ -956,7 +956,7 @@ class Billrun_Billrun {
 				$group = $formerTranslations['param1_date'] . $formerTranslations['param2_id'];
 				$fakeCollectionName = '$invoice_id_generation_' . $group;
 				$oid = $group . $this->getAccountId();
-				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc($oid, $minValue, $fakeCollectionName);
+				$seq = Billrun_Factory::db(array('name' => 'billrun'))->countersCollection()->createAutoInc($oid, $minValue, $fakeCollectionName);
 				if ($seq > $maxValue) {
 					throw new Exception("Sequence exceeded max value when generating invoice id");
 				}		
