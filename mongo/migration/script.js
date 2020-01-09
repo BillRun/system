@@ -24,6 +24,16 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
+function removeFieldFromConfig(lastConf, field_names, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		return lastConf;
+	}
+	field_names_to_delete = Array.isArray(field_names) ? field_names : [field_names];
+	var fields = lastConf[entityName]['fields'];
+	lastConf[entityName]['fields'] = fields.filter(field => !field_names_to_delete.includes(field.field_name));
+	return lastConf;
+}
+
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -178,22 +188,8 @@ if(lastConfig.invoice_export) {
 	}
 }
 
-//BRCD-1374 : Add taxation support services 
-var vatableField ={
-					"system":true,
-					"select_list" : false,
-					"display" : true,
-					"editable" : true,
-					"multiple" : false,
-					"field_name" : "vatable",
-					"unique" : false,
-					"default_value" : true,
-					"title" : "This service is taxable",
-					"mandatory" : false,
-					"type" : "boolean",
-					"select_options" : ""
-	};
-lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+// BRCD-2251 remove old vatable filed
+lastConfig = removeFieldFromConfig(lastConfig, 'vatable', 'services');
 
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
