@@ -75,7 +75,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			}
 		}
 
-		usort($billableResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
 		return array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults));
 
