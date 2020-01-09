@@ -169,7 +169,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$invoice_sumup->TOTAL_INCL_VAT = $totalVat;
 			//$row->{'xml'} = $xml->asXML();
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
-			$fileName = $row->get('stamp') . '_' . str_pad($row->get('account_id'), 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 20, '0', STR_PAD_LEFT);
+			$fileName = $row->get('stamp') . '_' . str_pad($row->get('account_id'), 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 17, '0', STR_PAD_LEFT);
 			$this->createXml($fileName, $xml->asXML());
 			if ($add_header) {
 				$this->addRowToCsv(null, null, null, null, $add_header);
