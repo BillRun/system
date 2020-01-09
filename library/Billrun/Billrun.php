@@ -1040,11 +1040,11 @@ class Billrun_Billrun {
 	}
 
 	protected function initBillrunDates() {
-		$billrunDate = self::getEndTime($this->getBillrunKey());
+		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$this->data['creation_date'] = new MongoDate(time());
 		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$this->data['end_date'] = new MongoDate($billrunDate);
-		$this->data['start_date'] = new MongoDate(self::getStartTime($this->getBillrunKey()));
+		$this->data['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$this->data['due_date'] = $this->generateDueDate($billrunDate);
 	}
 	
