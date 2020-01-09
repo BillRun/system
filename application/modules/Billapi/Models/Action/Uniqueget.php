@@ -38,8 +38,6 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	protected function initGroup() {
 		if ($this->request['collection'] == 'rates') {
 			$this->group = 'key';
-		} else if($this->request['collection'] == 'discounts') {
-			$this->group = 'key';
 		} else {
 			$this->group = 'name';
 		}

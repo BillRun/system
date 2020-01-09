@@ -35,7 +35,6 @@ class ImportController extends BillapiController {
 				}
 			}
 			$this->output->details = $results;
-			return $res;
 		} catch (Exception $ex) {
 			$this->output->status = 0;
 			$this->output->errorCode = $ex->getCode();

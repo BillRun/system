@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+
+$out = fopen('php://output', 'w');
+foreach ($this->output->details as $line) {
+	fputcsv($out, $line, $delimiter);
+}
+fclose($out);
