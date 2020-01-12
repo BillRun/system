@@ -599,8 +599,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
                 $additionalAccountsToPrepone = [];
                 if (!empty($this->merge_credit_installments)){
                         foreach (array_keys($this->merge_credit_installments) as $aid){
-                            if (in_array($aid, $accountsToPrepone) && !empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))){
-                                $additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
+                            if (in_array($aid, $accountsToPrepone)){
+                                if(!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))){
+                                    $additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
+                                }
+                            }else{
+                                $additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
                             }
                         }
                 }
