@@ -103,7 +103,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * 
 	 * @param array $line
 	 */
-	protected function getRowTaxData($line) {
+	protected function getRowTaxData(&$line) {
 		if (!empty($line['tax_data'])) {
 			return $line['tax_data'];
 		}
@@ -115,28 +115,45 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		$totalTax = 0;
 		$totalAmount = 0;
+		$totalEmbeddedAmount = 0;
 		$taxesData = [];
 
 		foreach ($taxes as $taxCategory => $tax) {
+			$isTaxEmbedded = isset($tax['embed_tax']) ? $tax['embed_tax'] : false;
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
-			$taxesData[] = [
+			$taxData = [
 				'tax' => $taxFactor,
-				'amount' => $taxAmount,
+				'amount' => !$isTaxEmbedded ? $taxAmount : 0,
 				'description' => $tax['description'] ?: 'VAT',
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
 			];
-			$totalAmount += $taxAmount;
-			$totalTax += $taxFactor;
+			
+			if ($isTaxEmbedded) {
+				$taxData['embedded_amount'] = $taxAmount;
+				$line['aprice'] += $taxAmount;
+				$totalEmbeddedAmount += $taxAmount;
+			} else {
+				$totalAmount += $taxAmount;
+				$totalTax += $taxFactor;
+			}
+			
+			$taxesData[] = $taxData;
 		}
-
-		return [
+		
+		$ret = [
 			'total_amount' => $totalAmount,
 			'total_tax' => $totalTax,
 			'taxes' => $taxesData,
 		];
+		
+		if ($totalEmbeddedAmount > 0) {
+			$ret['total_embedded_amount'] = $totalEmbeddedAmount;
+		}
+
+		return $ret;
 	}
 	
 	/**

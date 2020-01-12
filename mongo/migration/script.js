@@ -635,6 +635,21 @@ if (invoices) {
 	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
 }
 
+// BRCD - 2129: add embed_tax field
+if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+	var embedTaxField = {
+		"field_name": "embed_tax",
+		"system": true,
+		"title": "Embed Tax",
+		"mandatory": true,
+		"type": "boolean",
+		"editable": true,
+		"display": true,
+		"description": "In case the tax should be embedded (included in the customer price), please check the box"
+	};
+	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
@@ -736,11 +751,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		}
 		var serviceObject = {};
 		var serviceValue = [];
+		var servicesArray = [];
 		if (oldParams.service !== undefined) {
 			var serviceCondAmount = oldParams.service.length;
 			for (var i = 0; i < serviceCondAmount; i++) {
-				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+				servicesArray.push(oldParams.service[i]);
 			}
+			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
 			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
@@ -768,6 +785,9 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
 	lastConfig.subscribers.subscriber.type = 'db';
+}
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
 }
 
 db.config.insert(lastConfig);

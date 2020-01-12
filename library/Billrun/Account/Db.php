@@ -54,6 +54,12 @@ class Billrun_Account_Db extends Billrun_Account {
 		return $this->collection->query($query)->cursor();
 	}
 		
+
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
+		throw new Exception("Dont use this function until refatoring of the aggregation is done");
+	}
+
 	/**
 	 * Overrides parent abstract method
 	 */

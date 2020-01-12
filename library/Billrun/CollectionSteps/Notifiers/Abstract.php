@@ -94,7 +94,7 @@ abstract class Billrun_CollectionSteps_Notifiers_Abstract implements Billrun_Col
 	}
 	
 	protected function getAccount($aid) {
-		$billrunAaccount = new Billrun_Account_Db();
+		$billrunAaccount = Billrun_Factory::account();
 		$billrunAaccount->load(array('aid' => $aid));
 		return $billrunAaccount;
 	}

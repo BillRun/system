@@ -133,7 +133,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
