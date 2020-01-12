@@ -24,12 +24,18 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 */
 	protected $billrun_lower_bound_timestamp = 0;
 
+	/**
+	 * Minimum possible billrun key for newly calculated lines
+	 * @var string 
+	 */
+	protected $active_billrun;
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->config = Billrun_Factory::config()->getConfigValue('taxation',array());
 		$this->nonTaxableTypes = Billrun_Factory::config('taxation.non_taxable_types', array());
 		$this->months_limit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
 		$this->billrun_lower_bound_timestamp = strtotime($this->months_limit . " months ago");
+		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
 	}
 
 	public function updateRow($row) {
@@ -42,18 +48,16 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
 				return FALSE;
 			}
-			$subscriber = new Billrun_Subscriber_Db();
-			$subscriber->load(array('sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
-			$account = new Billrun_Account_Db();
-			$account->load(array('aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
-			$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData(),$account->getCustomerData());
+			$subscriberSearchData = ['sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
+			$accountSearchData = ['aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
+			$newData = $this->updateRowTaxInforamtion($current, $subscriberSearchData, $accountSearchData);
 		}
 		
-		//If we could not find the taxing information.
-		if ($newData == FALSE) {
-			return FALSE;
-		}
-
+			//If we could not find the taxing information.
+			if($newData == FALSE) {
+				return FALSE;
+			}
+		
 		if($row instanceof Mongodloid_Entity ) {
 			$row->setRawData($newData);
 		} else {
@@ -129,7 +133,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 				if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 					$aprice *= $apriceMult;
 				}
-				return $aprice;
+				return floatval($aprice);
 			}
 		}
 
@@ -172,8 +176,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $subscriber  the subscriber that is associated with the line
 	 * @return array updated line/row with the tax data
 	 */
-	abstract protected function updateRowTaxInforamtion($line, $subscriber, $account);
-	
+	abstract protected function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData);
 	/**
 	 * Update the non-taxable/pre-taxed line/row with it related taxing data.
 	 * @param array $line The line to update it data.
@@ -198,7 +201,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @return array
 	 */
 	protected function getPreTaxedRowTaxData($line) {
-		$taxFactor = Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun());
+		$taxFactor = Billrun_Billrun::getVATByBillrunKey($this->active_billrun);
 		return [
 			'total_amount' => $line['aprice'] * $taxFactor,
 			'total_tax' => $taxFactor,

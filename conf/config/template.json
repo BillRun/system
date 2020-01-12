@@ -131,6 +131,16 @@
 				"type": "percentage",
 				"editable": true,
 				"display": true
+			},
+			{
+				"field_name": "embed_tax",
+				"system": true,
+				"title": "Embed Tax",
+				"mandatory": true,
+				"type": "boolean",
+				"editable": true,
+				"display": true,
+				"description": "In case the tax should be embedded (included in the customer price), please check the box"
 			}
 		]
 	},
@@ -157,6 +167,11 @@
     ]
   },
   "billrun" : {
+        "allowances" : {
+            "enabled": false,
+            "included_in_allowance": false,
+            "taxable_paid_first": false
+        },
 	"detailed_invoices":{
 		"v": false,
 		"t": "Boolean"

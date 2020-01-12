@@ -207,6 +207,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				if (!$this->loadFile($file->get('path'), $file->get('retrieved_from'))) {
 					continue;
 				}
+				if (!empty($file->get('pg_file_type'))) {
+					$this->setPgFileType($file->get('pg_file_type'));
+				}
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
 					$linesCount += $processedLinesCount;
@@ -400,7 +403,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
 			$this->retrievedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
-			Billrun_Factory::log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
+			Billrun_Factory::log("Billrun Processor is loading file " . $file_path, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 			return FALSE;
@@ -453,7 +456,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		$query = array(
-			'source' => static::$type,
+			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
 			'process_time' => array(
 				'$exists' => false,
 			),
@@ -831,4 +834,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return false;
 	}
 
+	protected function setPgFileType($fileType) {
+		return;
+	}
 }

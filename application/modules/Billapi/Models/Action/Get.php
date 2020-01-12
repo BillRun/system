@@ -78,14 +78,17 @@ class Models_Action_Get extends Models_Action {
 
 		if (isset($this->request['project'])) {
 			$project = (array) json_decode($this->request['project'], true);
-			// if revision_info requested, all entity unique fields are requried for query
-			if(array_key_exists("revision_info",$project)){
+			$revision_info = !empty($project['revision_info']);
+			unset($project['revision_info']);
+			// if revision_info requested, all entity unique fields are required for query
+			if($revision_info){
 				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}.duplicate_check", array());
 				foreach ($uniqueFields as $fieldName) {
 					$project[$fieldName] = 1;
 				}
 			}
 		} else {
+			$revision_info = true;
 			$project = array();
 		}
 
@@ -108,7 +111,7 @@ class Models_Action_Get extends Models_Action {
 			if (isset($record['invoice_id'])) {
 				$record['invoice_id'] = (int)$record['invoice_id'];
 			}
-			if ((empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) && isset($record['from'], $record['to'])) {
+			if ($revision_info && isset($record['from'], $record['to'])) {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
 			}
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record, $this->getDateFields());
@@ -122,7 +125,20 @@ class Models_Action_Get extends Models_Action {
 	 * @return array
 	 */
 	protected function getDateFields() {
-		return array('from', 'to', 'creation_time');
+		$default = ['from', 'to', 'creation_time'];
+		$config_date_fields = [];
+		if (!empty($this->request['collection'])){
+			$data['collection'] = $this->request['collection'];
+			$data['no_init'] = true;
+			$entityModel = Models_Entity::getInstance($data);
+			$config = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}", array());
+			$config_fields = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($entityModel->getCustomFieldsPath(), [])), $config[$this->request['action']]);
+			$config_date_fields = array_column(array_filter($config_fields['fields'], function($field) {
+				return in_array(@$field['type'], ['date', 'daterange']);
+			}), 'field_name');
+		}
+		$date_fields_names = array_unique(array_merge($default, $config_date_fields));
+		return $date_fields_names;
 	}
 	
 	/**

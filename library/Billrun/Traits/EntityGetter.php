@@ -109,7 +109,7 @@ trait Billrun_Traits_EntityGetter {
 			return $this->afterEntityNotFound($row, $params);
 		}
 
-		Billrun_Factory::log('Entity found for row ' . $row['stamp'], Billrun_Log::DEBUG);
+		Billrun_Factory::log('Entity found for row ' . (isset($row['stamp']) ? $row['stamp']  :''), Billrun_Log::DEBUG);
 		$this->afterEntityFound($row, $entity, $category, $params);
 		return $entity;
 	}
@@ -301,7 +301,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array
 	 */
-	protected function getBasicMatchQuery($row, $category, $params = []) {
+	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
 		return Billrun_Utils_Mongo::getDateBoundQuery($sec, false, $usec);
@@ -315,7 +315,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array
 	 */
-	protected function getBasicGroupQuery($row, $category, $params = []) {
+	protected function getBasicGroupQuery($row, $category = '', $params = []) {
 		return [
 			'_id' => [
 				'_id' => '$_id',
@@ -337,7 +337,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array
 	 */
-	protected function getBasicSortQuery($row, $category, $params = []) {
+	protected function getBasicSortQuery($row, $category = '', $params = []) {
 		return [];
 	}
 	

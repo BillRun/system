@@ -38,8 +38,8 @@ class AccountInvoicesAction extends ApiAction {
 					'input' => $request->getRequest()
 			)));
 		} catch (Exception $ex) {
+			Billrun_Factory::log('AccountInvoices Error: ' . print_r(array('input' => $request->getPost(), 'error'=> $ex->getMessage(), 'trace' => $ex->getTraceAsString()),1),Zend_Log::ERR);
 			$this->setError($ex->getMessage(), $request->getPost());
-			Billrun_Factory::log(print_r(array('error'=> $ex->getMessage(), 'input' => $request->getPost()),1),Zend_Log::ERR);
 			return;
 		}
 	}
@@ -91,10 +91,18 @@ class AccountInvoicesAction extends ApiAction {
 			}
 		}
 		$invoiceId = $invoice['invoice_id'];
-		
-		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+		$invoiceData = $invoice->getRawData();
+		if (isset($invoice['export_path']) && !empty($invoice['export_path'])){
+                    $files_path = $invoice['export_path'];
+		}else{
+			$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+		}                
+		if (isset($invoiceData['file_name']) && !empty($invoiceData['file_name'])){
+                    $file_name = $invoiceData['file_name'];
+                } else{
 		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
-		$pdf = $files_path . $billrun_key . '/pdf/' . $file_name;
+		}
+		$pdf = $files_path . DIRECTORY_SEPARATOR . $file_name;
 
 		if( $request->get('detailed') ) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
@@ -147,7 +155,7 @@ class AccountInvoicesAction extends ApiAction {
 	
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		Billrun_Plan::initPlans();
+		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
 			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);

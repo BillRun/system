@@ -287,6 +287,48 @@
             "type": "boolean"
         }]
     },
+    "discounts": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }]
+    },
+    "charges": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }]
+    },
    "services": {
         "fields": [{
             "field_name": "from",
@@ -446,7 +488,8 @@
 								"connection_type",
 								"aid",
 								"sid",
-								"msisdn"
+								"msisdn",
+								"tax_data"
 							]
 						},
 						{
@@ -464,7 +507,8 @@
 								"apr",
 								"out_balance_usage",
 								"in_balance_usage",
-								"aprice"
+								"aprice",
+								"final_charge"
 							]
 						}
 					]

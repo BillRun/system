@@ -60,9 +60,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['method'] = $this->method;
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
-			$this->data['amount'] = floatval($options['amount']);
+			$this->data['amount'] = round(floatval($options['amount']), 2);
 			if (isset($options['due'])) {
-				$this->data['due'] = $options['due'];
+				$this->data['due'] = round($options['due'], 2);
 			} else {
 				$this->data['due'] = $this->getDir() == 'fc' ? -$this->data['amount'] : $this->data['amount'];
 			}
@@ -77,6 +77,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			} 
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
+			}
+			if (isset($options['denial'])) {
+				$this->data['denial'] = $options['denial'];
+			}
+			if (isset($options['generated_pg_file_log'])) {
+				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
 			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
@@ -103,11 +109,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
 			}
-			
+
 			if (isset($options['uf'])) {
 				$this->data['uf'] = $options['uf'];
 			}
-
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
@@ -138,8 +143,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['txid'] = $txid;
 		} else {
 			$this->data['_id'] = new MongoId();
-			$this->data->createAutoInc('txid');
-			$this->data['txid'] = str_pad($this->data['txid'], 13, '0', STR_PAD_LEFT);
+			$this->data['txid'] = isset($this->data['gateway_details']['txid']) ? $this->data['gateway_details']['txid'] : self::createTxid();
 		}
 	}
 
@@ -513,14 +517,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
-		$query['type'] = "account";
-		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
-		foreach ($subscribers as $subscriber) {
-			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		foreach ($accounts as $account) {
+			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
@@ -528,18 +530,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
-				$subscriber = $subscribers_in_array[$billDetails['aid']];
+				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = $subscriber['payment_gateway']['active'];
 				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
-				if (!empty($billDetails['left_to_pay']) && empty(!$billDetails['left'])) {
-					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
+				if (!Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
+					Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				}
-				if (empty($billDetails['left_to_pay']) && empty($billDetails['left'])) {
-					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'] . ", id: " . $billDetails['unique_id'], Zend_Log::ALERT);
+				if (Billrun_Util::isEqual($billDetails['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($billDetails['left'], 0, Billrun_Bill::precision)) {
+					Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
@@ -752,7 +754,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 	
-	protected static function buildFilterQuery($chargeFilters) {
+	public static function buildFilterQuery($chargeFilters) {
 		$filtersQuery = array();
 		$errorMessage = self::validateChargeFilters($chargeFilters);
 		if ($errorMessage) {
@@ -891,6 +893,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $pipelines;
 	}
 	
+	public static function createTxid() {
+		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
+		return str_pad($txid, 13, '0', STR_PAD_LEFT);
+	}
 	public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
@@ -927,10 +933,47 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
 	}
+
+	public static function createDenial($denialParams, $matchedPayment) {
+		$paymentAmount = $matchedPayment->getDue();
+		$denialParams['payment_amount'] = $paymentAmount;
+		$denial = new Billrun_Bill_Payment_Denial($denialParams);
+		if (!is_null($matchedPayment)) {
+			$denial->copyLinks($matchedPayment);
+		}
+		$denial->setTxid();
+		$res = $denial->save();
+		if ($res) {
+			return $denial;
+		}
+		return false;
+	}
 	
+	/**
+	 * Deny a payment
+	 * @param $denial- the information about the denied transaction.
+	 */
+	public function deny($denial) {
+		$txId = $denial->getId();
+		$deniedBy = array();
+		$amount = $denial->getAmount();
+		$deniedBy[$txId] = $amount;
+		$this->data['denied_by'] = isset($this->data['denied_by']) ? array_merge($this->data['denied_by'], $deniedBy) : $deniedBy;
+		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
+		$this->detachPaidBills();
+		$this->detachPayingBills();
+	}
+	
+	public function isDenied($denialAmount) {
+		$alreadyDenied = 0;
+		if (isset($this->data['denied_amount'])) {
+			$alreadyDenied = $this->data['denied_amount'];
+		}
+		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		return $totalAmountToDeny > $this->data['amount'];
+	}
+
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
 	}
-	
-
 }

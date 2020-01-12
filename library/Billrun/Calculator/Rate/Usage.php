@@ -19,7 +19,6 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		getBasicGroupQuery as entityGetterGetBasicGroupQuery;
 		getBasicMatchQuery as entityGetterGetBasicMatchQuery;
 	}
-
 	static protected $usaget;
 
 	public function __construct($options = array()) {
@@ -54,20 +53,21 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	protected function getLineVolume($row) {
 		
 	}
-
+	
 	protected function getLines() {
-		return $this->getQueuedLines(array());
+		return $this->getQueuedLines(array()); 
 	}
 
+	
 	protected function isRateLegitimate($rate) {
 		return !((is_null($rate) || $rate === false) ||
 			// TODO: Rate without a type field is used as a normal rate entity for
 			// backward compatability.
 			// This should be changed.
-			(isset($rate['type']) && $rate['type'] == "service") ||
+			(isset($rate['type']) && $rate['type'] == "service") || 
 			(isset($rate['key']) && $rate['key'] == "UNRATED"));
 	}
-
+	
 	protected function getAddedValues($tariffCategory, $rate, $row = array()) {
 		if ($tariffCategory !== 'retail') {
 			return array();
@@ -84,14 +84,15 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 //			// TODO: push plan to the function to enable market price by plan
 //			$added_values[$this->aprField] = Billrun_Rates_Utils::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan']);
 //		}
-
+		
 		return $added_values;
 	}
-
+	
+	
 	public function isLineLegitimate($line) {
 		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
 	}
-
+	
 	/**
 	 * gets the data object to save under the line's "rates" attribute
 	 * 
@@ -106,8 +107,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			'add_to_retail' => isset($rate['add_to_retail']) ? $rate['add_to_retail'] : false,
 			'rate' => $rate ? $rate->createRef() : $rate,
 		);
-	}
-
+		}
+	
 	/**
 	 * make the calculation
 	 */
@@ -119,16 +120,18 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			'type' => $type,
 			'usaget' => $usaget,
 		];
-
+			
 		$rates = $this->getMatchingEntitiesByCategories($row, $params);
 		if (empty($rates)) {
-			Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
-			return false;
-		}
+				Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
+				return false;
+			}
+
+
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
-
+	
 	/**
 	 * gets the matching rate for the category from the line  received
 	 * 
@@ -176,49 +179,56 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			'type' => $type,
 			'usaget' => $usaget,
 		];
-		
-		return $this->getEntityByFilters($row, $filters, $tariffCategory, $params);
-	}
 
+		return $this->getEntityByFilters($row, $filters, $tariffCategory, $params);
+			}
 	//------------------- Entity Getter functions ----------------------------------------------------
 
 	protected function getCollection($params = []) {
 		return Billrun_Factory::db()->ratesCollection();
-	}
+		}
 
 	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
-	}
+		}
 
-	protected function getBasicMatchQuery($row, $category, $params = []) {
+	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
-
-		return array_merge(
+	
+		$query = array_merge(
 			$this->entityGetterGetBasicMatchQuery($row, $category, $params),
 			['rates.' . $usaget => ['$exists' => true]],
 			['tariff_category' => $category]
 		);
+		if (Billrun_Utils_Plays::isPlaysInUse()) {
+			$play = Billrun_Util::getIn($row, 'subscriber.play', Billrun_Util::getIn(Billrun_Utils_Plays::getDefaultPlay(), 'name', ''));
+			$query['play'] = [
+				'$in' => [null, $play],
+			];
 	}
 
-	protected function getBasicGroupQuery($row, $category, $params = []) {
+		return $query;
+			}
+			
+	protected function getBasicGroupQuery($row, $category = '', $params = []) {
 		$query = $this->entityGetterGetBasicGroupQuery($row, $category, $params);
 		$query['key'] = [
 			'$first' => '$key',
 		];
 		
 		return $query;
-	}
-
+		}
+	
 	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		$usaget = $params['usaget'] ?: '';
 		return Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
 	}
-
+	
 	protected function getConditionEntityKey($params = []) {
 		return 'rate_key';
 	}
-
+	
 	protected function afterEntityFound(&$row, $entity, $category = '', $params = []) {
 		// TODO: Create the ref using the collection, not the entity object.
 		$entity->collection(Billrun_Factory::db()->ratesCollection());
@@ -228,10 +238,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			$this->getForeignFields(['rate' => $entity], $current),
 			$this->getAddedValues($category, $entity, $row)
 		);
-		
+	
 		if (!isset($newData['rates'])) {
 			$newData['rates'] = [];
-		}
+	}
+	
 		$newData['rates'][] = $this->getRateData($category, $entity);
 		$row->setRawData($newData);
 	}
@@ -239,9 +250,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	protected function getFullEntityDataQuery($rawEntity) {
 		$query = $this->entityGetterGetFullEntityDataQuery($rawEntity);
 		if (!$query || !isset($rawEntity['key'])) {
-			return false;
-		}
-		
+ 			return false;	
+ 		}
+ 		
 		$query['key'] = $rawEntity['key']; // this is for sharding purpose
 		return $query;
 	}
