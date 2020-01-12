@@ -124,6 +124,20 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		parent::__construct($options);
 	}
+	
+	public static function getInstance($method, $params = []) {
+		$paymentClass = self::getClassByPaymentMethod($method);
+		if (!class_exists($paymentClass)) {
+			return false;
+		}
+		
+		return new $paymentClass($params);
+	}
+	
+	public static function validatePaymentMethod($method, $params = []) {
+		$paymentClass = self::getClassByPaymentMethod($method);
+		return class_exists($paymentClass);
+	}
 
 	/**
 	 * Save the payment to bills collection
@@ -978,4 +992,20 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
 	}
+    
+    /**
+     * get bills affected by payment
+     * 
+     * @return array of Bills on success, false on error
+     */
+    public function getPaymentBills() {
+        switch ($this->getDir()) {
+            case 'fc':
+                return $this->getPaidBills();
+            case 'tc':
+                return $payment->getPaidByBills();
+            default:
+                return false;
+        }
+    }
 }
