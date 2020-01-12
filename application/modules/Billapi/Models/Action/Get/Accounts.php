@@ -28,5 +28,12 @@ class Models_Action_Get_Accounts extends Models_Action_Get {
 	protected function getCustomFieldsKey() {
 		return $this->getCollectionName() . ".account";
 	}
+	
+	protected function getDateFields() {
+		$fields = parent::getDateFields();
+		$fields[] = 'payment_gateway.active.generate_token_time';
+		$fields[] = 'in_collection_from';
+		return array_unique($fields);
+	}
 
 }

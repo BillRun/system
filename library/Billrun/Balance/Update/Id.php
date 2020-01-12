@@ -19,5 +19,12 @@ class Billrun_Balance_Update_Id extends Billrun_Balance_Update_Prepaidinclude {
 	 * @var string
 	 */
 	protected $updateType = 'Id';
+	
+	 protected function init() {
+		$this->query = array(
+			'_id' => $this->data['_id'],
+		);
+		$this->before = $this->data;
+	}
 
 }

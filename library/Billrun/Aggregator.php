@@ -72,6 +72,10 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	abstract protected function loadData();
 	
 	
+	public function getData() {
+		return $this->data;
+	}
+	
 	/**
 	 * execute aggregate
 	 */

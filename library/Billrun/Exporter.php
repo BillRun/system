@@ -166,8 +166,14 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$query = json_decode($querySettings['query'], JSON_OBJECT_AS_ARRAY);
 		if (isset($querySettings['time_range'])) {
 			$timeRange = $querySettings['time_range'];
-			$endTime = $this->exportTime;
-			$startTime = strtotime($timeRange, $endTime);
+			if (isset($querySettings['time_range_hour'])) {
+				$hour = $querySettings['time_range_hour'];
+				$endTime = strtotime($hour, $this->exportTime);
+				$startTime = strtotime($timeRange . ' ' . $hour, $endTime);
+			} else {
+				$endTime = $this->exportTime;
+				$startTime = strtotime($timeRange, $endTime);
+			}
 			$query['urt'] = array(
 				'$gte' => new MongoDate($startTime),
 				'$lt' => new MongoDate($endTime),
@@ -358,16 +364,16 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * mark the lines which are about to be exported
 	 */
 	function beforeExport() {
-		$this->query['export_start'] = array(
+		$this->query['export_start.' . static::$type] = array(
 			'$exists' => false,
 		);
-		$this->query['export_stamp'] = array(
+		$this->query['export_stamp.' . static::$type] = array(
 			'$exists' => false,
 		);
 		$update = array(
 			'$set' => array(
-				'export_start' => new MongoDate(),
-				'export_stamp' => $this->exportStamp,
+				'export_start.' . static::$type => new MongoDate(),
+				'export_stamp.' . static::$type => $this->exportStamp,
 			),
 		);
 		$options = array(
@@ -376,8 +382,8 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		
 		$collection = $this->getCollection();
 		$collection->update($this->query, $update, $options);
-		unset($this->query['export_start']);
-		$this->query['export_stamp'] = $this->exportStamp;
+		unset($this->query['export_start.' . static::$type]);
+		$this->query['export_stamp.' . static::$type] = $this->exportStamp;
 		$this->createLogDB($this->getLogStamp());
 	}
 	
@@ -424,7 +430,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		);
 		$update = array(
 			'$set' => array(
-				'exported' => new MongoDate(),
+				'exported.' . static::$type => new MongoDate(),
 			),
 		);
 		$options = array(
@@ -542,13 +548,17 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 * 
 	 * @return string - number in the range of 00001-99999
 	 */
-	protected function getSequenceNumber() {
+	protected function getSequenceNumber($row = array(), $mapping = array()) {
 		if (is_null($this->sequenceNum)) {
 			$query = array(
 				'source' => 'export',
 				'type' => static::$type,
+				'sequence_num' => array(
+					'$exists' => true,
+				),
 			);
 			$sort = array(
+				'sequence_num' => -1,
 				'export_start_time' => -1,
 			);
 			$lastSeq = $this->logCollection->query($query)->cursor()->sort($sort)->limit(1)->current()->get('sequence_num');
@@ -557,8 +567,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			} else {
 				$nextSeq = $lastSeq + 1;
 			}
-			$this->sequenceNum = sprintf('%05d', $nextSeq % 100000);
+			
+			$this->sequenceNum = $nextSeq;
 		}
+		
+		$length = intval(Billrun_Util::getIn($mapping, 'func.length', 5));
+		$this->sequenceNum = sprintf('%0' . $length . 'd', $this->sequenceNum % pow(10, $length));
 		return $this->sequenceNum;
 	}
 	

@@ -83,7 +83,12 @@ class AdjustPaymentsAction extends ApiAction {
 						$rawData['method'] = $adjustment['method'];
 					}
 					if (isset($adjustment['amount'])) {
-						$rawData['amount'] = $adjustment['amount'];
+						if ($adjustment['amount']) {
+							$rawData['amount'] = $adjustment['amount'];
+						}
+						else { // 0 means cancellation only
+							continue;
+						}
 					}
 					unset($rawData['_id'], $rawData['pays'], $rawData['due']);
 					$rawData['deposit_slip'] = isset($rawData['deposit_slip'])? $rawData['deposit_slip'] : '';

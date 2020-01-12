@@ -69,9 +69,9 @@ class Billrun_Billingcycle {
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	protected static function getDatetime() {
+	public static function getDatetime($billrunKey) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		return self::$billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
 	/**
@@ -440,7 +440,7 @@ class Billrun_Billingcycle {
 	}
 
 	public static function getLastNonRerunnableCycle() {
-		$query = array('billed' => 1, 'attributes.invoice_type' => array('$ne' => 'immediate'));
+		$query = array('billed' => 1, 'billrun_key' => array('$regex' => '^\d{6}$'));
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {

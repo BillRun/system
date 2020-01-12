@@ -107,7 +107,7 @@ abstract class Billrun_Balance_Update_Abstract {
 	/**
 	 * create row to track the balance update
 	 */
-	abstract protected function createBillingLines();
+	abstract protected function createBillingLines($chargingData = array());
 
 	/**
 	 * method to track change in audit trail
@@ -158,6 +158,16 @@ abstract class Billrun_Balance_Update_Abstract {
 	
 	public function getAfter() {
 		return null;
+	}
+	
+	/**
+	 * method to add property to additional info
+	 * 
+	 * @param string $key
+	 * @param mixed $val
+	 */
+	public function addAdditional($key, $val) {
+		$this->additional[$key] = $val;
 	}
 
 }

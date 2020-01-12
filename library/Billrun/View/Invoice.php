@@ -89,8 +89,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
 				$rate = $this->getRateForLine($line);
 				$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
-				
-				$line->collection(Billrun_Factory::db()->linesCollection());
+				if ($line instanceof Mongodloid_Entity) {
+					$line->collection(Billrun_Factory::db()->linesCollection());
+				}
 				$name = $this->getLineUsageName($line);
 				$key = $this->getLineAggregationKey($line, $rate, $name);
 				$subscriptionList[$key]['desc'] = $name;	
@@ -210,7 +211,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function shouldProvideDetails() {
-		return !empty($this->data['attributes']['detailed_invoice']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
+		return !empty($this->data['attributes']['invoice_details']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
 	}
 	
 	public function getInvoicePhonenumber($rawNumber) {

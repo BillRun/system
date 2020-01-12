@@ -25,6 +25,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $invoicedLines = array();
 	
 	protected $shouldKeepLinesinMemory = true;
+	protected $shouldAggregateUsage = true;
         
 	/**
 	 * 
@@ -61,6 +62,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 
 	public function setShouldKeepLinesinMemory($newValue) {
         $this->shouldKeepLinesinMemory = $newValue;
+	}
+
+	public function setShouldAggregateUsage($newValue) {
+        $this->shouldAggregateUsage = $newValue;
 	}
 	
 	/**
@@ -200,10 +205,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
-		if(!isset($this->rates[$id_str])) {
+		$col_str = strval($raw_rate['$ref']);
+		if(!isset($this->rates[$col_str][$id_str])) {
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
 			return null;
 		}
-		return $this->rates[$id_str];
+		return $this->rates[$col_str][$id_str];
 	}
 	
 	/**
@@ -245,7 +254,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skiping...",Zend_log::DEBUG);
+						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skipping...",Zend_log::DEBUG);
 						continue;
 					}
 					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
@@ -305,8 +314,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			$vat =  Billrun_Rates_Util::getVat();
-			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
@@ -381,8 +389,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-
-		$this->aggregateLinesToBreakdown($subLines);
+		if ($this->shouldAggregateUsage) {
+			$this->aggregateLinesToBreakdown($subLines);
+		} else {
+			Billrun_Factory::log('Skipping subscriber '. $this->data['sid'].' usage aggrergation for AID :'. $this->data['aid'],Zend_Log::INFO);
+		}
 
 		return $updatedLines;
 	}
@@ -411,7 +422,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				}
 			}
 		}
-		Billrun_Factory::log('Finished aggreating into billrun object for SID : ' . $this->data['sid']);
+		Billrun_Factory::log('Finished aggregating into billrun object for SID : ' . $this->data['sid']);
 	}
 
 	/**

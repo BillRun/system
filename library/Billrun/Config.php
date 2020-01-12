@@ -473,4 +473,29 @@ class Billrun_Config {
 		}
 		return array();
 	}
+	
+	public function getCustomFieldType($customFieldsKey, $fieldName) {
+		$customFields = $this->getConfigValue("{$customFieldsKey}.fields", []);
+		foreach ($customFields as $customField) {
+			if ($customField['field_name'] == $fieldName) {
+				return isset($customField['type']) ? $customField['type'] : 'string';
+			}
+		}
+		return 'string';
+	}
+	
+	/**
+	 * method to get all input processors settings
+	 * 
+	 * @param boolean $enabledOnly - indicates if input processor enabled or not
+	 * @return array - input processors settings
+	 */
+	public function getFileTypesSettings($enabledOnly = false) {		
+		$fileTypes = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($enabledOnly) {
+			return (!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
+		});
+
+		return $fileTypes;
+	}
+
 }

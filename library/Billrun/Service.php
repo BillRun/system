@@ -26,12 +26,14 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	
+	
 	/**
-	 * service internal id
+	 * local cache to store all entities (services/plans), so on run-time they will be fetched from memory instead of from DB
 	 * 
-	 * @var int
+	 * @var array
 	 */
-	protected $service_id = 0;
+	protected static $entities = [];
 
 	/**
 	 * constructor
@@ -53,9 +55,6 @@ class Billrun_Service {
 			$this->load($params['name'], $time, 'name');
 		}
 		
-		if (isset($params['service_id'])) {
-			$this->data['service_id'] = $params['service_id'];
-		}
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
@@ -83,6 +82,33 @@ class Billrun_Service {
 		} else {
 			$queryTime = new MongoDate($time);
 		}
+		
+		switch ($loadByField) {
+			case 'name':
+				$this->data = self::getEntityByNameAndTime($param, $queryTime);
+				break;
+			case 'id':
+			case '_id':
+				$this->data = self::getEntityById($param);
+				break;
+			default: // BC
+				$this->loadFromDb($param, $queryTime, $loadByField);
+		}
+	}
+
+	/**
+	 * load the service from DB
+	 * 
+	 * @param mixed $param the value to load by
+	 * @param mixed $time unix timestamp OR mongo date
+	 * @param string $loadByField the field to load by the value
+	 */
+	protected function loadFromDb($param, $time = null, $loadByField = '_id') {
+		if (is_null($time)) {
+			$queryTime = new MongoDate();
+		} else if (!$time instanceof MongoDate) {
+			$queryTime = new MongoDate($time);
+		}
 		$serviceQuery = array(
 			$loadByField => $param,
 			'$or' => array(
@@ -90,7 +116,7 @@ class Billrun_Service {
 				array('to' => null)
 			)
 		);
-		$coll = Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_class($this))) . 's');
+		$coll = self::getCollection();
 		$record = $coll->query($serviceQuery)->lessEq('from', $queryTime)->cursor()->current();
 		$record->collection($coll);
 		$this->data = $record;
@@ -253,7 +279,7 @@ class Billrun_Service {
 	 * 
 	 * @return int usage left in the group
 	 */
-	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null) {
+	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null, $serviceQuantity = 1) {
 		if (is_null($staticGroup)) {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
@@ -282,7 +308,7 @@ class Billrun_Service {
 				return array('usagev' => 0);
 			}
 			
-			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time);
+			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
 				return array(
@@ -300,7 +326,7 @@ class Billrun_Service {
 				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
 			);
 		} else {
-			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time);
+			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
 			if ($rateUsageIncluded === 'UNLIMITED') {
 				return array(
 					'usagev' => PHP_INT_MAX,
@@ -394,15 +420,20 @@ class Billrun_Service {
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
 
-	public function getGroupVolume($usageType, $aid, $group = null, $time = null) {
+	public function getGroupVolume($usageType, $aid, $group = null, $time = null, $serviceQuantity = 1) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
+		$isShared = isset($this->data['include']['groups'][$group]['account_shared']) ? $this->data['include']['groups'][$group]['account_shared'] : false;
+		$isquantityAffected = isset($this->data['include']['groups'][$group]['quantity_affected']) ? $this->data['include']['groups'][$group]['quantity_affected'] : false;
 		$groupValue = $this->getGroupValue($group, $usageType);
 		if ($groupValue === FALSE) {
 			return 0;
 		}
-		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
+		if (!$isShared && $isquantityAffected) {
+			return $groupValue * $serviceQuantity;
+		}
+		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time, $isquantityAffected)) {
 			return $groupValue * $pool;
 		}
 		return $groupValue;
@@ -433,9 +464,10 @@ class Billrun_Service {
 	 * method to calculate how much usage there is in pool sharing usage/cost
 	 * @param int $aid the account
 	 * @param string $group the group
+	 * @param boolean $quantityAffected flag whether to multiply by subscriber service quantity 
 	 * @return int
 	 */
-	protected function getPoolSharingUsageCount($aid, $time = null) {
+	protected function getPoolSharingUsageCount($aid, $time = null, $quantityAffected = false) {
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -445,9 +477,11 @@ class Billrun_Service {
 			'to' => array('$gt' => new MongoDate($time)),
 			'from' => array('$lt' => new MongoDate($time)),
 		);
-		if ($this instanceof Billrun_Plan) {
+		$isPlan = $this instanceof Billrun_Plan;
+		$isService = $this instanceof Billrun_Service;
+		if ($isPlan) {
 			$query['plan'] = $this->data['name'];
-		} else if ($this instanceof Billrun_Service) {
+		} else if ($isService) {
 			$query['services.name'] = $this->data['name'];
 		} else {
 			return 0;
@@ -457,19 +491,131 @@ class Billrun_Service {
 			'$match' => $query,
 		);
 		
-		$aggregateGroup = array(
-			'$group' => array(
-				'_id' => null,
-				's' => array(
-					'$sum' => 1,
-				)
+		$unwindServices = array('$unwind' => '$services');
+		
+		$aggregateServices = array(
+			'$match' => array(
+				'services.name' => $this->data['name']
 			)
 		);
-		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregateMatch, $aggregateGroup)->current();
+		
+		if ($isPlan || ($isService && !$quantityAffected)) {
+			$aggregateGroup = array(
+				'$group' => array(
+					'_id' => null,
+					's' => array(
+						'$sum' => 1
+						)
+					)
+				);				
+		} else if ($isService && $quantityAffected) {
+			$aggregateGroup = array(
+				'$group' => array(
+					'_id' => null,
+					's' => array(
+						'$sum' => array(
+							'$ifNull' => array(
+								'$services.quantity', 1
+							)
+						)
+					)
+				)
+			);
+		}
+		
+		$aggreagateArray = array($aggregateMatch);
+		
+		if ($isPlan) {
+			array_push($aggreagateArray, $aggregateGroup);
+		} else if ($this instanceof Billrun_Service) {
+			array_push($aggreagateArray, $unwindServices, $aggregateServices, $aggregateGroup);
+		} 
+				
+		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggreagateArray)->current();
 		if (!isset($results['s'])) {
 			return 0;
 		}
 		return $results['s'];
+	}
+	
+	public function getPlays() {
+		$plays = $this->get('play');
+		return empty($plays) ? [] : $plays;
+	}
+	
+	/**
+	 * gets the DB collection of the entity (servicesCollection/plansCollection/etc...)
+	 * 
+	 * @return Mongodloid Collection
+	 */
+	public static function getCollection() {
+		return Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_called_class())) . 's');
+	}
+	
+	/**
+	 * loads all entities (Services/Plans/etc...) to a static local variable
+	 * these entities will be later use to fetch from the memory instead of from the DB
+	 */
+	public static function initEntities() {
+		$coll = self::getCollection();
+		$entities = $coll->query()->cursor();
+		self::$entities['by_id'] = [];
+		self::$entities['by_name'] = [];
+		foreach ($entities as $entity) {
+			$entity->collection($coll);
+			self::$entities['by_id'][strval($entity->getId())] = $entity;
+			self::$entities['by_name'][$entity['name']][] = [
+				'entity' => $entity,
+				'from' => $entity['from'],
+				'to' => $entity['to'],
+			];
+		}
+	}
+
+	/**
+	 * get local stored entities
+	 * 
+	 * @return array
+	 */
+	public static function getEntities() {
+		if (empty(self::$entities)) {
+			self::initEntities();
+		}
+		return self::$entities;
+	}
+
+	/**
+	 * get the entity by its id
+	 *
+	 * @param string $id
+	 *
+	 * @return array of entity details if id exists else false
+	 */
+	protected static function getEntityById($id) {
+		$entities = static::getEntities();
+		if (isset($entities['by_id'][$id])) {
+			return $entities['by_id'][$id];
+		}
+		return new Mongodloid_Entity(array(), self::getCollection());
+	}
+
+	/**
+	 * get entuty by name and date
+	 * entity is time-depend
+	 * @param string $name name of the entity
+	 * @param int $time unix timestamp
+	 * @return array with entity details if entity exists, else false
+	 */
+	protected static function getEntityByNameAndTime($name, $time) {
+		$entities = static::getEntities();
+		if (isset($entities['by_name'][$name])) {
+			foreach ($entities['by_name'][$name] as $entityTimes) {
+				if ($entityTimes['from'] <= $time && (!isset($entityTimes['to']) || is_null($entityTimes['to']) || $entityTimes['to'] >= $time)) {
+					return $entityTimes['entity'];
+				}
+			}
+		}
+		return new Mongodloid_Entity(array(), self::getCollection());
 	}
 	
 }

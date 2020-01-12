@@ -52,11 +52,6 @@ class Billrun_Cycle_Account_Invoice {
 	 * @var boolean
 	 */
 	protected $overrideMode = true;
-	/**
-	 * Hold all the discounts that are  applied to the account.
-	 * @var array 
-	 */
-	protected $discounts= array();
 
 	protected $invoicedLines = array();
 
@@ -160,14 +155,19 @@ class Billrun_Cycle_Account_Invoice {
 		return $this->key;
 	}
 
-	public function applyDiscounts() {
-		$dm = new Billrun_DiscountManager();
-		$this->discounts = $dm->getEligibleDiscounts($this);
+	/**
+	 * Apply discount added to the account to subscribers;
+	 */
+	public function applyDiscounts($discounts) {
 		$sidDiscounts = array();
-		foreach($this->discounts as $discount) {
+		foreach($discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
-				if($subscriber->getData()['sid'] == $discount['sid']) {
-					$rawDiscount = $discount->getRawData();
+				$subscriberData = $subscriber->getData();
+				if($subscriberData['sid'] == $discount['sid']) {
+					$rawDiscount = ( $discount instanceof Mongodloid_Entity ) ? $discount->getRawData() : $discount ;
+					if (Billrun_Utils_Plays::isPlaysInUse()) {
+						$discount['subscriber'] = array('play' => isset($subscriberData['play']) ? $subscriberData['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+					}
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
@@ -210,6 +210,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param int $invoiceId minimum invoice id to start from
 	 */
 	public function close($invoiceId,$isFake = FALSE,$customCollName = FALSE) {
+		Billrun_Factory::log('closing invoice.', Zend_Log::DEBUG);
 		if(!$this->isAccountActive()) {
 			Billrun_Factory::log("Deactivated account: " . $this->aid, Zend_Log::INFO);
 			return;
@@ -274,6 +275,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
+		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
 		$newTotals = array(
@@ -288,16 +290,21 @@ class Billrun_Cycle_Account_Invoice {
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
+			'current_balance' => array('after_vat' => 0),
 		);
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
 		}
+		
+		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
+		
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
-		if($pastBalance['total'] < -Billrun_Billingcycle::PRECISION  ) {
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $invoicingDay);
+		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
+		$newTotals['current_balance']['after_vat'] = $newTotals['past_balance']['after_vat'] + $newTotals['after_vat_rounded'];
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
 	}
@@ -379,10 +386,6 @@ class Billrun_Cycle_Account_Invoice {
 
 	public function getTotals() {
 		return $this->data['totals'];
-	}
-
-	public function getAppliedDiscounts() {
-		return $this->discounts;
 	}
 	
 	public function getInvoicedLines() {
