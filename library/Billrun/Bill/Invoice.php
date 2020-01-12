@@ -137,5 +137,41 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		}
 		return false; 
 	}
+        /**
+         * Function gets start + end time, as Unix Timestamp,and aid.
+         * @param string $startTime
+         * @param string $endTime
+         * @param integer $aid
+         * @return array of Billrun_Bill_Invoice objects, of the wanted account's immediate invoices, in the time rang.
+         */
+        public static function getImmediateInvoicesByRange($aid, $startTime, $endTime, $returnAsArray = false) {
+            $convertedStartTime = date('YmdHis', $startTime);
+            $convertedEndTime = date('YmdHis', $endTime);
+            $query = array(
+                        'aid' => $aid,
+                        'invoice_type' => array('$eq' => 'immediate'),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
+
+		);
+            $sort = array(
+			'billrun_key' => -1,
+		);
+            $fields = array(
+			'billrun_key' => 1,
+                );  
+            $bills = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort($sort);
+            $billsArray = iterator_to_array($bills, true);
+            $invoicesArray = [];
+            if(!$returnAsArray){
+                foreach($billsArray as $id => $entity){
+                    $invoicesArray[] = Billrun_Bill_Invoice::getInstanceByData($entity);
+                }
+            }else{
+                foreach($billsArray as $id => $entity){
+                    $invoicesArray[] = $entity->getRawData();
+                }
+            }
+            return $invoicesArray;
+        }
 
 }

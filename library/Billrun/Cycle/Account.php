@@ -54,6 +54,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->applyDiscounts($flatLines);
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
+	
+	public function addConfigurableData() {
+		$this->invoice->addConfigurableData();
+	}
 
 	public function getInvoice() {
 		return $this->invoice;
@@ -203,7 +207,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
 			foreach($servicesArr as $service) {
 				$creationTime = !empty($subRev['creation_time']) ? $subRev['creation_time'] : $subRev['from'];
-				if( $subRev['from'] >= $service['creation_time'] && $maxTo >= $service['from']->sec && $maxTo < $service['to']->sec ) {
+				if( $maxTo >= $service['from']->sec && $maxTo < $service['to']->sec ) {
 					if(Billrun_Plans_Util::hasPriceWithinDates($service,$creationTime->sec,$minFrom,$maxTo) &&
 					   Billrun_Plans_Util::balancePeriodWithInDates($service,$creationTime->sec,$minFrom,$maxTo) ) {
 						return FALSE;
@@ -287,7 +291,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
 
-		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
+		$data = [
+			'rates' => $this->cycleAggregator->getRates(),
+			'discounts' => $this->cycleAggregator->getDiscounts(),
+		];
+		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
 		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );

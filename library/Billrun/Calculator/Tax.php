@@ -133,7 +133,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 				if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 					$aprice *= $apriceMult;
 				}
-				return $aprice;
+				return floatval($aprice);
 			}
 		}
 

@@ -619,6 +619,24 @@ var formerPlanField ={
 	};
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
+// BRCD-2021 - Invoice translations support
+const invoices = lastConfig['billrun']['invoices'];
+if (invoices) {
+	const language = invoices['language'];
+	if (language) {
+		const def = language['default'];
+		if (!def) {
+			lastConfig.billrun.invoices.language.default = 'en_GB';
+		}
+	} else {
+		lastConfig.billrun.invoices.language = {'default': 'en_GB'};
+	}
+} else {
+	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+}
+
+db.config.insert(lastConfig);
+
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -718,11 +736,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		}
 		var serviceObject = {};
 		var serviceValue = [];
+		var servicesArray = [];
 		if (oldParams.service !== undefined) {
 			var serviceCondAmount = oldParams.service.length;
 			for (var i = 0; i < serviceCondAmount; i++) {
-				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+				servicesArray.push(oldParams.service[i]);
 			}
+			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
 			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
@@ -746,4 +766,23 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
+// BRCD-2070 - GSD - getSubscriberDetails
+if (!lastConfig.subscribers.subscriber.type) {
+	lastConfig.subscribers.subscriber.type = 'db';
+}
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
+}
+
 db.config.insert(lastConfig);
+
+db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
+db.archive.dropIndex('session_id_1_request_num_-1')
+db.archive.dropIndex('sid_1_call_reference_1')
+db.archive.dropIndex('call_reference_1')
+if (db.serverStatus().ok == 0) {
+	print('Cannot shard archive collection - no permission')
+} else if (db.serverStatus().process == 'mongos') {
+	sh.shardCollection("billing.archive", {"stamp": 1});
+}

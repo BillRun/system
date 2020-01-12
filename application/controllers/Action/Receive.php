@@ -44,7 +44,7 @@ class ReceiveAction extends Action_Base {
 		if(!$this->handleTypeAll($options)) {
 			$connectionsPerReceiverType = array();
 			if (isset($options['payment_gateway'])) {
-				$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);				
+				$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);
 				$pgConnections = isset($paymentGatewayReceiver['connections']) ? $paymentGatewayReceiver['connections'] : [];
 				foreach ($pgConnections as $pgConnection) {
 					$pgOptions = $options;
