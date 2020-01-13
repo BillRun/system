@@ -70,11 +70,19 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if (isset($options['availableFields'])) {
-			$this->availableFields = $options['availableFields'];
+		if (isset($options['fields'])) {
+                    foreach ($options['fields'] as $field){
+			if (isset($field['field_name'])) {
+                            array_push($this->availableFields, $field['field_name']);
+                        }
+                    }
 		}
 		if (isset($options['extra_data'])) {
-			$this->customerExtraData = $options['extra_data'];
+                     foreach ($options['extra_data'] as $extra_field){
+			if (isset($extra_field['field_name'])) {
+                            array_push($this->customerExtraData, $extra_field['field_name']);
+                        }
+                    }
 		}
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
