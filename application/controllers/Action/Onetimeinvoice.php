@@ -37,6 +37,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$inputCdrs = json_decode($request['cdrs'],JSON_OBJECT_AS_ARRAY);
 		$step = isset($request['step']) ? intval($request['step']) : self::STEP_FULL;
 		$sendEmail = isset($request['send_email']) ? intval($request['send_email']) : true;
+		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
         $cdrs = [];
         $this->aid = intval($request['aid']);
         $affectedSids = [];
@@ -81,6 +82,7 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 		} else {
 			$invoiceData = $this->invoice->getRawData();
+			$invoiceData['allow_bill'] = $allowBill;
 			$billrunToBill->updateBillrunNotForBill($invoiceData);
 			$billrunToBill->handleSendInvoicesByMail([$invoiceData['invoice_id']]);
 		}

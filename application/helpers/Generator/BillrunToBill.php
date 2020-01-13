@@ -41,6 +41,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'billrun_key' => (string) $this->stamp,
 			'billed' => array('$ne' => 1),
 			'invoice_id' => $invoiceQuery,
+			'allow_bill' => ['$ne' => 0],
 		);
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
@@ -124,7 +125,22 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	public function updateBillrunNotForBill($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>2)));
+		$query = [
+			'invoice_id' => $data['invoice_id'],
+			'billrun_key' => $data['billrun_key'],
+			'aid' => $data['aid'],
+		];
+		
+		$update = [
+			'$set' => [
+				'billed' => 2,
+			],
+		];
+		
+		if (isset($data['allow_bill'])) {
+			$update['$set']['allow_bill'] = $data['allow_bill'];
+		}
+		Billrun_Factory::db()->billrunCollection()->update($query, $update);
 	}
 	
 	/**
