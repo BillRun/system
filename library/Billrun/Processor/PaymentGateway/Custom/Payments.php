@@ -53,10 +53,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
-		$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
-		$amount = $billAmount;
-		$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
-		$paymentParams[$payDir][$billData['type']][$id] = $amount;
+		if ($this->linkToInvoice) {
+			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
+			$amount = $billAmount;
+			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
+			$paymentParams[$payDir][$billData['type']][$id] = $amount;
+		}
 		try {
 			Billrun_Bill::pay('cash', array($paymentParams));
 		} catch (Exception $e) {
