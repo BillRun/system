@@ -394,7 +394,11 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
 								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
 								$this->generateDueDate($billrunDate);
-		$initData['charge'] = ['not_before' => $this->generateChargeDate($options, $initData)];
+		$chargeNotBefore = $this->generateChargeDate($options, $initData);
+		if (!empty($chargeNotBefore)) {
+			$initData['charge'] = ['not_before' => $chargeNotBefore];
+		}
+		
 		$this->data->setRawData($initData);
 	}
         
@@ -437,6 +441,10 @@ class Billrun_Cycle_Account_Invoice {
 		
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
+			if (in_array($invoiceType, $option['invoice_type']) && $option['anchor_field'] != 'confirm_date') {
+				return false;
+			}
+			
 			if ($option['anchor_field'] == 'invoice_date' && in_array($invoiceType, $option['invoice_type'])) {
 				return new MongoDate(strtotime($option['relative_time'], $initData['invoice_date']));
 			}
