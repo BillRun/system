@@ -40,7 +40,9 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		}
 		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
 		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
-		$this->aggregationLogic = new Billrun_Cycle_Onetime_AggregatePipeline($aggregateOptions);
+		//This class will define the account/subscriber/plans aggregation logic for the cycle
+		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
+
 		$this->affectedSids = Billrun_Util::getFieldVal($options['affected_sids'],[]);
 	}
 	
@@ -87,12 +89,12 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];
-
+			$invalidAccountFunctions = ['getActivePlan','getPlanNextTeirDate','getPlay'];
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				$raw = $subscriberPlan['id'];
 				foreach($this->getAggregatorConfig('subscriber.passthrough_data', array()) as $dstField => $srcField) {
-					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
+					if(is_array($srcField) && method_exists($this, $srcField['func']) && !in_array($srcField['func'],$invalidAccountFunctions)) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];

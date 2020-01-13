@@ -533,8 +533,6 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		// white list exists but aids not included
@@ -552,14 +550,13 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$aidsQuery = array('aid' => array('$in' => $aids));			
+			$accountQuery = array('aid' => array('$in' => $aids));			
 		} else if (!empty($exempted)){
-			$aidsQuery = array('aid' => array('$nin' => $aids));
+			$accountQuery = array('aid' => array('$nin' => $aids));
 		} else {
-			$aidsQuery = array();
+			$accountQuery = array();
 		}
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {
@@ -624,7 +621,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-        public function getDueBeforeVat() {
+	public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
@@ -1129,4 +1126,13 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
 }

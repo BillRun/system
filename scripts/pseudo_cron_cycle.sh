@@ -44,5 +44,8 @@ echo "Invoked customer pricing calculator for "$TENANT" file"
 php $INDEX --env $ENV --tenant $TENANT --calculate --type tax
 echo "Invoked tax calculator for "$TENANT" file"
 
+php $INDEX --env $ENV --tenant $TENANT --calculate --type unify
+echo "Invoked unify calculator for "$TENANT" file"
+
 php $INDEX --env $ENV --tenant $TENANT --calculate --type rebalance
 echo "Invoked rebalance calculator for "$TENANT" file"

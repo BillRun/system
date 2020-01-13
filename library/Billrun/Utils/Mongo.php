@@ -272,12 +272,11 @@ class Billrun_Utils_Mongo {
 	 * Convert the date values in a query to Mongo format
 	 * @param array $arr - Arr to translate its values.
 	 */
-	public static function convertQueryMongoDates(&$arr) {
-		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/';
+	public static function convertQueryMongoDates(&$arr, $strDatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/') {
 		foreach ($arr as &$value) {
 			if (is_array($value)) {
-				self::convertQueryMongoDates($value);
-			} else if (preg_match($ISODatePattern, $value)) {
+				self::convertQueryMongoDates($value, $strDatePattern);
+			} else if (preg_match($strDatePattern, $value)) {
 				$value = new MongoDate(strtotime($value));
 			}
 		}

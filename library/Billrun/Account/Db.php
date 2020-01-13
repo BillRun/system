@@ -14,16 +14,15 @@
  * @since    5.0
  */
 class Billrun_Account_Db extends Billrun_Account {
-
+	
 	/**
-	 * The instance of the Account collection.
+	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
-
-	/**
-	 * Account data.
-	 */
-	protected $data;
+	
+	protected static $type = 'db';
+	
+	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
 
 	/**
 	 * Construct a new account DB instance.
@@ -32,11 +31,6 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-	}
-
-	public function getList($page, $size, $time, $acc_id = null) {
-		
 	}
 
 	/**
@@ -52,108 +46,72 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return null;
 	}
-
+	
 	/**
-	 * Get the account from the db.
-	 * @param array $params - Input params to get a subscriber by.
-	 * @return array Raw data of mongo raw. False if none found.
+	 * Overrides parent abstract method
 	 */
-	protected function runAccountQuery($params) {
-		$results = $this->collection->query($params)->cursor()->limit(1)->current();
-		if ($results->isEmpty()) {
-			return false;
-		}
-		return $results->getRawData();
+	protected function getAccountsDetails($query) {
+		return $this->collection->query($query)->cursor();
+	}
+		
+
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
+		throw new Exception("Dont use this function until refatoring of the aggregation is done");
 	}
 
 	/**
-	 * Get the account from the db.
-	 * @param array $params - Input params to get a subscriber by.
-	 * @return array Raw data of mongo raw. False if none found.
+	 * Overrides parent abstract method
 	 */
-	protected function buildQuery($params) {
-		$query = array('type' => 'account');
-		$queryExcludeParams = array('time', 'type', 'to', 'from');
-
-		if (!isset($params['time'])) {
-			$query['to']['$gt'] = new MongoDate();
-			$query['from']['$lte'] = new MongoDate();
-		} else {
-			$query['to']['$gt'] = new MongoDate(strtotime($params['time']));
-			$query['from']['$lte'] = new MongoDate(strtotime($params['time']));
-		}
-
-		foreach ($params as $key => $value) {
-			if (in_array($key, $queryExcludeParams)) {
-				continue;
+	protected function getAccountDetails($queries) {
+		$accounts = [];		
+		foreach ($queries as &$query) {
+			$query = $this->buildParams($query);
+			if(isset($query['limit'])) {
+				$limit = $query['limit'];
+				unset($query['limit']);
 			}
-			$query[$key] = $value;
-		}
-
-		return $query;
-	}
-
-	/**
-	 * method to load subsbscriber details
-	 * 
-	 * @param array $params load by those params 
-	 * @return true if successful.
-	 */
-	public function load($params) {
-		$query = $this->buildQuery($params);
-		$data = $this->runAccountQuery($query);
-		if (!$data) {
-			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
-			return false;
-		}
-
-		$this->data = $data;
-		return true;
-	}
-
-	/**
-	 * method to update account collection status
-	 */
-	public function updateCrmInCollection($updateCollectionStateChanged) {
-		$collectionSteps = Billrun_Factory::collectionSteps();
-		$result = array('in_collection' => array(), 'out_of_collection' => array());
-
-		if (!empty($updateCollectionStateChanged['in_collection'])) {
-			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
-				if ($this->load($params)) {
-					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
-					$collectionSteps->createCollectionSteps($aid);
-					if ($this->closeAndNew($new_values)) {
-						$result['in_collection'][] = $aid;
-					} else {
-						$result['error'][] = $aid;
-					}
+			if(isset($query['time'])) {
+				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
+				$query = array_merge($query, $time);
+				unset($query['time']);
+			}
+			if(isset($query['id'])) {
+				$id = $query['id'];
+				unset($query['id']);
+			}
+			$result = $this->collection->query($query)->cursor();
+			if (isset($limit) && $limit === 1) {
+				$account = $result->limit(1)->current();
+				if ($account->isEmpty()) {
+					continue;
 				}
-			}
-		}
-
-		if (!empty($updateCollectionStateChanged['out_of_collection'])) {
-			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
-				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
-				if ($this->load($params)) {
-					$remove_values = array('in_collection', 'in_collection_from');
-					$collectionSteps->removeCollectionSteps($aid);
-					if ($this->closeAndNew(array(), $remove_values)) {
-						$result['out_of_collection'][] = $aid;
-					} else {
-						$result['error'][] = $aid;
-					}
+				if (isset($id)) {
+					$account->set('id', $id);
 				}
+				$accounts[] = $account;
+			} else {
+				return iterator_to_array($result);
 			}
 		}
-		$collectionSteps->runCollectionStateChange($result['in_collection'], true);
-		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
-		return $result;
+		return $accounts;
 	}
 
+	public function permanentChange($query, $update) {
+		$params = array(
+			'collection' => 'accounts',
+			'request' => array(
+				'action' => 'permanentchange',
+				'update' => json_encode($update),
+				'query' => json_encode($query),
+			)
+		);
+		$entityModel = Models_Entity::getInstance($params);
+		$entityModel->permanentchange();
+	}
+	
+		
 	/**
-	 * TODO: Update to Entity API
 	 * 
 	 * Method to Save as 'Close And New' item
 	 * @param Array $set_values Key value array with values to set
@@ -191,83 +149,19 @@ class Billrun_Account_Db extends Billrun_Account {
 			return FALSE;
 		}
 	}
-
-	public function getExcludedFromCollection($aids = array()) {
-		$excludeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.exempted_from_collection', []);
-		if(empty($excludeIds)) {
-			return [];
-		}
-		if (empty($aids)) {
-			return $excludeIds;
-		}
-		return array_intersect($aids, $excludeIds);
-	}
 	
-	public function getIncludedInCollection($aids = array()) {
-		$includeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.subject_to_collection', []);
-		if (empty($includeIds)) {
-			return empty($aids) ? null : $aids;
+	protected function buildParams($query) {
+		$type = 'account';
+		$query['type'] = $type;
+		foreach ($query as $key => $value) {
+			if (!in_array($key, static::$queryBaseKeys)) {
+				$query[$key] = $value;
+				continue;
+			}
+			switch ($key) {
+				default:
+			}
 		}
-		if (empty($aids)) {
-			return $includeIds;
-		}	
-		return array_intersect($aids, $includeIds);
-	}
-
-	public function getInCollection($aids = array()) {
-		$results = array();
-		$params = Billrun_Utils_Mongo::getDateBoundQuery();
-		$exempted = $this->getExcludedFromCollection($aids);
-		$subject_to = $this->getIncludedInCollection($aids);
-		$params['in_collection'] = true;
-		// white list exists but aids not included
-		if (!is_null($subject_to) && empty($subject_to)) {
-			return $results;
-		}
-		// white list exists and aids included
-		if (!is_null($subject_to) && !empty($subject_to)) {
-			$params['aid']['$in'] = $subject_to;
-		}
-		// black list exist and include aids
-		if (!empty($exempted)) {
-			$params['aid']['$nin'] = $exempted;
-		}
-		$query = $this->buildQuery($params);
-		$cursor = $this->collection->query($query)->cursor();
-		foreach ($cursor as $row) {
-			$results[$row->get('aid')] = $row->getRawData();
-		}
-		return $results;
-	}
-	
-	/**
-	 * Get accounts by transferred query.
-	 * @param array $query - query.
-	 */
-	public function getAccountsByQuery($query) {
-		return $this->collection->query($query)->cursor();
-	}
-	
-	public function getQueryActiveAccounts($aids) {
-		$today = new MongoDate();
-		return array(
-			'aid' => array('$in' => $aids), 
-			'from' => array('$lte' => $today), 
-			'to' => array('$gte' => $today), 
-			'type' => "account"
-		);
-	}
-
-	public function permanentChange($query, $update) {
-		$params = array(
-			'collection' => 'accounts',
-			'request' => array(
-				'action' => 'permanentchange',
-				'update' => json_encode($update),
-				'query' => json_encode($query),
-			)
-		);
-		$entityModel = Models_Entity::getInstance($params);
-		$entityModel->permanentchange();
+		return $query;
 	}
 }

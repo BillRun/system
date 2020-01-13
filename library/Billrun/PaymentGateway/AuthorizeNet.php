@@ -122,7 +122,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],
@@ -436,8 +436,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		if (empty($paymentProfileId)) {	
 			$index = 0;
-			$account = new Billrun_Account_Db();
-			$account->load(array('aid' => $aid));
+			$account = Billrun_Factory::account();
+			$account->loadAccountForQuery(array('aid' => $aid));
 			$accountPg = $account->payment_gateway;
 			$setValues['payment_gateway']['active'] = array();
 			if (!isset($accountPg['former'])) { 
