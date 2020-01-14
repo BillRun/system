@@ -873,7 +873,7 @@
 			"installments" : 3,
 			"skip_calc" : [
 				"unify"
-					],
+			],
 			"process_time" :"time*2020-01-13T13:01:53.762Z",
 			"usaget" : "charge",
 			"credit" : {
@@ -882,7 +882,7 @@
 				"rate" : "CALL",
 				"usaget" : "call",
 				"aprice" : 24
-					},
+			},
 			"prepriced" : true,
 			"source" : "credit",
 			"rand" : 261031,
@@ -902,7 +902,7 @@
 				"lastname" : "f",
 				"services" : [ ],
 				"services_data" : [ ]
-					},
+			},
 			"plan" : "FREE_WITH_NOTHING",
 			"firstname" : "rf",
 			"lastname" : "f",
@@ -913,16 +913,16 @@
 								"collection": "plans",
 								"ObjectId": "5a55ca8b6d5b99344e5226c3",
 								"isDbRef": true
-					},
+			},
 
 				"arate": {
 								"collection": "rates",
 								"ObjectId": "5a55cacc6d5b993da318bad2",
 								"isDbRef": true
-					},
+			},
 			"arate_key" : "CALL",
 			"rates" : [
-						{
+				{
 					"tariff_category" : "retail",
 					"key" : "CALL",
 					"add_to_retail" : false,
@@ -930,13 +930,13 @@
 								"collection": "rates",
 								"ObjectId": "5a55cacc6d5b993da318bad2",
 										"isDbRef": true
-							},
+					},
 					"pricing" : {
 						"billrun" : "202002",
 						"charge" : 1
-							}
-						}
-					],
+					}
+				}
+			],
 			"usagev_offset" : 0,
 			"billrun" : "202002",
 			"retail_rate" : true,
@@ -944,18 +944,18 @@
 				"total_amount" : 1.36,
 				"total_tax" : 0.17,
 				"taxes" : [
-							{
+					{
 						"tax" : 0.17,
 						"amount" : 1.36,
 						"description" : "Vat",
 						"key" : "DEFAULT_VAT",
 						"type" : "vat",
 						"pass_to_customer" : 1
-							}
-						]
-					},
+					}
+				]
+			},
 			"final_charge" : 9.36
-				},
+		},
 		{
 			"OBJID":"5e1c6a41cd4acc445f75d978",
 			"sid" : 85,
@@ -967,7 +967,7 @@
 			"installments" : 3,
 			"skip_calc" : [
 				"unify"
-					],
+			],
 			"process_time" :"time*2020-01-13T13:01:53.762Z",
 			"usaget" : "charge",
 			"credit" : {
@@ -976,7 +976,7 @@
 				"rate" : "CALL",
 				"usaget" : "call",
 				"aprice" : 24
-					},
+			},
 			"prepriced" : true,
 			"source" : "credit",
 			"rand" : 155350,
@@ -997,7 +997,7 @@
 				"lastname" : "f",
 				"services" : [ ],
 				"services_data" : [ ]
-					},
+			},
 			"plan" : "FREE_WITH_NOTHING",
 			"firstname" : "rf",
 			"lastname" : "f",
@@ -1009,11 +1009,11 @@
 								"collection": "plans",
 								"ObjectId": "5a55ca8b6d5b99344e5226c3",
 								"isDbRef": true
-					},
+			},
 			"arate": {"collection": "rates","ObjectId": "5a55cacc6d5b993da318bad2","isDbRef": true},
 			"arate_key" : "CALL",
 			"rates" : [
-						{
+				{
 					"tariff_category" : "retail",
 					"key" : "CALL",
 					"add_to_retail" : false,
@@ -1021,9 +1021,9 @@
 					"pricing" : {
 						"billrun" : "202003",
 						"charge" : 1
-							}
-						}
-					],
+					}
+				}
+			],
 			"usagev_offset" : 0,
 			"billrun" : "202003",
 			"retail_rate" : true,
@@ -1031,18 +1031,18 @@
 				"total_amount" : 1.36,
 				"total_tax" : 0.17,
 				"taxes" : [
-							{
+					{
 						"tax" : 0.17,
 						"amount" : 1.36,
 						"description" : "Vat",
 						"key" : "DEFAULT_VAT",
 						"type" : "vat",
 						"pass_to_customer" : 1
-							}
-						]
-					},
+					}
+				]
+			},
 			"final_charge" : 9.36
-				},
+		},
 		{
 			"OBJID":"5e1c6a41cd4acc445f75d979",
 			"sid" : 85,
@@ -1054,7 +1054,7 @@
 			"installments" : 3,
 			"skip_calc" : [
 				"unify"
-					],
+			],
 			"process_time" :"time*2020-01-13T13:01:53.762Z",
 			"usaget" : "charge",
 			"credit" : {
@@ -1063,7 +1063,7 @@
 				"rate" : "CALL",
 				"usaget" : "call",
 				"aprice" : 24
-					},
+			},
 			"prepriced" : true,
 			"source" : "credit",
 			"rand" : 12840,
@@ -1084,7 +1084,7 @@
 				"lastname" : "f",
 				"services" : [ ],
 				"services_data" : [ ]
-					},
+			},
 			"plan" : "FREE_WITH_NOTHING",
 			"firstname" : "rf",
 			"lastname" : "f",
@@ -1095,11 +1095,11 @@
 								"collection": "plans",
 								"ObjectId": "5a55ca8b6d5b99344e5226c3",
 								"isDbRef": true
-					},
+			},
 			"arate": {"collection": "rates","ObjectId": "5a55cacc6d5b993da318bad2","isDbRef": true},
 			"arate_key" : "CALL",
 			"rates" : [
-						{
+				{
 					"tariff_category" : "retail",
 					"key" : "CALL",
 					"add_to_retail" : false,
@@ -1107,9 +1107,9 @@
 					"pricing" : {
 						"billrun" : "202003",
 						"charge" : 1
-							}
-						}
-					],
+					}
+				}
+			],
 			"usagev_offset" : 0,
 			"billrun" : "202004",
 			"retail_rate" : true,
@@ -1117,18 +1117,18 @@
 				"total_amount" : 1.36,
 				"total_tax" : 0.17,
 				"taxes" : [
-							{
+					{
 						"tax" : 0.17,
 						"amount" : 1.36,
 						"description" : "Vat",
 						"key" : "DEFAULT_VAT",
 						"type" : "vat",
 						"pass_to_customer" : 1
-							}
-						]
-					},
+					}
+				]
+			},
 			"final_charge" : 9.36
-				}
+		}
 
 
 
@@ -1147,7 +1147,7 @@
 				
 				
 				
-				,{
+		,{
 	"OBJID":"5e1d784bcd4acc075e10d9ee",
 	"sid" : 87,
 	"aid" : 86,
@@ -1158,7 +1158,7 @@
 	"installments" : 3,
 	"skip_calc" : [
 		"unify"
-	],
+			],
 	"process_time" :"time*2020-01-14T08:14:03.082Z",
 	"usaget" : "charge",
 	"credit" : {
@@ -1167,7 +1167,7 @@
 		"rate" : "CALL",
 		"usaget" : "call",
 		"aprice" : 24
-	},
+			},
 	"prepriced" : true,
 	"source" : "credit",
 	"rand" : 598259,
@@ -1188,7 +1188,7 @@
 		"lastname" : "f",
 		"services" : [ ],
 		"services_data" : [ ]
-	},
+			},
 	"plan" : "FREE_WITH_NOTHING",
 	"firstname" : "f",
 	"lastname" : "f",
@@ -1199,7 +1199,7 @@
 	"arate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
 	"arate_key" : "CALL",
 	"rates" : [
-		{
+				{
 			"tariff_category" : "retail",
 			"key" : "CALL",
 			"add_to_retail" : false,
@@ -1207,9 +1207,9 @@
 			"pricing" : {
 				"billrun" : "202003",
 				"charge" : 1
-			}
-		}
-	],
+					}
+				}
+			],
 	"usagev_offset" : 5,
 	"billrun" : "202003",
 	"retail_rate" : true,
@@ -1217,17 +1217,17 @@
 		"total_amount" : 1.36,
 		"total_tax" : 0.17,
 		"taxes" : [
-			{
+					{
 				"tax" : 0.17,
 				"amount" : 1.36,
 				"description" : "Vat",
 				"pass_to_customer" : 1
-			}
-		]
-	},
+					}
+				]
+			},
 	"final_charge" : 9.36
-},
-{
+		},
+		{
 	"OBJID":"5e1d784bcd4acc075e10d9ef",
 	"sid" : 87,
 	"aid" : 86,
@@ -1238,7 +1238,7 @@
 	"installments" : 3,
 	"skip_calc" : [
 		"unify"
-	],
+			],
 	"process_time" :"time*2020-01-14T08:14:03.082Z",
 	"usaget" : "charge",
 	"credit" : {
@@ -1247,7 +1247,7 @@
 		"rate" : "CALL",
 		"usaget" : "call",
 		"aprice" : 24
-	},
+			},
 	"prepriced" : true,
 	"source" : "credit",
 	"rand" : 141164,
@@ -1268,7 +1268,7 @@
 		"lastname" : "f",
 		"services" : [ ],
 		"services_data" : [ ]
-	},
+			},
 	"plan" : "FREE_WITH_NOTHING",
 	"firstname" : "f",
 	"lastname" : "f",
@@ -1279,7 +1279,7 @@
 	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
 	"arate_key" : "CALL",
 	"rates" : [
-		{
+				{
 			"tariff_category" : "retail",
 			"key" : "CALL",
 			"add_to_retail" : false,
@@ -1287,9 +1287,9 @@
 			"pricing" : {
 				"billrun" : "202004",
 				"charge" : 1
-			}
-		}
-	],
+					}
+				}
+			],
 	"usagev_offset" : 5,
 	"billrun" : "202004",
 	"retail_rate" : true,
@@ -1297,17 +1297,17 @@
 		"total_amount" : 1.36,
 		"total_tax" : 0.17,
 		"taxes" : [
-			{
+					{
 				"tax" : 0.17,
 				"amount" : 1.36,
 				"description" : "Vat",
 				"pass_to_customer" : 1
-			}
-		]
-	},
+					}
+				]
+			},
 	"final_charge" : 9.36
-},
-{
+		},
+		{
 	"OBJID":"5e1d784bcd4acc075e10d9ed",
 	"sid" : 87,
 	"aid" : 86,
@@ -1318,7 +1318,7 @@
 	"installments" : 3,
 	"skip_calc" : [
 		"unify"
-	],
+			],
 	"process_time" :"time*2020-01-14T08:14:03.082Z",
 	"usaget" : "charge",
 	"credit" : {
@@ -1327,7 +1327,7 @@
 		"rate" : "CALL",
 		"usaget" : "call",
 		"aprice" : 24
-	},
+			},
 	"prepriced" : true,
 	"source" : "credit",
 	"rand" : 604259,
@@ -1347,7 +1347,7 @@
 		"lastname" : "f",
 		"services" : [ ],
 		"services_data" : [ ]
-	},
+			},
 	"plan" : "FREE_WITH_NOTHING",
 	"firstname" : "f",
 	"lastname" : "f",
@@ -1358,7 +1358,7 @@
 	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
 	"arate_key" : "CALL",
 	"rates" : [
-		{
+				{
 			"tariff_category" : "retail",
 			"key" : "CALL",
 			"add_to_retail" : false,
@@ -1366,9 +1366,9 @@
 			"pricing" : {
 				"billrun" : "202002",
 				"charge" : 1
-			}
-		}
-	],
+					}
+				}
+			],
 	"usagev_offset" : 5,
 	"billrun" : "202002",
 	"retail_rate" : true,
@@ -1376,16 +1376,542 @@
 		"total_amount" : 1.36,
 		"total_tax" : 0.17,
 		"taxes" : [
-			{
+					{
 				"tax" : 0.17,
 				"amount" : 1.36,
 				"description" : "Vat",
 				"pass_to_customer" : 1
-			}
-		]
-	},
+					}
+				]
+			},
 	"final_charge" : 9.36
-}
+		}
+		,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		{
+
+	"sid" : 89,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1580508001,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 598259,
+	"installment_no" : 2,
+	"invoice_label" : "",
+	"first_installment" : "d914",
+	"stamp" : "836cf",
+	"type" : "credit",
+	"urt" :"time*2020-02-01T22:00:01Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 89,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"arate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202003",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202003",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		},
+		{
+	
+	"sid" : 89,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1583013601,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 141164,
+	"installment_no" : 3,
+	"invoice_label" : "",
+	"first_installment" : "d914",
+	"stamp" : "c78a",
+	"type" : "credit",
+	"urt" :"time*2020-03-01T22:00:01Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 89,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202004",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202004",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		},
+		{
+	
+	"sid" : 89,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1579514400,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 604259,
+	"installment_no" : 1,
+	"invoice_label" : "",
+	"stamp" : "d914",
+	"type" : "credit",
+	"urt" :"time*2020-01-20T10:00:00Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 89,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202002",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202002",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		},
+		{
+
+	"sid" : 90,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1580508001,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 598259,
+	"installment_no" : 2,
+	"invoice_label" : "",
+	"first_installment" : "d91434",
+	"stamp" : "836cf45",
+	"type" : "credit",
+	"urt" :"time*2020-02-01T22:00:01Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 90,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"arate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202003",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202003",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		},
+		{
+	
+	"sid" : 90,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1583013601,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 141164,
+	"installment_no" : 3,
+	"invoice_label" : "",
+	"first_installment" : "d91434",
+	"stamp" : "c78a546",
+	"type" : "credit",
+	"urt" :"time*2020-03-01T22:00:01Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 90,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202004",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202004",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		},
+		{
+	
+	"sid" : 90,
+	"aid" : 88,
+	"rate" : "CALL",
+	"credit_time" : 1579514400,
+	"aprice" : 8,
+	"usagev" : 1,
+	"installments" : 3,
+	"skip_calc" : [
+		"unify"
+			],
+	"process_time" :"time*2020-01-14T08:14:03.082Z",
+	"usaget" : "charge",
+	"credit" : {
+		"usagev" : 1,
+		"credit_by" : "rate",
+		"rate" : "CALL",
+		"usaget" : "call",
+		"aprice" : 24
+			},
+	"prepriced" : true,
+	"source" : "credit",
+	"rand" : 604259,
+	"installment_no" : 1,
+	"invoice_label" : "",
+	"stamp" : "d91434",
+	"type" : "credit",
+	"urt" :"time*2020-01-20T10:00:00Z",
+	"account_level" : false,
+	"granted_return_code" : 1,
+	"realtime" : true,
+	"subscriber" : {
+		"aid" : 88,
+		"sid" : 90,
+		"plan" : "FREE_WITH_NOTHING",
+		"firstname" : "f",
+		"lastname" : "f",
+		"services" : [ ],
+		"services_data" : [ ]
+			},
+	"plan" : "FREE_WITH_NOTHING",
+	"firstname" : "f",
+	"lastname" : "f",
+	"services" : [ ],
+	"services_data" : [ ],
+	"connection_type" : "postpaid",
+	"plan_ref": {"collection": "plans","ObjectId": "5a55ca8b6d5b99344e5226c3","isDbRef": true},
+	"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+	"arate_key" : "CALL",
+	"rates" : [
+				{
+			"tariff_category" : "retail",
+			"key" : "CALL",
+			"add_to_retail" : false,
+			"rate": {"collection": "rates","ObjectId": "5aeee54905e68c5b1f45f9f4","isDbRef": true},
+			"pricing" : {
+				"billrun" : "202002",
+				"charge" : 1
+					}
+				}
+			],
+	"usagev_offset" : 5,
+	"billrun" : "202002",
+	"retail_rate" : true,
+	"tax_data" : {
+		"total_amount" : 1.36,
+		"total_tax" : 0.17,
+		"taxes" : [
+					{
+				"tax" : 0.17,
+				"amount" : 1.36,
+				"description" : "Vat",
+				"pass_to_customer" : 1
+					}
+				]
+			},
+	"final_charge" : 9.36
+		}
+
 
 
 

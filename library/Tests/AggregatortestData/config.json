@@ -8,7 +8,8 @@
 				"aggregator" : {
 					"options" : {
 						"merge_credit_installments" : {
-							"86" :[87]
+							"86" :[87],
+							"88" :[89]
 						}
 					}
 				}
