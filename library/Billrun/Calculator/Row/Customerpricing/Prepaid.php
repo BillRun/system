@@ -95,6 +95,25 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	}
 	
 	/**
+	 * see parent::getLinePricingData
+	 */
+	protected function getLinePricingData($volume, $usageType, $rate, $plan) {
+		if (!$this->isReblanceOnLastRequestOnly()) {
+			return parent::getLinePricingData($volume, $usageType, $rate, $plan);
+		}
+		
+		$totalPricingData = parent::getLinePricingData($volume + $this->row['usagev_offset'], $usageType, $rate, $plan);
+		$offsetPricingData = parent::getLinePricingData($this->row['usagev_offset'], $usageType, $rate, $plan);
+		$pricingData = [];
+		
+		foreach ($totalPricingData as $key => $value) {
+			$pricingData[$key] = $totalPricingData[$key] - $offsetPricingData[$key];
+		}
+		
+		return $pricingData;
+	}
+	
+	/**
 	 * In case balance is in over charge (due to prepaid mechanism), 
 	 * adds a refund row to the balance.
 	 * 
