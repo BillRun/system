@@ -343,10 +343,10 @@ class Mongodloid_Collection {
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1) {
+	public function createAutoInc($oid, $init_id = 1, $collName = FALSE) {
 
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
+		$collection_name = !empty($collName) ? $collName : $this->getName();
 
 		// try to set last seq
 		while (1) {
@@ -368,7 +368,7 @@ class Mongodloid_Collection {
 			} catch (MongoCursorException $e) {
 				if ($e->getCode() == 11000) {
 					// duplicate - need to check if oid already exists
-					$ret = $this->getAutoInc($oid);
+					$ret = $this->getAutoInc($oid, $collName);
 					if (empty($ret) || !is_numeric($ret)) {
 						// if oid not exists - probably someone insert same seq at the same time
 						// let's try to insert same oid with next seq
@@ -383,9 +383,9 @@ class Mongodloid_Collection {
 		return $lastSeq;
 	}
 
-	public function getAutoInc($oid) {
+	public function getAutoInc($oid, $collName = FALSE) {
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
+		$collection_name = !empty($collName) ? $collName : $this->getName();
 		$query = array(
 			'coll' => $collection_name,
 			'oid' => $oid,

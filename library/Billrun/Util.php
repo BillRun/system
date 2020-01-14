@@ -995,5 +995,26 @@ class Billrun_Util {
 		}
 		return false;
 	}
+	
+	/**
+	 * Translate standard [[]] template strings to thier actual values
+	 * @param type $str
+	 * @param type $translations
+	 * @param type $self
+	 * @return type
+	 */
+	public static function translateTemplateValue($str, $translations, $self = NULL) {
+		foreach ($translations as $key => $translation) {
+			if(is_string($translation) || is_numeric($translation)) {
+				$replace = is_integer($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
+				$str = str_replace($replace, $translation, $str);
+			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
+				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
+			} else {
+				Billrun_Factory::log("Couldn't translate {$key} to ".print_r($translation,1),Zend_log::WARN);
+			}
+		}
+		return $str;
+	}
 }
 
