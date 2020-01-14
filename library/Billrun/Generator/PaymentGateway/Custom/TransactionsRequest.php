@@ -82,7 +82,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}, $this->customers);
 		
 		$account = Billrun_Factory::account();
-		$accountQuery = array('aid' => array('$in' => $aids));
+		$accountQuery = array('aid' => array('$in' => $customersAids));
 		$accounts = $account->loadAccountsForQuery($accountQuery);
 		foreach ($accounts as $account){
 			$accountsInArray[$account['aid']] = $account;
@@ -99,7 +99,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
 				continue;
 			}
-			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedFileLog);
+			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
 				continue;
