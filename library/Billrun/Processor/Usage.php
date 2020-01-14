@@ -150,7 +150,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-
+                $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
+                
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
@@ -210,6 +211,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 
 		return $row;
+	}
+        
+        /**
+         * According to the configuration get computed fields (cf)
+         * @param Array     $uf - all the user-defined fields in the input processor
+         * @param string    $type - Input processor name
+         * @return Array    computed fields (cf)
+         */
+        protected function getCalculatedFields($uf, $type) {
+                $row = array();
+		$configurations = Billrun_Factory::config()-> getFileTypeSettings($type,true)['processor']['calculated_fields'];
+                foreach ($configurations as $calculatedConf){ 
+                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+                    $targetFieldName = $calculatedConf['target_field'];
+                    $row[$targetFieldName] =  $filter->getComputedValue($uf);
+                }
+                return $row;
 	}
 
 //	protected function buildHeader($line) {

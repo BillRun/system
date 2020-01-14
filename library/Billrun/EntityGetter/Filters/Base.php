@@ -83,7 +83,7 @@ class Billrun_EntityGetter_Filters_Base {
 	 * @param array $row
 	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
-	protected function getComputedValue($row) {
+	public function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
