@@ -116,7 +116,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installment['charge'] = ['not_before' => $installment['due_date']];
+			$installment['charge']['not_before'] = $installment['due_date'];
 			$installments[] = new self($installment);
 		}
 

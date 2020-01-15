@@ -236,8 +236,8 @@ abstract class Billrun_Bill {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
 			$query['$or'] = array(
-				array('charge' => array('not_before' => array('$lte' => new MongoDate(strtotime($date))))),
-				array('charge' => array('not_before' => array('$exists' => false))),
+				array('charge.not_before' => array('$lte' => new MongoDate(strtotime($date)))),
+				array('charge.not_before' => array('$exists' => false)),
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
