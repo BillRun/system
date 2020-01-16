@@ -91,6 +91,6 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
         }
         
         public function saveLogFileFields(){
-            $this->save();
+            $this->data->save();
         }
 }

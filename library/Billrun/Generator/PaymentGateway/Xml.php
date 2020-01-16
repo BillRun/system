@@ -176,27 +176,28 @@ class Billrun_Generator_PaymentGateway_Xml {
         $flag = 0;
         foreach ($this->workingArray as $segment => $indexes) {
             foreach($indexes as $nodeIndex => $values){
-            for ($a = 0; $a < count($values); $a++) {
-                if ($a == 0) {
+                for ($a = 0; $a < count($values); $a++) {
+                    if ($a == 0) {
+                            $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
+                            $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
+                        $pathAndValueAsArr = array();
+                        Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
+
+                        $nodeArray = $pathAndValueAsArr;
+                        continue 1;
+                    }
+
                         $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
                         $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
                     $pathAndValueAsArr = array();
                     Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                    
-                    $nodeArray = $pathAndValueAsArr;
-                    continue 1;
+                    $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
+
                 }
-
-                    $pathAsArray = $this->pathAsArray($segment, $tags[$segment]['repeatedTag'], $nodeIndex, $a);
-                    $val = $this->workingArray[$segment][$nodeIndex][$a]['value'];
-                $pathAndValueAsArr = array();
-                Billrun_Util::setIn($pathAndValueAsArr, $pathAsArray, $val);
-                $this->set_in_without_override($nodeArray, $pathAndValueAsArr);
-
-            }
-            $this->newNode($nodeArray, $document, $doc);
-            if($segment === "data"){
-                $this->transactionsCounter++;
+                $this->newNode($nodeArray, $document, $doc);
+                if($segment === "data"){
+                    $this->transactionsCounter++;
+                }
             }
         }
         $root = $doc->createElement($this->name_space . ':' . $firstTag);
@@ -217,7 +218,6 @@ class Billrun_Generator_PaymentGateway_Xml {
         }
         $doc->encoding = $this->encoding;
         $doc->save($this->file_path);
-    }
     }
 
     /**

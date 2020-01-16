@@ -29,6 +29,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
+                $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
                 $this->informationArray['type'] = 'custom_payment_gateway';
                 $this->informationArray['fileType'] = 'received';
                 $this->informationArray['transactions']['confirmed'] = 0;
@@ -107,17 +108,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->updateLogCollection($fileCorrelationObj);
 		}
                 if(isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])){
-                    if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
+                if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
                         $currentFileCount = $this->getCurrentFileCount() + 1;
-                        $this->informationArray['file_count'] = $currentFileCount;
+                    $this->informationArray['file_count'] = $currentFileCount;
                         if (($currentFileCount) > $fileConfCount){
-                            $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
-                            Billrun_Factory::log($message , Zend_Log::ALERT);
-                            $this->informationArray['errors'] = $message;
-                            return False;
-                        }else{
+                        $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+                        Billrun_Factory::log($message , Zend_Log::ALERT);
+                        $this->informationArray['errors'] = $message;
+                        return False;
+                    }else{
                             if($currentFileCount == $fileConfCount){
-                                $this->informationArray['last_file'] = true;
+                            $this->informationArray['last_file'] = true;
                             }
                         }
                     }
