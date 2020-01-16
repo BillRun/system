@@ -71,10 +71,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->headerRows = $parser->getHeaderRows();
 		$this->trailerRows = $parser->getTrailerRows();
 		$parsedData = $parser->getDataRows();
-                $this->reprocessData($parsedData, $dataStructure);
 		$rowCount = 0;
 
 		foreach ($parsedData as $line) {
+                        $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line);
 			if (!$row){
 				return false;
@@ -87,17 +87,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 		return true;
 	}
-
-        protected function reprocessData(&$parsedData, $dataStructure){
+        
+        protected function formatLine($row,$dataStructure) {
             foreach($dataStructure as $index => $paramObj){
                 if(isset($paramObj['decimals'])){
-                    for($i = 0; $i < count($parsedData); $i++){
-                        $value = intval($parsedData[$i][$paramObj['name']]);
-                        $parsedData[$i][$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
-                    }
+                    $value = intval($row[$paramObj['name']]);
+                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
                 }
             }
-            return;
+            return $row;
         }
         
 	protected function getBillRunLine($rawLine) {
