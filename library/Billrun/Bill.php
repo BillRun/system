@@ -301,7 +301,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function updateLeft() {
-		if ($this->getDue() < 0) {
+		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
 			foreach ($this->getPaidBills() as $paidBills) {
 				$this->data['left'] -= array_sum($paidBills);
@@ -313,7 +313,7 @@ abstract class Billrun_Bill {
 	}
 		
 	protected function updateLeftToPay() {
-		if ($this->getDue() > 0) {
+		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
 			foreach ($this->getPaidByBills() as $paidByBills) {
 				$this->data['left_to_pay'] -= array_sum($paidByBills);
@@ -410,6 +410,9 @@ abstract class Billrun_Bill {
 	}
 
 	protected function recalculatePaymentFields($billId = null, $status = null) {
+		if ($this->getBillMethod() == 'denial') {
+			return $this;
+		}
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
@@ -426,8 +429,7 @@ abstract class Billrun_Bill {
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
-				
-		} else if ($this->getDue() < 0){
+		} else if ($this->getDue() < 0) {
 			$amount = 0;
 			if (isset($this->data['pays']['inv'])) {
 				$amount += array_sum($this->data['pays']['inv']);
@@ -1130,4 +1132,12 @@ abstract class Billrun_Bill {
 			}
 		}
 	}
+	
+	public function getBillMethod() {
+		if (empty($this->method)) {
+			return null;
+		}
+		return $this->method;
+	}
+
 }
