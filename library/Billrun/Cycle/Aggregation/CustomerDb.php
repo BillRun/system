@@ -33,11 +33,13 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
+		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size);
 		if(!empty($this->generalOptions['is_onetime_invoice'])) {
-			$pipelines = array_merge($pipelines,$this->getOnetimeAggregationPipeline($addedPassthroughFields,$page,$size));
-		} else {
-			$pipelines = array_merge($pipelines,$this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size));
+			$mainAggregationLogic = $this->alterMainLogicForOnetime($mainAggregationLogic);
 		}
+
+		$pipelines = array_merge($pipelines,array_values($mainAggregationLogic));
+
 
 		$pipelines[] = $this->getSortPipeline();
 
@@ -70,7 +72,10 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			),
 		);
 	}
-	
+
+	/**
+	 * get the main  aggreation and paging logic query that is to be sent to the DB
+	 */
 	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size) {
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['group'],array(
@@ -155,85 +160,17 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		return $pipelines;
 	}
 
+	/**
+	 * Remove fields from main aggreation  that are not needed for onetime invoice
+	 */
+	protected function alterMainLogicForOnetime($mainAggregationLogic) {
+		unset($mainAggregationLogic[0]['$group']['sub_plans']['$push']['plan']);
+		unset($mainAggregationLogic[0]['$group']['sub_plans']['$push']['plan_activation']);
+		unset($mainAggregationLogic[0]['$group']['sub_plans']['$push']['plan_deactivation']);
+		$finalGroupIdx = ($mainAggregationLogic[5]['$group']['plan_dates']['$push']['plan']) ? 5 : 6;
+		unset($mainAggregationLogic[$finalGroupIdx]['$group']['plan_dates']['$push']['plan']);
 
-	protected function getOnetimeAggregationPipeline($addedPassthroughFields, $page, $size) {
-		$pipelines[] = array(
-			'$group' => array_merge($addedPassthroughFields['group'],array(
-				'_id' => array(
-					'aid' => '$aid',
-				),
-				'sub_plans' => array(
-					'$push' => array_merge($addedPassthroughFields['sub_push'],array(
-						'type' => '$type',
-						'sid' => '$sid',
-						'play' => '$play',
-						'from' => '$from',
-						'to' => '$to',
-						'first_name' => '$firstname',
-						'last_name' => '$lastname',
-						'email' => '$email',
-						'address' => '$address',
-						'services' => '$services'
-					)),
-				),
-				'card_token' => array(
-					'$first' => '$card_token'
-				),
-			)),
-		);
-		$pipelines[] = array(
-			'$skip' => $page * $size,
-		);
-		$pipelines[] = array(
-			'$limit' => intval($size),
-		);
-
-		// If the accounts should not be overriden, filter the existing ones before.
-		if ($this->exclusionQuery) {
-			$pipelines[] = ['$match' => ['aid' => $this->exclusionQuery ] ];
-		}
-
-		$pipelines[] = array(
-			'$unwind' => '$sub_plans',
-		);
-
-		$pipelines[] = array(
-			'$sort' => array(
-				'_id.aid' => 1,
-				'sub_plans.sid' => 1,
-				'sub_plans.from' => -1,
-			)
-		);
-		$pipelines[] = array(
-			'$group' => array_merge($addedPassthroughFields['second_group'], array(
-				'_id' => array(
-					'aid' => '$_id.aid',
-					'sid' => '$sub_plans.sid',
-					'plan' => '$sub_plans.plan',
-					'play' => '$sub_plans.play',
-					'first_name' => '$sub_plans.first_name',
-					'last_name' => '$sub_plans.last_name',
-					'type' => '$sub_plans.type',
-					'email' => '$sub_plans.email',
-					'address' => '$sub_plans.address',
-					'services' => '$sub_plans.services',
-					'activation_date' => '$sub_plans.activation_date'
-				),
-				'plan_dates' => array(
-					'$push' => array(
-						'from' => '$sub_plans.from',
-						'to' => '$sub_plans.to',
-						'plan_activation' => '$sub_plans.plan_activation',
-						'plan_deactivation' => '$sub_plans.plan_deactivation',
-					),
-				),
-				'card_token' => array(
-					'$first' => '$card_token'
-				),
-			)),
-		);
-
-		return $pipelines;
+		return $mainAggregationLogic;
 	}
 
 	protected function getAddedPassthroughValuesQuery() {

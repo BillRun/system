@@ -343,9 +343,7 @@ abstract class Billrun_Account extends Billrun_Base {
 				return new Billrun_Cycle_Aggregation_CustomerRemote($params);
 				break;
 			case 'db' :
-				return empty($params['is_onetime_invoice']) ?
-						new Billrun_Cycle_Aggregation_CustomerDb($params) :
-						new Billrun_Cycle_Aggregation_CustomerDb($params);
+				return	new Billrun_Cycle_Aggregation_CustomerDb($params);
 				break;
 		}
 
