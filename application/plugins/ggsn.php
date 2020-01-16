@@ -15,10 +15,10 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 Billrun_Traits_FileSequenceChecking,
 	 Billrun_Traits_FraudAggregation;
 
-	const HEADER_LENGTH = 54;
+	const HEADER_LENGTH = 59;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
-	const RECORD_PADDING = 4;
+	const RECORD_PADDING = 5;
 
 	/**
 	 * plugin name
@@ -351,7 +351,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		$processedData = &$processor->getData();
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
-
+//		fread($fileHandle, 1);
 		$bytes = null;
 		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
