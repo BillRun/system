@@ -34,7 +34,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $this->informationArray['transactions']['confirmed'] = 0;
                 $this->informationArray['transactions']['rejected'] = 0;
                 $this->informationArray['transactions']['denied'] = 0;
-                $this->informationArray['transactions']['pending'] = 0;
                 $this->informationArray['last_file'] = false;
 	}
 
