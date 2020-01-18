@@ -518,7 +518,6 @@ class Tests_Updaterowt extends UnitTestCase {
                     $passed = False;
                 }
                     }
-                }
 		}
 		if ($inGroupE == 0) {
 			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'], 0, $epsilon)) {
