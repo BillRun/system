@@ -391,13 +391,13 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
-		services.forEach(function (service) {
-			if (service.quantity) {
-				service.quantity = Number(service.quantity);
-				db.subscribers.save(sub);
-			}
-		});
+	var services = sub.services;
+	services.forEach(function (service) {
+		if (service.quantity) {
+			service.quantity = Number(service.quantity);
+			db.subscribers.save(sub);
+		}
+	});
 });
 
 //// BRCD-1624: add default Plays to config
@@ -636,6 +636,14 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.save(obj);
+		db.log.remove(obj._id);
+	}
+);
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
