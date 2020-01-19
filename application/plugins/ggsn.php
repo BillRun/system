@@ -295,13 +295,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			),
 			'group' => array(
 				'$group' => array(
-					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
+					"_id" => array('imsi' => '$served_imsi'),
 					"download" => array('$sum' => '$fbc_downlink_volume'),
 					"upload" => array('$sum' => '$fbc_uplink_volume'),
 					"usagev" => array('$sum' => array('$add' => array('$fbc_downlink_volume', '$fbc_uplink_volume'))),
 					'aprice' => array('$sum' => '$aprice'),
 					//"usagev" => array('$sum' => '$usagev'), //TODO usethis once the usagev is calculated before the fraud.
 					"duration" => array('$sum' => '$duration'),
+					"msisdn" => array('$first' => '$served_msisdn'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
 				),
 			),
@@ -314,7 +315,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'duration' => 1,
 					'aprice' => 1,
 					'imsi' => '$_id.imsi',
-					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
+					'msisdn' => array('$substr' => array('$msisdn', 5, 10)),
 					'lines_stamps' => 1,
 				),
 			),
