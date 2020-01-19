@@ -29,7 +29,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //	protected $activeBillrun;
 	protected $dbConcurrentPref = 'RP_PRIMARY';
 	protected static $calcs = array();
-	protected $writeConcern = 0;
+	protected $writeConcern = 1;
+	protected $linesCollection;
 
 	/**
 	 * Create a new instance of the unify caclulator object.
@@ -55,6 +56,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		// archive connection setting
 		$this->archiveDb = Billrun_Factory::db();
+		$this->linesCollection = Billrun_Factory::db()->linesCollection();
 	}
 
 	protected function getMergedUpdateFields($unificationPerType) {
@@ -216,7 +218,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	public function updateUnifiedLines() {
 		Billrun_Factory::log('Updating ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
-		$db = Billrun_Factory::db();
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
@@ -239,16 +240,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				}
 			}
 			$update['$inc']['lcount'] = $row['lcount'];
-
-			$linesCollection = $db->linesCollection();
-			$ret = $linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
-			$success = ($this->writeConcern == 0 && $ret) || (($this->writeConcern > 0 || $this->writeConcern = 'majority') && isset($ret['ok']) && $ret['ok'] && isset($ret['ok']) && $ret['ok'] == 1);
-			if (!$success) {
-				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
-				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
-					unset($this->archivedLines[$lstamp]);
-				}
-				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
+			if (!$this->tryUpdatingExistingRecord($query, $update)) {
+				$updateFailedLines = $this->handleUpdatingFailure($query, $update, $key, $row);
 			}
 		}
 		return $updateFailedLines;
@@ -278,12 +271,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			$this->setMinUrt($newRow, $existingRow);
-			if (!empty($newRow['arategroups'])) {
-				$this->unifyArateGroups($newRow, $existingRow);
-			}
-			if (!empty($newRow['tax_data'])) {
-				$this->unifyTaxData($newRow, $existingRow);
-			}
 			foreach ($typeFields['$inc'] as $field) {
 				$newVal = Billrun_Util::getIn($newRow, $field, null);
 				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
@@ -477,21 +464,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		
 	}
 	
-	/**
-	 * Unify arategroups arrays
-	 * @param array $newRow the  new line to unify.
-	 * @param array $existingRow the already unified value.
-	 */
-	protected function unifyArateGroups($newRow, &$existingRow) { // the assumption is that were dealing 
-		$arategroupsArray = array();
-		$newArategroups = current(Billrun_Util::getIn($newRow, 'arategroups', null)); // only with arategroups from size 1 array
-		$existingArategroups = current(Billrun_Util::getIn($existingRow, 'arategroups', null));
-		foreach ($newArategroups as $field => $value) {
-			$arategroupsArray[$field] = $this->calcValueByField($field, $newArategroups[$field], $existingArategroups[$field]);
-		}
-		$existingRow['arategroups'] = array($arategroupsArray);
-	}
-	
 	protected function setMinUrt($newRow, &$existingRow) {
 		$newVal = Billrun_Util::getIn($newRow, 'urt', null);
 		$existingVal = Billrun_Util::getIn($existingRow, 'urt', null);
@@ -512,27 +484,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			return false;
 		}
 		return true;
-	}
-	
-	/**
-	 * Calcs value by the field name
-	 * @param array $field the field name.
-	 * @param array $newVal new value.
-	 * @param array $existingVal the existing value.
-	 * returns the unified value of a given field
-	 */
-	protected function calcValueByField($field, $newVal, $existingVal) {
-		switch ($field) {
-			case 'usagev':
-			case 'total_amount':
-			case 'amount':
-				return $newVal + $existingVal;
-			case 'left':
-			case 'usagesb':
-				return ($newVal < $existingVal) ? $newVal : $existingVal;
-			default:
-				return $newVal;
-		}
 	}
 	
 	protected function enrichOptionsWithUserFields($options) {
@@ -563,22 +514,44 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		return array_merge($options, $configByType);
 	}
-	
-	protected function unifyTaxData($newRow, &$existingRow) {
-		$taxArray = array();
-		$newTaxData = Billrun_Util::getIn($newRow, 'tax_data', null);
-		$existingTaxData = Billrun_Util::getIn($existingRow, 'tax_data', null);
-		$taxData['total_amount'] = $this->calcValueByField('total_amount', $newTaxData['total_amount'], $existingTaxData['total_amount']);
-		$taxData['total_tax'] = $this->calcValueByField('total_tax', $newTaxData['total_tax'], $existingTaxData['total_tax']);
-		$newTaxes = isset($newTaxData['taxes']) ? current($newTaxData['taxes']) : array();
-		$existingTaxes = isset($existingTaxData['taxes']) ? current($existingTaxData['taxes']) : array();
-		foreach ($newTaxes as $field => $value) {
-			$taxArray[$field] = $this->calcValueByField($field, $newTaxes[$field], $existingTaxes[$field]);
-		}
-		foreach ($taxData as $key => $value) {
-			$existingRow['tax_data'][$key] = $value;
-		}
-		$existingRow['tax_data']['taxes'] = array($taxArray);
-	}
 
+	/**
+	 * Increment needed fields in existing records
+	 * @param array $query - query.
+	 * @param array $update - update query.
+	 * returns true if updates succeed
+	 */
+	protected function tryUpdatingExistingRecord($query, $update) {
+		foreach ($update as $action => $def) {
+			if (!in_array($action, ['$set', '$inc'])) {
+				unset($update[$action]);
+			}
+		}
+		$ret = $this->linesCollection->update($query, $update);
+		return (!$ret || !$ret['ok'] || $ret['nModified'] == 0) ? false : true;
+	}
+	
+	protected function handleUpdatingFailure($query, $update, $key, $row) {
+		$updateFailedLines = array();
+		$incUpdate = $update;
+		unset($update['$inc']);
+		foreach ($update['$set'] as $field => $value) {
+			if ($field != 'process_time') {
+				unset($update['$set'][$field]);
+			}
+		}
+		$update['$set']['lcount'] = $row['lcount'];
+		$ret = $this->linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
+		$success = !empty($ret['ok']) && empty($ret['updatedExisting']);
+		if (!$success) {
+			if (!$this->tryUpdatingExistingRecord($query, $incUpdate)) {
+				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
+				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
+					unset($this->archivedLines[$lstamp]);
+				}
+				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
+			}
+		}
+		return $updateFailedLines;
+	}
 }

@@ -66,6 +66,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
                         return;
 		}
                 $this->informationArray['transactions']['confirmed']++;
+                $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
                 $message = "Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField];
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
                 $this->informationArray['info'][] = $message;

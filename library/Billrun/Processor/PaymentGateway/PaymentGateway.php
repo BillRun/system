@@ -80,6 +80,7 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 				$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
 				if (is_null($bill)) {
 					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
+					$this->unmatchedRows[] = $row;
 					continue;
 				}
 				$this->updatePayments($row, $bill);
@@ -87,6 +88,7 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 				$this->updatePayments($row);
 			}
 		}
+		$this->afterUpdateData();
 	}
 
 	/**
@@ -123,6 +125,10 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 		}
 		
 		return array('processor' => $processorDefinitions, 'parser' => $parserDefinitions, 'workspace' => $this->workspace);
+	}
+	
+	protected function afterUpdateData() {
+		return;
 	}
 
 }

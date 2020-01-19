@@ -767,3 +767,8 @@ if (db.serverStatus().ok == 0) {
 } else if (db.serverStatus().process == 'mongos') {
 	sh.shardCollection("billing.archive", {"stamp": 1});
 }
+
+// BRCD-2099 - sharding rates, billrun and balances
+sh.shardCollection("billing.rates", { "key" : 1 } );
+sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
