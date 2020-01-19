@@ -42,12 +42,12 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			return;
 		}
 		$row['aid'] = $payment->getAid();
-		if (abs($row[$this->amountField]) > $payment->getAmount()) {
-                        $message = "Amount sent is bigger than the amount of the payment with txid: " . $row[$this->tranIdentifierField];
+		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount())) {
+                        $message = "Amount sent is different than the amount of the payment with txid: " . $row[$this->tranIdentifierField] . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
                         return;
-		}
+                }
 		if ($payment->isDenied(abs($row[$this->amountField]))) {
                         $message = "Payment " . $row[$this->tranIdentifierField] . " is already denied";
 			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
@@ -77,6 +77,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
 			}
+                        $this->informationArray['total_denied_amount']+=$payment->getAmount();
 		} else {
                         $message = "Denial process was failed for payment: " . $row[$this->tranIdentifierField];
                         $this->informationArray['warnings'][] = $message;

@@ -32,6 +32,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
                 $this->informationArray['type'] = 'custom_payment_gateway';
                 $this->informationArray['fileType'] = 'received';
+                $this->informationArray['total_denied_amount'] = 0;
+                $this->informationArray['total_confirmed_amount'] = 0;
+                $this->informationArray['total_rejected_amount'] = 0;
                 $this->informationArray['transactions']['confirmed'] = 0;
                 $this->informationArray['transactions']['rejected'] = 0;
                 $this->informationArray['transactions']['denied'] = 0;
