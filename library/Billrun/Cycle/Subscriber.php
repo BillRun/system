@@ -470,22 +470,15 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$services = array();
 		$subend = 0;
 		foreach ($current as $subscriber) {
-			if(!$this->hasPlans($subscriber)) {
-				if ($subscriber['sid'] == 0) {
-					$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
-					$subend = max($subscriber['sto'], $subend);
-					$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
-				}
-				continue;
-			}
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
 			$subend = max($subscriber['sto'], $subend);
-			// Get the plans
-			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
-
 			// Get the services for the subscriber.
 			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
-
+			if(!$this->hasPlans($subscriber)) {
+				continue;
+			}
+			// Get the plans
+			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
 		}
 
 		foreach($services as $service) {
@@ -516,7 +509,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function handleSubscriberDates($subscriber, $endTime) {
-		if ($subscriber['sid'] == 0) {
+		if (!empty($subscriber['from']->sec)) {
 			$to = $subscriber['to']->sec;
 			$from = $subscriber['from']->sec;
 		} else {
