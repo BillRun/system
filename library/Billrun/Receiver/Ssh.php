@@ -63,6 +63,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			}
 			
 			$ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
+                        $recursive_mode = isset($config['recursive_mode']) ? $config['recursive_mode'] : false;
 			$this->filenameRegex = !empty($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->ssh->getHost() , Zend_Log::INFO);
@@ -75,7 +76,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			$this->ssh->changeDir($ssh_path);
 			try {
 				Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-				$files = $this->ssh->getListOfFiles($ssh_path, false);
+				$files = $this->ssh->getListOfFiles($ssh_path, $recursive_mode);
 	
 				$type = static::$type;
 				$count = 0;
