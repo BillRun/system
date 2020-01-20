@@ -117,7 +117,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['source'] = $customer['source'];
 			try {
-				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+				$paymentResponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
+				$payment = $paymentResponse['payment'];
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
 				continue;

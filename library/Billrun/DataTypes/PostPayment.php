@@ -47,18 +47,12 @@ class Billrun_DataTypes_PostPayment {
 	 */
 	private $transactionId;
 	
-	public function __construct(Billrun_DataTypes_PrePayment $prePayment, $transactionId = '') {
+	public function __construct(Billrun_DataTypes_PrePayment $prePayment) {
 		$this->prePayment = $prePayment;
-		$this->setDue($prePayment->getDue());
-		$this->setTransactionId($transactionId);
 	}
 	
-	public function getDue() {
-		return $this->due;
-	}
-	
-	public function setDue($due) {
-		$this->due = floatval($due);
+	public function getAmount() {
+		return $this->prePayment ? $this->prePayment->getAmount() : false;
 	}
 	
 	public function getStatus() {
@@ -83,5 +77,46 @@ class Billrun_DataTypes_PostPayment {
 	
 	public function setTransactionId($transactionId) {
 		$this->transactionId = $transactionId;
+	}
+	
+	public function getPgResponse() {
+		return $this->pgResponse;
+	}
+	
+	public function setPgResponse($response) {
+		$this->pgResponse = $response;
+	}
+	
+	public function getPayment() {
+		return $this->prePayment ? $this->prePayment->getPayment() : false;
+	}
+	
+	public function getCustomerDirection() {
+		return $this->prePayment ? $this->prePayment->getCustomerDirection() : false;
+	}
+	
+	public function getUpdatedBill($billType, $billId) {
+		return $this->prePayment ? $this->prePayment->getUpdatedBill($billType, $billId) : false;
+	}
+	
+	/**
+	 * get bills related to the payment
+	 * 
+	 * @return array
+	 */
+	public function getRelatedBills() {
+		$payment = $this->getPayment();
+		if (!$payment) {
+			return false;
+		}
+		
+		switch($this->getCustomerDirection()) {
+			case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
+				return $payment->getPaidBills();
+			case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
+				return $payment->getPaidByBills();
+			default:
+				return false;
+		}
 	}
 }

@@ -141,7 +141,7 @@ class Billrun_DataTypes_PrePayment {
 		$query = [
 			'aid' => $this->getAid(),
 		];
-		$updatedBills = $this->getUpdatedBills($billType);
+		$updatedBills = $this->getBillsToHandle($billType);
 		switch ($this->getPaymentDirection()) {
 			case self::PAY_DIR_PAYS:
 				$query['invoice_id'] = [
@@ -297,7 +297,7 @@ class Billrun_DataTypes_PrePayment {
 	 */
 	public function getAid() {
 		if (is_null($this->aid)) {
-			$this->aid = intavl($this->data['aid']);
+			$this->aid = intval($this->data['aid']);
 		}
 
 		return $this->aid;
@@ -322,7 +322,7 @@ class Billrun_DataTypes_PrePayment {
 	 * @return float
 	 */
 	public function getBillAmount($billType, $billId) {
-		$amount = Billrun_Util::getIn($this->getData(), [$this->getPayDirection(), $billType, $billId], 0);
+		$amount = Billrun_Util::getIn($this->getData(), [$this->getPaymentDirection(), $billType, $billId], 0);
 		if (!is_numeric($amount)) {
 			return false;
 		}

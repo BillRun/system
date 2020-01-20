@@ -602,7 +602,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 				Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 				try {
-					$paymentResponse = Billrun_Bill::pay($billDetails['payment_method'], array($paymentParams), $options);
+					$paymentResponse = Billrun_PaymentManager::getInstance()->pay($billDetails['payment_method'], array($paymentParams), $options);
 				} catch (Exception $e) {
 					Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 					continue;
@@ -627,7 +627,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 						$updatedPaymentParams = $gateway->handleTransactionRejectionCases($paymentResponse['response'][$transactionId], $newPaymentParams);
 						try {
 							if ($updatedPaymentParams) {
-								$paymentResponse = Billrun_Bill::pay($paymentData['method'], array($updatedPaymentParams), $options);
+								$paymentResponse = Billrun_PaymentManager::getInstance()->pay($paymentData['method'], array($updatedPaymentParams), $options);
 								$newPaymentData = $paymentResponse['payment'][0]->getRawData();
 								$newTransactionId = $newPaymentData['payment_gateway']['transactionId'];
 								self::updateAccordingToStatus($paymentResponse['response'][$newTransactionId], $paymentResponse['payment'][0], $gatewayName);
@@ -863,7 +863,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $options = array()) {
-		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($paymentMethod, array($paymentParams), $options);
 		$gatewayName = $paymentParams['gateway_details']['name'];
 		$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
 		foreach ($paymentResponse['payment'] as $payment) {

@@ -25,17 +25,24 @@ class Billrun_PaymentManager {
 	}
 
 	/**
-	 * Handles synchronous payment (awaits response)
+	 * Handles payment (awaits response)
 	 */
-	public function paySync($method, $paymentsData, $params = []) {
+	public function pay($method, $paymentsData, $params = []) {
 		if (!Billrun_Bill_Payment::validatePaymentMethod($method, $params)) {
 			return $this->handleError("Unknown payment method {$method}");
 		}
-		
-		$prePayments =$this->preparePayments($method, $paymentsData, $params);
+
+		$prePayments = $this->preparePayments($method, $paymentsData, $params);
 		if (!$this->savePayments($prePayments)) {
 			return $this->handleError('Error encountered while saving the payments');
 		}
+
+		$successPayments = $this->handlePayment($prePayments, $params);
+		$this->handleSuccessPayments($postPayments, $params);
+		return [
+			'payment' => $this->getInvolvedPayments($successPayments),
+			'response' => $this->getResponsesFromGateways($successPayments),
+		];
 	}
 
 	/**
@@ -52,6 +59,7 @@ class Billrun_PaymentManager {
 			$prePayment = new Billrun_DataTypes_PrePayment($paymentData);
 			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			$prePayments[] = $prePayment;
 		}
 
 		return $prePayments;
@@ -119,11 +127,11 @@ class Billrun_PaymentManager {
 		$billsToHandle = $prePayment->getBillsToHandle($billType);
 		$relatedBills = $prePayment->getRelatedBills($billType);
 		if (count($relatedBills) != count($billsToHandle)) {
-			throw new Exception("Unknown {$prePayment->getDisplayType($billType)}/s for account {$prePayment->getAid()}");
+			return $this->handleError("Unknown {$prePayment->getDisplayType($billType)}/s for account {$prePayment->getAid()}");
 		}
 
 		if (($prePayment->getAmount() - array_sum($billsToHandle)) <= -Billrun_Bill::precision) {
-			throw new Exception("{$prePayment->getAid()}: Total to pay is less than the subtotals");
+			return $this->handleError("{$prePayment->getAid()}: Total to pay is less than the subtotals");
 		}
 
 		foreach ($relatedBills as $billData) {
@@ -158,7 +166,7 @@ class Billrun_PaymentManager {
 		if (is_null($dir)) {
 			return;
 		}
-		
+
 		$leftToSpare = $prePayment->getAmount();
 		$relatedBills = $prePayment->getRelatedBills();
 		foreach ($relatedBills as $billData) {
@@ -175,7 +183,7 @@ class Billrun_PaymentManager {
 			}
 		}
 	}
-	
+
 	/**
 	 * get aids involved in payments
 	 * 
@@ -187,10 +195,10 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$involvedAccounts[] = $prePayment->getAid();
 		}
-		
-		return $involvedAccounts;
+
+		return array_unique($involvedAccounts);
 	}
-	
+
 	/**
 	 * save payments to DB
 	 * 
@@ -198,11 +206,7 @@ class Billrun_PaymentManager {
 	 * @return boolean
 	 */
 	protected function savePayments($prePayments) {
-		$payments = [];
-		foreach ($prePayments as $prePayment) {
-			$payments[] = $prePayment->getPayment();
-		}
-		
+		$payments = $this->getInvolvedPayments($prePayments);
 		$ret = Billrun_Bill_Payment::savePayments($payments);
 		if (!$ret || empty($ret['ok'])) {
 			return false;
@@ -211,6 +215,170 @@ class Billrun_PaymentManager {
 		return $ret;
 	}
 
+	/**
+	 * get involved payments
+	 * 
+	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
+	 * @return array
+	 */
+	protected function getInvolvedPayments($prePayments) {
+		$payments = [];
+		foreach ($prePayments as $prePayment) {
+			$payments[] = $prePayment->getPayment();
+		}
+
+		return $payments;
+	}
+
+	/**
+	 * get responses from payment gateways
+	 * 
+	 * @param array $postPayments - array of Billrun_DataTypes_PostPayment
+	 * @return array
+	 */
+	protected function getResponsesFromGateways($postPayments) {
+		$responses = [];
+		foreach ($postPayments as $postPayment) {
+			$responses[] = $postPayment->getPgResponse();
+		}
+
+		return $responses;
+	}
+
+	/**
+	 * handles payment against payment gateway (if exists)
+	 * 
+	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
+	 * @param array $params
+	 * @return array of Billrun_DataTypes_PostPayment - success payments
+	 */
+	protected function handlePayment($prePayments, $params = []) {
+		$successPayments = [];
+		if (!$this->hasPaymentGateway($params)) { // no payment gateway - all payments are considered as successful
+			foreach ($prePayments as $prePayment) {
+				$ret[] = new Billrun_DataTypes_PostPayment($prePayment);
+			}
+			return $ret;
+		}
+
+		foreach ($prePayments as $prePayment) {
+			$postPayment = new Billrun_DataTypes_PostPayment($prePayment);
+			$payment = $prePayment->getPayment();
+			$gatewayDetails = $payment->getPaymentGatewayDetails();
+			$gatewayName = $gatewayDetails['name'];
+			$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+
+			if (is_null($gateway)) {
+				Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
+			} else {
+				Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
+				Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $prePayment->getAid(), Zend_Log::DEBUG);
+			}
+
+			if (empty($params['single_payment_gateway'])) {
+				try {
+					$payment->setPending(true);
+					$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
+					$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
+				} catch (Exception $e) {
+					$payment->setGatewayChargeFailure($e->getMessage());
+					$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
+					Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
+					continue;
+				}
+			} else {
+				$paymentStatus = array(
+					'status' => $payment->getSinglePaymentStatus(),
+					'additional_params' => isset($params['additional_params']) ? $params['additional_params'] : array(),
+				);
+				if (empty($paymentStatus['status'])) {
+					return $this->handleError("Missing status from gateway for single payment");
+				}
+			}
+			$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
+			$txId = $gateway->getTransactionId();
+			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
+			$postPayment->setTransactionId($txId);
+			$postPayment->setPgResponse($responseFromGateway);
+			$ret[] = $postPayment;
+		}
+
+		return $ret;
+	}
+
+	protected function hasPaymentGateway($params) {
+		return isset($params['payment_gateway']) && $params['payment_gateway'];
+	}
+
+	protected function isFileBasedCharge($params) {
+		return isset($params['file_based_charge']) && $params['file_based_charge'];
+	}
+
+	/**
+	 * handles success payment
+	 * 
+	 * @param array $postPayments - array of Billrun_DataTypes_PostPayment
+	 * @param array $params
+	 */
+	protected function handleSuccessPayments($postPayments, $params = []) {
+		foreach ($postPayments as $postPayment) {
+			$payment = $postPayment->getPayment();
+			if (empty($payment)) {
+				return $this->handleError("Cannot get payment");
+			}
+			$paymantData = $payment->getRawData();
+			$transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
+			if (isset($paymantData['payment_gateway']) && empty($transactionId)) {
+				return $this->handleError('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $paymantData['name']);
+			}
+			
+			$pgResponse = $postPayment->getPgResponse();
+			$customerDir = $postPayment->getCustomerDirection();
+			
+			switch ($customerDir) {
+				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
+				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
+					$relatedBills = $postPayment->getRelatedBills();
+					foreach ($relatedBills as $billType => $bills) {
+						foreach ($bills as $billId => $amountPaid) {
+							if ($this->isFileBasedCharge($params)) {
+								$payment->setPending(true);
+							}
+							
+							if ($pgResponse && $pgResponse['stage'] != 'Pending') {
+								$payment->setPending(false);
+							}
+							$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
+							if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
+								$updatedBill->attachPayingBill($payment, $amountPaid, empty($pgResponse['stage']) ? 'Completed' : $pgResponse['stage'])->save();
+							} else {
+								$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+							}
+						}
+					}
+					break;
+				default:
+					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+			}
+
+			if (!empty($gatewayDetails)) {
+				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+			}
+			
+			if (!empty($pgResponse)) {
+				$pgResponseStage = $pgResponse['stage'];
+				if ($pgResponseStage == 'Completed') {
+					if ($gatewayAmount < (0 - Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
+					} else if ($gatewayAmount > (0 + Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+					}
+				}
+			} else if (!isset($params['file_based_charge']) && $payment->getAmount() > 0) { // offline payment
+				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+			}
+		}
+	}
 
 	protected function handleError($errorMessage, $logLevel = Billrun_Log::CRIT) {
 		Billrun_Factory::log($errorMessage, $logLevel);
