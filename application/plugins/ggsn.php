@@ -15,10 +15,10 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 Billrun_Traits_FileSequenceChecking,
 	 Billrun_Traits_FraudAggregation;
 
-	const HEADER_LENGTH = 59;
+	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
-	const RECORD_PADDING = 5;
+	const RECORD_PADDING = 4;
 
 	/**
 	 * plugin name
@@ -191,7 +191,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getRawDataLength() + self::RECORD_PADDING);
+		$parser->setLastParseLength($asnObject->getRawDataLength() + intval(Billrun_Util::getFieldVal($this->ggsnConfig['revision_specific'][$this->currentRevision]['record_padding'],self::RECORD_PADDING)));
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -210,7 +210,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			else {
 				$cdrLine['callEventStartTimeStamp'] = $cdrLine['record_opening_time'];
 			}
-			if (is_array($cdrLine['rating_group'])) {
+			if (!empty($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
@@ -225,7 +225,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 				$cdrLine['rating_group'] = 0;
-			} else if ($cdrLine['rating_group'] == 10) {
+			} else if (!empty($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 				return false;
 			}
 		} else {
@@ -254,7 +254,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$nx16Data = unpack("N", substr($data, 0x16, 4));
 		$header['next_file_number'] = reset($nx16Data);
 		//Billrun_Factory::log(print_r($header,1));
-
+		$rev = unpack("C", substr($data, 0x7, 1));
+		$this->currentRevision = $header['revision'] = decoct( reset($rev) );
 		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $header;
@@ -351,7 +352,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		$processedData = &$processor->getData();
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
-//		fread($fileHandle, 1);
+		if( !empty($headerPadding = intval(Billrun_Util::getFieldVal($this->ggsnConfig['revision_specific'][$this->currentRevision]['header_padding'],0))) ) {
+			fread($fileHandle,$headerPadding);
+		}
 		$bytes = null;
 		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
