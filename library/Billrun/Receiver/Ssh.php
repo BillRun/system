@@ -75,7 +75,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			$this->ssh->changeDir($ssh_path);
 			try {
 				Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-				$files = $this->ssh->getListOfFiles($ssh_path, true);
+				$files = $this->ssh->getListOfFiles($ssh_path, false);
 	
 				$type = static::$type;
 				$count = 0;
