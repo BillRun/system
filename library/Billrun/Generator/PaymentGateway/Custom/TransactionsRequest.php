@@ -12,11 +12,10 @@
  * @package  Billing
  * @since    5.10
  */
-
 class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
-	
+
 	use Billrun_Traits_ConditionsCheck;
-	
+
 	protected static $type = 'transactions_request';
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
 	protected $tokenField = null;
@@ -42,23 +41,23 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$this->extraParamsDef = $this->configByType['parameters'];
 		}
 		$this->options = $options;
-                $className = $this->getGeneratorClassName();
-                $generatorOptions = $this->buildGeneratorOptions();
-                $this->fileGenerator = new $className($generatorOptions);
-                $this->initLogFile();
-                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
-                $parametersString = "";
-                if (isset($options['collection_date']) && !empty($options['collection_date'])){
-                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
-                }
-                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
-                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
-                }
-                $parametersString = trim($parametersString, ",");
-                $this->logFile->updateLogFileField('parameters_string', $parametersString);
-                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		$this->fileGenerator = new $className($generatorOptions);
+		$this->initLogFile();
+		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
+		$parametersString = "";
+		if (isset($options['collection_date']) && !empty($options['collection_date'])) {
+			$parametersString.= "collection_date=" . $options['collection_date'] . ",";
+		}
+		if (isset($options['sequence_type']) && !empty($options['sequence_type'])) {
+			$parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
+		}
+		$parametersString = trim($parametersString, ",");
+		$this->logFile->updateLogFileField('parameters_string', $parametersString);
+		$this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
@@ -72,19 +71,19 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
-                $message = 'generator entities loaded: ' . count($this->customers);
+		$message = 'generator entities loaded: ' . count($this->customers);
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
-                $this->logFile->updateLogFileField('info', $message);
+		$this->logFile->updateLogFileField('info', $message);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 		$this->data = array();
-		$customersAids = array_map(function($ele){
+		$customersAids = array_map(function($ele) {
 			return $ele['aid'];
 		}, $this->customers);
-		
+
 		$account = Billrun_Factory::account();
 		$accountQuery = array('aid' => array('$in' => $customersAids));
 		$accounts = $account->loadAccountsForQuery($accountQuery);
-		foreach ($accounts as $account){
+		foreach ($accounts as $account) {
 			$accountsInArray[$account['aid']] = $account;
 		}
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
@@ -149,19 +148,20 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$params['amount'] = $paymentParams['amount'];
 			$params['aid'] = $currentPayment->getAid();
 			$params['txid'] = $currentPayment->getId();
-                        if(isset($account['payment_gateway']['active']['card_token'])){
-                            $params['card_token'] = $account['payment_gateway']['active']['card_token'];
-                        }
-                            if (isset($account['payment_gateway']['active']['card_expiration'])) {
-                                    $params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
-                            }
-                            $line = $this->getDataLine($params);
-                            $this->data[] = $line;
+			if (isset($account['payment_gateway']['active']['card_token'])) {
+				$params['card_token'] = $account['payment_gateway']['active']['card_token'];
+			}
+			if (isset($account['payment_gateway']['active']['card_expiration'])) {
+				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			}
+			$line = $this->getDataLine($params);
+			$this->data[] = $line;
+			$currentPayment->setExtraFields($this->billSavedFields, 'pg_request');
 		}
-                $numberOfRecordsToTreat = count($this->data);
-                $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
-                Billrun_Factory::log()->log($message, Zend_Log::INFO);
-                $this->logFile->updateLogFileField('info', $message);
+		$numberOfRecordsToTreat = count($this->data);
+		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
+		Billrun_Factory::log()->log($message, Zend_Log::INFO);
+		$this->logFile->updateLogFileField('info', $message);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}
@@ -169,7 +169,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected function isGatewayActive($account) {
 		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
 	}
-	
+
 	protected function initChargeOptions($options) {
 		foreach ($options as $paramName => $option) {
 			if (in_array($paramName, $this->filterParams)) {
@@ -177,7 +177,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 		}
 	}
-	
+
 	protected function isRefundMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'refund';
 	}
@@ -185,7 +185,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected function isChargeMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
 	}
-	
+
 	protected function isPaymentUpholdPlaceholders($paymentDetails, $placeHoldersConditions) {
 		$res = true;
 		foreach ($placeHoldersConditions as $condition) {
@@ -202,14 +202,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					break;
 
 				default:
-					Billrun_Factory::log()->log("Unknown placeholder for file type " .  $this->configByType['file_type'] , Zend_Log::INFO);
+					Billrun_Factory::log()->log("Unknown placeholder for file type " . $this->configByType['file_type'], Zend_Log::INFO);
 					break;
 			}
 		}
-		
+
 		return $res;
 	}
-	
+
 	protected function isAccountUpholdConditions($account, $conditions) {
 		if (empty($conditions)) {
 			return true;
@@ -219,7 +219,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		return false;
 	}
-	
+
 	protected function validateExtraParams() {
 		$validated = true;
 		if (empty($this->extraParamsDef)) {
@@ -247,10 +247,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$validated = false;
 					break;
 				}
-			}         
+			}
 			$this->extraParamsNames[] = $paramObj['name'];
 		}
-		
+
 		return $validated;
 	}
 
