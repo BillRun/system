@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	use Billrun_Traits_EntityGetter;
-	
+	use Billrun_Traits_ForeignFields;
 	protected static $taxes = [];
 
 	/**
@@ -50,6 +50,28 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		$taxes = $this->getMatchingEntitiesByCategories($line);
 		
 		if ($taxes === false) {
+			return false;
+		}
+		
+		$params = [
+			'skip_categories' => array_keys($taxes),
+		];
+		
+		$globalTaxes = $this->getMatchingEntitiesByCategories($line, $params);
+		
+		if ($globalTaxes !== false) {
+			$taxes = array_merge($taxes, $globalTaxes);
+		}
+		
+		$taxHintFallback = $this->getLineTaxHintFallbackData($line, $taxHint, $taxes);
+		
+		if ($taxHintFallback === false) {
+			return false;
+		}
+		
+		$taxes = array_merge($taxes, $taxHintFallback);
+		
+		if (empty($taxes)) {
 			return false;
 		}
 
@@ -100,6 +122,75 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			],
 		];
 	}
+	
+	/**
+	 * get tax data of override taxation (hint tax calculated before general taxation)
+	 * 
+	 * @param array $line
+	 * @param array $taxHint
+	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
+	 */
+	protected function getLineTaxHintOverrideData($line, $taxHint) {
+		$ret = [];
+		$time = $line['urt']->sec;
+		
+		foreach ($taxHint as $taxHintData) {
+			$category = $taxHintData['type'] ?: '';
+			
+			switch ($taxHintData['taxation']) {
+				case 'no':
+					$ret[$category] = [];
+					break;
+				case 'default':
+					$ret[$category] = self::getDetaultTax($time);
+					break;
+				case 'custom':
+					if ($taxHintData['custom_logic'] == 'override') {
+						$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
+						break;
+					}
+				default:
+					continue;
+			}
+			
+			if (isset($ret[$category]) && $ret[$category] === false) {
+				return false;
+			}
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * get tax data of fallback taxation (hint tax calculated after general taxation)
+	 * 
+	 * @param array $line
+	 * @param array $taxHint
+	 * @param array $taxes - taxes that were found on general taxation calculation
+	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
+	 */
+	protected function getLineTaxHintFallbackData($line, $taxHint, $taxes = []) {
+		$ret = [];
+		$time = $line['urt']->sec;
+		
+		foreach ($taxHint as $taxHintData) {
+			$category = $taxHintData['type'] ?: '';
+			
+			if (isset($taxes[$category])) {
+				continue;
+			}
+			
+			if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
+				$ret[$category] = self::getTaxByKey($taxHintData['custom_tax'], $time);
+				if (empty($ret[$category])) {
+					return false;
+				}
+			}
+		}
+		
+		return $ret;
+	}
+
 
 	/**
 	 * get row's tax data 
@@ -125,15 +216,16 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			$isTaxEmbedded = isset($tax['embed_tax']) ? $tax['embed_tax'] : false;
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
-			$taxData = [
+			$foreignTaxData = $this->getForeignFields(array('tax' => $tax));
+			$taxData = array_merge([
 				'tax' => $taxFactor,
 				'amount' => !$isTaxEmbedded ? $taxAmount : 0,
 				'description' => $tax['description'] ?: 'VAT',
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
-			];
-			
+			], $foreignTaxData);
+
 			if ($isTaxEmbedded) {
 				$taxData['embedded_amount'] = $taxAmount;
 				$line['aprice'] += $taxAmount;
