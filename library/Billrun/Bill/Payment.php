@@ -123,8 +123,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
 			if(isset($options['source'])){
-				if(!in_array($this->data['source'], $this->known_sources)){
-					throw new Exception("Undefined payment source: " . $this->data['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
+				if(!in_array($options['source'], $this->known_sources)){
+					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
 				}
 				$this->data['source'] = $options['source'];
 			}
