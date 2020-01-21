@@ -41,23 +41,28 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$this->extraParamsDef = $this->configByType['parameters'];
 		}
 		$this->options = $options;
-		$className = $this->getGeneratorClassName();
-		$generatorOptions = $this->buildGeneratorOptions();
-		$this->fileGenerator = new $className($generatorOptions);
-		$this->initLogFile();
-		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
-		$parametersString = "";
-		if (isset($options['collection_date']) && !empty($options['collection_date'])) {
-			$parametersString.= "collection_date=" . $options['collection_date'] . ",";
-		}
-		if (isset($options['sequence_type']) && !empty($options['sequence_type'])) {
-			$parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
-		}
-		$parametersString = trim($parametersString, ",");
-		$this->logFile->updateLogFileField('parameters_string', $parametersString);
-		$this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
+                $className = $this->getGeneratorClassName();
+                $generatorOptions = $this->buildGeneratorOptions();
+                try{
+                    $this->fileGenerator = new $className($generatorOptions);
+                }catch(Exception $ex){
+                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
+                    throw new Exception($ex->getMessage());
+                }
+                $this->initLogFile();
+                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
+                $parametersString = "";
+                if (isset($options['collection_date']) && !empty($options['collection_date'])){
+                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
+                }
+                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
+                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
+                }
+                $parametersString = trim($parametersString, ",");
+                $this->logFile->updateLogFileField('parameters_string', $parametersString);
+                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
