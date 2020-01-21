@@ -42,7 +42,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			return;
 		}
 		$row['aid'] = $payment->getAid();
-		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount())) {
+		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount(),  Billrun_Bill::precision)) {
                         $message = "Amount sent is different than the amount of the payment with txid: " . $row[$this->tranIdentifierField] . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
