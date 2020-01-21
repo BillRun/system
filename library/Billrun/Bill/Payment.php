@@ -38,6 +38,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
+	protected $known_sources;
+	
 	protected static $aids;
 	/**
 	 * 
@@ -118,6 +120,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
 				}
+			}
+			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			if(isset($options['source'])){
+				if(!in_array($this->data['source'], $this->known_sources)){
+					throw new Exception("Undefined payment source: " . $this->data['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
+				}
+				$this->data['source'] = $options['source'];
 			}
 		} else {
 			throw new Exception('Billrun_Bill_Payment: Insufficient options supplied.');
