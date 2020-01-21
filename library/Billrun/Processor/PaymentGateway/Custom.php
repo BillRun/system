@@ -76,6 +76,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$rowCount = 0;
 
 		foreach ($parsedData as $line) {
+                        $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line);
 			if (!$row){
 				return false;
@@ -88,7 +89,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 		return true;
 	}
-
+        
+        protected function formatLine($row,$dataStructure) {
+            foreach($dataStructure as $index => $paramObj){
+                if(isset($paramObj['decimals'])){
+                    $value = intval($row[$paramObj['name']]);
+                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
+                }
+            }
+            return $row;
+        }
+        
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));
