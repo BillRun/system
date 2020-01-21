@@ -239,7 +239,7 @@ class Billrun_PaymentManager {
 	protected function getResponsesFromGateways($postPayments) {
 		$responses = [];
 		foreach ($postPayments as $postPayment) {
-			$responses[] = $postPayment->getPgResponse();
+			$responses[$postPayment->getTransactionId()] = $postPayment->getPgResponse();
 		}
 
 		return $responses;
