@@ -19,6 +19,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $headerRows;
 	protected $trailerRows;
 	protected $correlatedValue;
+	protected $linkToInvoice = true;
 	protected $informationArray = [];
 	protected $billSavedFields = array();    
         
@@ -58,6 +59,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
+		$this->linkToInvoice = isset($currentProcessor['processor']['link_to_invoice']) ? $currentProcessor['processor']['link_to_invoice'] : $this->linkToInvoice;
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		$parser = $this->getParser();
@@ -76,6 +78,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$rowCount = 0;
 
 		foreach ($parsedData as $line) {
+                        $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line);
 			if (!$row){
 				return false;
@@ -88,7 +91,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 		return true;
 	}
-
+        
+        protected function formatLine($row,$dataStructure) {
+            foreach($dataStructure as $index => $paramObj){
+                if(isset($paramObj['decimals'])){
+                    $value = intval($row[$paramObj['name']]);
+                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
+                }
+            }
+            return $row;
+        }
+        
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));

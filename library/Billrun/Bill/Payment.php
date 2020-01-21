@@ -63,6 +63,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
 			$this->data['amount'] = round(floatval($options['amount']), 2);
+                        if(isset($options['is_denial'])){
+                            $this->data['is_denial'] = $options['is_denial'];
+                        }
 			if (isset($options['due'])) {
 				$this->data['due'] = round($options['due'], 2);
 			} else {
