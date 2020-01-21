@@ -872,9 +872,10 @@ class Tests_Aggregator extends UnitTestCase {
 	 */
 	public function passthrough($key, $returnBillrun, $row) {
 		$passed = true;
-		$billrun = new Billrun_Account_Db;
+		$billrun = Billrun_Factory::account();
 		$this->message .= "<b> passthrough_fields :</b> <br>";
-		$account = $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
+		$billrun->load((array('aid' => $row['test']['aid'], 'type' => 'account')));
+		$account = $billrun->getCustomerData();
 		$address = $account['address'];
 		if ($returnBillrun['attributes']['address'] === $address) {
 			$this->message .= "passthrough work well" . $this->pass;

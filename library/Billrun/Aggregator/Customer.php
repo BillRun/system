@@ -131,7 +131,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	/**
 	 *  Is the run is fake (for example to get a current balance in the middle of the month)
 	 */
-	protected $fakeCycle = false;
+	public $fakeCycle = false;
 	
 	/**
 	 * If false don't automatically generate pdf. 
@@ -220,7 +220,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$aggregateOptions['exclusion_query'] = $this->billrun->existingAccountsQuery();
 		}
 		//This class will define the account/subscriber/plans aggregation logic for the cycle
-		$this->aggregationLogic = new Billrun_Cycle_AggregatePipeline($aggregateOptions);
+		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
 	}
@@ -664,7 +664,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				],
 			];
 		}
-		
+	
 		$hint = [
 			'billrun' => 1,
 			'usaget' => 1,
@@ -739,6 +739,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				//Save Account discounts.
 				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save configurable data
+				$aggregatedEntity->addConfigurableData();
 				//Save the billrun document
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
@@ -785,9 +787,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return array
 	 */
 	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
-		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
-		$collection = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines, $collection);
+		return $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
@@ -819,7 +819,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 		}
 	}
-
+	
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle

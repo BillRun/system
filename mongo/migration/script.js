@@ -391,13 +391,13 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
-		services.forEach(function (service) {
-			if (service.quantity) {
-				service.quantity = Number(service.quantity);
-				db.subscribers.save(sub);
-			}
-		});
+	var services = sub.services;
+	services.forEach(function (service) {
+		if (service.quantity) {
+			service.quantity = Number(service.quantity);
+			db.subscribers.save(sub);
+		}
+	});
 });
 
 //// BRCD-1624: add default Plays to config
@@ -619,6 +619,39 @@ var formerPlanField ={
 	};
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
+// BRCD-2021 - Invoice translations support
+const invoices = lastConfig['billrun']['invoices'];
+if (invoices) {
+	const language = invoices['language'];
+	if (language) {
+		const def = language['default'];
+		if (!def) {
+			lastConfig.billrun.invoices.language.default = 'en_GB';
+		}
+	} else {
+		lastConfig.billrun.invoices.language = {'default': 'en_GB'};
+	}
+} else {
+	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+}
+
+// BRCD - 2129: add embed_tax field
+if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+	var embedTaxField = {
+		"field_name": "embed_tax",
+		"system": true,
+		"title": "Embed Tax",
+		"mandatory": true,
+		"type": "boolean",
+		"editable": true,
+		"display": true,
+		"description": "In case the tax should be embedded (included in the customer price), please check the box"
+	};
+	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
+}
+
+db.config.insert(lastConfig);
+
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -636,6 +669,14 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.save(obj);
+		db.log.remove(obj._id);
+	}
+);
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
@@ -748,6 +789,15 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
+// BRCD-2070 - GSD - getSubscriberDetails
+if (!lastConfig.subscribers.subscriber.type) {
+	lastConfig.subscribers.subscriber.type = 'db';
+}
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
+}
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
@@ -759,3 +809,8 @@ if (db.serverStatus().ok == 0) {
 } else if (db.serverStatus().process == 'mongos') {
 	sh.shardCollection("billing.archive", {"stamp": 1});
 }
+
+// BRCD-2099 - sharding rates, billrun and balances
+sh.shardCollection("billing.rates", { "key" : 1 } );
+sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
