@@ -89,6 +89,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
 			}
+			if (isset($options['pg_request'])) {
+				$this->data['pg_request'] = $options['pg_request'];
+			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
 				if ($direction != 'fc') {
@@ -978,6 +981,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
+	}
 	
 	/**
 	 * Checkes if possible to deny a requested amount according to the bill amount.

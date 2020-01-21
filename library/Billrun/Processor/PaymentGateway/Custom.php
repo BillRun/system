@@ -19,8 +19,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $headerRows;
 	protected $trailerRows;
 	protected $correlatedValue;
-        protected $informationArray = [];
-        
+	protected $informationArray = [];
+	protected $billSavedFields = array();    
         
 	
 	public function __construct($options) {
@@ -217,24 +217,26 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-                $no_txid_counter = 0;
+		$no_txid_counter = 0;
+		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
-                    if(isset($this->tranIdentifierField)){
-                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
-                            $no_txid_counter++;
-                            continue;
-                        }
-                    }
+				if(isset($this->tranIdentifierField)){
+					if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+						$no_txid_counter++;
+						continue;
+					}
+				}
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
+			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-                if($no_txid_counter > 0){
-                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-                }
+		if($no_txid_counter > 0){
+			Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+		}
 	}
 	
 	protected function updateLogCollection($fileCorrelation) {
@@ -279,4 +281,31 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $log->save($resource);
             }
         }
+		
+	protected function getBillSavedFieldsNames($parserDef) {
+		$savedFieldsNames = array();
+		$dataStructure = $parserDef['data_structure'];
+		foreach ($dataStructure as $field) {
+			if (empty($field['save_to_bill'])) {
+				continue;
+			}
+			$savedFieldsNames[] = $field['name'];
+		}
+		
+		return $savedFieldsNames;
+	}
+		
+	protected function getBillSavedFields($row, $fieldNames) {
+		$savedFields = array();
+		foreach ($row as $field => $fieldValue) {
+			if (!in_array($field, $fieldNames)) {
+				continue;
+			}
+			$savedFields[$field] = $fieldValue;
+		}
+		
+		return $savedFields;
+	}
+	
+	
 }
