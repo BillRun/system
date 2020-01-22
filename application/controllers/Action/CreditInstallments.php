@@ -9,11 +9,11 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Test action class
+ * CreditInstallments action class
  *
  * @package  Action
  * 
- * @since    4.0
+ * @since    5.11
  */
 class CreditInstallmentsAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
@@ -52,19 +52,12 @@ class CreditInstallmentsAction extends ApiAction {
 	
 	protected function preponeCreditInstallments($request){
 		$sid = $request->get('sid');
-		if(!is_numeric($sid)){
-			$this->setError('Illegal sid', $request->getPost());
+		$aid = $request->get('aid');
+		if(!is_numeric($sid) || !is_numeric($aid)){
+			$this->setError('Illegal sid/aid', $request->getPost());
 			return FALSE;
 		}
-		$subscriber = Billrun_Factory::subscriber();
-		$queries[] = ['time' => Date(time()), 'sid' => $sid];
-		$subscriber = $subscriber->getSubscriberDetails($queries)->getRawData();
-		$aid = $subscriber['aid'];
-		
-		if(!empty($request->get('agreement_id'))){
-			$agreement_id = $request->get('agreement_id');
-		}else{
-			
-		}
+		$accountArray = [$aid => [$sid]];
+		Billrun_Aggregator_Customer::preponeInstallments($accountArray);
 	}
 }

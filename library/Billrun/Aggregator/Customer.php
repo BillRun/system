@@ -625,7 +625,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (!empty($accountsToPrepone)) {
-			return $this->preponeInstallments($accountsToPrepone);
+			return $this->preponeInstallments($accountsToPrepone, $this->getCycle()->key(), $this->fakeCycle);
 		}
 	}
 	
@@ -634,12 +634,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * 
 	 * @param array $accounts - AID as key, array of SID's as values
 	 */
-	protected function preponeInstallments($accounts) {
+	public static function preponeInstallments($accounts, $billrunkey = null, $fakeCycle = false) {
 		if (empty($accounts)) {
 			return;
 		}
 		
-		$billrunKey = $this->getCycle()->key();
+		if($billrunkey === null){
+			$billrunkey = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
+		}
 		$query = [
 			'usaget' => 'charge',
 			'type' => 'credit',
@@ -648,7 +650,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new MongoDate($this->getCycle()->end()),
+				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunkey)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -677,7 +679,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return;
 		}
 		
-		if ($this->fakeCycle) {
+		if ($fakeCycle) {
 			return iterator_to_array($linesToUpdate);
 		}
 		
