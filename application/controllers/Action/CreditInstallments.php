@@ -28,7 +28,7 @@ class CreditInstallmentsAction extends ApiAction {
 		try {
 			switch ($request->get('action')) {
 				case 'prepone' :
-					$response = $this->preponeCreditInstallments($request->get('query'));
+					$response = $this->preponeCreditInstallments($request);
 					break;
 			}
 
@@ -50,7 +50,21 @@ class CreditInstallmentsAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 	
-	protected function preponeCreditInstallments(){
+	protected function preponeCreditInstallments($request){
+		$sid = $request->get('sid');
+		if(!is_numeric($sid)){
+			$this->setError('Illegal sid', $request->getPost());
+			return FALSE;
+		}
+		$subscriber = Billrun_Factory::subscriber();
+		$queries[] = ['time' => Date(time()), 'sid' => $sid];
+		$subscriber = $subscriber->getSubscriberDetails($queries)->getRawData();
+		$aid = $subscriber['aid'];
 		
+		if(!empty($request->get('agreement_id'))){
+			$agreement_id = $request->get('agreement_id');
+		}else{
+			
+		}
 	}
 }
