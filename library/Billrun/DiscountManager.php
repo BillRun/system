@@ -209,8 +209,7 @@ class Billrun_DiscountManager {
 
 		foreach (self::getCharges($this->cycle->key()) as $charge) {
 			$eligibility = $this->getDiscountEligibility($charge, $accountRevisions, $subscribersRevisions);
-			$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
-			$this->setEligibility($this->eligibleCharges, $charge, $eligibility, $aid);
+			$this->setEligibility($this->eligibleCharges, $charge, $eligibility);
 		}
 	}
 
@@ -221,7 +220,7 @@ class Billrun_DiscountManager {
 	 * @param array $discount
 	 * @param array $eligibility
 	 */
-	protected function setEligibility(&$eligibilityEntity, $discount, $eligibility, $aid = null) {
+	protected function setEligibility(&$eligibilityEntity, $discount, $eligibility) {
 		if (empty(Billrun_Util::getIn($eligibility, 'eligibility', []))) {
 			return;
 		}
@@ -257,17 +256,14 @@ class Billrun_DiscountManager {
 			}
 
 			$eligibility = [
+				'aid' => $eligibility['aid'],
 				'eligibility' => $timeEligibility,
 				'subs' => $subsEligibility,
 				'services' => $servicesEligibility,
 				'plans' => $plansEligibility,
 			];
 		}
-
-		if (!is_null($aid)) {
-			$eligibility['aid'] = $aid;
-		}
-
+		
 		$eligibilityEntity[$discountKey] = $eligibility;
 	}
 
@@ -557,6 +553,7 @@ class Billrun_DiscountManager {
 		$discountFrom = max(Billrun_Utils_Time::getTime($discount['from']), $this->cycle->start());
 		$discountTo = min(Billrun_Utils_Time::getTime($discount['to']), $this->cycle->end());
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
+		$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			$eligibility = [
 				[
@@ -570,6 +567,7 @@ class Billrun_DiscountManager {
 				$subscribersEligibility[$sid] = $eligibility;
 			}
 			return [
+				'aid' => $aid,
 				'eligibility' => $eligibility,
 				'subs' => $subscribersEligibility,
 			];
@@ -648,6 +646,7 @@ class Billrun_DiscountManager {
 		}
 
 		return [
+			'aid' => $aid,
 			'eligibility' => $eligibility,
 			'subs' => $subsEligibility,
 			'services' => $servicesEligibility,
