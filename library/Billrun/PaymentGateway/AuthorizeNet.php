@@ -155,6 +155,12 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $responseCode;
 	}
 	
+	/**
+	 * if customer was created in the request, updates account's payment gateway
+	 * 
+	 * @param XML $response
+	 * @param int $aid
+	 */
 	protected function savePaymentProfile($response, $aid) {
 		if (!$this->hasCustomerProfile($response)) {
 			return;
