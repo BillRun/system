@@ -209,7 +209,8 @@ class Billrun_DiscountManager {
 
 		foreach (self::getCharges($this->cycle->key()) as $charge) {
 			$eligibility = $this->getDiscountEligibility($charge, $accountRevisions, $subscribersRevisions);
-			$this->setEligibility($this->eligibleCharges, $charge, $eligibility);
+			$aid = Billrun_Util::getIn($accountRevisions, [0, 'aid']);
+			$this->setEligibility($this->eligibleCharges, $charge, $eligibility, $aid);
 		}
 	}
 
@@ -220,7 +221,7 @@ class Billrun_DiscountManager {
 	 * @param array $discount
 	 * @param array $eligibility
 	 */
-	protected function setEligibility(&$eligibilityEntity, $discount, $eligibility) {
+	protected function setEligibility(&$eligibilityEntity, $discount, $eligibility, $aid = null) {
 		if (empty(Billrun_Util::getIn($eligibility, 'eligibility', []))) {
 			return;
 		}
@@ -261,6 +262,10 @@ class Billrun_DiscountManager {
 				'services' => $servicesEligibility,
 				'plans' => $plansEligibility,
 			];
+		}
+
+		if (!is_null($aid)) {
+			$eligibility['aid'] = $aid;
 		}
 
 		$eligibilityEntity[$discountKey] = $eligibility;
@@ -1167,27 +1172,10 @@ class Billrun_DiscountManager {
 	}
 	
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
-		$aid = '';
-		$billrun = '';
-		$sid = 0;
-		if (!empty($eligibility['plans'])) {
-			$sid = array_keys($eligibility['plans'])[0];
-		} else if (!empty($eligibility['services'])) {
-			$sid = array_keys($eligibility['services'])[0];
-		}
-		
-		foreach ($lines as $line) {
-			if ($line['sid'] == $sid) {
-				$aid = $line['aid'];
-				$billrun = $line['billrun'];
-				break;
-			}
-		}
-		
 		return [
-			'aid' => $aid,
-			'sid' => $sid,
-			'billrun' => $billrun,
+			'aid' => $eligibility['aid'],
+			'sid' => 0,
+			'billrun' => $this->cycle->key(),
 		];
 	}
 	
