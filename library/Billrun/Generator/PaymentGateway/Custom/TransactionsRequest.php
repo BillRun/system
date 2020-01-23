@@ -35,8 +35,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->fileNameStructure = isset($this->configByType['filename']) ? $this->configByType['filename'] : '';
 		$this->initChargeOptions($options);
 		$this->localDir = $this->configByType['export']['export_directory'];
-		if (isset($this->configByType['generator']['filtration'])) {
-			$this->generatorFilters = $this->configByType['generator']['filtration'];
+		if (isset($this->configByType['filtration'])) {
+			$this->generatorFilters = $this->configByType['filtration'];
 		}
 		if (isset($this->configByType['parameters'])) {
 			$this->extraParamsDef = $this->configByType['parameters'];

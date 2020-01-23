@@ -73,7 +73,7 @@ class PayAction extends ApiAction {
 			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
-				$method = $payment->getPaymentMethod();
+				$method = $payment->getBillMethod();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
