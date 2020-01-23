@@ -522,6 +522,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$page = !empty($chargeOptions['page']) ? (int) $chargeOptions['page'] : 0;
 		$filtersQuery = self::buildFilterQuery($chargeOptions);
 		$payMode = isset($chargeOptions['pay_mode']) ? $chargeOptions['pay_mode'] : 'one_payment';
+		$paymentData = Billrun_Util::getIn($chargeOptions, 'payment_data', []);
 		$paginationQuery = self::getPaginationQuery($filtersQuery, $page, $size);
 		$paginationAids = iterator_to_array(Billrun_Factory::db()->billsCollection()->aggregate($paginationQuery));
 		$customersAids = array();
@@ -529,7 +530,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$customersAids[] = $paginationResult->getRawData()['_id'];
 		}
 		$involvedAccounts = array();
-		$options = array('collect' => true, 'payment_gateway' => TRUE);
+		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
 
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
@@ -547,7 +548,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
 				$subscriber = $subscribers_in_array[$billDetails['aid']];
-				$gatewayDetails = $subscriber['payment_gateway']['active'];
+				$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $subscriber['payment_gateway']['active']);
 				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 					continue;
