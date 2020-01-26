@@ -29,6 +29,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';
 		}
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$this->account = Billrun_Factory::account();
 	}
 
 	public function updateSessionTransactionId() {
@@ -168,7 +170,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		$profileId = (string) $response->profileResponse->customerProfileId;
 		$paymentProfileId = (string) $response->profileResponse->customerPaymentProfileIdList->numericString;
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->saveDetails['aid'] = $aid;
 		$this->saveDetails['customer_profile_id'] = $profileId;
 		$this->saveDetails['payment_profile_id'] = $paymentProfileId;
