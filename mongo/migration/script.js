@@ -31,9 +31,13 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
+var invoice_label_found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "tariff_category") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoice_label") {
+		invoice_label_found = true;
 	}
 }
 if(!found) {
@@ -49,6 +53,17 @@ if(!found) {
 		"mandatory":true,
 		"select_options":"retail",
 		"changeable_props": ["select_options"]
+	});
+}
+if(!invoice_label_found) {
+	fields.push({
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_label",
+		"default_value":"retail",
+		"show_in_list":true,
+		"title":"Invoice label",
 	});
 }
 lastConfig['rates']['fields'] = fields;
