@@ -345,8 +345,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 
 		$this->tmp_paths = array(
-			'header' => $this->paths['tmp'].$account['aid'] . DIRECTORY_SEPARATOR . 'tmp_header.html',
-			'footer' => $this->paths['tmp'].$account['aid'] . DIRECTORY_SEPARATOR . 'tmp_footer.html',
+			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
+			'footer' => $this->paths['tmp'].$account['aid'] . 'tmp_footer.html',
 		);
 		
 		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
