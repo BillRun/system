@@ -301,7 +301,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function updateLeft() {
-		if ($this->getDue() < 0) {
+		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
 			foreach ($this->getPaidBills() as $paidBills) {
 				$this->data['left'] -= array_sum($paidBills);
@@ -313,7 +313,7 @@ abstract class Billrun_Bill {
 	}
 		
 	protected function updateLeftToPay() {
-		if ($this->getDue() > 0) {
+		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
 			foreach ($this->getPaidByBills() as $paidByBills) {
 				$this->data['left_to_pay'] -= array_sum($paidByBills);
@@ -410,6 +410,9 @@ abstract class Billrun_Bill {
 	}
 
 	protected function recalculatePaymentFields($billId = null, $status = null) {
+		if ($this->getBillMethod() == 'denial') {
+			return $this;
+		}
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
@@ -426,8 +429,7 @@ abstract class Billrun_Bill {
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
-				
-		} else if ($this->getDue() < 0){
+		} else if ($this->getDue() < 0) {
 			$amount = 0;
 			if (isset($this->data['pays']['inv'])) {
 				$amount += array_sum($this->data['pays']['inv']);
@@ -533,8 +535,6 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		// white list exists but aids not included
@@ -552,14 +552,13 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$aidsQuery = array('aid' => array('$in' => $aids));			
+			$accountQuery = array('aid' => array('$in' => $aids));			
 		} else if (!empty($exempted)){
-			$aidsQuery = array('aid' => array('$nin' => $aids));
+			$accountQuery = array('aid' => array('$nin' => $aids));
 		} else {
-			$aidsQuery = array();
+			$accountQuery = array();
 		}
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {
@@ -624,7 +623,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-        public function getDueBeforeVat() {
+	public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
@@ -1110,7 +1109,6 @@ abstract class Billrun_Bill {
 	protected function setDueDate($dueDate) {
 		$this->data['due_date'] = $dueDate;
 	}
-	
 	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type = 'rec', $method = false, $remaining = false) {
 		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
 		$query['type'] = $type;
@@ -1127,6 +1125,23 @@ abstract class Billrun_Bill {
 			$query['method'] = $method;
 		}
 		return self::getBills($query);
+	}
+
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
+	
+	public function getBillMethod() {
+		if (empty($this->method)) {
+			return null;
+		}
+		return $this->method;
 	}
 
 }

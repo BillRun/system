@@ -166,7 +166,7 @@ class Billrun_Service {
 	}
 	
 	public function initCacheItems() {
-		$coll = Billrun_Factory::db()->{static::$cacheType . Collection}();
+		$coll = Billrun_Factory::db()->{static::$cacheType . 'Collection'}();
 		$items = $coll->query()->cursor();
 		foreach ($items as $item) {
 			$item->collection($coll);

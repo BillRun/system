@@ -39,8 +39,13 @@ class GenerateAction extends Action_Base {
         if (!empty($extraParams)) {
             $options = array_merge($extraParams, $options);
         }
-
-        $generator = Billrun_Generator::getInstance($options);
+        try{
+            $generator = Billrun_Generator::getInstance($options);
+        } catch(Exception $ex){
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+            Billrun_Factory::log()->log('Something went wrong while building the generator. No generate was made.', Zend_Log::ALERT);
+            return;
+        }
 
         if (!$generator) {
             $this->_controller->addOutput("Generator cannot be loaded");

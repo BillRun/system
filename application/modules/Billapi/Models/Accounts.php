@@ -40,6 +40,15 @@ class Models_Accounts extends Models_Entity {
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".account.fields";
 	}
+	
+	/**
+	 * Return the key field
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		return 'aid';
+	}
 
 	/**
 	 * validates that the allowances added to the account not added to other account
@@ -68,8 +77,8 @@ class Models_Accounts extends Models_Entity {
 		}
 
 		$account = new Billrun_Account_Db();
-		$account->load($query);
-		if (!$account->isEmpty()) {
+		$account->loadAccountForQuery($query);
+		if (!$account->getCustomerData()->isEmpty()) {
 			$account_sids = array_reduce($account->allowances, function($acc, $allowance) {
 				$acc[] = $allowance['sid'];
 				return $acc;

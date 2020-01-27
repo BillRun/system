@@ -87,12 +87,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		if (!empty($this->params['billrun_key'])) {
 			$query['billrun_key'] = (string) $this->params['billrun_key'];
 		}
-		$invoices = $billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
-		$ret = array();
-		foreach ($invoices as $invoice) {
-			$ret[] = $invoice->getRawData();
-		}
-		return $ret;
+		return $billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 	}
 
 	/**
