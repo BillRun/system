@@ -43,20 +43,37 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 
 		$pipelines[] = $this->getSortPipeline();
 
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => '$_id',
-				'plan_dates' => 1,
-				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project'],
-			)
-		);
+		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
+
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines,$collection);
 	}
 
 	//--------------------------------------------------------------------------------------------
+
+	/**
+	 * Retrive the final projection of the  aggregate.
+	 */
+	protected function getFinalProject($addedPassthroughFields) {
+		return empty($this->generalOptions['is_onetime_invoice']) ?
+			[
+				'$project' => [
+					'_id' => 0,
+					'id' => '$_id',
+					'plan_dates' => 1,
+					'card_token' => 1,
+					'passthrough' => $addedPassthroughFields['project'],
+				]
+			] :
+			[
+				'$project' => [
+					'_id' => 0,
+					'id' => '$_id',
+					'card_token' => 1,
+					'passthrough' => $addedPassthroughFields['project'],
+				]
+			];
+	}
 
 	/**
 	 *
