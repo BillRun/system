@@ -26,7 +26,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-	
+	protected $invoice_extra_params = [];
+
+
 
 	/**
 	 *
@@ -338,6 +340,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
+		$this->view->assign('extra_immediate_invoices_count', $this->invoice_extra_params['immediate_invoices_count']?:0);
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
