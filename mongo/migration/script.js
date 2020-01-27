@@ -61,7 +61,7 @@ if(!invoice_label_found) {
 		"display":true,
 		"editable":true,
 		"field_name":"invoice_label",
-		"default_value":"retail",
+		"default_value":"",
 		"show_in_list":true,
 		"title":"Invoice label",
 	});
