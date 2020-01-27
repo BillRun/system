@@ -13,10 +13,6 @@
  */
 class Billrun_DataTypes_PostPayment {
 	
-	const PG_RESPONSE_SUCCESS = 'success';
-	const PG_RESPONSE_FAILURE = 'failure';
-	const PG_RESPONSE_PENDING = 'pending';
-	
 	/**
 	 * pre-payment data 
 	 * @var Billrun_DataTypes_PrePayment

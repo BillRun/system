@@ -29,7 +29,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';
 		}
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->account = Billrun_Factory::account();
 	}
 
