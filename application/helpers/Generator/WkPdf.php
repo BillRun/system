@@ -211,7 +211,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                                 $meetConditions = 1;
                             }
                         }
-                    if($meetConditions){
+                    if($meetConditions && !$this->is_fake_generation){
                         $relative_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp . DIRECTORY_SEPARATOR . $path);
                         $this->paths['pdf'] = $relative_path . "pdf/";
                         $this->paths['html'] = $relative_path . "html/";
@@ -353,7 +353,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		
 		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
-                if(isset($account['file_name']) & !empty($account['file_name'])){
+                if(isset($account['file_name']) & !empty($account['file_name']) && !$this->is_fake_generation){
                     $pdf_name = $account['file_name'];
                 }else{
                     $pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
