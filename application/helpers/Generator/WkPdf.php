@@ -221,6 +221,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $this->paths;
             }
         }
+		
         public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
             if ($billrunObject instanceof Mongodloid_Entity){
                 $meetConditions = 0;
@@ -270,7 +271,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if(isset($paramObj['type']) && $paramObj['type'] === "string"){
-                        return Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']);
+                        return trim(Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']));
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
                     }
@@ -289,7 +290,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if((isset($paramObj['type']) && $paramObj['type'] === "string") && !(isset($paramObj['linked_entity']))){
-                        return $paramObj['value'];
+                        return trim($paramObj['value']);
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Missing 'linked entity, and the type isn't date/string.  None customized file name was chosen.", Zend_Log::ERR);
                         return -1;
