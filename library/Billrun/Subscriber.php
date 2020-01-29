@@ -212,8 +212,9 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
-		$this->data = $result[0]->getRawData();
-		return $result[0];
+		$firstRecord = reset($result);
+		$this->data = $firstRecord->getRawData();
+		return $firstRecord;
 	}
 	
 	/**

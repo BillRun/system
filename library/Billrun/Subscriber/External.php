@@ -12,7 +12,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static protected $type = 'external';
 	
-	protected static $queryBaseKeys = ['id', 'time', 'limit'];
+	protected static $queryBaseKeys = [ 'limit'];
 	
 	protected $remote;
 		
@@ -33,15 +33,15 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			$externalQuery[] = $query;
+			$externalQuery['params'] = $query;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
+		$results = json_decode(Billrun_Util::sendRequest($this->remote, ['query'=>$externalQuery]), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
-			$acc[] = new Mongodloid_Entity($currentSub);
+			$acc[$currentSub['id']] = new Mongodloid_Entity($currentSub['subscriber']);
 			return $acc;
 		}, []);
 	}

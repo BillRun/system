@@ -295,7 +295,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			
 			// load one subscriber for each query
-			$results = $this->subscriber->loadSubscriberForQueries($priorityQueries, $this->subscriber->getAvailableFields());			
+			$results = $this->subscriber->loadSubscriberForQueries($priorityQueries, $this->subscriber->getAvailableFields());
 			if (!$results) {
 				Billrun_Factory::log('Failed to load subscribers data for params: ' . print_r($priorityQueries, 1), Zend_Log::NOTICE);
 				return false;
