@@ -44,6 +44,9 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @return array with category as key, Mongodloid_Entity as value if found, false otherwise
 	 */
 	public function getLineTaxes($line) {
+		if (isset($line['taxes'])) {
+			return $line['taxes'];
+		}
 		$taxes = $this->getMatchingEntitiesByCategories($line);
 		
 		if ($taxes === false) {
@@ -104,7 +107,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * @param array $line
 	 */
 	protected function getRowTaxData($line) {
-		if (!empty($line['tax_data'])) {
+		if (isset($line['tax_data'])) {
 			return $line['tax_data'];
 		}
 		
@@ -137,6 +140,27 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			'total_tax' => $totalTax,
 			'taxes' => $taxesData,
 		];
+	}
+	
+	/**
+	 * Converts tax data of a given line to taxes array that can be used in "getRowTaxData"
+	 * 
+	 * @param array $taxData
+	 * @return array
+	 */
+	public static function taxDataToTaxes($taxData) {
+		$taxes = [];
+		
+		foreach (Billrun_Util::getIn($taxData, 'taxes', []) as $data) {
+			$category = $data['type'];
+			$taxes[$category] = [
+				'key' => $data['key'],
+				'rate' => $data['tax'],
+				'description' => $data['description'] ?: 'VAT',
+			];
+		}
+		
+		return $taxes;
 	}
 	
 	/**

@@ -136,5 +136,24 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$this->data['data'][] = $row;
 		return true;
 	}
+	
+	/**
+	 * Remove row to process (see parent implementation)
+	 * since in realtime we add row without stamp (see addDataRow), need to remove by stamp in other logic
+	 * 
+	 * @param string $stamp
+	 * @return boolean
+	 */
+	public function unsetRow($stamp) {
+		foreach ($this->data['data'] as $i => $row) {
+			if ($row['stamp'] === $stamp) {
+				$this->doNotSaveLines[$stamp] = $this->data['data'][$i];
+				unset($this->data['data'][$i]);
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 }

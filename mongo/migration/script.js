@@ -391,13 +391,13 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
-		services.forEach(function (service) {
-			if (service.quantity) {
-				service.quantity = Number(service.quantity);
-				db.subscribers.save(sub);
-			}
-		});
+	var services = sub.services;
+	services.forEach(function (service) {
+		if (service.quantity) {
+			service.quantity = Number(service.quantity);
+			db.subscribers.save(sub);
+		}
+	});
 });
 
 //// BRCD-1624: add default Plays to config
@@ -637,6 +637,14 @@ db.subscribers.getIndexes().forEach(function(index){
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
 
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.save(obj);
+		db.log.remove(obj._id);
+	}
+);
+
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
 db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
@@ -718,11 +726,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		}
 		var serviceObject = {};
 		var serviceValue = [];
+		var servicesArray = [];
 		if (oldParams.service !== undefined) {
 			var serviceCondAmount = oldParams.service.length;
 			for (var i = 0; i < serviceCondAmount; i++) {
-				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+				servicesArray.push(oldParams.service[i]);
 			}
+			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
 			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
@@ -756,4 +766,9 @@ if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
 	sh.shardCollection("billing.archive", {"stamp": 1});
+	// BRCD-2099 - sharding rates, billrun and balances
+	sh.shardCollection("billing.rates", { "key" : 1 } );
+	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+

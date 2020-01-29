@@ -122,7 +122,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],

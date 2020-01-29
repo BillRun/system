@@ -181,19 +181,18 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		];
 
 		return $this->getEntityByFilters($row, $filters, $tariffCategory, $params);
-		}
-
+			}
 	//------------------- Entity Getter functions ----------------------------------------------------
 
 	protected function getCollection($params = []) {
 		return Billrun_Factory::db()->ratesCollection();
-			}
-			
+		}
+
 	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 		}
-	
+
 	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
 	
@@ -207,11 +206,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			$query['play'] = [
 				'$in' => [null, $play],
 			];
-		}
+	}
 
 		return $query;
-	}
-	
+			}
+			
 	protected function getBasicGroupQuery($row, $category = '', $params = []) {
 		$query = $this->entityGetterGetBasicGroupQuery($row, $category, $params);
 		$query['key'] = [
@@ -219,7 +218,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		];
 		
 		return $query;
-	}
+		}
 	
 	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		$usaget = $params['usaget'] ?: '';
@@ -239,10 +238,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			$this->getForeignFields(['rate' => $entity], $current),
 			$this->getAddedValues($category, $entity, $row)
 		);
-		
+	
 		if (!isset($newData['rates'])) {
 			$newData['rates'] = [];
-		}
+	}
+	
 		$newData['rates'][] = $this->getRateData($category, $entity);
 		$row->setRawData($newData);
 	}

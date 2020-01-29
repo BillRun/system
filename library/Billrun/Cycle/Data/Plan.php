@@ -71,6 +71,9 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		foreach ($this->subscriberFields as $fieldName => $value) {
 			$entry['subscriber'][$fieldName] = $value;
 		}
+		foreach ($this->subscriberFields as $fieldName => $value) {
+			$entry['subscriber'][$fieldName] = $value;
+		}
 		
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;

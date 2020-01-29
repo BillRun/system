@@ -61,6 +61,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
 			$this->data['amount'] = round(floatval($options['amount']), 2);
+                        if(isset($options['is_denial'])){
+                            $this->data['is_denial'] = $options['is_denial'];
+                        }
 			if (isset($options['due'])) {
 				$this->data['due'] = round($options['due'], 2);
 			} else {
@@ -80,6 +83,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
+				if ($this->data['due'] >= 0) {
+					$this->data['left_to_pay'] = 0; 
+				} else {
+					$this->data['left'] = 0;
+				}
 			}
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
@@ -199,7 +207,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getCancellationPayment() {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['due'] = $rawData['due'] * -1;
@@ -211,17 +219,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return 'Billrun_Bill_Payment_' . str_replace(' ', '', ucwords(str_replace('_', ' ', $paymentMethod)));
 	}
 
-	public function getPaymentMethod() {
-		return $this->method;
-	}
-
 	/**
 	 * 
 	 * @param array $rejection
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getRejectionPayment($response) {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
@@ -977,5 +981,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
+	}
+	
+	
+	/**
+	 * Checkes if possible to deny a requested amount according to the bill amount.
+	 * @param $denialAmount- the amount to deny.
+	 * 
+	 * return true when the sum of denied amount is larger than the bill amount
+	 */
+	public function isAmountDeniable($denialAmount) {
+		$alreadyDenied = 0;
+		if (isset($this->data['denied_amount'])) {
+			$alreadyDenied = $this->data['denied_amount'];
+		}
+		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		return $totalAmountToDeny > $this->data['amount'];
 	}
 }
