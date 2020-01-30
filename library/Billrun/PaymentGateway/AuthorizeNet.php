@@ -230,7 +230,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$customerProfile = $gatewayDetails['customer_profile_id'];
 		$paymentProfile = $gatewayDetails['payment_profile_id'];
 		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
-		$canCreateProfile = Billrun_Util::getIn($gatewayDetails, 'create_profile', true);
+		$canCreateProfile = Billrun_Util::getIn($gatewayDetails, 'create_profile', false);
 		
 		if ($hasProfile) {
 			return [
