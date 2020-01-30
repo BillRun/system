@@ -441,7 +441,7 @@ class Billrun_Cycle_Account_Invoice {
 		
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
-			if (in_array($invoiceType, $option['invoice_type']) && $option['anchor_field'] != 'confirm_date') {
+			if (in_array($invoiceType, $option['invoice_type']) && $option['anchor_field'] == 'confirm_date') {
 				return false;
 			}
 			
