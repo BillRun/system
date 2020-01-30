@@ -456,7 +456,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		$request = $this->buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params);
-		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, ['Accept-encoding' => 'deflate'], null, 0);
         $paymentProfileId = $this->recurringBillingProfileResponse($result, $aid, $params);
         return $paymentProfileId ? $paymentProfileId : false;
 	}
