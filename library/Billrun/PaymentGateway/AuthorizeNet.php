@@ -152,7 +152,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$transaction = $xmlObj->transactionResponse;
 		$this->transactionId = (string) $transaction->transId;
 		$responseCode = (string) $transaction->responseCode;
-		$this->savePaymentProfile($xmlObj, $addonData['aid']);
+		$this->savePaymentProfile($xmlObj->profileResponse, $addonData['aid']);
 		return $responseCode;
 	}
 	
@@ -162,21 +162,21 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	 * @param XML $response
 	 * @param int $aid
 	 */
-	protected function savePaymentProfile($response, $aid) {
-		if (!$this->hasCustomerProfile($response)) {
+	protected function savePaymentProfile($profileResponse, $aid) {
+		if (!$this->hasCustomerProfile($profileResponse)) {
 			return;
 		}
 		
-		$profileId = (string) $response->profileResponse->customerProfileId;
-		$paymentProfileId = (string) $response->profileResponse->customerPaymentProfileIdList->numericString;
+		$profileId = (string) $profileResponse->customerProfileId;
+		$paymentProfileId = (string) $profileResponse->customerPaymentProfileIdList->numericString;
 		$this->saveDetails['aid'] = $aid;
 		$this->saveDetails['customer_profile_id'] = $profileId;
 		$this->saveDetails['payment_profile_id'] = $paymentProfileId;
 		$this->savePaymentGateway();
+        return $paymentProfileId;
 	}
 	
-	protected function hasCustomerProfile($response) {
-		$profileResponse = $response->profileResponse;
+	protected function hasCustomerProfile($profileResponse) {
 		if (!$profileResponse) {
 			return false;
 		}
@@ -190,25 +190,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPaymentRequest($gatewayDetails) {
-		$credentials = $this->getGatewayCredentials();
-		$apiLoginId = $credentials['login_id'];
-		$transactionKey = $credentials['transaction_key'];
 		$amount = $gatewayDetails['amount'];
-
 		$root = [
 			'tag' => 'createTransactionRequest',
 			'attr' => [
 				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
 			],
 		];
-		$body = [
-			'merchantAuthentication' => [
-				'name' => $apiLoginId,
-				'transactionKey' => $transactionKey,
-			],
-			'transactionRequest' => $this->buildTransactionRequest($amount, $gatewayDetails),
-		];
-
+		$body = $this->buildAuthenticationBody();
+		$body['transactionRequest'] = $this->buildTransactionRequest($amount, $gatewayDetails);
 		return $this->encodeRequest($root, $body);
 	}
 	
@@ -285,12 +275,55 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		];
 	}
 	
+	protected function buildAuthenticationBody() {
+		$credentials = $this->getGatewayCredentials();
+		$apiLoginId = $credentials['login_id'];
+		$transactionKey = $credentials['transaction_key'];
+		
+		return [
+			'merchantAuthentication' => [
+				'name' => $apiLoginId,
+				'transactionKey' => $transactionKey,
+			],
+		];
+	}
+	
+	protected function buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params = []) {
+		$root = [
+			'tag' => 'createCustomerProfileRequest',
+			'attr' => [
+				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
+			],
+		];
+		$body = $this->buildAuthenticationBody();
+		$body['profile'] = [
+			'merchantCustomerId' => $aid,
+			'email' => Billrun_Util::getIn($gatewayDetails, 'email', ''),
+			'paymentProfiles' => [
+				'customerType' => 'individual',
+				'payment' => $this->buildTransactionPayment($gatewayDetails),
+			],
+		];
+		return $this->encodeRequest($root, $body);
+	}
+	
 	protected function encodeRequest($root, $body, $params = []) {
 		$xmlEncoder = new Billrun_Encoder_Xml();
 		$params['addHeader'] = false;
 		$params['root'] = $root;
 		return $xmlEncoder->encode($body, $params);
 	}
+    
+    protected function decodeResponse($result) {
+        $xmlObj = @simplexml_load_string($result);
+        $resultCode = (string) $xmlObj->messages->resultCode;
+		if ($resultCode != 'Ok') {
+			$errorMessage = (string) $xmlObj->messages->message->text;
+			throw new Exception($errorMessage);
+		}
+        
+        return $xmlObj;
+    }
 
 	public function authenticateCredentials($params) {
 		$apiLoginId = $params['login_id'];
@@ -419,6 +452,19 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 
 		return $customerId;
+	}
+	
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		$request = $this->buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params);
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+        $paymentProfileId = $this->recurringBillingProfileResponse($result, $aid, $params);
+        return $paymentProfileId ? $paymentProfileId : false;
+	}
+    
+    protected function recurringBillingProfileResponse($result, $aid, $params = []) {
+        $response = $this->decodeResponse($result);
+		$paymentProfileId = $this->savePaymentProfile($response, $aid);
+		return $paymentProfileId;
 	}
 
 	protected function createHtmlRedirection($token) {

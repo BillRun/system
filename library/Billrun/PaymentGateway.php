@@ -361,6 +361,17 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
+	
+	/**
+	 * Creates customer profile on the gateway for recurring billing charge
+	 * and save it for the account
+	 * 
+	 * @param int $aid
+	 * @param array $gatewayDetails
+	 * @param array $params
+	 * @return profile identifier if created successfully, false otherwise
+	 */
+	abstract public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []);
 
 		/**
 	 * Redirect to the payment gateway page of card details.

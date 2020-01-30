@@ -530,4 +530,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return str_pad($param, 2, "0", STR_PAD_LEFT);
 	}
 
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+
 }
