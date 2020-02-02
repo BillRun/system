@@ -83,13 +83,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
-		if (empty($subscriber['plan'])) {
+//		if (empty($subscriber['plan'])) {
+		$current_plan = $subsriber_details->getCurrentPlanName();
+		if (empty($current_plan)) {
 			Billrun_Factory::log()->log("subscriber is not active. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
 
 		Billrun_Factory::log()->log("update line: " . $row->get('stamp') . " subscriber_id: " . $subscriber['subscriber_id'] . ", account_id: " . $subscriber['account_id'], Zend_Log::INFO);
-		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id'], 'plan' => $subscriber['plan']);
+		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id'], 'plan' => $current_plan);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		return true;
