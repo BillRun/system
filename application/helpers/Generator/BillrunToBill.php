@@ -236,7 +236,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
-				return new MongoDate(strtotime($option['relative_time'], $this->confirmDate));
+				return new MongoDate(Billrun_Util::calcInvoiceRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 		}
 		return $invoice['due_date'];
