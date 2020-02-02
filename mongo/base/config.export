@@ -488,7 +488,6 @@
 								"connection_type",
 								"aid",
 								"sid",
-								"msisdn",
 								"tax_data"
 							]
 						},
