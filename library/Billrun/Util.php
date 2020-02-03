@@ -1906,7 +1906,7 @@ class Billrun_Util {
 	 * @param int $startTime - unix timestamp determine where to start the count
 	 * @return aggregated unix timestamp
 	 */
-	public static function calcInvoiceRelativeTime($relativeTimes, $startTime) {
+	public static function calcRelativeTime($relativeTimes, $startTime) {
 		foreach ($relativeTimes as $relativeTime) {
 			$actualTime = strtotime($relativeTime, $startTime);
 			$startTime = $actualTime;
