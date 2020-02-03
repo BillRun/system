@@ -6,6 +6,7 @@
 class Billrun_DiscountManager {
 
 	use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_ForeignFields;
 
 	protected $cycle = null;
 	protected $eligibleDiscounts = [];
@@ -286,7 +287,7 @@ class Billrun_DiscountManager {
 						}
 					}
                     
-                    $servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
+					$servicesToExclude = Billrun_Util::getIn($this->eligibleDiscounts, [$discountToExclude, 'services'], []);
 					foreach ($servicesToExclude as $sid => $services) {
 						foreach ($services as $serviceKey => $serviceEligibility) {
 							$this->eligibleDiscounts[$discountToExclude]['services'][$sid][$serviceKey] = Billrun_Utils_Time::getIntervalsDifference($serviceEligibility, $eligibilityData['subs'][$sid]);
@@ -553,10 +554,10 @@ class Billrun_DiscountManager {
 		$conditions = Billrun_Util::getIn($discount, 'params.conditions', []);
 		if (empty($conditions)) { // no conditions means apply to all entities
 			$eligibility = [
-					[
-						'from' => $discountFrom,
-						'to' => $discountTo,
-					],
+				[
+					'from' => $discountFrom,
+					'to' => $discountTo,
+				],
 			];
 			$subscribersEligibility = [];
 			$sids = $this->getSids($subscribersRevisions);
@@ -597,7 +598,7 @@ class Billrun_DiscountManager {
 			}
 
 			$eligibility = array_merge($eligibility, $conditionEligibility['eligibility']);
-
+			
 			foreach ($conditionEligibility['subs'] as $sid => $subEligibility) {
 				if (isset($subsEligibility[$sid])) {
 					$subsEligibility[$sid] = array_merge($subsEligibility[$sid], $subEligibility);
@@ -1124,7 +1125,8 @@ class Billrun_DiscountManager {
 			if (!isset($this->discountedLinesAmounts[$line['stamp']])) {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
-			$lineAmountLimit = $line['full_price'];
+			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
+			$lineAmountLimit = $line['full_price'] * $lineQuantity;
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;
@@ -1319,7 +1321,8 @@ class Billrun_DiscountManager {
 	 */
 	protected function getDiscountAmount($discount, $line, $value, $operations) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
-		$price = $isPercentage ? $line['full_price'] : $value;
+		$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
+		$price = $isPercentage ? $line['full_price'] * $lineQuantity : $value;
 		if (empty($operations)) {
 			$ret = $isPercentage ? $price * $value : $price;
 		} else {
@@ -1359,13 +1362,14 @@ class Billrun_DiscountManager {
 			}
 		}
 		
-		$quantityMultiplier = floor($line['quantity'] / $quantity);
+		$lineQuantity = $line['usagev'];
+		$quantityMultiplier = floor($lineQuantity / $quantity);
 		if (!$isPercentage) {
 			return  $price * $quantityMultiplier;
 		}
 		
 		$discountedQuantity = $quantity * $quantityMultiplier;
-		$discountedPrice = $price / $line['quantity'] * $discountedQuantity;
+		$discountedPrice = $price / $lineQuantity * $discountedQuantity;
 		return $discountedPrice * $percentage;
 	}
 	
@@ -1462,11 +1466,15 @@ class Billrun_DiscountManager {
 			$discountLine['eligible_line'] = $eligibleLine['stamp'];
 		}
 		
+		if (isset($eligibleLine['tax_data'])) {
+			$discountLine['taxes'] = Billrun_Calculator_Tax_Usage::taxDataToTaxes($eligibleLine['tax_data']);
+		}
+		
 		$discountLine['stamp'] = Billrun_Util::generateArrayStamp($discountLine);
 		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
 		
-		$discountLine = array_merge($discountLine, $addToCdr);
+		$discountLine = array_merge($discountLine, $this->getForeignFields([], array_merge($eligibleLine, $discountLine), true), $addToCdr);
 		return $discountLine;
 	}
 	

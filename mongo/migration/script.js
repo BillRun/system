@@ -31,9 +31,13 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
+var invoice_label_found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "tariff_category") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoice_label") {
+		invoice_label_found = true;
 	}
 }
 if(!found) {
@@ -49,6 +53,17 @@ if(!found) {
 		"mandatory":true,
 		"select_options":"retail",
 		"changeable_props": ["select_options"]
+	});
+}
+if(!invoice_label_found) {
+	fields.push({
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_label",
+		"default_value":"retail",
+		"show_in_list":true,
+		"title":"Invoice label",
 	});
 }
 lastConfig['rates']['fields'] = fields;
@@ -391,13 +406,13 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
-		services.forEach(function (service) {
-			if (service.quantity) {
-				service.quantity = Number(service.quantity);
-				db.subscribers.save(sub);
-			}
-		});
+	var services = sub.services;
+	services.forEach(function (service) {
+		if (service.quantity) {
+			service.quantity = Number(service.quantity);
+			db.subscribers.save(sub);
+		}
+	});
 });
 
 //// BRCD-1624: add default Plays to config
@@ -635,6 +650,21 @@ if (invoices) {
 	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
 }
 
+// BRCD - 2129: add embed_tax field
+if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+	var embedTaxField = {
+		"field_name": "embed_tax",
+		"system": true,
+		"title": "Embed Tax",
+		"mandatory": true,
+		"type": "boolean",
+		"editable": true,
+		"display": true,
+		"description": "In case the tax should be embedded (included in the customer price), please check the box"
+	};
+	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-1717
@@ -654,6 +684,14 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.save(obj);
+		db.log.remove(obj._id);
+	}
+);
 
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
@@ -736,11 +774,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		}
 		var serviceObject = {};
 		var serviceValue = [];
+		var servicesArray = [];
 		if (oldParams.service !== undefined) {
 			var serviceCondAmount = oldParams.service.length;
 			for (var i = 0; i < serviceCondAmount; i++) {
-				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+				servicesArray.push(oldParams.service[i]);
 			}
+			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
 			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
@@ -769,6 +809,9 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 if (!lastConfig.subscribers.subscriber.type) {
 	lastConfig.subscribers.subscriber.type = 'db';
 }
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
+}
 
 db.config.insert(lastConfig);
 
@@ -780,4 +823,9 @@ if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
 	sh.shardCollection("billing.archive", {"stamp": 1});
+	// BRCD-2099 - sharding rates, billrun and balances
+	sh.shardCollection("billing.rates", { "key" : 1 } );
+	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+

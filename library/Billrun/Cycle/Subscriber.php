@@ -274,6 +274,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
 			$serviceData['line_stump'] = $stumpLine;
+			if (Billrun_Utils_Plays::isPlaysInUse()) {
+				$serviceData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+			}
 			$this->records['services'][] = $serviceData;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,&$mongoServices));
@@ -311,6 +314,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			unset($rawMongo['_id']);
 			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
+			if (Billrun_Utils_Plays::isPlaysInUse()) {
+				$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+			} 
 			$planData['line_stump'] = $stumpLine;
 			$planData['deactivation_date'] = $data['deactivation_date'];
 			$this->records['plans'][] = $planData;
@@ -406,7 +412,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-										'plan' => $subscriber['plan'],
+										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 										'start'=> max($tmpService['from']->sec, $activationDate),
 										'end'=> min($tmpService['to']->sec, $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
@@ -470,17 +476,15 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$services = array();
 		$subend = 0;
 		foreach ($current as $subscriber) {
+			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
+			$subend = max($subscriber['sto'], $subend);
+			// Get the services for the subscriber.
+			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
 			if(!$this->hasPlans($subscriber)) {
 				continue;
 			}
-			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
-			$subend = max($subscriber['sto'], $subend);
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
-
-			// Get the services for the subscriber.
-			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
-
 		}
 
 		foreach($services as $service) {
@@ -511,9 +515,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function handleSubscriberDates($subscriber, $endTime) {
-		$to = $subscriber['to'];
-		$from = $subscriber['from'];
-
+		if (!empty($subscriber['from']->sec)) {
+			$to = $subscriber['to']->sec;
+			$from = $subscriber['from']->sec;
+		} else {
+			$to = $subscriber['to'];
+			$from = $subscriber['from'];
+		}
 		if($to > $endTime) {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);
