@@ -1153,7 +1153,7 @@ abstract class Billrun_Bill {
          * @param string $ct_end_billrun - creation time to this billrun (exclusive).
          * @return array of relevant installments
          */
-        public static function getInstallments ($aid, $urt_start_billrun = "197101", $urt_end_billrun = "210001", $ct_start_billrun = "197101", $ct_end_billrun = "210001"){
+        public static function getInstallments ($aid, $urt_start_billrun = "197101", $urt_end_billrun = "210001", $ct_start_billrun = "197101", $ct_end_billrun = "999912"){
             $query['aid'] = $aid;
             $query = array(
                 'aid' => $aid,
