@@ -301,6 +301,10 @@ class PayAction extends ApiAction {
 		if (!empty($request->get('due_date'))) {
 			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
 		}
+		if (!empty($request->get('charge_not_before'))) {
+			$chargeNotBefore = strtotime($request->get('charge_not_before'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
 		$params['autoload'] = true;
 		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);
 		

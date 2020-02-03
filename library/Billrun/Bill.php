@@ -1143,5 +1143,11 @@ abstract class Billrun_Bill {
 		}
 		return $this->method;
 	}
+	
+	protected function setChargeNotBefore($chargeNotBefore) {
+		$rawData = $this->getRawData();
+		$rawData['charge']['not_before'] = $chargeNotBefore;
+		$this->setRawData($rawData);
+	}
 
 }

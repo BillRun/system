@@ -12,13 +12,14 @@
  * @package  Billrun
  * @since    5.11
  */
-class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
+class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 
 	protected $method = 'merge_installments';
 	protected $splitBills = array();
 	protected $aid;
 	protected $uniqueId;
 	protected $installmentDueDate;
+	protected $installmentChargeNotBefore;
 
 	public function __construct($options) {
 		if (!isset($options['aid']) ) {
@@ -32,6 +33,7 @@ class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 			$this->uniqueId = $options['split_bill_id'];
 			$this->splitBills = $this->getMatchingSplitBills($options['aid'], $options['split_bill_id']);
 			$this->installmentdueDate = isset($options['due_date']) ? $options['due_date'] : null;
+			$this->installmentChargeNotBefore = isset($options['charge']['not_before']) ? $options['charge']['not_before'] : null;
 			return;
 		}
 
@@ -52,10 +54,15 @@ class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 		$paymentsArr = array();
 		$totalAmount = 0;
 		foreach ($this->splitBills as $key => $splitBill) {
+			$billChargeNotBefore = ($key == 0) ? (isset($splitBill['charge']['not_before']) ? $splitBill['charge']['not_before'] : null) : $billChargeNotBefore;
+			$firstDueDate = $splitBill['payment_agreement']['first_due_date'];
 			$totalAmount += $splitBill['left_to_pay'];
 			$paymentsArr['pays'][$splitBill['type']][$splitBill['txid']] = $splitBill['left_to_pay'];
 			if ($key == 0 && empty($this->installmentDueDate)) { // sorted array by due_date to get the earliest due date
 				$this->installmentDueDate = $splitBill['due_date'];
+			}
+			if (!empty($billChargeNotBefore) && $splitBill['charge']['not_before']->sec < $billChargeNotBefore->sec) {
+				$billChargeNotBefore = $splitBill['charge']['not_before'];
 			}
 		}
 		$paymentsArr['amount'] = $totalAmount;
@@ -63,8 +70,10 @@ class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 		$paymentsArr['aid'] = $this->aid;
 		$paymentsArr['split_bill_id'] = $this->uniqueId;
 		$mergedBill = current(Billrun_Bill::pay($this->method, array($paymentsArr)));
+		$this->installmentChargeNotBefore = !empty($this->installmentChargeNotBefore) ? $this->installmentChargeNotBefore : (!empty($billChargeNotBefore) ? $billChargeNotBefore : $firstDueDate);
 		if (!empty($mergedBill) && !empty($mergedBill->getId())){
 			$mergedBill->setDueDate($this->installmentDueDate);
+			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);
 			$success = $mergedBill->insertMergeInstallment();
 			return $success;
 		}
@@ -92,6 +101,7 @@ class Billrun_Bill_Payment_MergedInstallments extends Billrun_Bill_Payment {
 		$installment['amount'] = $this->data['amount'];
 		$installment['bills_merged'] = $this->data['pays'];
 		$installment['due_date'] = $this->data['due_date'];
+		$installment['charge']['not_before'] = $this->data['charge']['not_before'];
 		return $installment;
 	}
 }

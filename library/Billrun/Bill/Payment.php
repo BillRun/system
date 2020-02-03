@@ -83,6 +83,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
+			if (isset($options['charge'])) {
+				$this->data['charge'] = $options['charge'];
+			}
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
 				if ($this->data['due'] >= 0) {
@@ -1021,7 +1024,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	public static function mergeSpllitedInstallments($params) {
-		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergedInstallments($params);
+		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
 		return $mergedInstallmentsObj->merge();
 	}
 }
