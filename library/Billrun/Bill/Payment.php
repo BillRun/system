@@ -38,6 +38,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
+	protected $known_sources;
+	
 	protected static $aids;
 	/**
 	 * 
@@ -61,6 +63,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
 			$this->data['amount'] = round(floatval($options['amount']), 2);
+                        if(isset($options['is_denial'])){
+                            $this->data['is_denial'] = $options['is_denial'];
+                        }
 			if (isset($options['due'])) {
 				$this->data['due'] = round($options['due'], 2);
 			} else {
@@ -88,6 +93,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
+			}
+			if (isset($options['pg_request'])) {
+				$this->data['pg_request'] = $options['pg_request'];
 			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
@@ -123,6 +131,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
 				}
+			}
+			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			if(isset($options['source'])){
+				if(!in_array($options['source'], $this->known_sources)){
+					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
+				}
+				$this->data['source'] = $options['source'];
 			}
 		} else {
 			throw new Exception('Billrun_Bill_Payment: Insufficient options supplied.');
@@ -978,6 +993,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
+	}
 	
 	/**
 	 * Checkes if possible to deny a requested amount according to the bill amount.

@@ -37,7 +37,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected function updatePayments($row, $payment = null) {
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
 		if (count($bill) == 0) {
-                        $message = "Didn't find bill with " . $row[$this->identifierField] . " value in " . $this->identifierField . " field";
+                        $message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
                         $this->informationArray['errors'][] = $message;
 			return;
@@ -53,21 +53,23 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
-		$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
-		$amount = $billAmount;
-		$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
-		$paymentParams[$payDir][$billData['type']][$id] = $amount;
+		if ($this->linkToInvoice) {
+			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
+			$amount = $billAmount;
+			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
+			$paymentParams[$payDir][$billData['type']][$id] = $amount;
+		}
 		try {
 			Billrun_Bill::pay('cash', array($paymentParams));
 		} catch (Exception $e) {
                         $message = "Payment process was failed for payment: " . $e->getMessage();
-			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log($message, Zend_Log::ALERT);
                         $this->informationArray['errors'][] = $message;
                         return;
 		}
-                $this->informationArray['transactions']['confirmed']++;
-                $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
-                $message = "Payment was created successfully for " . $this->identifierField . ' ' . $row[$this->identifierField];
+        $this->informationArray['transactions']['confirmed']++;
+        $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
+        $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
                 $this->informationArray['info'][] = $message;
 	}

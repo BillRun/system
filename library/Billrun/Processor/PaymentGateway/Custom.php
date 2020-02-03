@@ -19,8 +19,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $headerRows;
 	protected $trailerRows;
 	protected $correlatedValue;
-        protected $informationArray = [];
-        
+	protected $linkToInvoice = true;
+	protected $informationArray = [];
+	protected $billSavedFields = array();    
         
 	
 	public function __construct($options) {
@@ -38,7 +39,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $this->informationArray['transactions']['confirmed'] = 0;
                 $this->informationArray['transactions']['rejected'] = 0;
                 $this->informationArray['transactions']['denied'] = 0;
-                $this->informationArray['transactions']['pending'] = 0;
                 $this->informationArray['last_file'] = false;
 	}
 
@@ -59,6 +59,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
+		$this->linkToInvoice = isset($currentProcessor['processor']['link_to_invoice']) ? $currentProcessor['processor']['link_to_invoice'] : $this->linkToInvoice;
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		$parser = $this->getParser();
@@ -77,6 +78,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$rowCount = 0;
 
 		foreach ($parsedData as $line) {
+                        $line = $this->formatLine($line,$dataStructure);
 			$row = $this->getBillRunLine($line);
 			if (!$row){
 				return false;
@@ -89,7 +91,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 		return true;
 	}
-
+        
+        protected function formatLine($row,$dataStructure) {
+            foreach($dataStructure as $index => $paramObj){
+                if(isset($paramObj['decimals'])){
+                    $value = intval($row[$paramObj['name']]);
+                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
+                }
+            }
+            return $row;
+        }
+        
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));
@@ -112,17 +124,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->updateLogCollection($fileCorrelationObj);
 		}
                 if(isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])){
-                    if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-                        $currentFileCount = $this->getCurrentFileCount();
-                        $this->informationArray['file_count'] = $currentFileCount;
-                        if (($currentFileCount + 1) > $fileConfCount){
-                            $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
-                            Billrun_Factory::log($message , Zend_Log::ALERT);
-                            $this->informationArray['errors'] = $message;
-                            return False;
-                        }else{
-                            if(($currentFileCount + 1) === $fileConfCount){
-                                $this->informationArray['last_file'] = true;
+                if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
+                        $currentFileCount = $this->getCurrentFileCount() + 1;
+                    $this->informationArray['file_count'] = $currentFileCount;
+                        if (($currentFileCount) > $fileConfCount){
+                        $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+                        Billrun_Factory::log($message , Zend_Log::ALERT);
+                        $this->informationArray['errors'] = $message;
+                        return False;
+                    }else{
+                            if($currentFileCount == $fileConfCount){
+                            $this->informationArray['last_file'] = true;
                             }
                         }
                     }
@@ -218,24 +230,26 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-                $no_txid_counter = 0;
+		$no_txid_counter = 0;
+		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
-                    if(isset($this->tranIdentifierField)){
-                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
-                            $no_txid_counter++;
-                            continue;
-                        }
-                    }
+				if(isset($this->tranIdentifierField)){
+					if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+						$no_txid_counter++;
+						continue;
+					}
+				}
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
 				continue;
 			}
+			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-                if($no_txid_counter > 0){
-                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-                }
+		if($no_txid_counter > 0){
+			Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+		}
 	}
 	
 	protected function updateLogCollection($fileCorrelation) {
@@ -280,4 +294,31 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 $log->save($resource);
             }
         }
+		
+	protected function getBillSavedFieldsNames($parserDef) {
+		$savedFieldsNames = array();
+		$dataStructure = $parserDef['data_structure'];
+		foreach ($dataStructure as $field) {
+			if (empty($field['save_to_bill'])) {
+				continue;
+			}
+			$savedFieldsNames[] = $field['name'];
+		}
+		
+		return $savedFieldsNames;
+	}
+		
+	protected function getBillSavedFields($row, $fieldNames) {
+		$savedFields = array();
+		foreach ($row as $field => $fieldValue) {
+			if (!in_array($field, $fieldNames)) {
+				continue;
+			}
+			$savedFields[$field] = $fieldValue;
+		}
+		
+		return $savedFields;
+	}
+	
+	
 }
