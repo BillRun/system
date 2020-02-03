@@ -1105,15 +1105,22 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
-	public static function getBillsByKeyAndMethod($aid, $billrunKey, $type = 'rec', $method = false, $remaining = false) {
-		$billrun = new Billrun_DataTypes_CycleTime($billrunKey);
+	
+	/**
+	 * 
+	 * @param type $aid
+	 * @param type $startBillrunKey - billrun key to start the search from it's beginning.
+	 * @param type $endBillrunKey -  - billrun key to end the search to it's beginning (excluded).
+	 * @param type $type
+	 * @param type $method
+	 * @return array of relevant bills
+	 */
+	public static function getBillsByKeysRangeAndMethod($aid, $startBillrunKey, $endBillrunKey, $type = 'rec', $method = false) {
+		$startBillrun = new Billrun_DataTypes_CycleTime($startBillrunKey);
+		$endBillrun = new Billrun_DataTypes_CycleTime($endBillrunKey);
 		$query['type'] = $type;
 		$query['aid'] = $aid;
-		if ($remaining) {
-			$query['urt'] = ['$gt' => new MongoDate($billrun->end())];
-		} else {
-                    $query['urt'] = array('$gte' => new MongoDate($billrun->start()), '$lt' => new MongoDate($billrun->end()));
-		}
+		$query['due_date'] = array('$gte' => new MongoDate($startBillrun->start()), '$lt' => new MongoDate($endBillrun->start()));
 		if ($method) {
 			$query['method'] = $method;
 		}
