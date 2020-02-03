@@ -358,7 +358,9 @@ class Billrun_Cycle_Account_Invoice {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
-		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$isOneTimeInvoice = isset($options['attributes']['invoice_type']) && $options['attributes']['invoice_type'] == 'immediate' ? true : false;
+		$invoiceDate = $isOneTimeInvoice ? time() : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
+		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 
