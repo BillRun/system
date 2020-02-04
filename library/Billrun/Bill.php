@@ -1140,20 +1140,12 @@ abstract class Billrun_Bill {
 		return $this->method;
 	}
 	
-	public static function getBillsWithOptions($query, $action, $options = array()) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$sort = isset($options['sort']) ? $options['sort'] : array();
-		switch ($action) {
-			case 'query':
-				return iterator_to_array($billsColl->query($query)->sort($sort), FALSE);
-			case 'distinct':
-				if (!isset($options['distinct_by_field'])) {
-					Billrun_Factory::log("Billrun_Bill: Action is distinct and no field to distinct by was passed", Zend_Log::DEBUG);
-					return false;
-				}
-				return $billsColl->distinct($options['distinct_by_field'], $query);
-			default:
-				return iterator_to_array($billsColl->find($query)->sort($sort), FALSE);
+	public static function getDistinctBills($query, $distinctField) {
+		if (empty($distinctField)) {
+			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::DEBUG);
+			return false;
 		}
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		return $billsColl->distinct($distinctField, $query);
 	}
 }
