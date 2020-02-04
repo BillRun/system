@@ -830,25 +830,21 @@ if (db.serverStatus().ok == 0) {
 }
 
 //BRCD-2042 - charge.not_before migration script
-db.bills.find({'charge.not_before':{$exists:0}}).forEach(
+db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
-		if (typeof obj['due_date'] !== 'undefined') {
-			if (typeof obj['charge'] === 'undefined') {
-				obj['charge'] = {};
-			}
-			obj['charge']['not_before'] = obj['due_date']
-			db.bills.save(obj);
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
 		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.bills.save(obj);
 	}
 )
-db.billrun.find({'charge.not_before':{$exists:0}}).forEach(
+db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
-		if (typeof obj['due_date'] !== 'undefined') {
-			if (typeof obj['charge'] === 'undefined') {
-				obj['charge'] = {};
-			}
-			obj['charge']['not_before'] = obj['due_date']
-			db.billrun.save(obj);
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
 		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.billrun.save(obj);
 	}
 )
