@@ -20,6 +20,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected $rejectionCodes = "/^2$|^3$/";
 	protected $actionUrl;
 	protected $failureReturnUrl;
+	
+	const CREDIT_CARD_PAYMENT = 'COMMON.ACCEPT.INAPP.PAYMENT';
+	const APPLE_PAY_PAYMENT = 'COMMON.APPLE.INAPP.PAYMENT';
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -227,10 +230,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildCustomerProfile($gatewayDetails) {
-		$customerProfile = $gatewayDetails['customer_profile_id'];
-		$paymentProfile = $gatewayDetails['payment_profile_id'];
+		$customerProfile = Billrun_Util::getIn($gatewayDetails, 'customer_profile_id');
+		$paymentProfile = Billrun_Util::getIn($gatewayDetails, 'payment_profile_id');
 		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
-		$canCreateProfile = Billrun_Util::getIn($gatewayDetails, 'create_profile', true);
+		$canCreateProfile = Billrun_Util::getIn($gatewayDetails, 'create_profile', false);
 		
 		if ($hasProfile) {
 			return [
@@ -304,9 +307,17 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'payment' => $this->buildTransactionPayment($gatewayDetails),
 			],
 		];
+		if ($this->isApplePayRequest($request)) {
+			$body['validationMode'] = 'liveMode';
+		}
 		return $this->encodeRequest($root, $body);
 	}
 	
+	protected function isApplePayRequest($request) {
+		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::APPLE_PAY_PAYMENT;
+	}
+
+
 	protected function encodeRequest($root, $body, $params = []) {
 		$xmlEncoder = new Billrun_Encoder_Xml();
 		$params['addHeader'] = false;

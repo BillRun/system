@@ -253,7 +253,7 @@ class Billrun_PaymentManager {
 	 * @return array of Billrun_DataTypes_PostPayment - success payments
 	 */
 	protected function handlePayment($prePayments, $params = []) {
-		$successPayments = [];
+		$ret = [];
 		if (!$this->hasPaymentGateway($params)) { // no payment gateway - all payments are considered as successful
 			foreach ($prePayments as $prePayment) {
 				$ret[] = new Billrun_DataTypes_PostPayment($prePayment);

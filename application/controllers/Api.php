@@ -257,6 +257,16 @@ if ($errorMessage === "Failed to authenticate") {
 		return false;
 	}
 	
+	protected function setSuccess($details, $desc = 'success') {
+		$output = [
+			'status' => 1,
+			'desc' => $desc,
+			'details' => $details,
+		];
+		$this->getView()->outputMethod = ['Zend_Json', 'encode'];
+		$this->setOutput([$output]);
+	}
+	
 	public function localeAction() {
 		$this->allowed();
 		$this->forward('Locale', 'index');
