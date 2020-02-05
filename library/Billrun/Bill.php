@@ -1142,7 +1142,7 @@ abstract class Billrun_Bill {
 	
 	public static function getDistinctBills($query, $distinctField) {
 		if (empty($distinctField)) {
-			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::DEBUG);
+			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::ALERT);
 			return false;
 		}
 		$billsColl = Billrun_Factory::db()->billsCollection();
