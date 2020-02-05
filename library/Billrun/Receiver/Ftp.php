@@ -74,11 +74,12 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (isset($options['delete']['old_files'])){
 			$this->delete_old_files = $options['delete']['old_files'];
 		}
-		
+
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
 		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');
 		Zend_Ftp_Factory::registerDirecotryType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_Nsn');
+
 	}
 
 	/**
@@ -99,6 +100,20 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				$hostName = '';
 			}
 
+			if(!empty($config['server_type_override']) ) {
+				$fullServerType = defined("Zend_Ftp::{$config['server_type_override']['server_type']}") ?
+									"Zend_Ftp::{$config['server_type_override']['server_type']}" :
+									$config['server_type_override']['server_type'] ;
+				if(defined($fullServerType)) {
+					$resolvedServerType = constant($fullServerType);
+					Zend_Ftp_Factory::registerParserType($resolvedServerType, Billrun_Util::getFieldVal($config['server_type_override']['parser'],'Zend_Ftp_Parser_Unknown'));
+					Zend_Ftp_Factory::registerInteratorType($resolvedServerType, Billrun_Util::getFieldVal($config['server_type_override']['iterator'],'Zend_Ftp_Directory_Unknown'));
+					Zend_Ftp_Factory::registerFileType($resolvedServerType, Billrun_Util::getFieldVal($config['server_type_override']['file'],'Zend_Ftp_File'));
+					Zend_Ftp_Factory::registerDirecotryType($resolvedServerType, Billrun_Util::getFieldVal($config['server_type_override']['directory'],'Zend_Ftp_Directory'));
+				} else {
+					Billrun_Factory::log("Couldn't identify FTP server type: {$fullServerType}",Zend_Log::ERR);
+				}
+			}
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(isset($config['passive']) ? $config['passive'] : false);
 
