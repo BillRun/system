@@ -203,7 +203,9 @@ class Billrun_Cycle_Account_Invoice {
 	}
 
 	public function addConfigurableData() {
+		Billrun_Factory::dispatcher()->trigger('beforeAddInvoiceConfigurableData', array($this, &$this->data));
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
+		Billrun_Factory::dispatcher()->trigger('afterAddInvoiceConfigurableData', array($this, &$this->data));
 	}
 	/**
 	 * 
