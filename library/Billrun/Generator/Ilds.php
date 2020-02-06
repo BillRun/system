@@ -385,9 +385,4 @@ EOI;
 				break;
 		}
 	}
-
-	protected function getAccountId() {
-		return $this->aid;
-	}
-
 }
