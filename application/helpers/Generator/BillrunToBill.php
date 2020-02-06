@@ -220,6 +220,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {
 				return new MongoDate(strtotime($option['relative_time'], $this->confirmDate));
 			}
+			if ($option['anchor_field'] == 'invoice_date' && in_array($invoiceType, $option['invoice_type']) && !empty($invoice['invoice_date'])) {
+				return new MongoDate(strtotime($option['relative_time'], $invoice['invoice_date']->sec));
+			}
 		}
 		
 		// if no config option was matched this could be an on-confirmation invoice - use invoice 'due_date' field
