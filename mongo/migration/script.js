@@ -38,6 +38,7 @@ for (var field_key in fields) {
 	}
 	if (fields[field_key].field_name === "invoice_label") {
 		invoice_label_found = true;
+		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -61,9 +62,9 @@ if(!invoice_label_found) {
 		"display":true,
 		"editable":true,
 		"field_name":"invoice_label",
-		"default_value":"retail",
+		"default_value":"",
 		"show_in_list":true,
-		"title":"Invoice label",
+		"title":"Invoice label"
 	});
 }
 lastConfig['rates']['fields'] = fields;
