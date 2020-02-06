@@ -216,7 +216,9 @@ class Billrun_Cycle_Account_Invoice {
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
 			'EndTime' => $invoiceData['end_date']->sec,
-			'PreviousBillrunKey' => Billrun_Billrun::getAccountLastBillrun($invoiceData['aid'], $invoiceData['billrun_key']));
+			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
+			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key'])
+        );
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
