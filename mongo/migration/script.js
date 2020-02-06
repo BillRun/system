@@ -68,6 +68,17 @@ if(!invoice_label_found) {
 }
 lastConfig['rates']['fields'] = fields;
 
+var invoice_language_field = {
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_language",
+		"default_value":"en_GB",
+		"show_in_list":false,
+		"title":"Invoice language"
+	}
+lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
+
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
 	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
