@@ -74,7 +74,7 @@ var invoice_language_field = {
 		"editable":true,
 		"field_name":"invoice_language",
 		"default_value":"en_GB",
-		"show_in_list":true,
+		"show_in_list":false,
 		"title":"Invoice language"
 	}
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
