@@ -160,7 +160,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$total += $total_ild_cost;
 			}
 			$totalVat = $total * $this->vat;
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat));
+			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat, $row->get('account_id')));
 			$this->setLinesInvoiceId($stamps, $invoice_id);
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;			
@@ -260,7 +260,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$lines->update($where, $update, array("multiple" => true));
 	}
 
-	protected function createInvoiceId($totalAmount) {
+	protected function createInvoiceId($totalAmount, $aid = FALSE) {
 		$invoiceIdStructure = Billrun_Config::getInstance()->getConfigValue('ilds.generator.invoice_id_pattern', '');
 		if (empty($invoiceIdStructure)) {
 			Billrun_Factory::log()->log("Missing invoice id structure", Zend_Log::ALERT);
@@ -269,7 +269,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$translations = array();
 		$invoiceGroup = $totalAmount < 0 ? '30' : '25';
 		foreach ($invoiceIdParams as $paramObj) {
-			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
+			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations, $aid);
 		}
 		$ret = Billrun_Util::translateTemplateValue($invoiceIdStructure, $translations, null, true);
 		if (is_null($ret)) {
@@ -348,13 +348,13 @@ EOI;
 		return simplexml_load_string($xml);
 	}
 	
-	protected function getTranslationValue($paramObj, $invoiceGroup, $formerTranslations) {
+	protected function getTranslationValue($paramObj, $invoiceGroup, $formerTranslations, $aid= FALSE) {
 		if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
 			Billrun_Factory::log("Missing invoice_id params definitions when generating invoice id", Zend_Log::DEBUG);
 		}
 		switch ($paramObj['type']) {
 			case 'date':
-				$dateValue = ($paramObj['value'] == 'cycle') ? $this->getBillrunKey() : (($paramObj['value'] == 'now') ?  time() : strtotime($paramObj['value']));
+				$dateValue = ($paramObj['value'] == 'cycle') ? $this->getStamp() : (($paramObj['value'] == 'now') ?  time() : strtotime($paramObj['value']));
 				return substr($dateValue, 0, 4);
 			case 'autoinc':
 				if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
@@ -369,7 +369,7 @@ EOI;
 				$maxValue = intval($paramObj['max_value']);		
 				$group = $formerTranslations['param1_date'] . $formerTranslations['param2_id'];
 				$fakeCollectionName = '$invoice_id_generation_' . $group;
-				$oid = $group . $this->getAccountId() . $this->getBillrunKey();
+				$oid = $group . $aid . $this->getStamp();
 				$seq = Billrun_Factory::db()->countersCollection()->createAutoInc($oid, $minValue, $fakeCollectionName);
 				if ($seq > $maxValue) {
 					throw new Exception("Sequence exceeded max value when generating invoice id");
@@ -385,4 +385,9 @@ EOI;
 				break;
 		}
 	}
+
+	protected function getAccountId() {
+		return $this->aid;
+	}
+
 }
