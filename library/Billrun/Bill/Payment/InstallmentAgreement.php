@@ -21,6 +21,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected $totalAmount;
 	protected $firstDueDate;
 	protected $attachDueDateToCycleEnd = false;
+	protected $initialChargeNotBefore;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -29,13 +30,13 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 		if (!isset($options['id'])) {
 			$this->id = $this->data['payment_agreement.id'] = $this->generateAgreementId();
+			$this->initialChargeNotBefore = isset($options['charge']['not_before']) ? $options['charge']['not_before'] : null;
 		} else {
 			$this->id = $this->data['payment_agreement.id'] = $options['id'];
 		}
 		if (!empty($options['installment_index'])) {
 			$this->data['payment_agreement.installment_index'] = $options['installment_index'];
 		}
-		
 		if ((!empty($options['installments_num']) || !empty($options['first_due_date'])) && !empty($options['amount'])) {
 			if (!Billrun_Util::IsIntegerValue($options['installments_num'])) {
 				throw new Exception('installments_num parameter must be numeric value');
@@ -84,7 +85,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
-			$success = $primaryInstallment->splitToInstallments();
+			$initialChargeNotBefore = !empty($this->initialChargeNotBefore) ? $this->initialChargeNotBefore : $this->getInitialChargeNotBefore($primaryInstallment);
+			$success = $primaryInstallment->splitToInstallments($initialChargeNotBefore);
 			return $success;
 		}
 		
@@ -92,13 +94,13 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		return false;
 	}
 	
-	protected function splitToInstallments() {
+	protected function splitToInstallments($initialChargeNotBefore) {
 		$this->normalizeInstallments();
 		if (empty($this->installments)) {
 			throw new Exception("Error: Installments are empty");
 		}
 		$this->sortInstallmentsByDueDate();
-		$installments = $this->splitPrimaryBill();
+		$installments = $this->splitPrimaryBill($initialChargeNotBefore);
 		$res = $this->savePayments($installments);
 		if ($res && isset($res['ok']) && $res['ok']) {
 			Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array(array('aid' => $this->data['aid'])));
@@ -108,12 +110,13 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 	}
 	
-	protected function splitPrimaryBill() {
+	protected function splitPrimaryBill($initialChargeNotBefore) {
 		$installments = array();
 		$amountsArray = array_column($this->installments, 'amount');
+		$chargesArray = $this->calcInstallmentDates($initialChargeNotBefore, 'charge_not_before');
 		foreach ($this->installments as $key => $installmentPayment) {
 			$index = $key + 1;
-			$installment = $this->buildInstallment($index);
+			$installment = $this->buildInstallment($index, $chargesArray[$key]['charge_not_before']);
 			if (empty($amountsArray)) {
 				$totalAmount = $this->totalAmount;
 				$periodicalPaymentAmount = floor($totalAmount/ $this->installmentsNum);
@@ -155,25 +158,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (empty($this->installmentsNum) || empty($this->totalAmount)) {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
-		$currentBillrun = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-		$previousMonth = 0;
-		for ($index = 0; $index < $this->installmentsNum; $index++) {
-			$dueDateTime = strtotime("$index  month", $this->firstDueDate->sec);
-			$dueDate = date(Billrun_Base::base_datetimeformat, $dueDateTime);
-			$currentMonth = intval(date('m', $dueDateTime));
-			$correctMonth = ($previousMonth + 1) % 12;
-			if (!empty($previousMonth) && $currentMonth != $correctMonth) {
-				$dueDate = $this->correctMonthMiscalculation($dueDateTime, $previousMonth);
-				$currentMonth = $correctMonth;
-			}
-			$previousMonth = $currentMonth;
-			if ($this->attachDueDateToCycleEnd) {
-				$secondBeforeCycleEnd = Billrun_Billingcycle::getEndTime($currentBillrun) - 1;		
-				$dueDate = date(Billrun_Base::base_datetimeformat, $secondBeforeCycleEnd);
-			}
-			$this->installments[$index] = array('due_date' => $dueDate);
-			$currentBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
-		}
+		$this->installments = $this->calcInstallmentDates($this->firstDueDate, 'due_date');
 		$amountsArray = array_column($this->installments, 'amount');
 		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
 			throw new Exception("All installments must all be with/without amount");
@@ -184,7 +169,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 	}
 	
-	protected function buildInstallment($index) {
+	protected function buildInstallment($index, $chargeNotBefore) {
 		$installment['dir'] = 'tc';
 		$installment['method'] = $this->method;
 		$installment['aid'] = $this->data['aid'];
@@ -196,6 +181,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['installment_index'] = $index;
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
+		$installment['charge']['not_before'] = new MongoDate(strtotime($chargeNotBefore));
 		return $installment;
 	}
 	
@@ -204,5 +190,53 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$month = $prevMonth + 1;
 		$monthDays = date('t', strtotime($year . '/' . $month . '/1'));
 		return date(Billrun_Base::base_datetimeformat, strtotime($year . '/' . $month . '/' . $monthDays));
+	}
+
+	protected function calcInstallmentDates($initialDate, $dateType) {
+		$res = array();
+		$currentBillrun = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$previousMonth = 0;
+		for ($index = 0; $index < $this->installmentsNum; $index++) {
+			$dueDateTime = strtotime("$index  month", $initialDate->sec);
+			$dueDate = date(Billrun_Base::base_datetimeformat, $dueDateTime);
+			$currentMonth = intval(date('m', $dueDateTime));
+			$correctMonth = ($previousMonth + 1) % 12;
+			if (!empty($previousMonth) && $currentMonth != $correctMonth) {
+				$dueDate = $this->correctMonthMiscalculation($dueDateTime, $previousMonth);
+				$currentMonth = $correctMonth;
+			}
+			$previousMonth = $currentMonth;
+			if ($this->attachDueDateToCycleEnd && ($dateType == 'due_date')) {
+				$secondBeforeCycleEnd = Billrun_Billingcycle::getEndTime($currentBillrun) - 1;
+				$dueDate = date(Billrun_Base::base_datetimeformat, $secondBeforeCycleEnd);
+			}
+			$res[$index] = array($dateType => $dueDate);
+			$currentBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
+		}
+		
+		return $res;
+	}
+	
+	protected function getInitialChargeNotBefore($primaryInstallment) {
+		$invoiceIds = $primaryInstallment->getInvoicesIdFromReceipt();
+		$invoices = array();
+		foreach ($invoiceIds as $invoiceId) {
+			$invoices[] = Billrun_Bill_Invoice::getInstanceByid($invoiceId);
+		}
+		$chargeNotBefore = $this->getLatestChargeNotBefore($invoices);
+		return !empty($chargeNotBefore) ? $chargeNotBefore : $this->firstDueDate;
+	}
+	
+	protected function getLatestChargeNotBefore($invoices) {
+		$chargeNotBefore = false;
+		foreach ($invoices as $invoice) {
+			$invoiceData = $invoice->getRawData();
+			$chargeNotBefore = (empty($chargeNotBefore) && !empty($invoiceData['charge']['not_before'])) ? $invoiceData['charge']['not_before'] : $chargeNotBefore;
+			if (!empty($invoiceData['charge']['not_before']) && $invoiceData['charge']['not_before']->sec > $chargeNotBefore->sec) {
+				$chargeNotBefore = $invoiceData['charge']['not_before'];
+			}
+		}
+
+		return $chargeNotBefore;
 	}
 }

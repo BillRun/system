@@ -192,6 +192,10 @@ class PayAction extends ApiAction {
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
+		if (!empty($request->get('do_not_charge_before'))) {
+			$chargeNotBefore = strtotime($request->get('do_not_charge_before'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
 		$success = Billrun_Bill_Payment::createInstallmentAgreement($params);
 		
 		$this->getController()->setOutput(array(array(

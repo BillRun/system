@@ -78,6 +78,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
+			if (isset($options['charge'])) {
+				$this->data['charge'] = $options['charge'];
+			}
+
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
 			}
