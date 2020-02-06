@@ -134,7 +134,7 @@ class Billrun_Generator_Balance extends Billrun_Generator_Ilds {
 				$total += $total_ild_cost;
 			}
 			$totalVat = $total * $this->vat;
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat));
+			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId($totalVat, $row->get('account_id')));
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
 			$invoice_sumup->TOTAL_INCL_VAT = $totalVat;
