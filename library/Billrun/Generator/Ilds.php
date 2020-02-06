@@ -275,7 +275,6 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		if (is_null($ret)) {
 			Billrun_Factory::log()->log("Failed to generate invoice for account", Zend_Log::INFO);
 		} else {
-			Billrun_Factory::log()->log("Failed to generate invoice for account", Zend_Log::INFO);
 			return $ret;
 		}
 	}
