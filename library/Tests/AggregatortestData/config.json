@@ -1150,6 +1150,15 @@
 										"format": "Y-m-d H:i:s"
 							}
 						}
+							},
+							{
+								"field_name": "foreign.subscriber.sid",
+								"title": "discount_foreign_test",
+								"foreign": {
+									"entity": "subscriber",
+									"field": "sid"
+								},
+								"conditions": []
 					}
 				]
 			}
