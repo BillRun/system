@@ -217,12 +217,12 @@ class Zend_Ftp_Directory_Iterator implements Zend_Ftp_Directory_IIterator {
 	 * process the data returned from a directory content listing.
 	 * @param type $lines the lines  that  were returned from the directoryt file listing
 	 */
-	protected function processDirectoryData($lines) {			
+	protected function processDirectoryData($lines) {
 		
 		$parser = Zend_Ftp_Factory::getParser($this->_ftp->getSysType());
 		foreach ($lines as $line) {
 			$fileData = $parser->parseFileDirectoryListing($line);	
-			if ($fileData['type'] != 'l') {
+			if (!empty($fileData) && $fileData['type'] != 'l') {
 				$this->_data[] = $fileData;
 			}		
 		}

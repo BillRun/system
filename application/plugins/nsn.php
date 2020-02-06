@@ -244,6 +244,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$data['calling_number'] = Billrun_Util::msisdn($data['calling_number']);
 			}
 			if (isset($data['called_number'])) {
+			//Remove  the  "10" in front of the national call with an international prefix
 				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()) && substr($data['called_number'], 0, 2) == "10") {
 					$data['called_number'] = substr($data['called_number'], 2);
 				} else if (in_array($data['record_type'], array('30')) && (in_array($data['out_circuit_group'], Billrun_Util::getIldsOneWayCircuitGroups())) &&  
