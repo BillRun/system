@@ -98,7 +98,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		
 		//$this->save($aggregated);
 		Billrun_Factory::log("Done aggregating!");
-		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($data, &$this));
+	//	Billrun_Factory::dispatcher()->trigger('afterAggregate', array($data, &$this));
 		return $this->afterAggregate($aggregated);
 	}
 	
