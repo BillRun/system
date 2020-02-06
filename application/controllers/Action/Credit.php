@@ -29,12 +29,42 @@ class CreditAction extends ApiAction {
 	 */
 	public function execute() {
 		$this->allowed();
-		
-		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
-		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
-		$this->setEventsData();
-		$this->process();
-		return $this->response();
+		$request = $this->getRequest();
+		try {
+			switch ($request->get('action')) {
+				case 'prepone' :
+					$response = $this->preponeCreditInstallments($request);
+					break;
+				default :
+					Billrun_Factory::log("Execute credit", Zend_Log::INFO);
+					$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
+					$this->setEventsData();
+					$this->process();
+					return $this->response();
+			}
+			if ($response !== FALSE) {
+				$this->getController()->setOutput(array(array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request->getPost(),
+						'details' => $response,
+				)));
+			}
+		} catch (Exception $ex) {
+			$this->setError($ex->getMessage(), $request->getPost());
+			return;
+		}
+	}
+	
+	protected function preponeCreditInstallments($request){
+		$sid = $request->get('sid');
+		$aid = $request->get('aid');
+		if(!is_numeric($sid) || !is_numeric($aid)){
+			$this->setError('Illegal sid/aid', $request->getPost());
+			return FALSE;
+		}
+		$accountArray = [$aid => [$sid]];
+		Billrun_Aggregator_Customer::preponeInstallments($accountArray);
 	}
 	
 	protected function setEventsData() {
