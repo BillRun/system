@@ -37,11 +37,12 @@ class Billrun_PaymentManager {
 			return $this->handleError('Error encountered while saving the payments');
 		}
 
-		$successPayments = $this->handlePayment($prePayments, $params);
-		$this->handleSuccessPayments($postPayments, $params);
+		$postPayments = $this->handlePayment($prePayments, $params); 
+		$successPayments = $this->getSuccessPayments($postPayments, $params);
+		$this->handleSuccessPayments($successPayments, $params);
 		return [
-			'payment' => $this->getInvolvedPayments($successPayments),
-			'response' => $this->getResponsesFromGateways($successPayments),
+			'payment' => $this->getInvolvedPayments($postPayments),
+			'response' => $this->getResponsesFromGateways($postPayments),
 		];
 	}
 
@@ -250,7 +251,7 @@ class Billrun_PaymentManager {
 	 * 
 	 * @param array $prePayments - array of Billrun_DataTypes_PrePayment
 	 * @param array $params
-	 * @return array of Billrun_DataTypes_PostPayment - success payments
+	 * @return array of Billrun_DataTypes_PostPayment - payments
 	 */
 	protected function handlePayment($prePayments, $params = []) {
 		$ret = [];
@@ -312,6 +313,13 @@ class Billrun_PaymentManager {
 
 	protected function isFileBasedCharge($params) {
 		return isset($params['file_based_charge']) && $params['file_based_charge'];
+	}
+	
+	protected function getSuccessPayments($postPayments, $params = []) {
+		return array_filter($postPayments, function ($postPayment) {
+			$pgResponse = $postPayment->getPgResponse();
+			return Billrun_Util::getIn($pgResponse, 'stage', '') == 'Completed';
+		});
 	}
 
 	/**

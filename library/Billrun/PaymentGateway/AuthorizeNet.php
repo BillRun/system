@@ -14,10 +14,10 @@
 class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected $billrunName = "AuthorizeNet";
-	protected $pendingCodes = "/^4$/";
+	protected $pendingCodes = "/^4$|E00078|E00055|E00058/";
 	protected $customerId;
 	protected $completionCodes = "/^1$/";
-	protected $rejectionCodes = "/^2$|^3$/";
+	protected $rejectionCodes = "/^2$|^3$|^E/";
 	protected $actionUrl;
 	protected $failureReturnUrl;
 	
@@ -145,20 +145,26 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $status;
 	}
 
-	protected function payResponse($result, $addonData = []) {
+		protected function payResponse($result, $addonData = []) {
 		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
-		if (($resultCode != 'Ok')) {
+		$additionalParams = [];
+		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
-			throw new Exception($errorMessage);
+			$status = (string) $xmlObj->messages->message->code;			
+		} else {
+			$transaction = $xmlObj->transactionResponse;
+			$this->transactionId = (string) $transaction->transId;
+			$status = (string) $transaction->responseCode;
+			$this->savePaymentProfile($xmlObj->profileResponse, $addonData['aid']);
 		}
-		$transaction = $xmlObj->transactionResponse;
-		$this->transactionId = (string) $transaction->transId;
-		$responseCode = (string) $transaction->responseCode;
-		$this->savePaymentProfile($xmlObj->profileResponse, $addonData['aid']);
-		return $responseCode;
+		
+		return [
+			'status' => $status,
+			'additional_params' => $additionalParams,
+		];
 	}
-	
+		
 	/**
 	 * if customer was created in the request, updates account's payment gateway
 	 * 
