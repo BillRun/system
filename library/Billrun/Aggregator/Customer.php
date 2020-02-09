@@ -639,7 +639,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return;
 		}
 		
-		if($billrunkey === null){
+		if(is_null($billrunkey)){
 			$billrunkey = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 		}
 		$query = [
