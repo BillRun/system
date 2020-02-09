@@ -105,6 +105,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected $nextActiveBillrun;
 
 	/**
+	 * End time of the next active billrun (unix timestamp)
+	 * @var int
+	 */
+	protected $nextActiveBillrunEndTime;
+
+	/**
 	 * current configuration
 	 * 
 	 * @var type 

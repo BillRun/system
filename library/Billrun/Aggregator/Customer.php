@@ -212,7 +212,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$aggregateOptions = array(
 			'passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
-			'subs_passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
+			'subs_passthrough_fields' => $this->getAggregatorConfig('subscriber.passthrough_data', array()),
 		);
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
@@ -747,6 +747,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
+				//Save configurable data
+				$aggregatedEntity->addConfigurableData();
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
 			}

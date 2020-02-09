@@ -255,6 +255,15 @@
 			"mandatory":true,
 			"select_options":"retail",
 			"changeable_props": ["select_options"]
+		},
+		{
+			"system":true,
+			"display":true,
+			"editable":true,
+			"field_name":"invoice_label",
+			"default_value":"retail",
+			"show_in_list":true,
+			"title":"Invoice label",
 		}]
     },
     "plans": {
@@ -488,7 +497,6 @@
 								"connection_type",
 								"aid",
 								"sid",
-								"msisdn",
 								"tax_data"
 							]
 						},

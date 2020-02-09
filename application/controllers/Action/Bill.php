@@ -125,7 +125,10 @@ class BillAction extends ApiAction {
 		}
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
-		return Billrun_Bill_Invoice::getInvoices(json_decode($query, JSON_OBJECT_AS_ARRAY));
+                if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
+                    Billrun_Utils_Mongo::convertQueryMongoDates($queryAsArray);               
+                }
+		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
 	protected function getCollectionDebt($request) {
