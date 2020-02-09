@@ -1042,18 +1042,18 @@ class ConfigModel {
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetFileTypeSettings(&$config, $fileType) {
-		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
+		$config['file_types'] = array_values(array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
-		});
+		}));
 	}
 	
 	/**
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetPaymentGatewaySettings(&$config, $pg) {
- 		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
+ 		$config['payment_gateways'] = array_values(array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] !== $pg;
- 		});
+ 		}));
  	}
 	
 	protected function unsetExportGeneratorSettings(&$config, $name) {
@@ -1066,9 +1066,9 @@ class ConfigModel {
 	}
 	
 	protected function unsetSharedSecretSettings(&$config, $secret) {
- 		$config['shared_secret'] = array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
+ 		$config['shared_secret'] = array_values(array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
  			return $secretSettings['key'] !== $secret;
- 		});
+ 		}));
  	}
  
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
@@ -1108,7 +1108,7 @@ class ConfigModel {
 							}
 
 							if (isset($fileSettings['unify'])) {
-								$updatedFileSettings['unify'] = $fileSettings['unify'];
+								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
 							
 							if (isset($fileSettings['filters'])) {
@@ -1701,6 +1701,30 @@ class ConfigModel {
 		return array_column(array_filter($parserStructure, function($field) {
 				return isset($field['checked']) && $field['checked'] === true;
 			}),'name');
+	}
+	
+	/**
+	 * Get final unify configuration 
+	 * 
+	 * @param array $config - current configuration
+	 * @param array $unifyConfig - unify configuration received
+	 * @return array
+	 */
+	protected function getUnifyConfig($config, $unifyConfig) {
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+			$unifyConfig = $this->getPrepaidUnifyConfig();
+		}
+		
+		return $unifyConfig;
+	}
+	
+	/**
+	 * Get's unify configuration for prepaid input processors (taken from global unify configuration)
+	 * 
+	 * @return array
+	 */
+	protected function getPrepaidUnifyConfig() {
+		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
 
 }

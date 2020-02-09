@@ -488,7 +488,7 @@
 								"connection_type",
 								"aid",
 								"sid",
-								"msisdn"
+								"tax_data"
 							]
 						},
 						{
@@ -506,7 +506,8 @@
 								"apr",
 								"out_balance_usage",
 								"in_balance_usage",
-								"aprice"
+								"aprice",
+								"final_charge"
 							]
 						}
 					]

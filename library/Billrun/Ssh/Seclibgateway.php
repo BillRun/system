@@ -399,5 +399,14 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function changeDir($newPath) {
 		return $this->getConnection()->chdir($newPath);
 	}
+        
+        
+        /**
+	 * Verify that the path is a file. 
+	 * @return boolean true if the path is a file false otherwise.
+	 */
+        public function isFile($path) {
+		return $this->getConnection()->is_file($path);
+	}
 
 }
