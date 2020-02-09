@@ -314,9 +314,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end'], $sid);
 				
 							$subscriberOffers = !is_null($subscriber['offers']) ? $subscriber['offers'] : array();
+							$disconnectedPlans = !empty($subscriber['plan_before_disc']) ? $subscriber['plan_before_disc'] : array();
 							$offers = array();
 							$offerCredits = array();
-							if (!empty($subscriberOffers)) {
+							if (!empty($subscriberOffers) && !empty($disconnectedPlans)) {
+								Billrun_Factory::log()->log("There's a disconnectd plan and offers, there can be only one set", Zend_Log::ALERT);
+							}
+							if (!empty($subscriberOffers) || !empty($disconnectedPlans)) {
+								foreach ($disconnectedPlans as $key => $disconnectedPlan) {
+									$disconnectedPlan['disconnected_plan'] = true;
+									$disconnectedPlans[$key] = $disconnectedPlan;
+								}
+								$subscriberOffers = !empty($disconnectedPlans) && empty($subscriberOffers) ? $disconnectedPlans : $subscriberOffers;
 								foreach ($subscriberOffers as $subscriberOffer) {
 									$offer = array();
 									if (empty($uniquePlanId)) {
@@ -330,6 +339,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									$offer['offer_amount'] = $subscriberOffer['offer_amount'];
+									if (!empty($subscriberOffer['disconnected_plan'])) {
+										$offer['disconnected_plan'] = $subscriberOffer['disconnected_plan'];
+									}
 									if (!isset($subscriberOffer['offer_amount']) && isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
 										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
 										$offerCredit = $this->refundCredit;
