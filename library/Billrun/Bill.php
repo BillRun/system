@@ -1143,7 +1143,15 @@ abstract class Billrun_Bill {
 		}
 		return $this->method;
 	}
-
+	
+	public static function getDistinctBills($query, $distinctField) {
+		if (empty($distinctField)) {
+			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::ALERT);
+			return false;
+		}
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		return $billsColl->distinct($distinctField, $query);
+	}
         /**
          * Function that brings back account's installments, according to the input params.
          * @param int $aid - wanted account id.
