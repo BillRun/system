@@ -634,23 +634,23 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * 
 	 * @param array $accounts - AID as key, array of SID's as values
 	 */
-	public static function preponeInstallments($accounts, $billrunkey = null, $fakeCycle = false) {
+	public static function preponeInstallments($accounts, $billrun_key = null, $fakeCycle = false) {
 		if (empty($accounts)) {
 			return;
 		}
 		
-		if(is_null($billrunkey)){
-			$billrunkey = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
+		if(is_null($billrun_key)){
+			$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 		}
 		$query = [
 			'usaget' => 'charge',
 			'type' => 'credit',
 			'billrun' => [
-				'$gt' => $billrunKey,
+				'$gt' => $billrun_key,
 				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrunkey)),
+				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -695,7 +695,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$update = [
 			'$set' => [
-				'billrun' => $billrunKey,
+				'billrun' => $billrun_key,
 				'preponed' => new MongoDate(),
 			],
 		];
@@ -707,13 +707,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		try {
 			$res = $linesCol->update($updateQuery, $update, $options);
 			if ($res['ok']) {
-				Billrun_Factory::log($res['nModified'] . " future installments were updated for account " . $aid . ", subscribers " . implode(',', $sids) . " to the current billrun " . $billrunKey, Zend_Log::NOTICE);
+				Billrun_Factory::log($res['nModified'] . " future installments were updated for account " . $aid . ", subscribers " . implode(',', $sids) . " to the current billrun " . $billrun_key, Zend_Log::NOTICE);
 			} else {
-				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrun_key
 				. ". error message: " . $res['err'] . ". error code: " . $res['errmsg'], Zend_log::ALERT);
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrun_key
 				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
 		}
 	}

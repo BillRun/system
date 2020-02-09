@@ -62,8 +62,8 @@ class CreditAction extends ApiAction {
 		if(!is_numeric($sid) || !is_numeric($aid)){
 			$this->setError('Illegal sid/aid', $request->getPost());
 			return FALSE;
-		}
-		$accountArray = [$aid => [$sid]];
+		}		
+		$accountArray = [(int)$aid => [(int)$sid]];
 		Billrun_Aggregator_Customer::preponeInstallments($accountArray);
 	}
 	
