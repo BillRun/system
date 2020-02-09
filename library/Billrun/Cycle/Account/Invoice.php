@@ -445,8 +445,8 @@ class Billrun_Cycle_Account_Invoice {
 				return false;
 			}
 			
-			if ($option['anchor_field'] == 'invoice_date' && in_array($invoiceType, $option['invoice_type'])) {
-				return new MongoDate(strtotime($option['relative_time'], $initData['invoice_date']->sec));
+			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
+				return new MongoDate(strtotime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
 		}
 		
