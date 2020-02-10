@@ -63,6 +63,7 @@ class GenerateAction extends Action_Base {
             Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
             Billrun_Factory::log()->log('Something went wrong while generating. Please pay attention.', Zend_Log::ERR);
         }
+        $this->_controller->addOutput("Finished generating.");
         if ($generator->shouldFileBeMoved()) {
             $this->_controller->addOutput("Exporting the file");
             $generator->move();
