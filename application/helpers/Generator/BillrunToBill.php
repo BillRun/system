@@ -55,8 +55,19 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	public function generate() {
 		$invoicesIds = array();
 		foreach ($this->data as $invoice) {
+                        if (method_exists($this, 'lock')) {
+                            if (!$this->lock($invoice['aid'])) {
+                                Billrun_Factory::log("Generator for aid ". $invoice['aid'] ." is already running");
+                                continue;
+                            }
+                        }
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
+                        if (method_exists($this, 'release')) {
+                            if (!$this->release($invoice['aid'])) {
+                                Billrun_Factory::log("Problem in releasing operation");
+                            }
+                        }
 		}
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
@@ -186,30 +197,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery() {	
-		if (!empty($this->invoices)){
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => $this->invoices)),
-				),
-			);
-		}
-		
-		return array();	
+	protected function getConflictingQuery($aidToLock) {
+                return array('filtration' => $aidToLock);
 	}
 	
-	protected function getInsertData() {
+	protected function getInsertData($aidToLock) {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'filtration' => $aidToLock,
 		);
 	}
 	
-	protected function getReleaseQuery() {
+	protected function getReleaseQuery($aidToRelease) {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'filtration' => $aidToRelease,
 			'end_time' => array('$exists' => false)
 		);
 	}
