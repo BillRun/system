@@ -46,8 +46,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
-
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
+		
+                Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 		$this->data = $invoices;
 	}
@@ -197,21 +197,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery($aidToLock) {
-                return array('filtration' => $aidToLock);
+	protected function getConflictingQuery($filtration) {
+                return array('filtration' => $filtration);
 	}
 	
-	protected function getInsertData($aidToLock) {
+	protected function getInsertData($filtration) {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => $aidToLock,
+			'filtration' => $filtration,
 		);
 	}
 	
-	protected function getReleaseQuery($aidToRelease) {
+	protected function getReleaseQuery($filtration) {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => $aidToRelease,
+			'filtration' => $filtration,
 			'end_time' => array('$exists' => false)
 		);
 	}

@@ -18,31 +18,31 @@ trait Billrun_Traits_Api_OperationsLock {
 	 * Returns the data of the operation that request to lock it.
 	 *
 	 */
-	protected abstract static function getInsertData($aidToLock = null);
+	protected abstract static function getInsertData($filtration = null);
 	
 	/**
 	 * Returns the conflicting conditions of the selected operation.
 	 *
 	 */
-	protected abstract function getConflictingQuery($aidToLock = null);
+	protected abstract function getConflictingQuery($filtration = null);
 	
 	/**
 	 * Returns the details of the operation to release.
 	 *
 	 */
-	protected abstract function getReleaseQuery($aidToRelease = null);
+	protected abstract function getReleaseQuery($filtration = null);
 		
 	/**
 	 * Locks operation from get executed again before the first one ended.
 	 *
 	 */
-	public function lock($aidToLock = null) {
+	public function lock($filtration = null) {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
-		$data = static::getInsertData($aidToLock);
+		$data = static::getInsertData($filtration);
 		$newInsert = array(
 			'start_time' => new MongoDate(),
 		);
-		$conflict = static::getConflictingQuery($aidToLock);
+		$conflict = static::getConflictingQuery($filtration);
 		$updateQuery = array_merge($data, $newInsert);
 		if (!empty($conflict)) {
 			$lockCondition = array(
@@ -76,9 +76,9 @@ trait Billrun_Traits_Api_OperationsLock {
 	 * Releasing operation so it can be executed once more.
 	 *
 	 */
-	public function release($aidToRelease = null) {
+	public function release($filtration = null) {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
-		$query = static::getReleaseQuery($aidToRelease);
+		$query = static::getReleaseQuery($filtration);
 		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
 		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new MongoDate())));
 		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
