@@ -58,10 +58,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
 		}
-                if((count($invoicesIds) === 0) && (count($this->invoices) !== 0)){
-                    $invoicesIds = $this->invoices;
-                }
-		$this->handleSendInvoicesByMail($invoicesIds);
+		if(count($invoicesIds) >0){
+			$this->handleSendInvoicesByMail($invoicesIds);
+		}else{
+			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
+		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
