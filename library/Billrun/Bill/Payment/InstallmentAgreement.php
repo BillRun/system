@@ -129,6 +129,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
+			$installment['charge']['not_before'] = $installment['due_date'];
 			$installments[] = new self($installment);
 		}
 
@@ -158,7 +159,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (empty($this->installmentsNum) || empty($this->totalAmount)) {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
-		$this->installments = $this->calcInstallmentDates($this->firstDueDate, 'due_date');
+		for ($index = 0; $index < $this->installmentsNum; $index++) {
+			$this->installments[$index] = array('due_date' => date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec)));
+		}
 		$amountsArray = array_column($this->installments, 'amount');
 		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
 			throw new Exception("All installments must all be with/without amount");

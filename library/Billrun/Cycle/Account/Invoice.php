@@ -401,6 +401,11 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
 								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
 								$this->generateDueDate($billrunDate);
+		$chargeNotBefore = $this->generateChargeDate($options, $initData);
+		if (!empty($chargeNotBefore)) {
+			$initData['charge'] = ['not_before' => $chargeNotBefore];
+		}
+		
 		$this->data->setRawData($initData);
 	}
         
@@ -435,5 +440,30 @@ class Billrun_Cycle_Account_Invoice {
 			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
+	}
+	
+	protected function generateChargeDate($invoice, $initData) {
+		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
+		$invoiceType = @$invoice['attributes']['invoice_type'];
+		
+		// go through all config options and try to match the relevant
+		foreach ($options as $option) {
+			if (in_array($invoiceType, $option['invoice_type']) && $option['anchor_field'] == 'confirm_date') {
+				return false;
+			}
+			
+			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
+				return new MongoDate(strtotime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+			}
+		}
+		
+		// if no config option was matched this could be an on-confirmation invoice - use invoice 'due_date' field
+		if (!empty($initData['due_date'])) {
+			return $initData['due_date'];
+		}
+		
+		// else - get config default value or temporerily use 'invoice_date' with offset
+		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
 }
