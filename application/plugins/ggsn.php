@@ -415,7 +415,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		foreach ($config as $key => $val) {
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
 			if ($tmpVal !== FALSE) {
-				$valueArr[$key] = $tmpVal;
+				$valueArr[preg_replace('/_\d$/','',$key)]  = $tmpVal;
 			}
 		}
 		return count($valueArr) ? $valueArr : false;
