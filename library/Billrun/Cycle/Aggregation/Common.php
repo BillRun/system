@@ -2,6 +2,18 @@
 
 trait Billrun_Cycle_Aggregation_Common {
 
+	protected $exclusionQuery = [];
+	protected $passthroughFields = [];
+	protected $subsPassthroughFields = [];
+	protected $generalOptions=[];
+
+	public function __construct($options = array()) {
+		$this->exclusionQuery = Billrun_Util::getFieldVal($options['exclusion_query'], $this->exclusionQuery);
+		$this->passthroughFields = Billrun_Util::getFieldVal($options['passthrough_fields'], $this->passthroughFields);
+		$this->subsPassthroughFields = Billrun_Util::getFieldVal($options['subs_passthrough_fields'], $this->subsPassthroughFields);
+		$this->generalOptions = $options;
+	}
+
 	/**
 	 *
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle
