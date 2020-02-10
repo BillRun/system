@@ -180,9 +180,11 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		foreach ($expression['arguments'] as $arg) {
 			$arr[] = $arg;
 		}
-		foreach ($expression['extra_params'] as $key => $value) {
-			$arr[] = $value;
-		}
+                if(isset($expression['extra_params'])){
+                    foreach ($expression['extra_params'] as $key => $value) {
+                            $arr[] = $value;
+                    }
+                }
 		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],$arr);
 	}
 	
