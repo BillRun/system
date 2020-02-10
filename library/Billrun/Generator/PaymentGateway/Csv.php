@@ -22,6 +22,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $file_path;
         protected $local_dir;
         protected $encoding = 'utf-8';
+        protected $transactionsCounter = 0;
 
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
@@ -31,9 +32,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		} else if ($this->fixedWidth) {
 			$this->delimiter = '';
 		}
-		if (!$this->validateOptions($options)) {
-			throw new Exception("Missing options when generating payment gateways csv file for file type " . $options['file_type']);
-		}
+		$this->validateOptions($options);
                 if (isset($options['local_dir'])) {
                     $this->local_dir = $options['local_dir'];
                 }
@@ -47,19 +46,16 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
-                        Billrun_Factory::log("File type isn't fixed/separator. No generate was made.", Zend_Log::ALERT);
-			return false;
+                        throw new Exception("File type isn't fixed/separator. No generate was made.");
 		}
 		if (!isset($options['local_dir'])) {
-                        Billrun_Factory::log("File's local_dir is undefined. No generate was made.", Zend_Log::ALERT);
-			return false;
+                        throw new Exception("File's local_dir is undefined. No generate was made.");
 		}
 		if ($this->fixedWidth) {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-						Billrun_Factory::log("Missing padding length definitions for " . $options['file_type'], Zend_Log::DEBUG);
-						return false;
+                                                throw new Exception("Missing padding length definitions for " . $options['file_type']);
 					}
 				}
 			}
@@ -136,6 +132,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents = '';
 				$counter = 0;
 			}
+                        $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;
@@ -205,7 +202,11 @@ class Billrun_Generator_PaymentGateway_Csv {
             $this->headers = $header;
         }
     
-        public function settrailerRows($trailer) {
+        public function setTrailerRows($trailer) {
             $this->trailers = $trailer;
+        }
+        
+        public function getTransactionsCounter (){
+            return $this->transactionsCounter;
         }
 }

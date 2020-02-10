@@ -101,7 +101,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['billing_agreement_id'],
 				'transaction_exhausted' => true,

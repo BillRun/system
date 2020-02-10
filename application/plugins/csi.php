@@ -32,10 +32,10 @@ class csiPlugin extends Billrun_Plugin_Base {
 		$queryData = array();
 		foreach($lines as $line) {
 			if(!$taxCalacualtor->isLineTaxable($line)) { continue; }
-			$subscriber = new Billrun_Subscriber_Db();
-			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
-			$account = new Billrun_Account_Db();
-			$account->load(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			$subscriber = Billrun_Factory::subscriber();
+			$subscriber->loadSubscriberForQuery(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			$account = Billrun_Factory::account();
+			$account->loadAccountForQuery(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			
 			$singleData = $this->constructSingleRowData($line, $subscriber->getSubscriberData(), $account->getCustomerData());
 			$queryData[] = $singleData;

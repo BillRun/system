@@ -14,14 +14,16 @@
  */
 class Billrun_Discount_Subscriber extends Billrun_Discount {
 
+	protected static $cache;
 
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
         $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
 		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$all' => array('*' => '*.name') ));
+		$cache = $this->initCache();
     }
 
-    /**
+	/**
      * Check a single discount if an account is eligible to get it.
      * (TODO change this hard coded logic to something more flexible)
      * @param type $accountInvoice the account data to check the discount against	 
@@ -43,9 +45,32 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
+	public static function getByNameAndTime($name, $time) {
+		if (isset(static::$cache['by_key'][$name])) {
+			foreach (static::$cache['by_key'][$name] as $revision) {
+				if ($revision['from'] <= $time && (!isset($revision['to']) || is_null($revision['to']) || $revision['to'] >= $time)) {
+					return $revision;
+				}
+			}
+		}
+		$discountsColl = Billrun_Factory::db()->getCollection('discounts');
+		$query = array_merge(['key' => $name], Billrun_Utils_Mongo::getDateBoundQuery($time->sec));
+		$results = $discountsColl->query($query)->cursor()->current();
+		if($results) {
+			static::$cache['by_key'][$results['key']][] = $results->getRawData();
+			return $results;
+		}
+		return false;
+	}
 
     //==================================== Protected ==========================================
 
+	protected function initCache() {
+		if (empty(static::$cache)) {
+			$this->cache = ['by_key' => []];
+		}
+	}
+	
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$totals ) {
 		$retPrice= $simpleDiscountPrice;
 		$pricingData = [];
@@ -92,8 +117,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
 			foreach($matchedDocs as $matchedDoc ) {
-				foreach($matchedDoc as $matchedType ) {
+				foreach($matchedDoc as $type => $matchedType ) {
 					foreach($matchedType as $matched) {
+						if ($type == 'flat' && !empty($matched['name']) && !empty($this->discountData['params']['plan']) && $this->discountData['params']['plan'] != $matched['name']) {
+							continue;
+						}
+						if ($type == 'service' && !empty($matched['name']) && !empty($this->discountData['params']['service']) && !in_array($matched['name'], $this->discountData['params']['service'])) {
+							continue;
+						}
 						if(!empty($matched['start']) && $cover['start'] < $matched['start'] && $cover['end'] > $matched['start']) {
 							$cover['start'] = $matched['start'];
 						}

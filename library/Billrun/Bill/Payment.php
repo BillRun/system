@@ -38,6 +38,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
+	protected $known_sources;
+	
 	protected static $aids;
 	/**
 	 * 
@@ -61,6 +63,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['aid'] = intval($options['aid']);
 			$this->data['type'] = $this->type;
 			$this->data['amount'] = round(floatval($options['amount']), 2);
+                        if(isset($options['is_denial'])){
+                            $this->data['is_denial'] = $options['is_denial'];
+                        }
 			if (isset($options['due'])) {
 				$this->data['due'] = round($options['due'], 2);
 			} else {
@@ -84,9 +89,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
+				if ($this->data['due'] >= 0) {
+					$this->data['left_to_pay'] = 0; 
+				} else {
+					$this->data['left'] = 0;
+				}
 			}
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
+			}
+			if (isset($options['pg_request'])) {
+				$this->data['pg_request'] = $options['pg_request'];
 			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
@@ -122,6 +135,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
 				}
+			}
+			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			if(isset($options['source'])){
+				if(!in_array($options['source'], $this->known_sources)){
+					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
+				}
+				$this->data['source'] = $options['source'];
 			}
 		} else {
 			throw new Exception('Billrun_Bill_Payment: Insufficient options supplied.');
@@ -203,7 +223,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getCancellationPayment() {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['due'] = $rawData['due'] * -1;
@@ -215,17 +235,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return 'Billrun_Bill_Payment_' . str_replace(' ', '', ucwords(str_replace('_', ' ', $paymentMethod)));
 	}
 
-	public function getPaymentMethod() {
-		return $this->method;
-	}
-
 	/**
 	 * 
 	 * @param array $rejection
 	 * @return Billrun_Bill_Payment
 	 */
 	public function getRejectionPayment($response) {
-		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getPaymentMethod());
+		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
 		unset($rawData['_id']);
 		$rawData['original_txid'] = $this->getId();
@@ -521,14 +537,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
-		$query['type'] = "account";
-		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
-		foreach ($subscribers as $subscriber) {
-			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		foreach ($accounts as $account) {
+			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
@@ -536,7 +550,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$billsDetails = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
-				$subscriber = $subscribers_in_array[$billDetails['aid']];
+				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = $subscriber['payment_gateway']['active'];
 				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
@@ -981,5 +995,30 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
+	}
+	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
+	}
+	
+	/**
+	 * Checkes if possible to deny a requested amount according to the bill amount.
+	 * @param $denialAmount- the amount to deny.
+	 * 
+	 * return true when the sum of denied amount is larger than the bill amount
+	 */
+	public function isAmountDeniable($denialAmount) {
+		$alreadyDenied = 0;
+		if (isset($this->data['denied_amount'])) {
+			$alreadyDenied = $this->data['denied_amount'];
+		}
+		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
+		return $totalAmountToDeny > $this->data['amount'];
 	}
 }

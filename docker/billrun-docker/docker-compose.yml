@@ -1,0 +1,65 @@
+version: '2'
+
+services:
+    web:
+        image: nginx:latest
+        container_name: nginx
+        ports:
+            - "8080:80"
+        restart: always
+        volumes:
+            - ${BILLRUN_DIR}:/billrun
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+            - "mongodb"
+        networks:
+            - core-network
+    php:
+        build: ./billrun-php7.1
+        image: billrun-php7.1
+        container_name: billrun
+        restart: always
+        volumes:
+            - ${BILLRUN_DIR}:/billrun
+        networks:
+            - core-network
+    mongodb:
+        image: mongo:3.6
+        container_name: billrun-mongo
+        restart: always
+        volumes:
+            - ${BILLRUN_DIR}:/billrun
+            - ../persist/data/db/mongo-3.6:/data/db
+            - ../persist/backup:/backup
+            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+        networks:
+            - core-network
+        ports:
+            - 27018:27017
+#        command: 
+#            - "mongo billing_cloud /billrun/mongo/create.ini"
+#    memcache:
+#        image: memcached
+#        container_name: memcache
+#        restart: always
+#        networks:
+#            - core-network
+#    smtp:
+#        image: python:2.7
+#        container_name: smtp
+#        restart: always
+#        command:
+#            - python 
+#            - -m 
+#            - smtpd 
+#            - -n 
+#            - -c 
+#            - DebuggingServer 
+#            - 0.0.0.0:25
+#        networks:
+#            - core-network
+
+networks:
+    core-network:
+        driver: bridge

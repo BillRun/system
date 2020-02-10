@@ -301,7 +301,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function updateLeft() {
-		if ($this->getDue() < 0) {
+		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
 			foreach ($this->getPaidBills() as $paidBills) {
 				$this->data['left'] -= array_sum($paidBills);
@@ -313,7 +313,7 @@ abstract class Billrun_Bill {
 	}
 		
 	protected function updateLeftToPay() {
-		if ($this->getDue() > 0) {
+		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
 			foreach ($this->getPaidByBills() as $paidByBills) {
 				$this->data['left_to_pay'] -= array_sum($paidByBills);
@@ -410,6 +410,9 @@ abstract class Billrun_Bill {
 	}
 
 	protected function recalculatePaymentFields($billId = null, $status = null) {
+		if ($this->getBillMethod() == 'denial') {
+			return $this;
+		}
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
@@ -426,7 +429,6 @@ abstract class Billrun_Bill {
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
-				
 		} else if ($this->getDue() < 0){
 			$amount = 0;
 			if (isset($this->data['pays']['inv'])) {
@@ -533,8 +535,6 @@ abstract class Billrun_Bill {
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		// white list exists but aids not included
@@ -552,14 +552,13 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$aidsQuery = array('aid' => array('$in' => $aids));			
+			$accountQuery = array('aid' => array('$in' => $aids));			
 		} else if (!empty($exempted)){
-			$aidsQuery = array('aid' => array('$nin' => $aids));
+			$accountQuery = array('aid' => array('$nin' => $aids));
 		} else {
-			$aidsQuery = array();
+			$accountQuery = array();
 		}
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {
@@ -624,7 +623,7 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
-	public function getDueBeforeVat() {
+        public function getDueBeforeVat() {
 		return isset($this->data['due_before_vat']) ? $this->data['due_before_vat'] : 0;
 	}
 
@@ -1106,4 +1105,74 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
+	
+	/**
+	 * 
+	 * @param type $aid
+	 * @param type $startBillrunKey - billrun key to start the search from it's beginning.
+	 * @param type $endBillrunKey -  - billrun key to end the search to it's beginning (excluded).
+	 * @param type $type
+	 * @param type $method
+	 * @return array of relevant bills
+	 */
+	public static function getBillsByKeysRangeAndMethod($aid, $startBillrunKey, $endBillrunKey, $type = 'rec', $method = false) {
+		$startBillrun = new Billrun_DataTypes_CycleTime($startBillrunKey);
+		$endBillrun = new Billrun_DataTypes_CycleTime($endBillrunKey);
+		$query['type'] = $type;
+		$query['aid'] = $aid;
+		$query['due_date'] = array('$gte' => new MongoDate($startBillrun->start()), '$lt' => new MongoDate($endBillrun->start()));
+		if ($method) {
+			$query['method'] = $method;
+		}
+		return self::getBills($query);
+	}
+
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
+	
+	public function getBillMethod() {
+		if (empty($this->method)) {
+			return null;
+		}
+		return $this->method;
+	}
+	
+	public static function getDistinctBills($query, $distinctField) {
+		if (empty($distinctField)) {
+			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::ALERT);
+			return false;
+		}
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		return $billsColl->distinct($distinctField, $query);
+	}
+        /**
+         * Function that brings back account's installments, according to the input params.
+         * @param int $aid - wanted account id.
+         * @param string $urt_start_billrun - urt time from this billrun (inclusive).
+         * @param string $urt_end_billrun - urt time to this billrun (inclusive).
+         * @param string $ct_start_billrun - creation time from this billrun (inclusive).
+         * @param string $ct_end_billrun - creation time to this billrun (exclusive).
+         * @return array of relevant installments
+         */
+        public static function getInstallments ($aid, $urt_start_billrun = "197101", $urt_end_billrun = "210001", $ct_start_billrun = "197101", $ct_end_billrun = "999912"){
+            $query['aid'] = $aid;
+            $query = array(
+                'aid' => $aid,
+                'method' => "installment_agreement",
+                'creation_time' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_start_billrun)),
+                                         '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_end_billrun))
+                                        ),
+                'urt' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_start_billrun)),
+                               '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_end_billrun))
+                                        ),
+            );
+            return static::getBills($query);
+        }
 }

@@ -19,7 +19,6 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 	 * @var string
 	 */
 	protected $source = 'CreditGuard';
-	protected $orphanTime = '1 hour ago';
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -28,7 +27,7 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 		$query = array(
 			'source' => $this->source,
 			'key' => $key,
-			'process_time' => array('$gt' => new MongoDate(strtotime($this->orphanTime))),
+			'process_time' => array('$exists' => true),
 		);
 
 		$cgLog = $this->collection->query($query)->cursor();
@@ -63,6 +62,7 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 	}
 
 	protected function generateKeyFromOptions($options) {
+		$options['time'] = time();
 		return md5(serialize($options));
 	}
 
