@@ -113,14 +113,14 @@ class OnetimeinvoiceAction extends ApiAction {
         return  $this->sendBackInvoice($pdfPath);
     }
 	
-	protected function getInsertData() {
+	protected function getInsertData($filtration = null) {
 	return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
 		);
 	}
 	
-	protected function getConflictingQuery() {
+	protected function getConflictingQuery($filtration = null) {
 		if (!empty($this->aid)) {
 			return array(
 				'$or' => array(
@@ -131,7 +131,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 	}
 	
-	protected function getReleaseQuery() {
+	protected function getReleaseQuery($filtration = null) {
 		return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aid) ? 'all' : $this->aid),

@@ -370,18 +370,18 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		Billrun_Factory::log()->log('Failed removing empty file ' . $this->file_path, Zend_Log::INFO);
 	}
 	
-	protected function getConflictingQuery() {
+	protected function getConflictingQuery($filtration = null) {
 		return array();
 	}
 
-	protected function getInsertData() {
+	protected function getInsertData($filtration = null) {
 		return array(
 			'action' => 'generate_pg_file',
 			'filtration' => 'all',
 		);
 	}
 
-	protected function getReleaseQuery() {
+	protected function getReleaseQuery($filtration = null) {
 		return array(
 			'action' => 'generate_pg_file',
 			'filtration' => 'all',

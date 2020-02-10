@@ -197,18 +197,18 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery($filtration) {
+	protected function getConflictingQuery($filtration = null) {
                 return array('filtration' => $filtration);
 	}
 	
-	protected function getInsertData($filtration) {
+	protected function getInsertData($filtration = null) {
 		return array(
 			'action' => 'confirm_cycle',
 			'filtration' => $filtration,
 		);
 	}
 	
-	protected function getReleaseQuery($filtration) {
+	protected function getReleaseQuery($filtration = null) {
 		return array(
 			'action' => 'confirm_cycle',
 			'filtration' => $filtration,
