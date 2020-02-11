@@ -25,9 +25,13 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
+		$payment->setExtraFields($this->billSavedFields, 'pg_response');
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
+				if ($paymentResponse['stage'] == 'Rejected') {
+					$payment->updatePastRejectionsOnProcessingFiles();
+				}
                 if ($paymentResponse['stage'] == 'Completed') {
                         $payment->markApproved($paymentResponse['stage']);
                         $billData = $payment->getRawData();
@@ -100,6 +104,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                             $payment->setPending(false);
                             $payment->updateConfirmation();
                             $payment->setPaymentStatus($response, $this->gatewayName);
+                            $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
                             Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
                         }else{
                             Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
@@ -114,6 +119,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				$rejection->save();
 				$payment->markRejected();
                                 $this->informationArray['transactions']['rejected']++;
+                                $this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
                                 $message = 'Transaction ' . $payment->getId() . ' already rejected';

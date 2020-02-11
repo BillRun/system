@@ -52,7 +52,8 @@ trait Billrun_Traits_ForeignFields  {
 			}
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
-					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));
+					$pathToInsert = $this->buildPathToInsert($fieldConf);
+					Billrun_Util::setIn($foreignFieldsData, $pathToInsert, $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));	
 				} else {
 					foreach ($foreignEntities[$fieldConf['foreign']['entity']] as $idx => $foreignEntity) {
 						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']));
@@ -86,5 +87,18 @@ trait Billrun_Traits_ForeignFields  {
 		}
 
 		return $translated;
+	}
+	
+	protected function buildPathToInsert($foreignConf) {
+		$entity = $foreignConf['foreign']['entity'];
+		switch ($entity) {
+			case 'tax':
+				$pathToInsert = $foreignConf['foreign']['field'];
+				break;
+			default:
+				$pathToInsert = $foreignConf['field_name'];
+				break;
+		}
+		return $pathToInsert;
 	}
 }

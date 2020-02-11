@@ -224,7 +224,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$aggregateOptions = array(
 			'passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
-			'subs_passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
+			'subs_passthrough_fields' => $this->getAggregatorConfig('subscriber.passthrough_data', array()),
 		);
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
@@ -653,7 +653,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (!empty($accountsToPrepone)) {
-			return $this->preponeInstallments($accountsToPrepone);
+			return $this->preponeInstallments($accountsToPrepone, $this->getCycle()->key(), $this->fakeCycle);
 		}
                 return $accountsToPrepone;
 	}
@@ -663,21 +663,23 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * 
 	 * @param array $accounts - AID as key, array of SID's as values
 	 */
-	protected function preponeInstallments($accounts) {
+	public static function preponeInstallments($accounts, $billrun_key = null, $fakeCycle = false) {
 		if (empty($accounts)) {
 			return;
 		}
 		
-		$billrunKey = $this->getCycle()->key();
+		if(is_null($billrun_key)){
+			$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
+		}
 		$query = [
 			'usaget' => 'charge',
 			'type' => 'credit',
 			'billrun' => [
-				'$gt' => $billrunKey,
+				'$gt' => $billrun_key,
 				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new MongoDate($this->getCycle()->end()),
+				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -706,7 +708,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return;
 		}
 		
-		if ($this->fakeCycle) {
+		if ($fakeCycle) {
 			return iterator_to_array($linesToUpdate);
 		}
 		
@@ -722,7 +724,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$update = [
 			'$set' => [
-				'billrun' => $billrunKey,
+				'billrun' => $billrun_key,
 				'preponed' => new MongoDate(),
 			],
 		];
@@ -734,13 +736,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		try {
 			$res = $linesCol->update($updateQuery, $update, $options);
 			if ($res['ok']) {
-				Billrun_Factory::log($res['nModified'] . " future installments were updated for account " . $aid . ", subscribers " . implode(',', $sids) . " to the current billrun " . $billrunKey, Zend_Log::NOTICE);
+				Billrun_Factory::log($res['nModified'] . " future installments were updated for account " . $aid . ", subscribers " . implode(',', $sids) . " to the current billrun " . $billrun_key, Zend_Log::NOTICE);
 			} else {
-				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrun_key
 				. ". error message: " . $res['err'] . ". error code: " . $res['errmsg'], Zend_log::ALERT);
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrun_key
 				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
 		}
 	}
@@ -774,6 +776,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
+				//Save configurable data
+				$aggregatedEntity->addConfigurableData();
 				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
 				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
 			}
