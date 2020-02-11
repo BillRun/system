@@ -249,6 +249,7 @@ class Billrun_Billrun {
 			),
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
@@ -1057,7 +1058,7 @@ class Billrun_Billrun {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
+				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
@@ -1083,10 +1084,19 @@ class Billrun_Billrun {
 		return @$this->data['invoice_id'];
 	}
 	
+        /**
+         * Function that brings back account last billrun object
+         * @param type $aid
+         * @param type $currentBillrunKey
+         * @return array last billrun object
+         */
 	public static function getAccountLastBillrun($aid, $currentBillrunKey) {
-		$query['aid'] = $aid;
-		$query['billrun_key'] = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
-		return Billrun_Factory::db()->getCollection('billrun')->query($query)->cursor()->current();
+                $query['aid'] = $aid;
+                $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
+                if (empty($billrun)) {
+                    return null;
+                }
+                return $billrun;
 	}
 }
 

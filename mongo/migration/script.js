@@ -38,6 +38,7 @@ for (var field_key in fields) {
 	}
 	if (fields[field_key].field_name === "invoice_label") {
 		invoice_label_found = true;
+		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -61,12 +62,23 @@ if(!invoice_label_found) {
 		"display":true,
 		"editable":true,
 		"field_name":"invoice_label",
-		"default_value":"retail",
+		"default_value":"",
 		"show_in_list":true,
-		"title":"Invoice label",
+		"title":"Invoice label"
 	});
 }
 lastConfig['rates']['fields'] = fields;
+
+var invoice_language_field = {
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_language",
+		"default_value":"en_GB",
+		"show_in_list":false,
+		"title":"Invoice language"
+	}
+lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
@@ -696,6 +708,8 @@ db.log.find({"source":"audit"}).forEach(
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
 db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
 
 // taxes collection indexes
 db.createCollection('taxes');

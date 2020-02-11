@@ -136,7 +136,7 @@ class Billrun_Cycle_Account_Invoice {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
+				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
@@ -165,6 +165,7 @@ class Billrun_Cycle_Account_Invoice {
 			),
 			'vat' => $vat, //TODO remove 2017-01-29
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
@@ -203,7 +204,9 @@ class Billrun_Cycle_Account_Invoice {
 	}
 
 	public function addConfigurableData() {
+		Billrun_Factory::dispatcher()->trigger('beforeAddInvoiceConfigurableData', array($this, &$this->data));
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
+		Billrun_Factory::dispatcher()->trigger('afterAddInvoiceConfigurableData', array($this, &$this->data));
 	}
 	/**
 	 * 
@@ -216,7 +219,9 @@ class Billrun_Cycle_Account_Invoice {
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
 			'EndTime' => $invoiceData['end_date']->sec,
-			'PreviousBillrunKey' => Billrun_Billrun::getAccountLastBillrun($invoiceData['aid'], $invoiceData['billrun_key']));
+			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
+			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key'])
+        );
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
@@ -388,12 +393,19 @@ class Billrun_Cycle_Account_Invoice {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
-		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$isOneTimeInvoice = isset($options['attributes']['invoice_type']) && $options['attributes']['invoice_type'] == 'immediate' ? true : false;
+		$invoiceDate = $isOneTimeInvoice ? strtotime($options['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
+		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
 								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
 								$this->generateDueDate($billrunDate);
+		$chargeNotBefore = $this->generateChargeDate($options, $initData);
+		if (!empty($chargeNotBefore)) {
+			$initData['charge'] = ['not_before' => $chargeNotBefore];
+		}
+		
 		$this->data->setRawData($initData);
 	}
         
@@ -428,5 +440,30 @@ class Billrun_Cycle_Account_Invoice {
 			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
 		}
 		return $invoicedLines;
+	}
+	
+	protected function generateChargeDate($invoice, $initData) {
+		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
+		$invoiceType = @$invoice['attributes']['invoice_type'];
+		
+		// go through all config options and try to match the relevant
+		foreach ($options as $option) {
+			if (in_array($invoiceType, $option['invoice_type']) && $option['anchor_field'] == 'confirm_date') {
+				return false;
+			}
+			
+			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
+				return new MongoDate(strtotime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+			}
+		}
+		
+		// if no config option was matched this could be an on-confirmation invoice - use invoice 'due_date' field
+		if (!empty($initData['due_date'])) {
+			return $initData['due_date'];
+		}
+		
+		// else - get config default value or temporerily use 'invoice_date' with offset
+		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
 }
