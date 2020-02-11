@@ -46,7 +46,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
 
 		$collection = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines,$collection);
+		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
 
 	//--------------------------------------------------------------------------------------------
@@ -185,8 +185,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				'passthrough' => $addedPassthroughFields['project'],
 			)
 		);
-		$collection = Billrun_Factory::db()->subscribersCollection();
-		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
+		return $pipelines;
 	}
 	
 	/**
