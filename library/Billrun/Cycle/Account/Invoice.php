@@ -398,9 +398,7 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
-								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
-								$this->generateDueDate($billrunDate);
+		$initData['due_date'] = $this->generateDueDate($billrunDate);
 		$chargeNotBefore = $this->generateChargeDate($options, $initData);
 		if (!empty($chargeNotBefore)) {
 			$initData['charge'] = ['not_before' => $chargeNotBefore];
