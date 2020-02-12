@@ -1907,6 +1907,9 @@ class Billrun_Util {
 	 * @return aggregated unix timestamp
 	 */
 	public static function calcRelativeTime($relativeTimes, $startTime) {
+		if (!is_array($relativeTimes)) {
+			return strtotime($relativeTimes, $startTime);
+		}
 		foreach ($relativeTimes as $relativeTime) {
 			$actualTime = strtotime($relativeTime, $startTime);
 			$startTime = $actualTime;

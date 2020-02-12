@@ -453,7 +453,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			
 			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
-				return new MongoDate(strtotime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
 		}
 		
