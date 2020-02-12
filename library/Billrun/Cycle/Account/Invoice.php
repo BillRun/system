@@ -132,11 +132,11 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param string $billrunDate
 	 * @return \MongoDate
 	 */
-	protected function generateDueDate($billrunDate) {
+	protected function generateDueDate($billrunDate, $invoiceType) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
-			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) { //TODO: transfer the entity instead of just array with invoice_type
+				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
@@ -398,7 +398,8 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] = $this->generateDueDate($billrunDate);
+		$invoiceType = isset($options['attributes']['invoice_type']) ? $options['attributes']['invoice_type'] : null;
+		$initData['due_date'] = $this->generateDueDate($billrunDate, $invoiceType);
 		$chargeNotBefore = $this->generateChargeDate($options, $initData);
 		if (!empty($chargeNotBefore)) {
 			$initData['charge'] = ['not_before' => $chargeNotBefore];
