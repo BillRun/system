@@ -174,17 +174,6 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			)),
 		);
 		
-		$pipelines[] = $this->getSortPipeline();
-
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => '$_id',
-				'plan_dates' => 1,
-				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project'],
-			)
-		);
 		return $pipelines;
 	}
 	
