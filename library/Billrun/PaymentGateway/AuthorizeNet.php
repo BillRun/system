@@ -313,7 +313,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'payment' => $this->buildTransactionPayment($gatewayDetails),
 			],
 		];
-		if ($this->isApplePayRequest($request)) {
+		if ($this->isApplePayRequest($body)) {
 			$body['validationMode'] = 'liveMode';
 		}
 		return $this->encodeRequest($root, $body);
