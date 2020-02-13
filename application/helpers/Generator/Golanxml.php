@@ -714,6 +714,9 @@ class Generator_Golanxml extends Billrun_Generator {
 			
 			$alreadyUsedUniqueIds = array();
 			foreach ($plans as $planToCharge) {
+				if (!isset($subscriber['breakdown'])) {
+					continue;
+				}
 				$currentUniqueId = $planToCharge['id'] . strtotime($planToCharge['start_date']);
 				$planUniqueIds = $this->getAllSubUniquePlanIds($plans, $subscriber['breakdown'][$planToCharge['plan']], $alreadyUsedUniqueIds);
 				array_push($planUniqueIds, $currentUniqueId);
@@ -724,26 +727,36 @@ class Generator_Golanxml extends Billrun_Generator {
                         continue;
 					}
 					$alreadyUsedUniqueIds[$planUniqueId] = $planToCharge['plan'];
+					$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost'] : 0;
+					$out_of_plan_usage_entry_COST_WITHOUTVAT = (!empty($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']) ?
+											array_sum(array_map(['Generator_Golanxml','sumBreakDownCosts'] ,$subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan'])) : 0) +
+										(!empty($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']) ?
+											array_sum(array_map(['Generator_Golanxml','sumBreakDownCosts'] ,$subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan'])) : 0);
+
+					$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
+					$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
 					$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 					$offerId = substr($planUniqueId, 0, -10);
 					$this->writer->writeElement('OFFER_ID', $offerId);
 					$offerStartDate = substr($planUniqueId, -10);
 					if ($offerStartDate < Billrun_Util::getStartTime($billrun_key)) {
-						$offerUniqueId = $sid . '_' . $offerId . '_0';
+						$lateUsages = 1;
+						$lateCharges = (abs($out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST + $out_of_plan_usage_entry_COST_WITHOUTVAT) >= 0.005) ? 1 : 0;
 					} else {
-						$offerUniqueId = $sid . '_' . $offerId . '_' . $offerStartDate;
+						$lateCharges = 0;
+						$lateUsages = 0;
 					}
+					$this->writer->writeElement('LATE_CHARGES', $lateCharges);
+					$this->writer->writeElement('LATE_USAGES', $lateUsages);
+					$offerUniqueId = $sid . '_' . $offerId . '_' . $offerStartDate;
 					$this->writer->writeElement('OFFER_UNIQUE_ID', $offerUniqueId);
 					$this->writer->startElement('BREAKDOWN_TOPIC');
 					$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 					$this->writer->writeElement('UNITS', 1);
-					$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base']['service']['cost'] : 0;
 					$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
-					$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
 					$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
-					$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
 					$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
 					$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
 					$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
@@ -2106,4 +2119,21 @@ EOI;
 		}
 		return false;
 	}
+
+	public static function sumBreakDownCosts($breakdownSection){
+		$ret=0;
+		foreach($breakdownSection as $a){
+			foreach($a as $b){
+					if(isset($b['cost'])) {
+						$ret += $b['cost'];
+					} else if(is_array($b)) {
+						foreach($b as $c) {
+							$ret += (isset($c['cost'])? $c['cost'] : 0);
+						}
+					}
+			}
+		};
+		return $ret;
+}
+
 }
