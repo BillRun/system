@@ -13,8 +13,9 @@ class Billrun_Account_External extends Billrun_Account {
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
 	
 	protected $remote;
-
-	public function __consrtuct($options = []) {
+    protected $remote_billable_url;
+                     
+	public function __construct($options = []) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
@@ -34,7 +35,7 @@ class Billrun_Account_External extends Billrun_Account {
 				$requestParams['aids'] = $aids;
 			}
 			//Actually  do the request
-			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);
 
 			//Check for errors
 			if(empty($results)) {
