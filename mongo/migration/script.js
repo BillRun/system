@@ -24,7 +24,7 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
-//===============================================================================
+// =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
