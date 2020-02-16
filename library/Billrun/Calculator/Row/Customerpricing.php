@@ -121,6 +121,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * This holds the services used when pricing the row.
 	 */
 	protected $servicesUsed = array();
+	
+	/**
+	 *
+	 * @var boolean - is multi cycle day mode
+	 */
+	protected $multi_cycle_day = false;
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);

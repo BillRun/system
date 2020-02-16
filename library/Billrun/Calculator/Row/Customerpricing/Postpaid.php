@@ -21,6 +21,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
 		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
 		$this->nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($this->nextActiveBillrun);
+		$this->multi_cycle_day = Billrun_Factory::config()->getConfigValue('billrun.multi_cycle_day', false);
 	}
 
 	protected function validate() {
@@ -33,6 +34,9 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
+//		if($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])){
+//			$activeBillrunEndTime
+//		}
 		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
 			$urt = $this->row['urt']->sec;
 			if ($urt <= $this->activeBillrunEndTime) { // lines in current billing cycle

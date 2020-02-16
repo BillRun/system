@@ -489,7 +489,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
-		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
+		$runningTimeForeign = [];
+		if(Billrun_Factory::config()->getConfigValue('billrun.multi_cycle_day', false)) {
+			$runningTimeForeign[] = [
+				'field_name' => 'foreign.account.invoicing_day',
+				'foreign' => [
+					'entity' => 'account',
+					'field' => 'invoicing_day'
+				]
+			];
+		}
+		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData, $runningTimeForeign);
 		if((!is_null($subscriber) || !empty($enrichedData)) ||
 				is_null($subscriber) || !empty($foreignData)) {
 			if($row instanceof Mongodloid_Entity) {

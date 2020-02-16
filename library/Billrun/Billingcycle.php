@@ -87,7 +87,7 @@ class Billrun_Billingcycle {
 		}
 		
 		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+			$dayofmonth = !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', 1) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		}
 		$format = "Ym";
 		if (date("d", $timestamp) < $dayofmonth) {
