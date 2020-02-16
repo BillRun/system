@@ -254,6 +254,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function getCustomerPossiblyUpdatedFields() {
 		$subscriber = Billrun_Factory::subscriber();
 		$configFields = Billrun_Factory::config()->getConfigValue('customer.calculator.row_enrichment', array());
+                $configFields = array_map(function($fieldObj) {return current(array_keys($fieldObj));}, $configFields);
 		$availableFileds = $subscriber->getAvailableFields();
 		$customerExtraData = $subscriber->getCustomerExtraData();
 		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'), $configFields);

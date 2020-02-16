@@ -25,27 +25,7 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 }
 
 //===============================================================================
-function addExtraDataToConfig(lastConf, fieldConf, entityName, FieldsName){
-    	if (typeof lastConf[entityName] === 'undefined' ) {
-		lastConf[entityName] = {FieldsName: []};
-	}
-        if (typeof lastConf[entityName][FieldsName] === 'undefined' ) {
-		lastConf[entityName][FieldsName] = [];
-	}
-	var fields = lastConf[entityName][FieldsName];
-	var found = false;
-	for (var field_key in fields) {
-		if (fields[field_key].field_name === fieldConf.field_name) {
-			found = true;
-		}
-	}
-	if(!found) {
-		fields.push(fieldConf);
-	}
-	lastConf[entityName]['extra_data'] = fields;
 
-	return lastConf;
-}
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -409,18 +389,6 @@ if(!found) {
 	});
 }
 lastConfig['subscribers']['subscriber']['fields'] = fields;
-
-
-// BRCD-2254 Add extra_fields to Subscribers
-var servicesDataExtraField = {
-    "field_name" : "services_data"
-};
-lastConfig['subscribers'] = addExtraDataToConfig(lastConfig['subscribers'], servicesDataExtraField, 'subscriber' , "extra_data");
-
-var subscriberExtraField ={
-    "field_name" : "subscriber"
-};
-lastConfig['subscribers'] = addExtraDataToConfig(lastConfig['subscribers'], subscriberExtraField, 'subscriber', "extra_data");
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
 db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
