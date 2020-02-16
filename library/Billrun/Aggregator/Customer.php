@@ -272,13 +272,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
-            	if (empty($aids)) {
-			Billrun_Factory::log("Removing flat and service lines", Zend_Log::DEBUG);
-			Billrun_Factory::log("Removing billrun of " . $billrunKey, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
-			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
-		}
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$eq' => 1));
@@ -304,13 +297,26 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
+                if (empty($aids)) {
+			Billrun_Factory::log("Removing flat and service lines", Zend_Log::DEBUG);
+		} else {
+			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
+		}
 		$linesColl->remove($linesRemoveQuery);
-		$billrunColl->remove($billrunRemoveQuery);
-		if (empty($aids)) {
+                if (empty($aids)) {
 			Billrun_Factory::log("Removed flat and service lines", Zend_Log::DEBUG);
-			Billrun_Factory::log("Removed billrun of " . $billrunKey, Zend_Log::DEBUG);
 		} else {
 			Billrun_Factory::log("Removed flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
+		}
+                if (empty($aids)) {
+			Billrun_Factory::log("Removing billrun of " . $billrunKey, Zend_Log::DEBUG);
+		} else {
+			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
+		}
+		$billrunColl->remove($billrunRemoveQuery);
+		if (empty($aids)) {
+			Billrun_Factory::log("Removed billrun of " . $billrunKey, Zend_Log::DEBUG);
+		} else {
 			Billrun_Factory::log("Removed billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
 		}
 	}
