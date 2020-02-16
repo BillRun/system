@@ -12,7 +12,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static protected $type = 'external';
 	
-	protected static $queryBaseKeys = [ 'limit'];
+	protected static $queryBaseKeys = [ 'limit','id'];
 	
 	protected $remote;
 		
@@ -29,13 +29,19 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		return array();
 	}
 
-	protected function getSubscriberDetails($queries) {
+	protected function getSubscriberDetails($queries, $globalLimit = FALSE, $globalDate = FALSE) {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			$externalQuery['params'] = $query;
+			$externalQuery['query'][] = $query;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, ['query'=>$externalQuery]), true);
+		if($globalLimit) {
+			$externalQuery['limit'] = $globalLimit;
+		}
+		if($globalDate) {
+			$externalQuery['date'] = $globalDate;
+		}
+		$results = json_decode(Billrun_Util::sendRequest($this->remote,$externalQuery), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -60,6 +66,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			unset($query['EXTRAS']);
 		}
 		$params = [];
+
 		foreach ($query as $key => $value) {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$params[] = [

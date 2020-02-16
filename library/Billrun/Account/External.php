@@ -65,7 +65,7 @@ class Billrun_Account_External extends Billrun_Account {
 	 * Overrides parent abstract method
 	 */
 	protected function getAccountsDetails($query) {
-		$res = Billrun_Util::sendRequest($this->remote, json_encode($query));
+		$res = Billrun_Util::sendRequest($this->remote, json_encode(['query' => $query]));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
