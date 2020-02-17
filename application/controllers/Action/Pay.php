@@ -309,8 +309,8 @@ class PayAction extends ApiAction {
 		if (!empty($request->get('due_date'))) {
 			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
 		}
-		if (!empty($request->get('do_not_charge_before'))) {
-			$chargeNotBefore = strtotime($request->get('do_not_charge_before'));	
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
 			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
 		}
 		$params['autoload'] = true;
