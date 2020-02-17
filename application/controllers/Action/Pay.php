@@ -196,8 +196,8 @@ class PayAction extends ApiAction {
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
-		if (!empty($request->get('do_not_charge_before'))) {
-			$chargeNotBefore = strtotime($request->get('do_not_charge_before'));	
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
 			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
 		}
 Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
