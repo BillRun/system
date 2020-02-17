@@ -34,17 +34,19 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-//		if($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])){
-//			$activeBillrunEndTime
-//		}
+		$activeBillrun = ($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(),$this->row['foreign']['account']['invoicing_day']) : $this->activeBillrun; 
+		$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun);
+		$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
+		$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun);
+
 		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
 			$urt = $this->row['urt']->sec;
-			if ($urt <= $this->activeBillrunEndTime) { // lines in current billing cycle
-				$billrunKey = $this->activeBillrun;
-			} else if ($urt <= $this->nextActiveBillrunEndTime) { // late lines
-				$billrunKey = $this->nextActiveBillrun;
+			if ($urt <= $activeBillrunEndTime) { // lines in current billing cycle
+				$billrunKey = $activeBillrun;
+			} else if ($urt <= $nextActiveBillrunEndTime) { // late lines
+				$billrunKey = $nextActiveBillrun;
 			} else { // future lines
-				$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
+				$billrunKey = ($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $this->row['foreign']['account']['invoicing_day']) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
 			}
 			$pricingData['billrun'] = $billrunKey;
 		}
