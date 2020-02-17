@@ -74,8 +74,12 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
+			$paymentAgreementData = array();
 			$success = $primaryInstallment->splitToInstallments();
-			return $success;
+			if ($success) {
+				$paymentAgreementData = $primaryInstallment->getRawData()['payment_agreement'];
+			}
+			return array('status' => $success, 'payment_agreement' => $paymentAgreementData);
 		}
 		
 		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
