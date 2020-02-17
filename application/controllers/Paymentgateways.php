@@ -176,9 +176,7 @@ class PaymentGatewaysController extends ApiController {
 	 * exception if the input is invalid
 	 */
 	protected function validatePaymentGateway($name, $aid) {
-		// Get the accound object.
-		$accountQuery = $this->getAccountQuery($aid);
-		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
 		if($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
 			// Check the payment gateway
 			if($account['payment_gateway']['active']['name'] != $name) {

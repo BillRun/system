@@ -15,7 +15,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected $conf;
 	protected $billrunName = "CreditGuard";
-	protected $subscribers;
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
@@ -23,7 +22,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function __construct() {
 		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->account = Billrun_Factory::account();
 	}
 
@@ -44,7 +42,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['return_url'] = $returnUrl;
 		$xmlParams['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
 		$account = Billrun_Factory::account();
-		$account->load(array('aid' => (int)$aid));
+		$account->loadAccountForQuery(array('aid' => (int)$aid));
 		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
 		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 		return $this->getXmlStructureByParams($credentials, $xmlParams);
@@ -342,7 +340,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$gatewayDetails = $paymentParams['gateway_details'];
 		$updatedPaymentParams = $paymentParams;
 		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'], $cgConfig['oldest_card_expiration'])) {
-			$this->account->load(array('aid' => $paymentParams['aid']));
+			$this->account->loadAccountForQuery(array('aid' => $paymentParams['aid']));
 			$updatedPaymentParams['gateway_details']['card_expiration'] = $gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
 			$accountGateway = $this->account->payment_gateway;
 			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
@@ -406,8 +404,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$xmlParams['ok_page'] = $params['ok_page'];
 		$xmlParams['return_url'] = $params['return_url'];
 		$xmlParams['amount'] = $this->convertAmountToSend($params['amount']);
-		$today = new MongoDate();
-		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+		$query = array('aid' => (int) $params['aid']);
+		$account = $this->account->loadAccountForQuery($query);
 		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
 		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
 		if (isset($options['installments'])) {

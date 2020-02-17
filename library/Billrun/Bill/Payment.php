@@ -38,6 +38,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
+	protected $known_sources;
+	
 	protected static $aids;
 	/**
 	 * 
@@ -78,6 +80,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['due_date'])) {
 				$this->data['due_date'] = $options['due_date'];
 			} 
+			if (isset($options['charge'])) {
+				$this->data['charge'] = $options['charge'];
+			} 
 			if (isset($options['installments'])) {
 				$this->data['installments'] = $options['installments'];
 			}
@@ -91,6 +96,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['generated_pg_file_log'])) {
 				$this->data['generated_pg_file_log'] = $options['generated_pg_file_log'];
+			}
+			if (isset($options['pg_request'])) {
+				$this->data['pg_request'] = $options['pg_request'];
 			}
 			if (isset($options['deposit']) && $options['deposit'] == true) {
 				$this->data['deposit'] = $options['deposit'];
@@ -126,6 +134,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
 				}
+			}
+			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			if(isset($options['source'])){
+				if(!in_array($options['source'], $this->known_sources)){
+					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
+				}
+				$this->data['source'] = $options['source'];
 			}
 		} else {
 			throw new Exception('Billrun_Bill_Payment: Insufficient options supplied.');
@@ -544,14 +559,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
 
-		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = array(
 			'$in' => $customersAids
 		);
-		$query['type'] = "account";
-		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
-		foreach ($subscribers as $subscriber) {
-			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		if(!empty($accounts)){
+			foreach ($accounts as $account) {
+				$accounts_in_array[$account['aid']] = $account;
+			}
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));
@@ -565,7 +580,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			foreach ($billsDetails as $billDetails) {
 				$paymentParams = array();
-				$subscriber = $subscribers_in_array[$billDetails['aid']];
+				$subscriber = $accounts_in_array[$billDetails['aid']];
 				$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $subscriber['payment_gateway']['active']);
 				if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 					Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
@@ -1029,7 +1044,21 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
+<<<<<<< library/Billrun/Bill/Payment.php
 	}	
+=======
+	}
+	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
+	}
+>>>>>>> library/Billrun/Bill/Payment.php
 	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.

@@ -31,9 +31,14 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 var fields = lastConfig['rates']['fields'];
 var found = false;
+var invoice_label_found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "tariff_category") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoice_label") {
+		invoice_label_found = true;
+		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -51,7 +56,29 @@ if(!found) {
 		"changeable_props": ["select_options"]
 	});
 }
+if(!invoice_label_found) {
+	fields.push({
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_label",
+		"default_value":"",
+		"show_in_list":true,
+		"title":"Invoice label"
+	});
+}
 lastConfig['rates']['fields'] = fields;
+
+var invoice_language_field = {
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_language",
+		"default_value":"en_GB",
+		"show_in_list":false,
+		"title":"Invoice language"
+	}
+lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
@@ -619,6 +646,39 @@ var formerPlanField ={
 	};
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], formerPlanField, 'subscriber');
 
+// BRCD-2021 - Invoice translations support
+const invoices = lastConfig['billrun']['invoices'];
+if (invoices) {
+	const language = invoices['language'];
+	if (language) {
+		const def = language['default'];
+		if (!def) {
+			lastConfig.billrun.invoices.language.default = 'en_GB';
+		}
+	} else {
+		lastConfig.billrun.invoices.language = {'default': 'en_GB'};
+	}
+} else {
+	lastConfig['billrun']['invoices'] = {'language': {'default': 'en_GB'}};
+}
+
+// BRCD - 2129: add embed_tax field
+if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fields'] !== 'undefined') {
+	var embedTaxField = {
+		"field_name": "embed_tax",
+		"system": true,
+		"title": "Embed Tax",
+		"mandatory": true,
+		"type": "boolean",
+		"editable": true,
+		"display": true,
+		"description": "In case the tax should be embedded (included in the customer price), please check the box"
+	};
+	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
+}
+
+db.config.insert(lastConfig);
+
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -648,6 +708,8 @@ db.log.find({"source":"audit"}).forEach(
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
 db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
 
 // taxes collection indexes
 db.createCollection('taxes');
@@ -756,6 +818,15 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
+// BRCD-2070 - GSD - getSubscriberDetails
+if (!lastConfig.subscribers.subscriber.type) {
+	lastConfig.subscribers.subscriber.type = 'db';
+}
+if (!lastConfig.subscribers.account.type) {
+	lastConfig.subscribers.account.type = 'db';
+}
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
@@ -766,9 +837,9 @@ if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
 	sh.shardCollection("billing.archive", {"stamp": 1});
+	// BRCD-2099 - sharding rates, billrun and balances
+	sh.shardCollection("billing.rates", { "key" : 1 } );
+	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
 
-// BRCD-2099 - sharding rates, billrun and balances
-sh.shardCollection("billing.rates", { "key" : 1 } );
-sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
-sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
