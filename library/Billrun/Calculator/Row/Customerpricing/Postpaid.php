@@ -34,10 +34,18 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		$activeBillrun = ($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(),$this->row['foreign']['account']['invoicing_day']) : $this->activeBillrun; 
-		$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun);
-		$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
-		$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun);
+		$rowData = $this->row->getRawData();
+		if($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) {
+			$activeBillrun = Billrun_Billrun::getActiveBillrun($this->row['foreign']['account']['invoicing_day']); 
+			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, null, $this->row['foreign']['account']['invoicing_day']);
+			$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
+			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, null, $this->row['foreign']['account']['invoicing_day']);
+		}else {
+			$activeBillrun = $this->activeBillrun;
+			$activeBillrunEndTime = $this->activeBillrunEndTime;
+			$nextActiveBillrun = $this->activeBillrun;
+			$nextActiveBillrunEndTime = $this->nextActiveBillrunEndTime;
+		}		
 
 		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
 			$urt = $this->row['urt']->sec;

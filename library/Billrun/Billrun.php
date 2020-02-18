@@ -961,7 +961,7 @@ class Billrun_Billrun {
 	 * @return string billrun_key
 	 * @todo create an appropriate index on billrun collection
 	 */
-	public static function getActiveBillrun() {
+	public static function getActiveBillrun($invoicing_day = null) {
 		$query = array(
 			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
@@ -972,13 +972,13 @@ class Billrun_Billrun {
 		$fields = array(
 			'billrun_key' => 1,
 		);
-		$runtime_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
+		$runtime_billrun_key = !is_null($invoicing_day) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
 			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key']);
-			$billrun_start_time = Billrun_Billingcycle::getStartTime($active_billrun);
+			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;

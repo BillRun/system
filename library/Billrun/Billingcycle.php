@@ -42,13 +42,24 @@ class Billrun_Billingcycle {
 	 * @param type $key
 	 * @return type int
 	 */
-	public static function getEndTime($key) {
+	public static function getEndTime($key, $customer = null, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleEndTable) {
 			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
 		
-		return self::$cycleEndTable->get($key);
+		if(is_null($customer)) {
+			return !is_null($invoicing_day) ? self::$cycleEndTable->get($key, $invoicing_day) : self::$cycleEndTable->get($key);
+		}else {
+			$config = Billrun_Factory::config();
+			if($config->isMultiCycleDay()) {
+				return !is_null($customer['invoicing_day']) ? self::$cycleEndTable->get($key, $customer['invoicing_day']) : self::$cycleEndTable->get($key);
+			} else {
+				return self::$cycleEndTable->get($key);
+			}
+			
+		}
+		
 	}
 
 	/**
@@ -56,13 +67,22 @@ class Billrun_Billingcycle {
 	 * @param type $key
 	 * @return type int
 	 */
-	public static function getStartTime($key) {
+	public static function getStartTime($key,$customer = null, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleStartTable) {
 			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
-
-		return self::$cycleStartTable->get($key);
+		
+		if(is_null($customer)) {
+			return !is_null($invoicing_day) ? self::$cycleStartTable->get($key, $invoicing_day) : self::$cycleStartTable->get($key);
+		}else {
+			$config = Billrun_Factory::config();
+			if($config->isMultiCycleDay()) {
+				return !is_null($customer['invoicing_day']) ? self::$cycleStartTable->get($key, $customer['invoicing_day']) : self::$cycleStartTable->get($key);
+			} else {
+				return self::$cycleStartTable->get($key);
+			}
+		}
 	}
 	
 	/**

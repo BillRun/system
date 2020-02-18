@@ -26,8 +26,8 @@ abstract class Billrun_DataTypes_CachedDataTable {
 	 * @param mixed $key - Key to get the data by.
 	 * @return mixed - Data.
 	 */
-	public function get($key) {
-		return $this->_get($key);
+	public function get($key, $invoicing_day = null) {
+		return !is_null($invoicing_day)? $this->_get($key, $invoicing_day) : $this->_get($key);
 	}
 	
 	/**
@@ -61,14 +61,20 @@ abstract class Billrun_DataTypes_CachedDataTable {
 	 * @param mixed $key - Key to get the data by.
 	 * @return mixed - Data.
 	 */
-	private function _get($key) {
+	private function _get($key, $invoicing_day = null) {
 		// If the value is in the table, return it.
-		if(isset($this->dictionary[$key])) {
-			return $this->dictionary[$key];
+		$config = Billrun_Factory::config();
+		if((!is_null($invoicing_day)) && $config->isMultiCycleDay()){
+			$dictionaryKey = $key . $invoicing_day;
+		}else {
+			$dictionaryKey = $key;
+		}
+		if(isset($this->dictionary[$dictionaryKey])) {
+			return $this->dictionary[$dictionaryKey];
 		}
 		
-		$data = $this->onGet($key);
-		$this->_set($key, $data);
+		$data = !is_null($invoicing_day) ? $this->onGet($key, $invoicing_day) : $this->onGet($key);
+		$this->_set($dictionaryKey, $data);
 		return $data;
 	}
 	
@@ -81,4 +87,5 @@ abstract class Billrun_DataTypes_CachedDataTable {
 		$this->onSet($key, $data);
 		$this->dictionary[$key] = $data;
 	}
+	
 }

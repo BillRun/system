@@ -497,5 +497,8 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
-
+	
+	public function isMultiCycleDay(){
+		return $this->getConfigValue('billrun.multi_cycle_day', false);
+	}
 }
