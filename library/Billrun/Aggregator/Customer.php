@@ -596,21 +596,21 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
 			$accountsToPrepone = $this->handleInstallmentsPrepone($accounts);
 		}
-                $additionalAccountsToPrepone = [];
-                if (!empty($this->merge_credit_installments)){
-                        foreach (array_keys($this->merge_credit_installments) as $aid){
-                            if (in_array($aid, $accountsToPrepone)){
-                                if(!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))){
-                                    $additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
-                                }
-                            }else{
-                                $additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
-                            }
-                        }
-                }
-                if (!empty($additionalAccountsToPrepone)){
-                    $this->preponeInstallments($additionalAccountsToPrepone); 
-                }
+		$additionalAccountsToPrepone = [];
+		if (!empty($this->merge_credit_installments)) {
+			foreach (array_keys($this->merge_credit_installments) as $aid) {
+				if (in_array($aid, $accountsToPrepone)) {
+					if (!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))) {
+						$additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
+					}
+				} else {
+					$additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
+				}
+			}
+		}
+		if (!empty($additionalAccountsToPrepone) && !$this->fakeCycle){
+			$this->preponeInstallments($additionalAccountsToPrepone); 
+		}
 	}
 	
 	/**
@@ -655,7 +655,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (!empty($accountsToPrepone)) {
 			return $this->preponeInstallments($accountsToPrepone, $this->getCycle()->key(), $this->fakeCycle);
 		}
-                return $accountsToPrepone;
+		return $accountsToPrepone;
 	}
 	
 	/**
