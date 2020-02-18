@@ -25,6 +25,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $transactionsTotalAmount = 0;
     protected $gatewayLogName;
     protected $fileGenerator;
+	protected $billSavedFields = array();
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -56,6 +57,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $dataLine = array();
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
+		$this->billSavedFields = array();
         foreach ($dataStructure as $dataField) {
             try{
             if (!isset($dataField['path'])) {
@@ -98,7 +100,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $this->logFile->updateLogFileField('errors', $message);
                 throw new Exception($message);
             }
-            $dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+			if (!empty($dataField['save_to_bill'])) {
+				$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
+			}
+			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
             } catch(Exception $ex){
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
@@ -127,7 +132,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     throw new Exception('Missing account id');
                 }
                 $account = Billrun_Factory::account();
-                $account->load(array('aid' => $params['aid']));
+                $account->loadAccountForQuery(array('aid' => $params['aid']));
                 $accountData = $account->getCustomerData();
                 if (!isset($accountData[$field])) {
                     $message = "Field name $field does not exists under entity " . $entity;

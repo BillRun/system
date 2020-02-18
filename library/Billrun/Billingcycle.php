@@ -141,7 +141,7 @@ class Billrun_Billingcycle {
 		$ret = date("Ym", $month_before);
 		return $ret;
 	}
-	
+        
 	/**
 	 * method to get the last closed billing cycle
 	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
@@ -573,5 +573,32 @@ class Billrun_Billingcycle {
 		}
 		return $entry['billrun_key'];
 	}
+        
+        /**
+         * Function gets aid, start + end time, as Unix Timestamp.. 
+         * @param integer $aid
+         * @param string $startTime
+         * @param string $endTime
+         * @return array of the wanted account's immediate invoices, in the time rang.
+         */
+        public static function getImmediateInvoicesInRange($aid, $startTime, $endTime) {
+            $convertedStartTime = date('YmdHis', $startTime);
+            $convertedEndTime = date('YmdHis', $endTime);
+            $query = array(
+                        'aid' => $aid,
+                        'attributes.invoice_type' => array('$eq' => 'immediate'),
+                        'billrun_key' => array('$gte' => $convertedStartTime, '$lt' => $convertedEndTime)
 
+		);
+            $sort = array(
+			'billrun_key' => -1,
+		); 
+            $billruns = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort);
+            $billrunsArray = iterator_to_array($billruns, true);
+            $invoicesArray = [];
+            foreach($billrunsArray as $id => $entity){
+                    $invoicesArray[] = $entity->getRawData();
+            }
+            return $invoicesArray;
+        }
 }
