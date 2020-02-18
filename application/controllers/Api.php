@@ -257,6 +257,12 @@ if ($errorMessage === "Failed to authenticate") {
 		return false;
 	}
 	
+	/**
+	 * set a response for a successful response to the controller
+	 * 
+	 * @param array $details
+	 * @param string $desc
+	 */
 	protected function setSuccess($details, $desc = 'success') {
 		$output = [
 			'status' => 1,
