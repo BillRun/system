@@ -1044,9 +1044,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
-<<<<<<< library/Billrun/Bill/Payment.php
-	}	
-=======
 	}
 	
 	public function setExtraFields($fields, $path) {
@@ -1058,7 +1055,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->setRawData($paymentData);
 		$this->save();
 	}
->>>>>>> library/Billrun/Bill/Payment.php
 	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.
