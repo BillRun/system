@@ -81,10 +81,10 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 */
 	protected function getDatetime($billrunKey, $defaultChargingDay=1, $invoicingDay = null) {
 		$config = Billrun_Factory::config();
-		if(($config->isMultiCycleDay()) && (!is_null($invoicingDay))) {
+		if(($config->isMultiDayCycle()) && (!is_null($invoicingDay))) {
 			$dayofmonth = $invoicingDay;
 		}else {
-			$dayofmonth = !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', $defaultChargingDay) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', $defaultChargingDay);
+			$dayofmonth = $config->getConfigChargingDay($defaultChargingDay);
 		}
 		return strlen($billrunKey) == 14 ? $billrunKey : $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}

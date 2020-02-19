@@ -498,7 +498,11 @@ class Billrun_Config {
 		return $fileTypes;
 	}
 	
-	public function isMultiCycleDay(){
-		return $this->getConfigValue('billrun.multi_cycle_day', false);
+	public function isMultiDayCycle() {
+		return $this->getConfigValue('billrun.multi_day_cycle', false);
+	}
+	
+	public function getConfigChargingDay($defaultChargingDay = 1) {
+		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', $defaultChargingDay) : $this->getConfigValue('billrun.charging_day', $defaultChargingDay);
 	}
 }

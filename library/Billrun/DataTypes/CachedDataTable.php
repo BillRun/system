@@ -64,7 +64,7 @@ abstract class Billrun_DataTypes_CachedDataTable {
 	private function _get($key, $invoicing_day = null) {
 		// If the value is in the table, return it.
 		$config = Billrun_Factory::config();
-		if((!is_null($invoicing_day)) && $config->isMultiCycleDay()){
+		if((!is_null($invoicing_day)) && $config->isMultiDayCycle()){
 			$dictionaryKey = $key . $invoicing_day;
 		}else {
 			$dictionaryKey = $key;

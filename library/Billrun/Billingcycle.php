@@ -42,24 +42,29 @@ class Billrun_Billingcycle {
 	 * @param type $key
 	 * @return type int
 	 */
-	public static function getEndTime($key, $customer = null, $invoicing_day = null) {
+	public static function getEndTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleEndTable) {
 			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
-		
-		if(is_null($customer)) {
-			return !is_null($invoicing_day) ? self::$cycleEndTable->get($key, $invoicing_day) : self::$cycleEndTable->get($key);
-		}else {
-			$config = Billrun_Factory::config();
-			if($config->isMultiCycleDay()) {
-				return !is_null($customer['invoicing_day']) ? self::$cycleEndTable->get($key, $customer['invoicing_day']) : self::$cycleEndTable->get($key);
-			} else {
-				return self::$cycleEndTable->get($key);
-			}
-			
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $invoicing_day) : self::$cycleEndTable->get($key);
+	}
+	
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the end of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getEndTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleEndTable) {
+			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
-		
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $customer['invoicing_day']) : self::$cycleEndTable->get($key);
 	}
 
 	/**
@@ -73,18 +78,26 @@ class Billrun_Billingcycle {
 			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
 		
-		if(is_null($customer)) {
-			return !is_null($invoicing_day) ? self::$cycleStartTable->get($key, $invoicing_day) : self::$cycleStartTable->get($key);
-		}else {
-			$config = Billrun_Factory::config();
-			if($config->isMultiCycleDay()) {
-				return !is_null($customer['invoicing_day']) ? self::$cycleStartTable->get($key, $customer['invoicing_day']) : self::$cycleStartTable->get($key);
-			} else {
-				return self::$cycleStartTable->get($key);
-			}
-		}
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $invoicing_day) : self::$cycleStartTable->get($key);
 	}
 	
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the start of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getStartTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleStartTable) {
+			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
+		}
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $customer['invoicing_day']) : self::$cycleStartTable->get($key);
+	}
+
 	/**
 	 * Return the date constructed from the current billrun key
 	 * @return string
@@ -107,7 +120,8 @@ class Billrun_Billingcycle {
 		}
 		
 		if (!$dayofmonth) {
-			$dayofmonth = !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', 1) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+			$config = Billrun_Factory::config();
+			$dayofmonth = $config->getConfigChargingDay();
 		}
 		$format = "Ym";
 		if (date("d", $timestamp) < $dayofmonth) {

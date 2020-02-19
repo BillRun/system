@@ -21,7 +21,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
 		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
 		$this->nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($this->nextActiveBillrun);
-		$this->multi_cycle_day = Billrun_Factory::config()->getConfigValue('billrun.multi_cycle_day', false);
 	}
 
 	protected function validate() {
@@ -34,12 +33,13 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		$rowData = $this->row->getRawData();
-		if($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) {
-			$activeBillrun = Billrun_Billrun::getActiveBillrun($this->row['foreign']['account']['invoicing_day']); 
-			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, null, $this->row['foreign']['account']['invoicing_day']);
+		$customerInvoicingDay = isset($this->row['foreign']['account']) ? isset($this->row['foreign']['account']['invoicing_day'])? : null : null;
+		$config = Billrun_Factory::config();
+		if($config->isMultiDayCycle() && !empty($customerInvoicingDay)) {
+			$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay); 
+			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, null, $customerInvoicingDay);
 			$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
-			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, null, $this->row['foreign']['account']['invoicing_day']);
+			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, null, $customerInvoicingDay);
 		}else {
 			$activeBillrun = $this->activeBillrun;
 			$activeBillrunEndTime = $this->activeBillrunEndTime;
@@ -54,7 +54,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			} else if ($urt <= $nextActiveBillrunEndTime) { // late lines
 				$billrunKey = $nextActiveBillrun;
 			} else { // future lines
-				$billrunKey = ($this->multi_cycle_day && !empty($this->row['foreign']['account']['invoicing_day'])) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $this->row['foreign']['account']['invoicing_day']) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
+				$billrunKey = ($config->isMultiDayCycle() && !empty($customerInvoicingDay)) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $customerInvoicingDay) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
 			}
 			$pricingData['billrun'] = $billrunKey;
 		}

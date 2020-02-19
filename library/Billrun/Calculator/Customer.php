@@ -480,6 +480,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	protected function enrichWithSubscriberInformation($row, $subscriber = null) {
+		$config = Billrun_Factory::config();
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
 		if (!is_null($subscriber)) {
@@ -489,17 +490,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
-		$runningTimeForeign = [];
-		if(Billrun_Factory::config()->getConfigValue('billrun.multi_cycle_day', false)) {
-			$runningTimeForeign[] = [
-				'field_name' => 'foreign.account.invoicing_day',
-				'foreign' => [
-					'entity' => 'account',
-					'field' => 'invoicing_day'
-				]
-			];
-		}
-		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData, $runningTimeForeign);
+		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
 		if((!is_null($subscriber) || !empty($enrichedData)) ||
 				is_null($subscriber) || !empty($foreignData)) {
 			if($row instanceof Mongodloid_Entity) {
