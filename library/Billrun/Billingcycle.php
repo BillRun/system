@@ -69,8 +69,12 @@ class Billrun_Billingcycle {
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	public static function getDatetime($billrunKey) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+	public static function getDatetime($billrunKey, $customer = null, $invoicing_day = null) {
+		$config = Billrun_Factory::config();
+		$dayofmonth =  !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', 1) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+		if($config->isMultiCycleDay()){
+			$dayofmonth = (!is_null($customer) && !is_null($customer['invoicing_day'])) ? $customer['invoicing_day'] : !is_null($invoicing_day) ? $invoicing_day : $dayofmonth;
+		}
 		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
@@ -102,11 +106,11 @@ class Billrun_Billingcycle {
 	 * returns the end timestamp of the input billing period
 	 * @param date $date
 	 */
-	public static function getBillrunEndTimeByDate($date) {
+	public static function getBillrunEndTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
 		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
 		return self::getEndTime($billrunKey);
-	}
+		}
 
 	/**
 	 * returns the start timestamp of the input billing period
