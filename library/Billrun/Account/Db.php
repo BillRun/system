@@ -14,7 +14,7 @@
  * @since    5.0
  */
 class Billrun_Account_Db extends Billrun_Account {
-	
+
 	/**
 	 * Instance of the subscribers collection.
 	 */
@@ -30,6 +30,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 
@@ -46,14 +47,14 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Overrides parent abstract method
 	 */
 	protected function getAccountsDetails($query) {
 		return $this->collection->query($query)->cursor();
 	}
-		
+
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
 		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
@@ -64,7 +65,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Overrides parent abstract method
 	 */
 	protected function getAccountDetails($queries) {
-		$accounts = [];		
+		$accounts = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
 			if(isset($query['limit'])) {
@@ -109,7 +110,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
 	}
-	
+
 		
 	/**
 	 * 
@@ -149,7 +150,7 @@ class Billrun_Account_Db extends Billrun_Account {
 			return FALSE;
 		}
 	}
-	
+
 	protected function buildParams($query) {
 		$type = 'account';
 		$query['type'] = $type;

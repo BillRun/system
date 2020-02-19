@@ -31,9 +31,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$subscriber->loadSubscriberForQuery($subscriberSearchData);
 		$account = Billrun_Factory::account();
 		$account->loadAccountForQuery($accountSearchData);
+		$accountData = $account->getCustomerData();
 
-		Billrun_Factory::dispatcher()->trigger('onUpdateRowTaxInforamtion', array(&$line, $subscriber, $account, &$this));
-		Billrun_Factory::dispatcher()->trigger('onAddManualTaxationToRow', array(&$line, $subscriber, $account, &$this));
+		Billrun_Factory::dispatcher()->trigger('onUpdateRowTaxInforamtion', array(&$line, $subscriber, $accountData, &$this));
+		Billrun_Factory::dispatcher()->trigger('onAddManualTaxationToRow', array(&$line, $subscriber, $accountData, &$this));
 		
 		return $line;
 	}
