@@ -498,10 +498,19 @@ class Billrun_Config {
 		return $fileTypes;
 	}
 	
+	/**
+	 * method to check the cycle's mode
+	 * @return boolean true if it's multi day cycle mode, false otherwise.
+	 */
 	public function isMultiDayCycle() {
 		return $this->getConfigValue('billrun.multi_day_cycle', false);
 	}
 	
+	/**
+	 * 
+	 * @param type $defaultChargingDay
+	 * @return returns the default charging/invoicing day from the config.
+	 */
 	public function getConfigChargingDay($defaultChargingDay = 1) {
 		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', $defaultChargingDay) : $this->getConfigValue('billrun.charging_day', $defaultChargingDay);
 	}

@@ -618,6 +618,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $play;
 	}
 	
+	/**
+	 * method to get update the lines's foreign fields, according to the system mode (multi day cycle or not)
+	 * @return the updated foreign fields array. 
+	 */
 	protected function getForeignFieldsFromConfig() {
 		$foreignFields = $this->baseGetForeignFieldsFromConfig();
 		$config = Billrun_Factory::config();

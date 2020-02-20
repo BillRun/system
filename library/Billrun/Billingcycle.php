@@ -40,6 +40,7 @@ class Billrun_Billingcycle {
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's end time will be calculated respectively.
 	 * @return type int
 	 */
 	public static function getEndTime($key, $invoicing_day = null) {
@@ -70,9 +71,10 @@ class Billrun_Billingcycle {
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's start time will be calculated respectively.
 	 * @return type int
 	 */
-	public static function getStartTime($key,$customer = null, $invoicing_day = null) {
+	public static function getStartTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleStartTable) {
 			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
