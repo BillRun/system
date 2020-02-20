@@ -975,6 +975,11 @@ class Billrun_Billrun {
 		$query = array(
 			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
+		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
+			$query = array(
+				'invoicing_day' => intval($invoicing_day),
+		);
+		}
 		$now = time();
 		$sort = array(
 			'billrun_key' => -1,

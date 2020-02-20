@@ -33,13 +33,13 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
-		$customerInvoicingDay = isset($this->row['foreign']['account']) ? isset($this->row['foreign']['account']['invoicing_day'])? : null : null;
+		$customerInvoicingDay = isset($this->row['foreign']['account']) ? isset($this->row['foreign']['account']['invoicing_day'])? $this->row['foreign']['account']['invoicing_day'] : null : null;
 		$config = Billrun_Factory::config();
 		if($config->isMultiDayCycle() && !empty($customerInvoicingDay)) {
 			$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay); 
-			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, null, $customerInvoicingDay);
+			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay);
 			$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
-			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, null, $customerInvoicingDay);
+			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay);
 		}else {
 			$activeBillrun = $this->activeBillrun;
 			$activeBillrunEndTime = $this->activeBillrunEndTime;

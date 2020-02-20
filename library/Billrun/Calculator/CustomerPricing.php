@@ -408,19 +408,4 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $this->next_active_billrun;
 	}
 	
-	protected function getForeignFieldsFromConfig() {
-		$foreignFields = parent::getForeignFieldsFromConfig();
-		$config = Billrun_Factory::config();
-		$runningTimeForeign = [];
-		if($config->isMultiDayCycle()) {
-			$runningTimeForeign[] = [
-				'field_name' => 'foreign.account.invoicing_day',
-				'foreign' => [
-					'entity' => 'account',
-					'field' => 'invoicing_day'
-				]
-			];
-		}
-		return !empty(array_diff(array_column($runningTimeForeign, 'field_name'), array_column($foreignFields, 'field_name'))) ? array_merge($foreignFields, $runningTimeForeign) : $foreignFields;
-	}
 }
