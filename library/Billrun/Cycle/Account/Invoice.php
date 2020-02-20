@@ -64,6 +64,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
+		$this->initInvoiceDates();
 	}
 
 	/**
@@ -134,9 +135,10 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function generateDueDate($billrunDate) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		$invoiceType = isset($this->data['attributes']['invoice_type']) ? $this->data['attributes']['invoice_type'] : null; 
 		foreach ($options as $option) {
-			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				 return new MongoDate(strtotime($option['relative_time'], $billrunDate));
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) { //TODO: transfer the entity instead of just array with invoice_type
+				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
@@ -358,7 +360,6 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
-		$this->initInvoiceDates($options);
 	}
 	
 	/**
@@ -389,19 +390,17 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Init the date values of the invoice.
 	 */
-	protected function initInvoiceDates($options) {
+	protected function initInvoiceDates() {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
-		$isOneTimeInvoice = isset($options['attributes']['invoice_type']) && $options['attributes']['invoice_type'] == 'immediate' ? true : false;
-		$invoiceDate = $isOneTimeInvoice ? strtotime($options['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
+		$isOneTimeInvoice = isset($initData['attributes']['invoice_type']) && $initData['attributes']['invoice_type'] == 'immediate' ? true : false;
+		$invoiceDate = $isOneTimeInvoice ? strtotime($initData['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
 		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$initData['due_date'] =  @$options['attributes']['invoice_type'] == 'immediate' ? 
-								new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.immediate_due_date_interval', "+0 seconds"),$initData['creation_time']->sec - 1)) :
-								$this->generateDueDate($billrunDate);
-		$chargeNotBefore = $this->generateChargeDate($options, $initData);
+		$initData['due_date'] = $this->generateDueDate($billrunDate);
+		$chargeNotBefore = $this->generateChargeDate($initData);
 		if (!empty($chargeNotBefore)) {
 			$initData['charge'] = ['not_before' => $chargeNotBefore];
 		}
@@ -442,9 +441,9 @@ class Billrun_Cycle_Account_Invoice {
 		return $invoicedLines;
 	}
 	
-	protected function generateChargeDate($invoice, $initData) {
+	protected function generateChargeDate($initData) {
 		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
-		$invoiceType = @$invoice['attributes']['invoice_type'];
+		$invoiceType = @$this->data['attributes']['invoice_type'];
 		
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
@@ -453,7 +452,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			
 			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
-				return new MongoDate(strtotime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
 		}
 		

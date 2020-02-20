@@ -224,34 +224,34 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $newLine;
     }
 
-    public function shouldFileBeMoved() {
-        $localPath = $this->localDir . '/' . $this->getFilename();
-        if (file_exists($localPath) && !empty(file_get_contents($localPath))) {
-            return true;
-        }
-        if (file_exists($localPath)) {
-            Billrun_Factory::log("Removing empty generated file", Zend_Log::DEBUG);
-            $this->removeEmptyFile();
-        }
-        return false;
-    }
-
-    protected function removeEmptyFile() {
-        $localPath = $this->localDir . '/' . $this->getFilename();
-        $ret = unlink($localPath);
-        if ($ret) {
-            Billrun_Factory::log()->log('Empty file ' . $localPath . ' was removed successfully', Zend_Log::INFO);
-            return;
-        }
-        Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::WARN);
-    }
-
-    public function move() {
-        $exportDetails = $this->configByType['export'];
-        $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
-        $fileName = $this->getFilename();
-        $connection->export($fileName);
-    }
+//    public function shouldFileBeMoved() {
+//        $localPath = $this->localDir . '/' . $this->getFilename();
+//        if (file_exists($localPath) && !empty(file_get_contents($localPath))) {
+//            return true;
+//        }
+//        if (file_exists($localPath)) {
+//            Billrun_Factory::log("Removing empty generated file", Zend_Log::DEBUG);
+//            $this->removeEmptyFile();
+//        }
+//        return false;
+//    }
+//
+//    protected function removeEmptyFile() {
+//        $localPath = $this->localDir . '/' . $this->getFilename();
+//        $ret = unlink($localPath);
+//        if ($ret) {
+//            Billrun_Factory::log()->log('Empty file ' . $localPath . ' was removed successfully', Zend_Log::INFO);
+//            return;
+//        }
+//        Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::WARN);
+//    }
+//
+//    public function move() {
+//        $exportDetails = $this->configByType['export'];
+//        $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
+//        $fileName = $this->getFilename();
+//        $connection->export($fileName);
+//    }
 
     protected function getTranslationValue($paramObj) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {

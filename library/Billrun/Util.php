@@ -1899,5 +1899,23 @@ class Billrun_Util {
 
 		return array_unique($fieldNames);
 	}
+	
+	/**
+	 * Aggregate strings representing time from some start point
+	 * @param array $relativeTimes - array of relative time strings
+	 * @param int $startTime - unix timestamp determine where to start the count
+	 * @return aggregated unix timestamp
+	 */
+	public static function calcRelativeTime($relativeTimes, $startTime) {
+		if (!is_array($relativeTimes)) {
+			$relativeTimes = array($relativeTimes);
+		}
+		foreach ($relativeTimes as $relativeTime) {
+			$actualTime = strtotime($relativeTime, $startTime);
+			$startTime = $actualTime;
+		}
+		
+		return $actualTime;
+	}
 
 }

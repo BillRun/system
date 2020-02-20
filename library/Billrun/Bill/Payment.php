@@ -544,8 +544,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			'$in' => $customersAids
 		);
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
-		foreach ($accounts as $account) {
-			$accounts_in_array[$account['aid']] = $account;
+		if(!empty($accounts)){
+			foreach ($accounts as $account) {
+				$accounts_in_array[$account['aid']] = $account;
+			}
 		}
 		foreach ($customersAids as $customerAid) {
 			$accountIdQuery = self::buildFilterQuery(array('aids' => array($customerAid)));

@@ -58,7 +58,7 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
-			return $results['data'];
+			return $results;
 	}
 
 
