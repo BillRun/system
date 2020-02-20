@@ -91,6 +91,13 @@
          /* line with not existing subscriber */
          array('row' => array('stamp' => 'ct7', 'uf' => ['sid' => 77, 'ndcsn' => '44123456', 'date' => '2019-11-10 10:39:00'], 'urt' => '2019-11-10 10:39:00', "usaget" => "call", "type" => "a", "source" => "a"),
              'expected' => array('notExists' => 1)),
+         //test for BRCD-1493 - subscriber with duplicate service with diffrent service_id
+         array('row' => array('stamp' => 'ct770', 'uf' => ['sid' => 8, 'ndcsn' => '123456789770', 'date' => '2019-11-27 10:39:00'], 'urt' => '2019-11-27 10:39:00', "usaget" => "call", "type" => "a", "source" => "a"),
+             'expected' => array('aid' => 1, 'sid' => 8, 'plan' => "PLAN_A", 'services' => ['SERVICE_A', 'SERVICE_A'],
+                 'firstname' => 's', 'lastname' => 's', 'services_data' => [
+                     ['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T09:00:00", 'service_id' => '123'],
+                     ['name' => 'SERVICE_A', 'from' => "2018-11-28T00:00:00", "to" => "2119-11-28T09:00:00", 'service_id' => '1234']]
+             )),
      ];
 
      public function __construct($label = 'customr calculator') {
