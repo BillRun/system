@@ -37,7 +37,7 @@ trait Billrun_Traits_ForeignFields  {
 		});
 	}
 
-	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array(), $runningTimeForeign = array()) {
+	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
 		$foreignFields = $this->getForeignFieldsFromConfig();
 		

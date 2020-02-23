@@ -480,7 +480,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	protected function enrichWithSubscriberInformation($row, $subscriber = null) {
-		$config = Billrun_Factory::config();
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
 		if (!is_null($subscriber)) {
