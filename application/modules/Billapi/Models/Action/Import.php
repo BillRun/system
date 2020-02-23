@@ -176,7 +176,7 @@ class Models_Action_Import extends Models_Action {
 	
 	protected function getFileData($filePath) {
 		$data = array_map('str_getcsv', file($filePath));
-		$header = $this->getHeader($data, $params);
+		$header = $this->getHeader($data);
 		if (!empty($header)) {
 			array_walk($data, function(&$row) use ($header) {
 				$row = array_combine($header, $row);

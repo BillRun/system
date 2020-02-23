@@ -13,11 +13,11 @@ class Billrun_Account_External extends Billrun_Account {
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
 	
 	protected $remote;
+    protected $remote_billable_url;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
-
-	public function __construct(array $options = array()) {
+	public function __construct($options = []) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue(	'subscribers.account.external_url',
 																	Billrun_Util::getFieldVal($options['external_url'],	''));
@@ -38,7 +38,7 @@ class Billrun_Account_External extends Billrun_Account {
 				$requestParams['aids'] = $aids;
 			}
 			//Actually  do the request
-			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);
 
 			//Check for errors
 			if(empty($results)) {
@@ -61,7 +61,7 @@ class Billrun_Account_External extends Billrun_Account {
 				}
 
 			}
-			return $results['data'];
+			return $results;
 	}
 
 
@@ -76,7 +76,7 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		$res = Billrun_Util::sendRequest($this->remote, $requestData);
+		$res = json_decode(Billrun_Util::sendRequest($this->remote, $requestData));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);

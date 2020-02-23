@@ -343,7 +343,7 @@ abstract class Billrun_Account extends Billrun_Base {
 				return new Billrun_Cycle_Aggregation_CustomerRemote($params);
 				break;
 			case 'db' :
-				return new Billrun_Cycle_Aggregation_CustomerDb($params);
+				return	new Billrun_Cycle_Aggregation_CustomerDb($params);
 				break;
 		}
 
