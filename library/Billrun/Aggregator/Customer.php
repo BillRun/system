@@ -297,7 +297,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
-                $addToLogMesaage =  !empty($aids)? " for aids " . implode(',', $aids): null;
+                $addToLogMesaage =  !empty($aids) ? " for aids " . implode(',', $aids) : null;
                 Billrun_Factory::log("Removing flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
 		$linesColl->remove($linesRemoveQuery);
                 Billrun_Factory::log("Removed flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
