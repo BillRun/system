@@ -50,8 +50,12 @@ class Billrun_Account_Db extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountsDetails($query) {
-		return $this->collection->query($query)->cursor();
+	protected function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE) {
+		$cursor =  $this->collection->query($query)->cursor();
+		if($globalLimit) {
+			$cursor->limit($globalLimit);
+		}
+		return $cursor;
 	}
 		
 
@@ -63,8 +67,8 @@ class Billrun_Account_Db extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($queries) {
-		$accounts = [];		
+	protected function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE) {
+		$accounts = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
 			if(isset($query['limit'])) {

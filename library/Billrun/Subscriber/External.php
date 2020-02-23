@@ -18,7 +18,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
+		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
 	}
 	
 	public function delete() {

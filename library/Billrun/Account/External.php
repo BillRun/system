@@ -14,9 +14,13 @@ class Billrun_Account_External extends Billrun_Account {
 	
 	protected $remote;
 
-	public function __consrtuct($options = []) {
+	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
+
+
+	public function __construct(array $options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
+		$this->remote = Billrun_Factory::config()->getConfigValue(	'subscribers.account.external_url',
+																	Billrun_Util::getFieldVal($options['external_url'],	''));
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
 	}
 	
@@ -49,7 +53,7 @@ class Billrun_Account_External extends Billrun_Account {
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
-				Billrun_Utils_Mongo::convertQueryMongoDates($rev,'/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/');
+				Billrun_Utils_Mongo::convertQueryMongoDates($rev, static::API_DATETIME_REGEX);
 				foreach($fieldMapping as $srcField => $dstField) {
 					if(isset($rev[$srcField])) {
 						$rev[$dstField] = $rev[$srcField];
@@ -64,14 +68,22 @@ class Billrun_Account_External extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountsDetails($query) {
-		$res = Billrun_Util::sendRequest($this->remote, json_encode(['query' => $query]));
+	protected function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE) {
+		$requestData = ['query' => $query];
+		if($globalLimit) {
+			$requestData['limit'] = $globalLimit;
+		}
+		if($globalDate) {
+			$requestData['date'] = $globalDate;
+		}
+		$res = Billrun_Util::sendRequest($this->remote, $requestData);
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		foreach ($res as $account) {
+			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
 		}
 		return $accounts;
@@ -80,19 +92,26 @@ class Billrun_Account_External extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($queries) {
+	protected function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE) {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			$externalQuery[] = $query;
+			$externalQuery['query'][] = $query;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($externalQuery)), true);
+		if($globalLimit) {
+			$externalQuery['limit'] = $globalLimit;
+		}
+		if($globalDate) {
+			$externalQuery['date'] = $globalDate;
+		}
+		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		return array_reduce($results, function($acc, $currentSub) {
-			$acc[] = new Mongodloid_Entity($currentSub);
+		return array_reduce($results, function($acc, $currentAcc) {
+			Billrun_Utils_Mongo::convertQueryMongoDates($currentAcc, static::API_DATETIME_REGEX);
+			$acc[] = new Mongodloid_Entity($currentAcc);
 			return $acc;
 		}, []);
 	}
