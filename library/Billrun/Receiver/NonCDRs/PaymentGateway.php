@@ -62,6 +62,9 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		foreach ($this->receiverDefinitions  as $key => $value) {
 			$receiverIniDefinitions[$key] = $value;
 		}
+		if (!isset($receiverIniDefinitions['port'])) {
+			Billrun_Factory::log()->log("Missing port definition in " . $this->gatewayName . " configuration", Zend_Log::NOTICE);
+		}
 		$dbReceiverDefinitions = $this->gateway->getGatewayReceiver($type);
 		$connections = $dbReceiverDefinitions['connections'];
 		foreach ($connections as $key => $connection) {
@@ -72,7 +75,6 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 					continue;
 				}
 			}
-			Billrun_Factory::log()->log("Missing port definition in " . $this->gatewayName . " configuration", Zend_Log::NOTICE);
 		}
 		$dbReceiverDefinitions['connections'] = $connections;
 		foreach ($dbReceiverDefinitions as $key => $value) {
