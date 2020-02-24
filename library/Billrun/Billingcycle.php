@@ -30,7 +30,19 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-        
+    
+	/**
+	 * Table holding the values of the following cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $followingCycleKeysTable = array();
+	
+	/**
+	 * Table holding the values of the previous cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $previousCycleKeysTable = array();
+	
 	/**
 	 * Cycle statuses cache (by page size)
 	 * @var array
@@ -160,9 +172,13 @@ class Billrun_Billingcycle {
 	 * @return string The following key
 	 */
 	public static function getFollowingBillrunKey($key) {
+		if(!empty(self::$followingCycleKeysTable[$key])) {
+			return self::$followingCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
+		self::$followingCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
 
@@ -172,9 +188,13 @@ class Billrun_Billingcycle {
 	 * @return string The previous key
 	 */
 	public static function getPreviousBillrunKey($key) {
+		if(!empty(self::$previousCycleKeysTable[$key])) {
+			return self::$previousCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
+		self::$previousCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
         

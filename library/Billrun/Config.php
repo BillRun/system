@@ -508,10 +508,9 @@ class Billrun_Config {
 	
 	/**
 	 * 
-	 * @param type $defaultChargingDay
 	 * @return returns the default charging/invoicing day from the config.
 	 */
-	public function getConfigChargingDay($defaultChargingDay = 1) {
-		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', $defaultChargingDay) : $this->getConfigValue('billrun.charging_day', $defaultChargingDay);
+	public function getConfigChargingDay() {
+		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
 	}
 }
