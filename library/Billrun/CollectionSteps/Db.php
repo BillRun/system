@@ -113,10 +113,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 					}
 				}
 				$newStep['extra_params']['aid'] = $aid;
-				$newStep['stamp'] = Billrun_Util::generateArrayStamp($step);
+				$newStep['stamp'] = Billrun_Util::generateArrayStamp($newStep);
 				$newStep['trigger_date'] = $trigger_date;
 				$newStep['creation_time'] = $create_date;
-
 				$newSteps[] = $newStep;
 			}
 		}

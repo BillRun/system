@@ -164,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 //			}
 //		}
 
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec,'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
@@ -350,7 +350,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				} else {
 					$params[] = array($fieldName => $val);
 				}
-				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . end($params)[$translationRules['target_key']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . print_R(end($params)[$translationRules['target_key']], 1), Zend_Log::DEBUG);
 			}
 			else {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
@@ -452,6 +452,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$row['subscriber'] = $enrichedData;
 				$row = array_merge($row,$foreignData, $enrichedData);
 			}
+			
+			if (Billrun_Utils_Plays::isPlaysInUse() && !isset($row['subscriber']['play'])) {
+				$newRowSubscriber = $row['subscriber'];
+				$newRowSubscriber['play'] = Billrun_Utils_Plays::getDefaultPlay()['name'];
+				$row['subscriber'] = $newRowSubscriber;
+			}
 		}
 		return $row;
 	}
@@ -468,9 +474,24 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if ($time instanceof MongoDate) {
 			$time = $time->sec;
 		}
-		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
-		$plansQuery['name'] = $planName;
-		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
+
+//		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+//		$plansQuery['name'] = $planName;
+//		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
+		
+		$planParams = array(
+			'name' => $planName,
+			'time' => $time,
+			'disableCache' => true
+		);
+		
+		$planObject = Billrun_Factory::plan($planParams);
+		if (empty($planObject)) {
+			return array();
+		}
+		
+		$plan = $planObject->getData();
+		
 		if($plan->isEmpty() || empty($plan->get('include')) || !isset($plan->get('include')['services']) || empty($services = $plan->get('include')['services'])) {
 			return array();
 		}

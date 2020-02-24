@@ -18,6 +18,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 
 	protected function init() {
 		parent::init();
+		$this->initMinBalanceValues();
 		$this->loadSubscriberBalance();
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok');
 		$this->initMinBalanceValues();
@@ -28,6 +29,16 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			$this->row['apr'] = 0;
 			$this->row['usagev'] = 0;
 		}
+	}
+	
+	/**
+	 * see parent::initMinBalanceValues
+	 * just adds 2 additional internal variables that were mistakenly used in the code without touching postpaid logic
+	 */
+	protected function initMinBalanceValues() {
+		parent::initMinBalanceValues();
+		$this->granted_volume = $this->min_balance_volume;
+		$this->granted_cost = $this->min_balance_cost;
 	}
 
 	/**
@@ -81,6 +92,32 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			return true;
 		}
 		return $ret;
+	}
+	
+	/**
+	 * see parent::getLinePricingData
+	 */
+	protected function getLinePricingData($volume, $usageType, $rate, $plan) {
+		$usagevOffset = isset($this->row['usagev_offset']) ?  $this->row['usagev_offset'] : 0;
+		if ($usagevOffset == 0 || !$this->isReblanceOnLastRequestOnly()) {
+			return parent::getLinePricingData($volume, $usageType, $rate, $plan);
+		}
+		
+		$totalPricingData = parent::getLinePricingData($volume + $usagevOffset, $usageType, $rate, $plan);
+		if ($totalPricingData === false) {
+			return false;
+		}
+		$offsetPricingData = parent::getLinePricingData($usagevOffset, $usageType, $rate, $plan);
+		if ($offsetPricingData === false) {
+			return false;
+		}
+		$pricingData = [];
+		
+		foreach ($totalPricingData as $key => $value) {
+			$pricingData[$key] = $totalPricingData[$key] - $offsetPricingData[$key];
+		}
+		
+		return $pricingData;
 	}
 	
 	/**

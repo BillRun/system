@@ -56,4 +56,21 @@ class Billrun_Utils_Plays {
 		});
 	}
 	
+	/**
+	 * Returns the default play
+	 * 
+	 * @return String - default play
+	 */
+	public static function getDefaultPlay() {
+		$plays = self::getAvailablePlays();
+		$defaultPlay = array();
+		foreach ($plays as $play) {
+			if (!empty($play['default'])) {
+				$defaultPlay = $play;
+				break;
+			}
+		}
+		return $defaultPlay;
+	}
+	
 }

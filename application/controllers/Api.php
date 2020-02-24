@@ -68,7 +68,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
 				Billrun_Factory::db()->linesCollection()
-					->query()->cursor()->limit(1)->current();
+					->query()->cursor()->sort(array('urt' => 1))->limit(1)->current();
 				$msg = 'SUCCESS';
 				$status = 1;
 			} else {
@@ -265,6 +265,15 @@ if ($errorMessage === "Failed to authenticate") {
     public function currenciesAction() {
 		$this->allowed();
 		$this->forward('currencies', 'index');
+	}
+	
+	public function versionsbcAction() {
+		$this->allowed();
+		$request = $this->getRequest();
+		$version = $request->get('api_version');
+		$action = $request->get('api_action');
+		$this->forward('Api', "v{$version}_{$action}");
+		return false;
 	}
 
 	protected function getPermissionLevel() {

@@ -122,7 +122,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],
@@ -132,7 +132,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		);
 	}
 
-	public function pay($gatewayDetails) {
+	public function pay($gatewayDetails, $addonData) {
 		$payXml = $this->buildPaymentRequset($gatewayDetails);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $payXml, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);

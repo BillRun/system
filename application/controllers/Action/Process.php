@@ -37,6 +37,10 @@ class ProcessAction extends Action_Base {
 			return;
 		}
 
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
 		// If not type all process normaly.
 		if(!$this->handleTypeAll($options)) {
 			$this->loadProcessor($options);	

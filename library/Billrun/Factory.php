@@ -321,7 +321,7 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the account instance
 	 * 
-	 * @return Billrun_Subscriber
+	 * @return Billrun_CollectionSteps
 	 */
 	static public function collectionSteps() {
 		if (!self::$collectionSteps) {
@@ -549,6 +549,15 @@ class Billrun_Factory {
 		}
 
 		return self::$collection;
+	}
+	
+	/**
+	 * method to retrieve a payment gateway by name
+	 * 
+	 * @return Billrun_PaymentGateway
+	 */
+	public static function paymentGatewayConnection($connectionDetails) {
+		return Billrun_PaymentGateway_Connection::getInstance($connectionDetails);
 	}
 
 }

@@ -30,8 +30,9 @@ abstract class Billrun_EmailSender_Base {
 			Billrun_Factory::log('sendEmail - emails should not be sent');
 			return false;
 		}
-		foreach ($this->getData() as $data) {
-			$this->sendEmail($data, $callback);
+                $invoicesCursor = $this->getData();
+		foreach ($invoicesCursor as $data) {
+			$this->sendEmail($data->getRawData(), $callback);
 		}
 		Billrun_Factory::log('sendEmail - done sending email for type ' . $this->type);
 	}
@@ -57,7 +58,7 @@ abstract class Billrun_EmailSender_Base {
 	/**
 	 * gets data/emails to send
 	 * 
-	 * @return array emails to send
+	 * @return cursor to the emails to send
 	 */
 	public abstract function getData();
 	
@@ -135,8 +136,9 @@ abstract class Billrun_EmailSender_Base {
 		$emails = is_array($email) ? $email : array($email);
 		$msg = $this->translateMessage($this->getEmailBody($data), $data);
 		$subject = $this->translateMessage($this->getEmailSubject($data), $data);
+		$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 		try {
-			if (!Billrun_Util::sendMail($subject, $msg, $emails, $attachments, true)) {
+			if (!Billrun_Util::sendMail($encodedSubject, $msg, $emails, $attachments, true)) {
 				Billrun_Factory::log('sendEmail - error sending email. Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			}
 			$this->afterSend($data, $callback);

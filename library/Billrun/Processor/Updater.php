@@ -7,7 +7,7 @@
  */
 
 /**
- * This defines an empty processor that pass the processing action to extarnal plugin.
+ * This defines an empty processor that pass the processing action to external plugin.
  */
 abstract class Billrun_Processor_Updater extends Billrun_Processor {
 
@@ -58,6 +58,9 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
 		}
+		if ($this->getType() == 'transactions_response') {
+			$this->updateLeftPaymentsByFileStatus();
+		}
 
 		$this->removefromWorkspace($this->getFileStamp());
 		Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
@@ -80,11 +83,6 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 	
 	protected function logDB() {
 
-		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
-			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . " no header nor trailer to log", Zend_Log::ERR);
-			return false;
-		}
-
 		$log = Billrun_Factory::db()->logCollection();
 
 		$header = array();
@@ -97,10 +95,6 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			$trailer = $this->data['trailer'];
 		}
 
-		if (empty($header) && empty($trailer)) {
-			Billrun_Factory::log()->log("Billrun_Processor::logDB - trailer and header are empty", Zend_Log::ERR);
-			return FALSE;
-		}
 
 		$header['linesStats']['good'] = $this->goodLines;
 

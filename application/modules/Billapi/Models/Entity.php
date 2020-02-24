@@ -25,6 +25,11 @@ class Models_Entity {
 	const UNLIMITED_DATE = '+149 years';
 
 	/**
+	 * The entity name
+	 * @var string
+	 */
+	protected $entityName;
+	/**
 	 * The DB collection name
 	 * @var string
 	 */
@@ -143,6 +148,7 @@ class Models_Entity {
 	}
 
 	public function __construct($params) {
+		$this->entityName = $params['collection'];
 		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
@@ -190,6 +196,9 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+
+		//transalte all date fields
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	/**
@@ -373,7 +382,7 @@ class Models_Entity {
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
-			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $oldRevision->getRawData(), $newRevision->getRawData());
+			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
 		return true;
 	}
@@ -1013,7 +1022,7 @@ class Models_Entity {
 		$new = !is_null($this->after) ? $this->after->getRawData() : null;
 		$key = isset($this->update[$field]) ? $this->update[$field] :
 			(isset($this->before[$field]) ? $this->before[$field] : null);
-		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $old, $new);
 	}
 
 	/**
@@ -1065,10 +1074,11 @@ class Models_Entity {
 		switch ($this->collectionName) {
 			case 'users':
 				return 'username';
+			case 'discounts':
+			case 'reports':
+			case 'taxes':
 			case 'rates':
 				return 'key';
-			case 'accounts':
-				return 'aid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
@@ -1180,12 +1190,14 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		$queryCreation = array(
-			$keyField => $this->before[$keyField],
-		);
-		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-		if ($this->update['_id'] == strval($firstRevision->getId())) {
-			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		if(isset($this->update['_id'])) {
+			$queryCreation = array(
+				$keyField => $this->before[$keyField],
+			);
+			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+			if ($this->update['_id'] == strval($firstRevision->getId())) {
+				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+			}
 		}
 	}
 
