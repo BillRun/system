@@ -60,8 +60,8 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 * Get a charging time table value
 	 * @param string $key - Billrun key to get time by.
 	 */
-	protected function onGet($key) {
-		$datetime = $this->getDatetime($key);
+	protected function onGet($key, $invoicing_day = null) {
+		$datetime = !is_null($invoicing_day) ? $this->getDatetime($key, 1 ,$invoicing_day) : $this->getDatetime($key);
 		
 		$time = strtotime($datetime);
 		
@@ -75,13 +75,16 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	/**
 	 * Return the date constructed from the current billrun key
 	 * @param string $billrunKey Billrun key to get the datetime by.
-	 * @param int $defaultChargingDay - Default value is 1.
 	 * @return string The string representation of current date time according
 	 * to the billrun key.
 	 */
-	protected function getDatetime($billrunKey, $defaultChargingDay=1) {
+	protected function getDatetime($billrunKey, $invoicingDay = null) {
 		$config = Billrun_Factory::config();
-		$dayofmonth = $config->getConfigValue('billrun.charging_day', $defaultChargingDay);
+		if(($config->isMultiDayCycle()) && (!is_null($invoicingDay))) {
+			$dayofmonth = $invoicingDay;
+		}else {
+			$dayofmonth = $config->getConfigChargingDay();
+		}
 		return strlen($billrunKey) == 14 ? $billrunKey : $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	

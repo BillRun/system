@@ -14,8 +14,10 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	use Billrun_Traits_ForeignFields;
-	
+	use Billrun_Traits_ForeignFields {
+		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
+	}
+
 	/**
 	 * the type of the object
 	 *

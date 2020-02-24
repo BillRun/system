@@ -31,14 +31,17 @@ trait Billrun_Traits_ForeignFields  {
 		$this->addedForeignFields = array();
 	}
 	
+	protected function getForeignFieldsFromConfig() {
+		return array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+			return isset($value['foreign']);
+		});
+	}
 
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
-			return isset($value['foreign']);	
-		});
+		$foreignFields = $this->getForeignFieldsFromConfig();
 		
-		foreach ($foreignFieldsConf as $fieldConf) {
+		foreach ($foreignFields as $fieldConf) {
 			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {
 				Billrun_Factory::log("Foreign field configuration not mapped to foreign sub-field",Zend_Log::WARN);
 				continue;
