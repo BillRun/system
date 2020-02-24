@@ -7,7 +7,7 @@
  */
 
 /**
- * Calculates a yearly upfront charge
+ * Calculates a not prorated monthly upfront charge
  *
  * @package  Plans
  * @since    5.2
