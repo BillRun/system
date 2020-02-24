@@ -47,7 +47,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
-			$acc[$currentSub['id']] = new Mongodloid_Entity($currentSub['subscriber']);
+			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);
 	}

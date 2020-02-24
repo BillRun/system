@@ -97,6 +97,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
 			$subs_by_stamp = array();
 			foreach ($this->subscribers as $key => $sub) {
+				$subData = $sub->getData();
+				$key = !empty($subData['id']) ? $subData['id'] :
+						(!empty($subData['stamp']) ? $subData['stamp'] : $key );
 				$subs_by_stamp[$key] = $sub;
 			}
 			$this->subscribers = $subs_by_stamp;
