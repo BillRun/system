@@ -96,9 +96,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function subscribersByStamp() {
 		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
 			$subs_by_stamp = array();
-			foreach ($this->subscribers as $sub) {
+			foreach ($this->subscribers as $key => $sub) {
 				$subData = $sub->getData();
-				$subs_by_stamp[$subData['id']] = $sub;
+				$key = !empty($subData['id']) ? $subData['id'] :
+						(!empty($subData['stamp']) ? $subData['stamp'] : $key );
+				$subs_by_stamp[$key] = $sub;
 			}
 			$this->subscribers = $subs_by_stamp;
 			$this->subscribers_by_stamp = true;
@@ -108,7 +110,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	
 	
 	public function prepareData($lines) {
-		if ($this->isBulk()) {
+		if ($this->isBulk() && empty($this->subscriber)) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
 	}
@@ -251,12 +253,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return array_merge(parent::getPossiblyUpdatedFields(), $this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
 	}
 
-	public function getCustomerPossiblyUpdatedFields() {
+	public function  getCustomerPossiblyUpdatedFields() {
 		$subscriber = Billrun_Factory::subscriber();
 		$configFields = Billrun_Factory::config()->getConfigValue('customer.calculator.row_enrichment', array());
 		$availableFileds = array_keys($subscriber->getAvailableFields());
 		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
-		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'), array_keys($configFields));
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'), array_keys(call_user_func_array('array_merge',$configFields)));
 	}
 
 	/**
@@ -283,34 +285,28 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		
 		// build customer mapping priorities
 		$priorities = $this->buildPriorities($rows, $subscriber_extra_data);
-		$matchedStamps = [];
 		$subsData = [];
+		$queriesToMatchSubs = [];
 		foreach ($priorities as $priorityQueries) {
-			// keep only queries that their previous priority was not found by the system
-			$priorityQueries = array_filter($priorityQueries, function($query) use ($matchedStamps){
-				return !isset($matchedStamps[$query['id']]);
-			});
 			if (empty($priorityQueries)) {
 				continue;
 			}
-			
+			$queriesToMatchSubs[] = $priorityQueries;
+		}
 			// load one subscriber for each query
-			$results = $this->subscriber->loadSubscriberForQueries($priorityQueries, $this->subscriber->getAvailableFields());			
+			$results = $this->subscriber->loadSubscriberForQueries($queriesToMatchSubs, $this->subscriber->getAvailableFields());
 			if (!$results) {
 				Billrun_Factory::log('Failed to load subscribers data for params: ' . print_r($priorityQueries, 1), Zend_Log::NOTICE);
 				return false;
 			}
-			foreach ($results as $sub) {
-				$matchedStamps[$sub['id']] = true;
-				$subsData[] = $sub;
-			}
-		}
+
+
 		return array_map(function($data) {
 			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
 			$options = array('data' => $data->getRawData());
 			$subscriber = Billrun_Subscriber::getInstance(array_merge($data->getRawData(), $options, $type));
 			return $subscriber;
-		}, $subsData);
+		}, $results);
 	}
 
 	/**
@@ -330,8 +326,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function loadSubscriberForLine($row) {
 		$priorities = $this->buildPriorities([$row]);
 		foreach ($priorities as $priority) {
-			if ($sub = $this->subscriber->loadSubscriberForQuery(array_values($priority)[0])) {
-				return $sub;
+			if ( $subData = $this->subscriber->loadSubscriberForQuery($priority) ) {
+				$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.subscriber.type', 'db'));
+				$options = array('data' => $subData->getRawData());
+				$subscriber = Billrun_Subscriber::getInstance(array_merge($subData->getRawData(), $options, $type));
+				return $subscriber;
 			}
 		}
 		return false;
@@ -357,7 +356,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 								break;
 							}
 						}
-						$priorities[$key][$currParams['id']] = $currParams;
+						$priorities[] = $currParams;
 					}
 				}
 			}

@@ -113,13 +113,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
-	protected abstract function getAccountDetails($query);
+	protected abstract function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */
-	protected abstract function getAccountsDetails($query);
+	protected abstract function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * Method to Save as 'Close And New' item
