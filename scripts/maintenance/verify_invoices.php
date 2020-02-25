@@ -21,7 +21,7 @@ $log = Billrun_Log::getInstance(array_merge(Billrun_Factory::config()->getConfig
 
 $billrunKey = $argv[4];
 $pdfVerifyExec = Billrun_Factory::config()->getConfigValue('invoice_export.verfiy_pdf_exec','pdfinfo');
-$pdfsPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export',"files/insddvoices")) . DIRECTORY_SEPARATOR. $billrunKey .DIRECTORY_SEPARATOR. 'pdf'. DIRECTORY_SEPARATOR ;
+$pdfsPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export',"files/ivoices")) . DIRECTORY_SEPARATOR. $billrunKey .DIRECTORY_SEPARATOR. 'pdf'. DIRECTORY_SEPARATOR ;
 $brokenPdfs = [];
 $log->log("Verifing invoices at path {$pdfsPath}");
 $thinkArr = ['-','\\','|','/'];
@@ -30,7 +30,7 @@ foreach(glob($pdfsPath."*.pdf") as $filePath ) {
 	print($thinkArr[$thinkIdx++ %4] ."\r");
 	$res = exec("{$pdfVerifyExec} {$filePath} 2>/dev/null");
 	if(empty($res)) {
-		$log->log("{$filePath} is borken {$res}",Zend_Log::WARN);
+		$log->log("{$filePath} is broken {$res}",Zend_Log::WARN);
 		$brokenPdfs[] = $filePath;
 	}
 }
