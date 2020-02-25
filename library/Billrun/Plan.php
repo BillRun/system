@@ -553,11 +553,9 @@ class Billrun_Plan extends Billrun_Service {
 		$end_month = date('F', $end);
 
 		if ($start_month == $end_month) {
-			$days_in_plan = (int) $end_day - (int) $start_day + 1;
+			$days_in_plan = (int) $end_day - (int) $start_day;
 		} else {
-			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
-			$days_in_current_month = (int) $end_day;
-			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+			$days_in_plan = $days_in_month - (int) $start_day + 1;
 		}
 
 		$fraction = $days_in_plan / $days_in_month;
