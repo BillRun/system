@@ -32,11 +32,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		} else if ($this->fixedWidth) {
 			$this->delimiter = '';
 		}
-		if (!$this->validateOptions($options)) {
-                        $message = "Missing options when generating payment gateways csv file for file type " . $options['file_type'];
-                        $this->logFile->updateLogFileField('errors', $message);
-			throw new Exception($message);
-		}
+		$this->validateOptions($options);
                 if (isset($options['local_dir'])) {
                     $this->local_dir = $options['local_dir'];
                 }
@@ -50,25 +46,16 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
-                        $message = "File type isn't fixed/separator. No generate was made.";
-                        Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->logFile->updateLogFileField('errors', $message);
-			return false;
+                        throw new Exception("File type isn't fixed/separator. No generate was made.");
 		}
 		if (!isset($options['local_dir'])) {
-                        $message = "File's local_dir is undefined. No generate was made.";
-                        Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->logFile->updateLogFileField('errors', $message);
-			return false;
+                        throw new Exception("File's local_dir is undefined. No generate was made.");
 		}
 		if ($this->fixedWidth) {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-                                                $message = "Missing padding length definitions for " . $options['file_type'];
-						Billrun_Factory::log($message, Zend_Log::DEBUG);
-                                                $this->logFile->updateLogFileField('errors', $message);
-						return false;
+                                                throw new Exception("Missing padding length definitions for " . $options['file_type']);
 					}
 				}
 			}

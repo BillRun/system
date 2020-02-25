@@ -24,13 +24,13 @@ class Billrun_Version {
 	public static $DEV_LEVEL = '';
 
 	/** @var  string  Development STATUS. */
-	public static $DEV_STATUS = 'Alpha';
+	public static $DEV_STATUS = 'Beta';
 
 	/** @var  string  Build number. */
-	public static $BUILD = '';
+	public static $BUILD = '2';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '05-December-2019';
+	public static $RELDATE = '12-February-2020';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';

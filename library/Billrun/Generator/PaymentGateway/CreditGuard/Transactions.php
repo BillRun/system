@@ -23,6 +23,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  */
 class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_Generator_Csv {
 	
+	use Billrun_Traits_Api_OperationsLock;
+
 	protected static $type = 'CreditGuard';
 
 	protected $customers;
@@ -67,15 +69,15 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$newAccount = Billrun_Factory::account();
-		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
-		$accounts = $newAccount->getAccountsByQuery($accountQuery);
+		$account = Billrun_Factory::account();
+		$accountQuery = array('aid' => array('$in' => $customersAids));
+		$accounts = $account->loadAccountsForQuery($accountQuery);
 		foreach ($accounts as $account){
-			$subscribers_in_array[$account['aid']] = $account;
+			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($this->customers as $customer) {
 			$paymentParams = array();
-			$account = $subscribers_in_array[$customer['aid']];
+			$account = $accounts_in_array[$customer['aid']];
 			if (!$this->isActiveGatewayCreditGuard($account)) {
 				continue;
 			}
@@ -366,6 +368,25 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			return;
 		}
 		Billrun_Factory::log()->log('Failed removing empty file ' . $this->file_path, Zend_Log::INFO);
+	}
+	
+	protected function getConflictingQuery() {
+		return array();
+	}
+
+	protected function getInsertData() {
+		return array(
+			'action' => 'generate_pg_file',
+			'filtration' => 'all',
+		);
+	}
+
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'generate_pg_file',
+			'filtration' => 'all',
+			'end_time' => array('$exists' => false)
+		);
 	}
 	
 }
