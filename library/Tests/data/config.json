@@ -2745,7 +2745,7 @@
 						}
 					],
 					"taxation": {
-						"tax_type": "vat",
+						"tax_type": "usage",
 						"CSI": {
 							"taxation_mapping": [],
 							"provider": "",
