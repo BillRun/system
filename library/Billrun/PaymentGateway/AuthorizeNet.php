@@ -231,6 +231,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (!empty($customerInfo)) {
 			$transactionRequest['customer'] = $customerInfo;
 		}
+		
+		$billTo = $this->buildBillTo($gatewayDetails);
+		if (!empty($billTo)) {
+			$transactionRequest['billTo'] = $billTo;
+		}
 
 		return $transactionRequest;
 	}
@@ -284,6 +289,30 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		];
 	}
 	
+	protected function buildBillTo($gatewayDetails, $params = []) {
+		$billTo = [];
+		$fields = [
+			'first_name' => 'firstName',
+			'last_name' => 'lastName',
+			'address' => 'address',
+			'city' => 'city',
+			'state' => 'state',
+			'zip' => 'zip',
+			'country' => 'country',
+			'phone_number' => 'phoneNumber',
+			'fax_number' => 'faxNumber',
+		];
+		
+		foreach ($fields as $dataField => $requestField) {
+			$val = Billrun_Util::getIn($gatewayDetails, $dataField, '');
+			if (!empty($val)) {
+				$billTo[$requestField] = $val;
+			}
+		}
+		
+		return $billTo;
+	}
+	
 	protected function buildAuthenticationBody() {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
@@ -310,6 +339,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			'email' => Billrun_Util::getIn($gatewayDetails, 'email', ''),
 			'paymentProfiles' => [
 				'customerType' => 'individual',
+				'billTo' => $this->buildBillTo($gatewayDetails, $params),
 				'payment' => $this->buildTransactionPayment($gatewayDetails),
 			],
 		];
