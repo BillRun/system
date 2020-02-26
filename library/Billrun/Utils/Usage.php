@@ -20,7 +20,7 @@ class Billrun_Utils_Usage {
 		}
 //		TODO  added the cache after complete testing is done for the cache
 //		$cache = Billrun_Factory::cache();
-		
+		$subscriber = Billrun_Factory::subscriber();
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
@@ -29,7 +29,7 @@ class Billrun_Utils_Usage {
 				$entityQueryData['collection'] = 'subscribers';
 				$entityQueryData['query'] = array('sid' => $row['sid'], 'aid'=> $row['aid']);
 				$entityQueryData['sort'] = array('from' => -1);
-				break;
+                                return $subscriber->loadSubscriberForQuery($entityQueryData['query']);
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
@@ -37,7 +37,7 @@ class Billrun_Utils_Usage {
 				$entityQueryData['collection'] = 'subscribers';
 				$entityQueryData['query'] = array('aid' => $row['aid'],'type' => 'account' );
 				$entityQueryData['sort'] = array('from' => -1);
-				break;			
+                                return $subscriber->loadSubscriberForQuery($entityQueryData['query']);		
 			
 			case 'plan' :
 				if(empty($row['plan'])) {
