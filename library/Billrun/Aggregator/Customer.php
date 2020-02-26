@@ -571,13 +571,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function beforeAggregate($accounts) {
-		if ($this->overrideMode && $accounts) {
+		if ($this->overrideMode && $accounts && !$this->fakeCycle) {
 			$aids = array();
 			foreach ($accounts as $account) {
 				$aids[] = $account->getInvoice()->getAid();
 			}
 			$billrunKey = $this->billrun->key();
-			self::removeBeforeAggregate($billrunKey, $aids);
+                        self::removeBeforeAggregate($billrunKey, $aids);
 		}
 		
 		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
