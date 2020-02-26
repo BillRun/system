@@ -72,7 +72,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->data['note'])) {
 			$paymentsArr[0]['note'] = $this->data['note'];
 		}
-		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
+		$primaryInstallment = current($paymentResponse['payment']);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$success = $primaryInstallment->splitToInstallments();
 			return $success;

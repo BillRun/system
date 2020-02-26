@@ -69,7 +69,8 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payments = Billrun_Bill::pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
