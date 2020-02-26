@@ -11,7 +11,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 /**
  * Taxation action class
  */
-class TaxationAction extends ApiAction {
+class ChargesAction extends ApiAction {
 	
 	use Billrun_Traits_Api_UserPermissions;	
 	
@@ -26,7 +26,7 @@ class TaxationAction extends ApiAction {
 		
 		switch ($request['operation']) {
 			case 'calculate':
-				$ret = $this->calculateTaxation($data);
+				$ret = $this->calculateCharges($data);
 				break;
 			default:
 				return $this->setError('Unrecognized operation', $request);
@@ -35,16 +35,16 @@ class TaxationAction extends ApiAction {
 		return $this->setSuccess($ret);
 	}
 	
-	protected function calculateTaxation($data) {
+	protected function calculateCharges($data) {
 		$taxCalc = Billrun_Calculator::getInstance(['type' => 'tax']);
 		$line = $this->prepareLine($data);
-		$subscriber = $data['subscriber'] ?? [];
-		$account = $data['account'] ?? [];
+		$subscriber = isset($data['subscriber']) ? $data['subscriber'] : [];
+		$account = isset($data['account']) ? $data['account'] : [];
 		$params = [
 			'pretend' => true,
 		];
 		$line = $taxCalc->updateRowTaxInforamtion($line, $subscriber, $account, $params);
-		$taxData = $line['tax_data'] ?? [];
+		$taxData = isset($line['tax_data']) ? $line['tax_data'] : [];
 		if (empty($taxData)) {
 			return $this->setError('Failed to get tax data', $data);
 		}
@@ -83,7 +83,7 @@ class TaxationAction extends ApiAction {
 			$service = new Billrun_Service(['name' => $data['service']]);
 			$line['aprice'] = $this->getPrice($service);
 		} else {
-			return $this->setError('Taxation can be calculated on one of: "rate"/"plan"/"service"');
+			return $this->setError('Charges can be calculated on one of: "rate"/"plan"/"service"');
 		}
 		
 		$line['stamp'] = Billrun_Util::generateArrayStamp($line);
