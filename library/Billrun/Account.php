@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
