@@ -144,6 +144,18 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	public $ignoreCdrs = false;
+        
+        /**
+	 * Array of aggregation options.
+	 * @var array.
+	 */
+        public $options;
+        
+        /**
+	 * Array of aid => sids, to merge their credit installments.
+	 * @var array.
+	 */
+        public $merge_credit_installments;
 
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -223,6 +235,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->aggregationLogic = Billrun_Account::getAccountAggregationLogic($aggregateOptions);
 
 		$this->isValid = true;
+                $this->merge_credit_installments = [];
 	}
 
 	public function getCycle() {
@@ -579,9 +592,24 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
-		
+		$accountsToPrepone = [];
 		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
-			$this->handleInstallmentsPrepone($accounts);
+			$accountsToPrepone = $this->handleInstallmentsPrepone($accounts);
+		}
+		$additionalAccountsToPrepone = [];
+		if (!empty($this->merge_credit_installments)) {
+			foreach (array_keys($this->merge_credit_installments) as $aid) {
+				if (in_array($aid, $accountsToPrepone)) {
+					if (!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))) {
+						$additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
+					}
+				} else {
+					$additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
+				}
+			}
+		}
+		if (!empty($additionalAccountsToPrepone) && !$this->fakeCycle){
+			$this->preponeInstallments($additionalAccountsToPrepone); 
 		}
 	}
 	
@@ -627,6 +655,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (!empty($accountsToPrepone)) {
 			return $this->preponeInstallments($accountsToPrepone, $this->getCycle()->key(), $this->fakeCycle);
 		}
+		return $accountsToPrepone;
 	}
 	
 	/**
@@ -791,7 +820,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return array
 	 */
 	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
-		return $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+                $result = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+                if(isset($result['options'])){
+                    $this->options = $result['options'];
+                }
+                if(isset($result['options']['merge_credit_installments'])){
+                    $this->merge_credit_installments = $result['options']['merge_credit_installments'];
+                }
+		return $result['data'];
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
