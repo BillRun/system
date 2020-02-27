@@ -32,6 +32,23 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		if ($aids) {
 			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
+		if (!empty($invoicing_days)) {
+			$config = Billrun_Factory::config();
+			if (in_array(strval($config->getConfigChargingDay()), $invoicing_days)) {
+				$nin = array_diff(array_map('strval', range("1", "28")), $invoicing_days);
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$nin' => array_values($nin)]
+					]
+				);
+			} else {
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$in' => $invoicing_days]
+					]
+				);
+			}
+		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size, $invoicing_days);
 		if(!empty($this->generalOptions['is_onetime_invoice'])) {
@@ -121,13 +138,6 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				),
 			)),
 		);
-		if(!empty($invoicing_days)) {
-			$nin = array_diff(array_merge(array_map('strval', range("1", "28")), [null]), $invoicing_days);
-			$pipelines[] = array(
-				'$match' => ['invoicing_day' => ['$nin' => array_values($nin)]
-				]
-			);
-		}
 		$pipelines[] = array(
 			'$skip' => $page * $size,
 		);

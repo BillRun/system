@@ -986,19 +986,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			if(!is_array($options['invoicing_days'])) {
 				$options['invoicing_days'] = [$options['invoicing_days']];
 			}
-			if (in_array(strval($config->getConfigChargingDay()), $options['invoicing_days'])) {
-				return array_merge($options['invoicing_days'], [null]);
-			} else {
-				return $options['invoicing_days'];
-			}
+			return $options['invoicing_days'];
 		}else {
-			$days = $this->allowPrematureRun ? range("1", "28") : range("1", (string)date('d', time()));
-			$days = array_map('strval', $days);
-			if (in_array(strval($config->getConfigChargingDay()), $days)) {
-				return array_merge($days, [null]);
-			} else {
-				return $days;
-			}
+			return array_map('strval', $this->allowPrematureRun ? range("1", "28") : range("1", (string)date("d", strtotime("yesterday"))));
 		}
 	}
 	
