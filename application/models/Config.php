@@ -1619,9 +1619,9 @@ class ConfigModel {
 	
 	protected function getTaxationFields() {
 		$ret = array(
-			'tax.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
-			'tax.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
-			'tax.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
+			'taxation.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
+			'taxation.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
+			'taxation.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
 		);
 		return $ret;
 	}
