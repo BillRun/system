@@ -39,7 +39,7 @@ class Billrun_Utils_Usage {
 				$entityQueryData['collection'] = 'subscribers';
 				$entityQueryData['query'] = array('aid' => $row['aid']);
 				$entityQueryData['sort'] = array('from' => -1);
-                                return $account->loadAccountsForQuery($entityQueryData['query']);		
+                                return $account->loadAccountForQuery($entityQueryData['query']);		
 			
 			case 'plan' :
 				if(empty($row['plan'])) {
