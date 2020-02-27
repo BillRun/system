@@ -22,7 +22,7 @@ class Billrun_Account_External extends Billrun_Account {
 	}
 	
 
-	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 			// Prepare request
 			$requestParams = [
 				'start_date' => date('Y-m-d',$cycle->start()->sec),
@@ -33,6 +33,10 @@ class Billrun_Account_External extends Billrun_Account {
 
 			if(!empty($aids)) {
 				$requestParams['aids'] = $aids;
+			}
+			
+			if(!empty($invoicing_days)) {
+				$requestParams['invoicing_days'] = $invoicing_days;
 			}
 			//Actually  do the request
 			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);

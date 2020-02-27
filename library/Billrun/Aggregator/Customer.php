@@ -144,7 +144,25 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	public $ignoreCdrs = false;
-
+	
+	/**
+	 * Array of invoicing days, extra customer filtration
+	 * @var array
+	 */
+	public $invoicing_days = [];
+	
+	/**
+	 * Is premature cycle's run is available.
+	 * @var bollean
+	 */
+	public $allowPrematureRun = false;
+	
+	/**
+	 * Is multi cycle day mode.
+	 * @var bollean
+	 */
+	public $multiDayCycleMode = false;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -179,6 +197,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		$this->ignoreCdrs = Billrun_Util::getFieldVal($options['aggregator']['ignore_cdrs'], Billrun_Util::getFieldVal($options['ignore_cdrs'], $this->ignoreCdrs));
 		
+		$config = Billrun_Factory::config();
+		if($this->multiDayCycleMode = $config->isMultiDayCycle()) {
+			Billrun_Factory::log()->log("Running on multi cycle day mode", Zend_Log::INFO);
+			$this->invoicing_days = $this->getInvoicingDays($options);
+		} else {
+			if(!$this->multiDayCycleMode && !empty($options['invoicing_days'])) {
+				Billrun_Factory::log()->log("Multi cycle day mode is off, 'invoicing_days' parameter was ignored.", Zend_Log::WARN);
+			}
+		}
+		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
@@ -201,6 +229,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 		$this->overrideMode = $this->getAggregatorConfig('override_mode', true);
+		$this->allowPrematureRun = $config->getConfigValue('cycle.allow_premature_run', false);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$pageResult = $this->getPage();
@@ -352,7 +381,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$data = $rawResults['data'];
 
 		$accounts = $this->parseToAccounts($data, $this);
-		
+	
 		return $accounts;
 	}
 
@@ -410,7 +439,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$result['data'] = array();
 			return $result;
 		}
-		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
+		if ($this->multiDayCycleMode) {
+			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds, $this->invoicing_days);
+		} else {
+			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
+		}
 		$result['data'] = $data;
 		return $result;
 	}
@@ -790,8 +823,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array
 	 */
-	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
-		return $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+	protected function aggregateMongo($cycle, $page, $size, $aids = null, $invoicing_days = null) {
+		return $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids, $invoicing_days);
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
@@ -847,11 +880,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function shouldRunAggregate($stamp) {
-		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
-		if (!$this->isFakeCycle() && !$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
-			return false;
+		$config = Billrun_Factory::config();
+		if ($this->multiDayCycleMode && !empty($this->invoicing_days) && !$this->isFakeCycle() && !$this->allowPrematureRun) {
+			for($i = 0; $i < count($this->invoicing_days); $i++) {
+				if (time() < Billrun_Billingcycle::getEndTime($stamp, $this->invoicing_days[$i])) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			if (!$this->isFakeCycle() && !$this->allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+				return false;
+			}
+			return true;
 		}
-		return true;
 	}
 	
 
@@ -937,5 +979,27 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public function getData() {
 		return $this->data;
 	}
-
+	
+	protected function getInvoicingDays($options) {
+		$config = Billrun_Factory::config();
+		if (!empty($options['invoicing_days'])) {
+			if(!is_array($options['invoicing_days'])) {
+				$options['invoicing_days'] = [$options['invoicing_days']];
+			}
+			if (in_array(strval($config->getConfigChargingDay()), $options['invoicing_days'])) {
+				return array_merge($options['invoicing_days'], [null]);
+			} else {
+				return $options['invoicing_days'];
+			}
+		}else {
+			$days = $this->allowPrematureRun ? range("1", "28") : range("1", (string)date('d', time()));
+			$days = array_map('strval', $days);
+			if (in_array(strval($config->getConfigChargingDay()), $days)) {
+				return array_merge($days, [null]);
+			} else {
+				return $days;
+			}
+		}
+	}
+	
 }

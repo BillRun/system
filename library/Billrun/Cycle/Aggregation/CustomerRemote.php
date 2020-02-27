@@ -22,7 +22,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
+	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null, $invoicing_days = null) {
 		if (is_null($page)) {
 			$page = 0;
 		}
@@ -30,7 +30,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 		if (empty($size)) {
 			$size = 100;
 		}
-		$billableResults = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
+		$billableResults = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids, $invoicing_days);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
 		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services'];

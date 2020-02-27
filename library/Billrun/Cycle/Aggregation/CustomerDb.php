@@ -22,7 +22,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
+	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null, $invoicing_days = null) {
 		if (is_null($page)) {
 			$page = 0;
 		}
@@ -33,7 +33,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
-		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size);
+		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size, $invoicing_days);
 		if(!empty($this->generalOptions['is_onetime_invoice'])) {
 			$mainAggregationLogic = $this->alterMainLogicForOnetime($mainAggregationLogic);
 		}
@@ -93,7 +93,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	/**
 	 * get the main  aggreation and paging logic query that is to be sent to the DB
 	 */
-	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size) {
+	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size, $invoicing_days = null) {
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['group'],array(
 				'_id' => array(
@@ -121,6 +121,13 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				),
 			)),
 		);
+		if(!empty($invoicing_days)) {
+			$nin = array_diff(array_merge(array_map('strval', range("1", "28")), [null]), $invoicing_days);
+			$pipelines[] = array(
+				'$match' => ['invoicing_day' => ['$nin' => array_values($nin)]
+				]
+			);
+		}
 		$pipelines[] = array(
 			'$skip' => $page * $size,
 		);
