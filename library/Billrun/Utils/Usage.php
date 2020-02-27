@@ -23,23 +23,19 @@ class Billrun_Utils_Usage {
 
 		switch ($entityType) {
 			case 'subscriber' :
-                                $subscriber = Billrun_Factory::subscriber();
 				if(empty($row['sid'])) {
 					return null;
 				}
-				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array('sid' => $row['sid'], 'aid'=> $row['aid']);
-				$entityQueryData['sort'] = array('from' => -1);
-                                return $subscriber->loadSubscriberForQuery($entityQueryData['query']);
+                                $subscriber = Billrun_Factory::subscriber();
+				$query = array('sid' => $row['sid'], 'aid'=> $row['aid']);
+                                return $subscriber->loadSubscriberForQuery($query);
 			case 'account' :
-                                $account = Billrun_Factory::account();
 				if(empty($row['aid'])) {
 					return null;
 				}
-				$entityQueryData['collection'] = 'subscribers';
-				$entityQueryData['query'] = array('aid' => $row['aid']);
-				$entityQueryData['sort'] = array('from' => -1);
-                                return $account->loadAccountForQuery($entityQueryData['query']);		
+                                $account = Billrun_Factory::account();
+				$query = array('aid' => $row['aid']);
+                                return $account->loadAccountForQuery($query);		
 			
 			case 'plan' :
 				if(empty($row['plan'])) {
