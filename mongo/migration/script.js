@@ -267,6 +267,29 @@ if(!lastConfig.email_templates) {
     }
   };
 }
+// BRCD-2364: Customer invoicing_day field, Should be a system field, not visible for editing by default.
+//The possible values are 1-28 - should be enforced using the existing "Select list" feature
+var fields = lastConfig['subscribers']['account']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "invoicing_day") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+                "field_name" : "invoicing_day",
+                "title" : "Invoicing Day",
+                "mandatory" : true,
+                "system" : true,
+                "show_in_list" : true,
+                "select_list" :true,
+                "editable" : true,
+                "display" : true,
+                "select_options": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]
+	});
+}
+lastConfig['subscribers']['account']['fields'] = fields;
 
 // BRCD-1415 - add system field to account (invoice_shipping_method)
 var fields = lastConfig['subscribers']['account']['fields'];
