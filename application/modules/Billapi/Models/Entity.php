@@ -242,8 +242,7 @@ class Models_Entity {
 			}
                         if(!is_null($selectOptionsFields[$field])){
                             $selectOptions = is_string($selectOptionsFields[$field])? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
-                            if((is_array($selectOptions) && !in_array($val, $selectOptions))
-                                    || (!is_array($selectOptions) && $selectOptions != $val)){
+                            if(!in_array($val, $selectOptions)){
                                 throw new Billrun_Exceptions_Api(0, array(), "Invalid field: $field, with value: $val");
                             }
                         }
