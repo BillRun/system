@@ -458,6 +458,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function parseToAccounts($outputArr) {
 		$accounts = array();
+		$config = Billrun_Factory::config();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
 			'autoload' => !empty($this->overrideMode)
@@ -568,8 +569,17 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		);
 
 		foreach($this->getAggregatorConfig('passthrough_data',array()) as  $invoiceField => $subscriberField) {
-			if(isset($subscriberPlan['passthrough'][$subscriberField])) {
+			if(isset($subscriberPlan['passthrough'][$subscriberField]) && $subscriberField !== "invoicing_day") {
 				$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
+			} else {
+				$config = Billrun_Factory::config();
+				if ($subscriberField == "invoicing_day" && $config->isMultiDayCycle()) {
+					if (empty($subscriberPlan['passthrough'][$subscriberField]) || !in_array($subscriberPlan['passthrough'][$subscriberField], array_map('strval', range("1", "28")))) {
+						$accountData[$invoiceField] = strval($config->getConfigChargingDay());
+					} else {
+						$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
+					}
+				}
 			}
 		}
 		return  $accountData;

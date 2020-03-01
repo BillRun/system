@@ -1049,19 +1049,10 @@ class Billrun_Billrun {
 	 */
 	public function populateBillrunWithAccountData($account, $optionLines = array()) {
 		$attr = array();
-		$config = Billrun_Factory::config();
 		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-			if (isset($account['attributes'][$remoteKey])) {
-				if ($remoteKey == "invoicing_day") { 
-					$attr[$key] = in_array($account['attributes'][$remoteKey] , array_map('strval', range(1, 28))) ? $account['attributes'][$remoteKey] : strval($config->getConfigChargingDay());
-				} else {
+				if (isset($account['attributes'][$remoteKey])) {
 					$attr[$key] = $account['attributes'][$remoteKey];
 				}
-			} else {
-				if ($remoteKey == "invoicing_day") {
-					$attr[$key] = strval($config->getConfigChargingDay());
-				}
-			}
 		}
 		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
 			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
