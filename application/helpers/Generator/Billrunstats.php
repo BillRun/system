@@ -98,7 +98,7 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 													}
 												} else {
 													$flat_breakdown_record['vat'] = $zone_totals['vat'];
-													$flat_breakdown_record['cost'] = $zone_totals['cost'];
+													$flat_breakdown_record['cost'] = $zone_totals['cost'] + (isset($zone_totals['cost_without_vat']) ? $zone_totals['cost_without_vat'] : 0);
 													$flat_breakdown_record['usaget'] = 'flat';
 													$flat_breakdown_record['usagev'] = 1;
 													$flat_breakdown_record['count'] = 1;

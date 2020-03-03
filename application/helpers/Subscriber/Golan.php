@@ -339,33 +339,35 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$offer['fraction'] = $this->calcServiceFractionIncludingFreeze($offer, $sid);	
 									$offer['count'] = 1;
 									$offer['offer_amount'] = $subscriberOffer['offer_amount'];
+									$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
 									if (!empty($subscriberOffer['disconnected_plan'])) {
 										$offer['disconnected_plan'] = $subscriberOffer['disconnected_plan'];
 									}
-									if (!isset($subscriberOffer['offer_amount']) && isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
-										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
-										$offerCredit = $this->refundCredit;
-										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
-										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
-										$offerCredit['offer_id'] = $subscriberOffer['offer_id'];
-										$offerCredit['unique_plan_id'] = self::generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
-										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
-										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
-										$offerCredit['activation'] = $concat['data']['activation_start'];
-										$offerCredit['deactivation'] = $concat['data']['activation_end'];
-										$offerCredit['fraction'] = $offer['fraction'];
-										$offerCredit['credit_time'] = Billrun_Util::getEndTime($this->billrun_key);
-										if ($sid) {
-											$offerCredit['plan'] = $subscriberOffer['plan'];
-										} else {
-											$offerCredit['subscriber_id'] = $sid;
-											$offerCredit['plan'] = 'ACCOUNT';
-										}
-										$offerCredit['amount_without_vat'] = $offer['amount_without_vat'];
-										$offerCredit['source_amount_without_vat'] = $offer['amount_without_vat'];
-										$offerCredit['amount_without_vat'] = $this->isFractionNeeded($offerCredit) ? ($offerCredit['amount_without_vat'] * $offerCredit['fraction']) : $offerCredit['amount_without_vat'];
-										$offerCredits[] = $offerCredit;									
-									}
+									// As agreed - this was commented out because this fallback no longer neccessary
+//									if (!isset($subscriberOffer['offer_amount']) && isset($subscriberOffer['amount_without_vat']) && $subscriberOffer['amount_without_vat'] > 0) {
+//										$offer['amount_without_vat'] = $subscriberOffer['amount_without_vat'];
+//										$offerCredit = $this->refundCredit;
+//										$replacedStampOfferService = preg_replace('/stamp/', $this->billrun_key, $offerCredit['service_name']);
+//										$offerCredit['service_name'] = preg_replace('/id/', $offer['id'], $replacedStampOfferService);
+//										$offerCredit['offer_id'] = $subscriberOffer['offer_id'];
+//										$offerCredit['unique_plan_id'] = self::generatePlanUniqueId($subscriberOffer['offer_id'], $subscriberOffer['start_date']);
+//										$offerCredit['aid'] = $offerCredit['account_id'] = $concat['data']['aid'];
+//										$offerCredit['sid'] = $offerCredit['subscriber_id'] = $concat['data']['sid'];
+//										$offerCredit['activation'] = $concat['data']['activation_start'];
+//										$offerCredit['deactivation'] = $concat['data']['activation_end'];
+//										$offerCredit['fraction'] = $offer['fraction'];
+//										$offerCredit['credit_time'] = Billrun_Util::getEndTime($this->billrun_key);
+//										if ($sid) {
+//											$offerCredit['plan'] = $subscriberOffer['plan'];
+//										} else {
+//											$offerCredit['subscriber_id'] = $sid;
+//											$offerCredit['plan'] = 'ACCOUNT';
+//										}
+//										$offerCredit['amount_without_vat'] = $offer['amount_without_vat'];
+//										$offerCredit['source_amount_without_vat'] = $offer['amount_without_vat'];
+//										$offerCredit['amount_without_vat'] = $this->isFractionNeeded($offerCredit) ? ($offerCredit['amount_without_vat'] * $offerCredit['fraction']) : $offerCredit['amount_without_vat'];
+//										$offerCredits[] = $offerCredit;									
+//									}
 									if ((!is_null($concat['data']['activation_end'])) && ($concat['data']['activation_end'] < $offer['end_date'])){
 										$offer['end_date'] = $concat['data']['activation_end'];
 									}
@@ -798,7 +800,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
-			'aprice' => isset($offer['offer_amount']) ? $offer['offer_amount'] * $fraction : $this->getFlatPrice($fraction),
+			'aprice' => $offer['offer_amount'] * $fraction,
+			'aprice_no_vat' => isset($offer['amount_without_vat']) ? $offer['amount_without_vat'] * $fraction : 0,
 			'plan' => $plan->getName(),
 			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
@@ -811,6 +814,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (!empty($offer) && isset($offer['start_date']) && isset($offer['id'])) {
 			$flat_entry['unique_plan_id'] = self::generatePlanUniqueId($offer['id'], $offer['start_date']);
 		}
+		$flat_entry['total_aprice'] = $flat_entry['aprice_no_vat'] + $flat_entry['aprice'];
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time . $flat_entry['plan'] . $flat_entry['fraction']);
 		$flat_entry['stamp'] = $stamp;
 		if ($retEntity) {
