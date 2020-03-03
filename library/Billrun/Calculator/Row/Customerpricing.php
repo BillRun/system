@@ -533,7 +533,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceSettings = array(
 				'name' => $serviceName,
 				'time' => $time,
-				'disableCache' => true
+				'disableCache' => true,
+				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
 			
 			if (isset($service['from']->sec)) {
@@ -636,6 +637,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if (!$service->get('plan_included')) {
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
+					$instanceOptions['add_on'] = true;
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else { // use same balance as plan balance
 					$balance = $this->balance;

@@ -141,7 +141,7 @@ class Billrun_Billingcycle {
 		$ret = date("Ym", $month_before);
 		return $ret;
 	}
-        
+	
 	/**
 	 * method to get the last closed billing cycle
 	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
@@ -373,8 +373,7 @@ class Billrun_Billingcycle {
 		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		$cycleToRerun = self::isToRerun($billrunKey);
-		if (empty($cycleStatus) && $cycleToRerun) {
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
 			$cycleStatus = 'to_rerun';
 		}
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
@@ -385,7 +384,7 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
@@ -572,6 +571,18 @@ class Billrun_Billingcycle {
 			return NULL;
 		}
 		return $entry['billrun_key'];
+	}
+	
+	public static function getCycleTimeStatus($billrunKey) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		if ($billrunKey == $currentBillrunKey) {
+			return 'present';
+		}
+		if ($billrunKey > $currentBillrunKey) {
+			return 'future';
+		}
+	
+		return 'past';
 	}
         
         /**
