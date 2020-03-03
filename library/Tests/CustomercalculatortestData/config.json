@@ -656,9 +656,9 @@
 						"passive" : false,
 						"delete_received" : false,
 						"name" : "a",
-						"host" : "192.168.1.12",
-						"user" : "yossi",
-						"password" : "yossi123!",
+						"host" : "",
+						"user" : "",
+						"password" : "",
 						"remote_directory" : "/1"
 							}
 						],
