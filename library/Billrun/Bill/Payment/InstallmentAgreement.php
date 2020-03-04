@@ -37,6 +37,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($options['installment_index'])) {
 			$this->data['payment_agreement.installment_index'] = $options['installment_index'];
 		}
+		if (!empty($options['invoices'])) {
+			$this->data['payment_agreement.invoices'] = $options['invoices'];
+		}
 		if ((!empty($options['installments_num']) || !empty($options['first_due_date'])) && !empty($options['amount'])) {
 			if (!Billrun_Util::IsIntegerValue($options['installments_num'])) {
 				throw new Exception('installments_num parameter must be numeric value');
@@ -83,7 +86,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->attachDueDateToCycleEnd)) {
 			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
-		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
+		$primaryInstallment = current($paymentResponse['payment']);
+		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$paymentAgreementData = array();
 			$initialChargeNotBefore = !empty($this->initialChargeNotBefore) ? $this->initialChargeNotBefore : $this->getInitialChargeNotBefore($primaryInstallment);
@@ -188,10 +193,18 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['installment_index'] = $index;
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
+		$installment['invoices'] = $this->getInvoicesIdFromReceipt();
 		$installment['charge']['not_before'] = new MongoDate(strtotime($chargeNotBefore));
 		return $installment;
 	}
-	
+
+	protected function updatePaidInvoicesOnPrimaryInstallment($primaryInstallment) {
+		$installmentData = $primaryInstallment->getRawData();
+		$installmentData['payment_agreement']['invoices'] = $primaryInstallment->getInvoicesIdFromReceipt();
+		$primaryInstallment->setRawData($installmentData);
+		$primaryInstallment->save();
+	}
+
 	protected function correctMonthMiscalculation($date, $prevMonth) {
 		$year = date('Y', $date);
 		$month = $prevMonth + 1;
