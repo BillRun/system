@@ -38,6 +38,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $subscribers;
+        
+        	/**
+	 * array of Billrun_Accounts
+	 * @var array
+	 */
+	protected $accounts;
 
 	/**
 	 * Whether or not to use the subscriber bulk API method
@@ -45,6 +51,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $bulk = false;
 
+        /**
+	 * Whether or not to use the account bulk API method
+	 * @var boolean
+	 */
+	protected $accountBulk = false;
 	/**
 	 * Extra customer fields to be saved by line type
 	 * @var array
@@ -70,6 +81,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		if (isset($options['calculator']['bulk'])) {
 			$this->bulk = $options['calculator']['bulk'];
+		}
+                if (isset($options['calculator']['account_bulk'])) {
+			$this->accountBulk = $options['calculator']['account_bulk'];
 		}
 		if (isset($options['calculator']['extra_data'])) {
 			$this->extraData = $options['calculator']['extra_data'];
