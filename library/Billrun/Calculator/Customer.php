@@ -32,6 +32,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var Billrun_Subscriber 
 	 */
 	protected $subscriber;
+        
+        /**
+	 *
+	 * @var Billrun_Account
+	 */
+	protected $account;
 
 	/**
 	 * array of Billrun_Subscriber
@@ -39,7 +45,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $subscribers;
         
-        	/**
+        /**
 	 * array of Billrun_Accounts
 	 * @var array
 	 */
@@ -50,6 +56,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $bulk = false;
+        
+        /**
+	 * Whether or not to use the account bulk API method
+	 * @var boolean
+	 */
+	protected $bulkAccounts = false;
 
         /**
 	 * Whether or not to use the account bulk API method
@@ -82,8 +94,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['bulk'])) {
 			$this->bulk = $options['calculator']['bulk'];
 		}
-                if (isset($options['calculator']['account_bulk'])) {
-			$this->accountBulk = $options['calculator']['account_bulk'];
+                if (isset($options['calculator']['accounts']['bulk'])) {
+			$this->bulkAccount = $options['calculator']['accounts']['bulk'];
 		}
 		if (isset($options['calculator']['extra_data'])) {
 			$this->extraData = $options['calculator']['extra_data'];
@@ -94,7 +106,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['override_mandatory_fields'])) {
 			$this->overrideMandatoryFields = boolval($options['calculator']['override_mandatory_fields']);
 		}
-
+//                $this->bulkAccount = 1;
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -126,6 +138,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function prepareData($lines) {
 		if ($this->isBulk() && empty($this->subscriber)) {
 			$this->subscribers = $this->loadSubscribers($lines);
+		}
+                if ($this->bulkAccount) {
+                        $this->account =  Billrun_Factory:: account();
+			$this->accounts = $this->loadAccounts($lines);
 		}
 	}
 
@@ -323,6 +339,30 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}, $results);
 	}
 
+        public function loadAccounts($rows) {
+//		$this->accounts_by_stamp = false;
+		$account_extra_data = array_keys($this->account->getCustomerExtraData());
+		$subs = [];
+                $queriesToMatchAcoounts = [];
+                foreach ($rows as $row){
+                    $subs[] =  $this->loadSubscriberForLine($row);
+                }
+                foreach($subs as $sub){
+                    $queriesToMatchAcoounts[]  = array('aid' => $sub->getData()['aid']);
+                }
+                $results = $this->account->loadAccountsForQuery($queriesToMatchAcoounts, $this->account->getAvailableFields());
+                if (!$results) {
+				Billrun_Factory::log('Failed to load accounts data for params: ' . print_r($queriesToMatchAcoounts, 1), Zend_Log::NOTICE);
+				return false;
+		}
+		return array_map(function($data) {
+			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.account.type', 'db'));
+			$options = array('data' => $data->getRawData());
+			$account = Billrun_Subscriber::getInstance(array_merge($data->getRawData(), $options, $type));
+			return $account;
+		}, $results);
+	}
+        
 	/**
 	 * Checks if the current line supposed to be on account's level, means no subscriber should be loaded
 	 * @param array $row
@@ -351,7 +391,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 	
 	// method for building priorities to perform customer calculation by
-	protected function buildPriorities($rows, $subscriber_extra_data = []) {
+	protected function buildPriorities($rows, $extra_data = []) {
 		$priorities = [];
 		foreach ($rows as $row) {
 			if ($this->isLineLegitimate($row)) {
