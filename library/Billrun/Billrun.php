@@ -224,13 +224,13 @@ class Billrun_Billrun {
 	 * @param boolean $rawData
 	 * @return array
 	 */
-	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
+	public static function getBillrunData($aid, $billrun_key, $rawData = true, $project = []) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
 				))
-				->cursor()->limit(1)->current();
+				->project($project)->cursor()->limit(1)->current();
 		return $rawData ? $data->getRawData() : $data;
 	}
 
@@ -248,6 +248,7 @@ class Billrun_Billrun {
 			),
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
@@ -961,7 +962,7 @@ class Billrun_Billrun {
 	 */
 	public static function getActiveBillrun() {
 		$query = array(
-			'attributes.invoice_type' => array('$ne' => 'immediate'),
+			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
 		$now = time();
 		$sort = array(

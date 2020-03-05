@@ -72,7 +72,7 @@ class PayAction extends ApiAction {
 			$payments = Billrun_Bill::pay($method, $paymentsArr);
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
-				$method = $payment->getPaymentMethod();
+				$method = $payment->getBillMethod();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -180,6 +180,9 @@ class PayAction extends ApiAction {
 		}
 		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
 			throw new Exception("installment_num and first_due_date parameters must be passed together");
+		}
+		if (!empty($params['installments_num']) && ($params['installments_num'] > $params['amount'])) {
+			throw new Exception('Number of installments must be lower than passed amount');
 		}
 		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
 		if ($params['amount'] > $customerDebt['without_waiting']) {

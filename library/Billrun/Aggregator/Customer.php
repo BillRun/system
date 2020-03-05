@@ -261,6 +261,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->ratesCache;
 	}
 
+	public function &getDiscounts() {
+		if(empty($this->discountsCache)) {
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$coll = Billrun_Factory::db()->discountsCollection();
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->discountsCache = $this->toKeyHashedArray($res, '_id');
+		}
+		return $this->discountsCache;
+	}
+
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();

@@ -26,12 +26,6 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
-	/**
-	 * service internal id
-	 * 
-	 * @var int
-	 */
-	protected $service_id = 0;
 	
 	
 	/**
@@ -61,12 +55,11 @@ class Billrun_Service {
 			$this->load($params['name'], $time, 'name');
 		}
 		
-		if (isset($params['service_id'])) {
-			$this->data['service_id'] = $params['service_id'];
-		}
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**

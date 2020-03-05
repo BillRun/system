@@ -148,13 +148,14 @@ class Billrun_Cycle_Account_Invoice {
 			),
 			'vat' => $vat, //TODO remove 2017-01-29
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
 	public function getBillrunKey() {
 		return $this->key;
 	}
-	
+
 	/**
 	 * Apply discount added to the account to subscribers;
 	 */
@@ -162,9 +163,13 @@ class Billrun_Cycle_Account_Invoice {
 		$sidDiscounts = array();
 		foreach($discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
-				if($subscriber->getData()['sid'] == $discount['sid']) {
+				$subscriberData = $subscriber->getData();
+				if($subscriberData['sid'] == $discount['sid']) {
 					$rawDiscount = ( $discount instanceof Mongodloid_Entity ) ? $discount->getRawData() : $discount ;
-					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));
+					if (Billrun_Utils_Plays::isPlaysInUse()) {
+						$discount['subscriber'] = array('play' => isset($subscriberData['play']) ? $subscriberData['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
+					}
+					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
 					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
 				}
@@ -179,7 +184,8 @@ class Billrun_Cycle_Account_Invoice {
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array()));
 		$this->updateTotals();
 	}
-
+        
+	
 	/**
 	 * 
 	 * @param type $subLines
@@ -352,7 +358,9 @@ class Billrun_Cycle_Account_Invoice {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
 		$initData['creation_time'] = new MongoDate(time());
-		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$isOneTimeInvoice = isset($options['attributes']['invoice_type']) && $options['attributes']['invoice_type'] == 'immediate' ? true : false;
+		$invoiceDate = $isOneTimeInvoice ? strtotime($options['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
+		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
 		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$initData['due_date'] =  new MongoDate( (@$options['attributes']['invoice_type'] == 'immediate') ? 

@@ -24,6 +24,16 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
+function removeFieldFromConfig(lastConf, field_names, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		return lastConf;
+	}
+	field_names_to_delete = Array.isArray(field_names) ? field_names : [field_names];
+	var fields = lastConf[entityName]['fields'];
+	lastConf[entityName]['fields'] = fields.filter(field => !field_names_to_delete.includes(field.field_name));
+	return lastConf;
+}
+
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -178,22 +188,8 @@ if(lastConfig.invoice_export) {
 	}
 }
 
-//BRCD-1374 : Add taxation support services 
-var vatableField ={
-					"system":true,
-					"select_list" : false,
-					"display" : true,
-					"editable" : true,
-					"multiple" : false,
-					"field_name" : "vatable",
-					"unique" : false,
-					"default_value" : true,
-					"title" : "This service is taxable",
-					"mandatory" : false,
-					"type" : "boolean",
-					"select_options" : ""
-	};
-lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+// BRCD-2251 remove old vatable filed
+lastConfig = removeFieldFromConfig(lastConfig, 'vatable', 'services');
 
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
@@ -309,6 +305,23 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
+
+// BRCD-1552 collection
+if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
+    lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
+}
+delete lastConfig['collection']['min_debt'];
+// BRCD-1562 - steps trigget time
+if (typeof lastConfig['collection']['settings']['run_on_holidays'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_holidays'] = true;
+}
+if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_days'] = [true,true,true,true,true,true,true];
+}
+if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_hours'] = [];
+}
+
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -391,13 +404,13 @@ var subscribers = db.subscribers.find({type:'subscriber', "services":{$type:4, $
 		return hasStringQuantity;
 }});
 subscribers.forEach(function (sub) {
-		var services = sub.services;
-		services.forEach(function (service) {
-			if (service.quantity) {
-				service.quantity = Number(service.quantity);
-				db.subscribers.save(sub);
-			}
-		});
+	var services = sub.services;
+	services.forEach(function (service) {
+		if (service.quantity) {
+			service.quantity = Number(service.quantity);
+			db.subscribers.save(sub);
+		}
+	});
 });
 
 //// BRCD-1624: add default Plays to config
@@ -637,9 +650,19 @@ db.subscribers.getIndexes().forEach(function(index){
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
 
+// Migrate audit records in log collection into separated audit collection
+db.log.find({"source":"audit"}).forEach(
+	function(obj) {
+		db.audit.save(obj);
+		db.log.remove(obj._id);
+	}
+);
+
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
 db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
 
 // taxes collection indexes
 db.createCollection('taxes');
@@ -718,11 +741,13 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		}
 		var serviceObject = {};
 		var serviceValue = [];
+		var servicesArray = [];
 		if (oldParams.service !== undefined) {
 			var serviceCondAmount = oldParams.service.length;
 			for (var i = 0; i < serviceCondAmount; i++) {
-				serviceValue.push({"field": "name", "op": "in", "value":[oldParams.service[i]]})
+				servicesArray.push(oldParams.service[i]);
 			}
+			serviceValue.push({"field": "name", "op": "in", "value":servicesArray})
 			servicesValues = {"fields": serviceValue};
 			serviceObject['any'] = [servicesValues];
 			conditionObject["subscriber"]["service"] = serviceObject;
@@ -747,3 +772,17 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	db.plans.save(plan);
 });
 db.config.insert(lastConfig);
+
+db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
+db.archive.dropIndex('session_id_1_request_num_-1')
+db.archive.dropIndex('sid_1_call_reference_1')
+db.archive.dropIndex('call_reference_1')
+if (db.serverStatus().ok == 0) {
+	print('Cannot shard archive collection - no permission')
+} else if (db.serverStatus().process == 'mongos') {
+	sh.shardCollection("billing.archive", {"stamp": 1});
+	// BRCD-2099 - sharding rates, billrun and balances
+	sh.shardCollection("billing.rates", { "key" : 1 } );
+	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
+}

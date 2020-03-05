@@ -452,6 +452,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$row['subscriber'] = $enrichedData;
 				$row = array_merge($row,$foreignData, $enrichedData);
 			}
+			
+			if (Billrun_Utils_Plays::isPlaysInUse() && !isset($row['subscriber']['play'])) {
+				$newRowSubscriber = $row['subscriber'];
+				$newRowSubscriber['play'] = Billrun_Utils_Plays::getDefaultPlay()['name'];
+				$row['subscriber'] = $newRowSubscriber;
+			}
 		}
 		return $row;
 	}
@@ -501,6 +507,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'from' => $subscriberData['plan_activation'],
 				'to' => $subscriberData['plan_deactivation'],
 				'service_id' => 0, // assumption: there is no *custom period* service includes
+				'plan_included' => true,
 			);
 		}
 		return $retServices;
@@ -537,6 +544,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'to' => $service['to'],
 					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
 					'quantity' => isset($service['quantity']) ? $service['quantity'] : 1,
+					'plan_included' => false,
 				);
 			}
 		}

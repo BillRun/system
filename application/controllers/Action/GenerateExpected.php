@@ -99,8 +99,8 @@ class GenerateExpectedAction extends ApiAction {
 				return $this->downloadPdf();
 			case 'pdf_path':
 				return $this->getPdfPath();
-			case 'discounts':
-				return $this->getDiscounts();
+//			case 'discounts':
+//				return $this->getDiscounts();
 			case 'invoice_meta_data':
 				return $this->getInvoiceMetaData();
 			default:
