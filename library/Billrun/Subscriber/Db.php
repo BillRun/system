@@ -67,9 +67,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				settype($query['sid'], 'int');
 			}
 			
-			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
-				$sub = $result->limit(1)->current();
+				$sub = $this->collection->query($query)->cursor()->limit(1)->current();
 				if ($sub->isEmpty()) {
 					continue;
 				}
@@ -78,7 +77,14 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-				return iterator_to_array($result);
+                                $sub = $this->collection->query($query)->cursor()->current();
+				if ($sub->isEmpty()) {
+					continue;
+				}
+				if (isset($id)) {
+					$sub->set('id', $id);
+				}
+				$subs[] = $sub;
 			}
 		}
 		return $subs;

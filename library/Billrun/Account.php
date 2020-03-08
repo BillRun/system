@@ -215,6 +215,26 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
+        
+        /**
+	 * @param array $queries to load one subscriber per query
+	 * @return array of account instances
+	 */
+	public function loadAccountsForQueries($queries, $extraData = []) {
+		$query = [];
+		
+		// build a single big query, using the passed params for each subquery
+		foreach($queries as $subQuery) {
+			$query[] = $this->buildQuery($subQuery);
+		}
+		$result = $this->getAccountDetails($query);
+		if (!$result) {
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+
+                return $result;
+	}
 
 	/**
 	 * @param array $params - Input params to get an account by.

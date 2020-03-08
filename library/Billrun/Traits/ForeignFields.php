@@ -101,4 +101,11 @@ trait Billrun_Traits_ForeignFields  {
 		}
 		return $pathToInsert;
 	}
+        
+        protected function checkIfExistInForeignEntities($entity) {
+		$foreignEntities = array_map(function($value) {
+			return $value['foreign']['entity'];	
+		}, Billrun_Factory::config()->getConfigValue('lines.fields', array()));
+                return in_array($entity, $foreignEntities) ? TRUE : FALSE;
+	}
 }

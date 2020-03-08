@@ -94,8 +94,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['bulk'])) {
 			$this->bulk = $options['calculator']['bulk'];
 		}
-                if (isset($options['calculator']['accounts']['bulk'])) {
-			$this->bulkAccount = $options['calculator']['accounts']['bulk'];
+                if (isset($options['calculator']['accounts']['bulk']) && $this->checkIfExistInForeignEntities('account')) {
+			$this->bulkAccounts = $options['calculator']['accounts']['bulk'];
 		}
 		if (isset($options['calculator']['extra_data'])) {
 			$this->extraData = $options['calculator']['extra_data'];
@@ -106,7 +106,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['override_mandatory_fields'])) {
 			$this->overrideMandatoryFields = boolval($options['calculator']['override_mandatory_fields']);
 		}
-//                $this->bulkAccount = 1;
+//                $this->bulk = 1;
+//                $this->bulkAccounts = 1;
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -132,14 +133,27 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->subscribers_by_stamp = true;
 		}
 	}
-
+        
+        protected function accountsByStamp() {
+		if (!isset($this->accounts_by_stamp) || !$this->accounts_by_stamp) {
+			$accounts_by_stamp = array();
+			foreach ($this->accounts as $key => $account) {
+				$accountData = $account->getData();
+				$key = !empty($accountData['id']) ? $accountData['id'] :
+						(!empty($accountData['stamp']) ? $accountData['stamp'] : $key );
+				$accounts_by_stamp[$key] = $account;
+			}
+			$this->accounts = $accounts_by_stamp;
+			$this->accounts_by_stamp = true;
+		}
+	}
 	
 	
 	public function prepareData($lines) {
 		if ($this->isBulk() && empty($this->subscriber)) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
-                if ($this->bulkAccount) {
+                if ($this->bulkAccounts) {
                         $this->account =  Billrun_Factory:: account();
 			$this->accounts = $this->loadAccounts($lines);
 		}
@@ -177,31 +191,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return $row;
 			}
 		}
-		
-		$row = $this->enrichWithSubscriberInformation($row,$subscriber);
-
-//		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
-//			if (is_numeric($subscriber->{$key})) {
-//				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
-//			}
-//				$subscriber_field = $subscriber->{$key};
-//			if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) {
-//				$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
-//			} else {
-//				$row[$key] = $subscriber_field;
-//			}
-//		}
-//		
-//		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
-//			if ($this->isExtraDataRelevant($row, $key)) {
-//					$subscriber_field = $subscriber->{$key};
-//				if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) { // if existing value is array and in input value is array let's do merge
-//					$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
-//				} else {
-//					$row[$key] = $subscriber_field;
-//				}
-//			}
-//		}
+                if ($this->bulkAccounts) {
+			$this->accountsByStamp();
+			$account = isset($this->accounts[$row['stamp']]) ? $this->accounts[$row['stamp']] : FALSE;
+                        $row = $this->enrichWithSubscriberInformation($row, $subscriber, $account);
+		}else {		
+                        $row = $this->enrichWithSubscriberInformation($row, $subscriber);
+                }
 
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec,'disableCache' => true));
 		$plan_ref = $plan->createRef();
@@ -340,17 +336,22 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
         public function loadAccounts($rows) {
-//		$this->accounts_by_stamp = false;
-		$account_extra_data = array_keys($this->account->getCustomerExtraData());
-		$subs = [];
-                $queriesToMatchAcoounts = [];
-                foreach ($rows as $row){
-                    $subs[] =  $this->loadSubscriberForLine($row);
+		$this->accounts_by_stamp = false;
+                $queriesToMatchAccounts = [];
+                if (isset($this->subscribers)){
+                    $subs = $this->subscribers;
+                }else{
+                    foreach ($rows as $row){
+                        $subs[] = $this->loadSubscriberForLine($row);
+                    }
                 }
                 foreach($subs as $sub){
-                    $queriesToMatchAcoounts[]  = array('aid' => $sub->getData()['aid']);
+                    $value = array('aid' => $sub->getData()['aid'], 'id' => $sub->getData()['id']);
+                    if(!in_array($value, $queriesToMatchAccounts)){
+                        $queriesToMatchAccounts[] = $value;
+                    }
                 }
-                $results = $this->account->loadAccountsForQuery($queriesToMatchAcoounts, $this->account->getAvailableFields());
+                 $results = $this->account->loadAccountsForQueries($queriesToMatchAccounts);
                 if (!$results) {
 				Billrun_Factory::log('Failed to load accounts data for params: ' . print_r($queriesToMatchAcoounts, 1), Zend_Log::NOTICE);
 				return false;
@@ -532,7 +533,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $customerIdentificationTranslation;
 	}
 
-	protected function enrichWithSubscriberInformation($row, $subscriber = null) {
+	protected function enrichWithSubscriberInformation($row, $subscriber = null, $account = null) {
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
 		if (!is_null($subscriber)) {
@@ -542,7 +543,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account', 'account_subscribers'));
-		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData);
+		$foreignData =  $this->getForeignFields(array('subscriber' => $subscriber, 'account' => $account), $enrichedData, $foreignEntitiesToAutoload, $rowData);
 		if((!is_null($subscriber) || !empty($enrichedData)) ||
 				is_null($subscriber) || !empty($foreignData)) {
 			if($row instanceof Mongodloid_Entity) {

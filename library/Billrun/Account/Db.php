@@ -85,9 +85,8 @@ class Billrun_Account_Db extends Billrun_Account {
 				$id = $query['id'];
 				unset($query['id']);
 			}
-			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
-				$account = $result->limit(1)->current();
+				$account = $this->collection->query($query)->cursor()->limit(1)->current();
 				if ($account->isEmpty()) {
 					continue;
 				}
@@ -96,7 +95,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				return iterator_to_array($result);
+				$account = $this->collection->query($query)->cursor()->current();
+				if ($account->isEmpty()) {
+					continue;
+				}
+				if (isset($id)) {
+					$account->set('id', $id);
+				}
+				$accounts[] = $account;
 			}
 		}
 		return $accounts;
