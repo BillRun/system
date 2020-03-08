@@ -34,6 +34,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($options['installment_index'])) {
 			$this->data['payment_agreement.installment_index'] = $options['installment_index'];
 		}
+		if (!empty($options['invoices'])) {
+			$this->data['payment_agreement.invoices'] = $options['invoices'];
+		}
 		
 		if (!empty($options['installments_num']) && !empty($options['first_due_date']) && !empty($options['amount'])) {
 			if (!Billrun_Util::IsIntegerValue($options['installments_num'])) {
@@ -72,10 +75,16 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->data['note'])) {
 			$paymentsArr[0]['note'] = $this->data['note'];
 		}
-		$primaryInstallment = current(Billrun_Bill::pay($this->method, $paymentsArr));
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
+		$primaryInstallment = current($paymentResponse['payment']);
+		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
+			$paymentAgreementData = array();
 			$success = $primaryInstallment->splitToInstallments();
-			return $success;
+			if ($success) {
+				$paymentAgreementData = $primaryInstallment->getRawData()['payment_agreement'];
+			}
+			return array('status' => $success, 'payment_agreement' => $paymentAgreementData);
 		}
 		
 		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
@@ -116,7 +125,6 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installment['charge']['not_before'] = $installment['due_date'];
 			$installments[] = new self($installment);
 		}
 
@@ -172,6 +180,14 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['installment_index'] = $index;
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
+		$installment['invoices'] = $this->getInvoicesIdFromReceipt();
 		return $installment;
+	}
+	
+	protected function updatePaidInvoicesOnPrimaryInstallment($primaryInstallment) {
+		$installmentData = $primaryInstallment->getRawData();
+		$installmentData['payment_agreement']['invoices'] = $primaryInstallment->getInvoicesIdFromReceipt();
+		$primaryInstallment->setRawData($installmentData);
+		$primaryInstallment->save();
 	}
 }

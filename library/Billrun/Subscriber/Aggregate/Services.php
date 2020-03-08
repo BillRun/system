@@ -91,7 +91,7 @@ class Billrun_Subscriber_Aggregate_Services extends Billrun_Subscriber_Aggregate
 	 * @todo This should be moved to a more fitting location
 	 */
 	protected function calcFractionOfMonth($billrunKey, $activation, $deactivation) {
-		$start = Billrun_Billrun::getStartTime($billrunKey);
+		$start = Billrun_Billingcycle::getStartTime($billrunKey);
 		
 		// If the billing start date is after the deactivation return zero
 		if($deactivation && ($start > $deactivation)) {
@@ -104,7 +104,7 @@ class Billrun_Subscriber_Aggregate_Services extends Billrun_Subscriber_Aggregate
 			return 1;
 		}
 		
-		$end = Billrun_Billrun::getEndTime($billrunKey);
+		$end = Billrun_Billingcycle::getEndTime($billrunKey);
 			
 		// Validate the dates.
 		if(!$this->validateCalcFractionOfMonth($billrunKey, $start, $end)) {

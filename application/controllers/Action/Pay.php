@@ -69,7 +69,8 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payments = Billrun_Bill::pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
@@ -193,13 +194,13 @@ class PayAction extends ApiAction {
 		if (!$executeSplitBill) {
 			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
 		}
-		$success = Billrun_Bill_Payment::createInstallmentAgreement($params);
+		$ret = Billrun_Bill_Payment::createInstallmentAgreement($params);
 		
 		$this->getController()->setOutput(array(array(
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? '' : 'failure',
+			'status' => $ret['status'] ? 1 : 0,
+			'desc' => $ret['status'] ? '' : 'failure',
 			'input' => $request->getPost(),
-			'details' => $success ? 'created installments successfully' : 'failed creating installments',
+			'details' => $ret['status'] ? 'created installments successfully . parameters: ' . json_encode($ret['payment_agreement'], true) : 'failed creating installments',
 		)));
 
 	}

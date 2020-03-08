@@ -307,6 +307,14 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('invoice_id' => 136, 'billrun_key' => '201904', 'aid' => 82, 'after_vat' => array("83" => 18.870967742))),
 			'line' => array('types' => array('flat','service')),
 		),
+        //subscriber with duplicate service with diffrent invoice_id
+        	array('test' => array('test_number' => 41, "aid" => 26, 'function' => array('basicCompare', 'linesVSbillrun','lineExists', 'rounded', 'passthrough','totalsPrice'), 'options' => array("stamp" => "202003",
+                "force_accounts" => array(26))),
+			'expected' => array('billrun' => array('invoice_id' => 137, 'billrun_key' => '202003', 'aid' => 26,'after_vat' => array("100" => 245.7), 'total' => 245.7, 'vatable' => 210, 'vat' => 17)),
+                'line' => array('types' => array('flat','service')),
+                	'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1493",
+),
+        
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 38,),

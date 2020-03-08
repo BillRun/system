@@ -105,11 +105,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				Billrun_Factory::log("Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'], Zend_Log::ALERT);
+                                $message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
+				Billrun_Factory::log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			}
 			if (Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
-				Billrun_Factory::log("Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'], Zend_Log::ALERT);
+                                $message = "Can't pay! left and left_to_pay fields are missing, Account id: " . $customer['aid'];
+				Billrun_Factory::log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			} else if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision)) {
 				$paymentParams['amount'] = $customer['left_to_pay'];
@@ -143,9 +147,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			try {
-				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
+                                $payment = $paymentReseponse['payment'];
+                                Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
+                                $message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
+				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
+                                $this->logFile->updateLogFileField('errors', $message);
 				continue;
 			}
 			$currentPayment = $payment[0];
