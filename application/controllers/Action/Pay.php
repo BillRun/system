@@ -69,7 +69,8 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payments = Billrun_Bill::pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
@@ -156,6 +157,8 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function executeSplitBill($request) {
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		$executeSplitBill = true;
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
@@ -167,7 +170,6 @@ class PayAction extends ApiAction {
 				throw new Exception('Sum of amounts in installments array must be equal to total amount');
 			}
 		}
-		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
 		$note = $request->get('note');
 		if (!empty($note)) {
 			$params['note'] = $note;
@@ -180,18 +182,25 @@ class PayAction extends ApiAction {
 		}
 		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
 			throw new Exception("installment_num and first_due_date parameters must be passed together");
+		}	
+		if (!empty($params['installments_num']) && ($params['installments_num'] > $params['amount'])) {
+			throw new Exception('Number of installments must be lower than passed amount');
 		}
 		$customerDebt = Billrun_Bill::getTotalDueForAccount($params['aid']);
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
-		$success = Billrun_Bill_Payment::createInstallmentAgreement($params);
+		Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+		if (!$executeSplitBill) {
+			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
+		}
+		$ret = Billrun_Bill_Payment::createInstallmentAgreement($params);
 		
 		$this->getController()->setOutput(array(array(
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? '' : 'failure',
+			'status' => $ret['status'] ? 1 : 0,
+			'desc' => $ret['status'] ? '' : 'failure',
 			'input' => $request->getPost(),
-			'details' => $success ? 'created installments successfully' : 'failed creating installments',
+			'details' => $ret['status'] ? 'created installments successfully . parameters: ' . json_encode($ret['payment_agreement'], true) : 'failed creating installments',
 		)));
 
 	}

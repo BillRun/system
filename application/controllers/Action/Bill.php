@@ -86,7 +86,7 @@ class BillAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['due_date'] = array('$lt' => new MongoDate());
+				$query['charge.not_before'] = array('$lt' => new MongoDate());
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
@@ -125,7 +125,10 @@ class BillAction extends ApiAction {
 		}
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
-		return Billrun_Bill_Invoice::getInvoices(json_decode($query, JSON_OBJECT_AS_ARRAY));
+                if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
+                    Billrun_Utils_Mongo::convertQueryMongoDates($queryAsArray);               
+                }
+		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
 	protected function getCollectionDebt($request) {

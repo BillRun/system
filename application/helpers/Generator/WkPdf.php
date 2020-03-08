@@ -26,8 +26,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-	protected $invoice_extra_params = [];
-
+        protected $invoice_extra_params = [];
+	
 
 
 	/**
@@ -189,11 +189,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                             $this->setBillrunExportPath($object, $paths);
                 	}
 		     }
-                    if (isset($object['invoice_id'])) {
-                        $this->generateAccountInvoices($object, $lines);
-                    }
-                }
-        }
+			if (isset($object['invoice_id'])) {
+				$this->generateAccountInvoices($object, $lines);
+			}
+		}
+	}
 /**
          * 
          * @param Mongodloid_Entity $billrunObject 
@@ -221,6 +221,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $this->paths;
             }
         }
+		
         public function getFileName($billrunObject, $fileNameConfig, $defaultFileName) {
             if ($billrunObject instanceof Mongodloid_Entity){
                 $meetConditions = 0;
@@ -270,7 +271,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if(isset($paramObj['type']) && $paramObj['type'] === "string"){
-                        return Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']);
+                        return trim(Billrun_Util::getIn($billrunObject, $paramObj['linked_entity']['field_name']));
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
                     }
@@ -289,7 +290,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                     }
                 }else{
                     if((isset($paramObj['type']) && $paramObj['type'] === "string") && !(isset($paramObj['linked_entity']))){
-                        return $paramObj['value'];
+                        return trim($paramObj['value']);
                     }else{
                         Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". Missing 'linked entity, and the type isn't date/string.  None customized file name was chosen.", Zend_Log::ERR);
                         return -1;
@@ -307,7 +308,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
             }
             return $date;
         }
-        
+
 	/*
 	 * load billrun objects from billrun collection  
 	 */
@@ -341,6 +342,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
 		$this->view->assign('extra_immediate_invoices_count', $this->invoice_extra_params['immediate_invoices_count']?:0);
+
+		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
+
 		if (empty($lines)) {
 			$this->view->loadLines();
 		} else {
@@ -356,13 +360,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 if(isset($account['file_name']) & !empty($account['file_name']) && !$this->is_fake_generation){
                     $pdf_name = $account['file_name'];
                 }else{
-                    $pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
+		$pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
                 }
 		$html = $this->paths['html'] . $file_name;
 		$pdf = $this->paths['pdf'] . $pdf_name;
 
 		$this->accountSpecificViewParams($account);
-
+		
 		Generator_Translations::load();
 		Generator_Translations::setLanguage(isset($account['attributes']['invoice_language'])? $account['attributes']['invoice_language'] : 'en_GB');
 		
@@ -590,8 +594,15 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
          */
         public function setInvoiceExtraParams($key, $value) {
             $this->invoice_extra_params[$key] = $value;
-        }
-        
+	}
+
+	protected function addExtraParamsToCurrentView($extraParams) {
+		if(!empty($extraParams)) {
+			foreach($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_'.$paramKey, $paramVal);
+			}
+		}
+	}
         public function setBillrunExportPath($object, $paths) {
             $object->set('export_path', $paths);
         }

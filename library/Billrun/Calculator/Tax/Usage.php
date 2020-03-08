@@ -20,7 +20,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	/**
 	 * @see Billrun_Calculator_Tax::updateRowTaxInforamtion
 	 */
-	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
+	public function updateRowTaxInforamtion($line, $subscriber, $account, $params = []) {
 		$taxData = $this->getRowTaxData($line);
 		if ($taxData === false) {
 			return false;

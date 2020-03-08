@@ -24,6 +24,16 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
+function removeFieldFromConfig(lastConf, field_names, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		return lastConf;
+	}
+	field_names_to_delete = Array.isArray(field_names) ? field_names : [field_names];
+	var fields = lastConf[entityName]['fields'];
+	lastConf[entityName]['fields'] = fields.filter(field => !field_names_to_delete.includes(field.field_name));
+	return lastConf;
+}
+
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -38,6 +48,7 @@ for (var field_key in fields) {
 	}
 	if (fields[field_key].field_name === "invoice_label") {
 		invoice_label_found = true;
+		fields[field_key].default_value = "";
 	}
 }
 if(!found) {
@@ -61,12 +72,23 @@ if(!invoice_label_found) {
 		"display":true,
 		"editable":true,
 		"field_name":"invoice_label",
-		"default_value":"retail",
+		"default_value":"",
 		"show_in_list":true,
-		"title":"Invoice label",
+		"title":"Invoice label"
 	});
 }
 lastConfig['rates']['fields'] = fields;
+
+var invoice_language_field = {
+		"system":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_language",
+		"default_value":"en_GB",
+		"show_in_list":false,
+		"title":"Invoice language"
+	}
+lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
@@ -193,22 +215,8 @@ if(lastConfig.invoice_export) {
 	}
 }
 
-//BRCD-1374 : Add taxation support services 
-var vatableField ={
-					"system":true,
-					"select_list" : false,
-					"display" : true,
-					"editable" : true,
-					"multiple" : false,
-					"field_name" : "vatable",
-					"unique" : false,
-					"default_value" : true,
-					"title" : "This service is taxable",
-					"mandatory" : false,
-					"type" : "boolean",
-					"select_options" : ""
-	};
-lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+// BRCD-2251 remove old vatable filed
+lastConfig = removeFieldFromConfig(lastConfig, 'vatable', 'services');
 
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
@@ -324,6 +332,23 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
+
+// BRCD-1552 collection
+if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
+    lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
+}
+delete lastConfig['collection']['min_debt'];
+// BRCD-1562 - steps trigget time
+if (typeof lastConfig['collection']['settings']['run_on_holidays'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_holidays'] = true;
+}
+if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_days'] = [true,true,true,true,true,true,true];
+}
+if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_hours'] = [];
+}
+
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -696,6 +721,8 @@ db.log.find({"source":"audit"}).forEach(
 // BRCD-1837: convert rates' "vatable" field to new tax mapping
 db.rates.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
 db.rates.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},$or:[{vatable:true},{vatable:{$exists:0}}]},{$set:{tax:[{type:"vat",taxation:"global"}]},$unset:{vatable:1}}, {multi: true});
+db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxation:"no"}]},$unset:{vatable:1}}, {multi: true});
 
 // taxes collection indexes
 db.createCollection('taxes');
