@@ -38,8 +38,7 @@ class Billrun_PaymentManager {
 		}
 
 		$postPayments = $this->handlePayment($prePayments, $params); 
-		$successPayments = $this->getSuccessPayments($postPayments, $params);
-		$this->handleSuccessPayments($successPayments, $params);
+		$this->handleSuccessPayments($postPayments, $params);
 		return [
 			'payment' => $this->getInvolvedPayments($postPayments),
 			'response' => $this->getResponsesFromGateways($postPayments),
@@ -58,8 +57,7 @@ class Billrun_PaymentManager {
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment($paymentData);
-			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
-			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			$this->handleInvoicesAndPaymentsAttachment($prePayment,$paymentData, $method, $params);
 			$prePayments[] = $prePayment;
 		}
 
@@ -94,7 +92,7 @@ class Billrun_PaymentManager {
 	 * @param Billrun_DataTypes_PrePayment $prePayment - by reference
 	 * @param array $params
 	 */
-	protected function handleInvoicesAndPaymentsAttachment(&$prePayment, $params = []) {
+	protected function handleInvoicesAndPaymentsAttachment(&$prePayment, $initialPaymentData, $method, $params = []) {
 		$dir = $prePayment->getCustomerDirection();
 		if (!in_array($dir, [Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER, Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER]) && !is_null($dir)) {
 			return;
@@ -105,6 +103,7 @@ class Billrun_PaymentManager {
 		switch ($paymentDir) {
 			case Billrun_DataTypes_PrePayment::PAY_DIR_PAYS:
 			case Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY:
+				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 				if (!empty($paymentData[$paymentDir][Billrun_DataTypes_PrePayment::BILL_TYPE_INVOICE])) {
 					$this->attachInvoicesAndPayments(Billrun_DataTypes_PrePayment::BILL_TYPE_INVOICE, $prePayment, $params);
 				}
@@ -113,7 +112,7 @@ class Billrun_PaymentManager {
 				}
 				break;
 			default: // one of fc/tc
-				$this->attachAllInvoicesAndPayments($prePayment, $dir);
+				$this->attachAllInvoicesAndPayments($prePayment, $dir, $method, $initialPaymentData, $params);
 		}
 	}
 
@@ -163,7 +162,7 @@ class Billrun_PaymentManager {
 	 * @param string $dir
 	 * @param array $params
 	 */
-	protected function attachAllInvoicesAndPayments(&$prePayment, $dir, $params = []) {
+	protected function attachAllInvoicesAndPayments(&$prePayment, $dir, $method, $initialPaymentData, $params = []) {
 		if (is_null($dir)) {
 			return;
 		}
@@ -179,6 +178,8 @@ class Billrun_PaymentManager {
 				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
 				$billId = $bill->getId();
 				$prePayment->setData([$paymentDir, $billType, $billId], $amount);
+				$initialPaymentData[$paymentDir][$billType][$billId] = $amount;
+				$prePayment->setPayment($this->getPayment($method, $initialPaymentData, $params));
 				$leftToSpare -= $amount;
 				$prePayment->addUpdatedBill($billType, $bill);
 			}

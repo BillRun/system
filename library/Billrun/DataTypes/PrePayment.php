@@ -152,6 +152,7 @@ class Billrun_DataTypes_PrePayment {
 				$query['txid'] = [
 					'$in' => array_keys($updatedBills),
 				];
+				break;
 			default:
 				$customerDir = $this->getCustomerDirection();
 				if ($customerDir == self::DIR_FROM_CUSTOMER) {
@@ -328,5 +329,5 @@ class Billrun_DataTypes_PrePayment {
 		}
 		return floatval($amount);
 	}
-
+	
 }
