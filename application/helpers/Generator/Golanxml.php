@@ -708,7 +708,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_charge_summary_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$subscriber_charge_summary_vat_free = $subscriber_charge_summary_before_vat - $subscriber_charge_summary_vatable;
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
-			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_charge_summary_before_vat);
+			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_charge_summary_vatable);
 			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_charge_summary_after_vat);
 			$this->writer->writeElement('TOTAL_CHARGE_EXEMPT_VAT', $subscriber_charge_summary_vat_free);		
 			$invoiceChargeExemptVat += $subscriber_charge_summary_vat_free;
@@ -758,6 +758,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 					$this->writer->writeElement('UNITS', 1);
+					$this->writer->writeElement('COST_EXEMPT_VAT', $flatCostWithoutVat);
 					$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT + $flatCostWithoutVat);
 					$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
 					$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
@@ -973,7 +974,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							}
 							$this->writer->writeElement('UNIT_TOTAL_COST', $unitCost + ($unitCost * $roaming_entry_VAT / 100));
 							$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
-							$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);
+							$this->writer->writeElement('COST_EXEMPT_VAT', $roaming_entry_COST_WITHOUTVAT);
 							$this->writer->writeElement('VAT', $roaming_entry_VAT);
 							$roaming_entry_VAT_COST = $roaming_entry_COST_WITHOUTVAT * $roaming_entry_VAT / 100;
 							$this->writer->writeElement('VAT_COST', $roaming_entry_VAT_COST);
