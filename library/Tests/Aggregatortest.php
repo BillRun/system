@@ -532,7 +532,6 @@
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
          }
          print_r($this->message);
-         die();
          $this->restoreColletions();
      }
 
