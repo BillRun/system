@@ -38,7 +38,7 @@
 			"creation_time": "time*2017-12-31T22:00:00Z"
 		},
 		{
-			"OBJID":"5b34bee305e68c7fa55cb902",
+			"OBJID": "5b34bee305e68c7fa55cb902",
 			"from": "time*2018-01-28T22:00:00Z",
 			"key": "D",
 			"description": "d",
@@ -55,7 +55,228 @@
 			},
 			"to": "time*2167-06-28T11:56:35Z",
 			"creation_time": "time*2018-01-28T22:00:00Z"
+		},	
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TTF",
+			"description": "TTF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TTF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TTF": {
+						"value": 10
+					}
+				}
+			}
 		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FFF",
+			"description": "FFF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FFF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FFF": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TFF",
+			"description": "TFF",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TFF"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TFF": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FTT",
+			"description": "FTT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FTT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FTT": {
+						"value": 10
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "TTT",
+			"description": "TTT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "TTT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"TTT": {
+						"value": 10
+					}
+				}
+			}
+		},
+		{
+
+			"from": "time*2018-12-31T22:00:00Z",
+			"key": "FFT",
+			"description": "FFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "FFT"
+									}
+								]
+							}
+						]
+					}
+				],
+				"min_subscribers": "",
+				"max_subscribers": ""
+			},
+			"to": "time*2167-01-10T08:26:34Z",
+			"creation_time": "time*2017-11-01T00:00:00Z",
+			"type": "monetary",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"FFT": {
+						"value": 10
+					}
+				}
+			}
+		}
+
 
 
 	]
