@@ -106,8 +106,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['override_mandatory_fields'])) {
 			$this->overrideMandatoryFields = boolval($options['calculator']['override_mandatory_fields']);
 		}
-//                $this->bulk = 1;
-//                $this->bulkAccounts = 1;
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
