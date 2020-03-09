@@ -167,7 +167,6 @@ class Billrun_PaymentManager {
 		if (is_null($dir)) {
 			return;
 		}
-		$paymentData = $prePayment->getData();
 		$method = $prePayment->getMethod();
 		$leftToSpare = $prePayment->getAmount();
 		$relatedBills = $prePayment->getRelatedBills();
@@ -180,7 +179,7 @@ class Billrun_PaymentManager {
 				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
 				$billId = $bill->getId();
 				$prePayment->setData([$paymentDir, $billType, $billId], $amount);
-				$paymentData[$paymentDir][$billType][$billId] = $amount;
+				$paymentData = $prePayment->getData();
 				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 				$leftToSpare -= $amount;
 				$prePayment->addUpdatedBill($billType, $bill);
