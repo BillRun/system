@@ -403,7 +403,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);
 						$currParams['id'] = $row['stamp'];
 						$currParams['EXTRAS'] = 0;
-						foreach ($subscriber_extra_data as $key) {
+						foreach ($extra_data as $key) {
 							if ($this->isExtraDataRelevant($row, $key)) {
 								$currParams['EXTRAS'] = 1;
 								break;
