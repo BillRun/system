@@ -63,11 +63,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $bulkAccounts = false;
 
-        /**
-	 * Whether or not to use the account bulk API method
-	 * @var boolean
-	 */
-	protected $accountBulk = false;
 	/**
 	 * Extra customer fields to be saved by line type
 	 * @var array
@@ -309,7 +304,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		
 		// build customer mapping priorities
 		$priorities = $this->buildPriorities($rows, $subscriber_extra_data);
-		$subsData = [];
 		$queriesToMatchSubs = [];
 		foreach ($priorities as $priorityQueries) {
 			if (empty($priorityQueries)) {
@@ -390,7 +384,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 	
 	// method for building priorities to perform customer calculation by
-	protected function buildPriorities($rows, $extra_data = []) {
+	protected function buildPriorities($rows, $subscriber_extra_data = []) {
 		$priorities = [];
 		foreach ($rows as $row) {
 			if ($this->isLineLegitimate($row)) {
@@ -403,7 +397,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 						$currParams['time'] = date(Billrun_Base::base_datetimeformat, $row['urt']->sec);
 						$currParams['id'] = $row['stamp'];
 						$currParams['EXTRAS'] = 0;
-						foreach ($extra_data as $key) {
+						foreach ($subscriber_extra_data as $key) {
 							if ($this->isExtraDataRelevant($row, $key)) {
 								$currParams['EXTRAS'] = 1;
 								break;
