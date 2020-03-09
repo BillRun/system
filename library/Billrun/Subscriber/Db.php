@@ -77,14 +77,17 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-                                $sub = $this->collection->query($query)->cursor()->current();
-				if ($sub->isEmpty()) {
+                                $subsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				if (empty($subsForQuery)) {
 					continue;
 				}
-				if (isset($id)) {
+                                if (isset($id)) {
+                                    foreach($subsForQuery as $sub){
 					$sub->set('id', $id);
+                                        $subs[] = $sub;
+                                    }
 				}
-				$subs[] = $sub;
+				 
 			}
 		}
 		return $subs;

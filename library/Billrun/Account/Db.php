@@ -95,14 +95,17 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				$account = $this->collection->query($query)->cursor()->current();
-				if ($account->isEmpty()) {
+				$accountsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				if (empty($accountsForQuery)) {
 					continue;
 				}
-				if (isset($id)) {
+                                if (isset($id)) {
+                                    foreach($accountsForQuery as $account){
 					$account->set('id', $id);
+                                        $accounts[] = $account;  
+                                    }
 				}
-				$accounts[] = $account;
+                                     
 			}
 		}
 		return $accounts;

@@ -143,7 +143,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	
 	
 	public function prepareData($lines) {
-		if ($this->isBulk() && empty($this->subscriber)) {
+		if ($this->isBulk() && empty($this->subscribers)) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
                 if ($this->bulkAccounts) {
@@ -330,14 +330,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
         public function loadAccounts($rows) {
 		$this->accounts_by_stamp = false;
                 $queriesToMatchAccounts = [];
-                if (isset($this->subscribers)){
-                    $subs = $this->subscribers;
-                }else{
+                if (!isset($this->subscribers)){
                     foreach ($rows as $row){
-                        $subs[] = $this->loadSubscriberForLine($row);
+                        $this->subscribers[] = $this->loadSubscriberForLine($row);
                     }
                 }
-                foreach($subs as $sub){
+                foreach($this->subscribers as $sub){
                     $value = array('aid' => $sub->getData()['aid'], 'id' => $sub->getData()['id']);
                     if(!in_array($value, $queriesToMatchAccounts)){
                         $queriesToMatchAccounts[] = $value;
@@ -423,14 +421,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 			$key = $translationRules['src_key'];
-			if (isset($row['uf.' .$key])) {
+			if (isset($row['uf'][$key])) {
 				if (isset($translationRules['clear_regex'])) {
-					$val = preg_replace($translationRules['clear_regex'], '', $row['uf.' .$key]);
+					$val = preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]);
 				} else {
 					if ($translationRules['target_key'] === 'msisdn') {
-						$val = Billrun_Util::msisdn($row['uf.' .$key]);
+						$val = Billrun_Util::msisdn($row['uf'][$key]);
 					} else {
-						$val = $row['uf.' .$key];
+						$val = $row['uf'][$key];
 					}
 				}
 				$fieldName = $translationRules['target_key'];
