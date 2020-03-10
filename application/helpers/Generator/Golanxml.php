@@ -219,6 +219,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_outside_gift_novat = 0;
 		$servicesTotalCostPerAccount = 0;
 		$invoiceChargeExemptVat = 0;
+		$accountCostExemptVat = 0;
 		$servicesCost = array();
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
@@ -759,6 +760,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $planToCharge['plan']);
 					$this->writer->writeElement('UNITS', 1);
 					$this->writer->writeElement('COST_EXEMPT_VAT', $flatCostWithoutVat);
+					$accountCostExemptVat += $flatCostWithoutVat;
 					$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
 					$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
 					$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
@@ -1090,7 +1092,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('NEXT_MONTH_CADENCE_END', $this->getFlatEndDate());
 		$account_before_vat = $this->getAccTotalBeforeVat($billrun);
 		$account_after_vat = $this->getAccTotalAfterVat($billrun);
-		$accountVatable = $this->getAccTotalVatabale($billrun);
 		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
 		$this->writer->writeElement('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('GIFTS');
@@ -1120,7 +1121,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $invoice_total_manual_correction_refund);
 		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
 		$this->writer->writeElement("TOTAL_CHARGE_EXEMPT_VAT", $invoiceChargeExemptVat);
-		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $accountVatable);
+		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT',  $account_before_vat - $invoice_total_outside_gift_novat - $accountCostExemptVat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
 		$this->writer->endElement(); // end INVOICE_CHARGE_SUMMARY
@@ -2149,9 +2150,5 @@ EOI;
 		};
 		return $ret;
 }
-
-	protected function getAccTotalVatabale($row) {
-		return isset($row['totals']['vatable']) ? $row['totals']['vatable'] : 0;
-	}
 
 }
