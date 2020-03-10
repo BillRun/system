@@ -23,8 +23,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $rates = array();
 	
 	protected $invoicedLines = array();
-	
-	protected $shouldKeepLinesinMemory = true;
+        
+        protected $totalGropHashMap = array();
+
+        protected $shouldKeepLinesinMemory = true;
 	protected $shouldAggregateUsage = true;
         
 	/**
@@ -229,7 +231,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-
+                $this->addGroupTotal($row);
 		$addedData = [];
 		if(!empty($row['start'])) {
 			$addedData['start'] = $row['start'];
@@ -238,7 +240,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$addedData['end'] = $row['end'];
 		}
 		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
-		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
 			$this->addLineGroupData($counters, $row);
@@ -493,4 +494,96 @@ class Billrun_Cycle_Subscriber_Invoice {
 	public function getInvoicedLines() {
 		return $this->invoicedLines;
 	}
+        
+        
+        protected function getGroupingKeysforRow($row){
+            $groupingKeys = array();
+            switch ($row['type']){
+                case 'flat':
+                    $groupingKeys['entity_key'] = $row['plan'];
+                    $groupingKeys['source'] = 'plan';
+                    break;
+                case 'service':
+                    $groupingKeys['entity_key'] = $row['service'];
+                    $groupingKeys['source'] = 'service';
+                    break;
+                case 'credit':
+                    $groupingKeys['entity_key'] = $row['key'];
+                    $groupingKeys['source'] = 'discount';
+                    break; 
+                default:
+                    $fileTypes = Billrun_Factory::config()->getFileTypes();
+                    if (in_array($row['type'], $fileTypes)) {
+                        $groupingKeys['entity_key'] = $row['arate_key'];
+                        $groupingKeys['source'] = 'rate'; 
+                        $groupingKeys['type'] = $row['type']; //input processor name
+                    }else{
+                        Billrun_Factory::log("Updating unknown type: " . $row['type']);
+                    }
+            }
+            
+            $taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
+            foreach ($taxes as $tax){
+                $groupingKeys['tax_key'][] = $tax['key'];
+            }
+            
+            $extraFields = ["usaget", "uf.PHONE_NUMBER", "type"]; //TODO: need to take for  DB configuration 
+            foreach($extraFields as $field){
+                $value = Billrun_Util::getIn($row, $field, null);
+                if (isset($value)){
+                    Billrun_Util::setIn($groupingKeys, $field, $value);
+                }
+            }
+            return $groupingKeys;
+        }
+        
+        
+        protected function createNewTotalsGrouping($groupingKeys, $row, $index){
+            foreach($groupingKeys as $field => $value){
+                $this->data['totals']['grouping'][$index][$field] = $value;
+            }
+            $this->data['totals']['grouping'][$index]['count'] = 1;
+            $this->data['totals']['grouping'][$index]['before_taxes'] = $row['aprice'];
+            $this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getIn($row , 'tax_data.total_amount', 0); 
+            $this->data['totals']['grouping'][$index]['after_taxes'] = $row['final_charge'];
+        }
+        
+         protected function updateTotalsGrouping($row, $index){
+            $this->data['totals']['grouping'][$index]['count'] ++;
+            $this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + $row['aprice'];
+            $this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row , 'tax_data.total_amount', 0); 
+            $this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + $row['final_charge'];
+        }
+        
+        protected function addGroupTotal($row){
+            $groupingKeys = $this->getGroupingKeysforRow($row);
+            foreach($groupingKeys['tax_key'] as $tax){
+               $uniqeGroupingKeys = $groupingKeys;
+               $uniqeGroupingKeys['tax_key'] = $tax;
+               $result = $this->findGropTotalByGroupingKey($uniqeGroupingKeys);
+               if($result['status']){
+                   $this->updateTotalsGrouping($row, $result['index']);
+               }else{
+                   $this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index']);
+               }
+            }
+        }
+
+        protected function findGropTotalByGroupingKey($groupingkeys){
+            $result = array();
+            $stamp = Billrun_Util::generateArrayStamp($groupingkeys);
+            $index = $this->totalGropHashMap[$stamp];
+            if (isset($index)){
+                $result['status'] = true;
+                $result['index'] = $index;
+            } else {
+                $result['status'] = false;
+                $result['index'] = count($this->totalGropHashMap);
+                $this->totalGropHashMap[$stamp] = $result['index'];
+            }
+            return $result;
+        }
+        
+        
+        
 }

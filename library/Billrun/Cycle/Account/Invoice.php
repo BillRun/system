@@ -56,6 +56,8 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
+        protected $totalGropHashMap = array();
+        
 	/**
 	 * @todo used only in current balance API. Needs refactoring
 	 */
@@ -313,6 +315,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
+                $this->totalGropHashMap = array();
 		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
@@ -329,10 +332,12 @@ class Billrun_Cycle_Account_Invoice {
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
 			'current_balance' => array('after_vat' => 0),
+                        'grouping' => array(),
 		);
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
+                        $newTotals['grouping'] = $this->sumUpGroupingTotalForAccount($newTotals['grouping'], $sub->getTotals()['grouping']);
 		}
 		
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
@@ -465,4 +470,33 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
+        protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
+            foreach($subTotalGroups as $group){
+                    $count = $group['count'];
+                    unset($group['count']);
+                    $beforeTax = $group['before_taxes'];
+                    unset($group['before_taxes']);
+                    $taxes = $group['taxes'];
+                    unset($group['taxes']); 
+                    $afterTax = $group['after_taxes'];
+                    unset($group['after_taxes']);
+                    $stamp = Billrun_Util::generateArrayStamp($group);
+                    $index = $this->totalGropHashMap[$stamp];
+                    if (isset($index)){
+                        $currentTotalGroups[$index]['count'] += $count;
+                        $currentTotalGroups[$index]['before_taxes'] += $beforeTax;
+                        $currentTotalGroups[$index]['taxes'] += $taxes;
+                        $currentTotalGroups[$index]['after_taxes'] += $afterTax;
+                    } else {
+                        $index = count($this->totalGropHashMap);
+                        $currentTotalGroups[$index] = $group;
+                        $currentTotalGroups[$index]['count'] = $count;
+                        $currentTotalGroups[$index]['before_taxes'] = $beforeTax;
+                        $currentTotalGroups[$index]['taxes'] = $taxes;
+                        $currentTotalGroups[$index]['after_taxes'] = $afterTax;
+                        $this->totalGropHashMap[$stamp] = $index;
+                    }
+            }
+            return $currentTotalGroups;
+        }
 }
