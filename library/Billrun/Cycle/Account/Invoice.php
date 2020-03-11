@@ -483,34 +483,34 @@ class Billrun_Cycle_Account_Invoice {
          * @return the new sum up of the account totals grouping
          */
         protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
-            foreach($subTotalGroups as $group){
-                    $count = $group['count'];
-                    unset($group['count']);
-                    $beforeTax = $group['before_taxes'];
-                    unset($group['before_taxes']);
-                    $taxes = $group['taxes'];
-                    unset($group['taxes']); 
-                    $afterTax = $group['after_taxes'];
-                    unset($group['after_taxes']);
-                    $stamp = Billrun_Util::generateArrayStamp($group);
-                    $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
-                    //if allready have acoount group for this subscriber group update account group 
-                    if (isset($index)){
-                        $currentTotalGroups[$index]['count'] += $count;
-                        $currentTotalGroups[$index]['before_taxes'] += $beforeTax;
-                        $currentTotalGroups[$index]['taxes'] += $taxes;
-                        $currentTotalGroups[$index]['after_taxes'] += $afterTax;
-                    } else {
-                        //if dont have acoount group for this subscriber group create new account group 
-                        $index = count($this->totalGropHashMap);
-                        $currentTotalGroups[$index] = $group;
-                        $currentTotalGroups[$index]['count'] = $count;
-                        $currentTotalGroups[$index]['before_taxes'] = $beforeTax;
-                        $currentTotalGroups[$index]['taxes'] = $taxes;
-                        $currentTotalGroups[$index]['after_taxes'] = $afterTax;
-                        $this->totalGropHashMap[$stamp] = $index;
-                    }
-            }
-            return $currentTotalGroups;
+                foreach($subTotalGroups as $group){
+                        $count = $group['count'];
+                        unset($group['count']);
+                        $beforeTax = $group['before_taxes'];
+                        unset($group['before_taxes']);
+                        $taxes = $group['taxes'];
+                        unset($group['taxes']);
+                        $afterTax = $group['after_taxes'];
+                        unset($group['after_taxes']);
+                        $stamp = Billrun_Util::generateArrayStamp($group);
+                        $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
+                        //if allready have acoount group for this subscriber group update account group
+                        if (isset($index)){
+                                $currentTotalGroups[$index]['count'] += $count;
+                                $currentTotalGroups[$index]['before_taxes'] += $beforeTax;
+                                $currentTotalGroups[$index]['taxes'] += $taxes;
+                                $currentTotalGroups[$index]['after_taxes'] += $afterTax;
+                        } else {
+                                //if dont have acoount group for this subscriber group create new account group
+                                $index = count($this->totalGropHashMap);
+                                $currentTotalGroups[$index] = $group;
+                                $currentTotalGroups[$index]['count'] = $count;
+                                $currentTotalGroups[$index]['before_taxes'] = $beforeTax;
+                                $currentTotalGroups[$index]['taxes'] = $taxes;
+                                $currentTotalGroups[$index]['after_taxes'] = $afterTax;
+                                $this->totalGropHashMap[$stamp] = $index;
+                        }
+                }
+                return $currentTotalGroups;
         }
 }

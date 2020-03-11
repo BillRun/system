@@ -514,9 +514,17 @@ class Billrun_Cycle_Subscriber_Invoice {
                     $groupingKeys['source'] = 'service';
                     break;
                 case 'credit':
-                    $groupingKeys['entity_key'] = $row['key'];
-                    $groupingKeys['source'] = 'discount';
-                    break; 
+                    switch ($row['usaget']){
+                        case 'discount':    
+                            $groupingKeys['entity_key'] = $row['key'];
+                            break;
+                        case 'refund':
+                        case 'charge':
+                            $groupingKeys['entity_key'] = $row['arate_key'];
+                            break;
+                    }
+                    $groupingKeys['source'] = $row['usaget'];
+                    break;
                 default:
                     $fileTypes = Billrun_Factory::config()->getFileTypes();
                     if (in_array($row['type'], $fileTypes)) {
@@ -529,7 +537,7 @@ class Billrun_Cycle_Subscriber_Invoice {
             
             $taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
             foreach ($taxes as $tax){
-                $groupingKeys['tax_key'][] = $tax['key'];
+                $groupingKeys['tax_key'][$tax['key']][] = $tax['type'];
             }
             
 
@@ -562,17 +570,20 @@ class Billrun_Cycle_Subscriber_Invoice {
         
         protected function addGroupTotal($row){
             $groupingKeys = $this->getGroupingKeysforRow($row);
-            foreach($groupingKeys['tax_key'] as $tax){
-               $uniqeGroupingKeys = $groupingKeys;
-               $uniqeGroupingKeys['tax_key'] = $tax;
-               $result = $this->findGropTotalByGroupingKey($uniqeGroupingKeys);
-               //if allready have group for this $uniqeGroupingKeys update this group 
-               if($result['status']){
-                   $this->updateTotalsGrouping($row, $result['index']);
-               }else{
-                   //if dont have group for this $uniqeGroupingKeys creat new one
-                   $this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index']);
-               }
+            foreach($groupingKeys['tax_key'] as $key => $types){
+                foreach ($types as $type){
+                    $uniqeGroupingKeys = $groupingKeys;
+                    $uniqeGroupingKeys['tax_key'] = $key;
+                    $uniqeGroupingKeys['tax_type'] = $type;
+                    $result = $this->findGropTotalByGroupingKey($uniqeGroupingKeys);
+                    //if allready have group for this $uniqeGroupingKeys update this group
+                    if($result['status']){
+                        $this->updateTotalsGrouping($row, $result['index']);
+                    }else{
+                        //if dont have group for this $uniqeGroupingKeys creat new one
+                        $this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index']);
+                    }
+                }
             }
         }
         
