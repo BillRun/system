@@ -506,30 +506,30 @@ class Billrun_Cycle_Subscriber_Invoice {
             $groupingKeys = array();
             switch ($row['type']){
                 case 'flat':
-                    $groupingKeys['entity_key'] = $row['plan'];
+                    $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'plan', null);
                     $groupingKeys['source'] = 'plan';
                     break;
                 case 'service':
-                    $groupingKeys['entity_key'] = $row['service'];
+                    $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'service', null);
                     $groupingKeys['source'] = 'service';
                     break;
                 case 'credit':
                     switch ($row['usaget']){
                         case 'discount':    
-                            $groupingKeys['entity_key'] = $row['key'];
+                            $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'key', null);
                             break;
                         case 'refund':
                         case 'charge':
-                            $groupingKeys['entity_key'] = $row['arate_key'];
+                            $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'arate_key', null);
                             break;
                     }
-                    $groupingKeys['source'] = $row['usaget'];
+                    $groupingKeys['source'] = Billrun_Util::getIn($row, 'usaget', null);
                     break;
                 default:
                     $fileTypes = Billrun_Factory::config()->getFileTypes();
                     if (in_array($row['type'], $fileTypes)) {
-                        $groupingKeys['entity_key'] = $row['arate_key'];
-                        $groupingKeys['source'] = 'rate'; 
+                        $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'arate_key', null);
+                        $groupingKeys['source'] = Billrun_Util::getIn($row, 'rate', null); 
                     }else{
                         Billrun_Factory::log("Updating unknown type: " . $row['type']);
                     }
@@ -557,16 +557,16 @@ class Billrun_Cycle_Subscriber_Invoice {
                 $this->data['totals']['grouping'][$index][$field] = $value;
             }
             $this->data['totals']['grouping'][$index]['count'] = 1;
-            $this->data['totals']['grouping'][$index]['before_taxes'] = $row['aprice'];
-            $this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getIn($row , 'tax_data.total_amount', 0); 
-            $this->data['totals']['grouping'][$index]['after_taxes'] = $row['final_charge'];
+            $this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getIn($row, 'aprice', 0);
+            $this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getIn($row, 'tax_data.total_amount', 0); 
+            $this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getIn($row, 'final_charge', 0);
         }
         
          protected function updateTotalsGrouping($row, $index){
             $this->data['totals']['grouping'][$index]['count'] ++;
-            $this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + $row['aprice'];
+            $this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
             $this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row , 'tax_data.total_amount', 0); 
-            $this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + $row['final_charge'];
+            $this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
         }
         
         
