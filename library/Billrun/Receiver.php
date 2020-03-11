@@ -96,10 +96,8 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'received_time' => new MongoDate()
                     );
 		
-		if (!empty($fileData['source'])) {
-			if (in_array($fileData['source'], $file_types)) {
-				$addData['type'] = 'input_processor';
-			}
+		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {
+			$addData['type'] = 'input_processor';
 		}
 
 		$update = array(
