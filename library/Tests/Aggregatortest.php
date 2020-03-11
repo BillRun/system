@@ -375,17 +375,17 @@
              'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
-//		array(
-//			'preRun' => ('expected_invoice'),
-//			'test' => array('test_number' => 66,),
-//			'expected' => array(),
-//		),
-//		/* run full cycle */
-//		array(
-//			'preRun' => ('changeConfig'),
-//			'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
-//			'expected' => array(),
-//		)
+		array(
+			'preRun' => ('expected_invoice'),
+			'test' => array('test_number' => 66,),
+			'expected' => array(),
+		),
+		/* run full cycle */
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'expected' => array(),
+		)
      );
 
      public function __construct($label = false) {
