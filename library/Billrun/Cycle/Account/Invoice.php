@@ -337,7 +337,7 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
-                        $newTotals['grouping'] = $this->sumUpGroupingTotalForAccount($newTotals['grouping'], $sub->getTotals()['grouping']);
+                        Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount($newTotals['grouping'], Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
 		}
 		
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
@@ -481,7 +481,7 @@ class Billrun_Cycle_Account_Invoice {
                     $afterTax = $group['after_taxes'];
                     unset($group['after_taxes']);
                     $stamp = Billrun_Util::generateArrayStamp($group);
-                    $index = $this->totalGropHashMap[$stamp];
+                    $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
                     if (isset($index)){
                         $currentTotalGroups[$index]['count'] += $count;
                         $currentTotalGroups[$index]['before_taxes'] += $beforeTax;

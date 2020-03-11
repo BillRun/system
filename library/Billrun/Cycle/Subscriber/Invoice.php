@@ -572,7 +572,7 @@ class Billrun_Cycle_Subscriber_Invoice {
         protected function findGropTotalByGroupingKey($groupingkeys){
             $result = array();
             $stamp = Billrun_Util::generateArrayStamp($groupingkeys);
-            $index = $this->totalGropHashMap[$stamp];
+            $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
             if (isset($index)){
                 $result['status'] = true;
                 $result['index'] = $index;
