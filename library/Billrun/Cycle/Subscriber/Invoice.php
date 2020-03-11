@@ -29,7 +29,10 @@ class Billrun_Cycle_Subscriber_Invoice {
         protected $shouldKeepLinesinMemory = true;
 	protected $shouldAggregateUsage = true;
         
-	/**
+        protected $gropingExtraFields = array();
+        protected $gropingEnabled = true;
+
+        /**
 	 * 
 	 * @param array $data - Subscriber data
 	 * @param integer $sid
@@ -42,6 +45,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		} else {
 			$this->data = $data;
 		}
+                $this->gropingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
+                $this->gropingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -231,7 +236,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-                $this->addGroupTotal($row);
+                if($this->gropingEnabled){
+                        $this->addGroupTotal($row);
+                }
 		$addedData = [];
 		if(!empty($row['start'])) {
 			$addedData['start'] = $row['start'];
@@ -515,7 +522,6 @@ class Billrun_Cycle_Subscriber_Invoice {
                     if (in_array($row['type'], $fileTypes)) {
                         $groupingKeys['entity_key'] = $row['arate_key'];
                         $groupingKeys['source'] = 'rate'; 
-                        $groupingKeys['type'] = $row['type']; //input processor name
                     }else{
                         Billrun_Factory::log("Updating unknown type: " . $row['type']);
                     }
@@ -526,8 +532,8 @@ class Billrun_Cycle_Subscriber_Invoice {
                 $groupingKeys['tax_key'][] = $tax['key'];
             }
             
-            $extraFields = ["usaget", "uf.PHONE_NUMBER", "type"]; //TODO: need to take for  DB configuration 
-            foreach($extraFields as $field){
+
+            foreach($this->gropingExtraFields as $field){
                 $value = Billrun_Util::getIn($row, $field, null);
                 if (isset($value)){
                     Billrun_Util::setIn($groupingKeys, $field, $value);

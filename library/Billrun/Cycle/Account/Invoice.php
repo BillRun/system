@@ -57,8 +57,10 @@ class Billrun_Cycle_Account_Invoice {
 	protected $invoicedLines = array();
 
         protected $totalGropHashMap = array();
-        
-	/**
+        protected $gropingEnabled = true;
+
+
+        /**
 	 * @todo used only in current balance API. Needs refactoring
 	 */
 	public function __construct($options = array()) {
@@ -67,6 +69,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
+                $this->gropingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -331,13 +334,15 @@ class Billrun_Cycle_Account_Invoice {
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
-			'current_balance' => array('after_vat' => 0),
-                        'grouping' => array(),
+			'current_balance' => array('after_vat' => 0)
 		);
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
-                        Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount($newTotals['grouping'], Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
+                        if($this->gropingEnabled){
+                                Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount(Billrun_Util::getIn($newTotals, 'grouping', array()),
+                                        Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
+                        }
 		}
 		
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
