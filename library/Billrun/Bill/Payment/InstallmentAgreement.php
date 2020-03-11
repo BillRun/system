@@ -167,10 +167,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (empty($this->installmentsNum) || empty($this->totalAmount)) {
 			throw new Exception('Installments_num and total_amount must exist and be bigger than 0');
 		}
-		for ($index = 0; $index < $this->installmentsNum; $index++) {
-			$date = date(Billrun_Base::base_datetimeformat, strtotime("$index  month", $this->firstDueDate->sec));
-			$this->installments[$index] = array('due_date' => $date, 'charge' => array('not_before' => $date));
-		}
+		$this->installments = $this->calcInstallmentDates($this->firstDueDate, 'due_date');
 		$amountsArray = array_column($this->installments, 'amount');
 		if (count($amountsArray) != 0 && count($amountsArray) != $this->installmentsNum) {
 			throw new Exception("All installments must all be with/without amount");
