@@ -470,6 +470,13 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
+        
+        /**
+         * This function add to the account totals grouping his subscriber totals group.
+         * @param type $currentTotalGroups 
+         * @param type $subTotalGroups 
+         * @return the new sum up of the account totals grouping
+         */
         protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
             foreach($subTotalGroups as $group){
                     $count = $group['count'];
@@ -482,12 +489,14 @@ class Billrun_Cycle_Account_Invoice {
                     unset($group['after_taxes']);
                     $stamp = Billrun_Util::generateArrayStamp($group);
                     $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
+                    //if allready have acoount group for this subscriber group update account group 
                     if (isset($index)){
                         $currentTotalGroups[$index]['count'] += $count;
                         $currentTotalGroups[$index]['before_taxes'] += $beforeTax;
                         $currentTotalGroups[$index]['taxes'] += $taxes;
                         $currentTotalGroups[$index]['after_taxes'] += $afterTax;
                     } else {
+                        //if dont have acoount group for this subscriber group create new account group 
                         $index = count($this->totalGropHashMap);
                         $currentTotalGroups[$index] = $group;
                         $currentTotalGroups[$index]['count'] = $count;

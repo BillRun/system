@@ -494,8 +494,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	public function getInvoicedLines() {
 		return $this->invoicedLines;
 	}
-        
-        
+             
         protected function getGroupingKeysforRow($row){
             $groupingKeys = array();
             switch ($row['type']){
@@ -537,7 +536,6 @@ class Billrun_Cycle_Subscriber_Invoice {
             return $groupingKeys;
         }
         
-        
         protected function createNewTotalsGrouping($groupingKeys, $row, $index){
             foreach($groupingKeys as $field => $value){
                 $this->data['totals']['grouping'][$index][$field] = $value;
@@ -555,20 +553,30 @@ class Billrun_Cycle_Subscriber_Invoice {
             $this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + $row['final_charge'];
         }
         
+        
         protected function addGroupTotal($row){
             $groupingKeys = $this->getGroupingKeysforRow($row);
             foreach($groupingKeys['tax_key'] as $tax){
                $uniqeGroupingKeys = $groupingKeys;
                $uniqeGroupingKeys['tax_key'] = $tax;
                $result = $this->findGropTotalByGroupingKey($uniqeGroupingKeys);
+               //if allready have group for this $uniqeGroupingKeys update this group 
                if($result['status']){
                    $this->updateTotalsGrouping($row, $result['index']);
                }else{
+                   //if dont have group for this $uniqeGroupingKeys creat new one
                    $this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index']);
                }
             }
         }
-
+        
+        /**
+         * This function find if for this subscriber already exist group (in the sub.totals of the billrun object)
+         * for the $groupingkeys, if so return the index of the group
+         * otherwise return the next index of the array and save it in $totalGropHashMap for this new $groupingkeys.
+         * @param $groupingkeys - the keys that distinguish a group.
+         * @return if exist group return status=true and the index otherwise status=false and the the new index.
+         */
         protected function findGropTotalByGroupingKey($groupingkeys){
             $result = array();
             $stamp = Billrun_Util::generateArrayStamp($groupingkeys);
@@ -582,8 +590,6 @@ class Billrun_Cycle_Subscriber_Invoice {
                 $this->totalGropHashMap[$stamp] = $result['index'];
             }
             return $result;
-        }
-        
-        
+        }  
         
 }
