@@ -24,13 +24,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 	
 	protected $invoicedLines = array();
         
-        protected $totalGropHashMap = array();
+        protected $totalGroupHashMap = array();
 
         protected $shouldKeepLinesinMemory = true;
 	protected $shouldAggregateUsage = true;
         
-        protected $gropingExtraFields = array();
-        protected $gropingEnabled = true;
+        protected $groupingExtraFields = array();
+        protected $groupingEnabled = true;
 
         /**
 	 * 
@@ -45,8 +45,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		} else {
 			$this->data = $data;
 		}
-                $this->gropingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
-                $this->gropingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+                $this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
+                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -236,7 +236,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-                if($this->gropingEnabled){
+                if($this->groupingEnabled){
                         $this->addGroupToTotalGrouping($row);
                 }
 		$addedData = [];
@@ -543,7 +543,7 @@ class Billrun_Cycle_Subscriber_Invoice {
             }
             
 
-            foreach($this->gropingExtraFields as $field){
+            foreach($this->groupingExtraFields as $field){
                 $value = Billrun_Util::getIn($row, $field, null);
                 if (isset($value)){
                     Billrun_Util::setIn($groupingKeys, $field, $value);
@@ -588,7 +588,7 @@ class Billrun_Cycle_Subscriber_Invoice {
         
         
         protected function addGroup($uniqeGroupingKeys, $row){
-            $result = $this->findGropTotalByGroupingKey($uniqeGroupingKeys);
+            $result = $this->findGroupTotalByGroupingKey($uniqeGroupingKeys);
             //if allready have group for this $uniqeGroupingKeys update this group
             if($result['status']){
                 $this->updateTotalsGrouping($row, $result['index']);
@@ -601,21 +601,21 @@ class Billrun_Cycle_Subscriber_Invoice {
         /**
          * This function find if for this subscriber already exist group (in the sub.totals of the billrun object)
          * for the $groupingkeys, if so return the index of the group
-         * otherwise return the next index of the array and save it in $totalGropHashMap for this new $groupingkeys.
+         * otherwise return the next index of the array and save it in $totalGroupHashMap for this new $groupingkeys.
          * @param $groupingkeys - the keys that distinguish a group.
          * @return if exist group return status=true and the index otherwise status=false and the the new index.
          */
-        protected function findGropTotalByGroupingKey($groupingkeys){
+        protected function findGroupTotalByGroupingKey($groupingkeys){
             $result = array();
             $stamp = Billrun_Util::generateArrayStamp($groupingkeys);
-            $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
+            $index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
             if (isset($index)){
                 $result['status'] = true;
                 $result['index'] = $index;
             } else {
                 $result['status'] = false;
-                $result['index'] = count($this->totalGropHashMap);
-                $this->totalGropHashMap[$stamp] = $result['index'];
+                $result['index'] = count($this->totalGroupHashMap);
+                $this->totalGroupHashMap[$stamp] = $result['index'];
             }
             return $result;
         }  

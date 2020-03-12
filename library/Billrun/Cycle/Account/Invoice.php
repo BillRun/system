@@ -56,8 +56,8 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-        protected $totalGropHashMap = array();
-        protected $gropingEnabled = true;
+        protected $totalGroupHashMap = array();
+        protected $groupingEnabled = true;
 
 
         /**
@@ -69,7 +69,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
-                $this->gropingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
+                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -318,7 +318,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
-                $this->totalGropHashMap = array();
+                $this->totalGroupHashMap = array();
 		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
@@ -334,12 +334,12 @@ class Billrun_Cycle_Account_Invoice {
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
-			'current_balance' => array('after_vat' => 0)
+			'current_balance' => array('after_vat' => 0),
 		);
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
-                        if($this->gropingEnabled){
+                        if($this->groupingEnabled){
                                 Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount(Billrun_Util::getIn($newTotals, 'grouping', array()),
                                         Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
                         }
@@ -493,7 +493,7 @@ class Billrun_Cycle_Account_Invoice {
                         $afterTax = $group['after_taxes'];
                         unset($group['after_taxes']);
                         $stamp = Billrun_Util::generateArrayStamp($group);
-                        $index = Billrun_Util::getIn($this->totalGropHashMap, $stamp, null);
+                        $index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
                         //if allready have acoount group for this subscriber group update account group
                         if (isset($index)){
                                 $currentTotalGroups[$index]['count'] += $count;
@@ -502,13 +502,13 @@ class Billrun_Cycle_Account_Invoice {
                                 $currentTotalGroups[$index]['after_taxes'] += $afterTax;
                         } else {
                                 //if dont have acoount group for this subscriber group create new account group
-                                $index = count($this->totalGropHashMap);
+                                $index = count($this->totalGroupHashMap);
                                 $currentTotalGroups[$index] = $group;
                                 $currentTotalGroups[$index]['count'] = $count;
                                 $currentTotalGroups[$index]['before_taxes'] = $beforeTax;
                                 $currentTotalGroups[$index]['taxes'] = $taxes;
                                 $currentTotalGroups[$index]['after_taxes'] = $afterTax;
-                                $this->totalGropHashMap[$stamp] = $index;
+                                $this->totalGroupHashMap[$stamp] = $index;
                         }
                 }
                 return $currentTotalGroups;
