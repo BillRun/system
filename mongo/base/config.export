@@ -263,7 +263,7 @@
 			"field_name":"invoice_label",
 			"default_value":"retail",
 			"show_in_list":true,
-			"title":"Invoice label",
+			"title":"Invoice label"
 		}]
     },
     "plans": {
