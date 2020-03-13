@@ -449,6 +449,13 @@ class Billrun_Billrun {
 			} else {
 				$sraw['costs']['flat'][$vat_key] += $pricingData['aprice'];
 			}
+			if (isset($pricingData['aprice_no_vat']) && $pricingData['aprice_no_vat'] > 0) {
+				if (!isset($sraw['costs']['flat']['vat_free'])) {
+					$sraw['costs']['flat']['vat_free'] = $pricingData['aprice_no_vat'];
+				} else {
+					$sraw['costs']['flat']['vat_free'] += $pricingData['aprice_no_vat'];
+				}
+			}
 		} else if ($row['type'] == 'credit') {
 			if (!isset($sraw['costs']['credit'][$row['credit_type']][$vat_key])) {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] = $pricingData['aprice'];
@@ -524,6 +531,9 @@ class Billrun_Billrun {
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
+				if (isset($pricingData['aprice_no_vat'])) {
+					$zone['cost_without_vat'] = $this->getFieldVal($zone['cost_without_vat'], 0) + $pricingData['aprice_no_vat'];
+				}
 			}
 			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
@@ -561,11 +571,11 @@ class Billrun_Billrun {
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
-			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
+			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key)) + (isset($pricingData['aprice_no_vat']) ? $pricingData['aprice_no_vat'] : 0);
 		} else {
-			$price_after_vat = $pricingData['aprice'];
+			$price_after_vat = $pricingData['aprice'] + (isset($pricingData['aprice_no_vat']) ? $pricingData['aprice_no_vat'] : 0);
 		}
-		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
+		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'] + (isset($pricingData['aprice_no_vat']) ? $pricingData['aprice_no_vat'] : 0);
 		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
 	}
 
@@ -744,6 +754,13 @@ class Billrun_Billrun {
 			} else if (isset($line['out_plan'])) {
 				$pricingData['out_plan'] = $line['out_plan'];
 			}
+			
+			if (isset($line['aprice_no_vat'])) {
+				$pricingData['aprice_no_vat'] = $line['aprice_no_vat'];
+			}
+			if ($line['total_aprice']) {
+				$pricingData['total_aprice'] = $line['total_aprice'];
+			}
 
 			if ($line['type'] != 'flat') {
 				$rate = $this->getRowRate($line);
@@ -753,7 +770,7 @@ class Billrun_Billrun {
 				$plan_ref = $line->get('plan_ref', true);
 				if (!empty($plan_ref)) {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
-					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+					$this->updateBillrun($this->billrun_key, array(), $pricingData, $line, $plan->get('vatable'));
 				} else {
 					Billrun_Factory::log()->log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 				}
