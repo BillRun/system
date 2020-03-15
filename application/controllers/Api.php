@@ -68,7 +68,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
 				Billrun_Factory::db()->linesCollection()
-					->query()->cursor()->limit(1)->current();
+					->query()->cursor()->sort(array('urt' => 1))->limit(1)->current();
 				$msg = 'SUCCESS';
 				$status = 1;
 			} else {

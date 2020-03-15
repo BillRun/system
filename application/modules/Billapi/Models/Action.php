@@ -64,6 +64,12 @@ abstract class Models_Action {
 	protected $collectionHandler = array();
 
 	/**
+	 * The request options
+	 * @var array
+	 */
+	protected $options = array();
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params parameters of the action
@@ -90,6 +96,10 @@ abstract class Models_Action {
 		
 		if (isset($this->request['collection'])) {
 			$this->collectionHandler = Billrun_Factory::db()->{$this->getCollectionName() . 'Collection'}();
+		}
+
+		if (isset($this->request['options'])) {
+			$this->options = @json_decode($this->request['options'], TRUE);
 		}
 	}
 

@@ -373,8 +373,7 @@ class Billrun_Billingcycle {
 		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		$cycleToRerun = self::isToRerun($billrunKey);
-		if (empty($cycleStatus) && $cycleToRerun) {
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
 			$cycleStatus = 'to_rerun';
 		}
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
@@ -385,7 +384,7 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
@@ -440,7 +439,7 @@ class Billrun_Billingcycle {
 	}
 
 	public static function getLastNonRerunnableCycle() {
-		$query = array('billed' => 1, 'attributes.invoice_type' => array('$ne' => 'immediate'));
+		$query = array('billed' => 1, 'billrun_key' => array('$regex' => '^\d{6}$'));
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
@@ -573,5 +572,16 @@ class Billrun_Billingcycle {
 		}
 		return $entry['billrun_key'];
 	}
-
+	
+	public static function getCycleTimeStatus($billrunKey) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		if ($billrunKey == $currentBillrunKey) {
+			return 'present';
+		}
+		if ($billrunKey > $currentBillrunKey) {
+			return 'future';
+		}
+	
+		return 'past';
+	}
 }

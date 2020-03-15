@@ -170,7 +170,8 @@ abstract class Billrun_Bill {
 				'aid' => 1,
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
-				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+				'waiting_for_confirmation_total' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+				'pending_total' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due' , 'else' => 0)),
 
 			),
 		);
@@ -180,8 +181,11 @@ abstract class Billrun_Bill {
 				'total' => array(
 					'$sum' => '$due',
 				),
-				'total2' => array(
-					'$sum' => '$total2',
+				'waiting_for_confirmation_total' => array(
+					'$sum' => '$waiting_for_confirmation_total',
+				),
+				'pending_total' => array(
+					'$sum' => '$pending_total',
 				),
 			),
 		);
@@ -191,7 +195,8 @@ abstract class Billrun_Bill {
 				'_id' => 0,
 				'aid' => '$_id',
 				'total' => 1,
-				'total2' =>  1,
+				'waiting_for_confirmation_total' =>  1,
+				'pending_total' => 1
 			),
 		);
 
@@ -211,7 +216,8 @@ abstract class Billrun_Bill {
 		if (!$notFormatted) {
 			$results = array_map(function($ele) {
 				$ele['total'] = Billrun_Util::getChargableAmount($ele['total']);
-				$ele['total2'] = Billrun_Util::getChargableAmount($ele['total2']);
+				$ele['waiting_for_confirmation_total'] = Billrun_Util::getChargableAmount($ele['waiting_for_confirmation_total']);
+				$ele['pending_total'] = Billrun_Util::getChargableAmount($ele['pending_total']);
 				return $ele;
 			}, $results);
 		}
@@ -237,13 +243,14 @@ abstract class Billrun_Bill {
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
-			$totalWaiting = current($results)['total2'];
+			$totalWaiting = current($results)['waiting_for_confirmation_total'];
+			$totalPending = abs(current($results)['pending_total']);
 		} else if ($notFormatted) {
-			$total = $totalWaiting = 0;
+			$total = $totalWaiting = $totalPending = 0;
 		} else {
-			$total = $totalWaiting = Billrun_Util::getChargableAmount(0);
+			$total = $totalWaiting = $totalPending = Billrun_Util::getChargableAmount(0);
 		}
-		return array('total' => $total, 'without_waiting' => $totalWaiting);
+		return array('total' => $total, 'without_waiting' => $totalWaiting, 'total_pending_amount' => $totalPending);
 	}
 
 	public static function payUnpaidBillsByOverPayingBills($aid, $sortByUrt = true) {
@@ -294,7 +301,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function updateLeft() {
-		if ($this->getDue() < 0) {
+		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
 			foreach ($this->getPaidBills() as $paidBills) {
 				$this->data['left'] -= array_sum($paidBills);
@@ -306,7 +313,7 @@ abstract class Billrun_Bill {
 	}
 		
 	protected function updateLeftToPay() {
-		if ($this->getDue() > 0) {
+		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
 			foreach ($this->getPaidByBills() as $paidByBills) {
 				$this->data['left_to_pay'] -= array_sum($paidByBills);
@@ -403,6 +410,9 @@ abstract class Billrun_Bill {
 	}
 
 	protected function recalculatePaymentFields($billId = null, $status = null) {
+		if ($this->getBillMethod() == 'denial') {
+			return $this;
+		}
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
@@ -412,15 +422,14 @@ abstract class Billrun_Bill {
 				$amount += array_sum($this->data['paid_by']['rec']);
 			}
 			$this->data['total_paid'] = $amount;
-			$this->data['left_to_pay'] = $this->getLeftToPay();
+			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
-				
-		} else if ($this->getDue() < 0){
+		} else if ($this->getDue() < 0) {
 			$amount = 0;
 			if (isset($this->data['pays']['inv'])) {
 				$amount += array_sum($this->data['pays']['inv']);
@@ -428,7 +437,7 @@ abstract class Billrun_Bill {
 			if (isset($this->data['pays']['rec'])) {
 				$amount += array_sum($this->data['pays']['rec']);
 			}
-			$this->data['left'] = $this->data['amount'] - $amount;				
+			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
 		return $this;
 	}
@@ -546,12 +555,10 @@ abstract class Billrun_Bill {
 		
 		if (!empty($aids)) {
 			$aidsQuery = array('aid' => array('$in' => $aids));			
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else if (!empty($exempted)){
 			$aidsQuery = array('aid' => array('$nin' => $aids));
-			$relevantAids = $billsColl->distinct('aid', array_merge($matchQuery, $aidsQuery));
 		} else {
-			$relevantAids = $billsColl->distinct('aid', $matchQuery);
+			$aidsQuery = array();
 		}
 		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
 		$currentAccounts = $account->getAccountsByQuery($accountQuery);
@@ -789,6 +796,9 @@ abstract class Billrun_Bill {
 					}
 				}
 				$involvedAccounts[] = $aid;
+				if (!empty($options['file_based_charge']) && isset($options['generated_pg_file_log'])) {
+					$rawPayment['generated_pg_file_log'] = $options['generated_pg_file_log'];
+				}
 				$payments[] = new $className($rawPayment);
 			}
 			$res = Billrun_Bill_Payment::savePayments($payments);
@@ -809,7 +819,8 @@ abstract class Billrun_Bill {
 						if (empty($options['single_payment_gateway'])) {
 							try {
 								$payment->setPending(true);
-								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails);
+								$addonData = array('aid' => $payment->getAid(), 'txid' => $payment->getId());
+								$paymentStatus = $gateway->makeOnlineTransaction($gatewayDetails, $addonData);
 							} catch (Exception $e) {
 								$payment->setGatewayChargeFailure($e->getMessage());
 								$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
@@ -819,7 +830,7 @@ abstract class Billrun_Bill {
 						} else {
 							$paymentStatus = array(
 								'status' => $payment->getSinglePaymentStatus(),
-								'additional_params' => array()
+								'additional_params' => isset($options['additional_params']) ? $options['additional_params'] : array()
 							);
 							if (empty($paymentStatus['status'])) {
 								throw new Exception("Missing status from gateway for single payment");
@@ -844,9 +855,9 @@ abstract class Billrun_Bill {
 						foreach ($payment->getPaidBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
+									$payment->setPending(true);
 								}
-								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
 								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
@@ -856,9 +867,9 @@ abstract class Billrun_Bill {
 						foreach ($payment->getPaidByBills() as $billType => $bills) {
 							foreach ($bills as $billId => $amountPaid) {
 								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$responsesFromGateway[$transactionId]['stage'] = 'Pending';
+									$payment->setPending(true);
 								}
-								if ($responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
 									$payment->setPending(false);
 								}
 								$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
@@ -869,13 +880,16 @@ abstract class Billrun_Bill {
 					}
 
 					$involvedAccounts = array_unique($involvedAccounts);
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] < (0 - Billrun_Bill::precision))) {
+					if (!empty($gatewayDetails)) {
+						$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+					}
+					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount < (0 - Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
 					}
-					if ($responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayDetails['amount'] > (0 + Billrun_Bill::precision))) {
+					if (!empty($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] == 'Completed' && ($gatewayAmount > (0 + Billrun_Bill::precision))) {
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
-					if (is_null($responsesFromGateway[$transactionId]) && $payment->getDue() > 0) { // offline payment
+					if (empty($responsesFromGateway[$transactionId]) && !isset($options['file_based_charge']) && $payment->getDue() > 0) { // offline payment
 						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
 					}
 				}
@@ -1094,4 +1108,22 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
+	
+	public function updatePastRejectionsOnProcessingFiles() {
+		foreach ($this->getPaidBills() as $type => $paidBills) {
+			foreach ($paidBills as $billId => $amount) {
+				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
+			}
+		}
+	}
+	
+	public function getBillMethod() {
+		if (empty($this->method)) {
+			return null;
+		}
+		return $this->method;
+	}
+
 }
