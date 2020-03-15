@@ -201,10 +201,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if($this->multiDayCycleMode = $config->isMultiDayCycle()) {
 			Billrun_Factory::log()->log("Running on multi cycle day mode", Zend_Log::INFO);
 			$this->invoicing_days = $this->getInvoicingDays($options);
-		} else {
-			if(!$this->multiDayCycleMode && !empty($options['invoicing_days'])) {
+		} elseif(!empty($options['invoicing_days'])) {
 				Billrun_Factory::log()->log("Multi cycle day mode is off, 'invoicing_days' parameter was ignored.", Zend_Log::WARN);
-			}
 		}
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
@@ -458,7 +456,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function parseToAccounts($outputArr) {
 		$accounts = array();
-		$config = Billrun_Factory::config();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
 			'autoload' => !empty($this->overrideMode)
@@ -574,7 +571,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			} else {
 				$config = Billrun_Factory::config();
 				if ($subscriberField == "invoicing_day" && $config->isMultiDayCycle()) {
-					if (empty($subscriberPlan['passthrough'][$subscriberField]) || !in_array($subscriberPlan['passthrough'][$subscriberField], array_map('strval', range("1", "28")))) {
+					if (empty($subscriberPlan['passthrough'][$subscriberField]) || !in_array($subscriberPlan['passthrough'][$subscriberField], array_map('strval', range(1, 28)))) {
 						$accountData[$invoiceField] = strval($config->getConfigChargingDay());
 					} else {
 						$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
@@ -991,14 +988,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 	
 	protected function getInvoicingDays($options) {
-		$config = Billrun_Factory::config();
 		if (!empty($options['invoicing_days'])) {
-			if(!is_array($options['invoicing_days'])) {
-				$options['invoicing_days'] = [$options['invoicing_days']];
-			}
-			return $options['invoicing_days'];
+			return !is_array($options['invoicing_days']) ? [$options['invoicing_days']] : $options['invoicing_days'];
 		}else {
-			return array_map('strval', $this->allowPrematureRun ? range("1", "28") : range("1", (string)date("d", strtotime("yesterday"))));
+			return array_map('strval', $this->allowPrematureRun ? range(1, 28) : range(1, date("d", strtotime("yesterday"))));
 		}
 	}
 	
