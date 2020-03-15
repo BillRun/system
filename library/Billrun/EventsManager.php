@@ -93,10 +93,9 @@ class Billrun_EventsManager {
 						$conditionEntityBefore = $entityBefore;
 					}
 					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
-					if ($extraValues === false) {
-						continue 3;
+					if ($extraValues !== false) {
+						$conditionSettings[] = $rawEventSettings;
 					}
-					$conditionSettings[] = $rawEventSettings;
 				}
 			}
 		}
