@@ -64,9 +64,17 @@ class Billrun_DataTypes_PrePayment {
 	 * @var int
 	 */
 	private $aid = null;
+	
+	/**
+	 * payment method
+	 * @var string
+	 */
+	private $method = null;
 
-	public function __construct($paymentData) {
+
+	public function __construct($paymentData, $method) {
 		$this->data = $paymentData;
+		$this->method = $method;
 	}
 
 	/**
@@ -144,14 +152,19 @@ class Billrun_DataTypes_PrePayment {
 		$updatedBills = $this->getBillsToHandle($billType);
 		switch ($this->getPaymentDirection()) {
 			case self::PAY_DIR_PAYS:
-				$query['invoice_id'] = [
-					'$in' => Billrun_Util::verify_array(array_keys($updatedBills), 'int'),
-				];
-				break;
 			case self::PAY_DIR_PAID_BY:
-				$query['txid'] = [
-					'$in' => array_keys($updatedBills),
-				];
+				switch ($billType) {
+					case self::BILL_TYPE_INVOICE:
+						$query['invoice_id'] = [
+							'$in' => Billrun_Util::verify_array(array_keys($updatedBills), 'int'),
+						];
+						return Billrun_Bill_Invoice::getInvoices($query);
+					case self::BILL_TYPE_RECEIPT:
+						$query['txid'] = [
+							'$in' => array_keys($updatedBills),
+						];
+						return Billrun_Bill_Payment::queryPayments($query);
+				}
 			default:
 				$customerDir = $this->getCustomerDirection();
 				if ($customerDir == self::DIR_FROM_CUSTOMER) {
@@ -161,17 +174,9 @@ class Billrun_DataTypes_PrePayment {
 				if ($customerDir == self::DIR_TO_CUSTOMER) {
 					return Billrun_Bill::getOverPayingBills($query);
 				}
-				return null;
 		}
-
-		switch ($billType) {
-			case self::BILL_TYPE_INVOICE:
-				return Billrun_Bill_Invoice::getInvoices($query);
-			case self::BILL_TYPE_RECEIPT:
-				return Billrun_Bill_Payment::queryPayments($query);
-			default:
-				return null;
-		}
+		
+		return null;
 	}
 
 	/**
@@ -328,5 +333,9 @@ class Billrun_DataTypes_PrePayment {
 		}
 		return floatval($amount);
 	}
-
+	
+	public function getMethod() {
+		return $this->method;
+	}
+	
 }
