@@ -855,3 +855,23 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+
+//BRCD-2042 - charge.not_before migration script
+db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.bills.save(obj);
+	}
+)
+db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.billrun.save(obj);
+	}
+)

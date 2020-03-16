@@ -1110,23 +1110,24 @@ abstract class Billrun_Bill {
 		$this->data['due_date'] = $dueDate;
 	}
 	/**
-	 * 
-	 * @param type $aid
-	 * @param type $startBillrunKey - billrun key to start the search from it's beginning.
-	 * @param type $endBillrunKey -  - billrun key to end the search to it's beginning (excluded).
-	 * @param type $type
-	 * @param type $method
-	 * @return array of relevant bills
+	 * Function that return bills with method = "installment_agreement", by chosen conditions.
+	 * @param type $aid - account id.
+	 * @param type $dueDateStartBillrunKey - billrun key, to find bills that their due date is after it's beginning.
+	 * @param type $dueDateEndBillrunKey - billrun key, to find bills that their due date is before it's beginning.
+	 * @param type $type - bill type, 'rec' by default.
+	 * @param type $urtStartBillrunKey - billrun key, to find bills that their urt is after it's beginning.
+	 * @param type $urtEndBillrunKey - billrun key, to find bills that their urt is before it's beginning.
+	 * @return type
 	 */
-	public static function getBillsByKeysRangeAndMethod($aid, $startBillrunKey, $endBillrunKey, $type = 'rec', $method = false) {
-		$startBillrun = new Billrun_DataTypes_CycleTime($startBillrunKey);
-		$endBillrun = new Billrun_DataTypes_CycleTime($endBillrunKey);
+	public static function getInstallmentsByKeysRangeAndMethod($aid, $dueDateStartBillrunKey, $dueDateEndBillrunKey, $type = 'rec', $urtStartBillrunKey = "197101", $urtEndBillrunKey = "999901") {
+		$startBillrun = new Billrun_DataTypes_CycleTime($dueDateStartBillrunKey);
+		$endBillrun = new Billrun_DataTypes_CycleTime($dueDateEndBillrunKey);
+		$query['method'] = 'installment_agreement';
 		$query['type'] = $type;
 		$query['aid'] = $aid;
+		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['due_date'] = array('$gte' => new MongoDate($startBillrun->start()), '$lt' => new MongoDate($endBillrun->start()));
-		if ($method) {
-			$query['method'] = $method;
-		}
 		return self::getBills($query);
 	}
 
@@ -1161,27 +1162,27 @@ abstract class Billrun_Bill {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		return $billsColl->distinct($distinctField, $query);
 	}
-        /**
-         * Function that brings back account's installments, according to the input params.
-         * @param int $aid - wanted account id.
-         * @param string $urt_start_billrun - urt time from this billrun (inclusive).
-         * @param string $urt_end_billrun - urt time to this billrun (inclusive).
-         * @param string $ct_start_billrun - creation time from this billrun (inclusive).
-         * @param string $ct_end_billrun - creation time to this billrun (exclusive).
-         * @return array of relevant installments
-         */
-        public static function getInstallments ($aid, $urt_start_billrun = "197101", $urt_end_billrun = "210001", $ct_start_billrun = "197101", $ct_end_billrun = "999912"){
-            $query['aid'] = $aid;
-            $query = array(
-                'aid' => $aid,
-                'method' => "installment_agreement",
-                'creation_time' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_start_billrun)),
-                                         '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($ct_end_billrun))
-                                        ),
-                'urt' => array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_start_billrun)),
-                               '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urt_end_billrun))
-                                        ),
-            );
-            return static::getBills($query);
-        }
+	
+	/**
+	 * Function that returns bills that are payments, Within billrun keys range 
+	 * @param type $aid
+	 * @param type $urtStartBillrunKey - billrun key, to find bills that their urt is after it's beginning.
+	 * @param type $urtEndBillrunKey - billrun key, to find bills that their urt is before it's beginning.
+	 * @param type $method - array of methods - optional
+	 * @return type
+	 */
+	public static function getPaymentsByKeysRange ($aid, $urtStartBillrunKey = "197001", $urtEndBillrunKey = "999901", $method = []) {
+		$startUrt = new Billrun_DataTypes_CycleTime($urtStartBillrunKey);
+		$endUrt = new Billrun_DataTypes_CycleTime($urtEndBillrunKey);
+		$query['aid'] = $aid;
+		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+		$query['method'] = array('$ne' => 'installment_agreement');
+		$query['type'] = 'rec';
+		if (!empty($method)) {
+			$query['method']['$in'] = $method;
+		}
+		return self::getBills($query);
+	}
+	
 }
