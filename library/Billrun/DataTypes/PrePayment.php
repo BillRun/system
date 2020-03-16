@@ -64,9 +64,17 @@ class Billrun_DataTypes_PrePayment {
 	 * @var int
 	 */
 	private $aid = null;
+	
+	/**
+	 * payment method
+	 * @var string
+	 */
+	private $method = null;
 
-	public function __construct($paymentData) {
+
+	public function __construct($paymentData, $method) {
 		$this->data = $paymentData;
+		$this->method = $method;
 	}
 
 	/**
@@ -152,6 +160,7 @@ class Billrun_DataTypes_PrePayment {
 				$query['txid'] = [
 					'$in' => array_keys($updatedBills),
 				];
+				break;
 			default:
 				$customerDir = $this->getCustomerDirection();
 				if ($customerDir == self::DIR_FROM_CUSTOMER) {
@@ -328,5 +337,9 @@ class Billrun_DataTypes_PrePayment {
 		}
 		return floatval($amount);
 	}
-
+	
+	public function getMethod() {
+		return $this->method;
+	}
+	
 }
