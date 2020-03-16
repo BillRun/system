@@ -47,6 +47,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 			'payment_agreement.id' => $splitBillId
 		);
 		$query = array_merge($basicQuery, $unpaidQuery);
+		Billrun_Factory::log("Searching matching split bills by query: " . print_r($query, true), Zend_Log::DEBUG);
 		return Billrun_Bill::getBills($query, array('due_date' => 1));
 	}
 
@@ -69,6 +70,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		$paymentsArr['fc'] = 'fc';
 		$paymentsArr['aid'] = $this->aid;
 		$paymentsArr['split_bill_id'] = $this->uniqueId;
+		Billrun_Factory::log("Merging bills, parameters" . print_r($paymentsArr, true), Zend_Log::DEBUG);
 		$mergedBill = current(Billrun_Bill::pay($this->method, array($paymentsArr)));
 		$this->installmentChargeNotBefore = !empty($this->installmentChargeNotBefore) ? $this->installmentChargeNotBefore : (!empty($billChargeNotBefore) ? $billChargeNotBefore : $firstDueDate);
 		if (!empty($mergedBill) && !empty($mergedBill->getId())){
