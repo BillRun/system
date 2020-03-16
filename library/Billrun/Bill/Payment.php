@@ -1081,7 +1081,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
             case 'fc':
                 return $this->getPaidBills();
             case 'tc':
-                return $payment->getPaidByBills();
+                return $this->getPaidByBills();
             default:
                 return false;
         }
