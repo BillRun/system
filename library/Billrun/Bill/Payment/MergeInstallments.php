@@ -32,7 +32,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 			$this->aid = $options['aid'];
 			$this->uniqueId = $options['split_bill_id'];
 			$this->splitBills = $this->getMatchingSplitBills($options['aid'], $options['split_bill_id']);
-			$this->installmentdueDate = isset($options['due_date']) ? $options['due_date'] : null;
+			$this->installmentDueDate = isset($options['due_date']) ? $options['due_date'] : null;
 			$this->installmentChargeNotBefore = isset($options['charge']['not_before']) ? $options['charge']['not_before'] : null;
 			return;
 		}
