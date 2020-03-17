@@ -19,8 +19,9 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
+        protected $billrunToken;
 
-	protected function __construct() {
+        protected function __construct() {
 		parent::__construct();
                 if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api.paysafe.com";
@@ -73,11 +74,10 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
                                                 <p></p>
                                                 <div id = 'cvv' class='inputField'></div>
                                                 <p></p>
-
                                                 <!-- Add a payment button -->
                                                 <button type='submit' form='myForm' value='Submit' id = 'pay' type = 'button'> Pay </button>
-
-							
+                                                                <form id='myForm' action='$okPage' method='POST'>
+                                                                <input type='hidden' id='tok' name='tok' value='' />
 								<script type='text/javascript'>     
                                                                 var options = {
 
@@ -104,11 +104,15 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
                                                                        }
                                                                      };                                                                
                                                                     paysafe.fields.setup('$publishable_key_encode', options, function(instance, error) {
-									document.getElementById('pay').addEventListener('click', function(event, document) {
+									document.getElementById('pay').addEventListener('click', function(event) {
                                                                             instance.tokenize(function(instance, error, result) {
-                                                                                    
-                                                                                   console.log(result.token);
-                                                                                  
+                                                                                if (error) {
+                                                                                    // display the tokenization error in dialog window
+                                                                                    alert(JSON.stringify(error));
+                                                                                  } else {
+                                                                                    // write the Payment token value to the browser console
+                                                                                    document.getElementById('tok').value = result.token;
+                                                                                  }
                                                                             });
                                                                             
                                                                         }, false);
@@ -132,7 +136,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		return "tok";
 	}
         //
-	protected function getResponseDetails($result) {
+    	protected function getResponseDetails($result) {
 		if (function_exists("simplexml_load_string")) {
 			if (strpos(strtoupper($result), 'HEB')) {
 				$result = iconv("utf-8", "iso-8859-8", $result);
@@ -357,8 +361,13 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
         public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		return false;
 	}
-        public function adjustOkPage($okPage) {
-		$updatedOkPage = $okPage;
+        
+	public function adjustOkPage($okPage) {
+		$this->billrunToken = md5(microtime() . rand(1, 700000));
+		$updatedOkPage = $okPage . '&amp;tok=' . $this->billrunToken;
 		return $updatedOkPage;
 	}
+        protected function setBillrunToken($token){
+            $this->billrunToken = $token;    
+        }
 }
