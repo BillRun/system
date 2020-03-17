@@ -17,7 +17,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected $billrunName = "Paysafe";
 	protected $subscribers;
 	protected $pendingCodes = "/$^/";
-	protected $completionCodes = "/^000$/";
+	protected $completionCodes = "/^COMPLETED$/";
 	protected $account;
         protected $billrunToken;
 
@@ -75,9 +75,9 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
                                                 <div id = 'cvv' class='inputField'></div>
                                                 <p></p>
                                                 <!-- Add a payment button -->
-                                                <button type='submit' form='myForm' value='Submit' id = 'pay' type = 'button'> Pay </button>
+                                                <button id = 'pay' type = 'button'> Pay </button>
                                                                 <form id='myForm' action='$okPage' method='POST'>
-                                                                <input type='hidden' id='tok' name='tok' value='' />
+                                                                <input type='hidden' id='tok' name='tok' value='555' />
 								<script type='text/javascript'>     
                                                                 var options = {
 
@@ -111,7 +111,9 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
                                                                                     alert(JSON.stringify(error));
                                                                                   } else {
                                                                                     // write the Payment token value to the browser console
-                                                                                    document.getElementById('tok').value = result.token;
+                                                                                    var token = String(result.token);
+                                                                                    document.getElementById('tok').value = token;
+                                                                                    document.getElementById('myForm').submit();
                                                                                   }
                                                                             });
                                                                             
@@ -125,11 +127,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
         
         //
 	protected function buildTransactionPost($txId, $additionalParams) {
-		$params = $this->getGatewayCredentials();
-		$params['txId'] = $txId;
-		$params['tid'] = $params['redirect_terminal'];
-
-		return $this->buildInquireQuery($params);
+		$this->saveDetails['card_token'] = $txId;
 	}
         //
 	public function getTransactionIdName() {
@@ -137,53 +135,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
         //
     	protected function getResponseDetails($result) {
-		if (function_exists("simplexml_load_string")) {
-			if (strpos(strtoupper($result), 'HEB')) {
-				$result = iconv("utf-8", "iso-8859-8", $result);
-			}
-			$xmlObj = simplexml_load_string($result);
-			// Example to print out status text
-			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
-				return false;
-
-			$this->saveDetails['card_token'] = (string) $xmlObj->response->inquireTransactions->row->cardId;
-			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
-			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
-			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
-			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
-			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
-			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
-			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
-			$retParams['transaction_status'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->status;
-			$retParams['card_token'] = $this->saveDetails['card_token'];		
-			$retParams['personal_id'] = $this->saveDetails['personal_id'];
-			$retParams['auth_number'] = $this->saveDetails['auth_number'];
-			$fourDigits = substr($cardNum, -4);
-			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
-			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
-			if ($retParams['action'] == 'SinglePayment') {
-				$this->transactionId = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->tranId;
-				$slaveNumber = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalNumber;
-				$slaveSequence = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalSequence;
-				$voucherNumber = $slaveNumber . $slaveSequence;
-				$retParams['payment_identifier'] = $voucherNumber;
-				$creditType = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType;
-				if (!empty((string) $xmlObj->response->inquireTransactions->row->xRem)) {
-					$retParams['txid'] = (string) $xmlObj->response->inquireTransactions->row->xRem;
-				}
-				if ($creditType == 'Payments') {
-					$retParams['installments'] = array();
-					$retParams['installments']['total_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
-					$retParams['installments']['number_of_payments'] = (int)($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->numberOfPayments) + 1;
-					$retParams['installments']['first_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->firstPayment));
-					$retParams['installments']['periodical_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->periodicalPayment));
-				}
-			}
-
-			return $retParams;
-		} else {
-			die("simplexml_load_string function is not support, upgrade PHP version!");
-		}
+		true;
 	}
 
 	protected function buildSetQuery() {
@@ -191,12 +143,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['card_token'],
-				'card_expiration' => (string) $this->saveDetails['card_expiration'],
-				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time()),
-				'auth_number' => (string) $this->saveDetails['auth_number'],
-				'four_digits' => (string) $this->saveDetails['four_digits'],
+                                'generate_token_time' => new MongoDate(time())
 			)
 		);
 	}
@@ -231,25 +179,18 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
         //
 	public function pay($gatewayDetails, $addonData) {
-		$credentials = $this->getGatewayCredentials();
-		$this->setApiKey($credentials['secret_key']);
-		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-		$result = \Stripe\Charge::create(array(
-				"amount" => $gatewayDetails['amount'],
-				"currency" => $gatewayDetails['currency'],
-				"customer" => $gatewayDetails['customer_id'],
-		));
-		$status = $this->payResponse($result);
-
-		return $status;
+            $paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
+            return $this->sendPaymentRequest($paymentArray);
 	}
         
-        protected function payResponse($result) {
-		if (isset($result['id'])) {
-			$this->transactionId = $result['id'];
-		}
-
-		return $result['status'];
+        protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {	
+                $credentials = $this->getGatewayCredentials();
+		return array(
+                    "merchantRefNum" => $credentials['merchantRefNum'],
+                    "amount" => $this->convertAmountToSend($gatewayDetails['amount']),
+                    "settleWithAuth" => true,
+                    "card" => array('paymentToken' => $gatewayDetails['card_token'])
+                );
 	}
 
 	public function verifyPending($txId) {
@@ -258,33 +199,6 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 
 	public function hasPendingStatus() {
 		return false;
-	}
-	//
-	protected function buildInquireQuery($params){
-		return array(
-			'user' => $params['user'],
-			'password' => $params['password'],
-			/* Build Ashrait XML to post */
-			'int_in' => '<ashrait>
-							<request>
-							 <language>HEB</language>
-							 <command>inquireTransactions</command>
-							 <inquireTransactions>
-							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
-							  <mainTerminalNumber/>
-							  <queryName>mpiTransaction</queryName>
-							  <mid>' . (int)$params['mid'] . '</mid>
-							  <mpiTransactionId>' . $params['txId'] . '</mpiTransactionId>
-							  <mpiValidation>Token</mpiValidation>
-							  <userData1/>
-							  <userData2/>
-							  <userData3/>
-							  <userData4/>
-							  <userData5/>
-							 </inquireTransactions>
-							</request>
-					   </ashrait>'
-		);
 	}
 	
 	protected function isRejected($status) {
@@ -301,7 +215,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
         //
 	protected function isNeedAdjustingRequest(){
-		return true;
+		return false;
 	}
 	
 	protected function isUrlRedirect() {
@@ -321,7 +235,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
 	
 	protected function validateStructureForCharge($structure) {
-		return !empty($structure['card_token']) && !empty($structure['card_expiration']) && !empty($structure['personal_id']);
+		return !empty($structure['card_token']);
 	}
 	
 	protected function handleTokenRequestError($response, $params) {
@@ -330,28 +244,44 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 
 	protected function credit($gatewayDetails, $addonData) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit', $addonData);
-		return $this->sendPaymentRequest($paymentArray);
+		return $this->sendPaymentRequest($paymentArray, $addonData);
 	}
 	//
-	protected function sendPaymentRequest($paymentArray) {
-		$additionalParams = array();
-		$paymentString = http_build_query($paymentArray);
+	protected function sendPaymentRequest($paymentArray, $addonData) {
+                $credentials = $this->getGatewayCredentials();
+                $url = $this->EndpointUrl."/cardpayments/" .$credentials['version'] . "/accounts/" . $credentials['Account'] . "/auths";
+                $userpwd = $credentials['Username'].":".$credentials['Password'];
+                $encodedAuth = base64_encode($userpwd);
+                $paymentData = json_encode($paymentArray);
 		if (function_exists("curl_init")) {
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$result = Billrun_Util::sendRequest($url, $paymentData, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic '.$encodedAuth), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
-		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string) $xmlObj->response->result;
-		$this->transactionId = (string) $xmlObj->response->tranId;
-		$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
-		$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
-		$voucherNumber = $slaveNumber . $slaveSequence;
-		if (!empty($voucherNumber)) {
-			$additionalParams['payment_identifier'] = $voucherNumber;
+		$status = $this->payResponse($result, $addonData);
+		return $status;
+	}
+        
+        protected function payResponse($result, $addonData = []) {
+                $arrResponse = json_decode($result);
+		$xmlObj = @simplexml_load_string($result);
+		$resultCode = $arrResponse['status'];
+		$additionalParams = [];
+		if ($resultCode != 'COMPLETED') {
+                    $errorMessage = $arrResponse['error']['message'];
+                    $status = $arrResponse['error']['code'];
+		} else {
+//			$transaction = $xmlObj->transactionResponse;
+//			$this->transactionId = (string) $transaction->transId;
+//			$status = $arrResponse['status'];
+//			$this->savePaymentProfile(, $addonData['aid']);
 		}
-		return array('status' => $codeResult, 'additional_params' => $additionalParams);
+		
+		return [
+//			'status' => $status,
+//			'additional_params' => $additionalParams,
+		];
 	}
 
 	protected function buildSinglePaymentArray($params, $options) {
@@ -367,7 +297,4 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		$updatedOkPage = $okPage . '&amp;tok=' . $this->billrunToken;
 		return $updatedOkPage;
 	}
-        protected function setBillrunToken($token){
-            $this->billrunToken = $token;    
-        }
 }
