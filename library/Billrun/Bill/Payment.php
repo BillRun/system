@@ -558,6 +558,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
+		$options['pretend_bills'] = !empty($chargeOptions['bills']);
 
 		$query['aid'] = array(
 			'$in' => $customersAids
