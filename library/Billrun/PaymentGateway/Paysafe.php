@@ -220,11 +220,11 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
                 $encodedAuth = base64_encode($userpwd);
                 $url = $this->redirectHostUrl;
                 $data = array(
-		"merchantRefNum"=> $merchantCustomerId,
+		"merchantRefNum"=> $aid,
 		  "totalAmount"=> 0,
 		"currencyCode"=> "USD",
 		 "profile" => [
-			"merchantCustomerId" => $merchantCustomerId,
+			"merchantCustomerId" => $aid,
 		   ],
 		"redirect" => [
 		      [
