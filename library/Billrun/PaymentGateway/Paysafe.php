@@ -43,85 +43,6 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected function updateRedirectUrl($result) {
 	}
               
-//        protected function buildFormForPopUp($okPage, $publishable_key) {
-//                $publishable_key_encode= base64_encode($publishable_key);
-//		return  "<!DOCTYPE html>
-//					<html>
-//                                       <head>
-//
-//                                        <!-- include the Paysafe.js SDK -->
-//                                        <script src = 'https://hosted.paysafe.com/js/v1/latest/paysafe.min.js'></script>
-//
-//                                        <!-- external style for the payment fields.internal style must be set using the SDK -->
-//                                        <style>
-//                                          .inputField {
-//                                            border: 1px solid #E5E9EC;
-//                                            height: 40px;
-//                                            padding - left: 10px;
-//                                          }
-//                                        </style>
-//
-//                                      </head>
-//
-//                  
-//						<body>
-//                                                <!-- Create divs for the payment fields -->
-//                                                <div id = 'cardNumber' class='inputField'></div>
-//                                                <p></p>
-//                                                <div id = 'expiryDate' class='inputField'></div>
-//                                                <p></p>
-//                                                <div id = 'cvv' class='inputField'></div>
-//                                                <p></p>
-//                                                <!-- Add a payment button -->
-//                                                <button id = 'pay' type = 'button'> Pay </button>
-//                                                                <form id='myForm' action='$okPage' method='POST'>
-//                                                                <input type='hidden' id='tok' name='tok' value='555' />
-//								<script type='text/javascript'>     
-//                                                                var options = {
-//
-//                                                                       // select the Paysafe test / sandbox environment
-//                                                                       environment: 'TEST',
-//
-//                                                                       // set the CSS selectors to identify the payment field divs above
-//                                                                       // set the placeholder text to display in these fields
-//                                                                       fields: {
-//                                                                         cardNumber: {
-//                                                                           selector: '#cardNumber',
-//                                                                           placeholder: 'Card number',
-//                                                                           separator: ' '
-//                                                                         },
-//                                                                         expiryDate: {
-//                                                                           selector: '#expiryDate',
-//                                                                           placeholder: 'Expiry date'
-//                                                                         },
-//                                                                         cvv: {
-//                                                                           selector: '#cvv',
-//                                                                           placeholder: 'CVV',
-//                                                                           optional: false
-//                                                                         }
-//                                                                       }
-//                                                                     };                                                                
-//                                                                    paysafe.fields.setup('$publishable_key_encode', options, function(instance, error) {
-//									document.getElementById('pay').addEventListener('click', function(event) {
-//                                                                            instance.tokenize(function(instance, error, result) {
-//                                                                                if (error) {
-//                                                                                    // display the tokenization error in dialog window
-//                                                                                    alert(JSON.stringify(error));
-//                                                                                  } else {
-//                                                                                    // write the Payment token value to the browser console
-//                                                                                    var token = String(result.token);
-//                                                                                    document.getElementById('tok').value = token;
-//                                                                                  }
-//                                                                                  document.getElementById('myForm').submit();
-//                                                                            });
-//                                                                            
-//                                                                        }, false);
-//                                                                    });
-//								</script>
-//							 </form>
-//							</body>
-//					</html>";
-//	}
         
         
 	protected function buildTransactionPost($txId, $additionalParams) {
@@ -129,7 +50,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	}
         
 	public function getTransactionIdName() {
-		return "tok";
+		return "profile.paymentToken";
 	}
         
     	protected function getResponseDetails($result) {
@@ -287,37 +208,52 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
         protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$customerProfileId = $this->checkIfCustomerExists($aid);
 		if (empty($customerProfileId)) {
-			$customerProfileId = $this->createCustomer($aid);
+			$customerProfileId = $this->createCustomer($aid, $okPage, $failPage);
 		}
 		$this->customerId = $customerProfileId;
                 return false;
 	}
         
-        protected function createCustomer() {
+        protected function createCustomer($aid, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
                 $userpwd = $credentials['Username'].":".$credentials['Password'];
                 $encodedAuth = base64_encode($userpwd);
                 $url = $this->redirectHostUrl;
-                $customerRequest = array(
-                    "merchantRefNum"=> $aid,
-                      "totalAmount"=> 0,
-                    "currencyCode"=> "USD",
+                $data = array(
+		"merchantRefNum"=> $merchantCustomerId,
+		  "totalAmount"=> 0,
+		"currencyCode"=> "USD",
+		 "profile" => [
+			"merchantCustomerId" => $merchantCustomerId,
+		   ],
+		"redirect" => [
+		      [
+			 "rel"=>"on_success",
+			 "uri"=>"https://api.test.netbanx.com/echo?payment=success",
+			"returnKeys" => [
+				"id",
+				"profile.id",
+				"profile.paymentToken"
+			]
+		      ]
+		   ],
                 );
+                $customerRequest = json_encode($data);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($url, $customerRequest, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic '.$encodedAuth), null, 0);
 			Billrun_Factory::log("Response for Paysafe for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
                 $arrResponse = json_decode($result, true);
-                $customerId = $arrResponse['profile']['id'];
-                $this->redirectUrl = $arrResponse['link'][0]['uri'];
-                $resultCode = isset($arrResponse['status']) ? $arrResponse['status'] : "FAILED";
-		if ($resultCode != 'ACTIVE') {
+                if (isset($resultCode['error'])) {
                     $errorMessage = $arrResponse['error']['message'];
                     $errorCode = $arrResponse['error']['code'];
                     Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
                     throw new Exception($errorMessage); 
-		}
+		}else{
+                    $customerId = $arrResponse['profile']['id'];
+                    $this->redirectUrl = $arrResponse['link'][0]['uri'];
+                }
 		return $customerId;
 	}
         
