@@ -74,9 +74,10 @@ class Billrun_EventsManager {
 			return;
 		}
 
-		$conditionSettings = array();
+		$conditionsSettings = [];
 		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawsEventSettings) {
+				$conditionSettings = [];
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'],
 					'usaget' => $rawsEventSettings['usaget'],
@@ -84,6 +85,7 @@ class Billrun_EventsManager {
 					'type' => $rawsEventSettings['type'],
 					'value' => $rawsEventSettings['value'],
 				);
+				$pathsMatched = [];
 				foreach($rawsEventSettings['paths'] as $rawEventSettings) {
 					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
 					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
@@ -94,13 +96,19 @@ class Billrun_EventsManager {
 					}
 					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
 					if ($extraValues !== false) {
-						$conditionSettings[] = $rawEventSettings;
+						$pathsMatched[] = $rawEventSettings;
 					}
 				}
+				
+				if (empty($pathsMatched)) { // all paths failed to match
+					continue 2;
+				}
+				$conditionSettings = array_merge($conditionSettings, $pathsMatched);
 			}
+			$conditionsSettings = array_merge($conditionsSettings, $conditionSettings);
 		}
 		
-		foreach ($conditionSettings as $conditionSetting) {
+		foreach ($conditionsSettings as $conditionSetting) {
 			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
 		}
 	}
