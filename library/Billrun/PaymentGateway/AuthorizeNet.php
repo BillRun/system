@@ -237,6 +237,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (!empty($billTo)) {
 			$transactionRequest['billTo'] = $billTo;
 		}
+		
+		$transactionSettings = $this->buildTransactionSettings($gatewayDetails);
+		if (!empty($transactionSettings)) {
+			$transactionRequest['transactionSettings'] = $transactionSettings;
+		}
 
 		return $transactionRequest;
 	}
@@ -259,6 +264,23 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if ($canCreateProfile) {
 			return [
 				'createProfile' => true,
+			];
+		}
+		
+		return [];
+	}
+	
+	protected function buildTransactionSettings($gatewayDetails) {
+		$customerProfile = Billrun_Util::getIn($gatewayDetails, 'customer_profile_id');
+		$paymentProfile = Billrun_Util::getIn($gatewayDetails, 'payment_profile_id');
+		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
+		
+		if ($hasProfile) {
+			return [
+				'setting' => [
+					'settingName' => 'recurringBilling',
+					'settingValue' => true,
+				],
 			];
 		}
 		
