@@ -17,42 +17,39 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected $billrunName = "Paysafe";
 	protected $pendingCodes = "/^PENDING$/";
 	protected $completionCodes = "/^COMPLETED$/";
-        protected $customerId;
+	protected $customerId;
 
-        protected function __construct() {
+	protected function __construct() {
 		parent::__construct();
-                $credentials = $this->getGatewayCredentials();
-                if (Billrun_Factory::config()->isProd()) {
+		$credentials = $this->getGatewayCredentials();
+		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . $credentials['Version'] . "/accounts/" . $credentials['Account'] . "/auths";
-                         $this->redirectHostUrl = "https://api.netbanx.com/hosted/" . $credentials['Version'] . "/orders";
+			$this->redirectHostUrl = "https://api.netbanx.com/hosted/" . $credentials['Version'] . "/orders";
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . $credentials['Version'] . "/accounts/" . $credentials['Account'] . "/auths";
-                        $this->redirectHostUrl = "https://api.test.netbanx.com/hosted/" . $credentials['Version'] . "/orders";
+			$this->redirectHostUrl = "https://api.test.netbanx.com/hosted/" . $credentials['Version'] . "/orders";
 		}
-                $this->account = Billrun_Factory::account();
+		$this->account = Billrun_Factory::account();
 	}
-        
-	public function updateSessionTransactionId() {
-            $this->transactionId = $this->customerId;
-	}
-        
 
-        
-	protected function updateRedirectUrl($result) {
+	public function updateSessionTransactionId() {
+		$this->transactionId = $this->customerId;
 	}
-              
-        
-        
+
+	protected function updateRedirectUrl($result) {
+		
+	}
+
 	protected function buildTransactionPost($txId, $additionalParams) {
 		$this->saveDetails['card_token'] = $additionalParams['profile_paymentToken'];
-                $this->saveDetails['customer_id'] = $txId;
+		$this->saveDetails['customer_id'] = $txId;
 	}
-        
+
 	public function getTransactionIdName() {
 		return 'profile_id';
 	}
-        
-    	protected function getResponseDetails($result) {
+
+	protected function getResponseDetails($result) {
 		true;
 	}
 
@@ -62,12 +59,12 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 				'name' => $this->billrunName,
 				'card_token' => $this->saveDetails['card_token'],
 				'transaction_exhausted' => true,
-                                'generate_token_time' => new MongoDate(time()),
-                                'customer_id' => $this->saveDetails['customer_id'],
+				'generate_token_time' => new MongoDate(time()),
+				'customer_id' => $this->saveDetails['customer_id'],
 			)
 		);
 	}
-        
+
 	public function getDefaultParameters() {
 		$params = array('Username', 'Password', 'Account', 'Version');
 		return $this->rearrangeParametres($params);
@@ -77,8 +74,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		$authArray = array(
 			'Username' => $params['Username'],
 			'Password' => $params['Password'],
-                        'Account' => $params['Account'],
-                        'Version' => $params['Version'],
+			'Account' => $params['Account'],
+			'Version' => $params['Version'],
 		);
 
 		$authString = http_build_query($authArray);
@@ -96,20 +93,20 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 			return true;
 		}
 	}
-        
+
 	public function pay($gatewayDetails, $addonData) {
-            $paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
-            return $this->sendPaymentRequest($paymentArray, $addonData);
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
+		return $this->sendPaymentRequest($paymentArray, $addonData);
 	}
-        
-        protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {	
-                $this->transactionId = $gatewayDetails ['customer_id'];
+
+	protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {
+		$this->transactionId = $gatewayDetails ['customer_id'];
 		return array(
-                        'merchantRefNum' => md5(microtime() . rand(1, 700000) . $addonData['aid']),
-                        'amount' => $this->convertAmountToSend($gatewayDetails['amount']),
-                        'settleWithAuth' => true,
-                        'card' => array('paymentToken' => $gatewayDetails['card_token'])
-                );
+			'merchantRefNum' => microtime() . $addonData['aid'],
+			'amount' => $this->convertAmountToSend($gatewayDetails['amount']),
+			'settleWithAuth' => true,
+			'card' => array('paymentToken' => $gatewayDetails['card_token'])
+		);
 	}
 
 	public function verifyPending($txId) {
@@ -119,24 +116,24 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	public function hasPendingStatus() {
 		return false;
 	}
-	
+
 	protected function isRejected($status) {
 		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
-	
+
 	protected function convertAmountToSend($amount) {
 		$amount = round($amount, 2);
 		return $amount * 100;
 	}
-	
+
 	protected function convertReceivedAmount($amount) {
 		return $amount / 100;
 	}
-        
-	protected function isNeedAdjustingRequest(){
+
+	protected function isNeedAdjustingRequest() {
 		return false;
 	}
-	
+
 	protected function isUrlRedirect() {
 		return true;
 	}
@@ -144,19 +141,19 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected function isHtmlRedirect() {
 		return false;
 	}
-		
+
 	protected function needRequestForToken() {
 		return true;
 	}
-	
+
 	public function handleOkPageData($txId) {
 		return true;
 	}
-	
+
 	protected function validateStructureForCharge($structure) {
 		return !empty($structure['card_token']);
 	}
-	
+
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
@@ -165,14 +162,14 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit', $addonData);
 		return $this->sendPaymentRequest($paymentArray, $addonData);
 	}
-	
+
 	protected function sendPaymentRequest($paymentArray, $addonData) {
-                $credentials = $this->getGatewayCredentials();
-                $userpwd = $credentials['Username'] . ":" . $credentials['Password'];
-                $encodedAuth = base64_encode($userpwd);
-                $paymentData = json_encode($paymentArray);
+		$credentials = $this->getGatewayCredentials();
+		$userpwd = $credentials['Username'] . ":" . $credentials['Password'];
+		$encodedAuth = base64_encode($userpwd);
+		$paymentData = json_encode($paymentArray);
 		if (function_exists("curl_init")) {
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentData, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic '. $encodedAuth), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentData, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
 			$result = iconv("utf-8", "iso-8859-8", $result);
@@ -180,14 +177,14 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		$status = $this->payResponse($result, $addonData);
 		return $status;
 	}
-        
-        protected function payResponse($result, $addonData = []) {
-                $arrResponse = json_decode($result, true);
+
+	protected function payResponse($result, $addonData = []) {
+		$arrResponse = json_decode($result, true);
 		$resultCode = isset($arrResponse['status']) ? $arrResponse['status'] : "FAILED";
 		$additionalParams = [];
 		if ($resultCode != 'COMPLETED') {
-                        $errorMessage = $arrResponse['error']['message'];
-                        $status = $arrResponse['error']['code'];
+			$errorMessage = $arrResponse['error']['message'];
+			$status = $arrResponse['error']['code'];
 		} else {
 			$status = $resultCode;
 		}
@@ -200,61 +197,60 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
-        
-        public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		return false;
 	}
-        
-        protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
-		$customerProfileId = $this->createCustomer($aid, $okPage, $failPage);
-		$this->customerId = $customerProfileId;
-                return false;
+
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
+		$this->customerId = $this->createCustomer($aid, $okPage, $failPage);
+		return false;
 	}
-        
-        protected function createCustomer($aid, $okPage, $failPage) {
+
+	protected function createCustomer($aid, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-                $userpwd = $credentials['Username'] . ":" . $credentials['Password'];
-                $encodedAuth = base64_encode($userpwd);
-                $merchant = md5(microtime() . rand(1, 700000) . $aid);
-                $currencyCode = Billrun_Factory::config()->getConfigValue('pricing.currency','USD');
-                $data = array(
-		'merchantRefNum' => $merchant,
-		'totalAmount' => 0,
-		'currencyCode' => $currencyCode,
-		'profile' => [
-			"merchantCustomerId" => $merchant,
-		],
-		'redirect' => [
-                        [
-                                'rel' => "on_success",
-                                'uri' => $okPage,
-                                'returnKeys' => [
-                                    'profile.paymentToken',
-                                    'profile.id'
-                                ]
-                        ]
-		   ],
-                );
-                $customerRequest = json_encode($data);
+		$userpwd = $credentials['Username'] . ":" . $credentials['Password'];
+		$encodedAuth = base64_encode($userpwd);
+		$merchant = microtime() . $aid;
+		$currencyCode = Billrun_Factory::config()->getConfigValue('pricing.currency', 'USD');
+		$data = array(
+			'merchantRefNum' => $merchant,
+			'totalAmount' => 0,
+			'currencyCode' => $currencyCode,
+			'profile' => [
+				"merchantCustomerId" => $merchant,
+			],
+			'redirect' => [
+				[
+					'rel' => "on_success",
+					'uri' => $okPage,
+					'returnKeys' => [
+						'profile.paymentToken',
+						'profile.id',
+					]
+				]
+			],
+		);
+		$customerRequest = json_encode($data);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->redirectHostUrl, $customerRequest, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
 			Billrun_Factory::log("Response for Paysafe for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
-                $arrResponse = json_decode($result, true);
-                if (isset($arrResponse['error'])) {
-                        $errorMessage = $arrResponse['error']['message'];
-                        $errorCode = $arrResponse['error']['code'];
-                        Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
-                        throw new Exception($errorMessage);
-		}else{
-                        $customerId = $arrResponse['profile']['id'];
-                        $this->redirectUrl = $arrResponse['link'][0]['uri'];
-                }
+		$arrResponse = json_decode($result, true);
+		if (isset($arrResponse['error'])) {
+			$errorMessage = $arrResponse['error']['message'];
+			$errorCode = $arrResponse['error']['code'];
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+			throw new Exception($errorMessage);
+		} else {
+			$customerId = $arrResponse['profile']['id'];
+			$this->redirectUrl = $arrResponse['link'][0]['uri'];
+		}
 		return $customerId;
 	}
-        
-        protected function checkIfCustomerExists ($aid) {
+
+	protected function checkIfCustomerExists($aid) {
 		$customerProfileId = '';
 		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountQuery['type'] = 'account';
@@ -267,15 +263,15 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		}
 		if ($formerGateways['name'] == 'Paysafe') {
 			$customerProfileId = $formerGateways['customer_id'];
-		}		
+		}
 		return $customerProfileId;
 	}
-        
-        public function addAdditionalParameters($request) {
+
+	public function addAdditionalParameters($request) {
 		return array('profile_paymentToken' => $request->get('profile_paymentToken'));
 	}
-        
-        protected function isTransactionDetailsNeeded() {
+
+	protected function isTransactionDetailsNeeded() {
 		return false;
 	}
 }
