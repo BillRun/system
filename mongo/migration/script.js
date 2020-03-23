@@ -844,6 +844,7 @@ if (db.serverStatus().ok == 0) {
 }
 
 db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
-db.billrun.dropIndex('billrun_key_-1');
 db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.billrun.dropIndex('billrun_key_-1');
+
 
