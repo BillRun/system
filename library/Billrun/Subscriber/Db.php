@@ -23,9 +23,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @var boolean
 	 */
 	static $queriesLoaded = false;
-	
 	protected $collection;
-	
 	static protected $type = 'db';
 
 	/**
@@ -33,16 +31,16 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @param array $options - Array of initialization parameters.
 	 */
 	public function __construct($options = array()) {
-		parent::__construct($options);	
+		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
-	
+
 	protected function getSubscriberDetails($queries) {
 		$subs = [];
 		$type = 'subscriber';
 		foreach ($queries as $query) {
 			$query['type'] = $type;
-			
+
 			if (isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
@@ -66,7 +64,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($query['sid'])) {
 				settype($query['sid'], 'int');
 			}
-			
+
 			if (isset($limit) && $limit === 1) {
 				$sub = $this->collection->query($query)->cursor()->limit(1)->current();
 				if ($sub->isEmpty()) {
@@ -77,17 +75,16 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-                                $subsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				$subsForQuery = iterator_to_array($this->collection->query($query)->cursor());
 				if (empty($subsForQuery)) {
 					continue;
 				}
-                                if (isset($id)) {
-                                    foreach($subsForQuery as $sub){
-					$sub->set('id', $id);
-                                        $subs[] = $sub;
-                                    }
+				if (isset($id)) {
+					foreach ($subsForQuery as $sub) {
+						$sub->set('id', $id);
+						$subs[] = $sub;
+					}
 				}
-				 
 			}
 		}
 		return $subs;
@@ -110,7 +107,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	public function isValid() {
 		return true;
 	}
-	
+
 	public function getCredits($billrun_key, $retEntity = false) {
 		return array();
 	}
