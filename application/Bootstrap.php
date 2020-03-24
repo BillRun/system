@@ -33,14 +33,21 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 		$definedPlugins = Billrun_Factory::config()->getConfigValue('plugins');
 		if (isset($definedPlugins) && is_array($definedPlugins)) {
-			$allPlugins = array_merge($definedPlugins, $plugins);
-			$plugins = array_unique($allPlugins);
+			if (!is_array($definedPlugins[0])) {
+				$allPlugins = array_merge($definedPlugins, $plugins);
+				$plugins = array_unique($allPlugins);
+			} else {
+				$plugins = !empty(array_diff(array_column($definedPlugins, 'name'), array_column($plugins, 'name'))) ? array_merge($definedPlugins, $plugins) : $definedPlugins;
+			}
 		}
 		if (!empty($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin) {
 				$dispatcher->attach(new $plugin);
+				if (isset($plugin['values'])) {
+					$plugin->setOptions($plugin['values']);
+				}
 			}
 		}
 
