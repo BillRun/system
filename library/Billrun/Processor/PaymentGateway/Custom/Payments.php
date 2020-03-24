@@ -60,7 +60,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
 		try {
-			Billrun_Bill::pay('cash', array($paymentParams));
+			Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
                         $message = "Payment process was failed for payment: " . $e->getMessage();
 			Billrun_Factory::log()->log($message, Zend_Log::ALERT);

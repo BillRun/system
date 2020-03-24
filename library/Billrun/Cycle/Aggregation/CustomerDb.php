@@ -13,7 +13,7 @@
  */
 class Billrun_Cycle_Aggregation_CustomerDb {
 	use Billrun_Cycle_Aggregation_Common;
-	
+
 	/**
 	 * Aggregate mongo with a query
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
@@ -65,7 +65,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
 
 		$collection = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines,$collection);
+		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
 
 	//--------------------------------------------------------------------------------------------
@@ -146,16 +146,16 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
-
+		
 		// If the accounts should not be overriden, filter the existing ones before.
 		if ($this->exclusionQuery) {
 			$pipelines[] = ['$match' => ['aid' => $this->exclusionQuery ] ];
 		}
-
+		
 		$pipelines[] = array(
 			'$unwind' => '$sub_plans',
 		);
-
+		
 		$pipelines[] = array(
 			'$sort' => array(
 				'_id.aid' => 1,
@@ -192,10 +192,10 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				),
 			)),
 		);
-
+		
 		return $pipelines;
 	}
-
+	
 	/**
 	 * Remove fields from main aggreation  that are not needed for onetime invoice
 	 */
@@ -208,7 +208,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 
 		return $mainAggregationLogic;
 	}
-
+	
 	protected function getAddedPassthroughValuesQuery() {
 		$group = array();
 		$group2 = array();

@@ -24,6 +24,16 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
+function removeFieldFromConfig(lastConf, field_names, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		return lastConf;
+	}
+	field_names_to_delete = Array.isArray(field_names) ? field_names : [field_names];
+	var fields = lastConf[entityName]['fields'];
+	lastConf[entityName]['fields'] = fields.filter(field => !field_names_to_delete.includes(field.field_name));
+	return lastConf;
+}
+
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -205,22 +215,8 @@ if(lastConfig.invoice_export) {
 	}
 }
 
-//BRCD-1374 : Add taxation support services 
-var vatableField ={
-					"system":true,
-					"select_list" : false,
-					"display" : true,
-					"editable" : true,
-					"multiple" : false,
-					"field_name" : "vatable",
-					"unique" : false,
-					"default_value" : true,
-					"title" : "This service is taxable",
-					"mandatory" : false,
-					"type" : "boolean",
-					"select_options" : ""
-	};
-lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+// BRCD-2251 remove old vatable filed
+lastConfig = removeFieldFromConfig(lastConfig, 'vatable', 'services');
 
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
@@ -336,6 +332,23 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
+
+// BRCD-1552 collection
+if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
+    lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
+}
+delete lastConfig['collection']['min_debt'];
+// BRCD-1562 - steps trigget time
+if (typeof lastConfig['collection']['settings']['run_on_holidays'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_holidays'] = true;
+}
+if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_days'] = [true,true,true,true,true,true,true];
+}
+if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_hours'] = [];
+}
+
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -848,3 +861,22 @@ db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{u
 db.billrun.dropIndex('billrun_key_-1');
 
 
+//BRCD-2042 - charge.not_before migration script
+db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.bills.save(obj);
+	}
+)
+db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.billrun.save(obj);
+	}
+)

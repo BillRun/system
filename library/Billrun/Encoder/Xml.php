@@ -41,7 +41,14 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 		$this->xmlWriter = new XMLWriter();
 		$this->xmlWriter->openMemory();
 		$this->xmlWriter->startDocument('1.0', 'UTF-8');
-		$this->xmlWriter->startElement($root);
+		if (is_array($root)) {
+			$this->xmlWriter->startElement($root['tag']);
+			foreach ($root['attr'] as $attr => $attrVal) {
+				$this->xmlWriter->writeAttribute($attr, $attrVal);
+			}
+		} else {
+			$this->xmlWriter->startElement($root);
+		}
 		$this->getXMLBody($array);
 		$this->xmlWriter->endElement();
 		$this->xmlWriter->endDocument();
