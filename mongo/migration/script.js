@@ -843,3 +843,8 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
 
+db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
+db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.billrun.dropIndex('billrun_key_-1');
+
+

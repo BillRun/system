@@ -1050,9 +1050,9 @@ class Billrun_Billrun {
 	public function populateBillrunWithAccountData($account, $optionLines = array()) {
 		$attr = array();
 		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-			if (isset($account['attributes'][$remoteKey])) {
-				$attr[$key] = $account['attributes'][$remoteKey];
-			}
+				if (isset($account['attributes'][$remoteKey])) {
+					$attr[$key] = $account['attributes'][$remoteKey];
+				}
 		}
 		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
 			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
