@@ -154,6 +154,16 @@ class ConfigModel {
 				}
 			}
 			return $plugins;
+		} else if ($category === 'plugins') {
+			$plugins = $this->_getFromConfig($currentConfig, $category, $data);
+			// Add configuration fields array to plugins
+			$configuration = Billrun_Factory::dispatcher()->trigger('getConfiguration');
+			foreach ($plugins as $key => $plugin) {
+				if (!is_string($plugin) && !empty($configuration[$plugin['name']])) {
+					$plugins[$key]['configuration']['fields'] = $configuration[$plugin['name']];
+				}
+			}
+			return $plugins;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -328,6 +338,23 @@ class ConfigModel {
 			$eventType = explode('.', $category)[1];
 			if ($this->validateEvent($eventType, $data)) {
 				$updatedData['events'][$eventType][] = $data;
+			}
+		} else if ($category === 'plugins') {
+			throw new Exception('Only one plugin can be saved');
+		} else if ($category === 'plugin') {
+			if (empty($data['name'])) {
+				throw new Exception('Missing plugin name');
+			}
+			$plugin_index = array_search($data['name'], array_column($updatedData['plugins'], 'name'));
+			if ($plugin_index === FALSE) {
+				throw new Exception("Plugin {$data['name']} not found");
+			}
+			// Allow to update only 'enabled' flag and configuration values
+			if (isset($data['enabled'])) {
+				$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
+			}
+			if (isset( $data['configuration']['values'])) {
+				$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
 			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
