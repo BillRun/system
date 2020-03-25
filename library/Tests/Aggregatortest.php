@@ -942,27 +942,6 @@
          return $passed;
      }
 
-     /**
-      * Check override mode using passthrough_fields 
-      * @param int $key number of the test case
-      * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
-      * @param array $row current test case
-      * @return boolean true if the test is pass and false if the tast is fail
-      */
-//	public function passthrough($key, $returnBillrun, $row) {
-//		$passed = true;
-//		$billrun = new Billrun_Account_Db;
-//		$this->message .= "<b> passthrough_fields :</b> <br>";
-//		$account = $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
-//		$address = $account['address'];
-//		if ($returnBillrun['attributes']['address'] === $address) {
-//			$this->message .= "passthrough work well" . $this->pass;
-//		} else {
-//			$this->message .= "passthrough fill" . $this->fail;
-//			$passed = false;
-//		}
-//		return $passed;
-//	}
 
      /**
       * Check override mode using passthrough_fields 
@@ -976,7 +955,6 @@
          $accounts = Billrun_Factory::account();
          $this->message .= "<b> passthrough_fields :</b> <br>";
          $account = $accounts->loadAccountForQuery((array('aid' => $row['test']['aid'])));
-         //$billrun->load((array('aid' => $row['test']['aid'], 'type' => 'account')));
          $account = $accounts->getCustomerData();
          $address = $account['address'];
          if ($returnBillrun['attributes']['address'] === $address) {
