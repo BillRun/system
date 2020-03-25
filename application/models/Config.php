@@ -345,16 +345,23 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Missing plugin name');
 			}
-			$plugin_index = array_search($data['name'], array_column($updatedData['plugins'], 'name'));
-			if ($plugin_index === FALSE) {
-				throw new Exception("Plugin {$data['name']} not found");
-			}
-			// Allow to update only 'enabled' flag and configuration values
-			if (isset($data['enabled'])) {
-				$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
-			}
-			if (isset( $data['configuration']['values'])) {
-				$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
+			// Search for plugin in old structure - as array of classNames
+			$old_strucrute_plugin_index = array_search($data['name'], $updatedData['plugins']);
+			if ($old_strucrute_plugin_index !== FALSE) {
+				// allow only in this case to set all parameters to convert class_name to new plugin structure
+				$updatedData['plugins'][$old_strucrute_plugin_index] = $data;
+			} else {
+				$plugin_index = array_search($data['name'], array_column($updatedData['plugins'], 'name'));
+				if ($plugin_index === FALSE) {
+					throw new Exception("Plugin {$data['name']} not found");
+				}
+				// Allow to update only 'enabled' flag and configuration values
+				if (isset($data['enabled'])) {
+					$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
+				}
+				if (isset( $data['configuration']['values'])) {
+					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
+				}
 			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
