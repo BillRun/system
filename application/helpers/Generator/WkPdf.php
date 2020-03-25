@@ -155,6 +155,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('servicesColl', $this->servicesColl);
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
+		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
 		$this->prepareGraphicsResources();
 	}
 
@@ -253,6 +254,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 		if (isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
 			$this->view->assign('render_subscription_details', $billrunData['attributes']['invoice_details']['subscription_details']);
+		}
+		if (!empty($billrunData['attributes']['invoice_display_options'])) {
+			$this->view->assign('invoice_display_options', $billrunData['attributes']['invoice_display_options']);
 		}
 	}
 
