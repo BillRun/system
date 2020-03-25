@@ -33,20 +33,18 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 		$definedPlugins = Billrun_Factory::config()->getConfigValue('plugins');
 		if (isset($definedPlugins) && is_array($definedPlugins)) {
-			if (!is_array($definedPlugins[0])) {
-				$allPlugins = array_merge($definedPlugins, $plugins);
-				$plugins = array_unique($allPlugins);
-			} else {
-				$plugins = !empty(array_diff(array_column($definedPlugins, 'name'), array_column($plugins, 'name'))) ? array_merge($definedPlugins, $plugins) : $definedPlugins;
-			}
+			$allPlugins = array_merge_recursive($definedPlugins, $plugins);
+			$plugins = $this->handlePluginsConf($allPlugins);
 		}
 		if (!empty($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin) {
-				$dispatcher->attach(new $plugin);
+				$pluginObject = new $plugin['name'];
+				$dispatcher->attach($pluginObject);
+				$pluginObject->setAvailability($plugin['enabled']);
 				if (isset($plugin['values'])) {
-					$plugin->setOptions($plugin['values']);
+					$pluginObject->setOptions($plugin['values']);
 				}
 			}
 		}
@@ -142,5 +140,28 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
 	}
-
+	
+	public function	handlePluginsConf($plugins) {
+		$addedPlugins = [];
+		$simplePlugins = array_unique(array_filter($plugins, function($plugin) {
+				return !is_array($plugin);
+			}));
+		$complexPlugins = array_unique(array_filter($plugins, function($plugin) {
+				return is_array($plugin);
+			}), SORT_REGULAR);
+		foreach ($complexPlugins as $key => $plugin) {
+			if (in_array($plugin['name'], $simplePlugins)) {
+				array_splice($simplePlugins, array_search($plugin['name'], $simplePlugins), 1);
+			}
+			if (!in_array($plugin['name'], $addedPlugins)) {
+				$addedPlugins[] = $plugin['name'];
+			} else {
+				unset($complexPlugins[$key]);
+			}
+		}
+		$simplePlugins = array_map(function($plugin) {
+			return ['name' => $plugin, 'enabled' => true, 'system' => true, 'hide_from_ui' => false];
+		}, $simplePlugins);
+		return array_merge_recursive($complexPlugins, $simplePlugins);
+	}
 }

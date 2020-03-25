@@ -75,6 +75,15 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 	}
 	
 	/**
+	 * method to set the plugin "enable" flag
+	 *
+	 * @param boolean 
+	 */
+	public function setAvailability($enable) {
+		$this->enabled = $enable;
+	}
+	
+	/**
 	 * whether the plugin is enabled 
 	 *
 	 * @param array of options

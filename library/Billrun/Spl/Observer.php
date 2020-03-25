@@ -35,7 +35,7 @@ abstract class Billrun_Spl_Observer implements SplObserver {
 		 * If the method to handle an event exists, call it and return its value
 		 * If it does not exist, return null.
 		 */
-		if (method_exists($this, $event)) {
+		if (method_exists($this, $event) && $this->isEnabled()) {
 			return call_user_func_array(array($this, $event), $args);
 		} else {
 			return null;

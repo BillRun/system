@@ -108,6 +108,10 @@ class Billrun_Config {
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
 		}
+		
+		if (is_array($moreImportantConf) && !is_array($lessImportentConf)) {
+			$NewlessImportentConf = [];
+		}
 
 		foreach ($moreImportantConf as $key => $value) {
 			if (!isset($moreImportantConf[$key])) {
@@ -121,10 +125,14 @@ class Billrun_Config {
 			} else {
 				$confValue = $moreImportantConf[$key];
 			}
-			$lessImportentConf[$key] = $confValue;
+			if (is_array($NewlessImportentConf)) {
+				$NewlessImportentConf[$key] = $confValue;
+			} else {
+				$lessImportentConf[$key] = $confValue;
+			}
 		}
 
-		return $lessImportentConf;
+		return !empty($NewlessImportentConf) ? $NewlessImportentConf : $lessImportentConf;
 	}
 
 	/**
