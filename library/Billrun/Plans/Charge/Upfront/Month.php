@@ -25,12 +25,12 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront) 
 		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
-			$endActivation  = strtotime('-1 day', $this->deactivation);
+			$endActivation = strtotime('-1 day', $this->deactivation);
 			return 1 + Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $endActivation);
 		}
-        // subscriber activates in the middle of the cycle and should be charged for a partial month
+		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation > $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
-			$endActivation  = strtotime('-1 day', $this->deactivation);
+			$endActivation = strtotime('-1 day', $this->deactivation);
 			return Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $endActivation);
 		}
 
