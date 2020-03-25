@@ -143,25 +143,25 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	
 	public function	handlePluginsConf($plugins) {
 		$addedPlugins = [];
-		$simplePlugins = array_unique(array_filter($plugins, function($plugin) {
-				return !is_array($plugin);
-			}));
-		$complexPlugins = array_unique(array_filter($plugins, function($plugin) {
-				return is_array($plugin);
-			}), SORT_REGULAR);
-		foreach ($complexPlugins as $key => $plugin) {
-			if (in_array($plugin['name'], $simplePlugins)) {
-				array_splice($simplePlugins, array_search($plugin['name'], $simplePlugins), 1);
-			}
-			if (!in_array($plugin['name'], $addedPlugins)) {
-				$addedPlugins[] = $plugin['name'];
+		foreach ($plugins as $key => $plugin) {
+			if (is_array($plugin)) {
+				$pluginName = $plugin['name'];
+				if (in_array($plugin['name'], $plugins)) {
+					array_splice($plugins, array_search($plugin['name'], $plugins), 1);
+				}
 			} else {
-				unset($complexPlugins[$key]);
+				$pluginName = $plugin;
+				$hideFromUI = ($pluginName == 'calcCpuPlugin') ? false : true;
+				$system = in_array($pluginName, ['calcCpuPlugin', 'csiPlugin', 'autorenewPlugin', 'fraudPlugin']) ? true : false;
+				$plugins[$key] = ['name' => $pluginName, 'enabled' => true, 'system' => $system, 'hide_from_ui' => $hideFromUI];
+			}
+			
+			if (!in_array($pluginName, $addedPlugins)) {
+				$addedPlugins[] = $pluginName;
+			} else {
+				unset($plugins[$key]);
 			}
 		}
-		$simplePlugins = array_map(function($plugin) {
-			return ['name' => $plugin, 'enabled' => true, 'system' => true, 'hide_from_ui' => false];
-		}, $simplePlugins);
-		return array_merge_recursive($complexPlugins, $simplePlugins);
+		return $plugins;
 	}
 }
