@@ -69,7 +69,8 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payments = Billrun_Bill::pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
@@ -168,6 +169,10 @@ class PayAction extends ApiAction {
 			if (!empty($amountsArray) && !Billrun_Util::isEqual(array_sum($amountsArray), $params['amount'], Billrun_Bill::precision)) {				
 				throw new Exception('Sum of amounts in installments array must be equal to total amount');
 			}
+			$dueDateArray = array_column($params['installments_agreement'], 'due_date');
+			if (count($dueDateArray) != count($params['installments_agreement'])) {
+				throw new Exception('Due date field is mandatory for all installments');
+			}
 		}
 		$note = $request->get('note');
 		if (!empty($note)) {
@@ -179,8 +184,11 @@ class PayAction extends ApiAction {
 		if (!empty($params['installments_agreement']) && (!empty($params['installments_num']) || !empty($params['first_due_date']))) {
 			throw new Exception('Passed parameters in contradiction');
 		}
-		if ((!empty($params['installments_num']) && empty($params['first_due_date'])) || (empty($params['installments_num']) && !empty($params['first_due_date']))) {
-			throw new Exception("installment_num and first_due_date parameters must be passed together");
+		if (empty($params['installments_num']) && !empty($params['first_due_date'])) {
+			throw new Exception("Can't pass first_due_date withouh passing installments_num");
+		}
+		if (!empty($params['installments_num']) && $params['installments_num'] > $params['amount']) {
+			throw new Exception("Number of installments can't be larger than the passed amount");
 		}	
 		if (!empty($params['installments_num']) && ($params['installments_num'] > $params['amount'])) {
 			throw new Exception('Number of installments must be lower than passed amount');
@@ -189,7 +197,11 @@ class PayAction extends ApiAction {
 		if ($params['amount'] > $customerDebt['without_waiting']) {
 			throw new Exception("Passed amount is bigger than the customer debt");
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
+Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
 			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
 		}

@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -113,13 +113,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
-	protected abstract function getAccountDetails($query);
+	protected abstract function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */
-	protected abstract function getAccountsDetails($query);
+	protected abstract function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * Method to Save as 'Close And New' item
