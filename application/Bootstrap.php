@@ -141,6 +141,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
 	}
 	
+	/**
+	 * Rearrange all the plugins from db and ini - to be in the latest plugins structure, and prevent duplications.
+	 * @param array $plugins
+	 * @return array.
+	 */
 	public function	handlePluginsConf($plugins) {
 		$addedPlugins = [];
 		foreach ($plugins as $key => $plugin) {

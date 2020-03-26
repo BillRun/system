@@ -97,11 +97,11 @@ class Billrun_Config {
 
 	/**
 	 * Merge to  configuration into one overiding  the  less important config  with  a newer config
-	 * @param type $lessImportentConf the configuration array to merge into and override
+	 * @param type $lessImportantConf the configuration array to merge into and override
 	 * @param type $moreImportantConf the  configuration array to merge from.
 	 * @return type array containing the  overriden values.
 	 */
-	public static function mergeConfigs($lessImportentConf, $moreImportantConf) {
+	public static function mergeConfigs($lessImportantConf, $moreImportantConf) {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
@@ -109,8 +109,8 @@ class Billrun_Config {
 			return $moreImportantConf;
 		}
 		
-		if (is_array($moreImportantConf) && !is_array($lessImportentConf)) {
-			$NewlessImportentConf = [];
+		if (is_array($moreImportantConf) && !is_array($lessImportantConf)) {
+			$NewlessImportantConf = [];
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -118,21 +118,21 @@ class Billrun_Config {
 				continue;
 			}
 
-			// If the key exists in the less importent config array then we have
+			// If the key exists in the less important config array then we have
 			// another level of config values to process.
-			if(isset($lessImportentConf[$key])) {
-				$confValue = self::mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			if(isset($lessImportantConf[$key])) {
+				$confValue = self::mergeConfigs($lessImportantConf[$key], $moreImportantConf[$key]);
 			} else {
 				$confValue = $moreImportantConf[$key];
 			}
-			if (is_array($NewlessImportentConf)) {
-				$NewlessImportentConf[$key] = $confValue;
+			if (is_array($NewlessImportantConf)) {
+				$NewlessImportantConf[$key] = $confValue;
 			} else {
-				$lessImportentConf[$key] = $confValue;
+				$lessImportantConf[$key] = $confValue;
 			}
 		}
 
-		return !empty($NewlessImportentConf) ? $NewlessImportentConf : $lessImportentConf;
+		return !empty($NewlessImportantConf) ? $NewlessImportantConf : $lessImportantConf;
 	}
 
 	/**
