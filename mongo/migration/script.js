@@ -272,14 +272,14 @@ if(!lastConfig.email_templates) {
 var invoicingDayField = {
                 "field_name" : "invoicing_day",
                 "title" : "Invoicing Day",
-                "mandatory" : true,
+                "mandatory" : false,
                 "system" : true,
                 "show_in_list" : true,
                 "select_list" :true,
                 "editable" : true,
                 "display" : true,
-                "default_value" : "1",
-                "select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28"
+                "select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,",//all other values will throw an api exception
+								"save_empty_value" : false
 };
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoicingDayField, 'account');

@@ -214,7 +214,10 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
-                $selectOptionsFields = array();
+		//all the options that value can be, so if selected will not throwing an api exception.
+		$selectOptionsFields = array();
+		//allow save empty value in db.
+		$saveEmptyValuesInDb = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
@@ -222,7 +225,8 @@ class Models_Entity {
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
-                        $selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
+			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
+			$saveEmptyValuesInDb[$fieldName] = Billrun_Util::getFieldVal($customField['save_empty_value'], true);
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -240,15 +244,20 @@ class Models_Entity {
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
 			}
-                        if(!is_null($selectOptionsFields[$field])){
-                            $selectOptions = is_string($selectOptionsFields[$field])? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
-                            if(!in_array($val, $selectOptions)){
-                                throw new Billrun_Exceptions_Api(0, array(), "Invalid field: $field, with value: $val");
-                            }
-                        }
-			if (!is_null($val)) {
+			if (!is_null($selectOptionsFields[$field])) {
+				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
+				if (!in_array($val, $selectOptions)) {
+					throw new Billrun_Exceptions_Api(0, array(), "Invalid field: $field, with value: $val");
+				}
+			}
+			if (empty($val) && !$saveEmptyValuesInDb[$field]) {
+				$save = false;
+			} else {
+				$save = true;
+			}
+			if (!is_null($val) && $save) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($this->action === 'create' && !is_null($defaultFieldsValues[$field])) {
+			} else if ($this->action === 'create' && !is_null($defaultFieldsValues[$field]) && $save) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
