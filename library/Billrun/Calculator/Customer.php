@@ -409,6 +409,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	protected function getIdentityParams($row) {
+		if (!$row instanceof Mongodloid_Entity) {
+			$row = new Mongodloid_Entity($row);
+		}
 		$params = array();
 		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
 		foreach ($customer_identification_translation as $translationRules) {
@@ -420,14 +423,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 			$key = $translationRules['src_key'];
-			if (isset($row['uf'][$key])) {
+			if (isset($row['uf.' .$key])) {
 				if (isset($translationRules['clear_regex'])) {
-					$val = preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]);
+					$val = preg_replace($translationRules['clear_regex'], '', $row['uf.' .$key]);
 				} else {
 					if ($translationRules['target_key'] === 'msisdn') {
-						$val = Billrun_Util::msisdn($row['uf'][$key]);
+						$val = Billrun_Util::msisdn($row['uf.' .$key]);
 					} else {
-						$val = $row['uf'][$key];
+						$val = $row['uf.' .$key];
 					}
 				}
 				$fieldName = $translationRules['target_key'];
