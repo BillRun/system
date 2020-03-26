@@ -86,6 +86,15 @@ class Billrun_EventsManager {
 					'value' => $rawsEventSettings['value'],
 				);
 				$pathsMatched = [];
+				
+				if (!isset($rawsEventSettings['paths'])) { // BC
+					$path = isset($rawsEventSettings['path']) ? $rawsEventSettings['path'] : '';
+					$rawsEventSettings['paths'] = [
+						['path' => $path],
+					];
+					unset($rawsEventSettings['path']);
+				}
+				
 				foreach($rawsEventSettings['paths'] as $rawEventSettings) {
 					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
 					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
