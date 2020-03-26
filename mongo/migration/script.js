@@ -776,14 +776,16 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 });
 
 // BRCD-1241: convert events to new structure
-for (var eventType in lastConfig.events) {
-	for (var eventId in lastConfig.events[eventType]) {
-		for (var conditionId in lastConfig.events[eventType][eventId].conditions) {
-			if (typeof lastConfig.events[eventType][eventId].conditions[conditionId].paths == 'undefined') {
-				lastConfig.events[eventType][eventId].conditions[conditionId].paths = [{
-						'path': lastConfig.events[eventType][eventId].conditions[conditionId].path,
-				}];
-				delete lastConfig.events[eventType][eventId].conditions[conditionId].path;
+if (typeof lastConfig.events !== 'undefined') {
+	for (var eventType in lastConfig.events) {
+		for (var eventId in lastConfig.events[eventType]) {
+			for (var conditionId in lastConfig.events[eventType][eventId].conditions) {
+				if (typeof lastConfig.events[eventType][eventId].conditions[conditionId].paths == 'undefined') {
+					lastConfig.events[eventType][eventId].conditions[conditionId].paths = [{
+							'path': lastConfig.events[eventType][eventId].conditions[conditionId].path,
+					}];
+					delete lastConfig.events[eventType][eventId].conditions[conditionId].path;
+				}
 			}
 		}
 	}
