@@ -157,7 +157,7 @@ class ConfigModel {
 		} else if ($category === 'plugins') {
 			$plugins = $this->_getFromConfig($currentConfig, $category, $data);
 			// Add configuration fields array to plugins
-			$configuration = Billrun_Factory::dispatcher()->trigger('getConfiguration');
+			$configuration = Billrun_Factory::dispatcher()->trigger('getConfigurationDefinitions');
 			foreach ($plugins as $key => $plugin) {
 				if (!is_string($plugin) && !empty($configuration[$plugin['name']])) {
 					$plugins[$key]['configuration']['fields'] = $configuration[$plugin['name']];
