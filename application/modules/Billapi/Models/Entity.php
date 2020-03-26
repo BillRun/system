@@ -214,7 +214,7 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
-		//all the options that value can be, so if selected will not throwing an api exception.
+		//all the options that value can be, so if selected will not throw an api exception.
 		$selectOptionsFields = array();
 		//allow save empty value in db.
 		$saveEmptyValuesInDb = array();
