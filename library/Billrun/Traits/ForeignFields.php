@@ -32,9 +32,9 @@ trait Billrun_Traits_ForeignFields  {
 	}
 	
 
-	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
+	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array(), $entity = 'lines') {
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue($entity .'.fields', array()), function($value) {
 			return isset($value['foreign']);	
 		});
 		

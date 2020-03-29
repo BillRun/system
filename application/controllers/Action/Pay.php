@@ -25,6 +25,7 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
+		$account = Billrun_Factory::account();
 		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
@@ -69,7 +70,8 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$currentAccount = $account->loadAccountForQuery(['aid' => $inputPayment['aid']]);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr, [], $currentAccount->getRawData());
 			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {

@@ -1090,4 +1090,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 return false;
         }
     }
+	
+	public function setForeignFields ($foreignData = []) {
+		$paymentData = $this->getRawData();
+		$paymentData = array_merge_recursive($paymentData, $foreignData);
+		$this->setRawData($paymentData);
+	}
 }

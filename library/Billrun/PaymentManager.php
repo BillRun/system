@@ -5,6 +5,8 @@
  */
 class Billrun_PaymentManager {
 
+	use Billrun_Traits_ForeignFields;
+	
 	protected static $instance;
 
 	public function __construct($params = []) {
@@ -27,12 +29,12 @@ class Billrun_PaymentManager {
 	/**
 	 * Handles payment (awaits response)
 	 */
-	public function pay($method, $paymentsData, $params = []) {
+	public function pay($method, $paymentsData, $params = [], $account = null) {
 		if (!Billrun_Bill_Payment::validatePaymentMethod($method, $params)) {
 			return $this->handleError("Unknown payment method {$method}");
 		}
 
-		$prePayments = $this->preparePayments($method, $paymentsData, $params);
+		$prePayments = $this->preparePayments($method, $paymentsData, $params, $account);
 		if (!$this->savePayments($prePayments)) {
 			return $this->handleError('Error encountered while saving the payments');
 		}
@@ -53,11 +55,14 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 * @returns array of pre-payment data for every payment
 	 */
-	protected function preparePayments($method, $paymentsData, $params = []) {
+	protected function preparePayments($method, $paymentsData, $params = [], $account = null) {
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			if (!is_null($account)) {
+				$this->setPaymentForeignFields($prePayment, $account);
+			}
 			$prePayments[] = $prePayment;
 		}
 
@@ -394,5 +399,9 @@ class Billrun_PaymentManager {
 		Billrun_Factory::log($errorMessage, $logLevel);
 		throw new Exception($errorMessage);
 	}
-
+	
+	protected function setPaymentForeignFields (&$payment, $account) {
+		$foreignData = $this->getForeignFields(array('account' => $account ), [], false, [], 'bills');
+		$payment->getPayment()->setForeignFields($foreignData);
+	}
 }
