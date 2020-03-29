@@ -205,7 +205,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
-		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
+		$this->forceAccountIds =(array) Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		$this->ignoreCdrs = Billrun_Util::getFieldVal($options['aggregator']['ignore_cdrs'], Billrun_Util::getFieldVal($options['ignore_cdrs'], $this->ignoreCdrs));
 		
@@ -624,16 +624,17 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function beforeAggregate($accounts) {
+            if(!$this->fakeCycle){
 		if ($this->overrideMode && $accounts) {
 			$aids = array();
 			foreach ($accounts as $account) {
 				$aids[] = $account->getInvoice()->getAid();
 			}
 			$billrunKey = $this->billrun->key();
-			self::removeBeforeAggregate($billrunKey, $aids);
+                        self::removeBeforeAggregate($billrunKey, $aids);
 		}
 		$accountsToPrepone = [];
-		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+		if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
 			$accountsToPrepone = $this->handleInstallmentsPrepone($accounts);
 		}
 		$additionalAccountsToPrepone = [];
@@ -651,6 +652,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (!empty($additionalAccountsToPrepone) && !$this->fakeCycle){
 			$this->preponeInstallments($additionalAccountsToPrepone); 
 		}
+            }
 	}
 	
 	/**
