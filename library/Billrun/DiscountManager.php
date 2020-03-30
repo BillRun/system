@@ -1402,7 +1402,6 @@ class Billrun_DiscountManager {
 			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
 	}
 
-
 	/**
 	 * get line's type (service/plan)
 	 * 
