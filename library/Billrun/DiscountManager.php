@@ -1291,15 +1291,23 @@ class Billrun_DiscountManager {
 	 * @param array $operations
 	 * @return float
 	 */
-	protected function calculateDiscountAmount($discount, $line, $value, $from, $to, $operations = []) {
+	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = []) {
 		$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+		$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
+		$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
 		if ($this->isDiscountProrated($discount, $line)) {
-			if (isset($line['start'])) {
+			if (!$proratedStart) {
+				$from = $this->cycle->start();
+			} else if (isset($line['start'])) {
 				$from = max($from, Billrun_Utils_Time::getTime($line['start']));
 			}
-			if (isset($line['end'])) {
+			
+			if (!$proratedEnd) {
+				$to = $this->cycle->end();
+			} else if (isset($line['end'])) {
 				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
 			}
+			
 			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 			$cycleDays = $this->cycle->days();
 			if ($discountDays < $cycleDays) {
@@ -1393,7 +1401,8 @@ class Billrun_DiscountManager {
 			($proratedStart && isset($line['start']) && (Billrun_Utils_Time::getTime($line['start']) != $this->cycle->start())) ||
 			($proratedEnd && isset($line['end']) && (Billrun_Utils_Time::getTime($line['end']) != $this->cycle->end()));
 	}
-	
+
+
 	/**
 	 * get line's type (service/plan)
 	 * 
