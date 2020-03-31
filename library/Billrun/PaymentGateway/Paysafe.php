@@ -250,23 +250,6 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		return $customerId;
 	}
 
-	protected function checkIfCustomerExists($aid) {
-		$customerProfileId = '';
-		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountQuery['type'] = 'account';
-		$accountQuery['aid'] = $aid;
-		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$account = $subscribers->query($accountQuery)->cursor()->current();
-		$formerGateways = Billrun_Util::getIn($account, 'payment_gateway.active', null);
-		if (is_null($formerGateways)) {
-			return $customerProfileId;
-		}
-		if ($formerGateways['name'] == 'Paysafe') {
-			$customerProfileId = $formerGateways['customer_id'];
-		}
-		return $customerProfileId;
-	}
-
 	public function addAdditionalParameters($request) {
 		return array('profile_paymentToken' => $request->get('profile_paymentToken'));
 	}
