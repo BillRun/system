@@ -1090,4 +1090,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 return false;
         }
     }
+	
+	public function setUserFields ($userFields = [], $data = null) {
+		$paymentUf = [];
+		if (!empty($userFields)) {
+			foreach ($userFields as $key => $field_name) {
+				if (!empty($data['uf.' . $field_name])) {
+					$paymentUf['uf'][$field_name] = $data['uf.' . $field_name];
+				}
+			}
+		}
+		$paymentData = $this->getRawData();
+		$paymentData = array_merge_recursive($paymentData, $paymentUf);
+		$this->setRawData($paymentData);
+	}
+
 }
