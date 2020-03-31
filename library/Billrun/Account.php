@@ -261,7 +261,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			$params['aid']['$nin'] = $exempted;
 		}
 		$query = $this->buildQuery($params);
-		$this->loadAccounts($query);
+		$this->loadAccountsForQuery($query);
 		$cursor = $this->getCustomerData();
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
