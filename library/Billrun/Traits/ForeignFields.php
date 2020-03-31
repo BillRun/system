@@ -22,11 +22,6 @@ trait Billrun_Traits_ForeignFields  {
 	 */
 	protected $addedForeignFields = array();
 	
-	/**
-	 * holds the database property for the foreign fields. 
-	 */
-	protected $entity = 'lines';
-	
 	protected function getAddedFoerignFields() {
 		return array_keys($this->addedForeignFields);
 	}
@@ -108,6 +103,6 @@ trait Billrun_Traits_ForeignFields  {
 	}
 	
 	protected function getForeignFieldsEntity () {
-		return $this->entity;
+		return 'lines';
 	}
 }
