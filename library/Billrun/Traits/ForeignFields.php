@@ -18,10 +18,14 @@ trait Billrun_Traits_ForeignFields  {
 	private $foreginFieldPrefix = 'foreign';
 
 	/**
-	 * This array  will hold all the  added foregin fields that  were added to the CDR/row/line.
+	 * This array  will hold all the  added foreign fields that  were added to the CDR/row/line.
 	 */
 	protected $addedForeignFields = array();
 	
+	/**
+	 * holds the database property for the foreign fields. 
+	 */
+	protected $entity = 'lines';
 	
 	protected function getAddedFoerignFields() {
 		return array_keys($this->addedForeignFields);
@@ -32,7 +36,8 @@ trait Billrun_Traits_ForeignFields  {
 	}
 	
 
-	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array(), $entity = 'lines') {
+	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
+		$entity = $this->getForeignFieldsEntity();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
 		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue($entity .'.fields', array()), function($value) {
 			return isset($value['foreign']);	
@@ -100,5 +105,9 @@ trait Billrun_Traits_ForeignFields  {
 				break;
 		}
 		return $pathToInsert;
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return $this->entity;
 	}
 }

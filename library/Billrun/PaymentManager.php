@@ -401,7 +401,11 @@ class Billrun_PaymentManager {
 	}
 	
 	protected function setPaymentForeignFields (&$payment, $account) {
-		$foreignData = $this->getForeignFields(array('account' => $account ), [], false, [], 'bills');
+		$foreignData = $this->getForeignFields(array('account' => $account ));
 		$payment->getPayment()->setForeignFields($foreignData);
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
 	}
 }
