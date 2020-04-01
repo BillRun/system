@@ -231,7 +231,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
-			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
+			Billrun_Factory::log()->log("Can't run aggregate before end of billing cycle", Zend_Log::WARN);
 			return;
 		}
 
