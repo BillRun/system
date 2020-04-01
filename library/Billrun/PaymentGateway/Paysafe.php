@@ -9,7 +9,7 @@
 /**
  * This class represents a payment gateway
  *
- * @since    5.2
+ * @since    5.12
  */
 class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 
