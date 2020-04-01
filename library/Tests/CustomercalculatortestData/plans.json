@@ -1,0 +1,73 @@
+{
+	"collection": "plansCollection",
+	"data":
+			[
+
+				{
+	"OBJID":"5ddf8be7dc26477dbf0333c2",
+	"from" :"time*2018-11-29T00:00:00Z",
+	"name" : "PLAN_A",
+	"price" : [
+		{
+			"price" : 100,
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "plan a",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : false,
+	"connection_type" : "postpaid",
+	"rates" : [ ],
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"prorated_start" : true,
+	"prorated_end" : true,
+	"prorated_termination" : true,
+	"to" :"time*2168-11-28T08:57:11Z",
+	"creation_time" :"time*2018-11-29T00:00:00Z"
+},
+{
+	"OBJID":"5ddf8c0d4be86533ad7154c3",
+	"from" :"time*2018-11-29T00:00:00Z",
+	"name" : "PLAN_B",
+	"price" : [
+		{
+			"price" : 200,
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "plan b",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : false,
+	"connection_type" : "postpaid",
+	"rates" : [ ],
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"prorated_start" : true,
+	"prorated_end" : true,
+	"prorated_termination" : true,
+	"to" :"time*2168-11-28T08:57:49Z",
+	"creation_time" :"time*2018-11-29T00:00:00Z",
+	"include" : {
+		"services" : [
+			"SERVICE_B"
+		]
+	}
+}
+
+			]
+}

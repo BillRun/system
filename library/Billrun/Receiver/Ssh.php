@@ -236,5 +236,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
+    
 
 }

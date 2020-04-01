@@ -63,3 +63,6 @@ services:
 networks:
     core-network:
         driver: bridge
+        ipam:
+            config:
+            - subnet: 172.177.0.0/29

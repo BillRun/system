@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Charge.php';
+
 /**
  * This class manages billing cycle process.
  *
@@ -154,7 +156,6 @@ class BillrunController extends ApiController {
 	 */
 	public function chargeStatusAction() {
 		$setting['status'] = $this->isChargeAllowed();
-		$setting['owed_amount'] = $this->getOwedAmount();
 
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
@@ -187,14 +188,71 @@ class BillrunController extends ApiController {
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
+		
+		if ($this->canSyncCharge($request)) {
+			return $this->chargeSync($mode, $params, $request);
+		}
+		
+		return $this->chargeAsync($mode, $params);
+	}
+	
+	/**
+	 * make an asynchronous charge request 
+	 * 
+	 * @param string $mode
+	 * @param array $params
+	 */
+	protected function chargeAsync($mode, $params) {
 		$success = self::processCharge($mode, $params);
-
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
+	}
+	
+	/**
+	 * make a synchronous charge request 
+	 * 
+	 * @param string $mode
+	 * @param array $params
+	 * @param Yaf_Request_Abstract $request
+	 */
+	protected function chargeSync($mode, $params, $request) {
+		$aid = intval($params['aids']);
+		$paymentData = json_decode($request->get('payment_data'), JSON_OBJECT_AS_ARRAY);
+		if (!empty($paymentData)) {
+			$params['payment_data'] = [
+				$aid => $paymentData,
+			];
+		}
+		$amount = $request->get('amount');
+		if ($amount) { // allow charge without existing bill
+			$params['bills'] = [
+				[
+					'aid' => $aid,
+					'left_to_pay' => $amount,
+					'left' => 0,
+					'payment_method' => $request->get('payment_method', 'automatic'),
+					'billrun_key' => $request->get('billrun_key', Billrun_Billingcycle::getBillrunKeyByTimestamp()),
+				],
+			];
+		}
+		$chargeAction = new ChargeAction();
+		$response = $chargeAction->charge($params);
+		$this->setSuccess($response);
+	}
+	
+	/**
+	 * checks if the charge can be done synchronously (1 payment request)
+	 * 
+	 * @param Yaf_Request_Abstract $request
+	 * @return boolean
+	 */
+	protected function canSyncCharge($request) {
+		$aids = Billrun_Util::verify_array($request->get('aids', []), 'int');
+		return (count($aids) == 1 && $request->get('pay_mode', '') == 'one_payment');
 	}
 
 	/**
@@ -207,12 +265,17 @@ class BillrunController extends ApiController {
 		$params['to'] = $request->get('to');
 		$params['billrun_key'] = $request->get('stamp');
 		$params['newestFirst'] = $request->get('newestFirst');
+		$params['timeStatus'] = $request->get('timeStatus');
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
 			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-			$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));	
+			if (empty($params['timeStatus'])) {
+				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+			} else {
+				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey);
+			}	
 			$settings[] = $setting;
 		}
 
@@ -315,28 +378,7 @@ class BillrunController extends ApiController {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . $paramsString . ' ' . $mode;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
-	
-	protected function getOwedAmount() {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$match = array(
-			'$match' => array(
-				'aid' => array('$exists' => true),
-			),
-		);
-		
-		$group = array(
-			'$group' => array(
-				'_id' => null,
-				'amount' => array(
-					'$sum' => '$due',
-				)
-			)
-		);
 
-		$result = $billsColl->aggregate($match, $group)->current();
-		return $result['amount'];
-	}
-	
 	protected function isChargeAllowed() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$query = array(
