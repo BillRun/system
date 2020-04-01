@@ -74,9 +74,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-				foreach (iterator_to_array($result) as $document) {
-					$subs[] = $document;
-				}
+				return iterator_to_array($result);
 			}
 		}
 		return $subs;
