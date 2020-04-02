@@ -112,7 +112,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
-                Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array($bill['aid'], $bill['billrun_key'], $bill['invoice_type']));
+        Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
