@@ -17,7 +17,7 @@
  class Tests_Aggregator extends UnitTestCase {
 
      use Tests_SetUp;
-
+     protected $fails;
      protected $ratesCol;
      protected $plansCol;
      protected $linesCol;
@@ -42,8 +42,8 @@
      );
      public $LatestResults;
      public $sumBillruns;
-     protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span></br>';
-     protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span></br>';
+     protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
+     protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
      protected $tests = array(
          /* check if the pagination work */
          array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination'), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
@@ -335,15 +335,16 @@
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 56, "aid" => 1402, 'sid' => 402, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1402))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 33.96774), 'total' => 71.331, 'vatable' => 67.741, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.1064), 'total' => 75.1064, 'vatable' => 64.1935, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
+         //start timezone GMT+2 ent timezone GMT +3
          array('test' => array('test_number' => 57, "aid" => 1502, 'sid' => 502, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1502))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" =>98.50645), 'total' => 98.50645, 'vatable' =>  84.193548, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 58, "aid" => 1602, 'sid' => 602, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1602))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1602, 'after_vat' => array("602" => 33.96774), 'total' => 33.96774, 'vatable' => 29.032258, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1602, 'after_vat' => array("602" => 37.36451703), 'total' => 37.36451703, 'vatable' => 31.935483864, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 59, "aid" => 1702, 'sid' => 702, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1702))),
@@ -352,7 +353,7 @@
          ),
          /* 3 */
          array('test' => array('test_number' => 60, "aid" => 1203, 'sid' => 203, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1203))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1203, 'after_vat' => array("203" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1203, 'after_vat' => array("203" => 41.138709677), 'total' => 41.138709677, 'vatable' => 35.1612903225, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 61, "aid" => 1303, 'sid' => 303, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1303))),
@@ -368,7 +369,7 @@
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 64, "aid" => 1603, 'sid' => 603, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1603))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 41.138709677), 'total' => 41.138709677, 'vatable' => 35.1612903225, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 65, "aid" => 1703, 'sid' => 703, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1703))),
@@ -437,7 +438,7 @@
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
-             $this->message .= 'test number : ' . $row['test']['test_number'];
+             $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'].'</span><br>';
              // run fenctions before the test begin 
              if (isset($row['preRun']) && !empty($row['preRun'])) {
                  $preRun = $row['preRun'];
@@ -459,7 +460,10 @@
                      $function = array($row['test']['function']);
                  }
                  foreach ($function as $func) {
-                     $this->assertTrue($this->$func($key, $returnBillrun, $row));
+                    $testFail = $this->assertTrue($this->$func($key, $returnBillrun, $row));
+                    if(!$testFail){
+                        $this->fails.="|---|<a href='#{$row['test']['test_number']}'>{$row['test']['test_number']}</a>";
+                    }
                  }
              }
              $this->saveLatestResults($returnBillrun, $row);
@@ -475,6 +479,9 @@
                  }
              }
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
+         }
+         if ($this->fails){
+             $this->message.=$this->fails;
          }
          print_r($this->message);
          $this->restoreColletions();
@@ -511,10 +518,10 @@
          $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
          foreach ($jiraLink as $link) {
-             $this->message .= '</br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
+             $this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
-         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
-         $this->message .= '</br><b> Result: </b> <br>';
+         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
+         $this->message .= '<br><b> Result: </b> <br>';
          if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
              $this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
          } else {
@@ -576,7 +583,7 @@
      public function totalsPrice($key, $returnBillrun, $row) {
          $passed = TRUE;
          $this->message .= "<b> total Price :</b> <br>";
-         if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.0000001)) {
+         if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.00001)) {
              $this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->pass;
          } else {
              $this->message .= "expected total after vat is : {$row['expected']['billrun']['total']} <b>result is </b>: {$returnBillrun['totals']['after_vat']}" . $this->fail;
@@ -585,13 +592,13 @@
          $vatable = (isset($row['expected']['billrun']['vatable']) ) ? $row['expected']['billrun']['vatable'] : null;
          if ($vatable <> 0) {
              $vat = $this->calcVat($returnBillrun['totals']['before_vat'], $returnBillrun['totals']['after_vat'], $vatable);
-             if (Billrun_Util::isEqual($vat, $row['expected']['billrun']['vat'], 0.000001)) {
+             if (Billrun_Util::isEqual($vat, $row['expected']['billrun']['vat'], 0.00001)) {
                  $this->message .= "total befor vat is : " . $returnBillrun['totals']['before_vat'] . $this->pass;
              } else {
                  $this->message .= "expected total befor vat is : {$row['expected']['billrun'] ['vatable']} <b>result is </b>:  {$returnBillrun['totals']['before_vat']}" . $this->fail;
                  $passed = FALSE; /* Percentage of tax */
              }
-             $this->message .= "Percentage of tax :$vat %</br>";
+             $this->message .= "Percentage of tax :$vat %<br>";
          }
          return $passed;
      }
@@ -672,7 +679,7 @@
              $passed = FALSE;
              $this->message .= "these lines aren't created : ";
              foreach ($diff as $dif) {
-                 $this->message .= $dif . '</br>';
+                 $this->message .= $dif . '<br>';
              }
              $this->message .= $this->fail;
          } elseif (empty($diff) && empty($returnTypes) && !empty($row['expected']['line'])) {
@@ -830,7 +837,7 @@
          $this->message .= "<b> rounding :</b> <br>";
          $passed = true;
          if (round($returnBillrun['totals']['after_vat_rounded'], 2) == round($returnBillrun['totals']['after_vat'], 2)) {
-             $this->message .= "'totals.after_vat_rounded' is rounding of 'totals.after_vat' :</b>" . $this->pass;
+             $this->message .= "'totals.after_vat_rounded' is rounding of 'totals.after_vat' :" . $this->pass;
          } else {
              $this->message .= "'totals.after_vat_rounded' is<b>not</b>rounding of 'totals.after_vat' :</b>" . $this->fail;
              $passed = false;
