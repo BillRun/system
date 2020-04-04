@@ -22,6 +22,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected $firstDueDate;
 	protected $attachDueDateToCycleEnd = false;
 	protected $initialChargeNotBefore;
+	protected $payment_uf = [];
+	protected $forced_uf = [];
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -139,8 +141,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
 			$installments[] = new self($installment);
-		}
-
+			}
+			
 		return $installments;
 	}
 
@@ -255,5 +257,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		}
 
 		return $chargeNotBefore;
+	}
+	
+	public function getData () {
+		return $this->data;
 	}
 }

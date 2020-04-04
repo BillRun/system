@@ -140,6 +140,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 			}
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			$this->forced_uf = !empty($options['installments_forced_uf']) ? $options['installments_forced_uf'] : [];
 			if(isset($options['source'])){
 				if(!in_array($options['source'], $this->known_sources)){
 					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
@@ -1091,18 +1092,27 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         }
     }
 	
-	public function setUserFields ($userFields = [], $data = null) {
-		$paymentUf = [];
-		if (!empty($userFields)) {
-			foreach ($userFields as $key => $field_name) {
-				if (!empty($data['uf.' . $field_name])) {
-					$paymentUf['uf'][$field_name] = $data['uf.' . $field_name];
+	public function getUserFields($payment_data, $params) {
+		$config = Billrun_Factory::config();
+		$confUserFields = $config->getConfigValue('payments.offline.uf', []);	
+		$forced_uf = !empty($params['forced_uf'])? $params['forced_uf'] : [];
+		if (!empty($forced_uf)) {
+			foreach ($forced_uf as $name => $value) {
+				$paymentUf['uf'][$name] = $value;
+			}
+		}
+		if (!empty($confUserFields)) {
+			foreach ($confUserFields as $key => $field_name) {
+				if (!empty($payment_data['uf.' . $field_name])) {
+					$paymentUf['uf'][$field_name] = $payment_data['uf.' . $field_name];
 				}
 			}
 		}
-		$paymentData = $this->getRawData();
-		$paymentData = array_merge_recursive($paymentData, $paymentUf);
-		$this->setRawData($paymentData);
+		return $paymentUf;
+	}
+	
+	public function setUserFields($prePayment, $payment_uf) {
+		
 	}
 
 }

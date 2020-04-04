@@ -58,7 +58,6 @@ class Billrun_PaymentManager {
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
-			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
 		}
 
@@ -396,11 +395,5 @@ class Billrun_PaymentManager {
 		throw new Exception($errorMessage);
 	}
 	
-	protected function setUserFields (&$prePayment) {
-		$payment = $prePayment->getPayment();
-		$config = Billrun_Factory::config();
-		$ufFields = $config->getConfigValue('payments.offline.uf', []);
-		$payment->setUserFields($ufFields, $prePayment->getData());
-	}
 
 }

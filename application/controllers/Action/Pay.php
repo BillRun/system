@@ -162,6 +162,10 @@ class PayAction extends ApiAction {
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['installments_forced_uf'] = json_decode($uf, true);
+		}
 		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
 		if(!empty($installments)) {
 			$params['installments_agreement'] = json_decode($installments, true);
@@ -201,7 +205,7 @@ class PayAction extends ApiAction {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
 			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
 		}
-Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+		Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
 			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
 		}
