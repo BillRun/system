@@ -495,12 +495,16 @@ class Billrun_Cycle_Account_Invoice {
                         unset($group['after_taxes']);
                         $stamp = Billrun_Util::generateArrayStamp($group);
                         $index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
-						$index = isset($index)? $index : count($this->totalGroupHashMap);
+						if (!isset($index)){
+							$index = count($this->totalGroupHashMap);
+							$currentTotalGroups[$index] = $group;
+							$this->totalGroupHashMap[$stamp] = $index;
+						}	
 						$currentTotalGroups[$index]['count'] += $count;
 						$currentTotalGroups[$index]['before_taxes'] += $beforeTax;
 						$currentTotalGroups[$index]['taxes'] += $taxes;
 						$currentTotalGroups[$index]['after_taxes'] += $afterTax;
-						$this->totalGroupHashMap[$stamp] = $index;
+						
                 }
                 return $currentTotalGroups;
         }
