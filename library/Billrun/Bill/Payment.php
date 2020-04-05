@@ -1092,27 +1092,24 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         }
     }
 	
-	public function getUserFields($payment_data, $params) {
-		$config = Billrun_Factory::config();
-		$confUserFields = $config->getConfigValue('payments.offline.uf', []);	
-		$forced_uf = !empty($params['forced_uf'])? $params['forced_uf'] : [];
-		if (!empty($forced_uf)) {
-			foreach ($forced_uf as $name => $value) {
-				$paymentUf['uf'][$name] = $value;
+	public function setUserFields ($confUserFields = [], $data = null) {
+		$paymentUf = [];
+		if (!empty($forcedUf = $data['installments_forced_uf'])) {
+			foreach ($forcedUf as $field_name => $value) {
+				$paymentUf['uf'][$field_name] = $value;
 			}
 		}
 		if (!empty($confUserFields)) {
 			foreach ($confUserFields as $key => $field_name) {
-				if (!empty($payment_data['uf.' . $field_name])) {
-					$paymentUf['uf'][$field_name] = $payment_data['uf.' . $field_name];
+				if (!empty($data['uf.' . $field_name])) {
+					$paymentUf['uf'][$field_name] = $data['uf.' . $field_name];
 				}
 			}
 		}
-		return $paymentUf;
+		$paymentData = $this->getRawData();
+		$paymentData = array_merge_recursive($paymentData, $paymentUf);
+		$this->setRawData($paymentData);
 	}
-	
-	public function setUserFields($prePayment, $payment_uf) {
-		
-	}
+
 
 }

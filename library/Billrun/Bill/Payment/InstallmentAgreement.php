@@ -88,6 +88,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->attachDueDateToCycleEnd)) {
 			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
+		if (!empty($this->forced_uf)) {
+			$paymentsArr[0]['installments_forced_uf'] = $this->forced_uf;
+		}
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
 		$primaryInstallment = current($paymentResponse['payment']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
