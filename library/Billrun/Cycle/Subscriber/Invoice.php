@@ -531,7 +531,7 @@ class Billrun_Cycle_Subscriber_Invoice {
                         $groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'arate_key', null);
                         $groupingKeys['source'] = Billrun_Util::getIn($row, 'rate', null); 
                     }else{
-                        Billrun_Factory::log("Updating unknown type: " . $row['type']);
+                        Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
                     }
             }
             

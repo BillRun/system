@@ -494,22 +494,12 @@ class Billrun_Cycle_Account_Invoice {
                         unset($group['after_taxes']);
                         $stamp = Billrun_Util::generateArrayStamp($group);
                         $index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
-                        //if allready have acoount group for this subscriber group update account group
-                        if (isset($index)){
-                                $currentTotalGroups[$index]['count'] += $count;
-                                $currentTotalGroups[$index]['before_taxes'] += $beforeTax;
-                                $currentTotalGroups[$index]['taxes'] += $taxes;
-                                $currentTotalGroups[$index]['after_taxes'] += $afterTax;
-                        } else {
-                                //if dont have acoount group for this subscriber group create new account group
-                                $index = count($this->totalGroupHashMap);
-                                $currentTotalGroups[$index] = $group;
-                                $currentTotalGroups[$index]['count'] = $count;
-                                $currentTotalGroups[$index]['before_taxes'] = $beforeTax;
-                                $currentTotalGroups[$index]['taxes'] = $taxes;
-                                $currentTotalGroups[$index]['after_taxes'] = $afterTax;
-                                $this->totalGroupHashMap[$stamp] = $index;
-                        }
+						$index = isset($index)? $index : count($this->totalGroupHashMap);
+						$currentTotalGroups[$index]['count'] += $count;
+						$currentTotalGroups[$index]['before_taxes'] += $beforeTax;
+						$currentTotalGroups[$index]['taxes'] += $taxes;
+						$currentTotalGroups[$index]['after_taxes'] += $afterTax;
+						$this->totalGroupHashMap[$stamp] = $index;
                 }
                 return $currentTotalGroups;
         }
