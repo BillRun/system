@@ -726,7 +726,7 @@ abstract class Billrun_PaymentGateway {
 			return false;
 		}
 		$gateway = self::getInstance($gatewayDetails['name']);
-		return $gateway->validateStructureForCharge($gatewayDetails);
+		return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
 	}
 			
 	public function getReturnUrlOnError() {

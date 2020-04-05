@@ -745,6 +745,46 @@
 					"vatable": true,
 					"to": "time*2167-12-03T12:56:09Z",
 					"creation_time": "time*2017-12-04T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "CALL",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "call",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				}
+
 			]
 }

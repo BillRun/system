@@ -29,12 +29,14 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		$charges = array();
 		foreach ($this->price as $tariff) {
 			$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset ,$this->activation);
+			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+			$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 			if (!empty($price)) {
 				$charges[] = array('value' => $price['price'] * $quantity,
-					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
+					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
 					'prorated_start' =>  $this->proratedStart ,
-					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ),
-					'prorated_end' =>  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated),
+					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ) : $this->cycle->end(),
+					'prorated_end' =>  $endProration,
 
 					'cycle' => $tariff['from'],
 					'full_price' => floatval($tariff['price']) );
