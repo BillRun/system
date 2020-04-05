@@ -134,7 +134,14 @@ for (var i in lastConfig['plugins']) {
 			"system": true,
 			"hide_from_ui": false
 		};
-	}
+	} else {
+			lastConfig['plugins'][i] = {
+			"name": lastConfig['plugins'][i],
+			"enabled": true,
+			"system": false,
+			"hide_from_ui": false
+		};
+	}	
 }
 
 //-------------------------------------------------------------------

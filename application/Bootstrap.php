@@ -39,12 +39,12 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		if (!empty($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
-			foreach ($plugins as $plugin) {
-				$pluginObject = new $plugin['name'];
+			foreach ($plugins as $plugin_name => $plugins_conf) {
+				$pluginObject = new $plugin_name;
 				$dispatcher->attach($pluginObject);
-				$pluginObject->setAvailability($plugin['enabled']);
-				if (isset($plugin['values'])) {
-					$pluginObject->setOptions($plugin['values']);
+				$pluginObject->setAvailability($plugins_conf['enabled']);
+				if (isset($plugins_conf['values'])) {
+					$pluginObject->setOptions($plugins_conf['values']);
 				}
 			}
 		}
@@ -147,26 +147,24 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	 * @return array.
 	 */
 	public function	handlePluginsConf($plugins) {
-		$addedPlugins = [];
+		$plugins_list = [];
 		foreach ($plugins as $key => $plugin) {
-			if (is_array($plugin)) {
-				$pluginName = $plugin['name'];
-				if (in_array($plugin['name'], $plugins)) {
-					array_splice($plugins, array_search($plugin['name'], $plugins), 1);
+			$pluginName = is_array($plugin) ? $plugin['name'] : $plugin;
+			if (!isset($plugins_list[$pluginName])) {
+				if (is_array($plugin)) {
+					$pluginName = $plugin['name'];
+					if (in_array($plugin['name'], $plugins)) {
+						array_splice($plugins, array_search($plugin['name'], $plugins), 1);
+					}
+					$plugins_list[$pluginName] = $plugin;
+				} else {
+					$pluginName = $plugin;
+					$hideFromUI = ($pluginName == 'calcCpuPlugin') ? false : true;
+					$system = in_array($pluginName, ['calcCpuPlugin', 'csiPlugin', 'autorenewPlugin', 'fraudPlugin']) ? true : false;
+					$plugins_list[$pluginName] = ['name' => $pluginName, 'enabled' => true, 'system' => $system, 'hide_from_ui' => $hideFromUI];
 				}
-			} else {
-				$pluginName = $plugin;
-				$hideFromUI = ($pluginName == 'calcCpuPlugin') ? false : true;
-				$system = in_array($pluginName, ['calcCpuPlugin', 'csiPlugin', 'autorenewPlugin', 'fraudPlugin']) ? true : false;
-				$plugins[$key] = ['name' => $pluginName, 'enabled' => true, 'system' => $system, 'hide_from_ui' => $hideFromUI];
-			}
-			
-			if (!in_array($pluginName, $addedPlugins)) {
-				$addedPlugins[] = $pluginName;
-			} else {
-				unset($plugins[$key]);
 			}
 		}
-		return $plugins;
+		return $plugins_list;
 	}
 }
