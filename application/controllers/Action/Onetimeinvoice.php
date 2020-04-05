@@ -42,7 +42,7 @@ class OnetimeinvoiceAction extends ApiAction {
         $this->aid = intval($request['aid']);
 		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''),JSON_OBJECT_AS_ARRAY);
         $affectedSids = [];
-        Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($step));
+        Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
