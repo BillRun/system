@@ -26,17 +26,17 @@ class Billrun_Utils_Usage {
 				if(empty($row['sid'])) {
 					return null;
 				}
-                                $subscriber = Billrun_Factory::subscriber();
-				$query = array('sid' => $row['sid'], 'aid'=> $row['aid']);
-                                return $subscriber->loadSubscriberForQuery($query);
+				$subscriber = Billrun_Factory::subscriber();
+				$query = array('sid' => $row['sid'], 'aid' => $row['aid']);
+				return $subscriber->loadSubscriberForQuery($query);
 			case 'account' :
 				if(empty($row['aid'])) {
 					return null;
 				}
-                                $account = Billrun_Factory::account();
+				$account = Billrun_Factory::account();
 				$query = array('aid' => $row['aid']);
-                                return $account->loadAccountForQuery($query);		
-			
+				return $account->loadAccountForQuery($query);
+
 			case 'plan' :
 				if(empty($row['plan'])) {
 					return null;
@@ -60,8 +60,14 @@ class Billrun_Utils_Usage {
 			case 'account_subscribers':
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
-											'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
-				return $subscriber->loadSubscriberForQueries([$query]);
+					'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
+				$documents = $subscriber->loadSubscriberForQueries([$query]);
+				foreach ($documents as $subs) {
+					foreach ($subs as $sub) {
+						$entity[] = $sub;
+					}
+				}
+				return $entity;
 			default:
 				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;
