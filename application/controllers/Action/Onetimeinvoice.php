@@ -70,16 +70,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $sendEmail]);
 		
 		if ($step >= self::STEP_PDF_AND_BILL) {
-			if (!$billrunToBill->lock()) {
-				Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
-				return;
-			}
 			$billrunToBill->load();
 			$billrunToBill->generate();
-			if (!$billrunToBill->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return;
-			}
 		} else {
 			$invoiceData = $this->invoice->getRawData();
 			$invoiceData['allow_bill'] = $allowBill;
@@ -113,14 +105,14 @@ class OnetimeinvoiceAction extends ApiAction {
         return  $this->sendBackInvoice($pdfPath);
     }
 	
-	protected function getInsertData($filtration = null) {
+	protected function getInsertData() {
 	return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
 		);
 	}
 	
-	protected function getConflictingQuery($filtration = null) {
+	protected function getConflictingQuery() {
 		if (!empty($this->aid)) {
 			return array(
 				'$or' => array(
@@ -131,7 +123,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		}
 	}
 	
-	protected function getReleaseQuery($filtration = null) {
+	protected function getReleaseQuery() {
 		return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aid) ? 'all' : $this->aid),

@@ -55,7 +55,7 @@ class ChargeAction extends Action_Base {
 		$this->getController()->addOutput("Charging Done");
 	}
 
-	protected function getConflictingQuery($filtration = null) {
+	protected function getConflictingQuery() {
 		if (!empty($this->aids)) {
 			return array(
 				'$or' => array(
@@ -68,14 +68,14 @@ class ChargeAction extends Action_Base {
 		return array();
 	}
 
-	protected function getInsertData($filtration = null) {
+	protected function getInsertData() {
 		return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aids) ? 'all' : $this->aids),
 		);
 	}
 
-	protected function getReleaseQuery($filtration = null) {
+	protected function getReleaseQuery() {
 		return array(
 			'action' => 'charge_account',
 			'filtration' => (empty($this->aids) ? 'all' : $this->aids),

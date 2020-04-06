@@ -21,6 +21,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $billrunColl;
 	protected $logo = null;
 	protected $sendEmail = true;
+	protected $filtration = null;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -46,8 +47,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
-		
-                Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
+
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 		$this->data = $invoices;
 	}
@@ -55,19 +56,16 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	public function generate() {
 		$invoicesIds = array();
 		foreach ($this->data as $invoice) {
-                        if (method_exists($this, 'lock')) {
-                            if (!$this->lock($invoice['aid'])) {
-                                Billrun_Factory::log("Generator for aid ". $invoice['aid'] ." is already running");
-                                continue;
-                            }
-                        }
-			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			$this->filtration = $invoice['aid'];
+			if (!$this->lock()) {
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running");
+				continue;
+			}
+			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
-                        if (method_exists($this, 'release')) {
-                            if (!$this->release($invoice['aid'])) {
-                                Billrun_Factory::log("Problem in releasing operation");
-                            }
-                        }
+			if (!$this->release()) {
+				Billrun_Factory::log("Problem in releasing operation");
+			}
 		}
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
@@ -197,21 +195,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery($filtration = null) {
-                return array('filtration' => $filtration);
+	protected function getConflictingQuery() {
+                return array('filtration' => $this->filtration);
 	}
 	
-	protected function getInsertData($filtration = null) {
+	protected function getInsertData() {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => $filtration,
+			'filtration' => $this->filtration,
 		);
 	}
 	
-	protected function getReleaseQuery($filtration = null) {
+	protected function getReleaseQuery() {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => $filtration,
+			'filtration' => $this->filtration,
 			'end_time' => array('$exists' => false)
 		);
 	}
