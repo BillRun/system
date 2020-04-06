@@ -562,6 +562,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
+		$options['pretend_bills'] = !empty($chargeOptions['bills']);
 
 		$query['aid'] = array(
 			'$in' => $customersAids
@@ -1085,7 +1086,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
             case 'fc':
                 return $this->getPaidBills();
             case 'tc':
-                return $payment->getPaidByBills();
+                return $this->getPaidByBills();
             default:
                 return false;
         }
