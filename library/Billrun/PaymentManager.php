@@ -345,7 +345,7 @@ class Billrun_PaymentManager {
 			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
 			$payment = $postPayment->getPayment();
-			$gatewayDetails = @$payment['gateway_details'];
+			$gatewayDetails = @$payment->getPaymentGatewayDetails();
 
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
