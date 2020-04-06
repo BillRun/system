@@ -225,6 +225,7 @@ class Billrun_EventsManager {
 			$event[$key] = $value;
 		}
 		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
+		Billrun_Factory::dispatcher()->trigger('beforeEventSave', array(&$event, $entityBefore, $entityAfter, $this));
 		self::$collection->insert($event);
 	}
 	

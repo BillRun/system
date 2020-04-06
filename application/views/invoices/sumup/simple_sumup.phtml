@@ -22,7 +22,7 @@
 		</tr>
 		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'),'col_count'=>2))	?>
 		
-		<?php if ($data->get('totals')['past_balance']['after_vat'] < -0.005) { ?>
+		<?php if (!empty($invoice_display_options['past_balance']) && $data->get('totals')['past_balance']['after_vat'] < -0.005) { ?>
 			<tr class="total">
 				<td colspan="1">PAST BALANCE / REIMBURSEMENTS</td>
 				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['past_balance']['after_vat'], 2); ?></td>
@@ -31,7 +31,7 @@
 
 		<tr class="grand-total">
 			<td colspan="1">GRAND TOTAL</td>
-			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['after_vat']  + $data->get('totals')['past_balance']['after_vat'], 2); ?></td>
+			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['after_vat']  + (!empty($invoice_display_options['past_balance']) ? $data->get('totals')['past_balance']['after_vat'] : 0 ), 2); ?></td>
 		</tr>
 	</tbody>
 </table>

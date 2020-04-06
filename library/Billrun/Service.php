@@ -58,6 +58,8 @@ class Billrun_Service {
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**
