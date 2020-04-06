@@ -403,6 +403,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param type $subLines
 	 */
 	public function aggregateLinesToBreakdown($subLines) {
+		$subLines = array_map(function($subLine) {
+			return ($subLine instanceof Mongodloid_Entity) ? $subLine->getRawData() : $subLine;
+		}, $subLines);
 		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines', Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.subscriber.final_data',array()));
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
