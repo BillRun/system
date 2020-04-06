@@ -14,7 +14,6 @@ class Billrun_Utils_Usage {
 
 	static public function retriveEntityFromUsage($row, $entityType, $foreignFieldConfig = array()) {
 		$entityQueryData = array();
-		$isSingleEntity = true;
 		if (!self::conditionsMet($foreignFieldConfig, $row)) {
 			return null;
 		}
@@ -72,7 +71,7 @@ class Billrun_Utils_Usage {
 				Billrun_Factory::log("Foreign entity type {$entityType} isn't supported.", Zend_Log::DEBUG);
 				return null;
 		}
-		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
+//		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
 //		TODO  added the cache after  complete testing is done
 //		if (!empty($cache) && ($cachedValue = Billrun_Factory::cache()->get($cachHash)) ) {
 //			return $cachedValue;
@@ -83,24 +82,17 @@ class Billrun_Utils_Usage {
 		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'],$timeBoundingQuery))->cursor();
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
-		}
-		if ($isSingleEntity) {
-			$cursor = $cursor->limit(1);
+		}	
+		$cursor = $cursor->limit(1);
+		$entity = $cursor->current();
+		//fall back to none time bounded query if no entity found.
+		if( (empty($entity) || $entity->isEmpty()) 
+			&& !empty($foreignFieldConfig['no_time_bounding'])) {
+				$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+			if (!empty($entityQueryData['sort'])) {
+				$cursor->sort($entityQueryData['sort']);
+			}
 			$entity = $cursor->current();
-			//fall back to none time bounded query if no entity found.
-			if( (empty($entity) || $entity->isEmpty()) 
-				&& !empty($foreignFieldConfig['no_time_bounding'])) {
-					$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
-				if (!empty($entityQueryData['sort'])) {
-					$cursor->sort($entityQueryData['sort']);
-				}
-				$entity = $cursor->current();
-			}
-		}
-		else {
-			foreach (iterator_to_array($cursor) as $document) {
-				$entity[] = $document;
-			}
 		}
 //		if ($entity && !empty($cache)) {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
