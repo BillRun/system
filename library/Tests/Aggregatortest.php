@@ -327,7 +327,7 @@
          ),
          /* 2 */
          array('test' => array('test_number' => 54, "aid" => 1202, 'sid' => 202, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1202))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1202, 'after_vat' => array("202" => 33.96774), 'total' => 71.331, 'vatable' => 67.74, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1202, 'after_vat' => array("202" => 74.729033), 'total' => 74.729033, 'vatable' => 63.8709668, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 55, "aid" => 1302, 'sid' => 302, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1302))),
@@ -335,7 +335,7 @@
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 56, "aid" => 1402, 'sid' => 402, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1402))),
-             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.1064), 'total' => 75.1064, 'vatable' => 64.1935, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.106451612903), 'total' => 75.106451612903, 'vatable' =>  64.19354838709, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          //start timezone GMT+2 ent timezone GMT +3
@@ -482,7 +482,7 @@
          }
          if ($this->fails){
              $this->message.=$this->fails;
-         }
+         }       
          print_r($this->message);
          $this->restoreColletions();
      }

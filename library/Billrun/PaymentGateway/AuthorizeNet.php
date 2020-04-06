@@ -152,6 +152,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
 			$status = (string) $xmlObj->messages->message->code;			
+			$additionalParams['error'] = $errorMessage;
 		} else {
 			$transaction = $xmlObj->transactionResponse;
 			$this->transactionId = (string) $transaction->transId;
@@ -236,6 +237,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (!empty($billTo)) {
 			$transactionRequest['billTo'] = $billTo;
 		}
+		
+		$transactionSettings = $this->buildTransactionSettings($gatewayDetails);
+		if (!empty($transactionSettings)) {
+			$transactionRequest['transactionSettings'] = $transactionSettings;
+		}
 
 		return $transactionRequest;
 	}
@@ -258,6 +264,23 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if ($canCreateProfile) {
 			return [
 				'createProfile' => true,
+			];
+		}
+		
+		return [];
+	}
+	
+	protected function buildTransactionSettings($gatewayDetails) {
+		$customerProfile = Billrun_Util::getIn($gatewayDetails, 'customer_profile_id');
+		$paymentProfile = Billrun_Util::getIn($gatewayDetails, 'payment_profile_id');
+		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
+		
+		if ($hasProfile) {
+			return [
+				'setting' => [
+					'settingName' => 'recurringBilling',
+					'settingValue' => true,
+				],
 			];
 		}
 		
@@ -326,6 +349,86 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		];
 	}
 	
+	public function getTransactionDetails($transactionId) {
+		$getTransactionDetailsRequest = $this->buildGetTransactionDetailsRequest($transactionId);
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $getTransactionDetailsRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		$response = $this->decodeResponse($result, true);
+		if (empty($response)) {
+			return [];
+		}
+		
+		return $response['transaction'];
+	}
+	
+	protected function buildGetTransactionDetailsRequest($transactionId) {
+		$amount = $gatewayDetails['amount'];
+		$root = [
+			'tag' => 'getTransactionDetailsRequest',
+			'attr' => [
+				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
+			],
+		];
+		$body = $this->buildAuthenticationBody();
+		$body['transId'] = $transactionId;
+		return $this->encodeRequest($root, $body);
+	}
+	
+	public function credit($gatewayDetails, $addonData) {
+		if (!empty($gatewayDetails['transaction_id'])) {
+			return $this->creditTransaction($gatewayDetails, $addonData);
+		}
+		
+		Billrun_Factory::log("AuthorizeNet - failed to Credit - invalid credit option. data: " . print_R($gatewayDetails ,1), Zend_Log::ERR);
+		return false;
+	}
+	
+	protected function creditTransaction($gatewayDetails, $addonData) {
+		$transactionId = $gatewayDetails['transaction_id'] ?? '';
+		if (empty($transactionId)) {
+			Billrun_Factory::log("AuthorizeNet - failed to Credit - missing transaction Id. data: " . print_R($gatewayDetails ,1), Zend_Log::ERR);
+			return false;
+		}
+		$transactionDetails = $this->getTransactionDetails($transactionId);
+		if (empty($transactionDetails)) {
+			Billrun_Factory::log("AuthorizeNet - failed to Credit - cannot get transaction details for transaction {$transactionId}", Zend_Log::ERR);
+			return false;
+		}
+		$creditRequest = $this->buildCreditRequest($transactionDetails, $gatewayDetails);
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $creditRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		$status = $this->payResponse($result, $addonData);
+		return $status;
+	}
+
+
+	protected function buildCreditRequest($transactionDetails, $gatewayDetails) {
+		$amount = $gatewayDetails['amount'];
+		$root = [
+			'tag' => 'createTransactionRequest',
+			'attr' => [
+				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
+			],
+		];
+		$body = $this->buildAuthenticationBody();
+		$body['transactionRequest'] = $this->buildRefundTransactionRequest($transactionDetails, $gatewayDetails);
+		return $this->encodeRequest($root, $body);
+	}
+	
+	protected function buildRefundTransactionRequest($transactionDetails, $gatewayDetails) {
+		$transactionRequest = [
+			'transactionType' => 'refundTransaction',
+		];
+
+		$transactionRequest['amount'] = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : Billrun_Util::getIn($transactionDetails, 'authAmount', 0);
+		$transactionRequest['payment'] = [
+			'creditCard' => [
+				'cardNumber' => Billrun_Util::getIn($transactionDetails, 'payment.creditCard.cardNumber', ''),
+                'expirationDate' =>  'XXXX',
+			],
+		];
+		$transactionRequest['refTransId'] = Billrun_Util::getIn($transactionDetails, 'transId', '');
+		return $transactionRequest;
+	}
+	
 	protected function buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params = []) {
 		$root = [
 			'tag' => 'createCustomerProfileRequest',
@@ -361,14 +464,20 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $xmlEncoder->encode($body, $params);
 	}
     
-    protected function decodeResponse($result) {
+    protected function decodeResponse($result, $asArray = false) {
         $xmlObj = @simplexml_load_string($result);
         $resultCode = (string) $xmlObj->messages->resultCode;
 		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
+			$errorCode = (string) $xmlObj->messages->message->code;
+			Billrun_Factory::log("AuthorizeNet - transaction error. Error code: {$errorCode}, error message: {$errorMessage}", Zend_Log::ERR);
 			throw new Exception($errorMessage);
 		}
         
+		if ($asArray) {
+			$xmlDecoder = new Billrun_Decoder_Xml();
+			return $xmlDecoder->decode($result);
+		}
         return $xmlObj;
     }
 
@@ -683,7 +792,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	protected function validateStructureForCharge($structure) {
 		return (!empty($structure['customer_profile_id']) && !empty($structure['payment_profile_id'])) ||
-			(!empty($structure['data_descriptor']) && !empty($structure['data_value']));
+			(!empty($structure['data_descriptor']) && !empty($structure['data_value'])) ||
+			(!empty($structure['type']) && $structure['type'] == 'refund_transaction' && !empty($structure['transaction_id']));
 	}
 	
 	protected function handleTokenRequestError($response, $params) {

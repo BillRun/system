@@ -71,7 +71,7 @@ class ChargesAction extends ApiAction {
 			$usaget = array_keys($rate['rates'])[0];
 			$line['type'] = 'credit';
 			$line['arate'] = $rate->createRef(Billrun_Factory::db()->ratesCollection());
-			$line['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $usaget, 1);
+			$line['aprice'] = isset($data['aprice']) ? $data['aprice'] : Billrun_Rates_Util::getTotalCharge($rate, $usaget, 1);
 		} else if (!empty($data['plan'])) {
 			$line['type'] = 'flat';
 			$line['name'] = $data['plan'];
