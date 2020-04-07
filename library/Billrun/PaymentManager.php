@@ -59,6 +59,7 @@ class Billrun_PaymentManager {
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
+			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
 			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
@@ -140,7 +141,7 @@ class Billrun_PaymentManager {
 
 		foreach ($relatedBills as $billData) {
 			$bill = $prePayment->getBill($billType, $billData);
-			if ($bill->isPaid()) {
+			if ($prePayment->getPaymentDirection() == Billrun_DataTypes_PrePayment::PAY_DIR_PAYS && $bill->isPaid()) {
 				return $this->handleError("{$prePayment->getDisplayType($billType)} {$bill->getId()} already paid");
 			}
 
@@ -231,7 +232,10 @@ class Billrun_PaymentManager {
 	protected function getInvolvedPayments($prePayments) {
 		$payments = [];
 		foreach ($prePayments as $prePayment) {
-			$payments[] = ['payments' => $prePayment->getPayment() , 'payment_data' => $prePayment->getData()];
+			$payment = $prePayment->getPayment();
+			if ($payment) {
+				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
+			}
 		}
 
 		return $payments;
@@ -348,6 +352,10 @@ class Billrun_PaymentManager {
 			
 			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
+			
+			if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
+				$payment->setPending(false);
+			}
 			
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
