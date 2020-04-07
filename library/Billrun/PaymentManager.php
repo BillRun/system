@@ -39,9 +39,11 @@ class Billrun_PaymentManager {
 
 		$postPayments = $this->handlePayment($prePayments, $params); 
 		$this->handleSuccessPayments($postPayments, $params);
+		$payments = $this->getInvolvedPayments($postPayments);
 		return [
-			'payment' => $this->getInvolvedPayments($postPayments),
+			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
+			'payment_data' => array_column($payments, 'payment_data')
 		];
 	}
 
@@ -56,7 +58,7 @@ class Billrun_PaymentManager {
 	protected function preparePayments($method, $paymentsData, $params = []) {
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
-			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
+			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
 			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
@@ -210,7 +212,8 @@ class Billrun_PaymentManager {
 	 * @return boolean
 	 */
 	protected function savePayments($prePayments) {
-		$payments = $this->getInvolvedPayments($prePayments);
+		$response = $this->getInvolvedPayments($prePayments);
+		$payments = array_column($response, 'payments');
 		$ret = Billrun_Bill_Payment::savePayments($payments);
 		if (!$ret || empty($ret['ok'])) {
 			return false;
@@ -228,7 +231,7 @@ class Billrun_PaymentManager {
 	protected function getInvolvedPayments($prePayments) {
 		$payments = [];
 		foreach ($prePayments as $prePayment) {
-			$payments[] = $prePayment->getPayment();
+			$payments[] = ['payments' => $prePayment->getPayment() , 'payment_data' => $prePayment->getData()];
 		}
 
 		return $payments;
@@ -398,9 +401,7 @@ class Billrun_PaymentManager {
 	
 	protected function setUserFields (&$prePayment) {
 		$payment = $prePayment->getPayment();
-		$config = Billrun_Factory::config();
-		$ufFields = $config->getConfigValue('payments.offline.uf', []);
-		$payment->setUserFields($ufFields, $prePayment->getData());
+		$payment->setUserFields($prePayment->getData());
 	}
 
 

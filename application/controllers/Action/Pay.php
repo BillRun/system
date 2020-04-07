@@ -25,6 +25,10 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
@@ -53,7 +57,9 @@ class PayAction extends ApiAction {
 					continue;
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
-				$deposit = new $className($inputPayment);
+				$this->processPaymentUf($inputPayment);
+				$deposit = new $className($inputPayment, $params);
+				$deposit->setUserFields($deposit->getData()->getRawData(), true);
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
@@ -69,7 +75,7 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr, $params);
 			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
@@ -164,7 +170,7 @@ class PayAction extends ApiAction {
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
 		$uf = $request->get('uf');
 		if (!empty($uf)) {
-			$params['installments_forced_uf'] = json_decode($uf, true);
+			$params['forced_uf'] = json_decode($uf, true);
 		}
 		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
 		if(!empty($installments)) {
@@ -311,5 +317,15 @@ class PayAction extends ApiAction {
 			$errors[] = "$missingTxidCounter payments was transferred without txid";
 		}
 		return array('payments' => $payments, 'errors' => $errors);
+	}
+	
+	public function processPaymentUf(&$payment) {
+		$ufFields = array_filter($payment, function($field) {return preg_match('/^uf/', $field);},ARRAY_FILTER_USE_KEY);
+		if (!empty($ufFields)) {
+			foreach ($ufFields as $name => $value) {
+				$payment['uf'][$name] = $value;
+				unset($payment[$name]);
+			}
+		}
 	}
 }
