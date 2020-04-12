@@ -89,7 +89,6 @@ var invoice_language_field = {
 		"title":"Invoice language"
 	}
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
-
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
 	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
@@ -694,7 +693,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 }
 
 db.config.insert(lastConfig);
-
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -834,6 +832,21 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+// BRCD-1241: convert events to new structure
+if (typeof lastConfig.events !== 'undefined') {
+	for (var eventType in lastConfig.events) {
+		for (var eventId in lastConfig.events[eventType]) {
+			for (var conditionId in lastConfig.events[eventType][eventId].conditions) {
+				if (typeof lastConfig.events[eventType][eventId].conditions[conditionId].paths == 'undefined') {
+					lastConfig.events[eventType][eventId].conditions[conditionId].paths = [{
+							'path': lastConfig.events[eventType][eventId].conditions[conditionId].path,
+					}];
+					delete lastConfig.events[eventType][eventId].conditions[conditionId].path;
+				}
+			}
+		}
+	}
+}
 
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
@@ -842,7 +855,6 @@ if (!lastConfig.subscribers.subscriber.type) {
 if (!lastConfig.subscribers.account.type) {
 	lastConfig.subscribers.account.type = 'db';
 }
-
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
@@ -858,7 +870,6 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
-
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
