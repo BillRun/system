@@ -147,7 +147,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			try {
-				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options, $account->getRawData());
+				$options['account'] = $account->getRawData();
+				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
                                 $payment = $paymentReseponse['payment'];
                                 Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
 			} catch (Exception $e) {

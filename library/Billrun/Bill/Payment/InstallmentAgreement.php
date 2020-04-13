@@ -86,7 +86,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->attachDueDateToCycleEnd)) {
 			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
-		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
+		$account = Billrun_Factory::account();
+		$params['account'] = $account->loadAccountForQuery(['aid' => $this->data['aid']]);
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr, $params);
 		$primaryInstallment = current($paymentResponse['payment']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
@@ -138,7 +140,14 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installments[] = new self($installment);
+			$installmentObj = new self($installment);
+			$account = Billrun_Factory::account();
+			$current_account = $account->loadAccountForQuery(['aid' => $installment['aid']]);
+			$foreignData = $this->getForeignFields(array('account' => $current_account));
+			if (!is_null($current_account)) {
+				$installmentObj->setForeignFields($foreignData);
+			}
+			$installments[] = $installmentObj;
 		}
 
 		return $installments;

@@ -29,12 +29,12 @@ class Billrun_PaymentManager {
 	/**
 	 * Handles payment (awaits response)
 	 */
-	public function pay($method, $paymentsData, $params = [], $account = null) {
+	public function pay($method, $paymentsData, $params = []) {
 		if (!Billrun_Bill_Payment::validatePaymentMethod($method, $params)) {
 			return $this->handleError("Unknown payment method {$method}");
 		}
 
-		$prePayments = $this->preparePayments($method, $paymentsData, $params, $account);
+		$prePayments = $this->preparePayments($method, $paymentsData, $params);
 		if (!$this->savePayments($prePayments)) {
 			return $this->handleError('Error encountered while saving the payments');
 		}
@@ -55,7 +55,8 @@ class Billrun_PaymentManager {
 	 * @param array $params
 	 * @returns array of pre-payment data for every payment
 	 */
-	protected function preparePayments($method, $paymentsData, $params = [], $account = null) {
+	protected function preparePayments($method, $paymentsData, $params = []) {
+		$account = !empty($params['account']) ? $params['account'] : null;
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
