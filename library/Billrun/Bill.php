@@ -1177,4 +1177,18 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
+	}
+	
+	public function setBalanceEffectiveDate ($date = "now") {
+		$this->data['balance_effective_date'] = new MongoDate(time());
+		$this->save();
+	}
 }

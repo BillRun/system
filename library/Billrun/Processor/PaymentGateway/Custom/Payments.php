@@ -37,15 +37,15 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected function updatePayments($row, $payment = null) {
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
 		if (count($bill) == 0) {
-                        $message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
+			$message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->informationArray['errors'][] = $message;
+			$this->informationArray['errors'][] = $message;
 			return;
 		}
 		if (count($bill) > 1) {
-                        $message = $this->identifierField . " field isn't unique";
+			$message = $this->identifierField . " field isn't unique";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->informationArray['errors'][] = $message;
+			$this->informationArray['errors'][] = $message;
 			return;
 		}
 		$billData = $bill->current()->getRawData();
@@ -60,18 +60,19 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
 		try {
-			Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
+			$payment = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
-                        $message = "Payment process was failed for payment: " . $e->getMessage();
+			$message = "Payment process was failed for payment: " . $e->getMessage();
 			Billrun_Factory::log()->log($message, Zend_Log::ALERT);
-                        $this->informationArray['errors'][] = $message;
-                        return;
+			$this->informationArray['errors'][] = $message;
+			return;
 		}
+		$payment->setBalanceEffectiveDate();
         $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
         $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
-                $this->informationArray['info'][] = $message;
+		$this->informationArray['info'][] = $message;
 	}
 
 	protected function findBillByUniqueIdentifier($id) {

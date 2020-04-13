@@ -1051,16 +1051,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
-	public function setExtraFields($fields, $path) {
-		if (empty($fields)) {
-			return;
-		}
-		$paymentData = $this->getRawData();
-		Billrun_Util::setIn($paymentData, $path, $fields);
-		$this->setRawData($paymentData);
-		$this->save();
-	}
-	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.
 	 * @param $denialAmount- the amount to deny.
