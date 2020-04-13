@@ -351,7 +351,10 @@ class ConfigModel {
 				// allow only in this case to set all parameters to convert class_name to new plugin structure
 				$updatedData['plugins'][$old_strucrute_plugin_index] = $data;
 			} else {
-				$plugin_index = array_search($data['name'], array_column($updatedData['plugins'], 'name'));
+				$plugins_names = array_map(function($plugin) {
+					return is_string($plugin) ? $plugin : $plugin['name'];
+				}, $updatedData['plugins']);
+				$plugin_index = array_search($data['name'], $plugins_names);
 				if ($plugin_index === FALSE) {
 					throw new Exception("Plugin {$data['name']} not found");
 				}
