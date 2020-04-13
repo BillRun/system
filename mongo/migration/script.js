@@ -1002,6 +1002,33 @@ function getServiceGroups(service) {
 // ============================= BRCD-2556: END ==============================================================================
 });
 
+
+// BRCD-2491 convert Import mappers to not use '.' as mongo key
+if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping !== 'undefined' && Array.isArray(lastConfig.import.mapping)) {
+	const mapping = lastConfig.import.mapping;
+	mapping.forEach((mapper, key) => {
+		if (typeof mapper.map !== 'undefined') {
+			let convertedMapper = [];
+			if (!Array.isArray(mapper.map)) {
+				Object.keys(mapper.map).forEach((field_name) => {
+					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
+				});
+			}
+			mapping[key].map = convertedMapper;
+		}
+		if (typeof mapper.multiFieldAction !== 'undefined') {
+			let convertedMultiFieldAction = [];
+			if (!Array.isArray(mapper.multiFieldAction)) {
+				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
+					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
+				});
+			}
+			mapping[key].multiFieldAction = convertedMultiFieldAction;
+		}
+	});
+	lastConfig.import.mapping = mapping;
+}
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
