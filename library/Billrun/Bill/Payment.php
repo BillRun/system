@@ -1101,12 +1101,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		if (!empty($confUserFields)) {
 			foreach ($confUserFields as $key => $field_name) {
-				if (!empty($data['uf.' . $field_name])) {
-					$paymentUf['uf'][$field_name] = $data['uf.' . $field_name];
+				if (!empty($data['uf'][$field_name])) {
+					$paymentUf['uf'][$field_name] = $data['uf'][$field_name];
 					if ($unsetOriginalUfFromData) {
-						unset($paymentData['uf.' . $field_name]);
-					}
-					
+						unset($paymentData['uf'][$field_name]);
+					}			
 				}
 			}
 		}

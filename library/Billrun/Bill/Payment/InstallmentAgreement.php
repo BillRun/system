@@ -88,6 +88,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->attachDueDateToCycleEnd)) {
 			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
+		if (!empty($this->forced_uf)) {
+			$paymentsArr[0]['forced_uf'] = $this->forced_uf;
+		}
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
 		$primaryInstallment = current($paymentResponse['payment']);
 		$primaryInstallmentData = current($paymentResponse['payment_data']);
@@ -144,6 +147,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$installment['uf'] = array_filter($installmentPayment, function($field) {
 						return preg_match('/^uf/', $field);
 			},ARRAY_FILTER_USE_KEY);
+			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
 			$installmentObj->setUserFields($installmentObj->getData()->getRawData(), true);
 			$installments[] = $installmentObj;

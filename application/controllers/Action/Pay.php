@@ -320,11 +320,9 @@ class PayAction extends ApiAction {
 	}
 	
 	public function processPaymentUf(&$payment) {
-		$ufFields = array_filter($payment, function($field) {return preg_match('/^uf/', $field);},ARRAY_FILTER_USE_KEY);
-		if (!empty($ufFields)) {
-			foreach ($ufFields as $name => $value) {
+		if (!empty($payment['uf'])) {
+			foreach ($payment['uf'] as $name => $value) {
 				$payment['uf'][$name] = $value;
-				unset($payment[$name]);
 			}
 		}
 	}
