@@ -62,7 +62,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($query['EXTRAS'])) {
 				unset($query['EXTRAS']);
 			}
-			
+			if (is_numeric($query['sid'])) {
+				settype($query['sid'], 'int');
+			}
 			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
 				$sub = $result->limit(1)->current();
