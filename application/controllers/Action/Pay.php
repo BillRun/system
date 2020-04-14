@@ -136,6 +136,7 @@ class PayAction extends ApiAction {
 				continue;
 			}
 			$depositUnfreezed = $deposit->unfreezeDeposit();
+			$deposit->setBalanceEffectiveDate();
 			if ($depositUnfreezed) {
 				$unfreezedDeposits[] = $txid;
 			}
