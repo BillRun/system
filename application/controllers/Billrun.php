@@ -232,8 +232,8 @@ class BillrunController extends ApiController {
 			$params['bills'] = [
 				[
 					'aid' => $aid,
-					'left_to_pay' => $amount,
-					'left' => 0,
+					'left_to_pay' => $amount > 0 ? $amount : 0,
+					'left' => $amount < 0 ? abs($amount) : 0,
 					'payment_method' => $request->get('payment_method', 'automatic'),
 					'billrun_key' => $request->get('billrun_key', Billrun_Billingcycle::getBillrunKeyByTimestamp()),
 				],
