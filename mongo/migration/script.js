@@ -119,30 +119,33 @@ if (!lastConfig['plugins']) {
 	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
 }
 
-for (var i in lastConfig['plugins']) {
-	if (lastConfig['plugins'][i] === "calcCpuPlugin") {
-		lastConfig['plugins'][i] = {
-			"name": "calcCpuPlugin",
-			"enabled": true,
-			"system": true,
-			"hide_from_ui": true
-		};
-	} else if (["csiPlugin", "autorenewPlugin"].includes(lastConfig['plugins'][i])) {
-		lastConfig['plugins'][i] = {
-			"name": lastConfig['plugins'][i],
-			"enabled": true,
-			"system": true,
-			"hide_from_ui": false
-		};
-	} else {
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+	if (typeof lastConfig['plugins'][i] === 'string') {
+		if (lastConfig['plugins'][i] === "calcCpuPlugin") {
 			lastConfig['plugins'][i] = {
-			"name": lastConfig['plugins'][i],
-			"enabled": true,
-			"system": false,
-			"hide_from_ui": false
-		};
-	}	
+				"name": "calcCpuPlugin",
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": true
+			};
+		} else if (["csiPlugin", "autorenewPlugin"].includes(lastConfig['plugins'][i]['name'])) {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": false
+			};
+		} else {
+				lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": false,
+				"hide_from_ui": false
+			};
+		}
+	}
 }
+
 
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
