@@ -71,7 +71,15 @@ class OnetimeinvoiceAction extends ApiAction {
 		
 		if ($step >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
-			$billrunToBill->generate();
+			$result = $billrunToBill->generate();
+			if ($result['alreadyRunning']){
+				Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
+				return;
+			}
+			if ($result['releasingProblem']) {
+				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+				return;
+			}
 		} else {
 			$invoiceData = $this->invoice->getRawData();
 			$invoiceData['allow_bill'] = $allowBill;
