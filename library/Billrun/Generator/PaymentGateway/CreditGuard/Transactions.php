@@ -190,14 +190,14 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 
 	public function generate() {
 		if (!$this->lock()) {
-			$this->_controller->addOutput("Generator is already running");
+			Billrun_Factory::log("Generator is already running", Zend_Log::NOTICE);
 			return;
 		}
 		parent::generate();
 		$this->cgLogFile->setProcessTime();
 		$this->cgLogFile->save();
-		if (!$this->reslease()) {
-			$this->_controller->addOutput("Problem in releasing operation");
+		if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 			return;
 		}
 	}

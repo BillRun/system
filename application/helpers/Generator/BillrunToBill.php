@@ -55,22 +55,26 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 	public function generate() {
 		$invoicesIds = array();
+		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
 		foreach ($this->data as $invoice) {
 			$this->filtration = $invoice['aid'];
 			if (!$this->lock()) {
-				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running");
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running", Zend_Log::NOTICE);
+				$result['alreadyRunning'] = true;
 				continue;
 			}
 			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
 			if (!$this->release()) {
-				Billrun_Factory::log("Problem in releasing operation");
+				Billrun_Factory::log("Problem in releasing operation for aid " . $invoice['aid'], Zend_Log::ALERT);
+				$result['releasingProblem'] = true;
 			}
 		}
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
+		return $result;
 	}
 	
 	/**

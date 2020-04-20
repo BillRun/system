@@ -71,7 +71,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		
 		if ($step >= self::STEP_PDF_AND_BILL) {
 			$billrunToBill->load();
-			$billrunToBill->generate();
+			$result = $billrunToBill->generate();
+			$this->isValidGenerateResult($result, $billrunToBill);
 		} else {
 			$invoiceData = $this->invoice->getRawData();
 			$invoiceData['allow_bill'] = $allowBill;
@@ -319,5 +320,22 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+	}
+	
+	protected function isValidGenerateResult($result, $billrunToBill) {
+		$tries = 0;
+		while($result['alreadyRunning'] || $result['releasingProblem']){
+			if ($tries >= 3) {
+				if ($result['alreadyRunning']){
+					throw new Exception("BillrunToBill is already running");
+				}
+				if ($result['releasingProblem']) {
+					throw new Exception("Problem in releasing operation");
+				}
+			}
+			$tries++;
+			sleep(1);
+			$result = $billrunToBill->generate();
+		}
 	}
 }
