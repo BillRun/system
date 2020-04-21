@@ -861,8 +861,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array
 	 */
-	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
-                $result = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
+	protected function aggregateMongo($cycle, $page, $size, $aids = null, $invoicing_days = null) {
+                $result = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids, $invoicing_days);
                 if(isset($result['options'])){
                     $this->options = $result['options'];
                 }
