@@ -169,8 +169,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		$result = $this->load([$accountQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($query, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		$this->data = $result[0]->getRawData();
 		return $result[0];
@@ -183,13 +183,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function loadAccountsForQuery($params) {
 		$accountsQuery = $this->buildQuery($params);
 		if ($accountsQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Cannot identify account. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		return $result;
 	}
@@ -220,7 +220,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $params - Input params to get an account by.
 	 * @return array of query params.
 	 */
-	protected function buildQuery($params, $limit = false) {
+	protected function buildQuery($params, $limit = false, $systemQuery = false) {
 		// validate that params are legal by configuration
 		$customFields = array_map(function ($customField) {
 			return $customField['field_name'];
@@ -233,7 +233,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		
 		foreach ($params as $key => $value) {
-			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
+			if (!$systemQuery && !isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
 				return false;
 			}
 			$query[$key] = $value;
@@ -260,8 +260,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!empty($exempted)) {
 			$params['aid']['$nin'] = $exempted;
 		}
-		$query = $this->buildQuery($params);
-		$cursor = $this->loadAccountsForQuery($query);
+
+		$cursor = $this->loadAccountsForQuery($params);
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
 		}
