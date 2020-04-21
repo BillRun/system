@@ -342,7 +342,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
-		$this->view->assign('extra_immediate_invoices_count', $this->invoice_extra_params['immediate_invoices_count']?:0);
+		$this->view->assign('extra_immediate_invoices_count', @$this->invoice_extra_params['immediate_invoices_count']?:0);
+		$this->view->assign('invoice_extra_params', @$this->invoice_extra_params);
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
 
@@ -371,7 +372,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Generator_Translations::load();
 		Generator_Translations::setLanguage(isset($account['attributes']['invoice_language'])? $account['attributes']['invoice_language'] : 'en_GB');
 		
-		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
+		$invoice_html =  $this->view->render($this->view_path . 'invoice.phtml');
+		Billrun_Factory::dispatcher()->trigger('alterGreneratedInvoiceHTML',array(&$invoice_html,$this,$account));
+		file_put_contents($html, $invoice_html);
 		chmod($html, $this->filePermissions);
 
 		$this->updateHtmlDynamicData($account);
@@ -386,7 +389,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 
 		chmod($pdf, $this->filePermissions);
-		$this->updateInvoicePropertyToBillrun($account, $pdf);
+		$this->updateInvoicePropertyToBillrun($account, $pdf, $html);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
@@ -562,10 +565,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	protected function updateInvoicePropertyToBillrun($account, $pdfPath) {
-		$account['invoice_file'] = $pdfPath;
+	protected function updateInvoicePropertyToBillrun($account, $pdfPath, $htmlPath = false) {
+		$update = ['invoice_file' => $pdfPath ];
+		if($htmlPath) {
+			$update['invoice_html'] = $htmlPath;
+		}
 		if(!$this->is_fake_generation) {
-			$this->billrunColl->save($account);
+			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(), "aid"=>$account['aid']],['$set' => $update ]);
 		}
 	}
 
