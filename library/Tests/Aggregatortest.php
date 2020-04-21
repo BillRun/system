@@ -159,18 +159,18 @@
          /* force_accounts shouldn't recreate a confirmed invoice (check by the billrun _id?)(aid:50 ,sid:51)
           * part 1
           *  */
-         array(
-             'preRun' => array('changeConfig'),
-             'test' => array('test_number' => 24, "aid" => 60, 'sid' => 61, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 5), 'options' => array("stamp" => "201810", "force_accounts" => array(60))),
-             'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201810', 'aid' => 60, 'after_vat' => array("61" => 3.7741935483870965), 'total' => 3.7741935483870965, 'vatable' => 3.225806451612903, 'vat' => 17),
-                 'line' => array('types' => array('flat'))),
-         ),
-         array(
-             'preRun' => array('changeConfig', 'loadConfig'),
-             'test' => array('test_number' => 25, "aid" => 3, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201805", "force_accounts" => array(3))),
-             'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3, 'after_vat' => array("4" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
-                 'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
-         ),
+//         array(
+//             'preRun' => array('changeConfig'),
+//             'test' => array('test_number' => 24, "aid" => 60, 'sid' => 61, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 5), 'options' => array("stamp" => "201810", "force_accounts" => array(60))),
+//             'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201810', 'aid' => 60, 'after_vat' => array("61" => 3.7741935483870965), 'total' => 3.7741935483870965, 'vatable' => 3.225806451612903, 'vat' => 17),
+//                 'line' => array('types' => array('flat'))),
+//         ),
+//         array(
+//             'preRun' => array('changeConfig', 'loadConfig'),
+//             'test' => array('test_number' => 25, "aid" => 3, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201805", "force_accounts" => array(3))),
+//             'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3, 'after_vat' => array("4" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+//                 'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
+//         ),
          /*   Subscriber with some units (aid:62,sid:63 ,service:iphonex) */
          array(
              'test' => array('test_number' => 28, "aid" => 62, 'sid' => 63, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(62))),
