@@ -572,7 +572,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$update['invoice_html'] = $htmlPath;
 		}
 		if(!$this->is_fake_generation) {
-			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(), "aid"=>$account['aid']],['$set' => $update ]);
+			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(), "aid"=>$account['aid'], 'bilrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
 	}
 
