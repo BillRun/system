@@ -373,9 +373,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Generator_Translations::setLanguage(isset($account['attributes']['invoice_language'])? $account['attributes']['invoice_language'] : 'en_GB');
 		
 		$invoice_html =  $this->view->render($this->view_path . 'invoice.phtml');
-		Billrun_Factory::dispatcher()->trigger('alterGreneratedInvoiceHTML',array(&$invoice_html,$this,$account));
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 		file_put_contents($html, $invoice_html);
 		chmod($html, $this->filePermissions);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 
 		$this->updateHtmlDynamicData($account);
 		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
