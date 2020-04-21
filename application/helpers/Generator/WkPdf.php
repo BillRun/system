@@ -342,7 +342,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
-		$this->view->assign('extra_immediate_invoices_count', @$this->invoice_extra_params['immediate_invoices_count']?:0);
 		$this->view->assign('invoice_extra_params', @$this->invoice_extra_params);
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
@@ -598,16 +597,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($merged, $this->filePermissions);
 	}
 
-        /**
-         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
-         * @param sring $key
-         * @param type $value
-         */
-        public function setInvoiceExtraParams($key, $value) {
-            $this->invoice_extra_params[$key] = $value;
+	/**
+	* Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+	* @param sring $key
+	* @param type $value
+	*/
+	public function setInvoiceExtraParams($key, $value) {
+		$this->invoice_extra_params[$key] = $value;
 	}
 
-	protected function addExtraParamsToCurrentView($extraParams) {
+	public function addExtraParamsToCurrentView($extraParams) {
 		if(!empty($extraParams)) {
 			foreach($extraParams as $paramKey => $paramVal) {
 				$this->view->assign('extra_'.$paramKey, $paramVal);
