@@ -348,11 +348,12 @@ class Billrun_PaymentManager {
 			
 			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
+			$gatewayDetails = $payment->getPaymentGatewayDetails();
 			
 			if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
 				$payment->setPending(false);
 			}
-
+			
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
@@ -381,6 +382,9 @@ class Billrun_PaymentManager {
 
 			if (!empty($gatewayDetails)) {
 				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+			} else {
+				$gatewayAmount = 0;
+				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
 			}
 			
 			if (!empty($pgResponse)) {
