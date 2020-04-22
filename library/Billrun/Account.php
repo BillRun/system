@@ -220,7 +220,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $params - Input params to get an account by.
 	 * @return array of query params.
 	 */
-	protected function buildQuery($params, $limit = false, $systemQuery = false) {
+	protected function buildQuery($params, $limit = false) {
 		// validate that params are legal by configuration
 		$customFields = array_map(function ($customField) {
 			return $customField['field_name'];
@@ -233,7 +233,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		
 		foreach ($params as $key => $value) {
-			if (!$systemQuery && !isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
+			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
 				return false;
 			}
 			$query[$key] = $value;

@@ -33,14 +33,19 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 		$definedPlugins = Billrun_Factory::config()->getConfigValue('plugins');
 		if (isset($definedPlugins) && is_array($definedPlugins)) {
-			$allPlugins = array_merge($definedPlugins, $plugins);
-			$plugins = array_unique($allPlugins);
+			$allPlugins = array_merge_recursive($definedPlugins, $plugins);
+			$plugins = $this->handlePluginsConf($allPlugins);
 		}
 		if (!empty($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
-			foreach ($plugins as $plugin) {
-				$dispatcher->attach(new $plugin);
+			foreach ($plugins as $plugin_name => $plugins_conf) {
+				$pluginObject = new $plugin_name;
+				$dispatcher->attach($pluginObject);
+				$pluginObject->setAvailability($plugins_conf['enabled']);
+				if (isset($plugins_conf['values'])) {
+					$pluginObject->setOptions($plugins_conf['values']);
+				}
 			}
 		}
 
@@ -135,5 +140,31 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
 	}
-
+	
+	/**
+	 * Rearrange all the plugins from db and ini - to be in the latest plugins structure, and prevent duplications.
+	 * @param array $plugins
+	 * @return array.
+	 */
+	public function	handlePluginsConf($plugins) {
+		$plugins_list = [];
+		foreach ($plugins as $key => $plugin) {
+			$pluginName = is_array($plugin) ? $plugin['name'] : $plugin;
+			if (!isset($plugins_list[$pluginName])) {
+				if (is_array($plugin)) {
+					$pluginName = $plugin['name'];
+					if (in_array($plugin['name'], $plugins)) {
+						array_splice($plugins, array_search($plugin['name'], $plugins), 1);
+					}
+					$plugins_list[$pluginName] = $plugin;
+				} else {
+					$pluginName = $plugin;
+					$hideFromUI = ($pluginName == 'calcCpuPlugin') ? false : true;
+					$system = in_array($pluginName, ['calcCpuPlugin', 'csiPlugin', 'autorenewPlugin', 'fraudPlugin']) ? true : false;
+					$plugins_list[$pluginName] = ['name' => $pluginName, 'enabled' => true, 'system' => $system, 'hide_from_ui' => $hideFromUI];
+				}
+			}
+		}
+		return $plugins_list;
+	}
 }
