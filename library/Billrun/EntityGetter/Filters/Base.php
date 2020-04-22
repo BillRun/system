@@ -16,6 +16,21 @@ class Billrun_EntityGetter_Filters_Base {
 
 	public $params = array();
 
+	protected $spceialQueries = array(
+		'$exists' => array('$exists' => 1),
+		'$existsFalse' => array('$exists' => 1),
+		'$isTrue' => array('$exists' => true, '$eq' => true),
+		'$isFalse' => array('$exists' => true, '$eq' => false),
+	);
+
+	protected $datePreFunctions = array(
+		'minute_of_hour' => 'i', // with leading zeros
+		'hour_of_day'    => 'G', // without leading zeros
+		'day_of_week'    => 'N', // 1 (for Monday) through 7 (for Sunday); without leading zeros
+		'day_of_month'   => 'j', // without leading zeros
+		'month_of_year'  => 'n', // without leading zeros
+	);
+
 	/**
 	 * whether or not this can handle the query
 	 * @var boolean
@@ -70,6 +85,9 @@ class Billrun_EntityGetter_Filters_Base {
 	}
 
 	protected function regexValue($value, $regex) {
+		if (!empty($this->params['preFunction'])) {
+			$value = $this->applyPreFunction($value, $this->params['preFunction']);
+		}
 		if (empty($regex) || !Billrun_Util::isValidRegex($regex)) {
 			return $value;
 		}
@@ -87,16 +105,16 @@ class Billrun_EntityGetter_Filters_Base {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
-		$spceialQueries = array(
-			'$exists' => array('$exists' => 1),
-			'$existsFalse' => array('$exists' => 1),
-			'$isTrue' => array('$exists' => true, '$eq' => true),
-			'$isFalse' => array('$exists' => true, '$eq' => false),
-		);
+
 		$computedType = Billrun_Util::getIn($this->params, array('computed', 'type'), 'regex');
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
 		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
 		$firstVal = $this->getRowFieldValue($row, $firstValKey, $firstValRegex);
+		$preFunction = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'prefunction'), false);
+		if ($preFunction) {
+			$firstVal = $this->applyPreFunction($firstVal, $preFunction);
+		}
+
 		if ($computedType === 'regex') {
 			return $firstVal;
 		}
@@ -115,13 +133,13 @@ class Billrun_EntityGetter_Filters_Base {
 				$operator => $secondVal,
 			),
 		);
-		if (!empty($spceialQueries[$operator]) ) {
+		if (!empty($this->spceialQueries[$operator]) ) {
 			$data = $row;
 			$op = in_array($operator, []) ? '$and' : '$or';
 			$query = array(
 				$op => [
-					[$firstValKey => $spceialQueries[$operator]],
-					['uf.'.$firstValKey => $spceialQueries[$operator]],
+					[$firstValKey => $this->spceialQueries[$operator]],
+					['uf.'.$firstValKey => $this->spceialQueries[$operator]],
 				]
 			);
 		}
@@ -157,6 +175,23 @@ class Billrun_EntityGetter_Filters_Base {
 				$regex = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'regex'), '');
 				return $this->getRowFieldValue($row, $key, $regex);
 		}
+	}
+
+	/**
+	 * method to apply pre-function on a value before use it on the mapping
+	 * 
+	 * @param string $val the value that function will be applied on
+	 * @param string $preFunction the pre-defined function to be applied on the value
+	 * 
+	 * @return string the value after applying after running the function (if pre-defined)
+	 */
+	protected function applyPreFunction($val, $preFunction) {
+
+		if (isset($this->datePreFunctions[$preFunction])) {
+			return date($this->datePreFunctions[$preFunction], $val);
+		}
+
+		return $val;
 	}
 
 	protected function updateMatchQuery(&$match, $row) {
