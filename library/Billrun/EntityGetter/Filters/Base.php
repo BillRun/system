@@ -16,7 +16,7 @@ class Billrun_EntityGetter_Filters_Base {
 
 	public $params = array();
 
-	protected $spceialQueries = array(
+	protected $specialQueries = array(
 		'$exists' => array('$exists' => 1),
 		'$existsFalse' => array('$exists' => 1),
 		'$isTrue' => array('$exists' => true, '$eq' => true),
@@ -136,13 +136,13 @@ class Billrun_EntityGetter_Filters_Base {
 				$operator => $secondVal,
 			),
 		);
-		if (!empty($this->spceialQueries[$operator]) ) {
+		if (!empty($this->specialQueries[$operator]) ) {
 			$data = $row;
 			$op = in_array($operator, []) ? '$and' : '$or';
 			$query = array(
 				$op => [
-					[$firstValKey => $this->spceialQueries[$operator]],
-					['uf.'.$firstValKey => $this->spceialQueries[$operator]],
+					[$firstValKey => $this->specialQueries[$operator]],
+					['uf.'.$firstValKey => $this->specialQueries[$operator]],
 				]
 			);
 		}
