@@ -50,7 +50,6 @@ class Billrun_EntityGetter_Filters_Base {
 			$additional[] = $a;
 		}
 		
-		$additionalBeforeMatch = $this->updatePreOperation($row);
 		$this->updateGroupQuery($group, $row);
 		$a2 = $this->updateAdditionaAfterGrouplQuery($row);
 		if ($a2) {
@@ -201,10 +200,6 @@ class Billrun_EntityGetter_Filters_Base {
 		
 	}
 
-	protected function updatePreOperation($row) {
-		
-	}
-	
 	protected function updateAdditionalQuery($row) {
 		
 	}

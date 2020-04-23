@@ -18,15 +18,15 @@ class Billrun_EntityGetter_Filters_Range extends Billrun_EntityGetter_Filters_Ma
 		if ($this->params['entity_key'] !== 'usaget') {
 			$comparedValue = $this->getRowFieldValue($row, $this->params['line_key']);
 			$filter = array(
-				$this->params['entity_key'] . ".min" => array('$lt' => $comparedValue), 
-				$this->params['entity_key'] . ".max" => array('$gt' => $comparedValue),
+				$this->params['entity_key'] => array(
+					'$elemMatch' => array(
+						"min" => array('$lte' => $comparedValue), 
+						"max" => array('$gte' => $comparedValue),
+					),
+				),
 			);
 			$match = array_merge($match, $filter);
 		}
-	}
-	
-	protected function updatePreOperation($row) {
-		return array('$unwind' => "$" . $this->params['entity_key']);
 	}
 
 
