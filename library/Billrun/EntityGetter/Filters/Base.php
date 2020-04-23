@@ -42,13 +42,15 @@ class Billrun_EntityGetter_Filters_Base {
 		$this->params = $params;
 	}
 
-	public function updateQuery(&$match, &$additional, &$group, &$additionalAfterGroup, &$sort, $row) {
+	public function updateQuery(&$match, &$additional, &$group, &$additionalBeforeMatch, &$additionalAfterGroup, &$sort, $row) {
 
 		$this->updateMatchQuery($match, $row);
 		$a = $this->updateAdditionalQuery($row);
 		if ($a) {
 			$additional[] = $a;
 		}
+		
+		$additionalBeforeMatch = $this->updatePreOperation($row);
 		$this->updateGroupQuery($group, $row);
 		$a2 = $this->updateAdditionaAfterGrouplQuery($row);
 		if ($a2) {
@@ -199,6 +201,10 @@ class Billrun_EntityGetter_Filters_Base {
 		
 	}
 
+	protected function updatePreOperation($row) {
+		
+	}
+	
 	protected function updateAdditionalQuery($row) {
 		
 	}

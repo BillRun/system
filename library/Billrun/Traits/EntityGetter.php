@@ -268,6 +268,7 @@ trait Billrun_Traits_EntityGetter {
 		$additional = [];
 		$group = $this->getBasicGroupQuery($row, $category, $params);
 		$additionalAfterGroup = [];
+		$additionalBeforeMatch = [];
 		$sort = $this->getBasicSortQuery($row, $category, $params);
 		$entityKeyInCondition = $this->getConditionEntityKey($params);
 
@@ -279,7 +280,7 @@ trait Billrun_Traits_EntityGetter {
 				continue;
 			}
 			
-			$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
+			$handlerClass->updateQuery($match, $additional, $group, $additionalBeforeMatch, $additionalAfterGroup, $sort, $row);
 			if (!$handlerClass->canHandle()) {
 				return false;
 			}
@@ -289,6 +290,11 @@ trait Billrun_Traits_EntityGetter {
 		$sortQuery = !empty($sort) ? [['$sort' => $sort]] : [];
 		$groupQuery = [['$group' => $group]];
 		$limitQuery = [['$limit' => 1]];
+		
+		if (!empty($additionalBeforeMatch)) {
+			$preMatch = [$additionalBeforeMatch];
+			return array_merge($preMatch, $matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
+		}
 		
 		return array_merge($matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
 	}
