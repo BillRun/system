@@ -190,6 +190,13 @@ class Billrun_EntityGetter_Filters_Base {
 	protected function applyPreFunction($val, $preFunction) {
 
 		if (isset($this->datePreFunctions[$preFunction])) {
+			if (isset($val->sec)) { // this is ISODate object
+				$dateFuncInput = $val->sec;
+			} else if (strlen($val) > 11) { // this is not unix timestamp (unless in this millennium) => ISO date string
+				$dateFuncInput = strtotime($val);
+			} else { // unix timestamp
+				$dateFuncInput = $val;
+			}
 			return date($this->datePreFunctions[$preFunction], $val);
 		}
 
