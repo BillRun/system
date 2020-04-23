@@ -376,6 +376,11 @@
              'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
+   
+             array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat'=>0)),
+             'line' => array('types' => array('flat', 'service')),'jiraLink' =>"https://billrun.atlassian.net/browse/BRCD-2492"
+         ),
          array(
              'preRun' => ('expected_invoice'),
              'test' => array('test_number' => 66,),
