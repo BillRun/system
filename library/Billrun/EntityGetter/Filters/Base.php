@@ -42,7 +42,7 @@ class Billrun_EntityGetter_Filters_Base {
 		$this->params = $params;
 	}
 
-	public function updateQuery(&$match, &$additional, &$group, &$additionalBeforeMatch, &$additionalAfterGroup, &$sort, $row) {
+	public function updateQuery(&$match, &$additional, &$group, &$additionalAfterGroup, &$sort, $row) {
 
 		$this->updateMatchQuery($match, $row);
 		$a = $this->updateAdditionalQuery($row);
