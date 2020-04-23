@@ -26,7 +26,7 @@ class Billrun_EntityGetter_Filters_Base {
 	protected $datePreFunctions = array(
 		'minute_of_hour' => 'i' , // with leading zeros
 		'hour_of_day'    => 'G' , // without leading zeros
-		'time_of_day'    => 'Hi', // this for f/c of range time of day
+		'time_of_day'    => 'Hi', // time of day (HHMM)
 		'day_of_week'    => 'N' , // 1 (for Monday) through 7 (for Sunday); without leading zeros
 		'day_of_month'   => 'j' , // without leading zeros
 		'month_of_year'  => 'n' , // without leading zeros
