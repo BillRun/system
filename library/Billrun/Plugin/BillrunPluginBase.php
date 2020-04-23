@@ -20,6 +20,20 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 	 * @var string
 	 */
 	protected $name = 'billrun';
+	
+	/**
+	 * plugin options
+	 *
+	 * @var array
+	 */
+	protected $options = [];
+	
+	/**
+	 * is the plugin enabled
+	 *
+	 * @var boolean
+	 */
+	protected $enabled = true;
 
 	/**
 	 * method to receive plugin name
@@ -38,6 +52,44 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 	 */
 	public function setName($name) {
 		$this->name = $name;
+	}
+	
+	/**
+	 * method to receive plugin options
+	 * this will be used by the subject (dispatcher)
+	 *
+	 * @return array of options
+	 */
+	public function getOptions() {
+		return $this->options;
+	}
+	
+	/**
+	 * method to set the plugin options
+	 *
+	 * @param array of options
+	 */
+	public function setOptions($options) {
+		$this->options = $options;
+		$this->enabled = !empty($options['enabled']) ? $options['enabled'] : $this->enabled;
+	}
+	
+	/**
+	 * method to set the plugin "enable" flag
+	 *
+	 * @param boolean 
+	 */
+	public function setAvailability($enable) {
+		$this->enabled = $enable;
+	}
+	
+	/**
+	 * whether the plugin is enabled 
+	 *
+	 * @param array of options
+	 */
+	public function isEnabled() {
+		return $this->enabled;
 	}
 
 	/**
