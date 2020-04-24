@@ -413,9 +413,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs['pipelines'] as $breakdownConfig) {
-				$aggrResults = $aggregate->aggregate($breakdownConfig, $subLines);
-				if($aggrResults) {
-					foreach($aggrResults as $aggregateValue) {
+				$aggregate->aggrResults = $aggregate->aggregate($breakdownConfig, $subLines, is_array($this->data['breakdown'][$brkdwnKey]) ? current($this->data['breakdown'][$brkdwnKey]) : $this->data['breakdown'][$brkdwnKey]);
+				if($aggregate->aggrResults) {
+					foreach($aggregate->aggrResults as $aggregateValue) {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );

@@ -8,7 +8,9 @@
  * @author eran
  */
 class Billrun_Utils_Arrayquery_Aggregate {
-
+	
+	public $aggrResults = null;
+	
 	protected $mapping = array(
 		'$match' => '_match',
 		'$group' => '_group',
@@ -21,7 +23,7 @@ class Billrun_Utils_Arrayquery_Aggregate {
 		foreach($pipeline as $stage) {
 			$data = $this->evaluate($stage, $data, $previouslyAggregatedResults);
 		}
-		return !empty($previouslyAggregatedResults) ? array_merge($previouslyAggregatedResults,$data) : $data;
+		return $data;
 	}
 
 	/**
@@ -77,7 +79,8 @@ class Billrun_Utils_Arrayquery_Aggregate {
 		$aggregateExpretion = new Billrun_Utils_Arrayquery_Aggregate_Expression();
 		foreach($data as $line) {
 			$stamp = Billrun_Util::generateArrayStamp(array('_id' => $aggregateExpretion->evaluate($line, $expression['_id']) ) );
-			$groupedData[$stamp] = $aggregateExpretion->evaluate($line, $expression, Billrun_Util::getFieldVal($prevGroupedData[$stamp],@$groupedData[$stamp]));
+			$prevGroupedData = !empty(Billrun_Util::getFieldVal($prevGroupedData[$stamp],@$groupedData[$stamp])) ? Billrun_Util::getFieldVal($prevGroupedData[$stamp],@$groupedData[$stamp]) : $prevGroupedData;
+			$groupedData[$stamp] = $aggregateExpretion->evaluate($line, $expression, $prevGroupedData);
 		}
 
 		return $groupedData;
