@@ -131,16 +131,16 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array(), $overridePreviouslyAggregatedResults = true) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array(), $overridePreviouslyAggregatedResults = false) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
-				$breakdowns['cost'] = $overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
-				$breakdowns['usagev'] = $overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
-				$breakdowns['count'] += $overridePreviouslyAggregatedResults ? $breakdowns['count'] + $usagev : $count;
+				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
+				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
+				$breakdowns['count'] += 1;
 				foreach($taxData as $tax ) {
 					if(empty($tax['description'])) {
 						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
@@ -404,7 +404,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * 
 	 * @param type $subLines
 	 */
-	public function aggregateLinesToBreakdown($subLines, $overridePreviouslyAggregatedResults = true) {
+	public function aggregateLinesToBreakdown($subLines, $overridePreviouslyAggregatedResults = false) {
 		$subLines = array_map(function($subLine) {
 			return ($subLine instanceof Mongodloid_Entity) ? $subLine->getRawData() : $subLine;
 		}, $subLines);
