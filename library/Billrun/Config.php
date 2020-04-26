@@ -108,7 +108,7 @@ class Billrun_Config {
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
 		}
-		
+		$NewlessImportantConf = null;
 		if (is_array($moreImportantConf) && !is_array($lessImportantConf)) {
 			$NewlessImportantConf = [];
 		}
