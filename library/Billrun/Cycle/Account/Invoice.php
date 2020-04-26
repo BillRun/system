@@ -197,7 +197,7 @@ class Billrun_Cycle_Account_Invoice {
 		foreach($this->subscribers as  $subscriber) {
 			$sid = $subscriber->getData()['sid'];
 			if( !empty($sidDiscounts[$subscriber->getData()['sid'] ]) ) {
-				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
+				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], false);
 			}
 		}
 		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
