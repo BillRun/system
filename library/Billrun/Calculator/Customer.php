@@ -164,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return $row;
 		}
 
-		if ($this->isBulk()) {
+		if ($this->isBulk() || isset($this->subscribers)) {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
