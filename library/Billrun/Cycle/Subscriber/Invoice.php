@@ -415,9 +415,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs['pipelines'] as $breakdownConfig) {
-				$this->aggrResults[$brkdwnKey] = $aggregate->aggregate($breakdownConfig, $subLines, $this->aggrResults[$brkdwnKey]);
-				if($this->aggrResults[$brkdwnKey]) {
-					foreach($this->aggrResults[$brkdwnKey] as $aggregateValue) {
+				$pipeline_stamp = Billrun_Util::generateArrayStamp(array('pipeline' => $breakdownConfig));
+				$this->aggrResults[$pipeline_stamp] = $aggregate->aggregate($breakdownConfig, $subLines, $this->aggrResults[$pipeline_stamp]);
+				if($this->aggrResults[$pipeline_stamp]) {
+					foreach($this->aggrResults[$pipeline_stamp] as $aggregateValue) {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
