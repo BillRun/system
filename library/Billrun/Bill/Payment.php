@@ -1004,9 +1004,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['amount'] = $depositAmount;
 		$this->data['due'] = -$depositAmount;
 		$this->data['left'] = $depositAmount;
+		$this->setBalanceEffectiveDate();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
-		$this->setBalanceEffectiveDate();
 		return true;
 	}
 
@@ -1051,6 +1051,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
+	}
+	
+	public function setExtraFields($fields, $path) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		Billrun_Util::setIn($paymentData, $path, $fields);
+		$this->setRawData($paymentData);
+		$this->save();
 	}
 	
 	/**
