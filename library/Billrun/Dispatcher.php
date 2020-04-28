@@ -82,7 +82,8 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 		$ret = array();
 		self::$run++;
 		foreach ($this->observers as $observer) {
-			$ret[$observer->getName()] = $observer->update($this);
+			$plugin_class = get_class($observer);
+			$ret[$plugin_class] = $observer->update($this);
 		}
 		self::$run--;
 		return $ret;

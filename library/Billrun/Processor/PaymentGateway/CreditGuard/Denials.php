@@ -36,6 +36,14 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		}
 		$row['aid'] = !is_null($payment) ? $payment->getAid() : $addonData;
 		if (!is_null($payment)) {
+			if ($payment->isRejection() || $payment->isRejected()) {
+				Billrun_Factory::log("Payment " . $payment->getId() . " is already rejected and can't been denied", Zend_Log::ALERT);
+				return;
+			}
+			if ($payment->isPendingPayment()) {
+				Billrun_Factory::log("Payment " . $payment->getId() . " is already pending and can't been denied", Zend_Log::ALERT);
+				return;
+			}
 			if (abs($row['amount']) != $payment->getAmount()) {
 				Billrun_Factory::log("Amount isn't equal to payment for payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
 				return;
