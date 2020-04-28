@@ -149,7 +149,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			},ARRAY_FILTER_USE_KEY);
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
-			$installmentObj->setUserFields($installmentObj->getData()->getRawData(), true);
+			$installmentObj->setUserFields($installmentObj->getRawData(), true);
 			$installments[] = $installmentObj;
 			}
 			

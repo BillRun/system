@@ -1093,7 +1093,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$paymentUf = [];
 		$config = Billrun_Factory::config();
 		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
-		$paymentData = ($this instanceof Billrun_Bill_Payment) ? $this->getRawData() : $this->getData();
+		$paymentData = ($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData();
 		if (!empty($this->forced_uf)) {
 			foreach ($this->forced_uf as $field_name => $value) {
 				$paymentUf['uf'][$field_name] = $value;

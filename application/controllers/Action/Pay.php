@@ -59,7 +59,7 @@ class PayAction extends ApiAction {
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 				$this->processPaymentUf($inputPayment);
 				$deposit = new $className($inputPayment, $params);
-				$deposit->setUserFields($deposit->getData()->getRawData(), true);
+				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
