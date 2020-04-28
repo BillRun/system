@@ -104,7 +104,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                             $payment->setPending(false);
                             $payment->updateConfirmation();
                             $payment->setPaymentStatus($response, $this->gatewayName);
-							$payment->setExtraFields(new MongoDate(time()), 'balance_effective_date');
                             $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
                             Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
                         }else{
