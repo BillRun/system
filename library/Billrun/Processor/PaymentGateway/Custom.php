@@ -197,7 +197,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->markApproved('Completed');
 				$bill->setPending(false);
 				$bill->updateConfirmation();
-				$bill->setExtraFields(new MongoDate(time()), 'balance_effective_date');
 				$bill->save();
 				$this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
