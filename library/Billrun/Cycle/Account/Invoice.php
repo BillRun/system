@@ -197,7 +197,7 @@ class Billrun_Cycle_Account_Invoice {
 		foreach($this->subscribers as  $subscriber) {
 			$sid = $subscriber->getData()['sid'];
 			if( !empty($sidDiscounts[$subscriber->getData()['sid'] ]) ) {
-				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
+				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], true);
 			}
 		}
 		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
@@ -339,7 +339,13 @@ class Billrun_Cycle_Account_Invoice {
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
 		
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $invoicingDay);
+		$config = Billrun_Factory::config();
+		$pastBalanceConfig = $config->getConfigValue('billrun.past_balance', []);
+		$past_balance_date = $invoicingDay;
+		if (!empty($pastBalanceConfig) && !empty($rawData[$pastBalanceConfig['anchor_field']])) {
+			$past_balance_date = Billrun_Util::calcRelativeTime($pastBalanceConfig['relative_time'],date($rawData[$pastBalanceConfig['anchor_field']]->sec));
+		}
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), date('Y-m-d', $past_balance_date));
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}

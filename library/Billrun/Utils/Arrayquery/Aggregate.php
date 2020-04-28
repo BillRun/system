@@ -8,7 +8,7 @@
  * @author eran
  */
 class Billrun_Utils_Arrayquery_Aggregate {
-
+	
 	protected $mapping = array(
 		'$match' => '_match',
 		'$group' => '_group',

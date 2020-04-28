@@ -14,6 +14,8 @@
  */
 class Billrun_Cycle_Subscriber_Invoice {
 	
+	public $aggrResults = null;
+	
 	/**
 	 *
 	 * @var array
@@ -129,22 +131,22 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array() ) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array(), $overridePreviouslyAggregatedResults = false) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
-				$breakdowns['cost'] += $cost;
-				$breakdowns['usagev'] += $usagev;
+				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
+				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
 				$breakdowns['count'] += 1;
 				foreach($taxData as $tax ) {
 					if(empty($tax['description'])) {
 						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
 						continue;
 					}
-					@$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+					@$breakdowns['taxes'][$tax['description']] = $overridePreviouslyAggregatedResults ? @$breakdowns['taxes'][$tax['description']] + $tax['amount'] : $tax['amount'];
 				}
 				if(!empty($addedData)) {
 					$breakdowns = array_merge($breakdowns,$addedData);
@@ -402,7 +404,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * 
 	 * @param type $subLines
 	 */
-	public function aggregateLinesToBreakdown($subLines) {
+	public function aggregateLinesToBreakdown($subLines, $overridePreviouslyAggregatedResults = false) {
 		$subLines = array_map(function($subLine) {
 			return ($subLine instanceof Mongodloid_Entity) ? $subLine->getRawData() : $subLine;
 		}, $subLines);
@@ -413,14 +415,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs['pipelines'] as $breakdownConfig) {
-				$aggrResults = $aggregate->aggregate($breakdownConfig, $subLines);
-				if($aggrResults) {
-					foreach($aggrResults as $aggregateValue) {
+				$pipeline_stamp = Billrun_Util::generateArrayStamp(array('pipeline' => $breakdownConfig));
+				$this->aggrResults[$pipeline_stamp] = $aggregate->aggregate($breakdownConfig, $subLines, $this->aggrResults[$pipeline_stamp]);
+				if($this->aggrResults[$pipeline_stamp]) {
+					foreach($this->aggrResults[$pipeline_stamp] as $aggregateValue) {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
 						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(),  array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)),
-						array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+						array('conditions' =>json_encode($breakdownConfig[0]['$match']))), $overridePreviouslyAggregatedResults);
 					}
 				}
 			}
