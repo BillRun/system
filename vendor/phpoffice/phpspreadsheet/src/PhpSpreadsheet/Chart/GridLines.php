@@ -91,7 +91,7 @@ class GridLines extends Properties
     /**
      * Change Object State to True.
      *
-     * @return GridLines
+     * @return $this
      */
     private function activateObject()
     {
@@ -229,7 +229,7 @@ class GridLines extends Properties
      *
      * @param float $size
      *
-     * @return GridLines
+     * @return $this
      */
     private function setGlowSize($size)
     {
@@ -245,7 +245,7 @@ class GridLines extends Properties
      * @param int $alpha
      * @param string $type
      *
-     * @return GridLines
+     * @return $this
      */
     private function setGlowColor($color, $alpha, $type)
     {
@@ -305,7 +305,7 @@ class GridLines extends Properties
      *
      * @param int $shadow_presets
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowPresetsProperties($shadow_presets)
     {
@@ -319,9 +319,9 @@ class GridLines extends Properties
      * Set Shadow Properties Values.
      *
      * @param array $properties_map
-     * @param * $reference
+     * @param mixed &$reference
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowProperiesMapValues(array $properties_map, &$reference = null)
     {
@@ -353,7 +353,7 @@ class GridLines extends Properties
      * @param int $alpha
      * @param string $type
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowColor($color, $alpha, $type)
     {
@@ -375,7 +375,7 @@ class GridLines extends Properties
      *
      * @param float $blur
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowBlur($blur)
     {
@@ -391,7 +391,7 @@ class GridLines extends Properties
      *
      * @param int $angle
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowAngle($angle)
     {
@@ -407,7 +407,7 @@ class GridLines extends Properties
      *
      * @param float $distance
      *
-     * @return GridLines
+     * @return $this
      */
     private function setShadowDistance($distance)
     {
@@ -439,7 +439,7 @@ class GridLines extends Properties
     {
         if ($size !== null) {
             $this->activateObject();
-            $softEdges['size'] = (string) $this->getExcelPointsWidth($size);
+            $this->softEdges['size'] = (string) $this->getExcelPointsWidth($size);
         }
     }
 
