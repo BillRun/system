@@ -25,6 +25,10 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
@@ -53,7 +57,9 @@ class PayAction extends ApiAction {
 					continue;
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
-				$deposit = new $className($inputPayment);
+				$this->processPaymentUf($inputPayment);
+				$deposit = new $className($inputPayment, $params);
+				$deposit->setUserFields($deposit->getRawData(), true);
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
@@ -69,7 +75,7 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
-			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr);
+			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr, $params);
 			$payments = $payResponse['payment'];
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
@@ -162,6 +168,10 @@ class PayAction extends ApiAction {
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
 		if(!empty($installments)) {
 			$params['installments_agreement'] = json_decode($installments, true);
@@ -201,7 +211,7 @@ class PayAction extends ApiAction {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
 			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
 		}
-Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+		Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
 			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
 		}
@@ -307,5 +317,13 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$errors[] = "$missingTxidCounter payments was transferred without txid";
 		}
 		return array('payments' => $payments, 'errors' => $errors);
+	}
+	
+	public function processPaymentUf(&$payment) {
+		if (!empty($payment['uf'])) {
+			foreach ($payment['uf'] as $name => $value) {
+				$payment['uf'][$name] = $value;
+			}
+		}
 	}
 }

@@ -1176,5 +1176,4 @@ abstract class Billrun_Bill {
 		}
 		return self::getBills($query);
 	}
-	
 }
