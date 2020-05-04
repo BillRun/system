@@ -552,7 +552,7 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$accountQuery = array('aid' => array('$in' => $aids));			
+			$accountQuery = array('aid' => array('$in' => $aids));
 		} else if (!empty($exempted)){
 			$accountQuery = array('aid' => array('$nin' => $aids));
 		} else {
@@ -1176,5 +1176,4 @@ abstract class Billrun_Bill {
 		}
 		return self::getBills($query);
 	}
-	
 }

@@ -72,7 +72,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		$taxes = array_merge($taxes, $taxHintFallback);
 		
 		if (empty($taxes)) {
-			return false;
+			return is_array($taxes) ? [] : false;
 		}
 
 		return array_filter($taxes, function($taxData) {

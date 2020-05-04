@@ -27,6 +27,10 @@ class PayAction extends ApiAction {
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
 		$account = Billrun_Factory::account();
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		if (!$method && !in_array($action, array('cancel_payments', 'use_deposit'))) {
 			return $this->setError('No method found', $request->getPost());
 		}
@@ -56,7 +60,9 @@ class PayAction extends ApiAction {
 					continue;
 				}
 				$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
-				$deposit = new $className($inputPayment);
+				$this->processPaymentUf($inputPayment);
+				$deposit = new $className($inputPayment, $params);
+				$deposit->setUserFields($deposit->getRawData(), true);
 				$foreignData = $this->getForeignFields(array('account' => $current_account));
 				if (!is_null($current_account)) {
 					$deposit->setForeignFields($foreignData);
@@ -172,6 +178,10 @@ class PayAction extends ApiAction {
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
 		$params['first_due_date'] = !empty($request->get('first_due_date')) ?  $request->get('first_due_date') : '';
+		$uf = $request->get('uf');
+		if (!empty($uf)) {
+			$params['forced_uf'] = json_decode($uf, true);
+		}
 		$installments = !empty($request->get('installments')) ?  $request->get('installments') : array();
 		if(!empty($installments)) {
 			$params['installments_agreement'] = json_decode($installments, true);
@@ -317,6 +327,14 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			$errors[] = "$missingTxidCounter payments was transferred without txid";
 		}
 		return array('payments' => $payments, 'errors' => $errors);
+	}
+	
+	public function processPaymentUf(&$payment) {
+		if (!empty($payment['uf'])) {
+			foreach ($payment['uf'] as $name => $value) {
+				$payment['uf'][$name] = $value;
+			}
+		}
 	}
 	
 	protected function getForeignFieldsEntity () {

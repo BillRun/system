@@ -19,7 +19,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
-	
+
 	protected static $type = 'db';
 	
 	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
@@ -32,6 +32,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		
 	}
 
 	/**
@@ -75,16 +76,18 @@ class Billrun_Account_Db extends Billrun_Account {
 			if(isset($query['limit'])) {
 				$limit = $query['limit'];
 				unset($query['limit']);
-			}
+		}
+
 			if(isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
 				unset($query['time']);
-			}
+	}
+
 			if(isset($query['id'])) {
 				$id = $query['id'];
 				unset($query['id']);
-			}
+					}
 			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
 				$account = $result->limit(1)->current();
@@ -93,15 +96,14 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				if (isset($id)) {
 					$account->set('id', $id);
-				}
-				$accounts[] = $account;
-			} else {
-				return iterator_to_array($result);
 			}
-		}
+				$accounts[] = $account;
+					} else {
+				return iterator_to_array($result);
+					}
+				}
 		return $accounts;
-	}
-
+			}
 	public function permanentChange($query, $update) {
 		$params = array(
 			'collection' => 'accounts',
@@ -113,9 +115,8 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
-	}
+		}
 
-		
 	/**
 	 * 
 	 * Method to Save as 'Close And New' item
@@ -162,11 +163,12 @@ class Billrun_Account_Db extends Billrun_Account {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$query[$key] = $value;
 				continue;
-			}
+		}
 			switch ($key) {
 				default:
-			}
 		}
+	}
+	
 		return $query;
 	}
 }
