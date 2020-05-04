@@ -82,8 +82,8 @@ class Billrun_DataTypes_PrePayment {
 	 * 
 	 * @return array
 	 */
-	public function getData() {
-		return $this->data;
+	public function getData($path = [], $default = null) {
+		return Billrun_Util::getIn($this->data, $path, $default);
 	}
 
 	/**
@@ -156,12 +156,12 @@ class Billrun_DataTypes_PrePayment {
 				switch ($billType) {
 					case self::BILL_TYPE_INVOICE:
 						$query['invoice_id'] = [
-							'$in' => Billrun_Util::verify_array(array_keys($updatedBills), 'int'),
+							'$in' => Billrun_Util::verify_array(array_column($updatedBills, 'id'), 'int'),
 						];
 						return Billrun_Bill_Invoice::getInvoices($query);
 					case self::BILL_TYPE_RECEIPT:
 						$query['txid'] = [
-							'$in' => array_keys($updatedBills),
+							'$in' => array_column($updatedBills, id),
 						];
 						return Billrun_Bill_Payment::queryPayments($query);
 				}
@@ -293,7 +293,7 @@ class Billrun_DataTypes_PrePayment {
 	 */
 	public function getBillsToHandle($billType) {
 		$paymentDir = $this->getPaymentDirection();
-		return Billrun_Util::getIn($this->getData(), [$paymentDir, $billType], []); // currently it is only possible to specifically pay invoices only and not payments
+		return Billrun_Bill::getRelatedBills(Billrun_Util::getIn($this->getData(), $paymentDir, []), $billType);
 	}
 
 	/**
@@ -327,7 +327,8 @@ class Billrun_DataTypes_PrePayment {
 	 * @return float
 	 */
 	public function getBillAmount($billType, $billId) {
-		$amount = Billrun_Util::getIn($this->getData(), [$this->getPaymentDirection(), $billType, $billId], 0);
+		$relatedBill = Billrun_Bill::getRelatedBill(Billrun_Util::getIn($this->getData(), $this->getPaymentDirection(), []), $billType, $billId);
+		$amount = !empty($relatedBill) ? $relatedBill['amount'] : 0;
 		if (!is_numeric($amount)) {
 			return false;
 		}
