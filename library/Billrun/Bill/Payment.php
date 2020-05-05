@@ -14,6 +14,7 @@
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
+	use Billrun_Traits_ForeignFields;
 	/**
 	 *
 	 * @var string
@@ -1095,6 +1096,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
                 return false;
         }
     }
+	
+	public function setForeignFields ($foreignData = []) {
+		$paymentData = $this->getRawData();
+		$paymentData = array_merge_recursive($paymentData, $foreignData);
+		$this->setRawData($paymentData);
+	}
+	
+	public function getForeignFieldsEntity () {
+		return 'bills';
+	}
 	
 	public function setUserFields ($data, $unsetOriginalUfFromData = false) {
 		$paymentUf = [];

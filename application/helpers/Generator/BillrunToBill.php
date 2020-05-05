@@ -16,6 +16,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	
 	use Billrun_Traits_Api_OperationsLock;
 	use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_ForeignFields;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
@@ -110,9 +111,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
 		}
-		
+		$account = Billrun_Factory::account();
+		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
+		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
-                Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array($bill['aid'], $bill['billrun_key'], $bill['invoice_type']));
+        Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array($bill['aid'], $bill['billrun_key'], $bill['invoice_type']));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
@@ -266,5 +269,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
 	}
 }
