@@ -919,31 +919,36 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 )
 
 //BRCD-2452 reformat paid_by and pays objects to array format
-var bills = db.bills.find({$or: [{pays: {$exists: 1}}, {paid_by: {$exists: 1}}]});
+var bills = db.bills.find({
+	$or: [
+		{"pays.inv": {$exists: 1}},
+		{"pays.rec": {$exists: 1}},
+		{"paid_by.inv": {$exists: 1}},
+		{"paid_by.rec": {$exists: 1}}
+	]
+});
 bills.forEach(function (bill) {
 	var relatedBills = [];
 	var currentBillsKey;
 
-	if (!Array.isArray(bill['pays']) && (!Array.isArray(bill['paid_by']))) {
-		if (typeof bill['pays'] !== 'undefined') {
-			currentBillsKey = 'pays';
-		} else if (typeof bill['paid_by'] !== 'undefined') {
-			currentBillsKey = 'paid_by';
-		}
+	if (typeof bill['pays'] !== 'undefined') {
+		currentBillsKey = 'pays';
+	} else if (typeof bill['paid_by'] !== 'undefined') {
+		currentBillsKey = 'paid_by';
+	}
 
-		if (typeof bill[currentBillsKey] != 'undefined') {
-			for (type in bill[currentBillsKey]) {
-				for (id in bill[currentBillsKey][type]) {
-					relatedBills.push({
-						"type": type,
-						"id": id,
-						"amount": bill[currentBillsKey][type][id]
-					});
-				}
+	if (typeof bill[currentBillsKey] != 'undefined') {
+		for (type in bill[currentBillsKey]) {
+			for (id in bill[currentBillsKey][type]) {
+				relatedBills.push({
+					"type": type,
+					"id": id,
+					"amount": bill[currentBillsKey][type][id]
+				});
 			}
-
-			bill[currentBillsKey] = relatedBills;
-			db.bills.save(bill);
 		}
+
+		bill[currentBillsKey] = relatedBills;
+		db.bills.save(bill);
 	}
 });
