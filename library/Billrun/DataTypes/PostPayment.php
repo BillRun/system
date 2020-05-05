@@ -43,8 +43,15 @@ class Billrun_DataTypes_PostPayment {
 	 */
 	private $transactionId;
 	
+	/**
+	 * Payment data
+	 * @var array
+	 */
+	protected $data;
+	
 	public function __construct(Billrun_DataTypes_PrePayment $prePayment) {
 		$this->prePayment = $prePayment;
+		$this->data = $prePayment->getData();
 	}
 	
 	public function getAmount() {
@@ -114,5 +121,9 @@ class Billrun_DataTypes_PostPayment {
 			default:
 				return false;
 		}
+	}
+	
+	public function getData() {
+		return $this->data;
 	}
 }

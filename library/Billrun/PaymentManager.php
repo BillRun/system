@@ -39,9 +39,11 @@ class Billrun_PaymentManager {
 
 		$postPayments = $this->handlePayment($prePayments, $params); 
 		$this->handleSuccessPayments($postPayments, $params);
+		$payments = $this->getInvolvedPayments($postPayments);
 		return [
-			'payment' => $this->getInvolvedPayments($postPayments),
+			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
+			'payment_data' => array_column($payments, 'payment_data')
 		];
 	}
 
@@ -56,9 +58,10 @@ class Billrun_PaymentManager {
 	protected function preparePayments($method, $paymentsData, $params = []) {
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
-			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
+			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
 			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
 		}
 
@@ -210,7 +213,8 @@ class Billrun_PaymentManager {
 	 * @return boolean
 	 */
 	protected function savePayments($prePayments) {
-		$payments = $this->getInvolvedPayments($prePayments);
+		$response = $this->getInvolvedPayments($prePayments);
+		$payments = array_column($response, 'payments');
 		$ret = Billrun_Bill_Payment::savePayments($payments);
 		if (!$ret || empty($ret['ok'])) {
 			return false;
@@ -230,7 +234,7 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$payment = $prePayment->getPayment();
 			if ($payment) {
-				$payments[] = $payment;
+				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
 			}
 		}
 
@@ -348,11 +352,12 @@ class Billrun_PaymentManager {
 			
 			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
+			$gatewayDetails = $payment->getPaymentGatewayDetails();
 			
 			if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
 				$payment->setPending(false);
 			}
-
+			
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
@@ -381,6 +386,9 @@ class Billrun_PaymentManager {
 
 			if (!empty($gatewayDetails)) {
 				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+			} else {
+				$gatewayAmount = 0;
+				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
 			}
 			
 			if (!empty($pgResponse)) {
@@ -402,5 +410,11 @@ class Billrun_PaymentManager {
 		Billrun_Factory::log($errorMessage, $logLevel);
 		throw new Exception($errorMessage);
 	}
+	
+	protected function setUserFields (&$prePayment) {
+		$payment = $prePayment->getPayment();
+		$payment->setUserFields($prePayment->getData());
+	}
+
 
 }
