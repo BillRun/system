@@ -537,7 +537,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 					Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
 				}
 		}
-
+		$groupingKeys['usagev'] = Billrun_Util::getIn($row, 'usagev', null);
 		$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
 		foreach ($taxes as $tax) {
 			$tax_key = isset($tax['key']) ? $tax['key'] : "";
