@@ -132,6 +132,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 
 			$this->data['urt'] = new MongoDate();
+			foreach ($this->optionalFields as $optionalField) {
+				if (isset($options[$optionalField])) {
+					$this->data[$optionalField] = $options[$optionalField];
+				}
+			}
 		    if (isset($options['uf']) && is_array($options['uf'])) {
 				$data = array_merge($this->getRawData(), $options['uf']);
 				$this->data->setRawData($data);
@@ -1105,13 +1110,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$config = Billrun_Factory::config();
 		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
 		$paymentData = ($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData();
-		if (!empty($this->forced_uf)) {
-			foreach ($this->forced_uf as $field_name => $value) {
-				$paymentUf['uf'][$field_name] = $value;
-			}
-		}
 		if (!empty($confUserFields)) {
 			foreach ($confUserFields as $key => $field_name) {
+				if (!empty($this->forced_uf[$field_name])) {
+					$paymentUf['uf'][$field_name] = $this->forced_uf[$field_name];
+				}
 				if (!empty($data['uf'][$field_name])) {
 					$paymentUf['uf'][$field_name] = $data['uf'][$field_name];
 					if ($unsetOriginalUfFromData) {
@@ -1119,6 +1122,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}			
 				}
 			}
+		}
+		if ($unsetOriginalUfFromData) {
+			unset($paymentData['uf']);
 		}
 		$paymentData = array_merge_recursive($paymentData, $paymentUf);
 		$this->setRawData($paymentData);
