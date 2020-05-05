@@ -56,7 +56,11 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-	/**
+        protected $totalGroupHashMap = array();
+        protected $groupingEnabled = true;
+
+
+        /**
 	 * @todo used only in current balance API. Needs refactoring
 	 */
 	public function __construct($options = array()) {
@@ -65,6 +69,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
+                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -314,6 +319,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
+                $this->totalGroupHashMap = array();
 		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
@@ -334,6 +340,10 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
+                        if($this->groupingEnabled){
+                                Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount(Billrun_Util::getIn($newTotals, 'grouping', array()),
+                                        Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
+                        }
 		}
 		
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
@@ -472,4 +482,36 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
+
+	/**
+	 * This function add to the account totals grouping his subscriber totals group.
+	 * @param type $currentTotalGroups 
+	 * @param type $subTotalGroups 
+	 * @return the new sum up of the account totals grouping
+	 */
+	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
+		foreach ($subTotalGroups as $group) {
+			$count = $group['count'];
+			unset($group['count']);
+			$beforeTax = $group['before_taxes'];
+			unset($group['before_taxes']);
+			$taxes = $group['taxes'];
+			unset($group['taxes']);
+			$afterTax = $group['after_taxes'];
+			unset($group['after_taxes']);
+			$stamp = Billrun_Util::generateArrayStamp($group);
+			$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
+			if (!isset($index)) {
+				$index = count($this->totalGroupHashMap);
+				$currentTotalGroups[$index] = $group;
+				$this->totalGroupHashMap[$stamp] = $index;
+			}
+			$currentTotalGroups[$index]['count'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['count'], 0) + $count;
+			$currentTotalGroups[$index]['before_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['before_taxes'], 0) + $beforeTax;
+			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;
+			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
+		}
+		return $currentTotalGroups;
+	}
+
 }

@@ -22,6 +22,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected $firstDueDate;
 	protected $attachDueDateToCycleEnd = false;
 	protected $initialChargeNotBefore;
+	protected $payment_uf = [];
+	protected $forced_uf = [];
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -86,13 +88,17 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->attachDueDateToCycleEnd)) {
 			$paymentsArr[0]['cycle_attached_date'] = true;
 		}
+		if (!empty($this->forced_uf)) {
+			$paymentsArr[0]['forced_uf'] = $this->forced_uf;
+		}
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
 		$primaryInstallment = current($paymentResponse['payment']);
+		$primaryInstallmentData = current($paymentResponse['payment_data']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$paymentAgreementData = array();
 			$initialChargeNotBefore = !empty($this->initialChargeNotBefore) ? $this->initialChargeNotBefore : $this->getInitialChargeNotBefore($primaryInstallment);
-			$success = $primaryInstallment->splitToInstallments($initialChargeNotBefore);
+			$success = $primaryInstallment->splitToInstallments($initialChargeNotBefore, $primaryInstallmentData);
 			if ($success) {
 				$paymentAgreementData = $primaryInstallment->getRawData()['payment_agreement'];
 			}
@@ -103,8 +109,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		return false;
 	}
 	
-	protected function splitToInstallments($initialChargeNotBefore) {
-		$this->normalizeInstallments();
+	protected function splitToInstallments($initialChargeNotBefore, $primaryInstallmentData = null) {
+		$this->normalizeInstallments($primaryInstallmentData);
 		if (empty($this->installments)) {
 			throw new Exception("Error: Installments are empty");
 		}
@@ -138,9 +144,15 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installments[] = new self($installment);
-		}
-
+			$installment['uf'] = array_filter($installmentPayment, function($field) {
+						return preg_match('/^uf/', $field);
+			},ARRAY_FILTER_USE_KEY);
+			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
+			$installmentObj = new self($installment);
+			$installmentObj->setUserFields($installmentObj->getRawData(), true);
+			$installments[] = $installmentObj;
+			}
+			
 		return $installments;
 	}
 
@@ -160,8 +172,10 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		return round(microtime(true) * 1000);
 	}
 	
-	protected function normalizeInstallments() {
-		if (!empty($this->installments)) {
+	protected function normalizeInstallments($primaryInstallmentData = null) {
+		$installments = !is_null($primaryInstallmentData) && !empty($primaryInstallmentData['installments_agreement']) ? $primaryInstallmentData['installments_agreement'] : null;
+		if (!empty($installments)) {
+			$this->installments = $installments;
 			return;
 		}
 		if (empty($this->installmentsNum) || empty($this->totalAmount)) {

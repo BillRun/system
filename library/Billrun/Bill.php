@@ -1177,7 +1177,6 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 	
-	
 	public function setBalanceEffectiveDate ($date = "now") {
 		$this->data['balance_effective_date'] = new MongoDate(time());
 	}
