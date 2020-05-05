@@ -131,6 +131,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 
 			$this->data['urt'] = new MongoDate();
+			foreach ($this->optionalFields as $optionalField) {
+				if (isset($options[$optionalField])) {
+					$this->data[$optionalField] = $options[$optionalField];
+				}
+			}
 		    if (isset($options['uf']) && is_array($options['uf'])) {
 				$data = array_merge($this->getRawData(), $options['uf']);
 				$this->data->setRawData($data);
