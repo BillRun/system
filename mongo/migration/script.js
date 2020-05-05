@@ -942,8 +942,8 @@ bills.forEach(function (bill) {
 			for (id in bill[currentBillsKey][type]) {
 				relatedBills.push({
 					"type": type,
-					"id": id,
-					"amount": bill[currentBillsKey][type][id]
+					"id": parseInt(id),
+					"amount": parseFloat(bill[currentBillsKey][type][id])
 				});
 			}
 		}

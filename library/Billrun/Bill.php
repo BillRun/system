@@ -1185,7 +1185,7 @@ abstract class Billrun_Bill {
 	 * 
 	 * @param array $relatedBills - the bills object to which we want to add a linked bill	
 	 * @param srting $type - related bill's type. one of: "rec"/"inv"
-	 * @param string $id - related bill's id
+	 * @param int $id - related bill's id
 	 * @param float $amount - related bill's amount
 	 */
 	public static function addRelatedBill(&$relatedBills, $type, $id, $amount) {
@@ -1195,7 +1195,7 @@ abstract class Billrun_Bill {
 
 		$relatedBills[] = [
 			'type' => $type,
-			'id' => $id,
+			'id' => intval($id),
 			'amount' => floatval($amount),
 		];
 	}
@@ -1205,11 +1205,11 @@ abstract class Billrun_Bill {
 	 * 
 	 * @param array $relatedBills - array of related bills
 	 * @param srting $type - related bill's type. one of: "rec"/"inv"
-	 * @param string $id - related bill's id
+	 * @param int $id - related bill's id
 	 */
 	public static function findRelatedBill($relatedBills, $type, $id) {
 		foreach ($relatedBills as $i => $bill) {
-			if ($bill['type'] == $type && $bill['id'] == $id) {
+			if ($bill['type'] == $type && $bill['id'] == intval($id)) {
 				return $i;
 			}
 		}
@@ -1222,7 +1222,7 @@ abstract class Billrun_Bill {
 	 * 
 	 * @param array $relatedBills - array of related bills
 	 * @param srting $type - related bill's type. one of: "rec"/"inv"
-	 * @param string $id - related bill's id
+	 * @param int $id - related bill's id
 	 */
 	public static function getRelatedBill($relatedBills, $type, $id) {
 		$index = Billrun_Bill::findRelatedBill($relatedBills, $type, $id);
