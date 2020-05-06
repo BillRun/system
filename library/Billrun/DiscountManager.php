@@ -1482,8 +1482,8 @@ class Billrun_DiscountManager {
 		$discountLine['stamp'] = Billrun_Util::generateArrayStamp($discountLine);
 		$discountLine['process_time'] = new MongoDate();
 		$discountLine = $this->addTaxationData($discountLine);
-		
-		$discountLine = array_merge($discountLine, $this->getForeignFields([], array_merge($eligibleLine, $discountLine), true), $addToCdr);
+		$foreignEntityKey = $isChargeLine ? 'charge' : 'discount';
+		$discountLine = array_merge($discountLine, $this->getForeignFields([$foreignEntityKey => $discount], array_merge($eligibleLine, $discountLine), true), $addToCdr);
 		return $discountLine;
 	}
 	

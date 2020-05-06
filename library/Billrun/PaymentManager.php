@@ -5,6 +5,8 @@
  */
 class Billrun_PaymentManager {
 
+	use Billrun_Traits_ForeignFields;
+	
 	protected static $instance;
 
 	public function __construct($params = []) {
@@ -56,11 +58,15 @@ class Billrun_PaymentManager {
 	 * @returns array of pre-payment data for every payment
 	 */
 	protected function preparePayments($method, $paymentsData, $params = []) {
+		$account = !empty($params['account']) ? $params['account'] : null;
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
 			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
 			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			if (!is_null($account)) {
+				$this->setPaymentForeignFields($prePayment, $account);
+			}
 			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
 		}
@@ -235,6 +241,7 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$payment = $prePayment->getPayment();
 			if ($payment) {
+				$payment->setBalanceEffectiveDate();
 				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
 			}
 		}
@@ -418,4 +425,13 @@ class Billrun_PaymentManager {
 		$payment->setUserFields($prePayment->getData());
 	}
 
+
+	protected function setPaymentForeignFields (&$payment, $account) {
+		$foreignData = $this->getForeignFields(array('account' => $account ));
+		$payment->getPayment()->setForeignFields($foreignData);
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
+	}
 }

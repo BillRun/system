@@ -491,6 +491,8 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			$usagev = $group['usagev'];
+			unset($group['usagev']);
 			$count = $group['count'];
 			unset($group['count']);
 			$beforeTax = $group['before_taxes'];
@@ -506,6 +508,7 @@ class Billrun_Cycle_Account_Invoice {
 				$currentTotalGroups[$index] = $group;
 				$this->totalGroupHashMap[$stamp] = $index;
 			}
+			$currentTotalGroups[$index]['usagev'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['usagev'], 0) + $usagev;
 			$currentTotalGroups[$index]['count'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['count'], 0) + $count;
 			$currentTotalGroups[$index]['before_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['before_taxes'], 0) + $beforeTax;
 			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;

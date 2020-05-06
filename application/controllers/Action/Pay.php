@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  */
 class PayAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
+	use Billrun_Traits_ForeignFields;
 	
 	public function execute() {
 		$this->allowed();
@@ -25,6 +26,7 @@ class PayAction extends ApiAction {
 		$txIdArray = json_decode($request->get('txid'), TRUE);
 		$deposits = array();
 		$jsonPayments = $request->get('payments');
+		$account = Billrun_Factory::account();
 		$uf = $request->get('uf');
 		if (!empty($uf)) {
 			$params['forced_uf'] = json_decode($uf, true);
@@ -53,6 +55,7 @@ class PayAction extends ApiAction {
 				throw new Exception("Method installment_agreement must be transferred with action split_bill");
 			}
 			foreach ($paymentsArr as $key => $inputPayment) {
+				$current_account = $account->loadAccountForQuery(['aid' => $inputPayment['aid']]);
 				if (empty($inputPayment['deposit'])) {
 					continue;
 				}
@@ -60,6 +63,10 @@ class PayAction extends ApiAction {
 				$this->processPaymentUf($inputPayment);
 				$deposit = new $className($inputPayment, $params);
 				$deposit->setUserFields($deposit->getRawData(), true);
+				$foreignData = $this->getForeignFields(array('account' => $current_account));
+				if (!is_null($current_account)) {
+					$deposit->setForeignFields($foreignData);
+				}
 				$deposits[] = $deposit;
 				$deposit->save();
 				unset($paymentsArr[$key]);
@@ -75,6 +82,7 @@ class PayAction extends ApiAction {
 				)));
 				return;
 			}
+			$params['account'] = $current_account;
 			$payResponse = Billrun_PaymentManager::getInstance()->pay($method, $paymentsArr, $params);
 			$payments = $payResponse['payment'];
 			$emailsToSend = array();
@@ -164,6 +172,8 @@ class PayAction extends ApiAction {
 	 */
 	protected function executeSplitBill($request) {
 		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		$account = Billrun_Factory::account();
+		$params['account'] = $account->loadAccountForQuery(['aid' => $params['aid']]);
 		$executeSplitBill = true;
 		$params['amount'] = !empty($request->get('amount')) ? floatval($request->get('amount')) : 0;
 		$params['installments_num'] = !empty($request->get('installments_num')) ?  $request->get('installments_num') : 0;
@@ -211,7 +221,7 @@ class PayAction extends ApiAction {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
 			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
+Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
 			throw new Exception("Failed executing split debt for aid: " . $params['aid']);
 		}
@@ -326,4 +336,9 @@ class PayAction extends ApiAction {
 			}
 		}
 	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
+	}
+	
 }

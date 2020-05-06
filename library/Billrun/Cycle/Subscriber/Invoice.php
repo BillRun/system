@@ -540,7 +540,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 					Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
 				}
 		}
-
 		$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
 		foreach ($taxes as $tax) {
 			$tax_key = isset($tax['key']) ? $tax['key'] : "";
@@ -566,6 +565,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	protected function updateTotalsGrouping($row, $index) {
+		$this->data['totals']['grouping'][$index]['usagev'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['usagev'], 0) + Billrun_Util::getIn($row, 'usagev', 0);;
 		$this->data['totals']['grouping'][$index]['count'] =  Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['count'], 0) + 1;
 		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
 		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);

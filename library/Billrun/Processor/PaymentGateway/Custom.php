@@ -198,7 +198,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
-                                $this->informationArray['transactions']['confirmed']++;
+				$this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
