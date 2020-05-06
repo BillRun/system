@@ -1176,4 +1176,12 @@ abstract class Billrun_Bill {
 		}
 		return self::getBills($query);
 	}
+	
+	/**
+	 * Function that sets balance effective date, in every payment's bill.
+	 * @param int $date - unix timestamp to set as the balance effective date.
+	 */
+	public function setBalanceEffectiveDate ($date = null) {
+		$this->data['balance_effective_date'] = new MongoDate(!empty($date)? $date : time());
+	}
 }
