@@ -91,7 +91,9 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		if (!empty($this->forced_uf)) {
 			$paymentsArr[0]['forced_uf'] = $this->forced_uf;
 		}
-		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr);
+		$account = Billrun_Factory::account();
+		$params['account'] = $account->loadAccountForQuery(['aid' => $this->data['aid']]);
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr, $params);
 		$primaryInstallment = current($paymentResponse['payment']);
 		$primaryInstallmentData = current($paymentResponse['payment_data']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
@@ -150,9 +152,16 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
 			$installmentObj->setUserFields($installmentObj->getRawData(), true);
-			$installments[] = $installmentObj;
+			$account = Billrun_Factory::account();
+			$current_account = $account->loadAccountForQuery(['aid' => $installment['aid']]);
+			$foreignData = $this->getForeignFields(array('account' => $current_account));
+			if (!is_null($current_account)) {
+				$installmentObj->setForeignFields($foreignData);
 			}
 			
+			$installments[] = $installmentObj;
+		}
+
 		return $installments;
 	}
 
