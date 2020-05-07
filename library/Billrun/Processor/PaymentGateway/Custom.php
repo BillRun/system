@@ -21,8 +21,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
 	protected $informationArray = [];
-	protected $billSavedFields = array();    
-        
+	protected $billSavedFields = array();
 	
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
@@ -320,5 +319,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	
+	public function getCustomPaymentGatewayFields () {
+		return [
+				'cpg_name' => [str_replace("_", "", !empty($this->gatewayName) ? $this->gatewayName : "")],
+				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
+				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
+	}
 }
