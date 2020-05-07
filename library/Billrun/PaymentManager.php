@@ -234,7 +234,6 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$payment = $prePayment->getPayment();
 			if ($payment) {
-				$payment->setBalanceEffectiveDate();
 				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
 			}
 		}
