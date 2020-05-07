@@ -433,7 +433,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		$result = array();
 		if (!$this->forceAccountIds) {
-			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size);
+			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, null, $this->invoicing_days);
 			$result['data'] = $data;
 			return $result;
 		}
