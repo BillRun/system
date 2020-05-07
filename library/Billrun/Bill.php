@@ -1254,4 +1254,29 @@ abstract class Billrun_Bill {
 		
 		return $ret;
 	}
+	
+	/**
+	 * converts related bills (pays/paid_by) of given array
+	 * 
+	 * @param array $paymentParams
+	 */
+	public static function convertRelatedBills(&$paymentParams) {
+		foreach (['pays', 'paid_by'] as $dir) {
+			if (empty($paymentParams[$dir])) {
+				continue;
+			}
+			if (!Billrun_Util::isAssoc($paymentParams[$dir])) { // already in the new format
+				continue;
+			}
+			
+			$newPaymentParam = [];
+			foreach ($paymentParams[$dir] as $billType => $bills) {
+				foreach ($bills as $billId => $amount) {
+					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount);
+				}
+			}
+			
+			$paymentParams[$dir] = $newPaymentParam;
+		}
+	}
 }

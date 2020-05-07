@@ -61,6 +61,7 @@ class Billrun_PaymentManager {
 		$account = !empty($params['account']) ? $params['account'] : null;
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
+			Billrun_Bill::convertRelatedBills($paymentData);
 			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
 			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
