@@ -35,6 +35,8 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	}
 	
 	protected function updatePayments($row, $payment = null) {
+		$customFields = $this->getCustomPaymentGatewayFields();
+		$payment->setExtraFields($customFields, array_keys($customFields));
 		if (is_null($payment)) {
                         $message = 'None matching payment for ' . $row['stamp'];
 			Billrun_Factory::log($message, Zend_Log::ALERT);
@@ -103,4 +105,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		});
 	}
 
+	public function getType () {
+		return static::$type;
+	}
 }
