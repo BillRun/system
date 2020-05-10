@@ -56,7 +56,11 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-	/**
+        protected $totalGroupHashMap = array();
+        protected $groupingEnabled = true;
+
+
+        /**
 	 * @todo used only in current balance API. Needs refactoring
 	 */
 	public function __construct($options = array()) {
@@ -65,6 +69,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 		$this->initInvoiceDates();
+                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -197,7 +202,7 @@ class Billrun_Cycle_Account_Invoice {
 		foreach($this->subscribers as  $subscriber) {
 			$sid = $subscriber->getData()['sid'];
 			if( !empty($sidDiscounts[$subscriber->getData()['sid'] ]) ) {
-				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
+				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], true);
 			}
 		}
 		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
@@ -314,6 +319,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
+                $this->totalGroupHashMap = array();
 		Billrun_Factory::log('Updating totals.', Zend_Log::DEBUG);
 		$rawData = $this->data->getRawData();
 		
@@ -334,12 +340,22 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log('updating totals based on: '. count($this->subscribers) .' subscribers.', Zend_Log::INFO);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
+                        if($this->groupingEnabled){
+                                Billrun_Util::setIn($newTotals, 'grouping', $this->sumUpGroupingTotalForAccount(Billrun_Util::getIn($newTotals, 'grouping', array()),
+                                        Billrun_Util::getIn($sub->getTotals(),'grouping', array())));
+                        }
 		}
 		
 		$invoicingDay = Billrun_Billingcycle::getDatetime($rawData['billrun_key']);
 		
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $invoicingDay);
+		$config = Billrun_Factory::config();
+		$pastBalanceConfig = $config->getConfigValue('billrun.past_balance', []);
+		$past_balance_date = $invoicingDay;
+		if (!empty($pastBalanceConfig) && !empty($rawData[$pastBalanceConfig['anchor_field']])) {
+			$past_balance_date = Billrun_Util::calcRelativeTime($pastBalanceConfig['relative_time'],date($rawData[$pastBalanceConfig['anchor_field']]->sec));
+		}
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), date('Y-m-d', $past_balance_date));
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
@@ -466,4 +482,39 @@ class Billrun_Cycle_Account_Invoice {
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
 		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
+
+	/**
+	 * This function add to the account totals grouping his subscriber totals group.
+	 * @param type $currentTotalGroups 
+	 * @param type $subTotalGroups 
+	 * @return the new sum up of the account totals grouping
+	 */
+	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
+		foreach ($subTotalGroups as $group) {
+			$usagev = $group['usagev'];
+			unset($group['usagev']);
+			$count = $group['count'];
+			unset($group['count']);
+			$beforeTax = $group['before_taxes'];
+			unset($group['before_taxes']);
+			$taxes = $group['taxes'];
+			unset($group['taxes']);
+			$afterTax = $group['after_taxes'];
+			unset($group['after_taxes']);
+			$stamp = Billrun_Util::generateArrayStamp($group);
+			$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
+			if (!isset($index)) {
+				$index = count($this->totalGroupHashMap);
+				$currentTotalGroups[$index] = $group;
+				$this->totalGroupHashMap[$stamp] = $index;
+			}
+			$currentTotalGroups[$index]['usagev'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['usagev'], 0) + $usagev;
+			$currentTotalGroups[$index]['count'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['count'], 0) + $count;
+			$currentTotalGroups[$index]['before_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['before_taxes'], 0) + $beforeTax;
+			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;
+			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
+		}
+		return $currentTotalGroups;
+	}
+
 }

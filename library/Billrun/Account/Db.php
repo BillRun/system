@@ -19,7 +19,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
-	
+
 	protected static $type = 'db';
 	
 	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
@@ -31,7 +31,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		$this->collection = Billrun_Factory::db()->subscribersCollection();		
 	}
 
 	/**
@@ -72,21 +72,24 @@ class Billrun_Account_Db extends Billrun_Account {
 		$accounts = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			if(isset($query['limit'])) {
+			if (isset($query['limit'])) {
 				$limit = $query['limit'];
 				unset($query['limit']);
 			}
-			if(isset($query['time'])) {
+
+			if (isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
-			if(isset($query['id'])) {
+
+			if (isset($query['id'])) {
 				$id = $query['id'];
 				unset($query['id']);
 			}
+			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
-				$account = $this->collection->query($query)->cursor()->limit(1)->current();
+				$account = $result->limit(1)->current();
 				if ($account->isEmpty()) {
 					continue;
 				}
@@ -99,13 +102,12 @@ class Billrun_Account_Db extends Billrun_Account {
 				if (empty($accountsForQuery)) {
 					continue;
 				}
-                                if (isset($id)) {
-                                    foreach($accountsForQuery as $account){
-					$account->set('id', $id);
-                                        $accounts[] = $account;  
-                                    }
+				foreach ($accountsForQuery as $account) {
+					if (isset($id)) {
+						$account->set('id', $id);
+					}
+					$accounts[] = $account;
 				}
-                                     
 			}
 		}
 		return $accounts;
@@ -122,9 +124,8 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
-	}
+		}
 
-		
 	/**
 	 * 
 	 * Method to Save as 'Close And New' item
@@ -171,11 +172,12 @@ class Billrun_Account_Db extends Billrun_Account {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$query[$key] = $value;
 				continue;
-			}
+		}
 			switch ($key) {
 				default:
-			}
 		}
+	}
+	
 		return $query;
 	}
 }
