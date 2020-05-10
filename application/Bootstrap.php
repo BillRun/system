@@ -40,11 +40,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin_name => $plugins_conf) {
-				$pluginObject = new $plugin_name;
+				$pluginObject = new $plugin_name($plugins_conf['configuration']['values']);
 				$dispatcher->attach($pluginObject);
 				$pluginObject->setAvailability($plugins_conf['enabled']);
-				if (isset($plugins_conf['values'])) {
-					$pluginObject->setOptions($plugins_conf['values']);
+				if (isset($plugins_conf['configuration']['values'])) {
+					$pluginObject->setOptions($plugins_conf['configuration']['values']);
 				}
 			}
 		}
