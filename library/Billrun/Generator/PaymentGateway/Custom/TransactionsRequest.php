@@ -172,7 +172,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$this->data[] = $line;
 			$currentPayment->setExtraFields([
 								'pg_request' => $this->billSavedFields,
-								'cpg_name' => [str_replace("_", "", !empty($this->gatewayName) ? $this->gatewayName : "")],
+								'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
 								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
 								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
 				], ['cpg_name', 'cpg_type', 'cpg_file_type']);
