@@ -21,13 +21,12 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
 	protected $informationArray = [];
-	protected $billSavedFields = array();    
-        
+	protected $billSavedFields = array();
 	
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
-		$this->gatewayName = str_replace('_', '', ucwords($options['name'], '_'));
-		$this->receiverSource = $this->gatewayName . str_replace('_', '', ucwords($options['type'], '_'));
+		$this->gatewayName = $options['name']; 
+		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
                 $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
@@ -320,5 +319,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	
+	public function getCustomPaymentGatewayFields () {
+		return [
+				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
+				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
+	}
 }
