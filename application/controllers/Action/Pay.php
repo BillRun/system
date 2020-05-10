@@ -88,6 +88,7 @@ class PayAction extends ApiAction {
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getBillMethod();
+				$payment->setBalanceEffectiveDate();
 				if (in_array($method, array('wire_transfer', 'cheque')) && $payment->getDir() == 'tc') {
 					if (!isset($emailsToSend[$method])) {
 						$emailsToSend[$method] = array(
@@ -105,6 +106,7 @@ class PayAction extends ApiAction {
 					);
 					$emailsToSend[$method]['entities'][] = $entity;
 				}
+				$payment->save();
 			}
 			if ($emailsToSend) {
 				$subscriber = Billrun_Factory::subscriber();

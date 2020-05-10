@@ -267,6 +267,14 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				'rate' => $data['tax'],
 				'description' => $data['description'] ?: 'VAT',
 			];
+
+			$foreignFields = Billrun_Utils_ForeignFields::getForeignFields('tax');
+			foreach ($foreignFields as $foreignField) {
+				$fieldName = Billrun_Util::getIn($foreignField, 'foreign.field', '');
+				if (!empty($data[$fieldName])) {
+					$taxes[$category][$fieldName] = $data[$fieldName];
+				}
+			}
 		}
 		
 		return $taxes;
