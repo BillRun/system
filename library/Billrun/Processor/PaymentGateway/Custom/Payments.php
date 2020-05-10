@@ -35,6 +35,8 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	}
 
 	protected function updatePayments($row, $payment = null) {
+		$customFields = $this->getCustomPaymentGatewayFields();
+		$payment->setExtraFields($customFields, array_keys($customFields));
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
 		if (count($bill) == 0) {
 			$message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
@@ -80,5 +82,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 //			$id = intval($id);
 //		}
 		return $this->bills->query(array('type' => 'inv', 'invoice_id' => intval($id)))->cursor();
+	}
+	
+	public function getType () {
+		return static::$type;
 	}
 }
