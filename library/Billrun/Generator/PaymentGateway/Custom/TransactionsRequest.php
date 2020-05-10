@@ -170,7 +170,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
-			$currentPayment->setExtraFields($this->billSavedFields, 'pg_request');
+			$currentPayment->setExtraFields([
+								'pg_request' => $this->billSavedFields,
+								'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
+								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
+				], ['cpg_name', 'cpg_type', 'cpg_file_type']);
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
