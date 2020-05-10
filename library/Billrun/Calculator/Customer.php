@@ -86,7 +86,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['customer_identification_translation'])) {
 			$this->translateCustomerIdentToAPI = $this->getCustomerIdentificationTranslation();
 		}
-		if (isset($options['calculator']['bulk'])) {
+		if (isset($options['calculator']['bulk']) && $this->checkIfExistInForeignEntities('subscriber')) {
 			$this->bulk = $options['calculator']['bulk'];
 		}
 		if (isset($options['calculator']['accounts']['bulk']) && $this->checkIfExistInForeignEntities('account')) {

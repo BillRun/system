@@ -81,12 +81,13 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				if (empty($subsForQuery)) {
 					continue;
 				}
-				if (isset($id)) {
-					foreach ($subsForQuery as $sub) {
+				foreach ($subsForQuery as $sub) {
+					if (isset($id)) {
 						$sub->set('id', $id);
-						$subs[] = $sub;
 					}
+					$subs[] = $sub;
 				}
+				
 			}
 		}
 		return $subs;
