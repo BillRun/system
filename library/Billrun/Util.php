@@ -1117,7 +1117,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnStatus  = false) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1158,7 +1158,7 @@ class Billrun_Util {
 			Billrun_Factory::log("Initiated HTTP request to " . $urlHost, Zend_Log::DEBUG);
 			$response = $client->request();
 			Billrun_Factory::log("Got HTTP response from " . $urlHost, Zend_Log::DEBUG);
-			$output = $response->getBody();
+			$output = !$returnStatus ? $response->getBody() : ['body' => $response->getBody(), 'status' => $response->getStatus()];
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
 			if(!$response) {
