@@ -303,8 +303,8 @@ abstract class Billrun_Bill {
 	protected function updateLeft() {
 		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
-			foreach ($this->getPaidBills() as $paidBills) {
-				$this->data['left'] -= array_sum($paidBills);
+			foreach ($this->getPaidBills() as $paidBill) {
+				$this->data['left'] -= $paidBill['amount'];
 			}
 			if (abs($this->data['left']) < Billrun_Bill::precision) {
 				$this->data['left'] = 0;
@@ -511,7 +511,7 @@ abstract class Billrun_Bill {
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
 		} else {
-			$paidBy[$relatedBillId]['amount'] += floatval($amount);
+			$paymentRawData['pays'][$relatedBillId]['amount'] += floatval($amount);
 		}
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
