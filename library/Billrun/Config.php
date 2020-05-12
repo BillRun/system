@@ -497,5 +497,15 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
+	
+	/**
+	 * method to get all input processors settings
+	 * 
+	 * @param boolean $enabledOnly - indicates if input processor enabled or not
+	 * @return array - input processors settings
+	 */
+	public function getInvoiceDisplayConfig() {		
+		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
 
 }
