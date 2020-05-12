@@ -22,6 +22,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		'data' => 1024*1024
 	);
 	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
+	public $invoice_tabels = [];
 	
 	/*
 	 * get and set lines of the account
@@ -266,16 +267,16 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $retMsgs;
 	}
 	
-	public function createInvoiceTables ($lines) {
+	public function createInvoiceTables ($lines, $types = []) {
 		$config = Billrun_Factory::config();
 		$invoice_display = $config->getInvoiceDisplayConfig();
-		$tabels = [];
 		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
 			foreach ($lines as $index => $line) {
-				$this->associateLineToTable($tabels, $line, $tabels_config);
+				if (in_array($line['type'],$types)) {
+					$this->associateLineToTable($this->invoice_tabels, $line, $tabels_config);
+				}
 			}
 		}
-		return $tabels;
 	}
 	
 	public function associateLineToTable(&$tabels, $line, $tabels_config) {

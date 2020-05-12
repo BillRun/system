@@ -96,7 +96,7 @@
 			<div class="section-body">
 				<?php 
 						if(!empty($sidLines)) {
-							echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $usage_line_types) ); 
+							echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $usage_line_types, 'tabels' => $this->invoice_tabels) ); 
 						}
 				?>
 			</div><!-- /.section-body -->
