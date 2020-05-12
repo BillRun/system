@@ -113,7 +113,7 @@ class Billrun_EntityGetter_Filters_Base {
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
 		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
 		$firstVal = $this->getRowFieldValue($row, $firstValKey, $firstValRegex);
-		$preFunction = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'prefunction'), false);
+		$preFunction = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'preFunction'), false);
 		if ($preFunction) {
 			$firstVal = $this->applyPreFunction($firstVal, $preFunction);
 		}
@@ -198,7 +198,7 @@ class Billrun_EntityGetter_Filters_Base {
 			} else { // unix timestamp
 				$dateFuncInput = $val;
 			}
-			return date($this->datePreFunctions[$preFunction], $val);
+			return date($this->datePreFunctions[$preFunction], $dateFuncInput);
 		}
 
 		return $val;
