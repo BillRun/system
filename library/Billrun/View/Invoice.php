@@ -266,4 +266,12 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $retMsgs;
 	}
 	
+	public function createInvoiceTables ($lines) {
+		$config = Billrun_Factory::config();
+		$config->getInvoiceDisplayConfig();
+		foreach ($lines as $index => $line) {
+			
+		}
+	}
+	
 }
