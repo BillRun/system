@@ -268,10 +268,36 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function createInvoiceTables ($lines) {
 		$config = Billrun_Factory::config();
-		$config->getInvoiceDisplayConfig();
-		foreach ($lines as $index => $line) {
-			
+		$invoice_display = $config->getInvoiceDisplayConfig();
+		$tabels = [];
+		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
+			foreach ($lines as $index => $line) {
+				$this->associateLineToTable($tabels, $line, $tabels_config);
+			}
 		}
+		return $tabels;
 	}
 	
+	public function associateLineToTable(&$tabels, $line, $tabels_config) {
+		$meetConditions = 0;
+		foreach ($tabels_config as $tabel_index => $tabel_config){
+			foreach ($tabel_config['conditions'] as $condition){
+				if (Billrun_Util::isConditionMet($line, $condition)){
+					$meetConditions = 1;
+				}
+            }
+			if ($meetConditions) {
+				$row = $this->getTableRow($line, $tabel_config['columns']);
+				$tabels[$tabel_index][] = $row;
+			}
+		}
+	}	
+	
+	public function getTableRow($line, $columns) {
+		$row = [];
+		foreach ($columns as $index => $column) {
+			$row[$column['label']] = Billrun_Util::getIn($line, $column['field_name'], "");
+		}
+		return $row;
+	}
 }

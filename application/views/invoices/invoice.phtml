@@ -24,8 +24,8 @@
 <?php
 		print $this->render($this->sumup_template);
 		if($render_subscription_details) {
-			$this->createInvoiceTables($this->lines);
-			print $this->render($this->details_template);
+			$tabels = $this->createInvoiceTables($this->lines);
+			print $this->render($this->details_template, $tabels);
 		}
 ?>
 			</div>
