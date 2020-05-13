@@ -1,6 +1,6 @@
 <div class="table table-default">
 	<?php if (!empty($tabels)) { 
-		foreach ($this->invoice_tabels as $index => $tabel) { ?>
+		foreach ($tabels as $index => $tabel) { ?>
 			<table>
 			<?php foreach ($tabel as $line_index => $line_data) {
 				if ($line_index == 0) { ?>
@@ -21,35 +21,5 @@
 			<?php } ?>
 			</tbody></table>
 		<?php }
-	} else {
-	?>
-		<table>
-			<thead>
-				<tr>
-					<th>Date &amp; Time</th>
-					<th>Type</th>
-					<th>Rate</th>
-					<th>Volume</th>
-					<th>Amount</th>
-				</tr>
-			</thead>
-
-			<tbody>
-				<?php if (!empty($lines)) { 
-						$flippedKeys = array_flip($details_keys);
-					?>			
-					<?php foreach ($lines as $line) { ?>
-						<?php if (!in_array($line['type'],$lines_detail_types)) { continue; } ?>
-						<tr>
-							<td><?php echo date($datetime_format, $line['urt']->sec); ?></td>
-							<td><?php echo (!empty($flippedKeys[$line['usaget']]) ? $flippedKeys[$line['usaget']] : (empty($flippedKeys[$line['type']]) ? $line['type'] : $flippedKeys[$line['type']])) ; ?></td>
-							<td><?php echo $this->getLineUsageName($line); ?></td>
-							<td><?php echo $this->getLineUsageVolume($line); ?></td>
-							<td><?php echo number_format($line['aprice'], 2); ?></td>
-						</tr>
-					<?php } ?>
-				<?php } ?>
-			</tbody>
-		</table>
-	<?php } ?>
+	} ?>
 </div><!-- /.table table-default -->
