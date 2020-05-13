@@ -1056,28 +1056,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
-	/**
-	 * Function to set custom fields in the paymet objects
-	 * @param array $fields - array of "field path" => "field value" (field valut can be an array) to insert.
-	 * @param boolean $mergeToExistingArray - array of fields names - for fields that their path leads to an array that needs
-	 * to be merge with the given "field_value" - which have to be an array in this case as well. 
-	 */
-	public function setExtraFields($fields, $mergeToExistingArray = []) {
-		if (empty($fields)) {
-			return;
-		}
-		$paymentData = $this->getRawData();
-		foreach ($fields as $path => $value) {
-			if (!in_array($path, $mergeToExistingArray) || in_array($path, $mergeToExistingArray) && empty(Billrun_Util::getIn($paymentData, $path))) {
-				Billrun_Util::setIn($paymentData, $path, $value);
-			} else {
-				$currentArray = Billrun_Util::getIn($paymentData, $path);
-				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
-			}
-		}
-		$this->setRawData($paymentData);
-		$this->save();
-	}
 	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.

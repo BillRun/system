@@ -193,6 +193,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill = Billrun_Bill::getInstanceByData($bill);
 			} 
 			if ($fileStatus == 'only_rejections') {
+				$customFields = $this->getCustomPaymentGatewayFields();
+				$bill->setExtraFields($customFields, array_keys($customFields));
 				$bill->markApproved('Completed');
 				$bill->setPending(false);
 				$bill->updateConfirmation();
@@ -208,6 +210,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			} else if ($fileStatus == 'only_acceptance') {
 				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
 				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
+				$customFields = $this->getCustomPaymentGatewayFields();
+				$billToReject->setExtraFields($customFields, array_keys($customFields));
 				Billrun_Factory::log('Rejecting transaction  ' . $billToReject->getId(), Zend_Log::INFO);
 				$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
 				$rejection->setConfirmationStatus(false);
