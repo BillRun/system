@@ -245,7 +245,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	
 	public function getInCollection($aids = array()) {
 		$results = array();
-		$exempted = $this->getExcludedFromCollection($aids);
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
 		// white list exists but aids not included
@@ -256,12 +255,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!is_null($subject_to) && !empty($subject_to)) {
 			$params['aid']['$in'] = $subject_to;
 		}
-		// black list exist and include aids
-		if (!empty($exempted)) {
-			$params['aid']['$nin'] = $exempted;
-		}
 		$query = $this->buildQuery($params);
-		$this->loadAccounts($query);
+		$this->loadAccountsForQuery($query);
 		$cursor = $this->getCustomerData();
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();

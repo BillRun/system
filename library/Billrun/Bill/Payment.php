@@ -14,6 +14,7 @@
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
+	use Billrun_Traits_ForeignFields;
 	/**
 	 *
 	 * @var string
@@ -89,6 +90,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['charge'])) {
 				$this->data['charge'] = $options['charge'];
 			}
+
 			if (isset($options['denial'])) {
 				$this->data['denial'] = $options['denial'];
 				if ($this->data['due'] >= 0) {
@@ -132,16 +134,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			if (isset($options['uf'])) {
-				$this->data['uf'] = $options['uf'];
-			}
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
 				}
 			}
+		    if (isset($options['uf']) && is_array($options['uf'])) {
+				$data = array_merge($this->getRawData(), $options['uf']);
+				$this->data->setRawData($data);
+			}
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
+			$this->forced_uf = !empty($options['forced_uf']) ? $options['forced_uf'] : [];
 			if(isset($options['source'])){
 				if(!in_array($options['source'], $this->known_sources)){
 					throw new Exception("Undefined payment source: " . $options['source'] . ", for account id: " . $this->data['aid'] . ", amount: " . $this->data['amount'] . ". This payment wasn't saved.");
@@ -465,6 +469,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function updateConfirmation() {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new MongoDate();
+		$this->setBalanceEffectiveDate();
 		$this->save();
 	}
 
@@ -564,6 +569,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
+		$options['pretend_bills'] = !empty($chargeOptions['bills']);
 
 		$query['aid'] = array(
 			'$in' => $customersAids
@@ -1004,6 +1010,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['amount'] = $depositAmount;
 		$this->data['due'] = -$depositAmount;
 		$this->data['left'] = $depositAmount;
+		$this->setBalanceEffectiveDate();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
@@ -1051,12 +1058,26 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function addUserFields($fields = array()) {
 		$this->data['uf'] = $fields;
 	}
-	public function setExtraFields($fields, $path) {
+	
+	/**
+	 * Function to set custom fields in the paymet objects
+	 * @param array $fields - array of "field path" => "field value" (field valut can be an array) to insert.
+	 * @param boolean $mergeToExistingArray - array of fields names - for fields that their path leads to an array that needs
+	 * to be merge with the given "field_value" - which have to be an array in this case as well. 
+	 */
+	public function setExtraFields($fields, $mergeToExistingArray = []) {
 		if (empty($fields)) {
 			return;
 		}
 		$paymentData = $this->getRawData();
-		Billrun_Util::setIn($paymentData, $path, $fields);
+		foreach ($fields as $path => $value) {
+			if (!in_array($path, $mergeToExistingArray) || in_array($path, $mergeToExistingArray) && empty(Billrun_Util::getIn($paymentData, $path))) {
+				Billrun_Util::setIn($paymentData, $path, $value);
+			} else {
+				$currentArray = Billrun_Util::getIn($paymentData, $path);
+				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
+			}
+		}
 		$this->setRawData($paymentData);
 		$this->save();
 	}
@@ -1091,9 +1112,44 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
             case 'fc':
                 return $this->getPaidBills();
             case 'tc':
-                return $payment->getPaidByBills();
+                return $this->getPaidByBills();
             default:
                 return false;
         }
     }
+	
+	public function setForeignFields ($foreignData = []) {
+		$paymentData = $this->getRawData();
+		$paymentData = array_merge_recursive($paymentData, $foreignData);
+		$this->setRawData($paymentData);
+	}
+	
+	public function getForeignFieldsEntity () {
+		return 'bills';
+	}
+	
+	public function setUserFields ($data, $unsetOriginalUfFromData = false) {
+		$paymentUf = [];
+		$config = Billrun_Factory::config();
+		$confUserFields = $config->getConfigValue('payments.offline.uf', []);
+		$paymentData = ($this instanceof Billrun_Bill) ? $this->getRawData() : $this->getData();
+		if (!empty($confUserFields)) {
+			foreach ($confUserFields as $key => $field_name) {
+				if (!empty($this->forced_uf[$field_name])) {
+					$paymentUf['uf'][$field_name] = $this->forced_uf[$field_name];
+				}
+				if (!empty($data['uf'][$field_name])) {
+					$paymentUf['uf'][$field_name] = $data['uf'][$field_name];
+					if ($unsetOriginalUfFromData) {
+						unset($paymentData['uf'][$field_name]);
+					}			
+				}
+			}
+		}
+		if ($unsetOriginalUfFromData) {
+			unset($paymentData['uf']);
+		}
+		$paymentData = array_merge_recursive($paymentData, $paymentUf);
+		$this->setRawData($paymentData);
+	}
 }

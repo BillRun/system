@@ -35,6 +35,8 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	}
 	
 	protected function updatePayments($row, $payment = null) {
+		$customFields = $this->getCustomPaymentGatewayFields();
+		$payment->setExtraFields($customFields, array_keys($customFields));
 		if (is_null($payment)) {
                         $message = 'None matching payment for ' . $row['stamp'];
 			Billrun_Factory::log($message, Zend_Log::ALERT);
@@ -42,6 +44,18 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			return;
 		}
 		$row['aid'] = $payment->getAid();
+		if ($payment->isRejection() || $payment->isRejected()) {
+			$message = "Payment " . $payment->getId() . " is already rejected and can't been denied";
+			Billrun_Factory::log($message, Zend_Log::ALERT);
+			$this->informationArray['errors'][] = $message;
+			return;
+		}
+		if ($payment->isPendingPayment()) {
+			$message = "Payment " . $payment->getId() . " is already pending and can't been denied";
+			Billrun_Factory::log($message, Zend_Log::ALERT);
+			$this->informationArray['errors'][] = $message;
+			return;
+		}
 		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount(),  Billrun_Bill::precision)) {
                         $message = "Amount sent is different than the amount of the payment with txid: " . $row[$this->tranIdentifierField] . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
@@ -91,4 +105,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		});
 	}
 
+	public function getType () {
+		return static::$type;
+	}
 }

@@ -147,13 +147,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			try {
+				$options['account'] = $account->getRawData();
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
                                 $payment = $paymentReseponse['payment'];
-                                Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
+				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
 			} catch (Exception $e) {
-                                $message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
+				$message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
 				Billrun_Factory::log()->log($message, Zend_Log::ALERT);
-                                $this->logFile->updateLogFileField('errors', $message);
+				$this->logFile->updateLogFileField('errors', $message);
 				continue;
 			}
 			$currentPayment = $payment[0];
@@ -169,7 +170,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
-			$currentPayment->setExtraFields($this->billSavedFields, 'pg_request');
+			$currentPayment->setExtraFields([
+								'pg_request' => $this->billSavedFields,
+								'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
+								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
+				], ['cpg_name', 'cpg_type', 'cpg_file_type']);
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;

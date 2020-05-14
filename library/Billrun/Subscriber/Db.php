@@ -52,6 +52,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($query['limit'])) {
 				$limit = $query['limit'];
 				unset($query['limit']);
+			} else {
+				unset($limit);
 			}
 
 			if (isset($query['id'])) {

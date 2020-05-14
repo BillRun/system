@@ -157,6 +157,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('servicesColl', $this->servicesColl);
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
+		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
 		$this->prepareGraphicsResources();
 	}
 
@@ -341,7 +342,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->addFolder($this->paths['tmp']);
 		$this->view->assign('data', $account);
 		$this->view->assign('details_keys', $this->getDetailsKeys());
-		$this->view->assign('extra_immediate_invoices_count', $this->invoice_extra_params['immediate_invoices_count']?:0);
+		$this->view->assign('invoice_extra_params', @$this->invoice_extra_params);
 
 		$this->addExtraParamsToCurrentView($this->invoice_extra_params);
 
@@ -370,8 +371,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Generator_Translations::load();
 		Generator_Translations::setLanguage(isset($account['attributes']['invoice_language'])? $account['attributes']['invoice_language'] : 'en_GB');
 		
-		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
+		$invoice_html =  $this->view->render($this->view_path . 'invoice.phtml');
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
+		file_put_contents($html, $invoice_html);
 		chmod($html, $this->filePermissions);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceHTMLCommit',array(&$invoice_html,$this,$account));
 
 		$this->updateHtmlDynamicData($account);
 		$ExporterFlagsString = Billrun_Factory::config()->getConfigValue(static::$type.'.exporter_flags','-R 0.1 -L 0 --print-media-type');
@@ -385,7 +389,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 
 		chmod($pdf, $this->filePermissions);
-		$this->updateInvoicePropertyToBillrun($account, $pdf);
+		$this->updateInvoicePropertyToBillrun($account, $pdf, $html);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
@@ -398,6 +402,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 		if (isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
 			$this->view->assign('render_subscription_details', $billrunData['attributes']['invoice_details']['subscription_details']);
+		}
+		if (!empty($billrunData['attributes']['invoice_display_options'])) {
+			$this->view->assign('invoice_display_options', $billrunData['attributes']['invoice_display_options']);
 		}
 	}
 
@@ -558,10 +565,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	protected function updateInvoicePropertyToBillrun($account, $pdfPath) {
-		$account['invoice_file'] = $pdfPath;
+	protected function updateInvoicePropertyToBillrun($account, $pdfPath, $htmlPath = false) {
+		$update = ['invoice_file' => $pdfPath ];
+		if($htmlPath) {
+			$update['invoice_html'] = $htmlPath;
+		}
 		if(!$this->is_fake_generation) {
-			$this->billrunColl->save($account);
+			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
 	}
 
@@ -587,16 +597,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		chmod($merged, $this->filePermissions);
 	}
 
-        /**
-         * Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
-         * @param sring $key
-         * @param type $value
-         */
-        public function setInvoiceExtraParams($key, $value) {
-            $this->invoice_extra_params[$key] = $value;
+	/**
+	* Function that sets the extra param's value, in the relevant key of $invoice_extra_params.
+	* @param sring $key
+	* @param type $value
+	*/
+	public function setInvoiceExtraParams($key, $value) {
+		$this->invoice_extra_params[$key] = $value;
 	}
 
-	protected function addExtraParamsToCurrentView($extraParams) {
+	public function addExtraParamsToCurrentView($extraParams) {
 		if(!empty($extraParams)) {
 			foreach($extraParams as $paramKey => $paramVal) {
 				$this->view->assign('extra_'.$paramKey, $paramVal);
