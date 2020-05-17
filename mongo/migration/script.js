@@ -875,6 +875,17 @@ if (typeof lastConfig.events !== 'undefined') {
 		}
 	}
 }
+// BRCD-2367 : Fix for in_collection field is rejected when quering the account
+if (lastConfig.subscribers !== undefined && lastConfig.subscribers.account !== undefined && lastConfig.subscribers.account.fields !== undefined) {
+	var brcd_2367_accInCollVal = {
+		"field_name" : "in_collection",
+		"system" : true,
+		"display" : false
+	};
+	if(!lastConfig.subscribers.account.fields.some(elm => elm.field_name === brcd_2367_accInCollVal.field_name )) {
+		lastConfig.subscribers.account.fields.push(brcd_2367_accInCollVal);
+	}
+}
 
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
