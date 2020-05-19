@@ -5,6 +5,8 @@
  */
 class Billrun_PaymentManager {
 
+	use Billrun_Traits_ForeignFields;
+	
 	protected static $instance;
 
 	public function __construct($params = []) {
@@ -37,11 +39,13 @@ class Billrun_PaymentManager {
 			return $this->handleError('Error encountered while saving the payments');
 		}
 
-		$postPayments = $this->handlePayment($prePayments, $params); 
+		$postPayments = $this->handlePayment($prePayments, $params);
 		$this->handleSuccessPayments($postPayments, $params);
+		$payments = $this->getInvolvedPayments($postPayments);
 		return [
-			'payment' => $this->getInvolvedPayments($postPayments),
+			'payment' => array_column($payments, 'payments'),
 			'response' => $this->getResponsesFromGateways($postPayments),
+			'payment_data' => array_column($payments, 'payment_data')
 		];
 	}
 
@@ -54,11 +58,17 @@ class Billrun_PaymentManager {
 	 * @returns array of pre-payment data for every payment
 	 */
 	protected function preparePayments($method, $paymentsData, $params = []) {
+		$account = !empty($params['account']) ? $params['account'] : null;
 		$prePayments = [];
 		foreach ($paymentsData as $paymentData) {
-			$prePayment = new Billrun_DataTypes_PrePayment($paymentData, $method);
+			Billrun_Bill::convertRelatedBills($paymentData);
+			$prePayment = new Billrun_DataTypes_PrePayment(array_merge($paymentData, $params), $method);
 			$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 			$this->handleInvoicesAndPaymentsAttachment($prePayment, $params);
+			if (!is_null($account)) {
+				$this->setPaymentForeignFields($prePayment, $account);
+			}
+			$this->setUserFields($prePayment);
 			$prePayments[] = $prePayment;
 		}
 
@@ -106,12 +116,8 @@ class Billrun_PaymentManager {
 			case Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY:
 				$method = $prePayment->getMethod();
 				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
-				if (!empty($paymentData[$paymentDir][Billrun_DataTypes_PrePayment::BILL_TYPE_INVOICE])) {
-					$this->attachInvoicesAndPayments(Billrun_DataTypes_PrePayment::BILL_TYPE_INVOICE, $prePayment, $params);
-				}
-				if (!empty($paymentData[$paymentDir][Billrun_DataTypes_PrePayment::BILL_TYPE_RECEIPT])) {
-					$this->attachInvoicesAndPayments(Billrun_DataTypes_PrePayment::BILL_TYPE_RECEIPT, $prePayment, $params);
-				}
+				$this->attachInvoicesAndPayments(Billrun_DataTypes_PrePayment::BILL_TYPE_INVOICE, $prePayment, $params);
+				$this->attachInvoicesAndPayments(Billrun_DataTypes_PrePayment::BILL_TYPE_RECEIPT, $prePayment, $params);
 				break;
 			default: // one of fc/tc
 				$this->attachAllInvoicesAndPayments($prePayment, $dir, $params);
@@ -127,6 +133,9 @@ class Billrun_PaymentManager {
 	 */
 	protected function attachInvoicesAndPayments($billType, &$prePayment, $params = []) {
 		$billsToHandle = $prePayment->getBillsToHandle($billType);
+		if (empty($billsToHandle)) {
+			return;
+		}
 		$relatedBills = $prePayment->getRelatedBills($billType);
 		if (count($relatedBills) != count($billsToHandle)) {
 			return $this->handleError("Unknown {$prePayment->getDisplayType($billType)}/s for account {$prePayment->getAid()}");
@@ -147,7 +156,7 @@ class Billrun_PaymentManager {
 				return $this->handleError("Illegal amount for {$prePayment->getDisplayType($billType)} {$bill->getId()}");
 			}
 
-			$billAmount = floatval($billsToHandle[$bill->getId()]);
+			$billAmount = floatval(Billrun_Bill::getRelatedBill($billsToHandle, $billType, $bill->getId())['amount']);
 			$leftAmount = $prePayment->getBillAmountLeft($bill);
 			if ($leftAmount < $billAmount && number_format($leftAmount, 2) != number_format($billAmount, 2)) {
 				return $this->handleError("{$prePayment->getDisplayType($billType)} {$bill->getId()} cannot be overpaid");
@@ -179,7 +188,9 @@ class Billrun_PaymentManager {
 				$billType = $bill->getType();
 				$paymentDir = $dir == Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER ? Billrun_DataTypes_PrePayment::PAY_DIR_PAYS : Billrun_DataTypes_PrePayment::PAY_DIR_PAID_BY;
 				$billId = $bill->getId();
-				$prePayment->setData([$paymentDir, $billType, $billId], $amount);
+				$relatedBills = $prePayment->getData($paymentDir, []);
+				Billrun_Bill::addRelatedBill($relatedBills, $billType, $billId, $amount);
+				$prePayment->setData($paymentDir, $relatedBills);
 				$paymentData = $prePayment->getData();
 				$prePayment->setPayment($this->getPayment($method, $paymentData, $params));
 				$leftToSpare -= $amount;
@@ -210,7 +221,8 @@ class Billrun_PaymentManager {
 	 * @return boolean
 	 */
 	protected function savePayments($prePayments) {
-		$payments = $this->getInvolvedPayments($prePayments);
+		$response = $this->getInvolvedPayments($prePayments);
+		$payments = array_column($response, 'payments');
 		$ret = Billrun_Bill_Payment::savePayments($payments);
 		if (!$ret || empty($ret['ok'])) {
 			return false;
@@ -230,7 +242,7 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$payment = $prePayment->getPayment();
 			if ($payment) {
-				$payments[] = $payment;
+				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
 			}
 		}
 
@@ -320,7 +332,7 @@ class Billrun_PaymentManager {
 	protected function isFileBasedCharge($params) {
 		return isset($params['file_based_charge']) && $params['file_based_charge'];
 	}
-	
+
 	protected function getSuccessPayments($postPayments, $params = []) {
 		return array_filter($postPayments, function ($postPayment) {
 			$pgResponse = $postPayment->getPgResponse();
@@ -345,34 +357,35 @@ class Billrun_PaymentManager {
 			if (isset($paymantData['payment_gateway']) && empty($transactionId)) {
 				return $this->handleError('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $paymantData['name']);
 			}
-			
+
 			$pgResponse = $postPayment->getPgResponse();
 			$customerDir = $postPayment->getCustomerDirection();
 			$gatewayDetails = $payment->getPaymentGatewayDetails();
-			
+
 			if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
 				$payment->setPending(false);
 			}
-			
+
 			switch ($customerDir) {
 				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
 				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
 					$relatedBills = $postPayment->getRelatedBills();
-					foreach ($relatedBills as $billType => $bills) {
-						foreach ($bills as $billId => $amountPaid) {
-							if ($this->isFileBasedCharge($params)) {
-								$payment->setPending(true);
-							}
-							
-							if ($pgResponse && $pgResponse['stage'] != 'Pending') {
-								$payment->setPending(false);
-							}
-							$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
-							if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-								$updatedBill->attachPayingBill($payment, $amountPaid, empty($pgResponse['stage']) ? 'Completed' : $pgResponse['stage'])->save();
-							} else {
-								$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
-							}
+					foreach ($relatedBills as $bill) {
+						$billId = $bill['id'];
+						$billType = $bill['type'];
+						$amountPaid = $bill['amount'];
+						if ($this->isFileBasedCharge($params)) {
+							$payment->setPending(true);
+						}
+
+						if ($pgResponse && $pgResponse['stage'] != 'Pending') {
+							$payment->setPending(false);
+						}
+						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
+						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
+							$updatedBill->attachPayingBill($payment, $amountPaid, empty($pgResponse['stage']) ? 'Completed' : $pgResponse['stage'])->save();
+						} else {
+							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
 						}
 					}
 					break;
@@ -386,7 +399,7 @@ class Billrun_PaymentManager {
 				$gatewayAmount = 0;
 				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
 			}
-			
+
 			if (!empty($pgResponse)) {
 				$pgResponseStage = $pgResponse['stage'];
 				if ($pgResponseStage == 'Completed') {
@@ -407,4 +420,18 @@ class Billrun_PaymentManager {
 		throw new Exception($errorMessage);
 	}
 
+	protected function setUserFields (&$prePayment) {
+		$payment = $prePayment->getPayment();
+		$payment->setUserFields($prePayment->getData());
+	}
+
+
+	protected function setPaymentForeignFields (&$payment, $account) {
+		$foreignData = $this->getForeignFields(array('account' => $account ));
+		$payment->getPayment()->setForeignFields($foreignData);
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
+	}
 }

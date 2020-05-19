@@ -18,7 +18,7 @@ trait Billrun_Traits_ForeignFields  {
 	private $foreginFieldPrefix = 'foreign';
 
 	/**
-	 * This array  will hold all the  added foregin fields that  were added to the CDR/row/line.
+	 * This array  will hold all the  added foreign fields that  were added to the CDR/row/line.
 	 */
 	protected $addedForeignFields = array();
 	
@@ -38,10 +38,13 @@ trait Billrun_Traits_ForeignFields  {
 	}
 
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
+		$entity = $this->getForeignFieldsEntity();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFields = $this->getForeignFieldsFromConfig();
+		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue($entity .'.fields', array()), function($value) {
+			return isset($value['foreign']);	
+		});
 		
-		foreach ($foreignFields as $fieldConf) {
+		foreach ($foreignFieldsConf as $fieldConf) {
 			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {
 				Billrun_Factory::log("Foreign field configuration not mapped to foreign sub-field",Zend_Log::WARN);
 				continue;
@@ -103,5 +106,9 @@ trait Billrun_Traits_ForeignFields  {
 				break;
 		}
 		return $pathToInsert;
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'lines';
 	}
 }

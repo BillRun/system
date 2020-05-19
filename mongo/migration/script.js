@@ -118,6 +118,32 @@ if (!lastConfig['plugins']) {
 	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
 }
 
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+	if (typeof lastConfig['plugins'][i] === 'string') {
+		if (lastConfig['plugins'][i] === "calcCpuPlugin") {
+			lastConfig['plugins'][i] = {
+				"name": "calcCpuPlugin",
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": true
+			};
+		} else if (["csiPlugin", "autorenewPlugin"].includes(lastConfig['plugins'][i]['name'])) {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": false
+			};
+		} else {
+				lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": false,
+				"hide_from_ui": false
+			};
+		}
+	}
+}
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
@@ -862,6 +888,17 @@ if (typeof lastConfig.events !== 'undefined') {
 		}
 	}
 }
+// BRCD-2367 : Fix for in_collection field is rejected when quering the account
+if (lastConfig.subscribers !== undefined && lastConfig.subscribers.account !== undefined && lastConfig.subscribers.account.fields !== undefined) {
+	var brcd_2367_accInCollVal = {
+		"field_name" : "in_collection",
+		"system" : true,
+		"display" : false
+	};
+	if(!lastConfig.subscribers.account.fields.some(elm => elm.field_name === brcd_2367_accInCollVal.field_name )) {
+		lastConfig.subscribers.account.fields.push(brcd_2367_accInCollVal);
+	}
+}
 
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
@@ -885,12 +922,9 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
-
 db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
 db.billrun.dropIndex('billrun_key_-1');
-
-
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
@@ -910,3 +944,37 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
+//BRCD-2452 reformat paid_by and pays objects to array format
+var bills = db.bills.find({
+	$or: [
+		{"pays.inv": {$exists: 1}},
+		{"pays.rec": {$exists: 1}},
+		{"paid_by.inv": {$exists: 1}},
+		{"paid_by.rec": {$exists: 1}}
+	]
+});
+bills.forEach(function (bill) {
+	var relatedBills = [];
+	var currentBillsKey;
+
+	if (typeof bill['pays'] !== 'undefined') {
+		currentBillsKey = 'pays';
+	} else if (typeof bill['paid_by'] !== 'undefined') {
+		currentBillsKey = 'paid_by';
+	}
+
+	if (typeof bill[currentBillsKey] != 'undefined') {
+		for (type in bill[currentBillsKey]) {
+			for (id in bill[currentBillsKey][type]) {
+				relatedBills.push({
+					"type": type,
+					"id": type === 'inv' ? parseInt(id) : id,
+					"amount": parseFloat(bill[currentBillsKey][type][id])
+				});
+			}
+		}
+
+		bill[currentBillsKey] = relatedBills;
+		db.bills.save(bill);
+	}
+});
