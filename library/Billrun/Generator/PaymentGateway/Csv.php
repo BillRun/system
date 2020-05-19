@@ -65,9 +65,9 @@ class Billrun_Generator_PaymentGateway_Csv {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-                                                $message = "Missing padding length definitions for " . $options['file_type'];
+						$message = "Missing padding length definitions for " . $options['file_type'];
 						Billrun_Factory::log($message, Zend_Log::DEBUG);
-                                                $this->logFile->updateLogFileField('errors', $message);
+						$this->logFile->updateLogFileField('errors', $message);
 						return false;
 					}
 				}
@@ -159,25 +159,25 @@ class Billrun_Generator_PaymentGateway_Csv {
 		foreach ($entity as $entityObj) {
 			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
-                        if($this->fixedWidth){
-                            $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
-                        }else{
-                            if(isset($entityObj['padding']['length'])){
-                                $length = $entityObj['padding']['length'];
-                            }else{
-                                $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
-                            }
-                        }
-                        if($this->fixedWidth){
-                            $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                        }else{
-                            if($flag == 0){
-                                $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                                $flag = 1;
-                            }else{
-                                $rowContents.= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-                            }
-                        }
+			if($this->fixedWidth){
+				$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+			} else {
+				if (isset($entityObj['padding']['length'])) {
+					$length = $entityObj['padding']['length'];
+				} else {
+					$length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
+				}
+			}
+			if ($this->fixedWidth) {
+				$rowContents .= substr(str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir) , 0, $length);
+			}else{
+				if($flag == 0){
+					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+					$flag = 1;
+				}else{
+					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+				}
+			}
 			
 		}
 		return $rowContents;
@@ -199,27 +199,27 @@ class Billrun_Generator_PaymentGateway_Csv {
 		return implode($this->delimiter, $rowValues);
 	}
 
-        public function setFileName($fileName){
-            $this->file_name = $fileName;
-        }
-        
-        public function setFilePath($dir){
-            $this->file_path = $dir . '/' . $this->file_name;
-        }
-        
-        public function setDataRows($data) {
-            $this->data = $data;
-        }
-    
-        public function setHeaderRows($header) {
-            $this->headers = $header;
-        }
-    
-        public function setTrailerRows($trailer) {
-            $this->trailers = $trailer;
-        }
-        
-        public function getTransactionsCounter (){
+	public function setFileName($fileName){
+		$this->file_name = $fileName;
+	}
+
+	public function setFilePath($dir){
+		$this->file_path = $dir . '/' . $this->file_name;
+	}
+
+	public function setDataRows($data) {
+		$this->data = $data;
+	}
+
+	public function setHeaderRows($header) {
+		$this->headers = $header;
+	}
+
+	public function setTrailerRows($trailer) {
+		$this->trailers = $trailer;
+	}
+
+	public function getTransactionsCounter (){
             return $this->transactionsCounter;
         }
 }
