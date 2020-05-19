@@ -74,7 +74,6 @@ class Billrun_EventsManager {
 			return;
 		}
 
-		$conditionsSettings = [];
 		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawsEventSettings) {
 				$conditionSettings = [];
