@@ -169,7 +169,11 @@ class Billrun_Generator_PaymentGateway_Csv {
 				}
 			}
 			if ($this->fixedWidth) {
-				$rowContents .= substr(str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir) , 0, $length);
+				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+				if ($length < strlen($value)) {
+					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
+				}
+				$rowContents .= $value;
 			}else{
 				if($flag == 0){
 					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
