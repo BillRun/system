@@ -23,6 +23,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	const CREDIT_CARD_PAYMENT = 'COMMON.ACCEPT.INAPP.PAYMENT';
 	const APPLE_PAY_PAYMENT = 'COMMON.APPLE.INAPP.PAYMENT';
+	const GOOGLE_PAY_PAYMENT = 'COMMON.GOOGLE.INAPP.PAYMENT';
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -446,7 +447,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'payment' => $this->buildTransactionPayment($gatewayDetails),
 			],
 		];
-		if ($this->isApplePayRequest($body)) {
+		if ($this->isApplePayRequest($body) || $this->isGooglePayRequest($body)) {
 			$body['validationMode'] = 'liveMode';
 		}
 		return $this->encodeRequest($root, $body);
@@ -454,6 +455,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	protected function isApplePayRequest($request) {
 		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::APPLE_PAY_PAYMENT;
+	}
+	
+	protected function isGooglePayRequest($request) {
+		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::GOOGLE_PAY_PAYMENT;
 	}
 
 
