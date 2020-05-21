@@ -303,8 +303,8 @@ abstract class Billrun_Bill {
 	protected function updateLeft() {
 		if ($this->getDue() < 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left'] = $this->getAmount();
-			foreach ($this->getPaidBills() as $paidBills) {
-				$this->data['left'] -= array_sum($paidBills);
+			foreach ($this->getPaidBills() as $paidBill) {
+				$this->data['left'] -= $paidBill['amount'];
 			}
 			if (abs($this->data['left']) < Billrun_Bill::precision) {
 				$this->data['left'] = 0;
@@ -315,8 +315,8 @@ abstract class Billrun_Bill {
 	protected function updateLeftToPay() {
 		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
-			foreach ($this->getPaidByBills() as $paidByBills) {
-				$this->data['left_to_pay'] -= array_sum($paidByBills);
+			foreach ($this->getPaidByBills() as $paidByBill) {
+				$this->data['left_to_pay'] -= floatval($paidByBill['amount']);
 			}
 			if ($this->data['left_to_pay'] < Billrun_Bill::precision) {
 				$this->data['left_to_pay'] = 0;
@@ -384,20 +384,16 @@ abstract class Billrun_Bill {
 	}
 
 	public function detachPaidBills() {
-		foreach ($this->getPaidBills() as $billType => $bills) {
-			foreach (array_keys($bills) as $billId) {
-				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
-				$billObj->detachPayingBill($this->getType(), $this->getId())->save();
-			}
+		foreach ($this->getPaidBills() as $bill) {
+			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$billObj->detachPayingBill($this->getType(), $this->getId())->save();
 		}
 	}
 	
 	public function detachPayingBills() {
-		foreach ($this->getPaidByBills() as $billType => $bills) {
-			foreach (array_keys($bills) as $billId) {
-				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
-				$billObj->detachPaidBill($this->getType(), $this->getId())->save();
-			}
+		foreach ($this->getPaidByBills() as $bill) {
+			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$billObj->detachPaidBill($this->getType(), $this->getId())->save();
 		}
 	}
 
@@ -415,12 +411,10 @@ abstract class Billrun_Bill {
 		}
 		if ($this->getDue() > 0) {
 			$amount = 0;
-			if (isset($this->data['paid_by']['inv'])) {
-				$amount += array_sum($this->data['paid_by']['inv']);
+			foreach (Billrun_Util::getIn($this->data, 'paid_by', []) as $relatedBill) {
+				$amount += floatval($relatedBill['amount']);
 			}
-			if (isset($this->data['paid_by']['rec'])) {
-				$amount += array_sum($this->data['paid_by']['rec']);
-			}
+			
 			$this->data['total_paid'] = $amount;
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
@@ -431,12 +425,10 @@ abstract class Billrun_Bill {
 			}
 		} else if ($this->getDue() < 0){
 			$amount = 0;
-			if (isset($this->data['pays']['inv'])) {
-				$amount += array_sum($this->data['pays']['inv']);
+			foreach (Billrun_Util::getIn($this->data, 'pays', []) as $relatedBill) {
+				$amount += floatval($relatedBill['amount']);
 			}
-			if (isset($this->data['pays']['rec'])) {
-				$amount += array_sum($this->data['pays']['rec']);
-			}
+			
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
 		return $this;
@@ -461,7 +453,13 @@ abstract class Billrun_Bill {
 		$billType = $bill->getType();
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
-			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
+			$relatedBillId = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
+			if ($relatedBillId == -1) {
+				Billrun_Bill::addRelatedBill($paidBy, $billType, $billId, $amount);
+			} else {
+				$paidBy[$relatedBillId]['amount'] += floatval($amount);
+			}
+			
 			if ($bill->isPendingPayment()) {
 				$this->addToWaitingPayments($billId, $billType);
 			}
@@ -475,15 +473,21 @@ abstract class Billrun_Bill {
 
 	public function detachPayingBill($billType, $id) {
 		$paidBy = $this->getPaidByBills();
-		unset($paidBy[$billType][$id]);
-		$this->updatePaidBy($paidBy);
+		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $id);
+		if ($index > -1) {
+			unset($paidBy[$index]);
+			$this->updatePaidBy(array_values($paidBy));
+		}
 		return $this;
 	}
 	
 	public function detachPaidBill($billType, $id) {
 		$pays = $this->getPaidBills();
-		unset($pays[$billType][$id]);
-		$this->updatePays($pays);
+		$index = Billrun_Bill::findRelatedBill($pays, $billType, $id);
+		if ($index > -1) {
+			unset($pays[$index]);
+			$this->updatePays(array_values($pays));
+		}
 		return $this;
 	}
 
@@ -503,7 +507,12 @@ abstract class Billrun_Bill {
 
 	public function attachPaidBill($billType, $billId, $amount) {
 		$paymentRawData = $this->data->getRawData();
-		$paymentRawData['pays'][$billType][$billId] = (isset($paymentRawData['pays'][$billType][$billId]) ? $paymentRawData['pays'][$billType][$billId] : 0) + $amount;
+		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
+		if ($relatedBillId == -1) {
+			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
+		} else {
+			$paymentRawData['pays'][$relatedBillId]['amount'] += floatval($amount);
+		}
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
 		return $this;
@@ -849,28 +858,24 @@ abstract class Billrun_Bill {
 						throw new Exception('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $gatewayName);
 					}
 					if ($payment->getDir() == 'fc') {
-						foreach ($payment->getPaidBills() as $billType => $bills) {
-							foreach ($bills as $billId => $amountPaid) {
-								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$payment->setPending(true);
-								}
-								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
-									$payment->setPending(false);
-								}
-								$updateBills[$billType][$billId]->attachPayingBill($payment, $amountPaid, empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
+						foreach ($payment->getPaidBills() as $bill) {
+							if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+								$payment->setPending(true);
 							}
+							if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								$payment->setPending(false);
+							}
+							$updateBills[$bill['type']][$bill['id']]->attachPayingBill($payment, $bill['amount'], empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
 						}
 					} else if ($payment->getDir() == 'tc') {
-						foreach ($payment->getPaidByBills() as $billType => $bills) {
-							foreach ($bills as $billId => $amountPaid) {
-								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-									$payment->setPending(true);
-								}
-								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
-									$payment->setPending(false);
-								}
-								$updateBills[$billType][$billId]->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+						foreach ($payment->getPaidByBills() as $bill) {
+							if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+								$payment->setPending(true);
 							}
+							if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+								$payment->setPending(false);
+							}
+							$updateBills[$bill['type']][$bill['id']]->attachPaidBill($payment->getType(), $payment->getId(), $bill['amount'])->save();
 						}
 					} else {
 						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
@@ -1130,12 +1135,10 @@ abstract class Billrun_Bill {
 	}
 
 	public function updatePastRejectionsOnProcessingFiles() {
-		foreach ($this->getPaidBills() as $type => $paidBills) {
-			foreach ($paidBills as $billId => $amount) {
-				$bill = Billrun_Bill::getInstanceByTypeAndid($type, $billId);
-				$bill->addToRejectedPayments($this->getId(), $this->getType());
-				$bill->save();
-			}
+		foreach ($this->getPaidBills() as $bill) {
+			$bill = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$bill->addToRejectedPayments($this->getId(), $this->getType());
+			$bill->save();
 		}
 	}
 	
@@ -1176,12 +1179,104 @@ abstract class Billrun_Bill {
 		}
 		return self::getBills($query);
 	}
-	
+
 	/**
 	 * Function that sets balance effective date, in every payment's bill.
 	 * @param int $date - unix timestamp to set as the balance effective date.
 	 */
 	public function setBalanceEffectiveDate ($date = null) {
 		$this->data['balance_effective_date'] = new MongoDate(!empty($date)? $date : time());
+	}
+	
+	/**
+	 * will add a related/linked bill to an existing bill
+	 * 
+	 * @param array $relatedBills - the bills object to which we want to add a linked bill	
+	 * @param srting $type - related bill's type. one of: "rec"/"inv"
+	 * @param mixed $id - related bill's id
+	 * @param float $amount - related bill's amount
+	 */
+	public static function addRelatedBill(&$relatedBills, $type, $id, $amount) {
+		if (empty($relatedBills)) {
+			$relatedBills = [];
+		}
+
+		$relatedBills[] = [
+			'type' => $type,
+			'id' => $type === 'inv' ? intval($id) : $id,
+			'amount' => floatval($amount),
+		];
+	}
+	
+	/**
+	 * get index of related bill, -1 if not found
+	 * 
+	 * @param array $relatedBills - array of related bills
+	 * @param srting $type - related bill's type. one of: "rec"/"inv"
+	 * @param mixed $id - related bill's id
+	 */
+	public static function findRelatedBill($relatedBills, $type, $id) {
+		$id = $type === 'inv' ? intval($id) : $id;
+		foreach ($relatedBills as $i => $bill) {
+			if ($bill['type'] == $type && $bill['id'] == $id) {
+				return $i;
+			}
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 * get related bill
+	 * 
+	 * @param array $relatedBills - array of related bills
+	 * @param srting $type - related bill's type. one of: "rec"/"inv"
+	 * @param mixed $id - related bill's id
+	 */
+	public static function getRelatedBill($relatedBills, $type, $id) {
+		$index = Billrun_Bill::findRelatedBill($relatedBills, $type, $id);
+		return $index == -1 ? false : $relatedBills[$index];
+	}
+	
+	/**
+	 * get related bills 
+	 * 
+	 * @param array $relatedBills - array of related bills
+	 * @param srting $type - related bill's type. one of: "rec"/"inv"
+	 */
+	public static function getRelatedBills($relatedBills, $type) {
+		$ret = [];
+		foreach ($relatedBills as $bill) {
+			if ($bill['type'] == $type) {
+				$ret[] = $bill;
+			}
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * converts related bills (pays/paid_by) of given array
+	 * 
+	 * @param array $paymentParams
+	 */
+	public static function convertRelatedBills(&$paymentParams) {
+		foreach (['pays', 'paid_by'] as $dir) {
+			if (empty($paymentParams[$dir])) {
+				continue;
+			}
+			if (!Billrun_Util::isAssoc($paymentParams[$dir])) { // already in the new format
+				continue;
+			}
+			
+			$newPaymentParam = [];
+			foreach ($paymentParams[$dir] as $billType => $bills) {
+				foreach ($bills as $billId => $amount) {
+					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount);
+				}
+			}
+			
+			$paymentParams[$dir] = $newPaymentParam;
+		}
 	}
 }
