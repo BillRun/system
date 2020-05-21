@@ -70,6 +70,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		}
 		foreach ($ret['payment'] as $index => $new_payment) {
 			$new_payment->setExtraFields($customFields, array_keys($customFields));
+			$new_payment->save();
 		}
         $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];

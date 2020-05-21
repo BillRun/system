@@ -158,7 +158,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			$currentPayment = $payment[0];
-			$currentPayment->save();
 			$params['amount'] = $paymentParams['amount'];
 			$params['aid'] = $currentPayment->getAid();
 			$params['txid'] = $currentPayment->getId();
@@ -176,6 +175,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
 								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
 				], ['cpg_name', 'cpg_type', 'cpg_file_type']);
+			$currentPayment->save();
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;

@@ -1078,7 +1078,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 		}
 		$this->setRawData($paymentData);
-		$this->save();
 	}
 	
 	/**
