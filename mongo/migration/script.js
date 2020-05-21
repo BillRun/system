@@ -875,6 +875,17 @@ if (typeof lastConfig.events !== 'undefined') {
 		}
 	}
 }
+// BRCD-2367 : Fix for in_collection field is rejected when quering the account
+if (lastConfig.subscribers !== undefined && lastConfig.subscribers.account !== undefined && lastConfig.subscribers.account.fields !== undefined) {
+	var brcd_2367_accInCollVal = {
+		"field_name" : "in_collection",
+		"system" : true,
+		"display" : false
+	};
+	if(!lastConfig.subscribers.account.fields.some(elm => elm.field_name === brcd_2367_accInCollVal.field_name )) {
+		lastConfig.subscribers.account.fields.push(brcd_2367_accInCollVal);
+	}
+}
 
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
@@ -917,3 +928,38 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
+
+//BRCD-2452 reformat paid_by and pays objects to array format
+var bills = db.bills.find({
+	$or: [
+		{"pays.inv": {$exists: 1}},
+		{"pays.rec": {$exists: 1}},
+		{"paid_by.inv": {$exists: 1}},
+		{"paid_by.rec": {$exists: 1}}
+	]
+});
+bills.forEach(function (bill) {
+	var relatedBills = [];
+	var currentBillsKey;
+
+	if (typeof bill['pays'] !== 'undefined') {
+		currentBillsKey = 'pays';
+	} else if (typeof bill['paid_by'] !== 'undefined') {
+		currentBillsKey = 'paid_by';
+	}
+
+	if (typeof bill[currentBillsKey] != 'undefined') {
+		for (type in bill[currentBillsKey]) {
+			for (id in bill[currentBillsKey][type]) {
+				relatedBills.push({
+					"type": type,
+					"id": type === 'inv' ? parseInt(id) : id,
+					"amount": parseFloat(bill[currentBillsKey][type][id])
+				});
+			}
+		}
+
+		bill[currentBillsKey] = relatedBills;
+		db.bills.save(bill);
+	}
+});

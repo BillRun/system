@@ -121,7 +121,7 @@ class CreditAction extends ApiAction {
 		$firstInstallment['aprice'] = $installmentPrice;
 		unset($firstInstallment['stamp']);
 		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
-		
+		$firstInstallment['first_installment'] = $firstInstallment['stamp'];
 		// handle other installments
 		for ($i = 2; $i <= $numOfInstallments; $i++) {
 			$billrunKey = Billrun_Billingcycle::getFollowingBillrunKey($billrunKey);

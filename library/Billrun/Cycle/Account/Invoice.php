@@ -355,7 +355,7 @@ class Billrun_Cycle_Account_Invoice {
 		if (!empty($pastBalanceConfig) && !empty($rawData[$pastBalanceConfig['anchor_field']])) {
 			$past_balance_date = Billrun_Util::calcRelativeTime($pastBalanceConfig['relative_time'],date($rawData[$pastBalanceConfig['anchor_field']]->sec));
 		}
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), date('Y-m-d', $past_balance_date));
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), date('YmdHis', $past_balance_date));
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}

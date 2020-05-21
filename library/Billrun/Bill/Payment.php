@@ -113,17 +113,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['deposit_amount'] = $this->data['amount'];
 				$this->data['amount'] = 0;
 				$this->data['due'] = 0;
-			}
-			if (isset($options['pays']['inv'])) {
-				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
-					$options['pays']['inv'][$invoiceId] = floatval($amount);
-				}
-			}
-			if (isset($options['paid_by']['inv'])) {
-				foreach ($options['paid_by']['inv'] as $invId => $credit) {
-					$options['paid_by']['inv'][$invId] = floatval($credit);
-				}
-			}		
+			}	
 			if ($this->isDeposit()) {
 				$this->data['left'] = 0;
 			}
@@ -140,7 +130,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		    if (isset($options['uf']) && is_array($options['uf'])) {
 				$data = array_merge($this->getRawData(), $options['uf']);
 				$this->data->setRawData($data);
-			}
+                               }
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
 			$this->forced_uf = !empty($options['forced_uf']) ? $options['forced_uf'] : [];
 			if(isset($options['source'])){
@@ -605,14 +595,20 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				} else if (!empty($billDetails['left_to_pay'])) {
 					$paymentParams['amount'] = $gatewayDetails['amount'] = $billDetails['left_to_pay'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['pays'][$billDetails['type']][$billDetails['unique_id']] = $paymentParams['amount'];
+						if (!isset($paymentParams['pays'])) {
+							$paymentParams['pays'] = [];
+						}
+						Billrun_Bill::addRelatedBill($paymentParams['pays'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
 					}
 					$paymentParams['dir'] = 'fc';
 				} else if (!empty($billDetails['left'])) {
 					$paymentParams['amount'] = $billDetails['left'];
 					$gatewayDetails['amount'] = -$billDetails['left'];
 					if ($payMode == 'multiple_payments') {
-						$paymentParams['paid_by'][$billDetails['type']][$billDetails['unique_id']] = $paymentParams['amount'];
+						if (!isset($paymentParams['paid_by'])) {
+							$paymentParams['paid_by'] = [];
+						}
+						Billrun_Bill::addRelatedBill($paymentParams['paid_by'], $billDetails['type'], $billDetails['unique_id'], $paymentParams['amount']);
 					}
 					$paymentParams['dir'] = 'tc';
 				}
@@ -624,7 +620,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 							continue;
 						}
 						$payDir = isset($invoice['left']) ? 'paid_by' : 'pays';
-						$paymentParams[$payDir][$invoice['type']][$id] = $amount;
+						if (!isset($paymentParams[$payDir])) {
+							$paymentParams[$payDir] = [];
+						}
+						Billrun_Bill::addRelatedBill($paymentParams[$payDir], $invoice['type'], $id, $amount);
 					}
 				}
 				if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
@@ -793,16 +792,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	public function getInvoicesIdFromReceipt() {
-		$inv = $this->data['pays']['inv'];
-		return array_keys($inv);
-	}
-	
-	public function markApproved($status) {
-		foreach ($this->getPaidBills() as $billType => $bills) {
-			foreach (array_keys($bills) as $billId) {
-				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
-				$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
+		$ids = [];
+		foreach (Billrun_Util::getIn($this->data, 'pays', []) as $bill) {
+			if ($bill['type'] == 'inv') {
+				$ids[] = $bill['id'];
 			}
+		}
+		return $ids;
+	}
+
+	public function markApproved($status) {
+		foreach ($this->getPaidBills() as $bill) {
+			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
+			$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
 		}
 	}
 
