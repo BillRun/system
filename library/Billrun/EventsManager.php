@@ -74,7 +74,6 @@ class Billrun_EventsManager {
 			return;
 		}
 
-		$conditionsSettings = [];
 		foreach ($eventSettings as $event) {
 			foreach ($event['conditions'] as $rawsEventSettings) {
 				$conditionSettings = [];
@@ -114,10 +113,6 @@ class Billrun_EventsManager {
 				}
 				$conditionSettings = array_merge($conditionSettings, $pathsMatched);
 			}
-			$conditionsSettings = array_merge($conditionsSettings, $conditionSettings);
-		}
-		
-		foreach ($conditionsSettings as $conditionSetting) {
 			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
 		}
 	}
