@@ -146,9 +146,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installment['uf'] = array_filter($installmentPayment, function($field) {
-						return preg_match('/^uf/', $field);
-			},ARRAY_FILTER_USE_KEY);
+			$installment['uf'] = $installmentPayment['uf'];
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
 			$installmentObj->setUserFields($installmentObj->getRawData(), true);

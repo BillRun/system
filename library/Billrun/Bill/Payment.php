@@ -128,7 +128,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 			}
 		    if (isset($options['uf']) && is_array($options['uf'])) {
-				$data = array_merge($this->getRawData(), $options['uf']);
+				$data = array_merge($this->getRawData(), ['uf' => $options['uf']]);
 				$this->data->setRawData($data);
                                }
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
@@ -1139,6 +1139,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}			
 				}
 			}
+		} else if (!empty($data['uf'])) {
+			unset($data['uf']);
 		}
 		if ($unsetOriginalUfFromData) {
 			unset($paymentData['uf']);
