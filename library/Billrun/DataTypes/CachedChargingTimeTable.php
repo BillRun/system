@@ -61,7 +61,7 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 * @param string $key - Billrun key to get time by.
 	 */
 	protected function onGet($key, $invoicing_day = null) {
-		$datetime = !is_null($invoicing_day) ? $this->getDatetime($key, 1 ,$invoicing_day) : $this->getDatetime($key);
+		$datetime = !is_null($invoicing_day) ? $this->getDatetime($key, $invoicing_day) : $this->getDatetime($key);
 		
 		$time = strtotime($datetime);
 		
