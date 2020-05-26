@@ -113,7 +113,9 @@ class Billrun_EventsManager {
 				}
 				$conditionSettings = array_merge($conditionSettings, $pathsMatched);
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
+			foreach ($conditionSettings as $index => $conditionSetting) {
+				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSetting, $extraParams, $extraValues);
+			}
 		}
 	}
 
