@@ -164,9 +164,6 @@ class Billrun_Tariff_Util {
 	 * @return type
 	 */
 	protected static function getChargeValueForRateStep($volume, $rate) {
-		if(empty($rate)){
-			return 0;
-		}
 		$ceil = true;
 
 		if (isset($rate['ceil'])) {
