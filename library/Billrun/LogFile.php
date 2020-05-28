@@ -74,6 +74,7 @@ class Billrun_LogFile {
 		$newLog['key'] = $this->data['key'];
 		$newLog['source'] = $this->data['source'];
 		$newLog['start_process_time'] = $this->data['start_process_time'];
+		Billrun_Factory::log("Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'], Zend_Log::DEBUG);
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
 	
