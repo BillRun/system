@@ -27,10 +27,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api2.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https://secure.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://secure.authorize.net';
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://test.authorize.net';
 		}
 		$this->account = Billrun_Factory::account();
 	}
@@ -50,6 +50,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$transactionKey = $credentials['transaction_key'];
 		$okPage = $okPage . '&amp;customer=' . $customerProfileId;
 
+		$this->actionUrl .= '/profile/addPayment';
 		return $postXml = "<getHostedProfilePageRequest xmlns='AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
 								<merchantAuthentication>
 									 <name>$apiLoginId</name>
@@ -261,6 +262,12 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			];
 		}
 		
+		if (!empty($customerProfile)) {
+			return [
+				'customerProfileId' => $customerProfile,
+			];
+		}
+
 		if ($canCreateProfile) {
 			return [
 				'createProfile' => true,
@@ -630,7 +637,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							<form id='myForm' method='post' action=$this->actionUrl>
 							<input type='hidden' name='token'
 							value='$token'/>
-							<input type='hidden' name='bloop' value='blibloo'/>
 							<input type='submit' value='Continue'/>
 							</form>
 							<script type='text/javascript'>
@@ -814,6 +820,46 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildSinglePaymentArray($params, $options) {
-		throw new Exception("Single payment not supported in " . $this->billrunName);
+		$customerProfileId = $this->checkIfCustomerExists($aid);
+		if (!empty($customerProfileId)) {
+			$this->customerId = $customerProfileId;
+			$params['ok_page'] .= '&amp;customer=' . $customerProfileId;
+		}
+
+		$root = [
+			'tag' => 'getHostedPaymentPageRequest',
+			'attr' => [
+				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
+			],
+		];
+		$body = $this->buildAuthenticationBody();
+		$amount = $this->convertAmountToSend($params['amount']);
+		$gatewayDetails = [
+			'customer_profile_id' => $customerProfileId,
+		];
+		$body['transactionRequest'] = $this->buildTransactionRequest($amount, $gatewayDetails);
+		$body['hostedPaymentSettings'] = $this->buildHostedPaymentSettings(array_merge($params, $options));
+		$this->actionUrl .= '/payment/payment';
+		return $this->encodeRequest($root, $body);
 	}
+
+	protected function buildHostedPaymentSettings($params) {
+		$urlSettings = [
+			'showReceipt' => false,
+			'url' => $params['ok_page'],
+			'urlText' => 'Finish',
+			'cancelUrl' => $params['fail_page'],
+			'cancelUrlText' => 'Cancel',
+		];
+		$settings = [
+			[
+				'settingName' => 'hostedPaymentReturnOptions',
+				'settingValue' => json_encode($urlSettings)
+			],
+		];
+		return [
+			'setting' => $settings,
+		];
+	}
+
 }
