@@ -268,39 +268,39 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $retMsgs;
 	}
 	
-	public function createSubscriberInvoiceTables ($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
+	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
 		$config = Billrun_Factory::config();
 		$invoice_display = $config->getInvoiceDisplayConfig();
 		$lines = array_filter($lines, function($line) {
-				return $line['sid'] != 0;
-			});
-		$this->buildNotCustomTabels ($lines, $flatTypes, false, $details_keys);
+			return $line['sid'] != 0;
+		});
+		$this->buildNotCustomTabels($lines, $flatTypes, false, $details_keys);
 		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
 			foreach ($lines as $index => $line) {
-				if (in_array($line['type'],$usageTypes)) {
+				if (in_array($line['type'], $usageTypes)) {
 					$this->associateLineToTable($line, $tabels_config, $details_keys);
 				}
 			}
 		} else {
-			$this->buildNotCustomTabels ($lines, $usageTypes, true, $details_keys);
+			$this->buildNotCustomTabels($lines, $usageTypes, true, $details_keys);
 		}
 	}
-	
+
 	public function associateLineToTable($line, $tabels_config, $details_keys = []) {
 		$meetConditions = 0;
-		foreach ($tabels_config as $tabel_index => $tabel_config){
-			foreach ($tabel_config['conditions'] as $condition){
-				if (Billrun_Util::isConditionMet($line, $condition)){
+		foreach ($tabels_config as $tabel_index => $tabel_config) {
+			foreach ($tabel_config['conditions'] as $condition) {
+				if (Billrun_Util::isConditionMet($line, $condition)) {
 					$meetConditions = 1;
 				}
-            }
+			}
 			if ($meetConditions) {
 				$this->invoice_usage_tabels[$tabel_index][] = $this->getTableRow($line, $tabel_config['columns'], $details_keys);
 				return;
 			}
 		}
-	}	
-	
+	}
+
 	public function getTableRow($line, $columns, $details_keys = []) {
 		$row = [];
 		$datetime_format = Billrun_Factory::config()->getConfigValue('invoice_export.datetime_format', 'd/m/Y H:i:s');
@@ -329,14 +329,14 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		return $row;
 	}
-	
-	public function buildNotCustomTabels ($lines, $types, $is_usage_types = false, $details_keys = []) {
+
+	public function buildNotCustomTabels($lines, $types, $is_usage_types = false, $details_keys = []) {
 		$fields = ['Date & Time' => 'urt',
-					'Type' => 'usaget',
-					'Rate' => 'arate_key',
-					'Volume' => 'usagev',
-					'Amount' => 'aprice'
-			];
+			'Type' => 'usaget',
+			'Rate' => 'arate_key',
+			'Volume' => 'usagev',
+			'Amount' => 'aprice'
+		];
 		$columns = [];
 		foreach ($fields as $label => $field_name) {
 			$columns[] = ['field_name' => $field_name, 'label' => $label];
@@ -348,8 +348,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				} else {
 					$this->invoice_usage_tabels[][] = $this->getTableRow($line, $columns, $details_keys);
 				}
-				
 			}
 		}
 	}
+
 }
