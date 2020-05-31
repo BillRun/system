@@ -304,6 +304,7 @@ var invoicingDayField = {
 	"editable": true,
 	"display": true,
 	"select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+	"default_value":null
 };
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoicingDayField, 'account');
@@ -314,6 +315,9 @@ var found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "invoice_shipping_method") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoicing_day") {
+		fields[field_key].default_value = null;
 	}
 }
 if(!found) {
