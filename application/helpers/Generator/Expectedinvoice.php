@@ -35,6 +35,12 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	 * @var string prepaid or postpaid
 	 */
 	protected $billing_method = null;
+	
+	/**
+	 * Account's invoicing day (relevant for multi day cycle mode)
+	 * @var string - invoicing day (between 1 to 28)
+	 */
+	protected $invoicing_day = null;
 
 	
 	public function __construct($options) {
@@ -48,6 +54,7 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	public function load() {}
 
 	public function generate() {
+		$config = Billrun_Factory::config();
 		$options = array(
 			'type' => 'customer',
 			'force_accounts' => array($this->aid),
@@ -56,6 +63,9 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		);
 		$generator = Billrun_Aggregator::getInstance($options);
 		$generator->load();
+		if ($config->isMultiDayCycle()) {
+			$generator->setInvoicing_days();
+		}
 		if($generator->aggregate()) {
 			return Generator_WkPdf::getTempDir($this->stamp) . "/pdf/{$this->stamp}_{$this->aid}_0.pdf";
 		} else {
