@@ -73,6 +73,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function setRequestParams($params = []) {
 		$this->requestParams = [
 			'url' => $this->redirectUrl,
+			'response_parameters' => [
+				'txId',
+			],
 		];
 	}
 

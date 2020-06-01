@@ -48,7 +48,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
-		$okPage = $okPage . '&amp;customer=' . $customerProfileId;
+		$okPage = Billrun_Util::addGetParameters($okPage, ['customer' => $customerProfileId]);
 
 		$this->actionUrl .= '/profile/addPayment';
 		return $postXml = "<getHostedProfilePageRequest xmlns='AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
@@ -94,6 +94,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$this->requestParams = [
 			'url' => $this->actionUrl,
 			'post_parameters' => $params,
+			'response_parameters' => [
+				'customer',
+			],
 		];
 	}
 
@@ -831,7 +834,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$customerProfileId = $this->checkIfCustomerExists($aid);
 		if (!empty($customerProfileId)) {
 			$this->customerId = $customerProfileId;
-			$params['ok_page'] .= '&amp;customer=' . $customerProfileId;
+			$params['ok_page'] = Billrun_Util::addGetParameters($params['ok_page'], ['customer' => $customerProfileId]);
 		}
 
 		$root = [
