@@ -530,7 +530,7 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getContractorsInCollection($aids = array()) {
+	public static function getContractorsInCollection($aids = array(), $include_exempted = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
@@ -540,7 +540,7 @@ abstract class Billrun_Bill {
 		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 
 		// white list exists but aids not included
-		if (!is_null($subject_to) && empty($subject_to)) {
+		if (!is_null($subject_to) && empty($subject_to) && !$include_exempted) {
 			return [];
 		}
 		// white list exists and aids included
@@ -554,8 +554,8 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$aidsQuery = array('aid' => array('$in' => $aids));			
-		} else if (!empty($exempted)){
+			$aidsQuery = !$include_exempted ? array('aid' => array('$in' => $aids)) : array('aid' => array('$in' => array_unique(array_merge($aids, $exempted))));			
+		} else if (!empty($exempted) && !$include_exempted){
 			$aidsQuery = array('aid' => array('$nin' => $aids));
 		} else {
 			$aidsQuery = array();
@@ -574,9 +574,9 @@ abstract class Billrun_Bill {
 		);
 
 		if ($aids) {
-			$match['$match']['aid']['$in'] = $aids;
+			$match['$match']['aid']['$in'] = !$include_exempted ? $aids : array_unique(array_merge($aids, $exempted));
 		}
-		if ($exempted) {
+		if ($exempted && !$include_exempted) {
 			$match['$match']['aid']['$nin'] = $exempted;
 		}
 
