@@ -58,6 +58,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (isset($xmlObj->response->doDeal->mpiHostedPageUrl)) {
 
 				$this->redirectUrl = (string)$xmlObj->response->doDeal->mpiHostedPageUrl;
+				$this->setRequestParams();
 			} else {
 				Billrun_Factory::log("Error: " . 'Error Code: ' . $xmlObj->response->result .
 					'Message: ' . $xmlObj->response->message .
@@ -67,6 +68,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+	}
+	
+	protected function setRequestParams($params = []) {
+		$this->requestParams = [
+			'url' => $this->redirectUrl,
+		];
 	}
 
 	protected function buildTransactionPost($txId, $additionalParams) {

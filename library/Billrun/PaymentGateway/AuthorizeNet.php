@@ -84,9 +84,17 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				throw new Exception($errorMessage);
 			}
 			$this->htmlForm = $this->createHtmlRedirection($token);
+			$this->setRequestParams(['token' => $token]);
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+	}
+	
+	protected function setRequestParams($params = []) {
+		$this->requestParams = [
+			'url' => $this->actionUrl,
+			'post_parameters' => $params,
+		];
 	}
 
 	protected function buildTransactionPost($txId, $additionalParams) {
