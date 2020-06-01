@@ -1,6 +1,6 @@
+<?php if (!empty($tabels)) { ?>
 <div class="table table-default">
-	<?php if (!empty($tabels)) { 
-		foreach ($tabels as $index => $tabel) { ?>
+	<?php foreach ($tabels as $index => $tabel) { ?>
 			<table>
 			<?php foreach ($tabel as $line_index => $line_data) {
 				if ($line_index == 0) { ?>
@@ -20,6 +20,6 @@
 				</tr>
 			<?php } ?>
 			</tbody></table>
-		<?php }
-	} ?>
+		<?php } ?>
 </div><!-- /.table table-default -->
+<?php } ?>

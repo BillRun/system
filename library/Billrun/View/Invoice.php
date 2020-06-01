@@ -295,7 +295,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				}
 			}
 			if ($meetConditions) {
-				$this->invoice_usage_tabels[$tabel_index][] = $this->getTableRow($line, $tabel_config['columns'], $details_keys);
+				$this->invoice_usage_tabels[$line['sid']][$tabel_index][] = $this->getTableRow($line, $tabel_config['columns'], $details_keys);
 				return;
 			}
 		}
@@ -344,9 +344,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		foreach ($lines as $index => $line) {
 			if (in_array($line['type'], $types)) {
 				if (!$is_usage_types) {
-					$this->invoice_flat_tabels[0][] = $this->getTableRow($line, $columns, $details_keys);
+					$this->invoice_flat_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys);
 				} else {
-					$this->invoice_usage_tabels[][] = $this->getTableRow($line, $columns, $details_keys);
+					$this->invoice_usage_tabels[$line['sid']][][] = $this->getTableRow($line, $columns, $details_keys);
 				}
 			}
 		}
