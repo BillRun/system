@@ -357,11 +357,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function initLogFile() {
         $logOptions = $this->chargeOptions;
         $logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
+		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
         $this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
         $this->logFile->setSequenceNumber();
         $this->logFile->setFileName($this->getFilename());
         $this->logFile->setStamp();
         $this->generatedLogFileStamp = $this->logFile->getStamp();
+		Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
+		Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
         $this->logFile->save();
     }
     
