@@ -119,6 +119,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function getResponseDetails($result) {
+		$retParams = [];
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
@@ -131,9 +132,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$this->saveDetails['aid'] = (int) $customerProfile->merchantCustomerId;
 			$this->saveDetails['customer_profile_id'] = (string) $customerProfile->customerProfileId;
 			$this->saveDetails['payment_profile_id'] = (string) $customerProfile->paymentProfiles->customerPaymentProfileId;
+			$cardNum = (string) $customerProfile->paymentProfiles->payment->creditCard->cardNumber;
+			$fourDigits = substr($cardNum, -4);
+			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
+			$retParams['expiration_date'] = (string) $customerProfile->paymentProfiles->payment->creditCard->expirationDate;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+		
+		return $retParams;
 	}
 
 	protected function buildSetQuery() {
