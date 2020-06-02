@@ -208,6 +208,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->forceAccountIds =(array) Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		$this->ignoreCdrs = Billrun_Util::getFieldVal($options['aggregator']['ignore_cdrs'], Billrun_Util::getFieldVal($options['ignore_cdrs'], $this->ignoreCdrs));
+		$this->allowPrematureRun = $config->getConfigValue('cycle.allow_premature_run', false);
 		
 		$config = Billrun_Factory::config();
 		if($this->multiDayCycleMode = $config->isMultiDayCycle()) {
@@ -239,7 +240,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 		$this->overrideMode = $this->getAggregatorConfig('override_mode', true);
-		$this->allowPrematureRun = $config->getConfigValue('cycle.allow_premature_run', false);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$pageResult = $this->getPage();
