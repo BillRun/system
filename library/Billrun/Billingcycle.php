@@ -419,21 +419,22 @@ class Billrun_Billingcycle {
 		return 0;
 	}
 	
-	public static function getCycleStatus($billrunKey, $size = null) {
+	public static function getCycleStatus($billrunKey, $size = null, $invoicing_day = null) {
 		if (is_null($size)) {
 			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		}
-		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
-			return self::$cycleStatuses[$billrunKey][$size];
+		$key = !empty($invoicing_day) ? ${$billrunKey . $invoicing_day} : $billrunKey;
+		if (isset(self::$cycleStatuses[$key][$size])) {
+			return self::$cycleStatuses[$key][$size];
 		}
 		$cycleStatus = '';
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		$currentBillrunKey = self::getBillrunKeyByTimestamp($billrunKey, $invoicing_day);
 		if ($billrunKey == $currentBillrunKey) {
 			$cycleStatus = 'current';
 		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey, $invoicing_day))) {
 			$cycleStatus = 'to_rerun';
 		}
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
@@ -549,12 +550,15 @@ class Billrun_Billingcycle {
 	 * @return bool - True if finished cycle was reseted.
 	 * 
 	 */
-	public static function isToRerun($billrunKey) {
+	public static function isToRerun($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billingCycleCol = self::getBillingCycleColl();
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
+		if (!empty($invoicing_day)) {
+			$query['invoicing_day'] = $invoicing_day;
+		} 
 		
 		$billrunDoc = $billrunColl->query($query)->count();
 		$cycleDoc = $billingCycleCol->query($query)->count();
