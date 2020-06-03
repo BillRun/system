@@ -292,19 +292,24 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cycleAction() {
+		$config = Billrun_Factory::config();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass stamp of the wanted cycle info');
 		}
-		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
-		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size);
-		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey);
-		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey);
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size)) {
-			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey);
+		if (empty($invoicingDay) && $config->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
+		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicingDay));
+		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicingDay));
+		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicingDay);
+		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size, $invoicingDay);
+		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey, $invoicingDay);
+		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey, $invoicingDay);
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)) {
+			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey, $invoicingDay);
 		}
 		$setting['generate_pdf'] = Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
 		$output = array(
