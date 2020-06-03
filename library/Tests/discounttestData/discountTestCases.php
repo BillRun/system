@@ -1372,7 +1372,7 @@ class discountTestCases {
 			]
 		),
 		/* PLAN
-		 * Subscriber is eligible to threre sequential discounts for a full cycle*/
+		 * Subscriber is eligible to three sequential discounts for a full cycle*/
 		array('test_num' => 48, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
 					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
 					]],
@@ -1403,12 +1403,12 @@ class discountTestCases {
 			),
 			'subjectExpected' => [
 				['sid' => '22', 'key' => 'DIS1', 'full_price' => -25, 'billrun' => '201905', 'final_charge' => -29.25,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS2', 'full_price' => -5, 'billrun' => '201905', 'final_charge' => -5.85, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS3', 'full_price' => -2.5, 'billrun' => '201905', 'final_charge' => -2.925, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -15, 'billrun' => '201905', 'final_charge' => -17.55, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -30, 'billrun' => '201905', 'final_charge' => -35.1, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
 		/* PLAN
-		 * Subscriber is eligible to threre discounts:
+		 * Subscriber is eligible to three discounts:
  		 * DIS1 (sequential) from  17-19, DIS2(sequential) from 10-12, DIS3(sequential)from 1-20 
 		 * (non conflicting percentage discounts, discount #1 applies first #2 secound)
 		 * the last discount intercection with the DIS1 for 3 days and 
@@ -1438,24 +1438,23 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
 			'subjectExpected' => [
-				['sid' => '22', 'key' => 'DIS1', 'full_price' => -1, 'billrun' => '201905', 'final_charge' => -1.17, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS2', 'full_price' => -2, 'billrun' => '201905', 'final_charge' => -2.34, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS3', 'full_price' => -14.9, 'billrun' => '201905', 'final_charge' => -17.433, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -3, 'billrun' => '201905', 'final_charge' => -3.51, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -6, 'billrun' => '201905', 'final_charge' => -7.02, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -57.3, 'billrun' => '201905', 'final_charge' => -67.041, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
 		/* PLAN
-		 * Subscriber is eligible to threre discounts:
+		 * Subscriber is eligible to three discounts:
  		 * #1 (sequential) from 12-29, #2(sequential) from 10-20, #3(sequential) from 1-15 
 		 * (non conflicting percentage discounts, discount #1 applies first #2 secound)
 		 * the last discount: intercection with DIS1 and DIS2 for 4 days and only with DIS2 for 2 days 
 		 * and the rest(9 days) separately. 
-		 * the second discount: intercection with DIS1 for 9 days 
-		 * and the rest(2 days) separately. 
+		 * the second discount: intercection with DIS1 for 9 days and the rest(2 days) separately. 
 		 */
 		array('test_num' =>50, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
 					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
@@ -1487,8 +1486,8 @@ class discountTestCases {
 			),
 			'subjectExpected' => [
 				['sid' => '22', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'final_charge' => -21.06, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS2', 'full_price' => -5.8, 'billrun' => '201905', 'final_charge' => -6.786, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS3', 'full_price' => -28.44, 'billrun' => '201905', 'final_charge' => -33.2748, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -20.2, 'billrun' => '201905', 'final_charge' => -23.634, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -40.494, 'billrun' => '201905', 'final_charge' => -47.37798, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
 		/* PLAN
@@ -1501,7 +1500,7 @@ class discountTestCases {
 					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
 					]],
 				'discounts' => [
-					['name' => 'DIS1', 'root' => ['from' => '2019-04-01', 'to' => '2019-04-17', 'type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.5]]]],
+					['name' => 'DIS1', 'root' => ['from' => '2019-04-01', 'to' => '2019-04-17', 'type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.25]]]],
 						'params_override' => [
 							'condition' => [[
 								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
@@ -1515,17 +1514,17 @@ class discountTestCases {
 						]],
 				],
 				'cdrs' => [
-					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+					['prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
 				'function' => array()),
 			'expected' => array(
 			),
 			'subjectExpected' => [
-				['sid' => '22', 'key' => 'DIS1', 'full_price' => -150, 'billrun' => '201905', 'final_charge' => -175.5, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
-				['sid' => '22', 'key' => 'DIS2', 'full_price' => -72.5, 'billrun' => '201905', 'final_charge' => -84.825, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -40, 'billrun' => '201905', 'final_charge' => -46.8, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -73.75, 'billrun' => '201905', 'final_charge' => -86.2875, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
 		/* Service
-		 * Subscriber is eligible to threre sequential discounts for a full cycle*/
+		 * Subscriber is eligible to three sequential discounts for a full cycle*/
 		array('test_num' => 52, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
 					[['sid' => 22, 'service' => 'SERVICE2', 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01',
 						'plan_activation' => "2019-04-01",
@@ -1553,12 +1552,12 @@ class discountTestCases {
 			),
 			'subjectExpected' => [
 				['sid' => '22', 'key' => 'DIS1', 'full_price' => -25, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
-				['sid' => '22', 'key' => 'DIS2', 'full_price' => -5, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
-				['sid' => '22', 'key' => 'DIS3', 'full_price' => -2.5, 'billrun' => '201905', 'service' => 'SERVICE2','affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -15, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -30, 'billrun' => '201905', 'service' => 'SERVICE2','affected_sections' => ['service']],
 			]
 		),
 		/* Service
-		 * Subscriber is eligible to threre discounts:
+		 * Subscriber is eligible to three discounts:
  		 * DIS1 (sequential) from  17-19, DIS2(sequential) from 10-12, DIS3(sequential)from 1-20 
 		 * (non conflicting percentage discounts, discount #1 applies first #2 secound)
 		 * the last discount intercection with the DIS1 for 3 days and 
@@ -1592,17 +1591,15 @@ class discountTestCases {
 			'subjectExpected' => [
 				['sid' => '22', 'key' => 'DIS1', 'full_price' => -1, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
 				['sid' => '22', 'key' => 'DIS2', 'full_price' => -2, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
-				['sid' => '22', 'key' => 'DIS3', 'full_price' => -14.9, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -19.1, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
 			]
 		),
 		/* Service
-		 * Subscriber is eligible to threre discounts:
+		 * Subscriber is eligible to three discounts:
  		 * #1 (sequential) from 12-29, #2(sequential) from 10-20, #3(sequential) from 1-15 
 		 * (non conflicting percentage discounts, discount #1 applies first #2 secound)
 		 * the last discount: intercection with DIS1 and DIS2 for 4 days and only with DIS2 for 2 days 
 		 * and the rest(9 days) separately. 
-		 * the second discount: intercection with DIS1 for 9 days 
-		 * and the rest(2 days) separately.
 		 * 
 		 * + check condition by firstname
 		 */
@@ -1642,8 +1639,336 @@ class discountTestCases {
 			),
 			'subjectExpected' => [
 				['sid' => '23', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
-				['sid' => '23', 'key' => 'DIS2', 'full_price' => -5.8, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
-				['sid' => '23', 'key' => 'DIS3', 'full_price' => -28.44, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '23', 'key' => 'DIS2', 'full_price' => -20.2, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '23', 'key' => 'DIS3', 'full_price' => -40.494, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
+			]
+		),
+		/* Conflicting discounts + discounts priority + sequential*/
+		/* X :{
+		  excludes :[ Z ]
+		  condition : plan = abcd
+		  & firstname =yossi
+		  subject:{
+		  monthly_fees:50
+		  }
+		  priority : 3
+		  }
+		  Z:{
+		  excludes :[ Y]
+		  condition : plan = abcd
+		  subject:{
+		  monthly_fees:50
+		  }
+		  priority : 2
+		  }
+		  Y:{
+		  condition : plan = abcd
+		  subject:{
+		  monthly_fees:50
+		  }
+		  priority :1
+		  }
+		  AB:{
+		  excludes :[ ABC ]
+		  condition : plan = BB
+		  subject:{
+		  monthly_fees:50
+		  }
+		  priority : 2
+		  }
+		  ABC:{
+		  condition : plan = BB
+		  OR plan = ZZZ
+		  subject:{
+		  monthly_fees:50
+		  }
+		  priority :1
+		  }
+		 *
+		 *  from 2019-04-01  eligibility for AB
+		  sid :23 :{
+		  plan :BB
+		  }
+		  from 2019-04-10 eligibility for ABC
+		  sid :23 :{
+		  plan :ZZZ
+		  }
+		  from 2019-04-20 eligibility for AB
+		  sid :23 :{
+		  plan :BB
+		  }
+
+		 */
+		array('test_num' => 55, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 18]], 'subsRevisions' => [
+					[
+						['sid' => 19, 'plan' => 'BB', 'from' => '2019-04-01', 'to' => '2019-04-10', 'plan_activation' => '2019-04-01'],
+						['sid' => 19, 'plan' => 'ZZZ', 'from' => '2019-04-10', 'to' => '2019-04-20', 'plan_activation' => '2019-04-10'],
+						['sid' => 19, 'plan' => 'BB', 'from' => '2019-04-20', 'to' => '2019-05-01', 'plan_activation' => '2019-04-20']
+					],
+				],
+				'discounts' => [
+					['name' => 'AB', 'root' => ['subject' => ['monthly_fees' => ['value' => 50, 'sequential' => true]], 'priority' => 2, 'excludes' => ['ABC']],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'op' => '$eq', 'values' => 'BB'],
+								]],
+						]
+					], ['name' => 'ABC', 'root' => ['subject' => ['monthly_fees' => ['value' => 50, 'sequential' => true]], 'priority' => 1],
+						'params_override' => [
+							'condition' => [
+								[['type' => 'subscriber', 'field' => 'plan', 'op' => '$eq', 'values' => 'BB']],
+								[['type' => 'subscriber', 'field' => 'plan', 'op' => '$eq', 'values' => 'ZZZ']]
+							],
+						]
+					]],
+				'function' => array('checkEligibility')),
+			'expected' => array(
+				"AB" => ["eligibility" => [["from" => "2019-04-01", "to" => "2019-04-10"], ["from" => "2019-04-20", "to" => "2019-05-01"]]],
+				"ABC" => ["eligibility" => [["from" => "2019-04-10", "to" => "2019-04-20"]]]
+			)),
+		/* PLAN
+		 * Subscriber is eligible to sequential discount but not a percentage discount (ignore the sequential)*/
+		array('test_num' => 56, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
+					]],
+				'discounts' => [
+					['name' => 'DIS1', 'root' => ['type' => 'monetary', 'subject' => ['plan' => ['PLAN2' => ['value' => 30, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -30, 'billrun' => '201905', 'final_charge' => -35.1,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+			]
+		),
+		/* PLAN
+		 * Subscriber is eligible to three sequential discounts for a full cycle
+		 * the first is not a percentage discount (ignore the sequential for this discount)
+		 */
+		array('test_num' => 57, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
+					]],
+				'discounts' => [
+					['name' => 'DIS1', 'root' => ['type' => 'monetary', 'subject' => ['plan' => ['PLAN2' => ['value' => 25, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS2', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.2, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS3', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.5, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -25, 'billrun' => '201905', 'final_charge' => -29.25,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -15, 'billrun' => '201905', 'final_charge' => -17.55, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -30, 'billrun' => '201905', 'final_charge' => -35.1, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+			]
+		),
+		/* PLAN
+		 * Subscriber is eligible to three sequential discounts for a full cycle
+		 * the second is not a percentage discount (ignore the sequential for this discount)
+		 */
+		array('test_num' => 58, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
+					]],
+				'discounts' => [
+					['name' => 'DIS3', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.5, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS1', 'root' => ['type' => 'monetary', 'subject' => ['plan' => ['PLAN2' => ['value' => 25, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS2', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.2, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -25, 'billrun' => '201905', 'final_charge' => -29.25,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -5, 'billrun' => '201905', 'final_charge' => -5.85, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -50, 'billrun' => '201905', 'final_charge' => -58.5, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+			]
+		),
+		/* PLAN
+		 * Subscriber is eligible to three sequential discounts for a full cycle
+		 * the second is not a percentage discount (ignore the sequential for this discount)
+		 * + more then 100%
+		 */
+		array('test_num' => 59, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
+					]],
+				'discounts' => [
+					['name' => 'DIS3', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.5, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS1', 'root' => ['type' => 'monetary', 'subject' => ['plan' => ['PLAN2' => ['value' => 50, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS2', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.2, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -50, 'billrun' => '201905', 'final_charge' => -58.5,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -50, 'billrun' => '201905', 'final_charge' => -58.5, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+			]
+		),
+		/* Service
+		 * three  Subscribers  eligible to one discount:
+ 		 * DIS1 (sequential) from  12-29
+		 */
+		array('test_num' => 60, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => 
+				[
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+					[['sid' => 23, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+					[['sid' => 24, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+				],
+				'discounts' => [
+					['name' => 'DIS1', 'root' => ['from' => '2019-04-12', 'to' => '2019-04-30', 'type' => 'percentage', 'subject' => ['service' => ['SERVICE2' => ['value' => 0.1, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2'],
+			['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '23', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '24', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
+			]
+		),
+		/* Service
+		 * three  Subscribers  eligible to two discounts:
+ 		 * DIS1 (sequential) from  12-29, DIS2 (sequential) from  10-20
+		 */
+		array('test_num' => 61, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => 
+				[
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+					[['sid' => 23, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+					[['sid' => 24, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"]],
+				],
+				'discounts' => [
+					['name' => 'DIS1', 'root' => ['from' => '2019-04-12', 'to' => '2019-04-30', 'type' => 'percentage', 'subject' => ['service' => ['SERVICE2' => ['value' => 0.1, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [],
+						]],
+					['name' => 'DIS2', 'root' => ['from' => '2019-04-10', 'to' => '2019-04-21', 'type' => 'percentage', 'subject' => ['service' => ['SERVICE2' => ['value' => 0.2, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 24, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 23, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2'],
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 0, 'full_price' => 0, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2'],
+					['usaget' => 'flat', 'type' => 'service', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 351, 'full_price' => 300, 'billrun' => '201905', 'tax_data' => [	"total_amount" => 0,"total_tax" => 0,"taxes" => [ ]], 'service' => 'SERVICE2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '23', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '24', 'key' => 'DIS1', 'full_price' => -18, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '23', 'key' => 'DIS2', 'full_price' => -20.2, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '22', 'key' => 'DIS2', 'full_price' => -20.2, 'billrun' => '201905', 'service' => 'SERVICE2', 'affected_sections' => ['service']],
+				['sid' => '24', 'key' => 'DIS2', 'full_price' => -20.2, 'billrun' => '201905',  'service' => 'SERVICE2', 'affected_sections' => ['service']],
+			]
+		),
+		/* PLAN
+		 * Subscriber is eligible to three sequential discounts for a full cycle
+		 * the second is not a percentage discount (ignore the sequential for this discount)
+		 * + more then 100%
+		 */
+		array('test_num' => 62, 'test' => array('options' => ['stamp' => '201905'], 'subsAccount' => [['aid' => 21]], 'subsRevisions' => [
+					[['sid' => 22, 'plan' => 'PLAN2', 'from' => '2019-04-01', 'to' => '2019-05-01', 'plan_activation' => "2019-04-01"],
+					]],
+				'discounts' => [
+					['name' => 'DIS3', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.5, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS1', 'root' => ['type' => 'monetary', 'subject' => ['plan' => ['PLAN2' => ['value' => 60, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+					['name' => 'DIS2', 'root' => ['type' => 'percentage', 'subject' => ['plan' => ['PLAN2' => ['value' => 0.2, 'sequential' => true]]]],
+						'params_override' => [
+							'condition' => [[
+								['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],
+								]],
+						]],
+				],
+				'cdrs' => [
+					['usaget' => 'flat', 'type' => 'flat', 'start' => "2019-04-01", 'end' => '2019-05-01', 'aid' => 21, 'sid' => 22, 'final_charge' => 117, 'full_price' => 100, 'billrun' => '201905', 'tax_data' => [], 'plan' => 'PLAN2']],
+				'function' => array()),
+			'expected' => array(
+			),
+			'subjectExpected' => [
+				['sid' => '22', 'key' => 'DIS1', 'full_price' => -50, 'billrun' => '201905', 'final_charge' => -58.5,  'plan' => 'PLAN2', 'affected_sections' => ['plan']],
+				['sid' => '22', 'key' => 'DIS3', 'full_price' => -50, 'billrun' => '201905', 'final_charge' => -58.5, 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
 	];
