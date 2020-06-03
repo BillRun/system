@@ -71,6 +71,9 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$from = $start_period = $this->row['service_start_date'];
 			$period = $this->row['balance_period'];
 			$to = strtotime((string) $this->row['balance_period'], $from);
+		} else if (!empty($this->row['add_on'])) {
+			$service_id = $this->row['service_id'];
+			$service_name = $this->row['service_name'];
 		} else {
 			$service_id = 0;
 			$service_name = null;

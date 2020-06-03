@@ -407,5 +407,5 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function getNextActiveBillrun() {
 		return $this->next_active_billrun;
 	}
-
+	
 }

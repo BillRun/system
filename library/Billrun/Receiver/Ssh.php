@@ -90,7 +90,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 					Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
                                         if (!$this->ssh->isFile($ssh_path."/" . $file)) {
-                                                Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::INFO);
+                                                Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::DEBUG);
                                                 continue;
                                         }
 					if (!$this->isFileValid($file, '')) {
@@ -236,5 +236,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
+    
 
 }

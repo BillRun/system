@@ -30,7 +30,19 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-        
+    
+	/**
+	 * Table holding the values of the following cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $followingCycleKeysTable = array();
+	
+	/**
+	 * Table holding the values of the previous cycle keys, by cycle key.
+	 * @var array
+	 */
+	protected static $previousCycleKeysTable = array();
+	
 	/**
 	 * Cycle statuses cache (by page size)
 	 * @var array
@@ -40,31 +52,66 @@ class Billrun_Billingcycle {
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's end time will be calculated respectively.
 	 * @return type int
 	 */
-	public static function getEndTime($key) {
+	public static function getEndTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleEndTable) {
 			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
-		
-		return self::$cycleEndTable->get($key);
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $invoicing_day) : self::$cycleEndTable->get($key);
+	}
+	
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the end of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getEndTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleEndTable) {
+			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
+		}
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleEndTable->get($key, $customer['invoicing_day']) : self::$cycleEndTable->get($key);
 	}
 
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param type $key
+	 * @param type $invoicing_day - in multi day cycle mode, need to send the invoicing day, so the billrun's start time will be calculated respectively.
 	 * @return type int
 	 */
-	public static function getStartTime($key) {
+	public static function getStartTime($key, $invoicing_day = null) {
 		// Create the table if not already initialized
 		if(!self::$cycleStartTable) {
 			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
-
-		return self::$cycleStartTable->get($key);
+		
+		$config = Billrun_Factory::config();
+		return (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $invoicing_day) : self::$cycleStartTable->get($key);
 	}
 	
+	/**
+	 * 
+	 * @param string $key
+	 * @param array / mongoloid entity $customer
+	 * @return type int - returns the start of the billrun cycle, according to the customer's invoicing_day field.
+	 */
+	public static function getStartTimeByCustomer($key, $customer) {
+		// Create the table if not already initialized
+		if (!self::$cycleStartTable) {
+			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
+		}
+
+		$config = Billrun_Factory::config();
+		return (!is_null($customer['invoicing_day']) && $config->isMultiDayCycle()) ? self::$cycleStartTable->get($key, $customer['invoicing_day']) : self::$cycleStartTable->get($key);
+	}
+
 	/**
 	 * Return the date constructed from the current billrun key
 	 * @return string
@@ -91,7 +138,8 @@ class Billrun_Billingcycle {
 		}
 		
 		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+			$config = Billrun_Factory::config();
+			$dayofmonth = $config->getConfigChargingDay();
 		}
 		$format = "Ym";
 		if (date("d", $timestamp) < $dayofmonth) {
@@ -128,9 +176,13 @@ class Billrun_Billingcycle {
 	 * @return string The following key
 	 */
 	public static function getFollowingBillrunKey($key) {
+		if(!empty(self::$followingCycleKeysTable[$key])) {
+			return self::$followingCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
+		self::$followingCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
 
@@ -140,12 +192,16 @@ class Billrun_Billingcycle {
 	 * @return string The previous key
 	 */
 	public static function getPreviousBillrunKey($key) {
+		if(!empty(self::$previousCycleKeysTable[$key])) {
+			return self::$previousCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
+		self::$previousCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
-        
+	
 	/**
 	 * method to get the last closed billing cycle
 	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
@@ -377,8 +433,7 @@ class Billrun_Billingcycle {
 		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		$cycleToRerun = self::isToRerun($billrunKey);
-		if (empty($cycleStatus) && $cycleToRerun) {
+		if (empty($cycleStatus) && (self::isToRerun($billrunKey))) {
 			$cycleStatus = 'to_rerun';
 		}
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
@@ -389,7 +444,7 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
@@ -576,6 +631,18 @@ class Billrun_Billingcycle {
 			return NULL;
 		}
 		return $entry['billrun_key'];
+	}
+	
+	public static function getCycleTimeStatus($billrunKey) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		if ($billrunKey == $currentBillrunKey) {
+			return 'present';
+		}
+		if ($billrunKey > $currentBillrunKey) {
+			return 'future';
+		}
+	
+		return 'past';
 	}
         
         /**

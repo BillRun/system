@@ -214,6 +214,8 @@ class Models_Entity {
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
 		$fieldTypes = array();
+		//all the options that value can be, so if selected will not throw an api exception.
+		$selectOptionsFields = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
@@ -221,6 +223,7 @@ class Models_Entity {
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
+			$selectOptionsFields[$fieldName] = Billrun_Util::getFieldVal($customField['select_options'], null);
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -237,6 +240,16 @@ class Models_Entity {
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
+			}
+			if (!is_null($selectOptionsFields[$field])) {
+				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
+				if (!in_array($val, $selectOptions)) {
+					if(!$mandatoryFields[$field] && empty($val)){
+						$val = null;
+					}else{
+						throw new Billrun_Exceptions_Api(0, array(), "Invalid field: $field, with value: $val");
+					}
+				}
 			}
 			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
@@ -256,8 +269,8 @@ class Models_Entity {
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
-		$startTime = strtotime(isset($data['from'])? $data['from'] : $this->getDefaultFrom());
-		$endTime = strtotime(isset($data['to'])? $data['to'] : $this->getDefaultTo());
+		$startTime = strtotime(isset($data['from']) ? $data['from'] : $this->getDefaultFrom());
+		$endTime = strtotime(isset($data['to']) ? $data['to'] : $this->getDefaultTo());
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
@@ -380,7 +393,7 @@ class Models_Entity {
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
-			
+
 			$key = $oldRevision[$field];
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
@@ -401,7 +414,7 @@ class Models_Entity {
 		unset($update['from']);
 		return $this->generateUpdateParameter($update, $this->queryOptions);
 	}
-	
+
 	/**
 	 * Performs the changepassword action by a query and data to update
 	 * @param array $query
@@ -725,7 +738,7 @@ class Models_Entity {
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
-		
+
 		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
 		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
@@ -818,16 +831,16 @@ class Models_Entity {
 		}
 		return true;
 	}
-	
+
 	protected function generateUpdateParameter($data, $options = array()) {
 		$update = array();
 		unset($data['_id']);
-		if(!empty($data)) {
+		if (!empty($data)) {
 			$update = array(
 				'$set' => $data,
 			);
 		}
-		if(!empty($options)) {
+		if (!empty($options)) {
 			$update = array_merge($update, $options);
 		}
 		return $update;
@@ -929,7 +942,7 @@ class Models_Entity {
 	public function setUpdate($u) {
 		$this->update = $u;
 	}
-	
+
 	/**
 	 * method to update the update options instruct
 	 * @param array $o mongo update options instruct
@@ -942,17 +955,15 @@ class Models_Entity {
 					'$each' => $push_field['field_values']
 				);
 			}
-			
 		}
 		if (isset($o['pull_fields'])) {
 			foreach ($o['pull_fields'] as $pull_field) {
-				if(isset($pull_field['pull_by_key'])) {
+				if (isset($pull_field['pull_by_key'])) {
 					$queryOptions['$pull'][$pull_field['field_name']][$pull_field['pull_by_key']]['$in'] = $pull_field['field_values'];
 				} else {
 					$queryOptions['$pull'][$pull_field['field_name']]['$in'] = $pull_field['field_values'];
 				}
 			}
-			
 		}
 		$this->queryOptions = $queryOptions;
 	}
@@ -1190,7 +1201,7 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		if(isset($this->update['_id'])) {
+		if (isset($this->update['_id'])) {
 			$queryCreation = array(
 				$keyField => $this->before[$keyField],
 			);
@@ -1229,25 +1240,25 @@ class Models_Entity {
 	protected function fixEntityFields($entity) {
 		return;
 	}
-	
+
 	protected function getDefaultFrom() {
 		switch ($this->action) {
 			case 'permanentchange':
 				return '1970-01-02 00:00:00';
 			case 'create':
 				return Billrun_Util::generateCurrentTime();
-			
+
 			default:
 				return $this->before['from'];
 		}
 	}
-	
+
 	protected function getDefaultTo() {
 		switch ($this->action) {
 			case 'permanentchange':
 			case 'create':
 				return '+100 years';
-			
+
 			default:
 				return $this->before['to'];
 		}
@@ -1259,4 +1270,5 @@ class Models_Entity {
 		}
 		return $additional;
 	}
+
 }

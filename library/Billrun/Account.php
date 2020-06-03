@@ -47,7 +47,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 */
 	protected $customerExtraData = array();
 	
-	protected $allowedQueryKeys = ['id', 'time'];
+	protected static $allowedQueryKeys = ['id', 'time'];
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -113,13 +113,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
-	protected abstract function getAccountDetails($query);
+	protected abstract function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */
-	protected abstract function getAccountsDetails($query);
+	protected abstract function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE);
 	
 	/**
 	 * Method to Save as 'Close And New' item
@@ -169,8 +169,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		$result = $this->load([$accountQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($query, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		$this->data = $result[0]->getRawData();
 		return $result[0];
@@ -183,13 +183,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function loadAccountsForQuery($params) {
 		$accountsQuery = $this->buildQuery($params);
 		if ($accountsQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Cannot identify account. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		return $result;
 	}
@@ -245,7 +245,6 @@ abstract class Billrun_Account extends Billrun_Base {
 	
 	public function getInCollection($aids = array()) {
 		$results = array();
-		$exempted = $this->getExcludedFromCollection($aids);
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
 		// white list exists but aids not included
@@ -256,13 +255,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!is_null($subject_to) && !empty($subject_to)) {
 			$params['aid']['$in'] = $subject_to;
 		}
-		// black list exist and include aids
-		if (!empty($exempted)) {
-			$params['aid']['$nin'] = $exempted;
-		}
-		$query = $this->buildQuery($params);
-		$this->loadAccounts($query);
-		$cursor = $this->getCustomerData();
+
+
+		$cursor = $this->loadAccountsForQuery($params);
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
 		}

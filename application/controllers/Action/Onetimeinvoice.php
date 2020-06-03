@@ -40,8 +40,9 @@ class OnetimeinvoiceAction extends ApiAction {
 		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
         $cdrs = [];
         $this->aid = intval($request['aid']);
+		$paymentData = json_decode(Billrun_Util::getIn($request, 'payment_data', ''),JSON_OBJECT_AS_ARRAY);
         $affectedSids = [];
-        
+        Billrun_Factory::dispatcher()->trigger('beforeImmediateInvoiceCreation', array($this->aid, $inputCdrs, $paymentData, $allowBill, $step, $oneTimeStamp, $sendEmail));
 		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
@@ -94,7 +95,14 @@ class OnetimeinvoiceAction extends ApiAction {
 			}
 
 			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
-			Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
+			$chargeOptions = [
+				'aids' => [$this->aid],
+				'invoices' => [$this->invoice->getInvoiceID()],
+				'payment_data' => [
+					$this->aid => $paymentData,
+				],
+			];
+            Billrun_Bill_Payment::makePayment($chargeOptions);
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 				return;

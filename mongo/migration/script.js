@@ -24,6 +24,16 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	return lastConf;
 }
 
+function removeFieldFromConfig(lastConf, field_names, entityName) {
+	if (typeof lastConf[entityName] === 'undefined') {
+		return lastConf;
+	}
+	field_names_to_delete = Array.isArray(field_names) ? field_names : [field_names];
+	var fields = lastConf[entityName]['fields'];
+	lastConf[entityName]['fields'] = fields.filter(field => !field_names_to_delete.includes(field.field_name));
+	return lastConf;
+}
+
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -79,7 +89,6 @@ var invoice_language_field = {
 		"title":"Invoice language"
 	}
 lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
-
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
 	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
@@ -109,6 +118,32 @@ if (!lastConfig['plugins']) {
 	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
 }
 
+for (var i = 0; i < lastConfig['plugins'].length; i++) {
+	if (typeof lastConfig['plugins'][i] === 'string') {
+		if (lastConfig['plugins'][i] === "calcCpuPlugin") {
+			lastConfig['plugins'][i] = {
+				"name": "calcCpuPlugin",
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": true
+			};
+		} else if (["csiPlugin", "autorenewPlugin"].includes(lastConfig['plugins'][i]['name'])) {
+			lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": true,
+				"hide_from_ui": false
+			};
+		} else {
+				lastConfig['plugins'][i] = {
+				"name": lastConfig['plugins'][i],
+				"enabled": true,
+				"system": false,
+				"hide_from_ui": false
+			};
+		}
+	}
+}
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
@@ -205,22 +240,8 @@ if(lastConfig.invoice_export) {
 	}
 }
 
-//BRCD-1374 : Add taxation support services 
-var vatableField ={
-					"system":true,
-					"select_list" : false,
-					"display" : true,
-					"editable" : true,
-					"multiple" : false,
-					"field_name" : "vatable",
-					"unique" : false,
-					"default_value" : true,
-					"title" : "This service is taxable",
-					"mandatory" : false,
-					"type" : "boolean",
-					"select_options" : ""
-	};
-lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+// BRCD-2251 remove old vatable filed
+lastConfig = removeFieldFromConfig(lastConfig, 'vatable', 'services');
 
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
@@ -271,6 +292,22 @@ if(!lastConfig.email_templates) {
     }
   };
 }
+// BRCD-2364: Customer invoicing_day field, Should be a system field, not visible for editing by default.
+//The possible values are 1-28 - should be enforced using the existing "Select list" feature
+var invoicingDayField = {
+	"field_name": "invoicing_day",
+	"title": "Invoicing Day",
+	"mandatory": false,
+	"system": true,
+	"show_in_list": true,
+	"select_list": true,
+	"editable": true,
+	"display": true,
+	"select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+	"default_value":null
+};
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoicingDayField, 'account');
 
 // BRCD-1415 - add system field to account (invoice_shipping_method)
 var fields = lastConfig['subscribers']['account']['fields'];
@@ -278,6 +315,9 @@ var found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "invoice_shipping_method") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoicing_day") {
+		fields[field_key].default_value = null;
 	}
 }
 if(!found) {
@@ -336,6 +376,26 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
+
+// BRCD-1552 collection
+if (typeof lastConfig['collection'] === 'undefined') {
+	lastConfig['collection'] = {'settings': {}};
+}
+if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
+    lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
+}
+delete lastConfig['collection']['min_debt'];
+// BRCD-1562 - steps trigget time
+if (typeof lastConfig['collection']['settings']['run_on_holidays'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_holidays'] = true;
+}
+if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_days'] = [true,true,true,true,true,true,true];
+}
+if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
+    lastConfig['collection']['settings']['run_on_hours'] = [];
+}
+
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -678,7 +738,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 }
 
 db.config.insert(lastConfig);
-
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -818,6 +877,32 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+// BRCD-1241: convert events to new structure
+if (typeof lastConfig.events !== 'undefined') {
+	for (var eventType in lastConfig.events) {
+		for (var eventId in lastConfig.events[eventType]) {
+			for (var conditionId in lastConfig.events[eventType][eventId].conditions) {
+				if (typeof lastConfig.events[eventType][eventId].conditions[conditionId].paths == 'undefined') {
+					lastConfig.events[eventType][eventId].conditions[conditionId].paths = [{
+							'path': lastConfig.events[eventType][eventId].conditions[conditionId].path,
+					}];
+					delete lastConfig.events[eventType][eventId].conditions[conditionId].path;
+				}
+			}
+		}
+	}
+}
+// BRCD-2367 : Fix for in_collection field is rejected when quering the account
+if (lastConfig.subscribers !== undefined && lastConfig.subscribers.account !== undefined && lastConfig.subscribers.account.fields !== undefined) {
+	var brcd_2367_accInCollVal = {
+		"field_name" : "in_collection",
+		"system" : true,
+		"display" : false
+	};
+	if(!lastConfig.subscribers.account.fields.some(elm => elm.field_name === brcd_2367_accInCollVal.field_name )) {
+		lastConfig.subscribers.account.fields.push(brcd_2367_accInCollVal);
+	}
+}
 
 // BRCD-2070 - GSD - getSubscriberDetails
 if (!lastConfig.subscribers.subscriber.type) {
@@ -826,7 +911,6 @@ if (!lastConfig.subscribers.subscriber.type) {
 if (!lastConfig.subscribers.account.type) {
 	lastConfig.subscribers.account.type = 'db';
 }
-
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
@@ -842,4 +926,59 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
+db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.billrun.dropIndex('billrun_key_-1');
+//BRCD-2042 - charge.not_before migration script
+db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.bills.save(obj);
+	}
+)
+db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
+	function(obj) {
+		if (typeof obj['charge'] === 'undefined') {
+			obj['charge'] = {};
+		}
+		obj['charge']['not_before'] = obj['due_date'];
+		db.billrun.save(obj);
+	}
+)
+//BRCD-2452 reformat paid_by and pays objects to array format
+var bills = db.bills.find({
+	$or: [
+		{"pays.inv": {$exists: 1}},
+		{"pays.rec": {$exists: 1}},
+		{"paid_by.inv": {$exists: 1}},
+		{"paid_by.rec": {$exists: 1}}
+	]
+});
+bills.forEach(function (bill) {
+	var relatedBills = [];
+	var currentBillsKey;
 
+	if (typeof bill['pays'] !== 'undefined') {
+		currentBillsKey = 'pays';
+	} else if (typeof bill['paid_by'] !== 'undefined') {
+		currentBillsKey = 'paid_by';
+	}
+
+	if (typeof bill[currentBillsKey] != 'undefined') {
+		for (type in bill[currentBillsKey]) {
+			for (id in bill[currentBillsKey][type]) {
+				relatedBills.push({
+					"type": type,
+					"id": type === 'inv' ? parseInt(id) : id,
+					"amount": parseFloat(bill[currentBillsKey][type][id])
+				});
+			}
+		}
+
+		bill[currentBillsKey] = relatedBills;
+		db.bills.save(bill);
+	}
+});

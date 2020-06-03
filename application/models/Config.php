@@ -154,6 +154,16 @@ class ConfigModel {
 				}
 			}
 			return $plugins;
+		} else if ($category === 'plugins') {
+			$plugins = $this->_getFromConfig($currentConfig, $category, $data);
+			// Add configuration fields array to plugins
+			$configuration = Billrun_Factory::dispatcher()->trigger('getConfigurationDefinitions');
+			foreach ($plugins as $key => $plugin) {
+				if (!is_string($plugin) && !empty($configuration[$plugin['name']])) {
+					$plugins[$key]['configuration']['fields'] = $configuration[$plugin['name']];
+				}
+			}
+			return $plugins;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -328,6 +338,33 @@ class ConfigModel {
 			$eventType = explode('.', $category)[1];
 			if ($this->validateEvent($eventType, $data)) {
 				$updatedData['events'][$eventType][] = $data;
+			}
+		} else if ($category === 'plugins') {
+			throw new Exception('Only one plugin can be saved');
+		} else if ($category === 'plugin') {
+			if (empty($data['name'])) {
+				throw new Exception('Missing plugin name');
+			}
+			// Search for plugin in old structure - as array of classNames
+			$old_strucrute_plugin_index = array_search($data['name'], $updatedData['plugins']);
+			if ($old_strucrute_plugin_index !== FALSE) {
+				// allow only in this case to set all parameters to convert class_name to new plugin structure
+				$updatedData['plugins'][$old_strucrute_plugin_index] = $data;
+			} else {
+				$plugins_names = array_map(function($plugin) {
+					return is_string($plugin) ? $plugin : $plugin['name'];
+				}, $updatedData['plugins']);
+				$plugin_index = array_search($data['name'], $plugins_names);
+				if ($plugin_index === FALSE) {
+					throw new Exception("Plugin {$data['name']} not found");
+				}
+				// Allow to update only 'enabled' flag and configuration values
+				if (isset($data['enabled'])) {
+					$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
+				}
+				if (isset( $data['configuration']['values'])) {
+					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
+				}
 			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
@@ -602,6 +639,8 @@ class ConfigModel {
 			'subscribers.subscriber.fields' => 'subscribers',
 			'subscribers.account.fields' => 'accounts',
 			'rates.fields' => 'rates',
+			'plans.fields' => 'plans',
+			'services.fields' => 'services',
 		);
 	}
 	
@@ -1619,9 +1658,9 @@ class ConfigModel {
 	
 	protected function getTaxationFields() {
 		$ret = array(
-			'tax.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
-			'tax.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
-			'tax.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
+			'taxation.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
+			'taxation.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
+			'taxation.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
 		);
 		return $ret;
 	}
