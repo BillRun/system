@@ -120,6 +120,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
 			}
+			if (isset($options['bills_merged'])) {
+				$this->data['bills_merged'] = $options['bills_merged'];
+			}
 
 			$this->data['urt'] = new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
@@ -1095,7 +1098,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
 		return $totalAmountToDeny > $this->data['amount'];
 	}
-    
+
+	public static function mergeSpllitedInstallments($params) {
+		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
+		return $mergedInstallmentsObj->merge();
+	}
+
     /**
      * get bills affected by payment
      * 
