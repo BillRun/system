@@ -169,6 +169,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
+				$this->file_transactions_counter = $numberOfRecordsToTreat;
                 Billrun_Factory::log()->log($message, Zend_Log::INFO);
                 $this->logFile->updateLogFileField('info', $message);
 		$this->headers[0] = $this->getHeaderLine();

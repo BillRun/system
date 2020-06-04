@@ -23,6 +23,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $logFile;
     protected $fileName;
     protected $transactionsTotalAmount = 0;
+	protected $file_transactions_counter = 0;
     protected $gatewayLogName;
     protected $fileGenerator;
     
@@ -308,7 +309,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 continue;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_num') {
-                $line[$field['path']] = count($this->customers);
+                $line[$field['path']] = $this->file_transactions_counter;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
                 $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
@@ -357,11 +358,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function initLogFile() {
         $logOptions = $this->chargeOptions;
         $logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
+		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
         $this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
         $this->logFile->setSequenceNumber();
         $this->logFile->setFileName($this->getFilename());
         $this->logFile->setStamp();
         $this->generatedLogFileStamp = $this->logFile->getStamp();
+		Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
+		Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
         $this->logFile->save();
     }
     
