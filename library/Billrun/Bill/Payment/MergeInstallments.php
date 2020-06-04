@@ -71,7 +71,8 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		$paymentsArr['aid'] = $this->aid;
 		$paymentsArr['split_bill_id'] = $this->uniqueId;
 		Billrun_Factory::log("Merging bills, parameters" . print_r($paymentsArr, true), Zend_Log::DEBUG);
-		$mergedBill = current(Billrun_Bill::pay($this->method, array($paymentsArr)));
+		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, array($paymentsArr));
+		$mergedBill = current($paymentResponse['payment']);
 		$this->installmentChargeNotBefore = !empty($this->installmentChargeNotBefore) ? $this->installmentChargeNotBefore : (!empty($billChargeNotBefore) ? $billChargeNotBefore : $firstDueDate);
 		if (!empty($mergedBill) && !empty($mergedBill->getId())){
 			$mergedBill->setDueDate($this->installmentDueDate);
