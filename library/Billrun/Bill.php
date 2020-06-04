@@ -999,7 +999,7 @@ abstract class Billrun_Bill {
 		);
 		$pipelines[] = array(
 			'$addFields' => array(
-				'method' => array('$ifNull' => array('$method', '$payment_method')),
+				'method' => 'automatic',
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
