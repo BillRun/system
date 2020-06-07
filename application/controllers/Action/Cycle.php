@@ -1,4 +1,4 @@
-<?php
+	<?php
 
 /**
  * @package         Billing
@@ -84,8 +84,12 @@ class CycleAction extends Action_Base {
 		$stamp = $options['stamp'];
 		$size = (int)$options['size'];
         $allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$invoicing_days = !empty($options['invoicing_days']) ? $options['invoicing_days'] : null;
+			
+		} 
         // Check if we should cycle.
-        if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+        if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp, $invoicing_days)) {
 			$this->_controller->addOutput("Can't run billing cycle before the cycle end time.");
             return;
 		} 
