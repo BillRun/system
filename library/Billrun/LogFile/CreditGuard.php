@@ -46,6 +46,7 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
 			$this->setStartProcessTime();
+			$this->setStamp();
 			$this->save();
 		}
 	}

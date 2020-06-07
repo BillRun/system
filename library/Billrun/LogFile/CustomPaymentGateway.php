@@ -50,10 +50,11 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data->collection($this->collection);
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
-                        $this->data['errors'] = [];
-                        $this->data['warnings'] = [];
-                        $this->data['info'] = [];
+			$this->data['errors'] = [];
+			$this->data['warnings'] = [];
+			$this->data['info'] = [];
 			$this->setStartProcessTime();
+			$this->setStamp();
 			$this->save();
 		}
 	}
