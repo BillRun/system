@@ -1313,7 +1313,7 @@ class Billrun_DiscountManager {
 				}
 			}
 		} else {
-			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $discount, $value);
+			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $value);
 		}
 		return $amount;
 	}
@@ -1512,7 +1512,7 @@ class Billrun_DiscountManager {
 		return array_unique($sids);
 	}
 	
-	protected function calcSeqDiscountAmount($from, $to, $line, $discount, $value){
+	protected function calcSeqDiscountAmount($from, $to, $line, $value){
 		$amount = 0;
 		$days = 0;
 		$cycleDays = $this->cycle->days();
@@ -1520,7 +1520,7 @@ class Billrun_DiscountManager {
 		if (!empty($this->seqEligibility[$line['stamp']])){
 			for($current = $from; $current < $to; $current = strtotime("+1 day", $current)) {
 				$day = array('from' => $current, 'to' => strtotime("+1 day", $current));
-				$amount += $this->calcSeqDiscountAmountForDay($day, $line, $discount, $cycleDays);
+				$amount += $this->calcSeqDiscountAmountForDay($day, $line, $cycleDays);
 				$days++;
 			}	
 			if ($days < $discountDays){
@@ -1531,8 +1531,8 @@ class Billrun_DiscountManager {
 		}
 		return $amount * $value;
 	}
-	
-	protected function calcSeqDiscountAmountForDay($day, $line, $discount,$cycleDays){
+
+	protected function calcSeqDiscountAmountForDay($day, $line, $cycleDays){
 		$seqValue = $line['full_price'];
 		foreach ($this->seqEligibility[$line['stamp']] as $discountkey => $lineEligibility){
 			$intersaction =  Billrun_Utils_Time::getIntervalsIntersections ($lineEligibility, array($day));
