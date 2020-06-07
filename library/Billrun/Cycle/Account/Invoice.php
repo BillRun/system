@@ -384,8 +384,12 @@ class Billrun_Cycle_Account_Invoice {
 	 * @return array an empty billrun document
 	 */
 	public function populateInvoiceWithAccountData($attributes) {
+		$config = Billrun_Factory::config();
 		$rawData = $this->data->getRawData();
 		$rawData['attributes'] = $attributes;
+		if ($config->isMultiDayCycle()) {
+			$this->setInvoicingDay($rawData, $attributes);
+		}
 		$this->data->setRawData($rawData);
 	}
 	
@@ -515,6 +519,11 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 		}
 		return $currentTotalGroups;
+	}
+	
+	public function setInvoicingDay(&$rawData, $attributes) {
+		$config = Billrun_Factory::config();
+		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
 }
