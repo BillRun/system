@@ -399,12 +399,15 @@ class Billrun_Billingcycle {
 	 *
 	 * @return int - number of generated bills.
 	 */
-	public static function getNumberOfGeneratedBills($billrunKey) {
+	public static function getNumberOfGeneratedBills($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey,
 			'billed' => 1
 		);
+		if (!is_null($invoicing_day)) {
+			$query['invoicing_day'] = $invoicing_day;
+		}
 		$generatedBills = $billrunColl->query($query)->count();
 		return $generatedBills;
 	}
@@ -415,11 +418,14 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return int - number of generated Invoices.
 	 */
-	public static function getNumberOfGeneratedInvoices($billrunKey) {
+	public static function getNumberOfGeneratedInvoices($billrunKey, $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
+		if (!is_null($invoicing_day)) {
+			$query['invoicing_day'] = $invoicing_day;
+		}
 		$generatedInvoices = $billrunColl->query($query)->count();
 		return $generatedInvoices;
 	}
@@ -429,10 +435,10 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @return percentage of completed bills
 	 */
-	public static function getCycleConfirmationPercentage($billrunKey) {
-		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey);
+	public static function getCycleConfirmationPercentage($billrunKey, $invoicing_day = null) {
+		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey, $invoicing_day);
 		if ($generatedInvoices != 0) {
-			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
+			return round((self::getNumberOfGeneratedBills($billrunKey, $invoicing_day) / $generatedInvoices) * 100, 2);
 		}
 		return 0;
 	}
