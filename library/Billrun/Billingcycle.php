@@ -367,18 +367,24 @@ class Billrun_Billingcycle {
 	 * 
 	 *  @return cycle completion percentage 
 	 */
-	public static function getCycleCompletionPercentage($billrunKey, $size) {
+	public static function getCycleCompletionPercentage($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
 		);
+		if (!is_null($invoicing_day)) {
+			$totalPagesQuery['invoicing_day'] = $invoicing_day;
+		}
 		$totalPages = $billingCycleCol->query($totalPagesQuery)->count();
 		$finishedPagesQuery = array(
 			'billrun_key' => $billrunKey,
 			'end_time' => array('$exists' => true)
 		);
+		if (!is_null($invoicing_day)) {
+			$finishedPagesQuery['invoicing_day'] = $invoicing_day;
+		}
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
-		if (self::hasCycleEnded($billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
 			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
 			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
