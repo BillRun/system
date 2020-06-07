@@ -119,7 +119,7 @@ class Billrun_Billingcycle {
 	public static function getDatetime($billrunKey, $customer = null, $invoicing_day = null) {
 		$config = Billrun_Factory::config();
 		$dayofmonth =  !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', 1) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		if($config->isMultiCycleDay()){
+		if($config->isMultiDayCycle()){
 			$dayofmonth = (!is_null($customer) && !is_null($customer['invoicing_day'])) ? $customer['invoicing_day'] : !is_null($invoicing_day) ? $invoicing_day : $dayofmonth;
 		}
 		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
@@ -239,9 +239,12 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected static function hasCycleStarted($billrunKey, $size) {
+	protected static function hasCycleStarted($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
+		if (!is_null($invoicing_day)) {
+			$existsKeyQuery['invoicing_day'] = $invoicing_day;
+		}
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
 		if ($keyCount < 1) {
 			return false;
@@ -257,12 +260,16 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billrunKey, $size) {
+	public static function hasCycleEnded($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
-		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
-		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		$query = array('billrun_key' => $billrunKey, 'page_size' => $size);
+		if (!is_null($invoicing_day)) {
+			$query['invoicing_day'] = $invoicing_day;
+		}
+		$numOfPages = $billingCycleCol->query($query)->count();
+		$finishedPages = $billingCycleCol->query(array_merge($query, array('end_time' => array('$exists' => 1))))->count();
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages, $invoicing_day) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -276,11 +283,11 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billrunKey, $size) {
-		if (!self::hasCycleStarted($billrunKey, $size)) {
+	public static function isCycleRunning($billrunKey, $size, $invoicing_day = null) {
+		if (!self::hasCycleStarted($billrunKey, $size, $invoicing_day)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
 			return false;
 		}
 		return true;
@@ -294,7 +301,7 @@ class Billrun_Billingcycle {
 	 * @return bool - returns the keys of confirmed cycles
 	 * 
 	 */
-	public static function getConfirmedCycles($billrunKeys = array()) {
+	public static function getConfirmedCycles($billrunKeys = array(), $invoicing_day = null) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();	
 		if (!empty($billrunKeys)) {
 			$pipelines[] = array(
@@ -303,11 +310,15 @@ class Billrun_Billingcycle {
 				),
 			);
 		}
+		if (!is_null($invoicing_day)) {
+			$pipelines[0]['$match']['invoicing_day'] = $invoicing_day;
+		}
 		
 		$pipelines[] = array(
 			'$project' => array(
 				'billrun_key' => 1,
 				'confirmed' => array('$cond' => array('if' => array('$eq' => array('$billed', 1)), 'then' => 1 , 'else' => 0)),
+				'invoicing_day' => 1
 			),
 		);
 		
@@ -328,12 +339,13 @@ class Billrun_Billingcycle {
 				'billrun_key' => '$_id',
 				'confirmed' => 1,
 				'total' => 1,
+				'invoicing_day' => 1
 			),
 		);
 
 		$potentialConfirmed = array();
 		$results = $billrunColl->aggregate($pipelines);
-		$resetCycles = self::getResetCycles($billrunKeys);
+		$resetCycles = self::getResetCycles($billrunKeys , $invoicing_day);
 		foreach ($results as $billrunDetails) {
 			if ($billrunDetails['confirmed'] == $billrunDetails['total']) {
 				$potentialConfirmed[] = $billrunDetails['billrun_key'];
@@ -428,7 +440,7 @@ class Billrun_Billingcycle {
 			return self::$cycleStatuses[$key][$size];
 		}
 		$cycleStatus = '';
-		$currentBillrunKey = self::getBillrunKeyByTimestamp($billrunKey, $invoicing_day);
+		$currentBillrunKey = self::getBillrunKeyByTimestamp(null, $invoicing_day);
 		if ($billrunKey == $currentBillrunKey) {
 			$cycleStatus = 'current';
 		} else if ($billrunKey > $currentBillrunKey) {
@@ -437,15 +449,15 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && (self::isToRerun($billrunKey, $invoicing_day))) {
 			$cycleStatus = 'to_rerun';
 		}
-		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
-		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size, $invoicing_day);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size, $invoicing_day);
 		if (empty($cycleStatus) && $billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			$cycleStatus = 'to_run';
 		}		
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey))) : false;
+		$cycleConfirmed = empty($cycleStatus) ? !empty(self::getConfirmedCycles(array($billrunKey), $invoicing_day)) : false;
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
@@ -510,11 +522,14 @@ class Billrun_Billingcycle {
 	}
 
 	
-	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1, $invoicing_day = null){
 		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
 			$zeroPages = 1;
 		}
 		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
+		if (!is_null($invoicing_days)) {
+			$cycleQuery['invoicing_day'] = $invoicing_day;
+		}
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
 		
 		if ($cycleCount >= $zeroPages) {
@@ -577,7 +592,7 @@ class Billrun_Billingcycle {
 	 * @return array - reset billrun keys.
 	 * 
 	 */
-	public static function getResetCycles($billrunKeys) {
+	public static function getResetCycles($billrunKeys, $invoicing_day = null) {
 		$billrunCount = array();
 		$cycleCount = array();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -591,6 +606,10 @@ class Billrun_Billingcycle {
 				'billrun_key' => array('$in' => $billrunKeys),
 			),
 		);
+		
+		if (!is_null($invoicing_day)) {
+			$pipelines[0]['match']['invoicing_day'] = $invoicing_day;
+		}
 
 		$pipelines[] = array(
 			'$group' => array(
@@ -601,6 +620,7 @@ class Billrun_Billingcycle {
 		$pipelines[] = array(
 			'$project' => array(
 				'billrun_key' => '$_id',
+				'invoicing_day' => '$invoicing_day'
 			),
 		);
 
