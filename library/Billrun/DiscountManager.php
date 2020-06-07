@@ -1287,9 +1287,7 @@ class Billrun_DiscountManager {
 	 */
 	protected function calculateDiscountAmount($discount, $line, $value, &$from, &$to, $operations = [], $sequential = false) {
 		$isPercentage = Billrun_Util::getIn($discount, 'type', 'percentage') === 'percentage';
-		if(!$sequential||!$isPercentage){
-			$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
-		}
+		$isSequential = $isPercentage && $sequential;
 		if ($this->isDiscountProrated($discount, $line)) {
 			$proratedStart = Billrun_Util::getIn($line, 'prorated_start', false);
 			$proratedEnd = Billrun_Util::getIn($line, 'prorated_end', false);
@@ -1304,18 +1302,19 @@ class Billrun_DiscountManager {
 			} else if (isset($line['end'])) {
 				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
 			}
-			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
-			if(!$sequential||!$isPercentage){	
+		}
+		if(!$isSequential){
+			$amount = $this->getDiscountAmount($discount, $line, $value, $operations);
+			if ($this->isDiscountProrated($discount, $line)) {
+				$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
 				$cycleDays = $this->cycle->days();
 				if ($discountDays < $cycleDays) {
 					$amount *= ($discountDays / $cycleDays);
 				}
 			}
-		}
-		if ($sequential && $isPercentage) {
+		} else {
 			$amount = $this->calcSeqDiscountAmount($from, $to, $line, $discount, $value);
 		}
-		
 		return $amount;
 	}
 	
