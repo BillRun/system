@@ -346,10 +346,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				if (!$is_usage_types) {
 					$this->invoice_flat_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys);
 				} else {
-					$this->invoice_usage_tabels[$line['sid']][][] = $this->getTableRow($line, $columns, $details_keys);
+					$this->invoice_usage_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys);
 				}
 			}
 		}
 	}
-
 }
