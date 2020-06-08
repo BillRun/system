@@ -83,45 +83,36 @@ class CycleAction extends Action_Base {
 
 		$stamp = $options['stamp'];
 		$size = (int)$options['size'];
+		//$invoicing_days = [];
         $allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$invoicing_days = !empty($options['invoicing_days']) ? $options['invoicing_days'] : null;
-			
-		} 
-        // Check if we should cycle.
-        if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp, $invoicing_days)) {
+			$this->_controller->addOutput("Running on multi cycle day mode");
+			$invoicing_days = $this->getInvoicingDays($options);
+			foreach ($invoicing_days as $index => $invoicing_day) {
+				//Check if we should cycle.
+				if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp, $invoicing_day)) {
+					$this->_controller->addOutput("Can't run billing cycle before the cycle end time - so invoicing day " . $invoicing_day . " was ignored.");
+					unset($invoicing_days[$index]);
+				}
+			}
+			if (empty($invoicing_days)) {
+				$this->_controller->addOutput("There were no invoicing days left. No cycle was run");
+			}
+			$options['invoicing_days'] = $invoicing_days;
+		} elseif (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+			// Check if we should cycle.
 			$this->_controller->addOutput("Can't run billing cycle before the cycle end time.");
             return;
 		} 
 
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-				
-		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
-			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
-				$pid = Billrun_Util::fork();
-				if ($pid == -1) {
-					die('could not fork');
-				}
-
-				$this->_controller->addOutput("Running on PID " . $pid);
-
-				// Parent process.
-				if ($pid) {
-					$this->executeParentProcess($processInterval);
-					continue;
-				}
+		if (!empty($invoicing_days)) {
+			foreach ($invoicing_days as $index => $invoicing_day) {
+				$this->runCycle($stamp, $size, $zeroPages, $processInterval, $options, $invoicing_day);
 			}
-			// Child process / Actual aggregate  when not forking
-			$this->executeChildProcess($options);
-			
-			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
-				break;
-			}
+		} else {
+			$this->runCycle($stamp, $size, $zeroPages, $processInterval, $options);
 		}
-		
-		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
-		$status = 0;
-		pcntl_wait($status);
 	}
 	
 	protected function executeParentProcess($processInterval) {
@@ -175,5 +166,41 @@ class CycleAction extends Action_Base {
 		
 		$this->_controller->addOutput("Aggregator loaded");
 		return $aggregator;
+	}
+	
+	public function runCycle($stamp, $size, $zeroPages, $processInterval, $options, $invoicing_day = null) {
+		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages, $invoicing_day)) {
+			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
+				$pid = Billrun_Util::fork();
+				if ($pid == -1) {
+					die('could not fork');
+				}
+
+				$this->_controller->addOutput("Running on PID " . $pid);
+
+				// Parent process.
+				if ($pid) {
+					$this->executeParentProcess($processInterval);
+					continue;
+				}
+			}
+			// Child process / Actual aggregate  when not forking
+			$this->executeChildProcess($options);
+			
+			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
+				break;
+			}
+		}
+		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
+		$status = 0;
+		pcntl_wait($status);
+	}
+	
+	public function getInvoicingDays($options) {
+		if (!empty($options['invoicing_days'])) {
+			return !is_array($options['invoicing_days']) ? [$options['invoicing_days']] : $options['invoicing_days'];
+		}else {
+			return array_map('strval', Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false) ? range(1, 28) : range(1, date("d", strtotime("yesterday"))));
+		}
 	}
 }
