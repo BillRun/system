@@ -236,25 +236,14 @@ abstract class Billrun_Bill {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
 			$query['$or'] = array(
+				array('charge.not_before' => array('$exists' => true, '$lte' => new MongoDate(strtotime($date)))),
 				array('$and' => array(
-						array('charge.not_before' => array('$exists' => true)),
-						array('charge.not_before' => array('$lte' => new MongoDate(strtotime($date)))),
-					),
-				),
-				array('$and' => array(
-						array('$and' => array(
-								array('charge.not_before' => array('$exists' => false)),
-								array('balance_effective_date' => array('$exists' => true))
-							)),
+						array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => true)),
 						array('balance_effective_date' => array('$lte' => new MongoDate(strtotime($date)))),
 					)
 				),
 				array('$and' => array(
-						array('$and' => array(
-								array('charge.not_before' => array('$exists' => false)),
-								array('balance_effective_date' => array('$exists' => false)),
-								array('urt' => array('$exists' => true))
-							)),
+						array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => true)),
 						array('urt' => array('$lte' => new MongoDate(strtotime($date)))),
 					)
 				)
