@@ -158,7 +158,7 @@ class Billrun_Billingcycle {
 		$dateTimestamp = strtotime($date);
 		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
 		return self::getEndTime($billrunKey);
-		}
+	}
 
 	/**
 	 * returns the start timestamp of the input billing period
@@ -622,7 +622,7 @@ class Billrun_Billingcycle {
 				'billrun_key' => array('$in' => $billrunKeys),
 			),
 		);
-		
+
 		if (!is_null($invoicing_day)) {
 			$pipelines[0]['match']['invoicing_day'] = $invoicing_day;
 		}
