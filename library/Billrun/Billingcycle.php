@@ -223,10 +223,14 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * 
 	 */
-    public static function removeBeforeRerun($billrunKey) {
+    public static function removeBeforeRerun($billrunKey, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		Billrun_Factory::log("Removing billing cycle records for " . $billrunKey, Zend_Log::DEBUG);
-		$billingCycleCol->remove(array('billrun_key' => $billrunKey));
+		$removeQuery = array('billrun_key' => $billrunKey);
+		if (!is_null($invoicing_day)) {
+			$removeQuery['invoicing_day'] =$invoicing_day;
+		}
+		$billingCycleCol->remove($removeQuery);
 		Billrun_Aggregator_Customer::removeBeforeAggregate($billrunKey);
 	}
 
