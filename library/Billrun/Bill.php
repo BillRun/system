@@ -1044,7 +1044,7 @@ abstract class Billrun_Bill {
 			),
 		);
 		
-		$res = $billsColl->aggregate($pipelines);
+		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
 	}
 

@@ -196,11 +196,9 @@ abstract class Billrun_PaymentGateway {
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
-		
 		if ($iframe && $requestParameters) {
 			return ['content'=> $this->requestParams, 'content_type' => 'url'];
 		}
-		
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			if ($iframe) {
@@ -374,8 +372,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
-	
-	/**
+
+		/**
 	 * Creates customer profile on the gateway for recurring billing charge
 	 * and save it for the account
 	 * 
@@ -739,7 +737,10 @@ abstract class Billrun_PaymentGateway {
 			return false;
 		}
 		$gateway = self::getInstance($gatewayDetails['name']);
+		if (!is_null($gateway)) {
 		return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
+		}
+		return false;
 	}
 			
 	public function getReturnUrlOnError() {
