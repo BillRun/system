@@ -27,6 +27,7 @@ class Billrun_LogFile {
 	public function __construct($options = array()) {
 		$this->data = new Mongodloid_Entity();
 		$this->data->collection(Billrun_Factory::db()->logCollection());
+		$this->data['rand'] = Billrun_Util::generateRandomNum();
 	}
 
 	public function setFileName($filename, $immediate = false) {
@@ -74,8 +75,8 @@ class Billrun_LogFile {
 		$newLog['key'] = $this->data['key'];
 		$newLog['source'] = $this->data['source'];
 		$newLog['start_process_time'] = $this->data['start_process_time'];
-		$newLog['stamp_random'] = Billrun_Util::generateRandomNum();
-		Billrun_Factory::log("Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'], Zend_Log::DEBUG);
+		$newLog['rand'] = $this->data['rand'];
+		Billrun_Factory::log("Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'] . ', and random number - ' . $newLog['rand'], Zend_Log::DEBUG);
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
 	
