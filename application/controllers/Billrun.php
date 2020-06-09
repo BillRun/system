@@ -132,14 +132,18 @@ class BillrunController extends ApiController {
 			$invoicesId = explode(',', $invoices);
 		}
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey))) || !empty($invoices))){
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
 			if (is_null($invoices)) {
-				$success = self::processConfirmCycle($billrunKey);
+				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
 			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoicesId);
+				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
 			}
 		}
 		$output = array (
@@ -354,7 +358,7 @@ class BillrunController extends ApiController {
 		return $billrunKeys;
 	}
 
-	protected function processConfirmCycle($billrunKey, $invoicesId = array()) {
+	protected function processConfirmCycle($billrunKey, $invoicesId = array(), $invoicing_day = null) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
@@ -369,6 +373,9 @@ class BillrunController extends ApiController {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
 		} else {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+		}
+		if (!empty($invoicing_day)) {
+			$cmd .= ' invoice_days=' . $invoicing_day;
 		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
