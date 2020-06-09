@@ -505,7 +505,15 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
-	
+
+	/**
+	 * method to get monthly invoice's display config
+	 * @return invoice display options if was configured, else returns null.
+	 */
+	public function getInvoiceDisplayConfig() {		
+		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
+
 	/**
 	 * method to check the cycle's mode
 	 * @return boolean true if it's multi day cycle mode, false otherwise.

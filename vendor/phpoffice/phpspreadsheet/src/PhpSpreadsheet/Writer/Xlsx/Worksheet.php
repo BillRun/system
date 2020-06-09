@@ -141,7 +141,7 @@ class Worksheet extends WriterPart
         $objWriter->startElement('sheetPr');
         if ($pSheet->getParent()->hasMacros()) {
             //if the workbook have macros, we need to have codeName for the sheet
-            if ($pSheet->hasCodeName() == false) {
+            if (!$pSheet->hasCodeName()) {
                 $pSheet->setCodeName($pSheet->getTitle());
             }
             $objWriter->writeAttribute('codeName', $pSheet->getCodeName());
@@ -221,6 +221,11 @@ class Worksheet extends WriterPart
             $objWriter->writeAttribute('zoomScaleNormal', $pSheet->getSheetView()->getZoomScaleNormal());
         }
 
+        // Show zeros (Excel also writes this attribute only if set to false)
+        if ($pSheet->getSheetView()->getShowZeros() === false) {
+            $objWriter->writeAttribute('showZeros', 0);
+        }
+
         // View Layout Type
         if ($pSheet->getSheetView()->getView() !== SheetView::SHEETVIEW_NORMAL) {
             $objWriter->writeAttribute('view', $pSheet->getSheetView()->getView());
@@ -251,14 +256,12 @@ class Worksheet extends WriterPart
         // Pane
         $pane = '';
         if ($pSheet->getFreezePane()) {
-            list($xSplit, $ySplit) = Coordinate::coordinateFromString($pSheet->getFreezePane());
+            [$xSplit, $ySplit] = Coordinate::coordinateFromString($pSheet->getFreezePane());
             $xSplit = Coordinate::columnIndexFromString($xSplit);
             --$xSplit;
             --$ySplit;
 
             $topLeftCell = $pSheet->getTopLeftCell();
-            $activeCell = $topLeftCell;
-            $sqref = $topLeftCell;
 
             // pane
             $pane = 'topRight';
@@ -322,7 +325,7 @@ class Worksheet extends WriterPart
         }
 
         // Set Zero Height row
-        if ((string) $pSheet->getDefaultRowDimension()->getZeroHeight() == '1' ||
+        if ((string) $pSheet->getDefaultRowDimension()->getZeroHeight() === '1' ||
             strtolower((string) $pSheet->getDefaultRowDimension()->getZeroHeight()) == 'true') {
             $objWriter->writeAttribute('zeroHeight', '1');
         }
@@ -383,7 +386,7 @@ class Worksheet extends WriterPart
                 }
 
                 // Column visibility
-                if ($colDimension->getVisible() == false) {
+                if ($colDimension->getVisible() === false) {
                     $objWriter->writeAttribute('hidden', 'true');
                 }
 
@@ -398,7 +401,7 @@ class Worksheet extends WriterPart
                 }
 
                 // Collapsed
-                if ($colDimension->getCollapsed() == true) {
+                if ($colDimension->getCollapsed() === true) {
                     $objWriter->writeAttribute('collapsed', 'true');
                 }
 
@@ -428,7 +431,7 @@ class Worksheet extends WriterPart
         // sheetProtection
         $objWriter->startElement('sheetProtection');
 
-        if ($pSheet->getProtection()->getPassword() != '') {
+        if ($pSheet->getProtection()->getPassword() !== '') {
             $objWriter->writeAttribute('password', $pSheet->getProtection()->getPassword());
         }
 
@@ -519,6 +522,12 @@ class Worksheet extends WriterPart
                             // Formula
                             $objWriter->writeElement('formula', $formula);
                         }
+                    } elseif ($conditional->getConditionType() == Conditional::CONDITION_CONTAINSBLANKS) {
+                        // formula copied from ms xlsx xml source file
+                        $objWriter->writeElement('formula', 'LEN(TRIM(' . $cellCoordinate . '))=0');
+                    } elseif ($conditional->getConditionType() == Conditional::CONDITION_NOTCONTAINSBLANKS) {
+                        // formula copied from ms xlsx xml source file
+                        $objWriter->writeElement('formula', 'LEN(TRIM(' . $cellCoordinate . '))>0');
                     }
 
                     $objWriter->endElement();
@@ -624,8 +633,9 @@ class Worksheet extends WriterPart
                     $objWriter->writeAttribute('location', str_replace('sheet://', '', $hyperlink->getUrl()));
                 }
 
-                if ($hyperlink->getTooltip() != '') {
+                if ($hyperlink->getTooltip() !== '') {
                     $objWriter->writeAttribute('tooltip', $hyperlink->getTooltip());
+                    $objWriter->writeAttribute('display', $hyperlink->getTooltip());
                 }
 
                 $objWriter->endElement();
@@ -748,7 +758,7 @@ class Worksheet extends WriterPart
             $range = Coordinate::splitRange($autoFilterRange);
             $range = $range[0];
             //    Strip any worksheet ref
-            list($ws, $range[0]) = PhpspreadsheetWorksheet::extractSheetTitle($range[0], true);
+            [$ws, $range[0]] = PhpspreadsheetWorksheet::extractSheetTitle($range[0], true);
             $range = implode(':', $range);
 
             $objWriter->writeAttribute('ref', str_replace('$', '', $range));
@@ -991,12 +1001,12 @@ class Worksheet extends WriterPart
                 }
 
                 // Row visibility
-                if ($rowDimension->getVisible() == false) {
+                if (!$rowDimension->getVisible() === true) {
                     $objWriter->writeAttribute('hidden', 'true');
                 }
 
                 // Collapsed
-                if ($rowDimension->getCollapsed() == true) {
+                if ($rowDimension->getCollapsed() === true) {
                     $objWriter->writeAttribute('collapsed', 'true');
                 }
 
@@ -1101,7 +1111,7 @@ class Worksheet extends WriterPart
                     break;
                 case 'f':            // Formula
                     $attributes = $pCell->getFormulaAttributes();
-                    if ($attributes['t'] == 'array') {
+                    if (($attributes['t'] ?? null) === 'array') {
                         $objWriter->startElement('f');
                         $objWriter->writeAttribute('t', 'array');
                         $objWriter->writeAttribute('ref', $pCellAddress);
@@ -1114,7 +1124,7 @@ class Worksheet extends WriterPart
                     }
                     if ($this->getParentWriter()->getOffice2003Compatibility() === false) {
                         if ($this->getParentWriter()->getPreCalculateFormulas()) {
-                            if (!is_array($calculatedValue) && substr($calculatedValue, 0, 1) != '#') {
+                            if (!is_array($calculatedValue) && substr($calculatedValue, 0, 1) !== '#') {
                                 $objWriter->writeElement('v', StringHelper::formatNumber($calculatedValue));
                             } else {
                                 $objWriter->writeElement('v', '0');
@@ -1126,8 +1136,15 @@ class Worksheet extends WriterPart
 
                     break;
                 case 'n':            // Numeric
-                    // force point as decimal separator in case current locale uses comma
-                    $objWriter->writeElement('v', str_replace(',', '.', $cellValue));
+                    //force a decimal to be written if the type is float
+                    if (is_float($cellValue)) {
+                        // force point as decimal separator in case current locale uses comma
+                        $cellValue = str_replace(',', '.', (string) $cellValue);
+                        if (strpos($cellValue, '.') === false) {
+                            $cellValue = $cellValue . '.0';
+                        }
+                    }
+                    $objWriter->writeElement('v', $cellValue);
 
                     break;
                 case 'b':            // Boolean
@@ -1135,7 +1152,7 @@ class Worksheet extends WriterPart
 
                     break;
                 case 'e':            // Error
-                    if (substr($cellValue, 0, 1) == '=') {
+                    if (substr($cellValue, 0, 1) === '=') {
                         $objWriter->writeElement('f', substr($cellValue, 1));
                         $objWriter->writeElement('v', substr($cellValue, 1));
                     } else {
