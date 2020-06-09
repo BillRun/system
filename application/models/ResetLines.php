@@ -381,22 +381,23 @@ class ResetLinesModel {
 		}
 	}
 
-	protected function getRelevantBalance($balances, $balanceId, $params = array()) {
+	protected function getRelevantBalances($balances, $balanceId, $params = array()) {
+		$ret = [];
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
-				return $rawData;
+				return [$rawData];
 			}
 
 			if (empty($balanceId) && !empty($params)) {
 				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
 				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
 				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
-					return $rawData;
+					$ret[] = $rawData;
 				}
 			}
 		}
-		return false;
+		return !empty($ret) ? $ret : false;
 	}
 
 	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
@@ -453,16 +454,21 @@ class ResetLinesModel {
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
-				if (empty($balanceToUpdate)) {
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId);
+				if (empty($relevantBalances)) {
 					continue;
 				}
-				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
-				$query = array(
-					'_id' => new MongoId($balanceId),
-				);
-				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
-				$balancesColl->update($query, $updateData);
+				foreach ($relevantBalances as $balanceToUpdate) {
+					if (empty($balanceToUpdate)) {
+						continue;
+					}
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+					$query = array(
+						'_id' => new MongoId($balanceId),
+					);
+					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
+					$balancesColl->update($query, $updateData);
+				}
 			}
 		}
 
@@ -482,22 +488,24 @@ class ResetLinesModel {
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
-					if (empty($balanceToUpdate)) {
-						continue;
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
+					foreach ($relevantBalances as $balanceToUpdate) {
+						if (empty($balanceToUpdate)) {
+							continue;
+						}
+						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
+						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
+						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
+						if (empty($updateData)) {
+							continue;
+						}
+						$query = array(
+							'_id' => $balanceToUpdate['_id'],
+						);
+						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
+						$ret = $balancesColl->update($query, $updateData);
 					}
-					$groups = !empty($usage['groups']) ? $usage['groups'] : array();
-					$totals = !empty($usage['totals']) ? $usage['totals'] : array();
-					$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
-					if (empty($updateData)) {
-						continue;
-					}
-					$query = array(
-						'_id' => $balanceToUpdate['_id'],
-					);
-					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
-					$ret = $balancesColl->update($query, $updateData);
 				}
 			}
 		}
