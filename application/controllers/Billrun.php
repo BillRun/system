@@ -47,7 +47,7 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
-		if (empty($invoicingDay) && $config->isMultiDayCycle()) {
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
 			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
 		}
 		$rerun = $request->get('rerun');
@@ -324,7 +324,7 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		if (is_null($invoicing_day)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
 		} else {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . 'invoicing_days=' . $invoicing_day . ' generate_pdf=' . $generatedPdf;
 		}		 
