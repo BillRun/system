@@ -489,7 +489,7 @@ class Mongodloid_Collection {
 		if (!empty($params)) {
 			$key = serialize($params);
 			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current()->get('seq');
-			if (!is_null($existingSec)&& $existingSec >= $init_id) {
+			if (!is_null($existingSec) && $existingSec >= $init_id) {
 				return $existingSec;
 			}
 		}
