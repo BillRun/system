@@ -342,9 +342,10 @@ tr { page-break-inside: avoid; }
 .table-default th:nth-child(4),
 .table-default td:nth-child(4),
 .table-default th:last-child,
-.table-default td:last-child { text-align: right; }
+.table-default th {table-layout: fixed }
+.table-default th:last-child { text-align: right; }
 .table-default th:last-child,
-.table-default td:last-child { width: 200px; }
+.table-default td:last-child { width: 200px; text-align: right; }
 .table-default td { background: url("dot.png") repeat-x center bottom; padding: 14px 0 17px 0; }
 .table-default tfoot td { background:transparent; font-size:44px; font-weight:300; border-top:7px double; border-bottom:7px double; }
 .table-default tbody tr:last-child td { background:transparent; }
