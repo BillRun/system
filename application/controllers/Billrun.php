@@ -43,28 +43,32 @@ class BillrunController extends ApiController {
 	public function completeCycleAction() {
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
 		$rerun = $request->get('rerun');
 		$generatedPdf = $request->get('generate_pdf');
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp(null, $invoicingDay);
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
+		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size, $invoicingDay)) {
 			throw new Exception("Already Running");
 		}
-		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey);
+		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
 			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
-			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 		}
 
-		$success = self::processCycle($billrunKey, $generatedPdf);
+		$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
 		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
 		$output = array (
 			'status' => $success ? 1 : 0,
