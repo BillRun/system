@@ -148,21 +148,25 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
                         if($this->fixedWidth){
                             $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
-                        }else{
-                            if(isset($entityObj['padding']['length'])){
+			} else {
+				if (isset($entityObj['padding']['length'])) {
                                 $length = $entityObj['padding']['length'];
-                            }else{
+				} else {
                                 $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
                             }
                         }
-                        if($this->fixedWidth){
-                            $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+			if ($this->fixedWidth) {
+				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+				if ($length < strlen($value)) {
+					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
+				}
+				$rowContents .= $value;
                         }else{
                             if($flag == 0){
-                                $rowContents.=str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
                                 $flag = 1;
                             }else{
-                                $rowContents.= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
+					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
                             }
                         }
 			

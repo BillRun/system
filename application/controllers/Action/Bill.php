@@ -156,7 +156,7 @@ class BillAction extends ApiAction {
 	}
 
         protected function getAllCollectionDebts($request) {
-                $contractors= Billrun_Bill::getContractorsInCollection($aids);
+                $contractors= Billrun_Bill::getContractorsInCollection();
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
