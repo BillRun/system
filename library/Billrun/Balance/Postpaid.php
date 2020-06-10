@@ -71,7 +71,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$from = $start_period = $this->row['service_start_date'];
 			$period = $this->row['balance_period'];
 			$to = strtotime((string) $this->row['balance_period'], $from);
-		} else if (!empty($this->row['add_on'])) {
+		} else if ($this->isAddonBalance()) {
 			$service_id = $this->row['service_id'];
 			$service_name = $this->row['service_name'];
 		} else {
@@ -106,6 +106,14 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function isExtendedBalance() {
 		return isset($this->row['balance_period']) && $this->row['balance_period'] != "default" && isset($this->row['service_name']);
+	}
+
+	/**
+	 * method to check if balance is an add-on balance
+	 * @return boolean true if this is an add-on balance, else false
+	 */
+	protected function isAddonBalance() {
+		return !empty($this->row['add_on']);
 	}
 
 	/**
@@ -207,7 +215,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		if ($this->get('sid') != 0 && !$this->isExtendedBalance()) {
+		if ($this->get('sid') != 0 && !$this->isExtendedBalance() && !$this->isAddonBalance()) {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
