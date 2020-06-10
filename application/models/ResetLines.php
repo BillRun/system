@@ -45,6 +45,12 @@ class ResetLinesModel {
 	 */
 	protected $balanceSubstract;
 	
+	/**
+	 * used for rebalance multiple balances affected by the same line
+	 * @var type 
+	 */
+	protected $alreadyUpdated = [];
+	
 	protected $balances;
 	
 	/**
@@ -382,6 +388,7 @@ class ResetLinesModel {
 	}
 
 	protected function getRelevantBalances($balances, $balanceId, $params = array()) {
+		$this->alreadyUpdated = [];
 		$ret = [];
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
@@ -405,13 +412,18 @@ class ResetLinesModel {
 		foreach ($volumeToSubstract as $group => $usaget) {
 			foreach ($usaget as $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
-					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
+					$usage = min($usagev['usage'] - ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
+					$count = min($usagev['count'] - ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usage;
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
-						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usage;
 					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
-						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usage;
 					}
-					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $count;
+					$this->alreadyUpdated[$group]['usage'] = ($this->alreadyUpdated[$group]['usage'] ?? 0) + $usage;
+					$this->alreadyUpdated[$group]['count'] = ($this->alreadyUpdated[$group]['count'] ?? 0) + $count;
 				}
 			}
 		}
@@ -500,6 +512,7 @@ class ResetLinesModel {
 						if (empty($updateData)) {
 							continue;
 						}
+						
 						$query = array(
 							'_id' => $balanceToUpdate['_id'],
 						);
