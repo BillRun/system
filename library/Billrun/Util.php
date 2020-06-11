@@ -1918,5 +1918,12 @@ class Billrun_Util {
 		
 		return $actualTime;
 	}
+	
+	public static function addGetParameters($url, $queryData) {
+		$query = parse_url($url, PHP_URL_QUERY);	
+		$url .= ($query ? "&" : "?") . http_build_query($queryData);
+		$url = htmlspecialchars($url);
+		return $url;
+	}
 
 }

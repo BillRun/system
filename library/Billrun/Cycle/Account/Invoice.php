@@ -353,9 +353,10 @@ class Billrun_Cycle_Account_Invoice {
 		$pastBalanceConfig = $config->getConfigValue('billrun.past_balance', []);
 		$past_balance_date = $invoicingDay;
 		if (!empty($pastBalanceConfig) && !empty($rawData[$pastBalanceConfig['anchor_field']])) {
-			$past_balance_date = Billrun_Util::calcRelativeTime($pastBalanceConfig['relative_time'],date($rawData[$pastBalanceConfig['anchor_field']]->sec));
+			$relative_date = date ('Ymd' , Billrun_Util::calcRelativeTime($pastBalanceConfig['relative_time'],date($rawData[$pastBalanceConfig['anchor_field']]->sec)));
+			$past_balance_date = $relative_date . "000000";
 		}
-		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), date('Y-m-d', $past_balance_date));
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid(), $past_balance_date);
 		if(!Billrun_Util::isEqual($pastBalance['total'], 0, Billrun_Billingcycle::PRECISION)) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
@@ -384,8 +385,12 @@ class Billrun_Cycle_Account_Invoice {
 	 * @return array an empty billrun document
 	 */
 	public function populateInvoiceWithAccountData($attributes) {
+		$config = Billrun_Factory::config();
 		$rawData = $this->data->getRawData();
 		$rawData['attributes'] = $attributes;
+		if ($config->isMultiDayCycle()) {
+			$this->setInvoicingDay($rawData, $attributes);
+		}
 		$this->data->setRawData($rawData);
 	}
 	
@@ -515,6 +520,11 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 		}
 		return $currentTotalGroups;
+	}
+	
+	public function setInvoicingDay(&$rawData, $attributes) {
+		$config = Billrun_Factory::config();
+		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
 }

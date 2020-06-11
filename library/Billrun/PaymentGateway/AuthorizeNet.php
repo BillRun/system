@@ -23,14 +23,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	const CREDIT_CARD_PAYMENT = 'COMMON.ACCEPT.INAPP.PAYMENT';
 	const APPLE_PAY_PAYMENT = 'COMMON.APPLE.INAPP.PAYMENT';
+	const GOOGLE_PAY_PAYMENT = 'COMMON.GOOGLE.INAPP.PAYMENT';
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api2.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https://secure.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://secure.authorize.net';
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://test.authorize.net';
 		}
 		$this->account = Billrun_Factory::account();
 	}
@@ -48,8 +49,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
-		$okPage = $okPage . '&amp;customer=' . $customerProfileId;
+		$okPage = Billrun_Util::addGetParameters($okPage, ['customer' => $customerProfileId]);
 
+		$this->actionUrl .= '/profile/addPayment';
 		return $postXml = "<getHostedProfilePageRequest xmlns='AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
 								<merchantAuthentication>
 									 <name>$apiLoginId</name>
@@ -83,9 +85,20 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				throw new Exception($errorMessage);
 			}
 			$this->htmlForm = $this->createHtmlRedirection($token);
+			$this->setRequestParams(['token' => $token]);
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+	}
+	
+	protected function setRequestParams($params = []) {
+		$this->requestParams = [
+			'url' => $this->actionUrl,
+			'post_parameters' => $params,
+			'response_parameters' => [
+				'customer',
+			],
+		];
 	}
 
 	protected function buildTransactionPost($txId, $additionalParams) {
@@ -107,6 +120,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function getResponseDetails($result) {
+		$retParams = [];
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
@@ -119,9 +133,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$this->saveDetails['aid'] = (int) $customerProfile->merchantCustomerId;
 			$this->saveDetails['customer_profile_id'] = (string) $customerProfile->customerProfileId;
 			$this->saveDetails['payment_profile_id'] = (string) $customerProfile->paymentProfiles->customerPaymentProfileId;
+			$cardNum = (string) $customerProfile->paymentProfiles->payment->creditCard->cardNumber;
+			$fourDigits = substr($cardNum, -4);
+			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
+			$retParams['expiration_date'] = (string) $customerProfile->paymentProfiles->payment->creditCard->expirationDate;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+		
+		return $retParams;
 	}
 
 	protected function buildSetQuery() {
@@ -261,6 +281,12 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			];
 		}
 		
+		if (!empty($customerProfile)) {
+			return [
+				'customerProfileId' => $customerProfile,
+			];
+		}
+
 		if ($canCreateProfile) {
 			return [
 				'createProfile' => true,
@@ -446,7 +472,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'payment' => $this->buildTransactionPayment($gatewayDetails),
 			],
 		];
-		if ($this->isApplePayRequest($body)) {
+		if ($this->isApplePayRequest($body) || $this->isGooglePayRequest($body)) {
 			$body['validationMode'] = 'liveMode';
 		}
 		return $this->encodeRequest($root, $body);
@@ -454,6 +480,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	protected function isApplePayRequest($request) {
 		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::APPLE_PAY_PAYMENT;
+	}
+	
+	protected function isGooglePayRequest($request) {
+		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::GOOGLE_PAY_PAYMENT;
 	}
 
 
@@ -630,7 +660,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							<form id='myForm' method='post' action=$this->actionUrl>
 							<input type='hidden' name='token'
 							value='$token'/>
-							<input type='hidden' name='bloop' value='blibloo'/>
 							<input type='submit' value='Continue'/>
 							</form>
 							<script type='text/javascript'>
@@ -814,6 +843,46 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildSinglePaymentArray($params, $options) {
-		throw new Exception("Single payment not supported in " . $this->billrunName);
+		$customerProfileId = $this->checkIfCustomerExists($aid);
+		if (!empty($customerProfileId)) {
+			$this->customerId = $customerProfileId;
+			$params['ok_page'] = Billrun_Util::addGetParameters($params['ok_page'], ['customer' => $customerProfileId]);
+		}
+
+		$root = [
+			'tag' => 'getHostedPaymentPageRequest',
+			'attr' => [
+				'xmlns' => 'AnetApi/xml/v1/schema/AnetApiSchema.xsd',
+			],
+		];
+		$body = $this->buildAuthenticationBody();
+		$amount = $this->convertAmountToSend($params['amount']);
+		$gatewayDetails = [
+			'customer_profile_id' => $customerProfileId,
+		];
+		$body['transactionRequest'] = $this->buildTransactionRequest($amount, $gatewayDetails);
+		$body['hostedPaymentSettings'] = $this->buildHostedPaymentSettings(array_merge($params, $options));
+		$this->actionUrl .= '/payment/payment';
+		return $this->encodeRequest($root, $body);
 	}
+
+	protected function buildHostedPaymentSettings($params) {
+		$urlSettings = [
+			'showReceipt' => false,
+			'url' => $params['ok_page'],
+			'urlText' => 'Finish',
+			'cancelUrl' => $params['fail_page'],
+			'cancelUrlText' => 'Cancel',
+		];
+		$settings = [
+			[
+				'settingName' => 'hostedPaymentReturnOptions',
+				'settingValue' => json_encode($urlSettings)
+			],
+		];
+		return [
+			'setting' => $settings,
+		];
+	}
+
 }

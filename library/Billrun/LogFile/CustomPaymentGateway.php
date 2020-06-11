@@ -59,6 +59,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	}
 
 	public function setSequenceNumber() {
+		Billrun_Factory::log("Setting log file's sequence number", Zend_Log::DEBUG);
 		return $this->data->createAutoInc('seq');
 	}
 

@@ -40,9 +40,7 @@ trait Billrun_Traits_ForeignFields  {
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
 		$entity = $this->getForeignFieldsEntity();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue($entity .'.fields', array()), function($value) {
-			return isset($value['foreign']);	
-		});
+		$foreignFieldsConf = $this->getForeignFieldsFromConfig();
 		
 		foreach ($foreignFieldsConf as $fieldConf) {
 			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {
