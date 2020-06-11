@@ -67,7 +67,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 			}
 		}
 		$paymentsArr['amount'] = $totalAmount;
-		$paymentsArr['fc'] = 'fc';
+		$paymentsArr['dir'] = 'fc';
 		$paymentsArr['aid'] = $this->aid;
 		$paymentsArr['split_bill_id'] = $this->uniqueId;
 		Billrun_Factory::log("Merging bills, parameters" . print_r($paymentsArr, true), Zend_Log::DEBUG);
