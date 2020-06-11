@@ -118,7 +118,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
-				throw new Exception('Missing file response definitions');
+				throw new Exception("Couldn't find file's correlation value, or number of expected response files.");
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
