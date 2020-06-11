@@ -169,8 +169,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		$result = $this->load([$accountQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($query, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		$this->data = $result[0]->getRawData();
 		return $result[0];
@@ -183,13 +183,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function loadAccountsForQuery($params) {
 		$accountsQuery = $this->buildQuery($params);
 		if ($accountsQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Cannot identify account. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::NOTICE);
-			return false;
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			return $result;
 		}
 		return $result;
 	}
@@ -275,9 +275,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (!is_null($subject_to) && !empty($subject_to)) {
 			$params['aid']['$in'] = $subject_to;
 		}
-		$query = $this->buildQuery($params);
-		$this->loadAccountsForQuery($query);
-		$cursor = $this->getCustomerData();
+
+
+		$cursor = $this->loadAccountsForQuery($params);
 		foreach ($cursor as $row) {
 			$results[$row->get('aid')] = $row->getRawData();
 		}

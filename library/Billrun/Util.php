@@ -1115,9 +1115,10 @@ class Billrun_Util {
 	 * @param string $data parameters for the request
 	 * @param string $method should be POST or GET
 	 * 
+	 * @param returnResponse - true - function returns the whole response, false - returns only body.
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1158,7 +1159,7 @@ class Billrun_Util {
 			Billrun_Factory::log("Initiated HTTP request to " . $urlHost, Zend_Log::DEBUG);
 			$response = $client->request();
 			Billrun_Factory::log("Got HTTP response from " . $urlHost, Zend_Log::DEBUG);
-			$output = $response->getBody();
+			$output = !$returnResponse ? $response->getBody() : $response;
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
 			if(!$response) {
@@ -1916,6 +1917,13 @@ class Billrun_Util {
 		}
 		
 		return $actualTime;
+	}
+	
+	public static function addGetParameters($url, $queryData) {
+		$query = parse_url($url, PHP_URL_QUERY);	
+		$url .= ($query ? "&" : "?") . http_build_query($queryData);
+		$url = htmlspecialchars($url);
+		return $url;
 	}
 
 }

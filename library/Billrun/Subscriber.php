@@ -347,7 +347,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		$customFields = array_map(function ($customField) {
 			return $customField['field_name'];
 		}, Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array()));
-		$fields = array_combine($customFields, $customFields);
+		$fields = array_merge($customFields, array('from', 'to'));
+		$fields = array_combine($fields, $fields);
 		
 		$query = [];
 		if (!isset($params['time'])) {
