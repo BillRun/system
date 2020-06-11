@@ -1,22 +1,20 @@
 language: php
-dist: trusty
+dist: bionic
 
 php:
-  - 5.6
-  - 7.0
   - 7.1
   - 7.2
   - 7.3
+  - 7.4
 
 cache:
   directories:
-    - cache
     - vendor
     - $HOME/.composer/cache
 
 before_script:
   # Deactivate xdebug
-  - if [ -z "$KEEP_XDEBUG" ]; then rm -rfv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ; fi
+  - phpenv config-rm xdebug.ini
   - composer install --ignore-platform-reqs
 
 script:
@@ -33,26 +31,26 @@ jobs:
 
     - stage: Coverage
       php: 7.2
-      env: KEEP_XDEBUG=1
       script:
-        - travis_wait 40 ./vendor/bin/phpunit --debug --coverage-clover coverage-clover.xml
+        - pecl install pcov
+        - composer require pcov/clobber --dev
+        - ./vendor/bin/pcov clobber
+        - ./vendor/bin/phpunit --coverage-clover coverage-clover.xml
       after_script:
         - wget https://scrutinizer-ci.com/ocular.phar
         - php ocular.phar code-coverage:upload --format=php-clover tests/coverage-clover.xml
 
-    - stage: API documentation
-      php: 7.2
+    - stage: API documentations
+      if: tag is present
+      php: 7.4
       before_script:
-      - curl -O https://get.sensiolabs.org/sami.phar
+      - curl -O https://github.com/phpDocumentor/phpDocumentor/releases/download/v3.0.0-rc/phpDocumentor.phar
       script:
-      - git fetch origin master:master
-      - git fetch origin --tags
-      - php sami.phar update .sami.php
-      - echo '<html><head><meta http-equiv="Refresh" content="0; url=master/"></head><body><p>If you are not automatically redirected, please go to <a href="master/">the latest stable API documentation</a>.</p></body></html>' > build/index.html
+      - php phpDocumentor.phar --directory src/ --target docs/api
       deploy:
         provider: pages
         skip-cleanup: true
-        local-dir: build
+        local-dir: docs/api
         github-token: $GITHUB_TOKEN
         on:
           all_branches: true
