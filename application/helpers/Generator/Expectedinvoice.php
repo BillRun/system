@@ -48,6 +48,9 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		parent::__construct($options);
 		$this->aid = Billrun_Util::getFieldVal($options['aid'], 0);
 		$this->now = time();
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$this->invoicing_day = !empty ($options['invoicing_day']) ? trim($options['invoicing_day'], '0') : Billrun_Factory::config()->getConfigChargingDay();
+		}
 	}
 
 	// Theres nothing  to load  in this  generator  ans it`s data  is based on the  customer aggregator logic	
@@ -61,11 +64,11 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 			'stamp' => $this->stamp,
 			'fake_cycle' => true,
 		);
+		if (!empty($this->invoicing_day)) {
+			$options['invoicing_day'] = $this->invoicing_day;
+		}
 		$generator = Billrun_Aggregator::getInstance($options);
 		$generator->load();
-		if ($config->isMultiDayCycle()) {
-			$generator->setInvoicing_days();
-		}
 		if($generator->aggregate()) {
 			return Generator_WkPdf::getTempDir($this->stamp) . "/pdf/{$this->stamp}_{$this->aid}_0.pdf";
 		} else {
