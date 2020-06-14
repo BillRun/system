@@ -49,7 +49,7 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		$this->aid = Billrun_Util::getFieldVal($options['aid'], 0);
 		$this->now = time();
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$this->invoicing_day = !empty ($options['invoicing_day']) ? trim($options['invoicing_day'], '0') : Billrun_Factory::config()->getConfigChargingDay();
+			$this->invoicing_day = !empty ($options['invoicing_day']) ? ltrim($options['invoicing_day'], '0') : Billrun_Factory::config()->getConfigChargingDay();
 		}
 	}
 
