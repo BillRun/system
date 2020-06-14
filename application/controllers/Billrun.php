@@ -308,7 +308,7 @@ class BillrunController extends ApiController {
 		}
 		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicingDay));
 		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicingDay));
-		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicingDay);
+		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
 		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size, $invoicingDay);
 		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey, $invoicingDay);
 		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey, $invoicingDay);
