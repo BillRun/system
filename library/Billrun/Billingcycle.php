@@ -543,7 +543,7 @@ class Billrun_Billingcycle {
 			$zeroPages = 1;
 		}
 		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
-		if (!is_null($invoicing_days)) {
+		if (!is_null($invoicing_day)) {
 			$cycleQuery['invoicing_day'] = $invoicing_day;
 		}
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
