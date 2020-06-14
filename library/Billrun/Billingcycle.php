@@ -451,7 +451,7 @@ class Billrun_Billingcycle {
 		if (is_null($size)) {
 			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		}
-		$key = !empty($invoicing_day) ? ${$billrunKey . $invoicing_day} : $billrunKey;
+		$key = !empty($invoicing_day) ? $billrunKey . $invoicing_day : $billrunKey;
 		if (isset(self::$cycleStatuses[$key][$size])) {
 			return self::$cycleStatuses[$key][$size];
 		}
@@ -480,7 +480,7 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleEnded && $cycleConfirmed) {
 			$cycleStatus = 'confirmed';
 		}
-		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
+		self::$cycleStatuses[$key][$size] = $cycleStatus;
 		return $cycleStatus;
 	}
 	
