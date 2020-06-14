@@ -43,7 +43,7 @@ class BillrunController extends ApiController {
 	public function completeCycleAction() {
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
-		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
@@ -299,7 +299,7 @@ class BillrunController extends ApiController {
 		$config = Billrun_Factory::config();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
-		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass stamp of the wanted cycle info');
 		}
