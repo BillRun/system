@@ -132,7 +132,7 @@ class BillrunController extends ApiController {
 			$invoicesId = explode(',', $invoices);
 		}
 		$billrunKey = $request->get('stamp');
-		$invoicingDay = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
