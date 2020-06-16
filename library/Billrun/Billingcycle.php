@@ -156,18 +156,20 @@ class Billrun_Billingcycle {
 	 */
 	public static function getBillrunEndTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
-		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
-		return self::getEndTime($billrunKey);
+		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : !empty ($invoicing_day) ? $invoicing_day : null;
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
+		return self::getEndTime($billrunKey, $invoice_day);
 	}
 
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param date $date
 	 */
-	public static function getBillrunStartTimeByDate($date) {
+	public static function getBillrunStartTimeByDate($date, $customer = null, $invoicing_day = null) {
 		$dateTimestamp = strtotime($date);
-		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
-		return self::getStartTime($billrunKey);
+		$invoice_day = !empty ($customer['invoicing_day']) ? $customer['invoicing_day'] : !empty ($invoicing_day) ? $invoicing_day : null;
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp, $invoice_day);
+		return self::getStartTime($billrunKey, $invoice_day);
 	}
 	
 	/**
