@@ -505,5 +505,13 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
+	
+	/**
+	 * method to get monthly invoice's display config
+	 * @return invoice display options if was configured, else returns null.
+	 */
+	public function getInvoiceDisplayConfig() {		
+		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
 
 }

@@ -80,7 +80,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['due_date'])) {
 				$this->data['due_date'] = $options['due_date'];
-			} 
+			} else {
+				$this->data['due_date'] = new MongoDate();
+			}
 			if (isset($options['charge'])) {
 				$this->data['charge'] = $options['charge'];
 			} 

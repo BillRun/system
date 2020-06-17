@@ -36,6 +36,12 @@ abstract class Billrun_PaymentGateway {
 	protected $redirectUrl;
 	
 	/**
+	 * holds parameters used for the client to dynamically build request to the gateway
+	 * @var array
+	 */
+	protected $requestParams = [];
+	
+	/**
 	 * endpoint of the payment gateway.
 	 * @var string
 	 */
@@ -160,8 +166,10 @@ abstract class Billrun_PaymentGateway {
 		unset($accountQuery['tenant_return_url']);
 		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
 		$this->updateReturnUrlOnEror($tenantReturnUrl);
-		$okPage = (isset($data['iframe']) && $data['iframe']) ? $data['ok_page'] : $this->getOkPage($request);
-		$failPage = (isset($data['iframe']) && $data['iframe']) ? $data['fail_page'] : false;
+		$iframe = Billrun_Util::getIn($data, 'iframe', false);
+		$requestParameters = Billrun_Util::getIn($data, 'request_parameters', false);
+		$okPage = $iframe ? $data['ok_page'] : $this->getOkPage($request);
+		$failPage = $iframe ? $data['fail_page'] : false;
 		if (isset($data['action']) && $data['action'] == 'single_payment') {
 			if (empty($data['amount'])) {
 				throw new Exception("Missing amount when making single payment");
@@ -171,7 +179,7 @@ abstract class Billrun_PaymentGateway {
 			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
-		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
+		if ($iframe && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
 		}
 		if (isset($data['installments'])) {
@@ -188,9 +196,12 @@ abstract class Billrun_PaymentGateway {
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
+		if ($iframe && $requestParameters) {
+			return ['content'=> $this->requestParams, 'content_type' => 'url'];
+		}
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
-			if (isset($data['iframe']) && $data['iframe']) {
+			if ($iframe) {
 				return array('content'=> $this->redirectUrl, 'content_type' => 'url');
 			}	
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
@@ -361,8 +372,8 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
-	
-	/**
+
+		/**
 	 * Creates customer profile on the gateway for recurring billing charge
 	 * and save it for the account
 	 * 
@@ -726,7 +737,10 @@ abstract class Billrun_PaymentGateway {
 			return false;
 		}
 		$gateway = self::getInstance($gatewayDetails['name']);
+		if (!is_null($gateway)) {
 		return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
+		}
+		return false;
 	}
 			
 	public function getReturnUrlOnError() {
