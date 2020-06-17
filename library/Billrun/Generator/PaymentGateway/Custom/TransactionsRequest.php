@@ -107,9 +107,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams = array();
 			$account = $accountsInArray[$customer['aid']];
 			$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
-// 			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
-// 					continue;
-// 			}
+			if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
+					continue;
+			}
 			$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
 			if (!Billrun_Util::isEqual($customer['left_to_pay'], 0, Billrun_Bill::precision) && !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision)) {
 				$message = "Wrong payment! left and left_to_pay fields are both set, Account id: " . $customer['aid'];
