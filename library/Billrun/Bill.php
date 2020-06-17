@@ -235,9 +235,12 @@ abstract class Billrun_Bill {
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
+			$relative_date = new MongoDate(strtotime($date));
 			$query['$or'] = array(
-				array('charge.not_before' => array('$lte' => new MongoDate(strtotime($date)))),
-				array('charge.not_before' => array('$exists' => false)),
+				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => true, '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => false))
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
