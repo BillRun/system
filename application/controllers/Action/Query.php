@@ -301,5 +301,17 @@ class QueryAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
-
+	
+	protected function getCacheLifeTimeForQuery() {
+		return Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $this->type, null);
+	}
+	
+	protected function getLinesDataForQuery($params) {
+		$cacheLifetime = $this->getCacheLifeTimeForQuery();
+		if (isset($cacheLifetime)){
+			$this->setCacheLifeTime($cacheLifetime);
+			return $this->cache($params);
+		}
+		return $this->fetchData($params['fetchParams']);
+	}
 }
