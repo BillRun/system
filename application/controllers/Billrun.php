@@ -271,7 +271,7 @@ class BillrunController extends ApiController {
 			if (empty($invoicing_day)) {
 				throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
 			} else {
-				$params['invoicing_day'] = $invoicing_day;
+				$params['invoicing_day'] = ltrim($invoicing_day, "0");
 			}
 		}
 		$billrunKeys = $this->getCyclesKeys($params);
@@ -284,6 +284,9 @@ class BillrunController extends ApiController {
 			} else {
 				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey, $invoicing_day);
 			}	
+			if (!empty($invoicing_day)) {
+				$setting['invoicing_day'] = $invoicing_day;
+			}
 			$settings[] = $setting;
 		}
 
