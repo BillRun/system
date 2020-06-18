@@ -326,7 +326,7 @@ class BillrunController extends ApiController {
 		if (is_null($invoicing_day)) {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . 'invoicing_days=' . $invoicing_day . ' generate_pdf=' . $generatedPdf;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' invoicing_days=' . $invoicing_day . ' generate_pdf=' . $generatedPdf;
 		}		 
 		return Billrun_Util::forkProcessCli($cmd);
 	}
