@@ -168,7 +168,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			//If payment is pre-approved don't wait for confirmation and lfag it as such
 			if($this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE) {
 				$currentPayment->setConfirmationStatus(false);
-				$currentPayment->setForeignFields([static::ASSUME_APPROVED_FILE_STATE => true]);
+				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
 
 			$currentPayment->save();
