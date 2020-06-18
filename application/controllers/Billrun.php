@@ -266,15 +266,23 @@ class BillrunController extends ApiController {
 		$params['billrun_key'] = $request->get('stamp');
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
+		$invoicing_day = !empty($request->get('invoicing_day')) ? $request->get('invoicing_day') : null;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			if (empty($invoicing_day)) {
+				throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+			} else {
+				$params['invoicing_day'] = $invoicing_day;
+			}
+		}
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
-			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));	
+			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicing_day));
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day));	
 			if (empty($params['timeStatus'])) {
-				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicing_day);
 			} else {
-				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey);
+				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey, $invoicing_day);
 			}	
 			$settings[] = $setting;
 		}
@@ -324,28 +332,29 @@ class BillrunController extends ApiController {
 	}
 
 	protected function getCyclesKeys($params) {
+		$invoicing_day = !empty($params['invoicing_day']) ? $params['invoicing_day'] : null;
 		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		if (!empty($params['from']) && !empty($params['to'])) {
-			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst);
+			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst, $invoicing_day);
 		}
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
 		$from = date('Y/m/d', strtotime('12 months ago'));		
-		return $this->getCyclesInRange($from, $to, $newestFirst);
+		return $this->getCyclesInRange($from, $to, $newestFirst, $invoicing_day);
 	}
 
-	public function getCyclesInRange($from, $to, $newestFirst = TRUE) {
+	public function getCyclesInRange($from, $to, $newestFirst = TRUE, $invoicing_day = null) {
 		$limit = 0;
-		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
-		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
-		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime);
+		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from, null, $invoicing_day);
+		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to, null, $invoicing_day);
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1, $invoicing_day);
+		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime, $invoicing_day);
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
-			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
+			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey, $invoicing_day);
 			$limit++;
 		}
 		if (!$newestFirst) {
