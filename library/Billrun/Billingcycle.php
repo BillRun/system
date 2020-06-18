@@ -317,9 +317,10 @@ class Billrun_Billingcycle {
 			);
 		}
 		if (!is_null($invoicing_day)) {
-			$pipelines[0]['$match']['invoicing_day'] = $invoicing_day;
+			$invoicing_day_query = array('invoicing_day' => $invoicing_day);
+			$pipelines[0]['$match'] = array_merge($pipelines[0]['$match'], $invoicing_day_query);
 		}
-		
+
 		$pipelines[] = array(
 			'$project' => array(
 				'billrun_key' => 1,
@@ -330,7 +331,10 @@ class Billrun_Billingcycle {
 		
 		$pipelines[] = array(
 			'$group' => array(
-				'_id' => '$billrun_key',
+				'_id' => array(
+					'billrun_key' => '$billrun_key',
+					'invoicing_day' => '$invoicing_day'
+				),
 				'confirmed' => array(
 					'$sum' => '$confirmed',
 				),
@@ -342,10 +346,10 @@ class Billrun_Billingcycle {
 		
 		$pipelines[] = array(
 			'$project' => array(
-				'billrun_key' => '$_id',
+				'billrun_key' => '$_id.billrun_key',
+				'invoicing_day' => '$_id.invoicing_day',
 				'confirmed' => 1,
 				'total' => 1,
-				'invoicing_day' => 1
 			),
 		);
 
@@ -626,19 +630,23 @@ class Billrun_Billingcycle {
 		);
 
 		if (!is_null($invoicing_day)) {
-			$pipelines[0]['match']['invoicing_day'] = $invoicing_day;
+			$invoicing_day_query = array('invoicing_day' => $invoicing_day);
+			$pipelines[0]['$match'] = array_merge($pipelines[0]['$match'], $invoicing_day_query);
 		}
 
 		$pipelines[] = array(
 			'$group' => array(
-				'_id' => '$billrun_key',
+				'_id' => array(
+					'billrun_key' => '$billrun_key',
+					'invoicing_day' => '$invoicing_day'
+				),
 			),
 		);
 		
 		$pipelines[] = array(
 			'$project' => array(
-				'billrun_key' => '$_id',
-				'invoicing_day' => '$invoicing_day'
+				'billrun_key' => '$_id.billrun_key',
+				'invoicing_day' => '$_id.invoicing_day',
 			),
 		);
 
