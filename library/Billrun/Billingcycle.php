@@ -193,14 +193,15 @@ class Billrun_Billingcycle {
 	 * @param string $key - Current key
 	 * @return string The previous key
 	 */
-	public static function getPreviousBillrunKey($key) {
-		if(!empty(self::$previousCycleKeysTable[$key])) {
-			return self::$previousCycleKeysTable[$key];
+	public static function getPreviousBillrunKey($key, $invoicing_day = null) {
+		$index_key = !empty($invoicing_day) ? $key . $invoicing_day : $key;
+		if(!empty(self::$previousCycleKeysTable[$index_key])) {
+			return self::$previousCycleKeysTable[$index_key];
 		}
-		$datetime = $key . "01000000";
+		$datetime = !empty($invoicing_day) ? $key . str_pad($invoicing_day, 2, "0", STR_PAD_LEFT) . "000000" : $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
-		self::$previousCycleKeysTable[$key] = $ret;
+		self::$previousCycleKeysTable[$index_key] = $ret;
 		return $ret;
 	}
 	
@@ -522,14 +523,14 @@ class Billrun_Billingcycle {
 	 * @param $startTime - string time to create billrun key from
 	 * @return billrun key
 	 */
-	public static function getOldestBillrunKey($startTime) {
-		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+	public static function getOldestBillrunKey($startTime, $invoicing_day = null) {
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime, $invoicing_day);
 		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
 		if (!$registrationDate) {
 			return $lastBillrunKey;
 		}
 		$monthBeforeRegistration = strtotime('- 1 month', $registrationDate->sec);
-		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration);
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration, $invoicing_day);
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
@@ -683,8 +684,8 @@ class Billrun_Billingcycle {
 		return $entry['billrun_key'];
 	}
 	
-	public static function getCycleTimeStatus($billrunKey) {
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+	public static function getCycleTimeStatus($billrunKey, $invoicing_day = null) {
+		$currentBillrunKey = self::getBillrunKeyByTimestamp(time(), $invoicing_day);
 		if ($billrunKey == $currentBillrunKey) {
 			return 'present';
 		}
