@@ -316,6 +316,9 @@ class BillrunController extends ApiController {
 			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey, $invoicingDay);
 		}
 		$setting['generate_pdf'] = Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
+		if (!empty($invoicingDay)) {
+			$setting['invoicing_day'] = $invoicingDay;
+		}
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
