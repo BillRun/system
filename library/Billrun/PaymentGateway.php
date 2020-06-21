@@ -169,6 +169,10 @@ abstract class Billrun_PaymentGateway {
 			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
+			$account = Billrun_Factory::account();
+			if (!$account->load(array('aid' => $aid))) {
+				throw new Exception("The account is not active");
+			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
 		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
