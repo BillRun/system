@@ -334,7 +334,9 @@ class Billrun_PaymentManager {
 	}
 
 	protected function isWaitingForConfirmation($params) {
-		return isset($params['waiting_for_confirmation']) && $params['waiting_for_confirmation'];
+		return 	$this->isFileBasedCharge($params) && isset($params['waiting_for_confirmation'])
+					||
+				isset($params['waiting_for_confirmation']) && $params['waiting_for_confirmation'];
 	}
 
 	protected function getSuccessPayments($postPayments, $params = []) {
@@ -378,7 +380,7 @@ class Billrun_PaymentManager {
 						$billId = $bill['id'];
 						$billType = $bill['type'];
 						$amountPaid = $bill['amount'];
-						if ($this->isFileBasedCharge($params) && $this->isWaitingForConfirmation($params)) {
+						if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
 							$payment->setPending(true);
 						}
 

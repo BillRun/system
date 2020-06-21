@@ -155,6 +155,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			try {
 				$options['account'] = $account->getRawData();
+				if($this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE) {
+					$options['waiting_for_confirmation'] = false;
+				}
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
 				$payment = $paymentReseponse['payment'];
 				Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
@@ -167,7 +170,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$currentPayment = $payment[0];
 			//If payment is pre-approved don't wait for confirmation and lfag it as such
 			if($this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE) {
-				$currentPayment->setConfirmationStatus(false);
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
 
