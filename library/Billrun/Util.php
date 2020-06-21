@@ -208,10 +208,15 @@ class Billrun_Util {
 	 * example: converts "201607" to : "July 2016"
 	 * 
 	 * @param type $billrunKey
+	 * @param string $format - returned date format
+	 * @param string $invoicing_day - custom invoicing day - in case multi day cycle system's mode on.
 	 * @return type
 	 */
-	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
-		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+	public static function billrunKeyToPeriodSpan($billrunKey, $format, $invoicing_day = null) {
+		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
+			$invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+		} 
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey, $invoicing_day);
 		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
