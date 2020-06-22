@@ -30,7 +30,7 @@ class ResetLinesAction extends ApiAction {
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
-		$invoicing_day = !empty($request['invoicing_day']) ? $request['invoicing_day'] : null;
+		$invoicing_day = !empty($request['invoicing_day']) ? ltrim($request['invoicing_day'], "0") : null;
 		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
 			Billrun_Factory::log("Multi day cycle system's mode on, but no invoicing day was sent. Default one was taken.", Zend_Log::ALERT);
 			$request['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
