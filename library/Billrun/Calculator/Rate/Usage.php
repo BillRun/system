@@ -249,11 +249,20 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	protected function getBasicMatchRateQuery($row, $usaget, $tariffCategory) {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
-		return array_merge(
+		$query = array_merge(
 			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
 			array('rates.' . $usaget => array('$exists' => true)),
 			array('tariff_category' => $tariffCategory)
 		);
+        
+		if (Billrun_Utils_Plays::isPlaysInUse()) {
+			$play = Billrun_Util::getIn($row, 'subscriber.play', Billrun_Util::getIn(Billrun_Utils_Plays::getDefaultPlay(), 'name', ''));
+			$query['play'] = [
+				'$in' => [null, $play],
+			];
+		}
+
+		return $query;
 	}
 	
 	protected function getBasicGroupRateQuery($row) {

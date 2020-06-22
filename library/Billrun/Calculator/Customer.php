@@ -350,7 +350,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				} else {
 					$params[] = array($fieldName => $val);
 				}
-				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . end($params)[$translationRules['target_key']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . print_R(end($params)[$translationRules['target_key']], 1), Zend_Log::DEBUG);
 			}
 			else {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
@@ -451,6 +451,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			} else {
 				$row['subscriber'] = $enrichedData;
 				$row = array_merge($row,$foreignData, $enrichedData);
+			}
+			
+			if (Billrun_Utils_Plays::isPlaysInUse() && !isset($row['subscriber']['play'])) {
+				$newRowSubscriber = $row['subscriber'];
+				$newRowSubscriber['play'] = Billrun_Utils_Plays::getDefaultPlay()['name'];
+				$row['subscriber'] = $newRowSubscriber;
 			}
 		}
 		return $row;
