@@ -273,7 +273,7 @@ class BillrunController extends ApiController {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
-		$from = date('Y/m/d', strtotime('12 months ago'));		
+		$from = date('Y/m/d', strtotime('24 months ago'));		
 		return $this->getCyclesInRange($from, $to, $newestFirst);
 	}
 
