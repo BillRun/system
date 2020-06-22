@@ -784,7 +784,46 @@
 							"taxation": "global"
 						}
 					]
+				}, {
+					"from": "time*2018-06-18T00:00:00Z",
+					"name": "ONE_CYCLE_ADDON",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": 100
+						}
+					],
+					"description": "one_cycle_addon",
+					"prorated": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-06-17T11:25:11Z",
+					"creation_time": "time*2018-06-18T00:00:00Z",
+					"include": {
+						"groups": {
+							"CALLL": {
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					}
 				}
+
 
 			]
 }

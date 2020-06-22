@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Query.php';
  * @since    2.8
  */
 class QuerybillrunAction extends QueryAction {
-
+	protected $type = 'querybillrun';
 	/**
 	 * The function to run before execute.
 	 */
@@ -70,12 +70,11 @@ class QuerybillrunAction extends QueryAction {
 	 * @return array lines to return for the action.
 	 */
 	protected function getLinesData($request, $linesRequestQueries) {
-		$cacheParams = array(
+		$params = array(
 			'fetchParams' => $linesRequestQueries
 		);
 
-		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
-		return $this->cache($cacheParams);
+		return $this->getLinesDataForQuery($params);
 	}
 
 	/**
