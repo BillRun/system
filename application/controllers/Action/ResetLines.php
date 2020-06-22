@@ -80,13 +80,13 @@ class ResetLinesAction extends ApiAction {
 					'billrun_key' => $billrun_key,
 				);
 				if (!is_null($invoicing_day)) {
-					$query['foreign']['account']['invoicing_day'] = $invoicing_day;
+					$query['foreign.account.invoicing_day'] = $invoicing_day;
 				}
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
 			}
 		} catch (Exception $exc) {
-			Billrun_Util::logFailedResetLines($aids, $billrun_key);
+			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
 			return FALSE;
 		}
 

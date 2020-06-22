@@ -980,9 +980,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
-	public static function logFailedResetLines($sids, $billrun_key) {
+	public static function logFailedResetLines($sids, $billrun_key, $invoicing_day = null) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
-		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		$output = array('sids' => $sids, 'billrun_key' => $billrun_key);
+		if (!is_null($invoicing_day)) {
+			$output['invoicing_day'] = $invoicing_day;
+		}
+		fwrite($fd, json_encode($output) . PHP_EOL);
 		fclose($fd);
 	}
 
