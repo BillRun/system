@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Query.php';
  * @since    2.8
  */
 class QueryaggregateAction extends QueryAction {
-
+	protected $type = 'queryaggregate';
 	/**
 	 * The function to run before execute.
 	 */
@@ -73,12 +73,11 @@ class QueryaggregateAction extends QueryAction {
 
 		$linesRequestQueries['group'] = $group;
 		$linesRequestQueries['groupby'] = $groupBy;
-		$cacheParams = array(
+		$params = array(
 			'fetchParams' => $linesRequestQueries
 		);
-
-		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
-		return $this->cache($cacheParams);
+		
+		return $this->getLinesDataForQuery($params);
 	}
 
 	/**
