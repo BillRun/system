@@ -155,7 +155,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			try {
 				$options['account'] = $account->getRawData();
-				if($this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE) {
+				if($this->isAssumeApproved()) {
 					$options['waiting_for_confirmation'] = false;
 				}
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
@@ -169,7 +169,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$currentPayment = $payment[0];
 			//If payment is pre-approved don't wait for confirmation and lfag it as such
-			if($this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE) {
+			if($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
 
@@ -218,6 +218,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$this->chargeOptions[$paramName] = $option;
 			}
 		}
+	}
+
+	protected function isAssumeApproved() {
+		return $this->logFile && $this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE;
 	}
 	
 	protected function isRefundMode() {
