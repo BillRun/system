@@ -209,11 +209,13 @@ class Billrun_Billingcycle {
 	 * method to get the last closed billing cycle
 	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
 	 * 
+	 * @param string $invoicing_day
 	 * @return string format YYYYmm
 	 */
-	public static function getLastClosedBillingCycle() {
+	public static function getLastClosedBillingCycle($invoicing_day = null) {
 		$sort = array("billrun_key" => -1);
-		$entry = Billrun_Factory::db()->billing_cycleCollection()->query(array())->cursor()->sort($sort)->limit(1)->current();
+		$query = !is_null($invoicing_day) ? array('invoicing_day' => $invoicing_day) : array();
+		$entry = Billrun_Factory::db()->billing_cycleCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
 			return self::getFirstTheoreticalBillingCycle();
 		}
