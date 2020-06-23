@@ -42,28 +42,31 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$this->extraParamsDef = $this->configByType['parameters'];
 		}
 		$this->options = $options;
-                $className = $this->getGeneratorClassName();
-                $generatorOptions = $this->buildGeneratorOptions();
-                try{
-                $this->fileGenerator = new $className($generatorOptions);
-                }catch(Exception $ex){
-                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
-                    throw new Exception($ex->getMessage());
-                }
-                $this->initLogFile();
-                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
-                $parametersString = "";
-                if (isset($options['collection_date']) && !empty($options['collection_date'])){
-                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
-                }
-                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
-                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
-                }
-                $parametersString = trim($parametersString, ",");
-                $this->logFile->updateLogFileField('parameters_string', $parametersString);
-                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		$this->initLogFile();
+		try{
+		$this->fileGenerator = new $className($generatorOptions);
+		}catch(Exception $ex){
+			$this->logFile->updateLogFileField('errors', $ex->getMessage());
+			$this->logFile->save();
+			throw new Exception($ex->getMessage());
+		}
+		$this->initLogFile(false);
+		$this->logFile->setStartProcessTime();
+		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
+		$parametersString = "";
+		if (isset($options['collection_date']) && !empty($options['collection_date'])){
+			$parametersString.= "collection_date=" . $options['collection_date'] . ",";
+		}
+		if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
+			$parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
+		}
+		$parametersString = trim($parametersString, ",");
+		$this->logFile->updateLogFileField('parameters_string', $parametersString);
+		$this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
@@ -171,18 +174,20 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                             }
                             $line = $this->getDataLine($params);
                             $this->data[] = $line;
-			$currentPayment->setExtraFields([
-								'pg_request' => $this->billSavedFields,
-								'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
-								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
-				], ['cpg_name', 'cpg_type', 'cpg_file_type']);
+			$extraFields = [
+				'pg_request' => $this->billSavedFields,
+				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+				'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""],
+				'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
+			];
+			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
 				$this->file_transactions_counter = $numberOfRecordsToTreat;
                 Billrun_Factory::log()->log($message, Zend_Log::INFO);
                 $this->logFile->updateLogFileField('info', $message);
+				$this->logFile->updateLogFileField(null, null, $extraFields);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}
