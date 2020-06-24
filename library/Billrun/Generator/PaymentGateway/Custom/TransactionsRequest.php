@@ -38,32 +38,33 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if (isset($this->configByType['filtration'])) {
 			$this->generatorFilters = $this->configByType['filtration'];
 		}
-		if (isset($this->configByType['parameters'])) {
-			$this->extraParamsDef = $this->configByType['parameters'];
+		$this->extraParamsDef = !empty($this->configByType['parameters']) ? $this->configByType['parameters'] : [];
+		$parametersString = "";
+		foreach ($this->extraParamsDef as $index => $param) { 
+			$field_name = !empty($options[$param['field_name']]) ? $options[$param['field_name']] : $options[$param['name']];
+			if (!empty($options[$field_name])) {
+				if ($param['type'] === "string") {
+					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
+					$parametersString .= $field_name . "=" . $options[$field_name];
+				}
+			}
 		}
+		$parametersString = trim($parametersString, ",");
 		$this->options = $options;
-                $className = $this->getGeneratorClassName();
-                $generatorOptions = $this->buildGeneratorOptions();
-                try{
-                $this->fileGenerator = new $className($generatorOptions);
-                }catch(Exception $ex){
-                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
-                    throw new Exception($ex->getMessage());
-                }
-                $this->initLogFile();
-                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
-                $parametersString = "";
-                if (isset($options['collection_date']) && !empty($options['collection_date'])){
-                    $parametersString.= "collection_date=" . $options['collection_date'] . ",";
-                }
-                if (isset($options['sequence_type']) && !empty($options['sequence_type'])){
-                    $parametersString.= "sequence_type=" . $options['sequence_type'] . ",";
-                }
-                $parametersString = trim($parametersString, ",");
-                $this->logFile->updateLogFileField('parameters_string', $parametersString);
-                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		try{
+		$this->fileGenerator = new $className($generatorOptions);
+		}catch(Exception $ex){
+			$this->logFile->updateLogFileField('errors', $ex->getMessage());
+			throw new Exception($ex->getMessage());
+		}
+		$this->initLogFile();
+		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
+		$this->logFile->updateLogFileField('parameters_string', $parametersString);
+		$this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
@@ -247,29 +248,30 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			return $validated;
 		}
 		foreach ($this->extraParamsDef as $paramObj) {
-			if (!isset($paramObj['name'])) {
+			$field_name = !empty($paramObj['field_name']) ? $paramObj['field_name'] : $paramObj['name'];
+			if (!empty($field_name)) {
 				$validated = false;
 				break;
 			}
-			if ((!isset($paramObj['type']) || $paramObj['type'] == 'string') && isset($this->options[$paramObj['name']])) {
-				if (!is_string($this->options[$paramObj['name']])) {
+			if ((!isset($paramObj['type']) || $paramObj['type'] == 'string') && isset($this->options[$field_name])) {
+				if (!is_string($this->options[$field_name])) {
 					$validated = false;
 					break;
 				}
 			}
 			if (!isset($paramObj['mandatory']) || !empty($paramObj['mandatory'])) {
-				if (!isset($this->options[$paramObj['name']])) {
+				if (!isset($this->options[$field_name])) {
 					$validated = false;
 					break;
 				}
 			}
-			if (isset($paramObj['regex']) && isset($this->options[$paramObj['name']])) {
-				if (!preg_match($paramObj['regex'], $this->options[$paramObj['name']])) {
+			if (isset($paramObj['regex']) && isset($this->options[$field_name])) {
+				if (!preg_match($paramObj['regex'], $this->options[$field_name])) {
 					$validated = false;
 					break;
 				}
 			}         
-			$this->extraParamsNames[] = $paramObj['name'];
+			$this->extraParamsNames[] = $field_name;
 		}
 		
 		return $validated;
