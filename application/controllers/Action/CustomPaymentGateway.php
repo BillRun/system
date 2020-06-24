@@ -23,12 +23,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 		$options['action'] = $request->get('action');
 		$options['gateway_name'] = $request->get('payment_gateway');
 		$options['file_type'] = $request->get('file_type');
-		$params = [];
+		$options['params'] = [];
 		if (!empty($request->get('parameters'))) {
 			$options['params'] = json_decode($request->get('parameters') ,true);
 			if (is_null($options['params'])) {
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
+		}
+		if ($options['action'] === "transactions_request") {
+			$options['params']['created_by'] = Billrun_Factory::user()->getUsername();
 		}
 		$options['pay_mode'] = !empty($request->get('pay_mode')) ? $request->get('pay_mode') : null;
 		if ((in_array($options['file_type'], ["transactions_request","transactions_response"])) && (empty($options['gateway_name']) || empty($options['file_type']))) {
@@ -48,8 +51,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
         }
 		Billrun_Factory::log("Finished " . $options['action'] . " custom payment gateway request." , Zend_Log::DEBUG);
 		$output = array (
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? 'success' : 'error',
+			'status' => "Done",
 			'details' => array(),
 		);
 		$this->setSuccess($output, $options);
