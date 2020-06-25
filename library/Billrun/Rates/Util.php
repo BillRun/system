@@ -163,9 +163,16 @@ class Billrun_Rates_Util {
 		return static::getCharges($rate, $usageType, $volume, $plan, $services, $offset, $time)['total'];
 	}
 
-	// TODO: This is a temporary function
-	public static function getVat($default = 0.17) {
-		return Billrun_Factory::config()->getConfigValue('taxation.vat', $default);
+	/**
+	 * Get system's VAT rate
+	 * 
+	 * @param float $default
+	 * @return float in range 0-1
+	 * @deprecated since version 5.9 - use Tax calculator
+	 */
+	public static function getVat($default = 0.17, $time = null) {
+		$defaultTax = Billrun_Calculator_Tax_Usage::getDetaultTax($time);
+		return !empty($defaultTax) && isset($defaultTax['rate']) ? $defaultTax['rate'] : $default;
 	}
 
 	/**

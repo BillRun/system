@@ -33,6 +33,13 @@ class Billrun_DataTypes_CycleTime {
 	private $key;
 	
 	/**
+	 * Number of days in the cycle
+	 * @var int
+	 */
+	private $days;
+
+
+	/**
 	 * Create a new instance of the cycle time class.
 	 * @param string $billrunKey - Billrun key to set the cycle times by.
 	 */
@@ -60,5 +67,16 @@ class Billrun_DataTypes_CycleTime {
 	
 	public function key() {
 		return $this->key;
+	}
+	
+	/**
+	 * get number of days in the cycle
+	 * @return int
+	 */
+	public function days() {
+		if (is_null($this->days)) {
+			$this->days = Billrun_Utils_Time::getDaysDiff($this->start(), $this->end());
+		}
+		return $this->days;
 	}
 }

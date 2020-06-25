@@ -26,12 +26,14 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	
+	
 	/**
-	 * service internal id
+	 * local cache to store all entities (services/plans), so on run-time they will be fetched from memory instead of from DB
 	 * 
-	 * @var int
+	 * @var array
 	 */
-	protected $service_id = 0;
+	protected static $entities = [];
 
 	/**
 	 * constructor
@@ -53,12 +55,11 @@ class Billrun_Service {
 			$this->load($params['name'], $time, 'name');
 		}
 		
-		if (isset($params['service_id'])) {
-			$this->data['service_id'] = $params['service_id'];
-		}
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**
@@ -83,6 +84,33 @@ class Billrun_Service {
 		} else {
 			$queryTime = new MongoDate($time);
 		}
+		
+		switch ($loadByField) {
+			case 'name':
+				$this->data = self::getEntityByNameAndTime($param, $queryTime);
+				break;
+			case 'id':
+			case '_id':
+				$this->data = self::getEntityById($param);
+				break;
+			default: // BC
+				$this->loadFromDb($param, $queryTime, $loadByField);
+		}
+	}
+
+	/**
+	 * load the service from DB
+	 * 
+	 * @param mixed $param the value to load by
+	 * @param mixed $time unix timestamp OR mongo date
+	 * @param string $loadByField the field to load by the value
+	 */
+	protected function loadFromDb($param, $time = null, $loadByField = '_id') {
+		if (is_null($time)) {
+			$queryTime = new MongoDate();
+		} else if (!$time instanceof MongoDate) {
+			$queryTime = new MongoDate($time);
+		}
 		$serviceQuery = array(
 			$loadByField => $param,
 			'$or' => array(
@@ -90,7 +118,7 @@ class Billrun_Service {
 				array('to' => null)
 			)
 		);
-		$coll = Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_class($this))) . 's');
+		$coll = self::getCollection();
 		$record = $coll->query($serviceQuery)->lessEq('from', $queryTime)->cursor()->current();
 		$record->collection($coll);
 		$this->data = $record;
@@ -148,7 +176,8 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat,$serviceStartDate));
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceCycleStartDate, $rowTime);
 		return $cyclesSpent > $serviceAvailableCycles;
 	}
 	
@@ -515,6 +544,81 @@ class Billrun_Service {
 	public function getPlays() {
 		$plays = $this->get('play');
 		return empty($plays) ? [] : $plays;
+	}
+	
+	/**
+	 * gets the DB collection of the entity (servicesCollection/plansCollection/etc...)
+	 * 
+	 * @return Mongodloid Collection
+	 */
+	public static function getCollection() {
+		return Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_called_class())) . 's');
+	}
+	
+	/**
+	 * loads all entities (Services/Plans/etc...) to a static local variable
+	 * these entities will be later use to fetch from the memory instead of from the DB
+	 */
+	public static function initEntities() {
+		$coll = self::getCollection();
+		$entities = $coll->query()->cursor();
+		self::$entities['by_id'] = [];
+		self::$entities['by_name'] = [];
+		foreach ($entities as $entity) {
+			$entity->collection($coll);
+			self::$entities['by_id'][strval($entity->getId())] = $entity;
+			self::$entities['by_name'][$entity['name']][] = [
+				'entity' => $entity,
+				'from' => $entity['from'],
+				'to' => $entity['to'],
+			];
+		}
+	}
+
+	/**
+	 * get local stored entities
+	 * 
+	 * @return array
+	 */
+	public static function getEntities() {
+		if (empty(self::$entities)) {
+			self::initEntities();
+		}
+		return self::$entities;
+	}
+
+	/**
+	 * get the entity by its id
+	 *
+	 * @param string $id
+	 *
+	 * @return array of entity details if id exists else false
+	 */
+	protected static function getEntityById($id) {
+		$entities = static::getEntities();
+		if (isset($entities['by_id'][$id])) {
+			return $entities['by_id'][$id];
+		}
+		return new Mongodloid_Entity(array(), self::getCollection());
+	}
+
+	/**
+	 * get entuty by name and date
+	 * entity is time-depend
+	 * @param string $name name of the entity
+	 * @param int $time unix timestamp
+	 * @return array with entity details if entity exists, else false
+	 */
+	protected static function getEntityByNameAndTime($name, $time) {
+		$entities = static::getEntities();
+		if (isset($entities['by_name'][$name])) {
+			foreach ($entities['by_name'][$name] as $entityTimes) {
+				if ($entityTimes['from'] <= $time && (!isset($entityTimes['to']) || is_null($entityTimes['to']) || $entityTimes['to'] >= $time)) {
+					return $entityTimes['entity'];
+				}
+			}
+		}
+		return new Mongodloid_Entity(array(), self::getCollection());
 	}
 	
 }

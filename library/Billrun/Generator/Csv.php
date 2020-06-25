@@ -115,47 +115,5 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	protected function resetFile() {
 		$this->writeToFile("", true);
 	}
-	
-	
-	protected function getHeaderRowContent($entity,$pad_length = array()) {
-		$row_contents = '';
-		if (!empty($pad_length)){
-			$this->pad_length = $pad_length;
-		}
-		$header_numeric_fields = $this->generateStructure['header']['numeric_fields'];
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key,$header_numeric_fields)){
-				$this->pad_type = STR_PAD_LEFT;
-				$this->pad_string = '0';
-			}
-			else{
-				$this->pad_type = STR_PAD_RIGHT;
-				$this->pad_string = ' ';
-			}
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
-		}
-		return $row_contents;
-	}
-	
-	protected function getRowContent($entity,$pad_length = array()) {
-		$row_contents = '';
-		if (!empty($pad_length)){
-			$this->pad_length = $pad_length;
-		}
-		$data_numeric_fields = $this->generateStructure['data']['numeric_fields'];
-		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key, $data_numeric_fields)){ 
-				$this->pad_type = STR_PAD_LEFT;
-				$this->pad_string = '0';
-			}
-			else{
-				$this->pad_type = STR_PAD_RIGHT;
-				$this->pad_string = ' ';
-			}
-			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
-		}
-			return $row_contents;
-	}
-	
 
 }

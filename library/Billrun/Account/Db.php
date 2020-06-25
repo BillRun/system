@@ -217,7 +217,6 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function getInCollection($aids = array()) {
 		$results = array();
 		$params = Billrun_Utils_Mongo::getDateBoundQuery();
-		$exempted = $this->getExcludedFromCollection($aids);
 		$subject_to = $this->getIncludedInCollection($aids);
 		$params['in_collection'] = true;
 		// white list exists but aids not included
@@ -228,10 +227,6 @@ class Billrun_Account_Db extends Billrun_Account {
 		if (!is_null($subject_to) && !empty($subject_to)) {
 			$params['aid']['$in'] = $subject_to;
 		}
-		// black list exist and include aids
-		if (!empty($exempted)) {
-			$params['aid']['$nin'] = $exempted;
-		}
 		$query = $this->buildQuery($params);
 		$cursor = $this->collection->query($query)->cursor();
 		foreach ($cursor as $row) {
@@ -239,7 +234,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return $results;
 	}
-	
+	  
 	/**
 	 * Get accounts by transferred query.
 	 * @param array $query - query.

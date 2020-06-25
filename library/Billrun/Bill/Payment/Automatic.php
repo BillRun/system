@@ -18,8 +18,10 @@ class Billrun_Bill_Payment_Automatic extends Billrun_Bill_Payment {
 
 	public function __construct($options) {
 		parent::__construct($options);	
-		if (!isset($options['_id'])) {
-			$this->data['waiting_for_confirmation'] = true;	
-		} 
+		if (!isset($options['_id']) && !isset($options['cancel'])) {
+			$this->data['waiting_for_confirmation'] = true;
+		} else if (isset($options['cancel'])) {
+			$this->data['waiting_for_confirmation'] = false;
+		}
 	}
 }
