@@ -471,7 +471,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($this->data['waiting_for_confirmation'])){
 			$status = $this->data['waiting_for_confirmation'];
 		}
-		return is_null($status) ? false : $status;
+		return !empty($status);
 	}
 
 	/**
