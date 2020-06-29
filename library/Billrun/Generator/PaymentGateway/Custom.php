@@ -359,22 +359,28 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         return $line;
     }
-
-    protected function initLogFile($firstInitialization = true) {
-		if ($firstInitialization) {
-			$logOptions = $this->chargeOptions;
-			$logOptions['source'] = "custom_payment_files";
-			Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
-			$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
-		} else {
-			$this->logFile->setSequenceNumber();
-			$this->logFile->setFileName($this->getFilename());
-			$this->logFile->setStamp();
-			$this->generatedLogFileStamp = $this->logFile->getStamp();
-			Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
-			Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
-			$this->logFile->save();
-		}
+	
+	/**
+	 * Function to create the cpg log file
+	 */
+	protected function createLogFile() {
+		$logOptions = $this->chargeOptions;
+		$logOptions['source'] = "custom_payment_files";
+		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
+		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
+	}
+	
+	/**
+	 * Function to initialize the created log file, only if it was created successfully.
+	 */
+    protected function initLogFile() {
+		$this->logFile->setSequenceNumber();
+		$this->logFile->setFileName($this->getFilename());
+		$this->logFile->setStamp();
+		$this->generatedLogFileStamp = $this->logFile->getStamp();
+		Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
+		Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
+		$this->logFile->save();
 	}
 
 	/**
