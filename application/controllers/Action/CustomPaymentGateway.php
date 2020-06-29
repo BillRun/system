@@ -2,16 +2,16 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
- * Pay action class
+ * Custom payment gateway action class
  *
  * @package  Action
- * @since    0.5
+ * @since    5.13
  */
 	class CustomPaymentGatewayAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
@@ -20,7 +20,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 		$this->allowed();
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Custom payment gateway API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
-		$options['action'] = $request->get('action');
+		$options['cpg_type'] = $request->get('cpg_type');
 		$options['gateway_name'] = $request->get('payment_gateway');
 		$options['file_type'] = $request->get('file_type');
 		$options['params'] = [];
@@ -30,14 +30,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
 		}
-		if ($options['action'] === "transactions_request") {
-			$options['params']['created_by'] = Billrun_Factory::user()->getUsername();
-		}
+		$options['params']['created_by'] = Billrun_Factory::user()->getUsername();
+
 		$options['pay_mode'] = !empty($request->get('pay_mode')) ? $request->get('pay_mode') : null;
-		if ((in_array($options['file_type'], ["transactions_request","transactions_response"])) && (empty($options['gateway_name']) || empty($options['file_type']))) {
-			return $this->setError("Action " . $options['action'] . " must be transferred with both file type and payment gateway.");
+		if ((in_array($options['file_type'], ["transactions_request"])) && (empty($options['gateway_name']) || empty($options['file_type']))) {
+			return $this->setError("Action " . $options['cpg_type'] . " must be transferred with both file type and payment gateway.");
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['action'] . ' payment_gateway=' . $options['gateway_name'] . ' file_type=' . $options['file_type'];
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['cpg_type'] . ' payment_gateway=' . $options['gateway_name'] . ' file_type=' . $options['file_type'];
 		if (!is_null($options['pay_mode'])) {
 			$cmd .= " pay_mode=" . $options['pay_mode'];
 		}
@@ -49,7 +48,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 		} catch(Exception $ex){
 			return $this->setError("Error: " . $ex->getMessage());
         }
-		Billrun_Factory::log("Finished " . $options['action'] . " custom payment gateway request." , Zend_Log::DEBUG);
+		Billrun_Factory::log("Finished " . $options['cpg_type'] . " custom payment gateway request." , Zend_Log::DEBUG);
 		$output = array (
 			'status' => "Done",
 			'details' => array(),
