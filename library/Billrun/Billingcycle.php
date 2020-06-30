@@ -193,17 +193,13 @@ class Billrun_Billingcycle {
 	 * @param string $key - Current key
 	 * @return string The previous key
 	 */
-	public static function getPreviousBillrunKey($key, $invoicing_day = null) {
-		$index_key = !empty($invoicing_day) ? $key . $invoicing_day : $key;
-		if(!empty(self::$previousCycleKeysTable[$index_key])) {
-			return self::$previousCycleKeysTable[$index_key];
-		}
-		$datetime = !empty($invoicing_day) ? $key . str_pad($invoicing_day, 2, "0", STR_PAD_LEFT) . "000000" : $key . "01000000";
+	public static function getPreviousBillrunKey($key) {
+		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
-		self::$previousCycleKeysTable[$index_key] = $ret;
 		return $ret;
 	}
+
 	
 	/**
 	 * method to get the last closed billing cycle
@@ -232,8 +228,8 @@ class Billrun_Billingcycle {
 		$billingCycleCol = self::getBillingCycleColl();
 		Billrun_Factory::log("Removing billing cycle records for " . $billrunKey, Zend_Log::DEBUG);
 		$removeQuery = array('billrun_key' => $billrunKey);
-		if (!is_null($invoicing_day)) {
-			$removeQuery['invoicing_day'] =$invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$removeQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$billingCycleCol->remove($removeQuery);
 		Billrun_Aggregator_Customer::removeBeforeAggregate($billrunKey);
@@ -251,8 +247,8 @@ class Billrun_Billingcycle {
 	protected static function hasCycleStarted($billrunKey, $size, $invoicing_day = null) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
-		if (!is_null($invoicing_day)) {
-			$existsKeyQuery['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$existsKeyQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
 		if ($keyCount < 1) {
@@ -273,8 +269,8 @@ class Billrun_Billingcycle {
 		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$query = array('billrun_key' => $billrunKey, 'page_size' => $size);
-		if (!is_null($invoicing_day)) {
-			$query['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$numOfPages = $billingCycleCol->query($query)->count();
 		$finishedPages = $billingCycleCol->query(array_merge($query, array('end_time' => array('$exists' => 1))))->count();
@@ -319,9 +315,8 @@ class Billrun_Billingcycle {
 				),
 			);
 		}
-		if (!is_null($invoicing_day)) {
-			$invoicing_day_query = array('invoicing_day' => $invoicing_day);
-			$pipelines[0]['$match'] = array_merge($pipelines[0]['$match'], $invoicing_day_query);
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$pipelines[0]['$match']['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 
 		$pipelines[] = array(
@@ -385,16 +380,16 @@ class Billrun_Billingcycle {
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
 		);
-		if (!is_null($invoicing_day)) {
-			$totalPagesQuery['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$totalPagesQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$totalPages = $billingCycleCol->query($totalPagesQuery)->count();
 		$finishedPagesQuery = array(
 			'billrun_key' => $billrunKey,
 			'end_time' => array('$exists' => true)
 		);
-		if (!is_null($invoicing_day)) {
-			$finishedPagesQuery['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$finishedPagesQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
 		if (self::hasCycleEnded($billrunKey, $size, $invoicing_day)) {
@@ -418,8 +413,8 @@ class Billrun_Billingcycle {
 			'billrun_key' => $billrunKey,
 			'billed' => 1
 		);
-		if (!is_null($invoicing_day)) {
-			$query['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$generatedBills = $billrunColl->query($query)->count();
 		return $generatedBills;
@@ -436,8 +431,8 @@ class Billrun_Billingcycle {
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
-		if (!is_null($invoicing_day)) {
-			$query['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$generatedInvoices = $billrunColl->query($query)->count();
 		return $generatedInvoices;
@@ -552,8 +547,8 @@ class Billrun_Billingcycle {
 			$zeroPages = 1;
 		}
 		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
-		if (!is_null($invoicing_day)) {
-			$cycleQuery['invoicing_day'] = $invoicing_day;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$cycleQuery['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
 		
@@ -596,9 +591,9 @@ class Billrun_Billingcycle {
 		$query = array(
 			'billrun_key' => $billrunKey
 		);
-		if (!empty($invoicing_day)) {
-			$query['invoicing_day'] = $invoicing_day;
-		} 
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		}
 		
 		$billrunDoc = $billrunColl->query($query)->count();
 		$cycleDoc = $billingCycleCol->query($query)->count();
@@ -631,10 +626,9 @@ class Billrun_Billingcycle {
 				'billrun_key' => array('$in' => $billrunKeys),
 			),
 		);
-
-		if (!is_null($invoicing_day)) {
-			$invoicing_day_query = array('invoicing_day' => $invoicing_day);
-			$pipelines[0]['$match'] = array_merge($pipelines[0]['$match'], $invoicing_day_query);
+		
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$pipelines[0]['$match']['invoicing_day'] = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
 		}
 
 		$pipelines[] = array(
