@@ -113,13 +113,12 @@ class CreditAction extends ApiAction {
 		}
 		
 		
-		$totalPrice = round($firstInstallment['aprice'], self::INSTALLMENTS_PRECISION);
-		$installmentPrice = round($totalPrice / $numOfInstallments, self::INSTALLMENTS_PRECISION);
-		$firstInstallmentPrice = round($totalPrice - ($installmentPrice * ($numOfInstallments - 1)), self::INSTALLMENTS_PRECISION);
+		$totalPrice = $firstInstallment['aprice'];
+		$installmentPrice = $totalPrice / $numOfInstallments;
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($firstInstallment['credit_time']);
 		
 		// handle first installment
-		$firstInstallment['aprice'] = $firstInstallmentPrice;
+		$firstInstallment['aprice'] = $installmentPrice;
 		unset($firstInstallment['stamp']);
 		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
 		$firstInstallment['first_installment'] = $firstInstallment['stamp'];
