@@ -1629,7 +1629,7 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
-			$keys = explode('.', $keys);
+				$keys = explode('.', $keys);
 		}
 		
 		$current = &$arr;
@@ -1640,6 +1640,39 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+
+	/**
+	 * Deeply unset an array values by path.
+	 *
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param type $clean_tree - if TRUE, all empty branches  in in keys will be removed
+	 */
+	public static function unsetInPath(&$arr, $keys, $clean_tree = false) {
+		if (empty($keys)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$prev_el = NULL;
+		$el = &$arr;
+		foreach ($keys as &$key) {
+			$prev_el = &$el;
+			$el = &$el[$key];
+		}
+		if ($prev_el !== NULL) {
+			unset($prev_el[$key]);
+		}
+		if ($clean_tree) {
+			array_pop($keys);
+			$prev_branch = static::getIn($arr, $keys);
+			if (empty($prev_branch)) {
+				static::unsetInPath($arr, $keys, true);
+			}
+		}
+	}
+
 	/**
 	 * Deeply unsets an array value.
 	 * 
@@ -1655,7 +1688,7 @@ class Billrun_Util {
 			$keys = explode('.', $keys);
 		}
 		$current = &$arr;
-		foreach($keys as $key) {
+		foreach($keys as &$key) {
 			$current = &$current[$key];
 		}
 		
