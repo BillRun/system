@@ -18,7 +18,7 @@
 							</td>
 							<td>
 								<span class="label">Period</span>
-								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></h3>
+								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></h3>
 							</td>
 						</tr>
 					</tbody></table>
@@ -81,8 +81,9 @@
 			<div class="section-body">
 				<?php 
 					$sidLines = array_filter($this->lines,function ($l) use ($sub) {return $l['sid'] == $sub['sid'];});
+					$subFlatTabels = !empty($this->invoice_flat_tabels[$sub['sid']]) ? $this->invoice_flat_tabels[$sub['sid']] : [];
 					if(!empty($sidLines)) {
-						echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $flat_line_types) ); 
+						echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $flat_line_types, 'tabels' => $subFlatTabels )); 
 					}
 				?>
 			</div><!-- /.section-body -->
@@ -96,7 +97,8 @@
 			<div class="section-body">
 				<?php 
 						if(!empty($sidLines)) {
-							echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $usage_line_types) ); 
+							$subUsageTabels = !empty($this->invoice_usage_tabels[$sub['sid']]) ? $this->invoice_usage_tabels[$sub['sid']] : [];
+							echo $this->render($this->details_table_template,array('lines'=> $sidLines,'lines_detail_types' => $usage_line_types, 'tabels' => $subUsageTabels) ); 
 						}
 				?>
 			</div><!-- /.section-body -->

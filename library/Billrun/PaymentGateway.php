@@ -177,6 +177,10 @@ abstract class Billrun_PaymentGateway {
 			if (isset($data['installments']) && ($data['amount'] != $data['installments']['total_amount'])) {
 				throw new Exception("Single payment amount different from installments amount");
 			}
+			$account = Billrun_Factory::account();
+			if (!$account->load(array('aid' => $aid))) {
+				throw new Exception("The account is not active");
+			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
 		}
 		if ($iframe && (is_null($okPage) || is_null($failPage))) {
@@ -196,11 +200,9 @@ abstract class Billrun_PaymentGateway {
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
-		
 		if ($iframe && $requestParameters) {
 			return ['content'=> $this->requestParams, 'content_type' => 'url'];
 		}
-		
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			if ($iframe) {
@@ -739,7 +741,10 @@ abstract class Billrun_PaymentGateway {
 			return false;
 		}
 		$gateway = self::getInstance($gatewayDetails['name']);
+		if (!is_null($gateway)) {
 		return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
+		}
+		return false;
 	}
 			
 	public function getReturnUrlOnError() {

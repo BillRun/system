@@ -235,9 +235,12 @@ abstract class Billrun_Bill {
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
+			$relative_date = new MongoDate(strtotime($date));
 			$query['$or'] = array(
-				array('charge.not_before' => array('$lte' => new MongoDate(strtotime($date)))),
-				array('charge.not_before' => array('$exists' => false)),
+				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => true, '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => false))
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
@@ -999,7 +1002,7 @@ abstract class Billrun_Bill {
 		);
 		$pipelines[] = array(
 			'$addFields' => array(
-				'method' => array('$ifNull' => array('$method', '$payment_method')),
+				'method' => 'automatic',
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
@@ -1044,7 +1047,7 @@ abstract class Billrun_Bill {
 			),
 		);
 		
-		$res = $billsColl->aggregate($pipelines);
+		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
 	}
 
@@ -1180,6 +1183,29 @@ abstract class Billrun_Bill {
 		return self::getBills($query);
 	}
 
+	/**
+	 * Function to set custom fields in the paymet objects
+	 * @param array $fields - array of "field path" => "field value" (field valut can be an array) to insert.
+	 * @param boolean $mergeToExistingArray - array of fields names - for fields that their path leads to an array that needs
+	 * to be merge with the given "field_value" - which have to be an array in this case as well. 
+	 */
+	public function setExtraFields($fields, $mergeToExistingArray = []) {
+		if (empty($fields)) {
+			return;
+		}
+		$paymentData = $this->getRawData();
+		foreach ($fields as $path => $value) {
+			if (!in_array($path, $mergeToExistingArray) || in_array($path, $mergeToExistingArray) && empty(Billrun_Util::getIn($paymentData, $path))) {
+				Billrun_Util::setIn($paymentData, $path, $value);
+			} else {
+				$currentArray = Billrun_Util::getIn($paymentData, $path);
+				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
+			}
+		}
+		$this->setRawData($paymentData);
+		$this->save();
+	}
+	
 	/**
 	 * Function that sets balance effective date, in every payment's bill.
 	 * @param int $date - unix timestamp to set as the balance effective date.
