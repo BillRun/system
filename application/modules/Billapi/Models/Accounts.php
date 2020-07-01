@@ -88,5 +88,8 @@ class Models_Accounts extends Models_Entity {
 		}
 		return true;
 	}
-
+	
+	public function getInvoicingDay () {
+		return !empty($additional['invoicing_day']) ? $additional['invoicing_day'] : null;
+	}
 }
