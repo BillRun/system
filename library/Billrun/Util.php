@@ -1629,7 +1629,7 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
-				$keys = explode('.', $keys);
+			$keys = explode('.', $keys);
 		}
 		
 		$current = &$arr;
@@ -1688,7 +1688,7 @@ class Billrun_Util {
 			$keys = explode('.', $keys);
 		}
 		$current = &$arr;
-		foreach($keys as &$key) {
+		foreach($keys as $key) {
 			$current = &$current[$key];
 		}
 		
