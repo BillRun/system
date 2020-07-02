@@ -49,7 +49,8 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		$this->aid = Billrun_Util::getFieldVal($options['aid'], 0);
 		$this->now = time();
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$this->invoicing_day = !empty ($options['invoicing_day']) ? ltrim($options['invoicing_day'], '0') : Billrun_Factory::config()->getConfigChargingDay();
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$this->aid));
+			$this->invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 		}
 	}
 
@@ -64,6 +65,7 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 			'stamp' => $this->stamp,
 			'fake_cycle' => true,
 		);
+		
 		if (!empty($this->invoicing_day)) {
 			$options['invoicing_day'] = $this->invoicing_day;
 		}
@@ -80,6 +82,5 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	protected function setAccountId($aid) {
 		$this->aid = intval($aid);
 	}
-
 
 }
