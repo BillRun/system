@@ -30,10 +30,15 @@ class ResetLinesAction extends ApiAction {
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
-		$invoicing_day = !empty($request['invoicing_day']) ? ltrim($request['invoicing_day'], "0") : null;
-		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
-			Billrun_Factory::log("Multi day cycle system's mode on, but no invoicing day was sent. Default one was taken.", Zend_Log::ALERT);
-			$request['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query = array(
+				'aid' => $request['aid'], 
+				'from' => array('$lte' => new MongoDate()), 
+				'to' => array('$gt' => new MongoDate())
+			);
+			$account = Billrun_Factory::account()->loadAccountForQuery($query);
+			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+			$request['invoicing_day'] = $invoicing_day;
 		}
 		if (!is_null($invoicing_day)) {
 			$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
@@ -45,11 +50,8 @@ class ResetLinesAction extends ApiAction {
 			return $this->setError('Illegal billrun key', $request);
 		}
 		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {
-			if (!is_null($invoicing_day)) {
-				return $this->setError("Billrun {$billrun_key} , with invoicing day {$invoicing_day},  already closed", $request);
-			} else {
-				return $this->setError("Billrun {$billrun_key} already closed", $request);
-			}
+			$message = "Billrun "  . $billrun_key . (!is_null($invoicing_day) ? " with invoicing day {$invoicing_day}, " : " ") . "already closed";
+			return $this->setError($message, $request);
 		}
 		
 		// Warning: will convert half numeric strings / floats to integers
