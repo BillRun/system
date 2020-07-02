@@ -18,7 +18,7 @@
 							</td>
 							<td>
 								<span class="label">Period</span>
-								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></h3>
+								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></h3>
 							</td>
 						</tr>
 					</tbody></table>
