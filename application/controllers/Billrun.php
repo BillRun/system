@@ -375,7 +375,9 @@ class BillrunController extends ApiController {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
 		}
 		if (!empty($invoicing_day)) {
-			$cmd .= ' invoice_days=' . $invoicing_day;
+			if (is_numeric($invoicing_day)) {
+				$cmd .= ' invoicing_days=' . $invoicing_day;
+			}
 		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
