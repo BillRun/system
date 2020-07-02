@@ -15,8 +15,8 @@
  */
 abstract class Billrun_Template_Token_Replacers_Abstract {
 
-	protected static $availableTokens;
-	protected static $category;
+	protected $availableTokens;
+	protected $category;
 	protected $data;
 
 	public function __construct() {

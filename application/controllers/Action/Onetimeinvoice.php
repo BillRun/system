@@ -16,6 +16,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 */
 class OnetimeinvoiceAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
+	use Billrun_Traits_Api_OperationsLock;
+	
+	const STEP_PDF_ONLY = 0;
+	const STEP_PDF_AND_BILL = 1;
+	const STEP_FULL = 2;
+
+	protected $aid;
 	
     public function execute($arg = null) {
         $this->allowed();
@@ -28,15 +35,21 @@ class OnetimeinvoiceAction extends ApiAction {
         
         $oneTimeStamp = date('YmdHis', Billrun_Util::getFieldVal($request['invoice_unixtime'],time()));
 		$inputCdrs = json_decode($request['cdrs'],JSON_OBJECT_AS_ARRAY);
+		$step = isset($request['step']) ? intval($request['step']) : self::STEP_FULL;
+		$sendEmail = isset($request['send_email']) ? intval($request['send_email']) : true;
+		$allowBill = isset($request['allow_bill']) ? intval($request['allow_bill']) : 1;
         $cdrs = [];
-        $aid = intval($request['aid']);
+        $this->aid = intval($request['aid']);
+        $affectedSids = [];
         
+		Billrun_Factory::log('One time invoice action running for account ' . $this->aid, Zend_Log::INFO);
         //Verify the cdrs data
         foreach($inputCdrs as &$cdr) {
-            if($aid != $cdr['aid']) {
+            if($this->aid != $cdr['aid']) {
                 $this->setError("One of the CDRs AID doesn't match the account AID");
                 return;
             }
+            $affectedSids[] = $cdr['sid'] ?: 0;
             $cdr['billrun'] = $oneTimeStamp;
 			$cdr = $this->parseCDR($cdr);
 			$cdr['onettime_invoice'] = $oneTimeStamp;
@@ -44,20 +57,50 @@ class OnetimeinvoiceAction extends ApiAction {
                 return FALSE;
 			}
         }
-        
+
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$aid] ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$this->aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular'),'affected_sids' => $affectedSids ]);
         $aggregator->aggregate();
 
 
-        $invoice = Billrun_Factory::billrun(['aid' => $aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
-        $pdfPath = $invoice->getInvoicePath();
-        //run charge
-		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$invoice->getInvoiceID()]]);
-		$billrunToBill->load();
-		$billrunToBill->generate();
-        Billrun_Bill_Payment::makePayment([ 'aids' => [$aid], 'invoices' => [$invoice->getInvoiceID()] ]);
-        
+        $this->invoice = Billrun_Factory::billrun(['aid' => $this->aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
+        $pdfPath = $this->invoice->getInvoicePath();
+		
+		Billrun_Factory::log('One time invoice action confirming invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
+		$billrunToBill = Billrun_Generator::getInstance(['type'=> 'BillrunToBill','stamp' => $oneTimeStamp,'invoices'=> [$this->invoice->getInvoiceID()], 'send_email' => $sendEmail]);
+		
+		if ($step >= self::STEP_PDF_AND_BILL) {
+			if (!$billrunToBill->lock()) {
+				Billrun_Factory::log("BillrunToBill is already running", Zend_Log::NOTICE);
+				return;
+			}
+			$billrunToBill->load();
+			$billrunToBill->generate();
+			if (!$billrunToBill->release()) {
+				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+				return;
+			}
+		} else {
+			$invoiceData = $this->invoice->getRawData();
+			$invoiceData['allow_bill'] = $allowBill;
+			$billrunToBill->updateBillrunNotForBill($invoiceData);
+			$billrunToBill->handleSendInvoicesByMail([$invoiceData['invoice_id']]);
+		}
+
+		if ($step >= self::STEP_FULL) {
+			if (!$this->lock()) {
+				Billrun_Factory::log("makePayment is already running", Zend_Log::NOTICE);
+				return;
+			}
+
+			Billrun_Factory::log('One time invoice action paying invoice ' . $this->invoice->getInvoiceID() . ' for account ' . $this->aid, Zend_Log::INFO);
+			Billrun_Bill_Payment::makePayment([ 'aids' => [$this->aid], 'invoices' => [$this->invoice->getInvoiceID()] ]);
+			if (!$this->release()) {
+				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+				return;
+			}
+		}
+		
 		if(empty($request['send_back_invoices'])) {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
@@ -69,6 +112,32 @@ class OnetimeinvoiceAction extends ApiAction {
 		} // else 
         return  $this->sendBackInvoice($pdfPath);
     }
+	
+	protected function getInsertData() {
+	return array(
+			'action' => 'charge_account',
+			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
+		);
+	}
+	
+	protected function getConflictingQuery() {
+		if (!empty($this->aid)) {
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => array($this->aid))),
+				),
+			);
+		}
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => (empty($this->aid) ? 'all' : $this->aid),
+			'end_time' => array('$exists' => false)
+		);
+	}
 
     /**
     * Validate the API inputs 
@@ -130,9 +199,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	}
 	
     protected function parseCredit($credit_row) {
+		$credit_row['rand'] = rand(1, 1000000);
 		$ret = $this->validateCDRFields($credit_row);
-        $ret['source'] = 'credit';
-		$ret['rand'] = rand(1, 1000000);
+		$ret['source'] = 'credit';
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
 		$ret['process_time'] = new MongoDate();
 		$ret['urt'] = new MongoDate( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
@@ -161,6 +230,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$options = array(
 			'type' => 'Credit',
 			'parser' => 'none',
+			'rand' => $cdr['rand']
 		);
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($cdr);
@@ -191,7 +261,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function parseCreditByUsagev(&$row, $rate) {
 		//$row['usagev'] = 1;
-		$row['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], null, 0, $row['urt']->sec);
+		$row['aprice'] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], null, array(), 0, $row['urt']->sec);
 		$row['prepriced'] = true;
 	}
 	

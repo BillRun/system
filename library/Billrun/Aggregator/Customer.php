@@ -138,7 +138,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	protected $generatePdf = true;
-
+	
+	/**
+	 * If true don't aggregate usage lines. 
+	 * @var boolean
+	 */
+	public $ignoreCdrs = false;
 
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -172,7 +177,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
 		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
-
+		$this->ignoreCdrs = Billrun_Util::getFieldVal($options['aggregator']['ignore_cdrs'], Billrun_Util::getFieldVal($options['ignore_cdrs'], $this->ignoreCdrs));
+		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
@@ -183,7 +189,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		
 		if (isset($options['generate_pdf'])) {
-			$this->generatePdf = ($options['generate_pdf'] == 'false' ? false : true);
+			$this->generatePdf = (filter_var($options['generate_pdf'], FILTER_VALIDATE_BOOLEAN) == false ? false : true);
 		}
 	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
@@ -194,7 +200,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
+		$this->overrideMode = $this->getAggregatorConfig('override_mode', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$pageResult = $this->getPage();
@@ -205,8 +211,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$aggregateOptions = array(
-			'passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array()),
-			'subs_passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.subscriber.passthrough_data', array())
+			'passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
+			'subs_passthrough_fields' => $this->getAggregatorConfig('passthrough_data', array()),
 		);
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
@@ -235,7 +241,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->plansCache;
 	}
 
-	public function getServices() {
+	public function &getServices() {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
@@ -245,7 +251,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->servicesCache;
 	}
 
-	public function getRates() {
+	public function &getRates() {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
@@ -253,6 +259,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
 		}
 		return $this->ratesCache;
+	}
+
+	public function &getDiscounts() {
+		if(empty($this->discountsCache)) {
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$coll = Billrun_Factory::db()->discountsCollection();
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->discountsCache = $this->toKeyHashedArray($res, '_id');
+		}
+		return $this->discountsCache;
 	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -345,7 +361,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->handleInvoices($data);
 		}
 
-		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
+		Billrun_Factory::log("Account entities loaded: " . count($data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => $data));
 
@@ -384,9 +400,15 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		foreach ($this->forceAccountIds as $accountId) {
 			if (Billrun_Bill_Invoice::isInvoiceConfirmed($accountId, $mongoCycle->key())) {
+				Billrun_Factory::log("Invoice already confirmed for aid: " . $accountId, Zend_Log::NOTICE);
 				continue;
 			}
 			$accountIds[] = intval($accountId);
+		}
+		
+		if (empty($accountIds)) {
+			$result['data'] = array();
+			return $result;
 		}
 		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
 		$result['data'] = $data;
@@ -414,11 +436,24 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
-			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
-				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
+				foreach($this->getAggregatorConfig('account.passthrough_data',array()) as $dstField => $srcField) {
 					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
 						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
+						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
+					}
+				}
+				$raw['sid']=0;
+				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
+			} else if (($type === 'subscriber')) {
+				$raw = $subscriberPlan['id'];
+				foreach($this->getAggregatorConfig('subscriber.passthrough_data',array()) as $dstField => $srcField) {
+					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
+						$ret = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+						if (!is_null($ret) || (!isset($srcField['nullable']) || $srcField['nullable'])) {
+							$raw[$dstField] = $ret;
+						}
 					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
 						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
 					}
@@ -499,7 +534,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'payment_details' => $paymentDetails,
 		);
 
-		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
+		foreach($this->getAggregatorConfig('passthrough_data',array()) as  $invoiceField => $subscriberField) {
 			if(isset($subscriberPlan['passthrough'][$subscriberField])) {
 				$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
 			}
@@ -544,32 +579,181 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
+		
+		if (!$this->fakeCycle && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+			$this->handleInstallmentsPrepone($accounts);
+		}
+	}
+	
+	/**
+	 * Handles the case of a future installments on a closed subscribers/accounts
+	 * 
+	 * @param array $accounts
+	 */
+	public function handleInstallmentsPrepone($accounts) {
+		$cycleEndTime = $this->getCycle()->end();
+		$accountsToPrepone = [];
+		
+		foreach ($accounts as $account) {
+			$aid = $account->getInvoice()->getAid();
+			$maxDeactivationTime = PHP_INT_MIN;
+			$sidsToPrepone = [];
+			
+			foreach ($account->getRecords() as $sub) {
+				$sid = $sub->getSid();
+				if ($sid == 0) {
+					continue;
+				}
+				
+				$deactivationTime = $this->getDeactivationTime($sub);
+				if ($deactivationTime > $maxDeactivationTime) {
+					$maxDeactivationTime = $deactivationTime;
+				}
+				
+				if ($deactivationTime <= $cycleEndTime) {
+					$sidsToPrepone[] = $sid;
+				}
+			}
+			
+			if ($maxDeactivationTime <= $cycleEndTime) {
+				$sidsToPrepone[] = 0;
+			}
+			
+			if (!empty($sidsToPrepone)) {
+				$accountsToPrepone[$aid] = $sidsToPrepone;
+			}
+		}
+		
+		if (!empty($accountsToPrepone)) {
+			return $this->preponeInstallments($accountsToPrepone);
+		}
+	}
+	
+	/**
+	 * Prepone future installments (update their billrun key to the current one)
+	 * 
+	 * @param array $accounts - AID as key, array of SID's as values
+	 */
+	protected function preponeInstallments($accounts) {
+		if (empty($accounts)) {
+			return;
+		}
+		
+		$billrunKey = $this->getCycle()->key();
+		$query = [
+			'usaget' => 'charge',
+			'type' => 'credit',
+			'billrun' => [
+				'$gt' => $billrunKey,
+				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
+			],
+			'urt' => [
+				'$gt' => new MongoDate($this->getCycle()->end()),
+			],
+			'installments' => [
+				'$exists' => true,
+			],
+			'$or' => [],
+		];
+		
+		foreach ($accounts as $aid => $sids) {
+			$query['$or'][] = [
+				'aid' => $aid,
+				'sid' => [
+					'$in' => $sids,
+				],
+			];
+		}
+		
+		$hint = [
+			'billrun' => 1,
+			'usaget' => 1,
+			'type' => 1,
+		];
+		
+		$linesCol = Billrun_Factory::db()->linesCollection();
+		$linesToUpdate = $linesCol->query($query)->cursor()->hint($hint);
+		if (empty($linesToUpdate) || $linesToUpdate->count() == 0) {
+			return;
+		}
+		
+		if ($this->fakeCycle) {
+			return iterator_to_array($linesToUpdate);
+		}
+		
+		$ids = array_map(function($line) {
+			return $line->getId()->getMongoID();
+		}, iterator_to_array($linesToUpdate));
+		
+		$updateQuery = [
+			'_id' => [
+				'$in' => array_values($ids),
+			],
+		];
+
+		$update = [
+			'$set' => [
+				'billrun' => $billrunKey,
+				'preponed' => new MongoDate(),
+			],
+		];
+		
+		$options = [
+			'multiple' => true,
+		];
+		
+		try {
+			$res = $linesCol->update($updateQuery, $update, $options);
+			if ($res['ok']) {
+				Billrun_Factory::log($res['nModified'] . " future installments were updated for account " . $aid . ", subscribers " . implode(',', $sids) . " to the current billrun " . $billrunKey, Zend_Log::NOTICE);
+			} else {
+				Billrun_Factory::log("Problem updating future installments for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				. ". error message: " . $res['err'] . ". error code: " . $res['errmsg'], Zend_log::ALERT);
+			}
+		} catch (Exception $e) {
+			Billrun_Factory::log("Problem updating installment credit for subscribers " . implode(',', $sids) . " for billrun " . $billrunKey
+				. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+		}
+	}
+	
+	/**
+	 * Get subscriber's deactivation time
+	 * 
+	 * @param array $sub
+	 * @return unixtimestamp
+	 */
+	protected function getDeactivationTime($sub) {
+		return max(array_column($sub->getRecords()['plans'], 'end'));
 	}
 
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			if(!$this->isFakeCycle()) {
-				$aggregatedEntity->writeInvoice( $this->min_invoice_id );
+				Billrun_Factory::log('Finalizing the invoice', Zend_Log::DEBUG);
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id , $aggregatedResults);
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
+				Billrun_Factory::log('Save Account services / plans', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
+				Billrun_Factory::log('Save Account discounts.', Zend_Log::DEBUG);
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save the billrun document
+				Billrun_Factory::log('Save the billrun document', Zend_Log::DEBUG);
 				$aggregatedEntity->save();
 			} else {
-				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() );
+				Billrun_Factory::log('Faking finalization of the invoice', Zend_Log::DEBUG);
+				$aggregatedEntity->writeInvoice( 0 , $aggregatedResults, $this->isFakeCycle() );
 			}
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
 
 	protected function afterAggregate($results) {
-
-
-		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
-		$end_msg .="Processed " . (count($results)) . " accounts";
+		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n"
+			. "Host:" . Billrun_Util::getHostName() . "\n"
+			. "Processed " . (count($results)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
 
@@ -586,8 +770,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
-		if ($recipients) {
-			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
+		$sendMailConfig = $this->getAggregatorConfig('sendendmail', true);
+		if ($recipients && $sendMailConfig) {
+			Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
 		}
 	}
 
@@ -642,12 +827,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function getPage($retries = 100) {
 
-		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+		$zeroPages = $this->getAggregatorConfig('zero_pages_limit', 2);
 		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
 			return false;
 		}
 		$pagerConfiguration = array(
-			'maxProcesses' => Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit',10),
+			'maxProcesses' => $this->getAggregatorConfig('processes_per_host_limit', 10),
 			'size' => $this->size,
 			'identifingQuery' => array('billrun_key' => $this->stamp),
 
@@ -690,9 +875,63 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return NULL;
 	}
+	
+	protected function getPlay($play) {
+		return Billrun_Utils_Plays::isPlaysInUse() ? $play : null;
+	}
 
 	public function getGeneratePdf() {
 		return $this->generatePdf;
+	}
+	
+	/**
+	 * method to get aggregator configuration variable, and if not find search in parent configuration
+	 * 
+	 * @param string $var configuration variable
+	 * @param mixed  $defaultValue default value if variable not set (in both layers
+	 */
+	protected function getAggregatorConfig($var, $defaultValue) {
+		// there is no parent -> return variable without checking parent
+		if (get_class($this) == 'Billrun_Aggregator_Customer') {
+			return $this->enrichConfig($var,Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue));
+		}
+		$retDefaultVal = Billrun_Factory::config()->getConfigValue(self::$type . '.aggregator.' . $var, $defaultValue);
+		$ret = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.' . $var, $retDefaultVal);
+		return $this->enrichConfig($var,$ret);
+	}
+
+	/**
+	 * Add unrelated fields/values to the  requested config
+	 */
+	protected function enrichConfig($var,$ret) {
+		if(!is_array($ret)) {
+			return $ret;
+		}
+		$enrichmentMapping = Billrun_Factory::config()->getConfigValue('customer.aggregator.config_enrichment', [
+			'passthrough_data' => [
+				'subscribers.subscriber.fields' => 'field_name',
+				'subscribers.account.fields' => 'field_name'
+			],
+			'account.passthrough_data' => [
+				'subscribers.account.fields' => 'field_name'
+			],
+			'subscriber.passthrough_data' => [
+				'subscribers.subscriber.fields' => 'field_name',
+			]
+		]);
+		$enrichment = [];
+		if(!empty($enrichmentMapping[$var])) {
+			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
+						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
+				}
+			}
+		}
+		return array_merge($enrichment,$ret);
+	}
+
+	public function getData() {
+		return $this->data;
 	}
 
 }

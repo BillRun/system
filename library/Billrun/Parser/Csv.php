@@ -96,15 +96,19 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					}
 					break;
 				case static::HEADER_LINE:
-					$this->setStructure($this->headerStructure);
-					if ($parsedLine = $this->parseLine($line)) {
-						$this->headerRows[] = $parsedLine;
+					if ($this->headerStructure) {
+						$this->setStructure($this->headerStructure);
+						if ($parsedLine = $this->parseLine($line)) {
+							$this->headerRows[] = $parsedLine;
+						}
 					}
 					break;
 				case static::TRAILER_LINE:
-					$this->setStructure($this->trailerStructure);
-					if ($parsedLine = $this->parseLine($line)) {
-						$this->trailerRows[] = $parsedLine;
+					if ($this->trailerStructure) {
+						$this->setStructure($this->trailerStructure);
+						if ($parsedLine = $this->parseLine($line)) {
+							$this->trailerRows[] = $parsedLine;
+						}
 					}
 					break;
 				default:
@@ -174,5 +178,9 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	public function setHeaderStructure($structure) {
 		$this->headerStructure = $structure;
 		return $this;
+	}
+	
+	public function getStructure() {
+		return $this->structure;
 	}
 }

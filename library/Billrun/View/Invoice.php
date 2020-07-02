@@ -15,24 +15,22 @@
 class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public $lines = array();
+	protected $subServices = [];
 	protected $tariffMultiplier = array(
 		'call' => 60,
 		'incoming_call' => 60,
 		'data' => 1024*1024
 	);
 	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
+	public $invoice_flat_tabels = [];
+	public $invoice_usage_tabels = [];
 	
 	/*
 	 * get and set lines of the account
 	 */
 	public function setLines($accountLines) {
-		foreach ($accountLines as $line) {
-			$sid = (string)$line['sid'];
-			if (empty($this->lines[$sid])) {
-				$this->lines[$sid] = array();
-			}
-			array_push($this->lines[$sid], $line instanceof Mongodloid_Entity ? $line : new Mongodloid_Entity($line));
-		}
+		$this->lines = $accountLines;
+		$this->subServices = [];
 	}
 	
 	public function loadLines() {
@@ -69,12 +67,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function getAllDiscount($lines) {
 		$discounts = array('lines' => array(), 'total'=> 0);
-		foreach($lines as $subLines) {
-			foreach($subLines as $line) {
-				if($line['usaget'] == 'discount') {
-					@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
-					@$discounts['total'] +=$line['aprice'];
-				}
+		foreach($lines as $line) {
+			if($line['usaget'] == 'discount') {
+				@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
+				@$discounts['total'] +=$line['aprice'];
 			}
 		}
 		return $discounts;
@@ -91,28 +87,24 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function buildSubscriptionListFromLines($lines) {
 		$subscriptionList = array();
 		$typeNames = array_flip($this->details_keys);
-		foreach($lines as $subLines) {
-			foreach($subLines as $line) {
-				if($line['usaget'] == 'discount') {
-					
-				}
-				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
-					$rate = $this->getRateForLine($line);
-					$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
-					
+		foreach($lines as $line) {
+			if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
+				$rate = $this->getRateForLine($line);
+				$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
+				if ($line instanceof Mongodloid_Entity) {
 					$line->collection(Billrun_Factory::db()->linesCollection());
-					$name = $this->getLineUsageName($line);
-					$key = $this->getLineAggregationKey($line, $rate, $name);
-					$subscriptionList[$key]['desc'] = $name;	
-					$subscriptionList[$key]['type'] = $typeNames[$line['type']];
-					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData,$line));
-					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
-					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
-					$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
-					$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
-					$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
 				}
+				$name = $this->getLineUsageName($line);
+				$key = $this->getLineAggregationKey($line, $rate, $name);
+				$subscriptionList[$key]['desc'] = $name;	
+				$subscriptionList[$key]['type'] = $typeNames[$line['type']];
+				//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
+				$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData, $line));
+				@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
+				$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
+				$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
+				$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
+				$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
 			}
 		}
 		return $subscriptionList;
@@ -127,6 +119,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		if(isset($rate['price'][0]['price'])) {
 			$priceByCycle = Billrun_Util::mapArrayToStructuredHash($rate['price'], array('from'));
 			$pricePerUsage = $priceByCycle[empty($line['cycle']) ? 0 : $line['cycle']]['price'];
+		} else if( isset($rate['rates'][$line['usaget']]['BASE']['rate'][0]['price']) ) {
+			$pricePerUsage = $rate['rates'][$line['usaget']]['BASE']['rate'][0]['price'];
 		} else {
 			$pricePerUsage = $rate['price'];
 		}
@@ -180,12 +174,21 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$volume = Billrun_Utils_Units::convertVolumeUnits( $usage , $usaget,  $unit);
 		return (preg_match('/^[\d.]+$/', $volume) && $volume ?  number_format($volume,$precision) : $volume )." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '');
 	}
-
-	public function getRateTariff($rateName, $usaget,$addTax = FALSE ) {
+	/**
+	* Get usage traiff based on the usage type  , rate ,plan, services  the subscriber had.
+	*/
+	public function getRateTariff($rateName, $usaget,$planName = FALSE, $services = [], $addTax = FALSE ) {
 		if(!empty($rateName)) {
 			$rate = Billrun_Rates_Util::getRateByName($rateName, $this->data['end_date']->sec);
 			if(!empty($rate)) {
-				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget);
+				$serviceInstances = [];
+				if(is_array($services)) {
+					foreach( $services as $service ) {
+						$serviceInstances[] = Billrun_Factory::service(['name' => $service['name'],'time' => $service['to']->sec-1]);
+					}
+				}
+				
+				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget, $planName, $serviceInstances);
 			
 			}
 		}
@@ -210,7 +213,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function shouldProvideDetails() {
-		return !empty($this->data['attributes']['detailed_invoice']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
+		return !empty($this->data['attributes']['invoice_details']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
 	}
 	
 	public function getInvoicePhonenumber($rawNumber) {
@@ -222,4 +225,131 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		
 		return $retNumber;
 	}
+	
+	public function shouldRatebeDisplayed($usageData,$section='all') {
+		return static::shouldRatebeDisplayedByKey($usageData['rate'],$section);
+	}
+        
+        public function shouldRatebeDisplayedForLine($line,$section='all') {
+		return static::shouldRatebeDisplayedByKey($line['arate_key'],$section) && !in_array($line['type'],Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates_by_type.'.$section,[]));
+	}
+        
+        public function shouldRatebeDisplayedByKey($rateKey,$section='all') {
+		return !Billrun_Util::regexArrMatch(Billrun_Factory::config()->getConfigValue('invoice_export.hide_rates.'.$section,array()),$rateKey);
+	}
+	
+	public function getSubscriberServices($sid) {
+		if(!isset($this->subServices[$sid])) {
+			$this->subServices[$sid] = [];
+			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $this->data['start_date']->sec,$this->data['end_date']->sec);
+			$query['sid'] = $sid;
+			$aggrgatePipeline = [['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
+			$subservs = Billrun_Factory::db()->subscribersCollection()->aggregate($aggrgatePipeline)->current();
+			foreach($subservs['services'] as $service) {
+				$this->subServices[$sid][] = $service;
+			}
+		}
+		return $this->subServices[$sid];
+	}
+	
+	public function getSubscriberMessages($sid) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($this->data['invoice_date']->sec);
+		$query['sid'] = $sid;
+		$query['type'] = 'subscriber';
+		$sub = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current();
+		$msgs = !$sub->isEmpty() && !empty($sub['invoice_messages']) ? $sub['invoice_messages'] : [];
+		$retMsgs = [];
+		foreach($msgs as $msg) {
+			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);
+			if( $this->data['start_date']->sec <= $entryTime && $entryTime < $this->data['end_date']->sec ) {
+				$retMsgs [] = $msg;
+			}
+		}
+		return $retMsgs;
+	}
+	
+	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
+		$config = Billrun_Factory::config();
+		$invoice_display = $config->getInvoiceDisplayConfig();
+		$lines = array_filter($lines, function($line) {
+			return $line['sid'] != 0;
+		});
+		$this->buildNotCustomTabels($lines, $flatTypes, false, $details_keys);
+		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
+			foreach ($lines as $index => $line) {
+				if (in_array($line['type'], $usageTypes)) {
+					$this->associateLineToTable($line, $tabels_config, $details_keys);
+				}
+			}
+		} else {
+			$this->buildNotCustomTabels($lines, $usageTypes, true, $details_keys);
+		}
+	}
+
+	public function associateLineToTable($line, $tabels_config, $details_keys = []) {
+		$meetConditions = 0;
+		foreach ($tabels_config as $tabel_index => $tabel_config) {
+			foreach ($tabel_config['conditions'] as $condition) {
+				if (Billrun_Util::isConditionMet($line, $condition)) {
+					$meetConditions = 1;
+				}
+			}
+			if ($meetConditions) {
+				$this->invoice_usage_tabels[$line['sid']][$tabel_index][] = $this->getTableRow($line, $tabel_config['columns'], $details_keys);
+				return;
+			}
+		}
+	}
+
+	public function getTableRow($line, $columns, $details_keys = [], $is_flat_type = false) {
+		$row = [];
+		$datetime_format = Billrun_Factory::config()->getConfigValue('invoice_export.datetime_format', 'd/m/Y H:i:s');
+		$flippedKeys = array_flip($details_keys);
+		foreach ($columns as $index => $column) {
+			switch ($column['field_name']) {
+				case 'urt':
+					$row['Date & Time'] = date($datetime_format, $line['urt']->sec - ($is_flat_type ? 1 : 0));
+					break;
+				case 'usaget':
+					$row['Type'] = (!empty($flippedKeys[$line['usaget']]) ? $flippedKeys[$line['usaget']] : (empty($flippedKeys[$line['type']]) ? $line['type'] : $flippedKeys[$line['type']]));
+					break;
+				case 'arate_key':
+					$row['Rate'] = $this->getLineUsageName($line);
+					break;
+				case 'usagev':
+					$row['Volume'] = $this->getLineUsageVolume($line);
+					break;
+				case 'aprice':
+					$row['Amount'] = number_format($line['aprice'], 2);
+					break;
+				default:
+					$row[$column['label']] = Billrun_Util::getIn($line, $column['field_name'], "");
+					break;
+			}
+		}
+		return $row;
+	}
+
+	public function buildNotCustomTabels($lines, $types, $is_usage_types = false, $details_keys = []) {
+		$fields = ['Date & Time' => 'urt',
+			'Type' => 'usaget',
+			'Rate' => 'arate_key',
+			'Volume' => 'usagev',
+			'Amount' => 'aprice'
+		];
+		$columns = [];
+		foreach ($fields as $label => $field_name) {
+			$columns[] = ['field_name' => $field_name, 'label' => $label];
+		}
+		foreach ($lines as $index => $line) {
+			if (in_array($line['type'], $types)) {
+				if (!$is_usage_types) {
+					$this->invoice_flat_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys, true);
+				} else {
+					$this->invoice_usage_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys);
+				}
+			}
+		}
+	}
+
 }

@@ -50,12 +50,16 @@ class Billrun_Cycle_AggregatePipeline {
 				'plan' => '$name',
 				'upfront' => 1,
 				'prorated' => 1,
+				'prorated_start' => 1,
+				'prorated_end' => 1,
+				'prorated_termination' => 1,
 				'vatable' => 1,
 				'price' => 1,
 				'recurrence.periodicity' => 1,
 				'plan_activation' => 1,
 				'plan_deactivation' => 1,
-				'include' => 1
+				'include' => 1,
+				'tax' => 1,
 			)
 		);
 	}
@@ -87,6 +91,7 @@ class Billrun_Cycle_AggregatePipeline {
 						'type' => '$type',
 						'sid' => '$sid',
 						'plan' => '$plan',
+						'play' => '$play',
 						'from' => '$from',
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
@@ -109,8 +114,22 @@ class Billrun_Cycle_AggregatePipeline {
 		$pipelines[] = array(
 			'$limit' => intval($size),
 		);
+		
+		// If the accounts should not be overriden, filter the existing ones before.
+		if ($this->exclusionQuery) {
+			$pipelines[] = ['$match' => ['aid' => $this->exclusionQuery ] ];
+		}
+		
 		$pipelines[] = array(
 			'$unwind' => '$sub_plans',
+		);
+		
+		$pipelines[] = array(
+			'$sort' => array(
+				'_id.aid' => 1,
+				'sub_plans.sid' => 1,
+				'sub_plans.from' => -1,
+			)
 		);
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['second_group'], array(
@@ -118,12 +137,14 @@ class Billrun_Cycle_AggregatePipeline {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
+					'play' => '$sub_plans.play',
 					'first_name' => '$sub_plans.first_name',
 					'last_name' => '$sub_plans.last_name',
 					'type' => '$sub_plans.type',
 					'email' => '$sub_plans.email',
 					'address' => '$sub_plans.address',
-					'services' => '$sub_plans.services'
+					'services' => '$sub_plans.services',
+					'activation_date' => '$sub_plans.activation_date'
 				),
 				'plan_dates' => array(
 					'$push' => array(
@@ -161,6 +182,7 @@ class Billrun_Cycle_AggregatePipeline {
 		$group = array();
 		$group2 = array();
 		$project = array();
+		$sub_push = array();
 		foreach ($this->passthroughFields as $accountField) {
 			$group[$accountField] = array('$addToSet' => '$' . $accountField);
 			$group2[$accountField] = array('$first' => '$' . $accountField);
@@ -211,11 +233,6 @@ class Billrun_Cycle_AggregatePipeline {
 				)
 			)
 		);
-
-		// If the accounts should not be overriden, filter the existing ones before.
-		if ($this->exclusionQuery) {
-			$match['$match']['aid'] = $this->exclusionQuery;
-		}
 
 		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
 		if ($confirmedAids) {

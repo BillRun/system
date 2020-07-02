@@ -123,7 +123,7 @@ class QueryAction extends ApiAction {
 		if (isset($request['to'])) {
 			if (!isset($query['urt'])) {
 				$query['urt'] = array(
-					'$lte' => new MongoDate(strtotime($request['to'])),
+					'$lt' => new MongoDate(strtotime($request['to'])),
 				);
 			} else {
 				$query['urt']['$lte'] = new MongoDate(strtotime($request['to']));
@@ -302,4 +302,16 @@ class QueryAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
+	protected function getCacheLifeTimeForQuery() {
+		return Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $this->type, null);
+	}
+	
+	protected function getLinesDataForQuery($params) {
+		$cacheLifetime = $this->getCacheLifeTimeForQuery();
+		if (isset($cacheLifetime)){
+			$this->setCacheLifeTime($cacheLifetime);
+			return $this->cache($params);
+		}
+		return $this->fetchData($params['fetchParams']);
+	}
 }

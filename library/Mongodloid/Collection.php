@@ -400,6 +400,9 @@ class Mongodloid_Collection {
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
+				if ($doc instanceof Mongodloid_Entity) {
+					$doc = $doc->getRawData();
+				}
 				$batch->add($doc);
 			}
 			return $batch->execute($options);
@@ -473,16 +476,24 @@ class Mongodloid_Collection {
 	 * Method to create auto increment of document
 	 * To use this method require counters collection (see create.ini)
 	 * 
-	 * @param string $id the id of the document to auto increment
+	 * @param mixed $params the id of the document to auto increment
 	 * @param int $init_id the first value if no value exists
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1) {
+	public function createAutoInc($params = null, $init_id = 1, $collName = FALSE) {
 
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
-
+		$collection_name = !empty($collName) ? $collName : $this->getName();
+		//check for existing seq
+		if (!empty($params)) {
+			$key = serialize($params);
+			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current()->get('seq');
+			if (!is_null($existingSec)) {
+				return $existingSec;
+			}
+		}
+			
 		// try to set last seq
 		while (1) {
 			// get last seq
@@ -492,45 +503,26 @@ class Mongodloid_Collection {
 			} else {
 				$lastSeq++;
 			}
-			if (is_string($oid)) {
-				$oidDelimiter = '#bk#';
-				$splitted = preg_split('/' . $oidDelimiter . '\d+$/', $oid);
-				$oid = $splitted[0] . $oidDelimiter . $lastSeq;
-			}
 			$insert = array(
 				'coll' => $collection_name,
-				'oid' => $oid,
 				'seq' => $lastSeq
 			);
-
+			
+			if (!empty($params)) {
+				$insert['key'] = $key;
+			}
+			
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
 				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					// duplicate - need to check if oid already exists
-					$ret = $this->getAutoInc($oid);
-					if (empty($ret) || !is_numeric($ret)) {
-						// if oid not exists - probably someone insert same seq at the same time
-						// let's try to insert same oid with next seq
-						continue;
-					}
-					$lastSeq = $ret;
-					break;
+					// try again with the next seq
+					continue;
 				}
 			}
 			break;
 		}
 		return $lastSeq;
-	}
-	
-	public function getAutoInc($oid) {
-		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
-		$query = array(
-			'coll' => $collection_name,
-			'oid' => $oid,
-		);
-		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
 	}
 	
 	/**

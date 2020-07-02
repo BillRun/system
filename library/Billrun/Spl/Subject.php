@@ -65,4 +65,13 @@ class Billrun_Spl_Subject implements SplSubject {
 		}
 	}
 
+	public function getImplementors($methodName) {
+		$plugins = [];
+		foreach ($this->observers as $observer) {
+			if(method_exists($observer, $methodName)) {
+				$plugins[] = $observer->getName();
+			}
+		}
+		return $plugins;
+	}
 }

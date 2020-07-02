@@ -19,17 +19,26 @@ class CollectAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		$this->allowed();
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
+		if (RUNNING_FROM_CLI) {
+			$extraParams = $this->_controller->getParameters();
+			if (!empty($extraParams) && isset($extraParams['aids'])) {
+				$aids = $extraParams['aids'];
+			}
+		} else {
+			$this->allowed();
+		}
 
+		$aids = !empty($extraParams) && isset($extraParams['aids']) ? Billrun_Util::verify_array($extraParams['aids'], 'int') : array();
 		try {
 			$jsonAids = $request->getPost('aids', '[]');
-			$aids = json_decode($jsonAids, TRUE);
+			$aids = array_merge($aids, json_decode($jsonAids, TRUE));
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
-			$result = static::collect($aids);
+			$collection = Billrun_Factory::collection();
+			$result = $collection->collect($aids);
 			if (RUNNING_FROM_CLI) {
 				foreach ($result as $colection_state => $aids) {
 					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
@@ -45,16 +54,6 @@ class CollectAction extends ApiAction {
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request->getRequest());
 		}
-	}
-
-	public static function collect($aids = array()) {
-		$account = Billrun_Factory::account();
-		$markedAsInCollection = $account->getInCollection($aids);
-		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
-		$updateCollectionStateChanged = array('in_collection' => array_diff_key($reallyInCollection, $markedAsInCollection), 'out_of_collection' => array_diff_key($markedAsInCollection, $reallyInCollection));
-		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
-//		$subscriber->markCollectionStepsCompleted($aids);
-		return $result;
 	}
 	
 	protected function getPermissionLevel() {

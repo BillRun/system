@@ -46,6 +46,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 
 		if (isset($config->chains)) {
 			$chains = $config->chains->toArray();
+			$definedChains = Billrun_Factory::config()->getConfigValue('chains');
+			if (isset($definedChains) && is_array($definedChains)) {
+				$allChains = array_merge($definedChains, $chains);
+				$chains = array_unique($allChains);
+			}
 			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 
 			foreach ($chains as $chain) {
@@ -116,6 +121,19 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		);
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("billapi", $routeRegex);
+		
+		// add API versions backward compatibility
+		$match = "#^/api/v/(\w+)/(\w+)#";
+		$route = array(
+			'controller' => 'api',
+			'action' => 'versionsbc',
+		);
+		$map = array(
+			1 => "api_version",
+			2 => "api_action",
+		);
+		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
+		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
 	}
 
 }

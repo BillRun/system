@@ -30,6 +30,11 @@ abstract class Billrun_Plans_Charge_Base {
 	public function __construct($plan) {
 		$this->cycle = $plan['cycle'];
 		$this->price = $plan['price'];
+		$this->proratedStart = !isset($plan['prorated_start']) || $plan['prorated_start'] != FALSE;
+		$this->proratedEnd = !isset($plan['prorated_end']) || $plan['prorated_end'] != FALSE;
+		$this->proratedTermination = !isset($plan['prorated_termination']) || $plan['prorated_termination'] != FALSE;
+		$this->subscriberDeactivation = !empty($plan['deactivation_date']) &&  $plan['deactivation_date'] instanceof MongoDate ?
+											$plan['deactivation_date']->sec : FALSE ;
 		
 		$this->setSpan($plan);
 	}

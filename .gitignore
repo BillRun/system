@@ -5,7 +5,6 @@ backup
 exports
 files
 workspace
-mongo/*.json
 *~
 exports
 logs
@@ -16,3 +15,4 @@ conf/dori.ini
 /conf/tenants/*
 /scripts/locks/*
 shared
+docker/persist

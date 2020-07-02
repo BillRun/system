@@ -95,6 +95,15 @@ class PaymentGatewaysController extends ApiController {
 		if (!isset($data['name'])) {
 			return $this->setError("need to pass payment gateway name", $request);
 		}
+		
+		if (isset($data['action']) && ($data['action'] == 'single_payment') && (isset($data['amount']) && $data['amount'] <= 0)) {
+			return $this->setError("In single payment mode amount must be positive value", $request);
+		}
+		
+		if (isset($data['installments']) && (!is_array($data['installments']) || !isset($data['installments']['total_amount']) || 
+			$data['installments']['total_amount'] <= 0 || !isset($data['installments']['number_of_payments']) || $data['installments']['number_of_payments'] <= 1)) {
+			return $this->setError("Installment structure is invalid", $request);
+		}
 
 		$name = $data['name'];
 		$aid = $data['aid'];
@@ -113,7 +122,7 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $data);
+			$result = $paymentGateway->redirectToGateway($aid, $accountQuery, $timestamp, $request, $data);
 		} catch (Exception $e) {
 			if ($iframe) {
 				$output = array(

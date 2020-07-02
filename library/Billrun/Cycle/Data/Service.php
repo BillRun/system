@@ -22,11 +22,12 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->name = $options['name'];
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
+		$this->tax = Billrun_Util::getFieldVal($options['tax'], []);
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
 		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
 		$this->serviceID = Billrun_Util::getFieldVal($options['service_id'], FALSE);
 		$this->constructOptions($options);
-		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine, TRUE);
+		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine);
 	}
 	
 	protected function getCharges($options) {

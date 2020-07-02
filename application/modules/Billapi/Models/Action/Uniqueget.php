@@ -38,8 +38,6 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	protected function initGroup() {
 		if ($this->request['collection'] == 'rates') {
 			$this->group = 'key';
-		} else if($this->request['collection'] == 'discounts') {
-			$this->group = 'key';
 		} else {
 			$this->group = 'name';
 		}
@@ -139,7 +137,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			);
 		}
 		$pipelines[] = $match;
-		$res = call_user_func_array(array($this->collectionHandler, 'aggregate'), $pipelines);
+		$res = call_user_func_array(array($this->collectionHandler, 'aggregateWithOptions'), array($pipelines, array('allowDiskUse' => TRUE)));
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));

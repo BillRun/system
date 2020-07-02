@@ -19,7 +19,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
 		   print_r($output);
-		   Billrun_Factory::log(print_r($output,1));
+		   Billrun_Factory::log(print_r($output,1), Zend_Log::ERR);
 	   } else {
 		   echo "Exception: " . $output;
 	   }
@@ -67,6 +67,9 @@ class ErrorController extends Yaf_Controller_Abstract {
 
 	   /* error occurs */
 	   switch ($exception->getCode()) {
+		   case 999999:
+			   $output['data']['message'] = 'Internal error raised';
+			   break;
 		   case YAF_ERR_NOTFOUND_MODULE:
 		   case YAF_ERR_NOTFOUND_CONTROLLER:
 		   case YAF_ERR_NOTFOUND_ACTION:

@@ -23,6 +23,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $rates = array();
 	
 	protected $invoicedLines = array();
+	
+	protected $shouldKeepLinesinMemory = true;
+	protected $shouldAggregateUsage = true;
         
 	/**
 	 * 
@@ -30,7 +33,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param integer $sid
 	 * @param integer $aid
 	 */
-	public function __construct($rates, $data, $sid = 0, $aid = 0) {
+	public function __construct(&$rates, $data, $sid = 0, $aid = 0) {
 		$this->rates = &$rates;
 		if(!$data) {
 			$this->data = $this->createClosedSubscriber($sid, $aid);
@@ -57,6 +60,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		return $subscriber;
 	}
 
+	public function setShouldKeepLinesinMemory($newValue) {
+        $this->shouldKeepLinesinMemory = $newValue;
+	}
+
+	public function setShouldAggregateUsage($newValue) {
+        $this->shouldAggregateUsage = $newValue;
+	}
+	
 	/**
 	 * Set data
 	 * @param type $key
@@ -194,10 +205,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
-		if(!isset($this->rates[$id_str])) {
+		$col_str = strval($raw_rate['$ref']);
+		if(!isset($this->rates[$col_str][$id_str])) {
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
 			return null;
 		}
-		return $this->rates[$id_str];
+		return $this->rates[$col_str][$id_str];
 	}
 	
 	/**
@@ -214,7 +229,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes']);
+
+		$addedData = [];
+		if(!empty($row['start'])) {
+			$addedData['start'] = $row['start'];
+		}
+		if(!empty($row['end'])) {
+			$addedData['end'] = $row['end'];
+		}
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
 		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -231,7 +254,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skiping...",Zend_log::DEBUG);
+						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skipping...",Zend_log::DEBUG);
 						continue;
 					}
 					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
@@ -251,7 +274,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals'][$breakdownKey]['before_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['before_vat'], 0) + $pricingData['aprice'];
 		$this->data['totals'][$breakdownKey]['after_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['after_vat'], 0) + $priceAfterVat;
 		
-		$this->invoicedLines[$row['stamp']] = $row;
+		if ($this->shouldKeepLinesinMemory) {
+			$this->invoicedLines[$row['stamp']] = $row;
+		}
 	}
 
 	/**
@@ -289,8 +314,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 			return $newPrice;
 		} else if( empty($taxData) ) {
-			$vat =  Billrun_Rates_Util::getVat();
-			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			Billrun_Factory::log('addLineVatableData failed: Tax data missing. data: ' . print_R($this->data, 1), Zend_Log::CRIT);
 		}
 		//else 
 		return $pricingData['aprice'];
@@ -332,7 +356,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$sid = $this->data['sid'];
 		$aid = $this->data['aid'];
 		
-		Billrun_Factory::log("Querying subscriber " . $aid . ":" . $sid . " for lines...", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $aid:$sid" . " lines: " . count($lines), Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
@@ -366,9 +389,12 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
-		
-		$this->aggregateLinesToBreakdown($subLines);
-		
+		if ($this->shouldAggregateUsage) {
+			$this->aggregateLinesToBreakdown($subLines);
+		} else {
+			Billrun_Factory::log('Skipping subscriber '. $this->data['sid'].' usage aggrergation for AID :'. $this->data['aid'],Zend_Log::INFO);
+		}
+
 		return $updatedLines;
 	}
 	
@@ -380,6 +406,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines',array());
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		Billrun_Factory::log('Updating billrun object with aggregated lines for SID : ' . $this->data['sid']);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs as $breakdownConfig) {
@@ -389,12 +416,13 @@ class Billrun_Cycle_Subscriber_Invoice {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
-						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(), array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)), 
-																																									array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(),  array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)),
+						array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
 					}
 				}
 			}
 		}
+		Billrun_Factory::log('Finished aggregating into billrun object for SID : ' . $this->data['sid']);
 	}
 
 	/**

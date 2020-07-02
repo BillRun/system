@@ -25,6 +25,11 @@ class Models_Entity {
 	const UNLIMITED_DATE = '+149 years';
 
 	/**
+	 * The entity name
+	 * @var string
+	 */
+	protected $entityName;
+	/**
 	 * The DB collection name
 	 * @var string
 	 */
@@ -53,6 +58,18 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $update = array();
+
+	/**
+	 * Additional data to save
+	 * @var array
+	 */
+	protected $additional = array();
+
+	/**
+	 * The update options
+	 * @var array
+	 */
+	protected $queryOptions = array();
 
 	/**
 	 * The wanted sort (for get operations)
@@ -131,6 +148,7 @@ class Models_Entity {
 	}
 
 	public function __construct($params) {
+		$this->entityName = $params['collection'];
 		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
@@ -151,15 +169,18 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		$options = isset($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999, true, array(), $duplicateCheck, $customFields);
+		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
+		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
+		$this->setQueryOptions($translatedQueryOptions);
 		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
@@ -175,6 +196,9 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+
+		//transalte all date fields
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
 	/**
@@ -184,17 +208,19 @@ class Models_Entity {
 	 */
 	protected function addCustomFields($fields, $originalUpdate) {
 //		$ad = $this->getCustomFields();
-		$customFields = $this->getCustomFields();
+		$customFields = $this->getCustomFields($this->update);
 		$additionalFields = array_column($customFields, 'field_name');
 		$mandatoryFields = array();
 		$uniqueFields = array();
 		$defaultFieldsValues = array();
+		$fieldTypes = array();
 
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
 			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
 			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
+			$fieldTypes[$fieldName] = Billrun_Util::getFieldVal($customField['type'], 'string');
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -209,8 +235,8 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
-			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
-				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal, $fieldTypes[$field])) {
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value $uniqueVal");
 			}
 			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
@@ -221,9 +247,11 @@ class Models_Entity {
 //		print_R($this->update);die;
 	}
 
-	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
-		if (is_array($val)) {
+		if ($fieldType == 'ranges') {
+			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
+		} else if (is_array($val)) {
 			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
@@ -267,7 +295,7 @@ class Models_Entity {
 		return $query;
 	}
 
-	protected function getCustomFields() {
+	protected function getCustomFields($update = array()) {
 		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()), function($customField) {
 			return !Billrun_Util::getFieldVal($customField['system'], false);
 		});
@@ -354,7 +382,7 @@ class Models_Entity {
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
-			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $oldRevision->getRawData(), $newRevision->getRawData());
+			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
 		return true;
 	}
@@ -371,9 +399,7 @@ class Models_Entity {
 	protected function getPermanentChangeUpdate() {
 		$update = $this->update;
 		unset($update['from']);
-		return array(
-			'$set' => $update,
-		);
+		return $this->generateUpdateParameter($update, $this->queryOptions);
 	}
 	
 	/**
@@ -699,7 +725,9 @@ class Models_Entity {
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
-		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
+		
+		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
 
@@ -790,6 +818,20 @@ class Models_Entity {
 		}
 		return true;
 	}
+	
+	protected function generateUpdateParameter($data, $options = array()) {
+		$update = array();
+		unset($data['_id']);
+		if(!empty($data)) {
+			$update = array(
+				'$set' => $data,
+			);
+		}
+		if(!empty($options)) {
+			$update = array_merge($update, $options);
+		}
+		return $update;
+	}
 
 	/**
 	 * DB update currently limited to update of one record
@@ -797,10 +839,7 @@ class Models_Entity {
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
-		unset($data['_id']);
-		$update = array(
-			'$set' => $data,
-		);
+		$update = $this->generateUpdateParameter($data, $this->queryOptions);
 		return $this->collection->update($query, $update);
 	}
 
@@ -890,6 +929,33 @@ class Models_Entity {
 	public function setUpdate($u) {
 		$this->update = $u;
 	}
+	
+	/**
+	 * method to update the update options instruct
+	 * @param array $o mongo update options instruct
+	 */
+	public function setQueryOptions($o) {
+		$queryOptions = array();
+		if (isset($o['push_fields'])) {
+			foreach ($o['push_fields'] as $push_field) {
+				$queryOptions['$push'][$push_field['field_name']] = array(
+					'$each' => $push_field['field_values']
+				);
+			}
+			
+		}
+		if (isset($o['pull_fields'])) {
+			foreach ($o['pull_fields'] as $pull_field) {
+				if(isset($pull_field['pull_by_key'])) {
+					$queryOptions['$pull'][$pull_field['field_name']][$pull_field['pull_by_key']]['$in'] = $pull_field['field_values'];
+				} else {
+					$queryOptions['$pull'][$pull_field['field_name']]['$in'] = $pull_field['field_values'];
+				}
+			}
+			
+		}
+		$this->queryOptions = $queryOptions;
+	}
 
 	/**
 	 * method to update the query instruct
@@ -956,7 +1022,7 @@ class Models_Entity {
 		$new = !is_null($this->after) ? $this->after->getRawData() : null;
 		$key = isset($this->update[$field]) ? $this->update[$field] :
 			(isset($this->before[$field]) ? $this->before[$field] : null);
-		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $old, $new);
 	}
 
 	/**
@@ -1008,10 +1074,11 @@ class Models_Entity {
 		switch ($this->collectionName) {
 			case 'users':
 				return 'username';
+			case 'discounts':
+			case 'reports':
+			case 'taxes':
 			case 'rates':
 				return 'key';
-			case 'accounts':
-				return 'aid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
@@ -1123,12 +1190,14 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		$queryCreation = array(
-			$keyField => $this->before[$keyField],
-		);
-		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-		if ($this->update['_id'] == strval($firstRevision->getId())) {
-			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		if(isset($this->update['_id'])) {
+			$queryCreation = array(
+				$keyField => $this->before[$keyField],
+			);
+			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+			if ($this->update['_id'] == strval($firstRevision->getId())) {
+				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+			}
 		}
 	}
 
@@ -1184,4 +1253,10 @@ class Models_Entity {
 		}
 	}
 
+	protected function validateAdditionalData($additional) {
+		if (!is_array($additional)) {
+			return [];
+		}
+		return $additional;
+	}
 }

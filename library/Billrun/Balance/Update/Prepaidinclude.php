@@ -140,9 +140,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		$this->query = array(
 			'pp_includes_external_id' => $this->data['external_id'],
 		);
-		if ($this->sharedBalance) {
-			$this->query['aid'] = $this->subscriber['aid'];
-		} else {
+		
+		$this->query['aid'] = $this->subscriber['aid'];
+		if (!$this->sharedBalance) {
 			$this->query['sid'] = $this->subscriber['sid'];
 		}
 		$this->preload();
@@ -171,6 +171,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
 			return false;
 		}
+		
+		if (($balanceValue + $this->chargingValue) > 0) {
+			return false;
+		}
+		
 		return true;
 	}
 	/**
@@ -289,6 +294,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 	}
 	
+	/**
+	 * get the balance key in the balance document
+	 * 
+	 * @return string the balance reference; if nested put dot for object hierarchy 
+	 */
 	protected function getChargingField() {
 		switch ($this->data['charging_by']) :
 			case 'cost':
@@ -303,6 +313,12 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		return $key;
 	}
 	
+	/**
+	 * get the balance value for the this charge
+	 * 
+	 * @param array $balance the balance object that the charging running on
+	 * @return double the balance value
+	 */
 	public function getBalanceValue($balance) {
 		switch ($this->data['charging_by']) :
 			case 'cost':
@@ -316,6 +332,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		endswitch;
 	}
 
+	/**
+	 * initialize method
+	 */
 	protected function preload() {
 		$this->before = Billrun_Factory::db()->balancesCollection()->query($this->query)->cursor()->current();
 	}
@@ -323,7 +342,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	/**
 	 * create row to track the balance update
 	 */
-	protected function createBillingLines() {
+	protected function createBillingLines($chargingData = array()) {
 		Billrun_Factory::dispatcher()->trigger('beforeBalanceUpdateCreateBillingLine', array($this));
 		$row = array(
 			'source' => 'billapi',
@@ -342,9 +361,21 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			'balance_after' => $this->getBalanceAfter(),
 			'balance_normalized' => $this->normalizeValue,
 		);
+	
+		$chargingValue = $row['balance_after'] - $row['balance_before'];
+		if ($this->data['charging_by'] == 'usagev') {
+			$row['usagev'] = $chargingValue;
+		} else {
+			$row['aprice'] = $chargingValue;
+		}
+
 		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
+		if (!empty($this->additional)) {
+			$row['additional'] = $this->additional;
+		}
+		$row = array_merge($chargingData, $row);
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
@@ -371,8 +402,11 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	 * @return true on success log change else false
 	 */
 	protected function trackChanges() {
+		$before = $this->before instanceof Mongodloid_Entity ? $this->before->getRawData() : $this->before;
+		$after = $this->after instanceof Mongodloid_Entity ? $this->after->getRawData() : $this->after;
+
 		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . (isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0), 
-			'balances', $this->before->getRawData(), $this->after->getRawData());
+			'balances', $before, $after);
 	}
 
 }

@@ -35,7 +35,7 @@ class AdjustPaymentsAction extends ApiAction {
 							}
 							$payment = Billrun_Bill_Payment::getInstanceByid($rawAdjustment['id']);
 							if ($payment) {
-								$method = $payment->getPaymentMethod();
+								$method = $payment->getBillMethod();
 								if (in_array($method, $this->payment_methods) && !($payment->isRejection() || $payment->isRejected() || $payment->isCancellation() || $payment->isCancelled() || $payment ->isWaiting())) {
 									if (isset($rawAdjustment['method'])) {
 										if (in_array($rawAdjustment['method'], $this->payment_methods)) {
@@ -83,7 +83,12 @@ class AdjustPaymentsAction extends ApiAction {
 						$rawData['method'] = $adjustment['method'];
 					}
 					if (isset($adjustment['amount'])) {
-						$rawData['amount'] = $adjustment['amount'];
+						if ($adjustment['amount']) {
+							$rawData['amount'] = $adjustment['amount'];
+						}
+						else { // 0 means cancellation only
+							continue;
+						}
 					}
 					unset($rawData['_id'], $rawData['pays'], $rawData['due']);
 					$rawData['deposit_slip'] = isset($rawData['deposit_slip'])? $rawData['deposit_slip'] : '';
@@ -101,9 +106,11 @@ class AdjustPaymentsAction extends ApiAction {
 					Billrun_Bill_Payment::savePayments($newPayments);
 				}
 				foreach ($payments as $payment) {
+					$id = $payment->getId();
 					$payment->markCancelled()->save();
 					$payment->detachPaidBills();
 					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+					Billrun_Factory::dispatcher()->trigger('afterPaymentAdjusted', array($payment->getAmount(), $adjustments[$id]['amount'], $payment->getAccountNo()));
 				}
 				$this->getController()->setOutput(array(array(
 						'status' => 1,

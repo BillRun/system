@@ -54,6 +54,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
+	
+	/**
+	 * Limit iterator
+	 * used to limit the count of files to process on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 10;
 
 	/**
 	 * flag indicate to make bulk insert into database
@@ -197,6 +206,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$this->setFileStamp($file);
 				if (!$this->loadFile($file->get('path'), $file->get('retrieved_from'))) {
 					continue;
+				}
+				if (!empty($file->get('pg_file_type'))) {
+					$this->setPgFileType($file->get('pg_file_type'));
 				}
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
@@ -391,7 +403,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
 			$this->retrievedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
-			Billrun_Factory::log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
+			Billrun_Factory::log("Billrun Processor is loading file " . $file_path, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 			return FALSE;
@@ -444,7 +456,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		$query = array(
-			'source' => static::$type,
+			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
 			'process_time' => array(
 				'$exists' => false,
 			),
@@ -789,29 +801,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 		foreach ($filter['conditions'] as $condition) {
-			if (!$this->isConditionMet($row, $condition)) {
+			if (!Billrun_Util::isConditionMet($row, $condition)) {
 				return false;
 			}
 		}
 		return true;
-	}
-	
-	/**
-	 * check if a specific condition is met
-	 * 
-	 * @param array $row
-	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
-	 * @return boolean
-	 */
-	protected function isConditionMet($row, $condition) {
-		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
-		$query = array(
-			'first_val' => array(
-				$condition['op'] => $condition['value'],
-			),
-		);
-		
-		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
 	}
 	
 	/**
@@ -840,4 +834,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return false;
 	}
 
+	protected function setPgFileType($fileType) {
+		return;
+	}
 }

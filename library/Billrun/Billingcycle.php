@@ -69,9 +69,9 @@ class Billrun_Billingcycle {
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	protected static function getDatetime() {
+	public static function getDatetime($billrunKey) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		return self::$billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
 	/**
@@ -165,20 +165,6 @@ class Billrun_Billingcycle {
 	 */
     public static function removeBeforeRerun($billrunKey) {
 		$billingCycleCol = self::getBillingCycleColl();
-		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-		$countersColl = Billrun_Factory::db()->countersCollection();
-		$billrunsToRemove = $billrunColl->query($billrunQuery)->cursor();
-		foreach ($billrunsToRemove as $billrun) {
-			$invoicesToRemove[] = $billrun['invoice_id'];
-			if (count($invoicesToRemove) > 1000) {  // remove bulks from billrun collection(bulks of 1000 records)
-				$countersColl->remove(array('coll' => 'billrun', 'seq' => array('$in' => $invoicesToRemove)));
-				$invoicesToRemove = array();
-			}
-		}
-		if (count($invoicesToRemove) > 0) { // remove leftovers
-			$countersColl->remove(array('coll' => 'billrun', 'seq' => array('$in' => $invoicesToRemove)));
-		}
 		Billrun_Factory::log("Removing billing cycle records for " . $billrunKey, Zend_Log::DEBUG);
 		$billingCycleCol->remove(array('billrun_key' => $billrunKey));
 		Billrun_Aggregator_Customer::removeBeforeAggregate($billrunKey);
@@ -454,7 +440,7 @@ class Billrun_Billingcycle {
 	}
 
 	public static function getLastNonRerunnableCycle() {
-		$query = array('billed' => 1, 'attributes.invoice_type' => array('$ne' => 'immediate'));
+		$query = array('billed' => 1, 'billrun_key' => array('$regex' => '^\d{6}$'));
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {

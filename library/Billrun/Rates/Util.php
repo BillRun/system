@@ -61,7 +61,13 @@ class Billrun_Rates_Util {
 		return false;
 	}
 
-	public static function getTariff($rate, $usage_type, $planName = null, $time = null) {
+	public static function getTariff($rate, $usage_type, $planName = null, $services = array(), $time = null) {
+		foreach ($services as $service) {
+			$rates = $service->get('rates');
+			if (isset($rates[$rate['key']], $rates[$rate['key']][$usage_type])) {
+				return $rates[$rate['key']][$usage_type];
+			}
+		}
 		if (is_null($time)) {
 			$time = time();
 		}
@@ -94,14 +100,24 @@ class Billrun_Rates_Util {
 	 * 
 	 * @return array the calculated charges
 	 */
-	public static function getCharges($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		$tariff = static::getTariff($rate, $usageType, $plan, $time);
+	public static function getCharges($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
+		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time);
+		$percentage = 1;
+		
+		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
+		if (array_keys($tariff)[0] === 'percentage') {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
+		$chargeWoIC *= $percentage;
 		return array(
 			'total' => $chargeWoIC,
 		);
@@ -143,13 +159,20 @@ class Billrun_Rates_Util {
 		return $price;
 	}
 
-	public static function getTotalCharge($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		return static::getCharges($rate, $usageType, $volume, $plan, $offset, $time)['total'];
+	public static function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
+		return static::getCharges($rate, $usageType, $volume, $plan, $services, $offset, $time)['total'];
 	}
 
-	// TODO: This is a temporary function
-	public static function getVat($default = 0.17) {
-		return Billrun_Factory::config()->getConfigValue('taxation.vat', $default);
+	/**
+	 * Get system's VAT rate
+	 * 
+	 * @param float $default
+	 * @return float in range 0-1
+	 * @deprecated since version 5.9 - use Tax calculator
+	 */
+	public static function getVat($default = 0.17, $time = null) {
+		$defaultTax = Billrun_Calculator_Tax_Usage::getDetaultTax($time);
+		return !empty($defaultTax) && isset($defaultTax['rate']) ? $defaultTax['rate'] : $default;
 	}
 
 	/**
@@ -158,14 +181,15 @@ class Billrun_Rates_Util {
 	 * @param type $usageType
 	 * @param type $volume
 	 * @param type $plan
+	 * @param array $services
 	 * @param type $offset
 	 * @param type $time
 	 * @return type
 	 * 
 	 * @todo move to rate class or rates util
 	 */
-	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
+	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
+		return static::getChargesByRate($rate, $usageType, $volume, $plan, $services, $offset, $time)['total'];
 	}
 
 	/**
@@ -175,20 +199,31 @@ class Billrun_Rates_Util {
 	 * @param string $usageType the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
+	 * @param array $services The services associated with the line
 	 * @param int $offset call start offset in seconds
 	 * @param int $time start of the call (unix timestamp)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return array the calculated charges
 	 */
-	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $time);
+	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
+		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $services, $time);
+		$percentage = 1;
+		
+		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
+		if (array_keys($tariff)[0] === 'percentage') {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
+		$chargeWoIC *= $percentage;
 		return array(
 			'total' => $chargeWoIC,
 		);
@@ -202,6 +237,7 @@ class Billrun_Rates_Util {
 	 * @param string $usage_type the usage type
 	 * @param int $price The price
 	 * @param object $plan The plan the line is associate to
+	 * @param array $services The services associated with the line
 	 * @param int $offset call start offset in seconds
 	 * @param int $min_balance_cost minimum balance cost
 	 * @param int $min_balance_volume minimum balance volume
@@ -209,14 +245,14 @@ class Billrun_Rates_Util {
 	 * @return int the calculated volume
 	 * 
 	 */
-	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null, $maxUsage = null) {
+	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $services = array(), $offset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null, $maxUsage = null) {
 		// Check if the price is enough for default usagev
 		if (is_null($maxUsage)) {
 			$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 100, 'float'); // float avoid set type to int
 		} else {
 			$defaultUsage = $maxUsage;
 		}
-		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset, $time);
+		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $services, $offset, $time);
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
 		}
@@ -232,7 +268,7 @@ class Billrun_Rates_Util {
 		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.000001);
 		$limitLoop = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.limitLoop', 50);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
-			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset, $time);
+			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $services, $offset, $time);
 			$diff = abs($currentUsage - $previousUsage) / 2;
 			if ($price < $currentPrice) {
 				$previousUsage = $currentUsage;
@@ -286,7 +322,7 @@ class Billrun_Rates_Util {
 				$price = $balance->get("balance")["cost"];
 				$rowInOrOutOfBalanceKey = 'out';
 			}
-			$currentBalanceVolume = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, abs($price), $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time, $requestedVolume);
+			$currentBalanceVolume = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, abs($price), $row['plan'], array(), $callOffset, $min_balance_cost, $min_balance_volume, $time, $requestedVolume); // TODO pass the correct subscriber services
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
 		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
@@ -308,10 +344,10 @@ class Billrun_Rates_Util {
 			return $rate["rates"][$usageType]["prepaid_granted_usagev"];
 		}
 		if (isset($rate["rates"][$usageType]["prepaid_granted_cost"])) {
-			return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage);
+			return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, array(), $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage); // TODO pass the correct subscriber services
 		}
 
-		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 5), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage);
+		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 5), $planName, array(), $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage); // TODO pass the correct subscriber services
 	}
 
 	/**

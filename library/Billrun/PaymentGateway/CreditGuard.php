@@ -18,10 +18,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $subscribers;
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
+	protected $account;
 
 	protected function __construct() {
+		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$this->account = Billrun_Factory::account();
 	}
 
 	public function updateSessionTransactionId() {
@@ -33,64 +36,18 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
-		$this->conf['aid'] = $aid;
-		$this->conf['ok_page'] = $okPage;
-		$this->conf['return_url'] = $returnUrl;
-		$today = new MongoDate();
-		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
-		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
-		$addFailPage = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
-
-		return $post_array = array(
-			'user' => $credentials['user'],
-			'password' => $credentials['password'],
-			/* Build Ashrait XML to post */
-			'int_in' => '<ashrait>                                      
-							<request>
-								 <version>1000</version>
-								 <language>' . $this->conf['language'] . '</language>
-								 <dateTime></dateTime>
-								 <command>doDeal</command>
-								 <doDeal>
-										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
-										  '. $addFailPage  .'
-										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
-										  <mainTerminalNumber/>
-										  <cardNo>CGMPI</cardNo>
-										  <total>' . $this->conf['amount'] . '</total>
-										  <transactionType>Debit</transactionType>
-										  <creditType>RegularCredit</creditType>
-										  <currency>ILS</currency>
-										  <transactionCode>Phone</transactionCode>
-										  <authNumber/>
-										  <numberOfPayments/>
-										  <firstPayment/>
-										  <periodicalPayment/>
-										  <validation>TxnSetup</validation>
-										  <dealerNumber/>
-										  <user>something</user>
-										  <mid>' . (int) $credentials['mid'] . '</mid>
-										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>Verify</mpiValidation>
-										  <email>someone@creditguard.co.il</email>
-										  <clientIP/>
-										  <customerData>
-										   <userData1>' . $this->conf['aid'] . '</userData1>
-										   <userData2/>
-										   <userData3/>
-										   <userData4/>
-										   <userData5/>
-										   <userData6/>
-										   <userData7/>
-										   <userData8/>
-										   <userData9/>
-										   <userData10/>
-										  </customerData>
-								 </doDeal>
-							</request>
-						   </ashrait>'
-		);
+		$xmlParams['version'] = '1000';
+		$xmlParams['mpiValidation'] = 'Verify';
+		$xmlParams['userData2'] = '';
+		$xmlParams['aid'] = $aid;
+		$xmlParams['ok_page'] = $okPage;
+		$xmlParams['return_url'] = $returnUrl;
+		$xmlParams['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
+		$account = Billrun_Factory::account();
+		$account->load(array('aid' => (int)$aid));
+		$xmlParams['language'] = isset($account->pay_page_lang) ? $account->pay_page_lang : "ENG";
+		$xmlParams['addFailPage'] = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
+		return $this->getXmlStructureByParams($credentials, $xmlParams);
 	}
 
 	protected function updateRedirectUrl($result) {
@@ -142,9 +99,33 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
+			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
+			$retParams['transferred_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
+			$retParams['transaction_status'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->status;
+			$retParams['card_token'] = $this->saveDetails['card_token'];		
+			$retParams['personal_id'] = $this->saveDetails['personal_id'];
+			$retParams['auth_number'] = $this->saveDetails['auth_number'];
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
+			if ($retParams['action'] == 'SinglePayment') {
+				$this->transactionId = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->tranId;
+				$slaveNumber = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalNumber;
+				$slaveSequence = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->slaveTerminalSequence;
+				$voucherNumber = $slaveNumber . $slaveSequence;
+				$retParams['payment_identifier'] = $voucherNumber;
+				$creditType = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->creditType;
+				if (!empty((string) $xmlObj->response->inquireTransactions->row->xRem)) {
+					$retParams['txid'] = (string) $xmlObj->response->inquireTransactions->row->xRem;
+				}
+				if ($creditType == 'Payments') {
+					$retParams['installments'] = array();
+					$retParams['installments']['total_amount'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total));
+					$retParams['installments']['number_of_payments'] = (int)($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->numberOfPayments) + 1;
+					$retParams['installments']['first_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->firstPayment));
+					$retParams['installments']['periodical_payment'] = $this->convertReceivedAmount(floatval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->periodicalPayment));
+				}
+			}
 
 			return $retParams;
 		} else {
@@ -154,7 +135,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
@@ -204,24 +185,24 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 	}
 
-	public function pay($gatewayDetails) {
-		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
-		$paymentString = http_build_query($paymentArray);
-		if (function_exists("curl_init")) {
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		}
-		if (strpos(strtoupper($result), 'HEB')) {
-			$result = iconv("utf-8", "iso-8859-8", $result);
-		}
-		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string) $xmlObj->response->result;
-		return $codeResult;
+	public function pay($gatewayDetails, $addonData) {
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Debit', $addonData);
+		return $this->sendPaymentRequest($paymentArray);
 	}
 
-	protected function buildPaymentRequset($gatewayDetails) {
+	protected function buildPaymentRequset($gatewayDetails, $transactionType, $addonData) {
 		$credentials = $this->getGatewayCredentials();
+		$customParams = $this->getGatewayCustomParams();
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-
+		$ZParameter = '';
+		if (!empty($customParams['send_z_param'])) {
+			$aidStringVal = strval($addonData['aid']);
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+			if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+			}
+			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		}		
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -240,8 +221,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<creditType>RegularCredit</creditType>
 										<currency>' . $gatewayDetails['currency'] . '</currency>
 										<transactionCode>Phone</transactionCode>
-										<transactionType>Debit</transactionType>
-										<total>' . $gatewayDetails['amount'] . '</total>
+										<transactionType>' . $transactionType . '</transactionType>
+										<total>' . abs($gatewayDetails['amount']) . '</total>
+										<user>' . $addonData['txid'] . '</user>
+										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
 									</doDeal>
 								</request>
@@ -292,6 +275,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$amount = round($amount, 2);
 		return $amount * 100;
 	}
+	
+	protected function convertReceivedAmount($amount) {
+		return $amount / 100;
+	}
 
 	protected function isNeedAdjustingRequest(){
 		return true;
@@ -320,4 +307,227 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
+
+	protected function credit($gatewayDetails, $addonData) {
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails, 'Credit', $addonData);
+		return $this->sendPaymentRequest($paymentArray);
+	}
+	
+	protected function sendPaymentRequest($paymentArray) {
+		$additionalParams = array();
+		$paymentString = http_build_query($paymentArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (strpos(strtoupper($result), 'HEB')) {
+			$result = iconv("utf-8", "iso-8859-8", $result);
+		}
+		$xmlObj = simplexml_load_string($result);
+		$codeResult = (string) $xmlObj->response->result;
+		$this->transactionId = (string) $xmlObj->response->tranId;
+		$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
+		$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
+		$voucherNumber = $slaveNumber . $slaveSequence;
+		if (!empty($voucherNumber)) {
+			$additionalParams['payment_identifier'] = $voucherNumber;
+		}
+		return array('status' => $codeResult, 'additional_params' => $additionalParams);
+	}
+	
+	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
+		if ($responseFromGateway['stage'] != 'Rejected') {
+			return false;
+		}
+		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+		$gatewayDetails = $paymentParams['gateway_details'];
+		$updatedPaymentParams = $paymentParams;
+		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'], $cgConfig['oldest_card_expiration'])) {
+			$this->account->load(array('aid' => $paymentParams['aid']));
+			$updatedPaymentParams['gateway_details']['card_expiration'] = $gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
+			$accountGateway = $this->account->payment_gateway;
+			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
+			if (isset($accountGateway['active']['generate_token_time']->sec)) {
+				$accountGateway['active']['generate_token_time'] = date("Y-m-d H:i:s", $accountGateway['active']['generate_token_time']->sec);
+			}
+			$time = date(Billrun_Base::base_datetimeformat);
+			$query = array(
+				'aid' => $paymentParams['aid'],
+				'type' => 'account',
+				'effective_date' => $time,
+			);
+			$update = array(
+				'from' => $time,
+				'payment_gateway' => $accountGateway,
+			);
+			Billrun_Factory::log("Updating expiration date for aid=" . $paymentParams['aid'] . " to date " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+			try {
+				$this->account->permanentChange($query, $update);
+				Billrun_Factory::log("Expiration date was updated for aid=" . $paymentParams['aid'] . " to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::ALERT);
+				return false;
+			}
+			
+			return $updatedPaymentParams;
+		}
+		
+		return false;
+	}
+	
+	protected function isCreditCardExpired($expiration, $oldestCardExpiration) {
+		$expires = \DateTime::createFromFormat('my', $expiration);
+		$dateTooOld = new DateTime($oldestCardExpiration);
+		if ($expires < $dateTooOld) {
+			Billrun_Factory::log("Expiration date " . $expires->date . " is too old", Zend_Log::DEBUG);
+			return false;
+		}
+		
+		return $expires < new DateTime();
+	}
+
+	protected function buildSinglePaymentArray($params, $options) {
+		$credentials = $this->getGatewayCredentials();
+		$customParams = $this->getGatewayCustomParams();
+		$addonData = array();
+		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
+		$xmlParams['version'] = '1001';
+		$xmlParams['mpiValidation'] = 'AutoComm';
+		$xmlParams['userData2'] = 'SinglePayment';
+		if (!empty($customParams['send_z_param'])) {
+			$aidStringVal = strval($addonData['aid']);
+			$addonData['aid'] = $this->addLeadingZero($aidStringVal);
+			if (strlen($aidStringVal) > 8) { // Sent tag addonData(Z parameter) to CG must be 2-8 digits
+				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
+			}
+		} else {
+			unset($addonData['aid']);
+		}
+		$addonData['txid'] = $params['txid'];
+		$xmlParams['ok_page'] = $params['ok_page'];
+		$xmlParams['return_url'] = $params['return_url'];
+		$xmlParams['amount'] = $this->convertAmountToSend($params['amount']);
+		$today = new MongoDate();
+		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+		$xmlParams['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$xmlParams['addFailPage'] = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
+		if (isset($options['installments'])) {
+			$installmentParams['amount'] = $this->convertAmountToSend($options['installments']['total_amount']);
+			$installmentParams['number_of_payments'] = $options['installments']['number_of_payments'] - 1;
+			$installmentParams['periodical_payments'] = floor($installmentParams['amount'] / $options['installments']['number_of_payments']); 	
+			$installmentParams['first_payment'] = $installmentParams['amount'] - ($installmentParams['number_of_payments'] * $installmentParams['periodical_payments']);
+			return $this->getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData);
+		}
+		return $this->getXmlStructureByParams($credentials, $xmlParams, $addonData);
+	}
+	
+	protected function getXmlStructureByParams($credentials, $xmlParams, $addonData = array()) {
+		$XParameter = !empty($addonData['txid']) ? '<user>' . $addonData['txid']  . '</user>' : '';
+		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+	
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>' . $xmlParams['version'] . '</version>
+								 <language>' . $xmlParams['language'] . '</language>
+								 <dateTime/>
+								 <command>doDeal</command>
+								 <doDeal>
+										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
+										  '. $xmlParams['addFailPage']  .'
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										 ' . $XParameter . '
+										 ' . $ZParameter . '
+										  <mainTerminalNumber/>
+										  <cardNo>CGMPI</cardNo>
+										  <total>' . $xmlParams['amount'] . '</total>
+										  <transactionType>Debit</transactionType>
+										  <creditType>RegularCredit</creditType>
+										  <currency>ILS</currency>
+										  <transactionCode>Phone</transactionCode>
+										  <authNumber/>
+										  <numberOfPayments/>
+										  <firstPayment/>
+										  <periodicalPayment/>
+										  <validation>TxnSetup</validation>
+										  <dealerNumber/>
+										  <mid>' . (int) $credentials['mid'] . '</mid>
+										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
+										  <customerData>
+										   <userData1>' . $xmlParams['aid'] . '</userData1>
+										   <userData2>' . $xmlParams['userData2'] . '</userData2>
+										   <userData3/>
+										   <userData4/>
+										   <userData5/>
+										   <userData6/>
+										   <userData7/>
+										   <userData8/>
+										   <userData9/>
+										   <userData10/>
+										  </customerData>
+								 </doDeal>
+							</request>
+						   </ashrait>'
+		);
+	}
+	
+	protected function getInstallmentXmlStructure($credentials, $xmlParams, $installmentParams, $addonData) {
+		$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
+		return array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>' . $xmlParams['version'] . '</version>
+								 <language>' . $xmlParams['language'] . '</language>
+								 <dateTime/>
+								 <command>doDeal</command>
+								 <doDeal>
+										  <successUrl>' . $xmlParams['ok_page'] . '</successUrl>
+										  ' . $xmlParams['addFailPage'] . '
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <mainTerminalNumber/>
+										  <cardNo>CGMPI</cardNo>
+										  <total>' . $installmentParams['amount'] . '</total>
+										  <user>' . $addonData['txid'] . '</user>
+									      ' . $ZParameter . '
+										  <transactionType>Debit</transactionType>
+										  <creditType>Payments</creditType>
+										  <currency>ILS</currency>
+										  <transactionCode>Phone</transactionCode>
+										  <authNumber/>
+										  <numberOfPayments>' . $installmentParams['number_of_payments'] . '</numberOfPayments>
+										  <firstPayment>' . $installmentParams['first_payment'] . '</firstPayment>
+										  <periodicalPayment>' . $installmentParams['periodical_payments'] . '</periodicalPayment>
+										  <validation>TxnSetup</validation>
+										  <dealerNumber/>
+										  <mid>' . (int) $credentials['mid'] . '</mid>
+										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
+										  <mpiValidation>' . $xmlParams['mpiValidation'] . '</mpiValidation>
+										  <customerData>
+										   <userData1>' . $xmlParams['aid'] . '</userData1>
+										   <userData2>' . $xmlParams['userData2'] . '</userData2>
+										   <userData3/>
+										   <userData4/>
+										   <userData5/>
+										   <userData6/>
+										   <userData7/>
+										   <userData8/>
+										   <userData9/>
+										   <userData10/>
+										  </customerData>
+								 </doDeal>
+							</request>
+						   </ashrait>'
+		);
+	}
+	
+	protected function addLeadingZero($param) {
+		return str_pad($param, 2, "0", STR_PAD_LEFT);
+	}
+
 }

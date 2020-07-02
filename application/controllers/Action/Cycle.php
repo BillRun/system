@@ -94,7 +94,7 @@ class CycleAction extends Action_Base {
 				
 		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
 			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
-				$pid = pcntl_fork();
+				$pid = Billrun_Util::fork();
 				if ($pid == -1) {
 					die('could not fork');
 				}
@@ -121,7 +121,7 @@ class CycleAction extends Action_Base {
 	}
 	
 	protected function executeParentProcess($processInterval) {
-		$this->_controller->addOutput("Going to sleep for " . $processInterval);
+		$this->_controller->addOutput("Going to sleep for " . $processInterval . " seconds");
 		sleep($processInterval);
 		pcntl_signal(SIGCHLD, SIG_IGN);
 	}

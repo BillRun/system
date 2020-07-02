@@ -20,11 +20,15 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $invoices;
 	protected $billrunColl;
 	protected $logo = null;
+	protected $sendEmail = true;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
 		if (!empty($options['invoices'])) {
 			$this->invoices = Billrun_Util::verify_array($options['invoices'], 'int');
+		}
+		if (isset($options['send_email'])) {
+			$this->sendEmail = $options['send_email'];
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -37,6 +41,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'billrun_key' => (string) $this->stamp,
 			'billed' => array('$ne' => 1),
 			'invoice_id' => $invoiceQuery,
+			'allow_bill' => ['$ne' => 0],
 		);
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
@@ -79,14 +84,14 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'lastname' => $invoice['attributes']['lastname'],
 				'firstname' => $invoice['attributes']['firstname'],
 				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'payment_method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
+				'method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
 				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => $invoice['invoice_file'],
+				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
@@ -95,6 +100,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['total_paid'] = 0;
 			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
+			$bill['paid'] = '0';
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
@@ -103,6 +109,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
  	}
 	
 	/**
@@ -111,6 +118,29 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 */
 	protected function updateBillrunONBilled($data) {
 		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1)));
+	}
+	
+	/**
+	 * update the billrun once the bill object was created and mark it as not to bill.
+	 * @param type $data
+	 */
+	public function updateBillrunNotForBill($data) {
+		$query = [
+			'invoice_id' => $data['invoice_id'],
+			'billrun_key' => $data['billrun_key'],
+			'aid' => $data['aid'],
+		];
+		
+		$update = [
+			'$set' => [
+				'billed' => 2,
+			],
+		];
+		
+		if (isset($data['allow_bill'])) {
+			$update['$set']['allow_bill'] = $data['allow_bill'];
+		}
+		Billrun_Factory::db()->billrunCollection()->update($query, $update);
 	}
 	
 	/**
@@ -185,7 +215,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	}
 	
 	
-	protected function handleSendInvoicesByMail($invoices) {
+	public function handleSendInvoicesByMail($invoices) {
+		if (!$this->sendEmail) {
+			return;
+		}
+		
 		$options = array(
 			'email_type' => 'invoiceReady',
 			'billrun_key' => (string) $this->stamp,

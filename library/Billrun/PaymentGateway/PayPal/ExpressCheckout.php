@@ -101,7 +101,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['billing_agreement_id'],
 				'transaction_exhausted' => true,
@@ -110,7 +110,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		);
 	}
 
-	public function pay($gatewayDetails) {
+	public function pay($gatewayDetails, $addonData) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
@@ -245,6 +245,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	
 	protected function handleTokenRequestError($response, $params) {
 		return false;
+	}
+		
+	protected function buildSinglePaymentArray($params, $options) {
+		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
 
 }

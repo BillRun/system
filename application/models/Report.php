@@ -23,7 +23,11 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $cacheEntityFields = [];
 	protected $currentTime = null;
+	protected $aggregateOptions = [
+		'allowDiskUse' => true,
+	];
 	
 	/**
 	 *  Array of entity join map keys
@@ -182,7 +186,7 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
 		
-		$results = $collection->aggregate($aggregate);
+		$results = $collection->aggregateWithOptions($aggregate, $this->aggregateOptions);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
 		foreach ($results as $result) {
@@ -207,6 +211,19 @@ class ReportModel {
 				$formats[] = $formatter;
 			}
 		}
+//		$field_names = array_column($this->report['columns'], 'field_name', 'key');
+//		// if field is subscriber.play forse add default empty value formater to be default Play
+//		if($field_names[$key] === 'subscriber.play') {
+//			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+//			if(!empty($defaultPlay['name'])) {
+//				$defaultEmptyPlayformat = [
+//					'field' => $key,
+//					'op' => 'default_empty',
+//					'value' => $defaultPlay['name'],
+//				];
+//				array_unshift($formats, $defaultEmptyPlayformat);
+//			}
+//		}
 		return $formats;
 	}
 	
@@ -268,8 +285,16 @@ class ReportModel {
 				return $value[$pluckField['key']];
 			}
 		}
-
-		return $value;
+		
+		$columns = array_column($this->report['columns'], null, 'key');
+		$field = $columns[$key];
+		$field_conf = $this->getEntityCustomFields($field['entity'], $field['field_name']);
+		switch ($field_conf['type']) {
+			case 'ranges':
+				return "{$value['from']}-{$value['to']}";
+			default:
+				return $value;
+		}
 	}
 	
 	protected function applyValueformat($value, $format) {
@@ -379,8 +404,6 @@ class ReportModel {
 		return $this->currentTime;
 	}
 
-
-	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
 		$value = $condition['value'];
@@ -401,6 +424,14 @@ class ReportModel {
 					return $op;
 			}
 		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if ($op === 'nin' || ($op === 'in' && in_array($defaultPlay['name'], $values))) {
+				return 'and';
+			}
+		}
 		if($condition['field'] === 'logfile_status') {
 			switch ($value) {
 				case 'processed':
@@ -419,20 +450,64 @@ class ReportModel {
 	protected function formatInputMatchValue($condition, $field, $type) {
 		$value = $condition['value'];
 		$op = $condition['op'];
+		if ($type === 'daterange') {
+			return new MongoDate(strtotime($value));
+		}
 		// search by op
 		switch ($op) {
 			case 'last_hours':
 				$hours = -1 * intval($value);
-				return strtotime("{$hours} hours");
+				return date("c", strtotime("{$hours} hours"));
 			case 'last_days_include_today':
 				$days = -1 * intval($value);
-				return strtotime("{$days} day midnight");
+				return date("c", strtotime("{$days} day midnight"));
 			case 'last_days':
 				$days = -1 * (intval($value) + 1);
 				return array(
-					'from' => strtotime("{$days} day midnight"),
-					'to' => strtotime("today") - 1	
+					'from' => date("c", strtotime("{$days} day midnight")),
+					'to' => date("c", strtotime("today") - 1)
 				);
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			$withDefault = in_array($defaultPlay['name'], $values);
+			// IN + DEFAULT
+			if ($op === 'in' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$or' => [
+						['subscriber.play' => ['$exists' => false]],
+						['subscriber.play' => ['$in' => $values]],
+					]]
+				];
+			}
+			// NIN + DEFAULT
+			if ($op === 'nin' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$and' => [
+						['subscriber.play' => ['$exists' => true]],
+						['subscriber.play' => ['$nin' => $values]],
+					]]
+				];
+			}
+			// NIN + NO DEFAULT
+			if ($op === 'nin' && !$withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['subscriber.play' => ['$nin' => $values]],
+				];
+			}
+			// IN + NO DEFAULT
+			// Nornal case return only [] value
 		}
 		// search by field_name
 		if($field === 'billrun') {
@@ -616,15 +691,34 @@ class ReportModel {
 				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
 			case 'logFile':
-				$defaultEntityMatch[]['file_name'] = array(
-					"\$exists" => true
-				);
+				$defaultEntityMatch[]['file_name'] = [
+					"\$exists" => true,
+				];
+				$defaultEntityMatch[]['type'] = [
+					"\$ne" => 'custom_payment_gateway',
+				];
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsRequest':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_request';
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsResponse':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_response';
+				return $defaultEntityMatch;
+			case 'paymentDenials':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'denials';
+				return $defaultEntityMatch;
+			case 'paymentsFiles':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'payments';
 				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
 		}
 	}
-	
+
 	protected function getCollection() {
 		$entity = $this->getReportEntity();
 		if(empty($entity)) {
@@ -653,10 +747,44 @@ class ReportModel {
 			case 'event':
 				return 'events';
 			case 'logFile':
+			case 'paymentsTransactionsRequest':
+			case 'paymentsTransactionsResponse':
+			case 'paymentDenials':
+			case 'paymentsFiles':
 				return 'log';
+			case 'bills':
+				return 'bills';
 			default:
 				throw new Exception("Invalid entity type");
 		}
+	}
+
+	/**
+	 * Map entity custom fields
+	 * 
+	 * @param type $entity name 
+	 * @return string path to custom fields
+	 */
+	protected function entityCustomFieldsMapper($entity) {
+		switch ($entity) {
+			case 'subscription':
+				return 'subscribers.subscriber.fields';
+			case 'customer':
+				return 'subscribers.account.fields';
+			default: {
+				$collection = $this->entityMapper($entity);
+				return "{$collection}.fields";
+			}
+		}
+	}
+	
+	protected function getEntityCustomFields($entity, $fieldName) {		
+		if(!empty($this->cacheEntityFields[$entity])) {
+			return $this->cacheEntityFields[$entity][$fieldName];
+		}
+		$entityFieldConfig = array_column(Billrun_Factory::config()->getConfigValue($this->entityCustomFieldsMapper($entity), []), null, "field_name");
+		$this->cacheEntityFields[$entity] = $entityFieldConfig;
+		return $this->cacheEntityFields[$entity][$fieldName];
 	}
 	
 	protected function getGroup() {
@@ -750,6 +878,24 @@ class ReportModel {
 		$op = $this->formatInputMatchOp($condition, $field);
 		$value = $this->formatInputMatchValue($condition, $field, $type);
 		switch ($op) {
+			case 'in_range':
+				$formatedExpression = [
+					'$elemMatch' => [
+						'from' => ['$lte' => $value],
+						'to' => ['$gte' => $value],
+					],
+				];
+				break;
+			case 'nin_range':
+				$formatedExpression = [
+					'$not' => [
+						'$elemMatch' => [
+							'from' => ['$lte' => $value],
+							'to' => ['$gte' => $value],
+						]
+					]
+				];
+				break;
 			case 'like':
 				$formatedExpression = array(
 					'$regex' => "{$value}",
@@ -776,6 +922,9 @@ class ReportModel {
 				} else {
 					$values = explode(',', $value);
 				}
+				if ($field == 'paid' && in_array('0', $values)) {
+					$values[] = false;
+				}
 				$formatedExpression = array(
 					"\${$op}" => $values
 				);
@@ -788,6 +937,14 @@ class ReportModel {
 					$endOfDay = strtotime("tomorrow", $date) - 1;
 					$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
 					$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
+					$formatedExpression = array(
+						'$gte' => new MongoDate($gteDate),
+						'$lt' => new MongoDate($ltDate),
+					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$gteDate = ($op === 'eq') ? $date : $date + 59;
+					$ltDate = ($op === 'eq') ? $date + 59 : $date;
 					$formatedExpression = array(
 						'$gte' => new MongoDate($gteDate),
 						'$lt' => new MongoDate($ltDate),
@@ -807,10 +964,10 @@ class ReportModel {
 				}
 				break;
 			case 'between':
-				if ($type === 'date') {
+				if (in_array($type, ['date', 'datetime'])) {
 					$formatedExpression = array(
-						'$gte' => new MongoDate($value['from']),
-						'$lte' => new MongoDate($value['to']),
+						'$gte' => new MongoDate(strtotime($value['from'])),
+						'$lt' => new MongoDate(strtotime($value['to'] + 60)), // to last minute second
 					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
@@ -834,6 +991,12 @@ class ReportModel {
 					$formatedExpression = array(
 						"\${$op}" => new MongoDate($queryDate),
 					);
+				} elseif ($type === 'datetime') {
+					$date = strtotime($value);
+					$queryDate = ($op === 'gt' || $op === 'lte') ? $date + 59 : $date;
+					$formatedExpression = array(
+						"\${$op}" => new MongoDate($queryDate),
+					);
 				} elseif ($type === 'number') {
 					$formatedExpression = array(
 						"\${$op}" => floatval($value)
@@ -849,8 +1012,10 @@ class ReportModel {
 					"\${$op}" => (bool) $value
 				);
 				break;
-			case 'and': // for complex queries
-				$field = '$and';
+			case 'and':
+			case 'or':
+				// for complex queries
+				$field = "\${$op}";
 				$formatedExpression = $value;
 				break;
 			default:

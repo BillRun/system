@@ -18,16 +18,27 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 
 	protected function init() {
 		parent::init();
+		$this->initMinBalanceValues();
 		$this->loadSubscriberBalance();
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok');
 		$this->initMinBalanceValues();
 		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance']) && $this->balance) { // If it's a prepaid row, but not rebalance
 			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey($this->usaget), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
-			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
+			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 		} else {
 			$this->row['apr'] = 0;
 			$this->row['usagev'] = 0;
 		}
+	}
+	
+	/**
+	 * see parent::initMinBalanceValues
+	 * just adds 2 additional internal variables that were mistakenly used in the code without touching postpaid logic
+	 */
+	protected function initMinBalanceValues() {
+		parent::initMinBalanceValues();
+		$this->granted_volume = $this->min_balance_volume;
+		$this->granted_cost = $this->min_balance_cost;
 	}
 
 	/**
@@ -45,7 +56,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			} else {
 				$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($this->rate, $this->row['usaget'], $this->plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec, $this->row['usagev']);
 			}
-			$charges = Billrun_Rates_Util::getChargesByRate($this->rate, $this->row['usaget'], $granted_volume, $this->plan->getName(), $this->getCallOffset(), $this->row['urt']->sec);
+			$charges = Billrun_Rates_Util::getChargesByRate($this->rate, $this->row['usaget'], $granted_volume, $this->plan->getName(), $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$granted_cost = $charges['total'];
 			return array(
 				$this->pricingField => $granted_cost,
@@ -81,6 +92,32 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			return true;
 		}
 		return $ret;
+	}
+	
+	/**
+	 * see parent::getLinePricingData
+	 */
+	protected function getLinePricingData($volume, $usageType, $rate, $plan) {
+		$usagevOffset = isset($this->row['usagev_offset']) ?  $this->row['usagev_offset'] : 0;
+		if ($usagevOffset == 0 || !$this->isReblanceOnLastRequestOnly()) {
+			return parent::getLinePricingData($volume, $usageType, $rate, $plan);
+		}
+		
+		$totalPricingData = parent::getLinePricingData($volume + $usagevOffset, $usageType, $rate, $plan);
+		if ($totalPricingData === false) {
+			return false;
+		}
+		$offsetPricingData = parent::getLinePricingData($usagevOffset, $usageType, $rate, $plan);
+		if ($offsetPricingData === false) {
+			return false;
+		}
+		$pricingData = [];
+		
+		foreach ($totalPricingData as $key => $value) {
+			$pricingData[$key] = $totalPricingData[$key] - $offsetPricingData[$key];
+		}
+		
+		return $pricingData;
 	}
 	
 	/**
@@ -144,6 +181,20 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 		$lines_coll->update($findQuery, $updateLinesQuery, $options);
 	}
+		
+	/**
+	 * gets the price of the rebalance
+	 * 
+	 * @param array $lineToRebalance
+	 * @param float $realUsagev
+	 * @return float
+	 */
+	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
+		$realPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
+		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
+		return $realPricing - $chargedPricing;
+	}
 	
 	/**
 	 * gets all fields that needs to be rebalanced by volume in the archive collection
@@ -163,5 +214,5 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		
 		return $ret;
 	}
-
+	
 }
