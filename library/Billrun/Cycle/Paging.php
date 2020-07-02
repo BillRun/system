@@ -29,7 +29,7 @@ class Billrun_Cycle_Paging {
 		$this->host = Billrun_Util::getHostName();
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			if (empty($options['invoicing_day'])) {
-				Billrun_Factory::log()->log("No invoicing day was found in Cycle Paging, the default one was taken.", Zend_Log::ALERT);
+				Billrun_Factory::log()->log("No invoicing day was found in Cycle Paging, the default one was taken.", Zend_Log::WARN);
 				$this->invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
 			} else {
 				$this->invoicing_day = $options['invoicing_day'];
