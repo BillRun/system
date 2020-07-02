@@ -16,3 +16,4 @@ conf/dori.ini
 /scripts/locks/*
 shared
 docker/persist
+.vscode/
