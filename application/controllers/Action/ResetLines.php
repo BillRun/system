@@ -31,12 +31,7 @@ class ResetLinesAction extends ApiAction {
 			$this->cleanAccountCache($request['aid']);
 		}
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$query = array(
-				'aid' => $request['aid'], 
-				'from' => array('$lte' => new MongoDate()), 
-				'to' => array('$gt' => new MongoDate())
-			);
-			$account = Billrun_Factory::account()->loadAccountForQuery($query);
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
 			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			$request['invoicing_day'] = $invoicing_day;
 		}
