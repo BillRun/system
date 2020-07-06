@@ -74,7 +74,12 @@ class Billrun_LogFile {
 		$newLog['key'] = $this->data['key'];
 		$newLog['source'] = $this->data['source'];
 		$newLog['start_process_time'] = $this->data['start_process_time'];
-		Billrun_Factory::log("Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'], Zend_Log::DEBUG);
+		$message = "Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'];
+		if (!empty($this->data['rand'])) {
+			$newLog['rand'] = $this->data['rand'];
+			$message .= ', and random number - ' . $newLog['rand'];
+		}
+		Billrun_Factory::log($message, Zend_Log::DEBUG);
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
 	
