@@ -20,7 +20,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $trailerRows;
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
-	protected $informationArray = [];
+        protected $informationArray = [];
+        
+        
 	protected $billSavedFields = array();
 	
 	public function __construct($options) {
@@ -118,7 +120,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
 		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
 			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
-				throw new Exception('Missing file response definitions');
+				throw new Exception("Couldn't find file's correlation value, or number of expected response files.");
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
@@ -193,11 +195,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill = Billrun_Bill::getInstanceByData($bill);
 			} 
 			if ($fileStatus == 'only_rejections') {
+				$customFields = $this->getCustomPaymentGatewayFields();
+				$bill->setExtraFields($customFields, array_keys($customFields));
 				$bill->markApproved('Completed');
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
-				$this->informationArray['transactions']['confirmed']++;
+                                $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
@@ -208,7 +212,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			} else if ($fileStatus == 'only_acceptance') {
 				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
 				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
-				Billrun_Factory::log('Rejecting transaction  ' . $billToReject->getId(), Zend_Log::INFO);
+				$customFields = $this->getCustomPaymentGatewayFields();
+				$billToReject->setExtraFields($customFields, array_keys($customFields));
+				Billrun_Factory::log('Rejecting transaction ' . $billToReject->getId(), Zend_Log::INFO);
 				$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
@@ -229,15 +235,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-		$no_txid_counter = 0;
+                $no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
-				if(isset($this->tranIdentifierField)){
-					if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
-						$no_txid_counter++;
-						continue;
-					}
-				}
+                    if(isset($this->tranIdentifierField)){
+                        if(($row[$this->tranIdentifierField] === "") && (static::$type != 'payments')){
+                            $no_txid_counter++;
+                            continue;
+                        }
+                    }
 			$bill = (static::$type != 'payments') ?  Billrun_Bill_Payment::getInstanceByid($row[$this->tranIdentifierField]) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $row[$this->tranIdentifierField] . ' in file ' . $this->filePath, Zend_Log::ALERT);
@@ -246,9 +252,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-		if($no_txid_counter > 0){
-			Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-		}
+                if($no_txid_counter > 0){
+                    Billrun_Factory::log()->log('In ' .$no_txid_counter . ' lines, ' . $this->tranIdentifierField . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
+                }
 	}
 	
 	protected function updateLogCollection($fileCorrelation) {
@@ -324,5 +330,5 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
 				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
 				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
-	}
+        }
 }

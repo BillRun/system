@@ -364,5 +364,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		throw new Exception("No subscriber aggregation identified");
 	}
-
+	
+	public function getData() {
+		return $this->data;
+	}
 }

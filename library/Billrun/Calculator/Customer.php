@@ -342,13 +342,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		$results = $this->account->loadAccountsForQueries($queriesToMatchAccounts);
 		if (!$results) {
-			Billrun_Factory::log('Failed to load accounts data for params: ' . print_r($queriesToMatchAcoounts, 1), Zend_Log::NOTICE);
+			Billrun_Factory::log('Failed to load accounts data for params: ' . print_r($queriesToMatchAccounts, 1), Zend_Log::NOTICE);
 			return false;
 		}
 		return array_map(function($data) {
 			$type = array('type' => Billrun_Factory::config()->getConfigValue('subscribers.account.type', 'db'));
 			$options = array('data' => $data->getRawData());
-			$account = Billrun_Subscriber::getInstance(array_merge($data->getRawData(), $options, $type));
+			$account = Billrun_Account::getInstance(array_merge($options, $type));
 			return $account;
 		}, $results);
 	}

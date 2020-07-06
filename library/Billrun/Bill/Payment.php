@@ -42,7 +42,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected $known_sources;
 	
 	protected static $aids;
-	/**
+        
+        const txIdLength = 13;
+        /**
 	 * 
 	 * @param type $options
 	 */
@@ -210,6 +212,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public static function getInstanceByid($id) {
+                $id = self::padTxId($id);
 		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->current();
 		if ($data->isEmpty()) {
 			return NULL;
@@ -727,7 +730,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$payment->setPaymentStatus($response, $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
@@ -977,9 +980,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public static function createTxid() {
 		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
-		return str_pad($txid, 13, '0', STR_PAD_LEFT);
+		return self::padTxId($txid);
 	}
-	public static function createInstallmentAgreement($params) {
+        
+        public static function padTxId($txId) {
+            return str_pad($txId, self::txIdLength, '0', STR_PAD_LEFT);
+        }
+
+
+        public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
@@ -1060,28 +1069,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
-	/**
-	 * Function to set custom fields in the paymet objects
-	 * @param array $fields - array of "field path" => "field value" (field valut can be an array) to insert.
-	 * @param boolean $mergeToExistingArray - array of fields names - for fields that their path leads to an array that needs
-	 * to be merge with the given "field_value" - which have to be an array in this case as well. 
-	 */
-	public function setExtraFields($fields, $mergeToExistingArray = []) {
-		if (empty($fields)) {
-			return;
-		}
-		$paymentData = $this->getRawData();
-		foreach ($fields as $path => $value) {
-			if (!in_array($path, $mergeToExistingArray) || in_array($path, $mergeToExistingArray) && empty(Billrun_Util::getIn($paymentData, $path))) {
-				Billrun_Util::setIn($paymentData, $path, $value);
-			} else {
-				$currentArray = Billrun_Util::getIn($paymentData, $path);
-				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
-			}
-		}
-		$this->setRawData($paymentData);
-		$this->save();
-	}
 	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.
