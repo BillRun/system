@@ -194,9 +194,13 @@ class Billrun_Billingcycle {
 	 * @return string The previous key
 	 */
 	public static function getPreviousBillrunKey($key) {
+		if(!empty(self::$previousCycleKeysTable[$key])) {
+			return self::$previousCycleKeysTable[$key];
+		}
 		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
+		self::$previousCycleKeysTable[$key] = $ret;
 		return $ret;
 	}
 
