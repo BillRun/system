@@ -358,7 +358,7 @@ class BillrunController extends ApiController {
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
-			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey, $invoicing_day);
+			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
 			$limit++;
 		}
 		if (!$newestFirst) {
