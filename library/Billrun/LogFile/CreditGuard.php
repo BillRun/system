@@ -45,7 +45,9 @@ class Billrun_LogFile_CreditGuard extends Billrun_LogFile {
 			$this->data->collection($this->collection);
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
+			$this->data['rand'] = Billrun_Util::generateRandomNum();
 			$this->setStartProcessTime();
+			$this->setStamp();
 			$this->save();
 		}
 	}
