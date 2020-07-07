@@ -50,9 +50,12 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data['creation_time'] = new MongoDate();
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
-			$this->data['errors'] = [];
-			$this->data['warnings'] = [];
-			$this->data['info'] = [];
+                        $this->data['errors'] = [];
+                        $this->data['warnings'] = [];
+                        $this->data['info'] = [];
+			$this->data['rand'] = Billrun_Util::generateRandomNum();
+			$this->setStartProcessTime();
+			$this->setStamp();
 			$this->save();
 		}
 	}
@@ -79,7 +82,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		}
 		return NULL;
 	}
-    
+        
 	/**
 	 * Function to add field/fields to the log file
 	 * @param string $field_name - comes with "$value" - value's field name
@@ -91,15 +94,15 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$fields = array($field_name => $value);
 		}
 		foreach($fields as $field_name => $value) {
-			if(in_array($field_name, ['errors', 'warnings', 'info'])){
+            if(in_array($field_name, ['errors', 'warnings', 'info'])){
                 $array = $this->data[$field_name];
                 array_push($array, $value);
                 $this->data[$field_name] = $array;
             }else{
                 $this->data[$field_name] = $value;
             }
-		}
-	}
+            }
+        }
         
         public function saveLogFileFields(){
             $this->data->save();
