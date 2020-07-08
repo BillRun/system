@@ -83,17 +83,21 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		return NULL;
 	}
         
-        public function updateLogFileField($field_name, $value) {
-            if(in_array($field_name, ['errors', 'warnings', 'info'])){
-                $array = $this->data[$field_name];
-                array_push($array, $value);
-                $this->data[$field_name] = $array;
-            }else{
-                $this->data[$field_name] = $value;
-            }
-        }
-        
-        public function saveLogFileFields(){
-            $this->data->save();
-        }
+	public function updateLogFileField($field_name, $value) {
+		if(in_array($field_name, ['errors', 'warnings', 'info'])){
+			$array = $this->data[$field_name];
+			array_push($array, $value);
+			$this->data[$field_name] = $array;
+		}else{
+			$this->data[$field_name] = $value;
+		}
+	}
+
+	public function getLogFileFieldValue($field_name, $defaultValue = null) {
+		return isset($this->data[$field_name]) ? $this->data[$field_name] : $defaultValue;
+	}
+
+	public function saveLogFileFields(){
+		$this->data->save();
+	}
 }
