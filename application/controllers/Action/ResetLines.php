@@ -33,7 +33,6 @@ class ResetLinesAction extends ApiAction {
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
 			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
-			$request['invoicing_day'] = $invoicing_day;
 		}
 		if (!is_null($invoicing_day)) {
 			$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
