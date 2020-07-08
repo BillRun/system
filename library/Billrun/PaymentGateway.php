@@ -492,7 +492,7 @@ abstract class Billrun_PaymentGateway {
 		try {
 			$this->account->permanentChange($query, $update);
 		} catch (Exception $ex) {
-			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed", Zend_Log::ALERT);
+			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed. Exception: {$ex->getCode()}: {$ex->getMessage()}", Zend_Log::ALERT);
 			return false;
 		}	
 		Billrun_Factory::log($update['payment_gateway']['active']['name'] . " was defined successfully for " . $aid, Zend_Log::INFO);
