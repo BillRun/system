@@ -136,8 +136,8 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
-			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
+			throw new Exception('Need to pass numeric invoicing day when on multi day cycle mode.');
 		}
 		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
 			if (is_null($invoices)) {
@@ -375,9 +375,7 @@ class BillrunController extends ApiController {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
 		}
 		if (!empty($invoicing_day)) {
-			if (is_numeric($invoicing_day)) {
-				$cmd .= ' invoicing_days=' . $invoicing_day;
-			}
+			$cmd .= ' invoicing_days=' . $invoicing_day;
 		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
