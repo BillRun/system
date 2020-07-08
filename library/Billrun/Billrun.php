@@ -996,7 +996,7 @@ class Billrun_Billrun {
 		}
 		$invoiceIdParams = Billrun_Config::getInstance()->getConfigValue('customer.aggregator.invoice_id_params', array());
 		$translations = array();
-		$invoiceGroup = $totalAmount < 0 ? '29' : '21';
+		$invoiceGroup = $totalAmount < 0 ? '29' : '31';
 		foreach ($invoiceIdParams as $paramObj) {
 			$translations[$paramObj['param']] = $this->getTranslationValue($paramObj, $invoiceGroup, $translations);
 		}
