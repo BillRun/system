@@ -46,11 +46,11 @@
      protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
      protected $tests = array(
          /* check if the pagination work */
-         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination'), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
+         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination',), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
              'expected' => array(),
              'postRun' => array()),
          /* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
+         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'checkInvoiceId','invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
              'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
                  'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
              'postRun' => array()),
@@ -517,15 +517,13 @@
          $passed = TRUE;
          $billrun_key = $row['expected']['billrun']['billrun_key'];
          $aid = $row['expected']['billrun']['aid'];
-         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
-         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
          foreach ($jiraLink as $link) {
              $this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
-         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
+         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — billrun_key: ' . $billrun_key;
          $this->message .= '<br><b> Result: </b> <br>';
          if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
              $this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
@@ -539,25 +537,26 @@
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+
+         return $passed;
+     }
+	 public function checkInvoiceId($key, $returnBillrun, $row) {
+		 $passed = TRUE;
+         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
 
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
                  $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
+				 '<br> — invoice_id: ' . $invoice_id . 
+                 $this->message .=  'invoice_id expected to be : ' .$invoice_id. ' result is '.$retun_invoice_id . $this->fail;
              }
-         } else {
-             if (!empty($retun_invoice_id) && $retun_invoice_id == $this->LatestResults[0][0]['invoice_id'] + 1) {
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
-             } else {
-                 $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
-             }
-         }
-
-         return $passed;
-     }
+         } 
+	 }
+		 
+	 
 
      /**
       * check if all subscribers was calculeted
