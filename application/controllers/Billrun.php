@@ -26,14 +26,24 @@ class BillrunController extends ApiController {
 	protected $size;
 	
 	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
+	
+	protected $model;
 
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		if (in_array($this->getRequest()->action, $this->permissionReadAction)) {
 			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 		}
+		$this->initializeModel();
 		$this->allowed();
 		parent::init();
+	}
+
+	/**
+	 * This method is for initializing controller's model.
+	 */
+	protected function initializeModel() {
+		$this->model = new ConfigModel();
 	}
 
 	/**
@@ -267,7 +277,7 @@ class BillrunController extends ApiController {
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
 		$invoicing_day = $request->get('invoicing_day');
-		if (Billrun_Factory::config()->isMultiDayCycle()) {
+		if ($this->model->isMultiDayCycleMode()) {
 			if (empty($invoicing_day)) {
 				$params['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
 				Billrun_Factory::log('No invoicing day was passed, the default one was taken', Zend_Log::DEBUG);

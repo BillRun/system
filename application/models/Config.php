@@ -1765,5 +1765,13 @@ class ConfigModel {
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
+	
+	/**
+	 * 
+	 * @return boolean
+	 */
+	public function isMultiDayCycleMode() {
+		return Billrun_Factory::config()->isMultiDayCycle();
+	}
 
 }
