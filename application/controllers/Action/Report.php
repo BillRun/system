@@ -21,8 +21,8 @@ class ReportAction extends ApiAction {
 		'usageType' => ['$in'=>['usaget']],
 		'sourcePhoneNumber' => ['$in'=>['calling_number']],
 		'targetPhoneNumber' => ['$in'=>['called_number']],
-		'sourceImei' => ['$regex'=>[ ['field'=> 'calling_imei' , 'modifier' => '^%s'] ]]],
-		'targetImei' => ['$regex'=>[  ['field'=> 'called_imei'  , 'modifier' => '^%s'] ]],
+		'sourceImei' => ['$regex'=>[ ['field'=> 'calling_imei' , 'modifier' => '^%s'] ]],
+		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s'] ]],
 //		'sourceEndpointType' =>  ['$in'=>['']],
 //		'targetEndpointType' =>  ['$in'=>['']],
 		'sourceImsi' =>  ['$in'=>['imsi']],
@@ -336,6 +336,7 @@ class ReportAction extends ApiAction {
 								unset($mappedQuery['$or']);
 								foreach($mappedQueryOr as $mappedOr) {
 										$retQueries[] = array_merge($query, $mappedQuery, $mappedOr);
+								}
 						}
 					}
 				}
@@ -369,7 +370,7 @@ class ReportAction extends ApiAction {
 
 	protected function fieldResolution($input, $field, $equalOp) {
 		if(is_array($field)) {
-			return [ $field['field'] => [$equalOp => is_array($input) ? array_map(function ($i) use($field) {return sprintf($field['modifier'],$i);},$input)  : sprintf($field['modifier'],$input) ]
+			return [ $field['field'] => [$equalOp => is_array($input) ? array_map(function ($i) use($field) {return sprintf($field['modifier'],$i);},$input)  : sprintf($field['modifier'],$input) ] ];
 		}
 		return [ $field => [$equalOp => is_array($input) ? $input : ["".$input] ] ];
 	}
