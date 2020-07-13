@@ -341,6 +341,17 @@ var detailedField = {
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
+// BRCD-2404: Fix payment gateways redirection for token (add payment gateway to custom field)
+var paymentGateway = {
+	"field_name" : "payment_gateway",
+	"system" : true,
+	"editable" : false,
+	"display" : true
+}
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], paymentGateway, 'account');
+
+
 
 // BRCD-1636 Add new custom 'play' field to Subscribers.
 var fields = lastConfig['subscribers']['subscriber']['fields'];
