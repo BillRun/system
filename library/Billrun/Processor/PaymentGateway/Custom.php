@@ -31,16 +31,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
-                $this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
-                $this->informationArray['type'] = 'custom_payment_gateway';
-                $this->informationArray['fileType'] = 'received';
-                $this->informationArray['total_denied_amount'] = 0;
-                $this->informationArray['total_confirmed_amount'] = 0;
-                $this->informationArray['total_rejected_amount'] = 0;
-                $this->informationArray['transactions']['confirmed'] = 0;
-                $this->informationArray['transactions']['rejected'] = 0;
-                $this->informationArray['transactions']['denied'] = 0;
-                $this->informationArray['last_file'] = false;
+		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
+		$this->informationArray['type'] = 'custom_payment_gateway';
+		$this->informationArray['creation_type'] = new MongoDate();
+		$this->informationArray['fileType'] = 'received';
+		$this->informationArray['total_denied_amount'] = 0;
+		$this->informationArray['total_confirmed_amount'] = 0;
+		$this->informationArray['total_rejected_amount'] = 0;
+		$this->informationArray['transactions']['confirmed'] = 0;
+		$this->informationArray['transactions']['rejected'] = 0;
+		$this->informationArray['transactions']['denied'] = 0;
+		$this->informationArray['last_file'] = false;
 	}
 
 /**
@@ -88,7 +89,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->addDataRow($row);
 		}
 		$this->data['header'] = array('header' => TRUE); //TODO
-               $this->data['trailer'] = array('trailer' => TRUE); //TODO
+        $this->data['trailer'] = array('trailer' => TRUE); //TODO
 
 		return true;
 	}
@@ -140,6 +141,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                         }
                     }
                 }
+				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
                 $this->updateLogFile();
 	}
