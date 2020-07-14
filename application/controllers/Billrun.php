@@ -137,7 +137,7 @@ class BillrunController extends ApiController {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
 		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
-			throw new Exception('Need to pass numeric invoicing day when on multi day cycle mode.');
+			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
 		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
 			if (is_null($invoices)) {
