@@ -311,7 +311,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			return [
 				'setting' => [
 					'settingName' => 'recurringBilling',
-					'settingValue' => true,
+					'settingValue' => 'true',
 				],
 			];
 		}
