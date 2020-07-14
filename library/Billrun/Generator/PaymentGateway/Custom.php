@@ -368,6 +368,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$logOptions['source'] = "custom_payment_files";
 		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
 		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
+		$this->logFile->save();
 	}
 	
 	/**
