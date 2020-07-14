@@ -277,9 +277,9 @@ class BillrunController extends ApiController {
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
 		$invoicing_day = $request->get('invoicing_day');
-		if ($this->model->isMultiDayCycleMode()) {
+		if ($default_invoicing_day = $this->model->isMultiDayCycleMode()) {
 			if (empty($invoicing_day)) {
-				$params['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
+				$params['invoicing_day'] = $default_invoicing_day;
 				Billrun_Factory::log('No invoicing day was passed, the default one was taken', Zend_Log::DEBUG);
 			} else {
 				$params['invoicing_day'] = ltrim($invoicing_day, "0");

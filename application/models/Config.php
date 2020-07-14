@@ -1767,11 +1767,11 @@ class ConfigModel {
 	}
 	
 	/**
-	 * 
-	 * @return boolean
+	 * Function to check if the system in multi day cycle mode
+	 * @return default invoicing day, if multi day cycle mode, else returns false
 	 */
 	public function isMultiDayCycleMode() {
-		return Billrun_Factory::config()->isMultiDayCycle();
+		return Billrun_Factory::config()->isMultiDayCycle() ? Billrun_Factory::config()->getConfigChargingDay() : false;
 	}
 
 }
