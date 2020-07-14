@@ -35,7 +35,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$this->sendEmail = $options['send_email'];
 		}
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$this->invoicing_days = $this->getInvoicingDays($options);
+			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -286,7 +286,4 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return 'bills';
 	}
 	
-	public function getInvoicingDays($options) {
-		return !empty($options['invoicing_days']) ? [$options['invoicing_days']] : [Billrun_Factory::config()->getConfigChargingDay()];
-	}
 }
