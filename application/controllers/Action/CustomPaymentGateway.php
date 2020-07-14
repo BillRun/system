@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * Custom payment gateway action class
@@ -13,9 +12,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @package  Action
  * @since    5.13
  */
-	class CustomPaymentGatewayAction extends ApiAction {
+class CustomPaymentGatewayAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
@@ -25,7 +25,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 		$options['file_type'] = $request->get('file_type');
 		$options['params'] = [];
 		if (!empty($request->get('parameters'))) {
-			$options['params'] = json_decode($request->get('parameters') ,true);
+			$options['params'] = json_decode($request->get('parameters'), true);
 			if (is_null($options['params'])) {
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
@@ -48,38 +48,38 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 		}
 		try {
 			$success = Billrun_Util::forkProcessCli($cmd);
-		} catch(Exception $ex){
+		} catch (Exception $ex) {
 			return $this->setError("Error: " . $ex->getMessage());
-        }
-		Billrun_Factory::log("Finished " . $options['cpg_type'] . " custom payment gateway request." , Zend_Log::DEBUG);
-		$output = array (
+		}
+		Billrun_Factory::log("Finished " . $options['cpg_type'] . " custom payment gateway request.", Zend_Log::DEBUG);
+		$output = array(
 			'status' => "Done",
 			'details' => array(),
 		);
 		$this->setSuccess($output, $options);
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
-	
+
 	protected function validateOptions($options) {
 		if (isset($options['pay_mode']) && !in_array($options['pay_mode'], ['one_payment', 'multiple_payments'])) {
-			Billrun_Factory::log("pay_mode parameter's value isn't valid" , Zend_Log::ERR);
+			Billrun_Factory::log("pay_mode parameter's value isn't valid", Zend_Log::ERR);
 			return false;
 		}
 		if (!isset($options['cpg_type']) || !in_array($options['cpg_type'], ['transactions_request'])) {
-			Billrun_Factory::log("cpg_type parameter's value isn't valid" , Zend_Log::ERR);
+			Billrun_Factory::log("cpg_type parameter's value isn't valid", Zend_Log::ERR);
 			return false;
 		}
 		$paymentsGatewaysConfig = Billrun_Factory::config()->getConfigValue('payment_gateways', []);
 		if (empty($paymentsGatewaysConfig)) {
-			Billrun_Factory::log("Payment gateways configuration is empty" , Zend_Log::ERR);
+			Billrun_Factory::log("Payment gateways configuration is empty", Zend_Log::ERR);
 			return false;
 		} else {
 			$gatewaysOptions = array_column($paymentsGatewaysConfig, 'name');
 			if (!in_array($options['gateway_name'], $gatewaysOptions)) {
-				Billrun_Factory::log("gateway_name parameter's value isn't valid" , Zend_Log::ERR);
+				Billrun_Factory::log("gateway_name parameter's value isn't valid", Zend_Log::ERR);
 				return false;
 			}
 		}
