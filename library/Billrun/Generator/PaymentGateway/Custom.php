@@ -373,7 +373,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	/**
 	 * Function to initialize the created log file, only if it was created successfully.
 	 */
-    protected function initLogFile() {
+	protected function initLogFile() {
 		$this->logFile->setSequenceNumber();
 		$this->logFile->setFileName($this->getFilename());
 		$this->logFile->setStamp();
