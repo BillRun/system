@@ -675,7 +675,7 @@ abstract class Billrun_Bill {
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
-		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit', 'installment_agreement'))) {
+		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit', 'installment_agreement', 'merge_installments'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
@@ -1114,7 +1114,9 @@ abstract class Billrun_Bill {
 			
 		return $group;
 	}
-	
+	protected function setDueDate($dueDate) {
+		$this->data['due_date'] = $dueDate;
+	}
 	/**
 	 * Function that return bills with method = "installment_agreement", by chosen conditions.
 	 * @param type $aid - account id.
@@ -1150,6 +1152,12 @@ abstract class Billrun_Bill {
 			return null;
 		}
 		return $this->method;
+	}
+	
+	protected function setChargeNotBefore($chargeNotBefore) {
+		$rawData = $this->getRawData();
+		$rawData['charge']['not_before'] = $chargeNotBefore;
+		$this->setRawData($rawData);
 	}
 	
 	public static function getDistinctBills($query, $distinctField) {

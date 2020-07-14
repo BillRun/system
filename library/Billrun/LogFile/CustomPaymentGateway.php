@@ -50,9 +50,9 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data['creation_time'] = new MongoDate();
 			$this->data['key'] = $key;
 			$this->data['source'] = $this->source;
-                        $this->data['errors'] = [];
-                        $this->data['warnings'] = [];
-                        $this->data['info'] = [];
+			$this->data['errors'] = [];
+			$this->data['warnings'] = [];
+			$this->data['info'] = [];
 			$this->data['rand'] = Billrun_Util::generateRandomNum();
 			$this->setStartProcessTime();
 			$this->setStamp();
@@ -104,6 +104,10 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
             }
         }
         
+	public function getLogFileFieldValue($field_name, $defaultValue = null) {
+		return isset($this->data[$field_name]) ? $this->data[$field_name] : $defaultValue;
+	}
+
         public function saveLogFileFields(){
             $this->data->save();
         }
