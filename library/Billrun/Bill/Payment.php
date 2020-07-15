@@ -212,7 +212,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
-		unset($rawData['_id']);
+		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
 		return new $className($rawData);
@@ -403,6 +403,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->setPending(false);
+                $this->setConfirmationStatus(false);
 		return $this;
 	}
 
