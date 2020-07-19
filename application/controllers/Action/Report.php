@@ -28,9 +28,11 @@ class ReportAction extends ApiAction {
 		'sourceImsi' =>  ['$in'=>['imsi']],
 		'targetImsi' =>  ['$in'=>['called_imsi']],
 		'serviceType' =>  ['$in'=>['basic_service_type']],
+		'cellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci', 'called_subs_last_ci','calling_subs_last_ci']],
 		'startCellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci']],
 // 		'startSector' =>  ['$in'=>['']],
 //		'startCgi' =>  ['$in'=>['']],
+		'lac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac', 'called_subs_last_lac', 'callling_subs_last_lac']],
 		'startLac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac']],
 		'startSiteName' =>  ['$in'=>['apnni']],
 		'startSiteAddress' =>  ['$in'=>['sgsn_address']],
@@ -359,7 +361,7 @@ class ReportAction extends ApiAction {
 							$localOr['$or'][]  = $this->fieldResolution($input[$inputField], $internalField, $equalOp);
 						}
 					} else {
-						$localOr['$or'][]  = [ $internalFields => [$equalOp => "".$input[$inputField]] ];
+						$localOr['$or'][]  = [ $internalFields => [$equalOp => $input[$inputField]] ];
 					}
 				}
 				$query[] = $localOr;
@@ -372,7 +374,7 @@ class ReportAction extends ApiAction {
 		if(is_array($field)) {
 			return [ $field['field'] => [$equalOp => is_array($input) ? array_map(function ($i) use($field) {return sprintf($field['modifier'],$i);},$input)  : sprintf($field['modifier'],$input) ] ];
 		}
-		return [ $field => [$equalOp => is_array($input) ? $input : ["".$input] ] ];
+		return [ $field => [$equalOp => is_array($input) ? $input : [$input] ] ];
 	}
 
 	protected function translateResults($results) {
