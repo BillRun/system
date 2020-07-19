@@ -134,7 +134,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		if (!empty($this->connection)){
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
-			$this->connection->put($local, $remote);
+			return $this->connection->put($local, $remote);
 		}
 		else {
 			if ($this->move_exported) {
