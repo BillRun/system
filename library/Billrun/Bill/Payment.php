@@ -42,7 +42,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected $known_sources;
 	
 	protected static $aids;
-	/**
+        
+        const txIdLength = 13;
+        /**
 	 * 
 	 * @param type $options
 	 */
@@ -121,6 +123,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			if (isset($options['note'])) {
 				$this->data['note'] = $options['note'];
+			}
+			if (isset($options['bills_merged'])) {
+				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
 			$this->data['urt'] = new MongoDate();
@@ -210,6 +215,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public static function getInstanceByid($id) {
+                $id = self::padTxId($id);
 		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->current();
 		if ($data->isEmpty()) {
 			return NULL;
@@ -471,7 +477,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (isset($this->data['waiting_for_confirmation'])){
 			$status = $this->data['waiting_for_confirmation'];
 		}
-		return is_null($status) ? false : $status;
+		return !empty($status);
 	}
 
 	/**
@@ -727,7 +733,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$payment->setPaymentStatus($response, $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
@@ -977,9 +983,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public static function createTxid() {
 		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
-		return str_pad($txid, 13, '0', STR_PAD_LEFT);
+		return self::padTxId($txid);
 	}
-	public static function createInstallmentAgreement($params) {
+        
+        public static function padTxId($txId) {
+            return str_pad($txId, self::txIdLength, '0', STR_PAD_LEFT);
+        }
+
+
+        public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
@@ -1075,7 +1087,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$totalAmountToDeny =  $denialAmount + $alreadyDenied;
 		return $totalAmountToDeny > $this->data['amount'];
 	}
-    
+
+	public static function mergeSpllitedInstallments($params) {
+		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
+		return $mergedInstallmentsObj->merge();
+	}
+
     /**
      * get bills affected by payment
      * 
