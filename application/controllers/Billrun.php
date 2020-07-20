@@ -319,6 +319,10 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		//Prevent command line injection
+		if (!is_bool($generatedPdf) || !is_numeric($billrunKey)) {
+			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
@@ -360,7 +364,7 @@ class BillrunController extends ApiController {
 		}
 		if (!empty($invoicesId)) {
 			$invoicesArray = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
-			if (empty($invoicesArray)) {
+			if (empty($invoicesArray) || count($invoicesArray) !== count(array_filter($invoicesArray,'is_numeric'))) {
 				throw new Exception("Illgal invoices");
 			}
 			$invoicesId = implode(',', $invoicesArray);			
