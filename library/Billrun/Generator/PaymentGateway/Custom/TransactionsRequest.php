@@ -44,7 +44,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->extraParamsDef = !empty($this->configByType['parameters']) ? $this->configByType['parameters'] : [];
 		$parametersString = "";
 		foreach ($this->extraParamsDef as $index => $param) { 
-			$field_name = @$param['field_name'] ? @$param['field_name'] : @$param['name'];
+			$field_name = !empty($param['field_name']) ? $param['field_name'] : $param['name'];
 			if (!empty($options[$field_name])) {
 				if ($param['type'] === "string") {
 					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
