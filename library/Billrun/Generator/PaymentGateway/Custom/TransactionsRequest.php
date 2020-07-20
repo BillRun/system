@@ -44,7 +44,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->extraParamsDef = !empty($this->configByType['parameters']) ? $this->configByType['parameters'] : [];
 		$parametersString = "";
 		foreach ($this->extraParamsDef as $index => $param) { 
-			$field_name = !empty($options[$param['field_name']]) ? $options[$param['field_name']] : $options[$param['name']];
+			$field_name = @$param['field_name'] ? @$param['field_name'] : @$param['name'];
 			if (!empty($options[$field_name])) {
 				if ($param['type'] === "string") {
 					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
@@ -272,14 +272,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		return false;
 	}
 	
-	protected function validateExtraParams() {
+		protected function validateExtraParams() {
 		$validated = true;
 		if (empty($this->extraParamsDef)) {
 			return $validated;
 		}
 		foreach ($this->extraParamsDef as $paramObj) {
 			$field_name = !empty($paramObj['field_name']) ? $paramObj['field_name'] : $paramObj['name'];
-			if (!empty($field_name)) {
+			if (empty($field_name)) {
 				$validated = false;
 				break;
 			}
