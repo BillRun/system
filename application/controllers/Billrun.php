@@ -185,6 +185,9 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
+		if (!$this->validateParams($params)) {
+			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
+		}
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
@@ -438,6 +441,59 @@ class BillrunController extends ApiController {
 		}
 		
 		return $paramsString;
+	}
+	
+	public function validateParams($params) {
+		foreach ($params as $name => $value) {
+			switch ($name) {
+				case 'date':
+					if (!strtotime($value)) {
+						return false;
+					}
+					break;
+				case 'invoices':
+					$invoices_array = !is_null($value) ? explode(",", $value) : null;
+					if (count($invoices_array) !== count(array_filter($invoices_array, 'is_numeric'))  && !is_null($invoices_array)) {
+						return false;
+					}
+					break;
+				case 'aids':
+					$aids_array = !is_null($value) ? explode(",", $value) : null;
+					if (count($aids_array) !== count(array_filter($aids_array, 'is_numeric')) && !is_null($aids_array)) {
+						return false;
+					}
+					break;
+				case 'billrun_key':
+					if (!is_numeric($value)) {
+						return false;
+					}
+					break;
+				case 'min_invoice_date':
+					if (!strtotime($value)) {
+						return false;
+					}
+					break;
+				case 'exclude_accounts':
+					$accounts_array = !is_null($value) ? explode(",", $value) : null;
+					if (count($accounts_array) !== count(array_filter($accounts_array, 'is_numeric')) && !is_null($accounts_array)) {
+						return false;
+					}
+					break;
+				case 'pay_mode':
+					if (!in_array($value, ['one_payment', 'multiple_payments'])) {
+						return false;
+					}
+					break;
+				case 'mode':
+					if (!in_array($value, ['refund', 'charge‎'])) {
+						return false;
+					}
+					break;
+				default:
+					return false;
+			}
+		}
+		return true;
 	}
 
 }
