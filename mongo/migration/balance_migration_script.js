@@ -1,147 +1,139 @@
-// need to set start end dates. 
+const time = ISODate();
+const services = getServices();
 
-from = ISODate("2020-01-30T21:00:00Z");
-to = ISODate("2020-06-30T21:00:00Z");
+services.forEach(function (service) {
+	const groups = getServiceGroups(service);
+	groups.forEach(function (group) {
+		const balances = getBalances(group);
+		balances.forEach(function (balance) {
+			// update/create add-on specific balance
+			db.balances.update(
+							{
+								aid: balance['aid'],
+								sid: balance['sid'],
+								from: balance['from'],
+								to: balance['to'],
+								period: balance['period'],
+								service_name: service['name'],
+								connection_type: 'postpaid',
+								priority: {
+									$exists: true,
+									$ne: 0
+								}
+							},
+							{
+								$setOnInsert: {
+									aid: balance['aid'],
+									sid: balance['sid'],
+									from: balance['from'],
+									to: balance['to'],
+									period: balance['period'],
+									start_period: balance['start_period'],
+									connection_type: balance['connection_type'],
+									current_plan: balance['current_plan'],
+									plan_description: balance['plan_description'],
+									priority: service['service_id'] || Math.floor(Math.random() * 10000000000000000) + 1,
+									service_name: service['name'],
+									added_by_script: ISODate(),
+									['balance.groups.' + group['name'] + '.total']: balance['balance']['groups'][group['name']]['total'],
+									['balance.totals.' + group['usaget'] + '.cost']: 0
+								},
+								$inc: {
+									['balance.groups.' + group['name'] + '.count']: balance['balance']['groups'][group['name']]['count'],
+									['balance.groups.' + group['name'] + '.usagev']: balance['balance']['groups'][group['name']]['usagev'],
+									['balance.totals.' + group['usaget'] + '.usagev']: balance['balance']['groups'][group['name']]['usagev'],
+									['balance.totals.' + group['usaget'] + '.count']: balance['balance']['groups'][group['name']]['count']
+								},
+								$set: {
+									['balance.groups.' + group['name'] + '.left']: balance['balance']['groups'][group['name']]['left']
+								}
+							},
+							{
+								upsert: true
+							}
+			);
 
-function isEmpty(obj) {
-    for(var key in obj) {
-        if(obj.hasOwnProperty(key))
-            return false;
-    }
-    return true;
-}
+			// update balance totals
+			balance['balance']['totals'][group['usaget']]['usagev'] -= balance['balance']['groups'][group['name']]['usagev'];
+			balance['balance']['totals'][group['usaget']]['count'] -= balance['balance']['groups'][group['name']]['count'];
 
+			// remove group from monthly balance
+			delete balance['balance']['groups'][group['name']];
+			if (typeof Object.keys(balance['balance']['groups'])[0] == 'undefined') {
+				delete balance['balance']['groups'];
+			}
+			balance['updated_by_script'] = ISODate();
+			db.balances.save(balance);
+		});
+	});
 
-function setUsageData(old_count,final_left,new_total,final_usagev){
-    
-    new_updated_service = {
-                          "count": old_count,
-                          "left" : final_left,
-                          "total" : new_total,
-                          "usagev": final_usagev          
-                        };
-    return new_updated_service;
-}
-
-function setTotal(new_cost,new_count,totals_object){
-    totals_object['cost'] = new_cost;
-    totals_object['count'] = new_count;
-    return totals_object;
-}
-
-
-function checkService(service_name,from,to,sid){
-//check if service non-custom
-var service_non_custom = db.services.find({name:service_name,balance_period:{$exists:0}}).toArray()[0];
-
-if(!isEmpty(service_non_custom)){
-    //check if not connected to subs plan 
-    var sub_service_check = db.subscribers.find({sid: sid, services:{$exists:1,$ne: []}},{services:1}).toArray()[0];
-    if(!isEmpty(sub_service_check)&&(sub_service_check!=="undefined")){   
-    for (var i = 0; i < sub_service_check['services'].length; i++) {
-       
-    if((sub_service_check['services'][i]['name'] === service_name)&&(from >=sub_service_check['services'][i]['from'])&&
-            (to <=sub_service_check['services'][i]['to'])){
-        return true;
-    }
-    }
-}
-}
-    return false;
-
-}
-
-function checkIfBalanceExists(service_name){
-    
-    location = 'balance.groups.'+[service_name]+'.left';        
-    service_exists = db.balances.find({from:{$gte:from},to:{$lte:to}, service_name:service_name,
-    [location]:{$gt:0}}).toArray()[0];
-
-    // case all service usage is full, but server exists
-     if (typeof service_exists === "undefined"){
-    service_exists = db.balances.find({from:{$gte:from},to:{$lte:to}, service_name:service_name,
-    [location]:{$eq:0}}).toArray()[0];
-     }
-
-    return service_exists;
-    
-}
-
-old_balances = db.balances.find({from:{$gte:from},to:{$lte:to}, priority:{$eq:0},service_name:{$exists:0}});
-
-if(old_balances.balance!=="undefined"){
-
-
-old_balances.forEach(function (current_balance){
-       
-    id = current_balance._id;
-    sid = current_balance.sid;
-    data = current_balance['balance']['groups'];
-
-          for ( var service_name in data) {
-            is_valid = checkService(service_name,from,to,sid); 
-            if(is_valid){
-               
-               new_balance_found = checkIfBalanceExists(service_name);
-               
-               if(!isEmpty(new_balance_found)){
-                   print("this service name exists, updating...");
-                // old service data
-                    old_group_data = current_balance['balance']['groups'][service_name];
-                    new_group_data = new_balance_found['balance']['groups'][service_name];
-                    
-                    call_or_data = null;
-                //check if service is data or calls 
-                    if (typeof (new_group_data['usage_types']) === "undefined") {
-                        call_or_data = "call";
-                    } else {
-                        call_or_data = "data";
-                    }
-                    
-                    
-                    old_count = old_group_data.count;
-                    old_left = old_group_data.left;
-                    old_total = old_group_data.total;
-                    old_usagev =  old_group_data.usagev;
-                    old_cost = current_balance['balance']['totals'][call_or_data].cost;
-                  
-                //new serivce data
-                    new_left = new_group_data.left;
-                    new_total = new_group_data.total;
-                    new_usagev = new_group_data.usagev;
-                    new_cost = old_cost + new_balance_found['balance']['totals'][call_or_data].cost;
-                    new_count = old_count+new_group_data.count;
-
-                //final service data
-                    final_usagev = old_usagev + new_usagev;
-                    
-                    //set service usage data
-                    final_left = new_total - final_usagev;
-                    if(final_left<0){
-                        final_left = 0;
-                    }
-                    new_updated_service = setUsageData(old_count,final_left,new_total,final_usagev);
-                    //set total object
-                    new_total_object = setTotal(new_cost,new_count,new_balance_found['balance']['totals'][call_or_data]);             
-                    new_balance_found['balance']['groups'][service_name] = new_updated_service;
-                    new_balance_found['balance']['totals'][call_or_data] = new_total_object;
-                    new_balance_found['service_updated'] = true;
-                    db.balances.save(new_balance_found);
-                
-                
-                unset_old_values = 'balance.'+'groups.'+service_name;
-                print(unset_old_values);
-                db.balances.update(
-                        { _id: id },
-                        { $unset: { [unset_old_values]: "" } }
-                        )                   
-               }
-                else{
-                    //service doesn't exist
-                    print("no aligned services found");
-                }                                    
-            }
-            
-            }
 });
+
+// get services aligned to cycle that are not included in any plan
+function getServices() {
+	const ret = [];
+	const alignedToCycleServices = db.services.find({
+		from: {$lte: time},
+		to: {$gt: time},
+		$or: [
+			{balance_period: {$exists: false}},
+			{balance_period: 'default'}
+		]
+	});
+	var servicesIncludedInPlans = db.plans.aggregate([
+		{
+			$match: {
+				from: {$lte: time},
+				to: {$gt: time},
+				'include.services': {$exists: true}
+			}
+		},
+		{
+			$unwind: '$include.services'
+		},
+		{
+			$project: {
+				_id: 0,
+				service: '$include.services'
+			}
+		}
+	]);
+
+	const servicesIncludedInPlansNames = servicesIncludedInPlans.map(x => x['service']);
+	alignedToCycleServices.forEach(function (service) {
+		if (servicesIncludedInPlansNames.indexOf(service['name']) == -1) {
+			ret.push(service);
+		}
+	});
+
+	return ret;
+}
+
+// get monthly balances with existing group
+function getBalances(group) {
+	const ret = db.balances.find({
+		from: {$lte: time},
+		to: {$gt: time},
+		['balance.groups.' + group['name']]: {$exists: true},
+		priority: 0
+	});
+
+	return ret;
+}
+
+function getServiceGroups(service) {
+	const ret = [];
+	if (typeof service['include'] == 'undefined' || typeof service['include']['groups'] == 'undefined') {
+		return ret;
+	}
+	
+	for (var group in service['include']['groups']) {
+		ret.push({
+			name: group,
+			usaget: Object.keys(service['include']['groups'][group]['usage_types'])[0],
+			value: service['include']['groups'][group]['value'],
+		});
+	}
+	
+	return ret;
 }
