@@ -350,7 +350,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 						case 2: $ret['rac'] =  intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6)));
 							break;
 						default :
-							Billrun_Factory::log("Unidentified location information type...z just keeping all the left overdata in 'unknown' field",Zend_log::WARN);
+							Billrun_Factory::log("Unidentified location information type... just keeping all the left overdata in 'unknown' field",Zend_log::WARN);
 							$ret['unknown'] =  Billrun_Util::bcd_unpack('C*', substr($fieldData,6));
  					}
 				}

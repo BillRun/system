@@ -802,6 +802,15 @@ class Billrun_Util {
 	public static function bcd_decode($binary) {
 		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
 	}
+	/**
+	 * Unpack a bcd encoded binary value into a decoded string.
+	 * @param $byteDef how to decode the packed bytes (based on php pack/unpack funtion)
+	 * @param $data  the packed data to decode
+	 * @return the BCD decoded string
+	 */
+	public static function bcd_unpack($byteDef,$data) {
+		return implode('',array_map(function($b){return  Billrun_Util::bcd_decode($b);},array_filter(unpack($byteDef, $data),function($a){return $a != 0xF;})));
+	}
 
 	/**
 	 * 
