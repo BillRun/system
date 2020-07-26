@@ -37,7 +37,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->fileNameParams = isset($this->configByType['filename_params']) ? $this->configByType['filename_params'] : '';
 		$this->fileNameStructure = isset($this->configByType['filename']) ? $this->configByType['filename'] : '';
 		$this->initChargeOptions($options);
-		$this->localDir = $this->configByType['export']['export_directory'];
+		if (isset($options['backup_path'])) {
+			$this->localDir = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
+		} elseif (isset($this->configByType['export']['export_directory'])) {
+			$this->localDir = $this->configByType['export']['export_directory'];
+		} else {
+			$this->localDir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', './backups/' . $this->getType()));
+		}
 		if (isset($this->configByType['filtration'])) {
 			$this->generatorFilters = $this->configByType['filtration'];
 		}
@@ -74,8 +80,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                 $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
                 $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
                 $this->logFile->updateLogFileField('payments_file_type', $options['type']);
+				$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
                 $this->logFile->updateLogFileField('parameters_string', $parametersString);
-                $this->logFile->updateLogFileField('correlation_value', $this->logFile->getStamp());
 	}
 
 	public function load() {
@@ -310,5 +316,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		
 		return $validated;
 	}
-
+	
+	public function getType() {
+		return "payment_gateways";
+	}
 }

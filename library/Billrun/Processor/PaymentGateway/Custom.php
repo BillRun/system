@@ -143,6 +143,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 }
 				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
+		$this->informationArray['process_time'] = new MongoDate(time());
                 $this->updateLogFile();
 	}
 
@@ -221,7 +222,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
-                                $this->informationArray['transactions']['rejected']++;
+                $this->informationArray['transactions']['rejected']++;
+				$this->informationArray['process_time'] = new MongoDate(time());
 			}
 		}
 	}
