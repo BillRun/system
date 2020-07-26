@@ -342,7 +342,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				return false;
 			}
 			
-			$pricingData = $this->getLineIncludedPricingData($pricingData);
+			$updatedPricingData = $this->getLineIncludedPricingData($pricingData);
 			$volume -= $overPlanVolume;
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
@@ -350,7 +350,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 			
 		if (isset($pricingData['arategroups'])) {
-			$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			if (isset($updatedPricingData)) {
+				$balancePricingData = array_diff_key($updatedPricingData, array('arategroups' => 'val')); // clone issue
+			} else {
+				$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			}
 			$pricingData['arategroups'] = $pricingData['arategroups'];
 			$arategroups = array(); // will used to flat the structure of pricingData['arategroups'] item
 			foreach ($pricingData['arategroups'] as /* $balance_key => */ &$balanceData) {
