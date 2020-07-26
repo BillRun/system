@@ -54,13 +54,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		$parametersString = trim($parametersString, ",");
 		$this->options = $options;
-                $className = $this->getGeneratorClassName();
-                $generatorOptions = $this->buildGeneratorOptions();
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
 		$this->createLogFile();
-                try{
-                $this->fileGenerator = new $className($generatorOptions);
-                }catch(Exception $ex){
-                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
+		try {
+			$this->fileGenerator = new $className($generatorOptions);
+		} catch (Exception $ex) {
+			$this->logFile->updateLogFileField('errors', $ex->getMessage());
 			$this->logFile->save();
                     throw new Exception($ex->getMessage());
                 }
@@ -70,8 +70,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 		$this->logFile->setStartProcessTime();
 				$this->logFile->updateLogFileField('file_status',Billrun_Util::getFieldVal(	$options['file_status'],
-																							Billrun_Util::getFieldVal(	$this->configByType['file_status'],
-																														static::INITIAL_FILE_STATE	)	)	);
+		Billrun_Util::getFieldVal(	$this->configByType['file_status'], static::INITIAL_FILE_STATE)));
                 $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
                 $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
                 $this->logFile->updateLogFileField('payments_file_type', $options['type']);
@@ -83,9 +82,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if (!$this->validateExtraParams()) {
 			$message = "Parameters not validated for file type " .  $this->configByType['file_type'] . '. No file was generated.'; 
 			$this->logFile->updateLogFileField('errors', $message);
+			$this->logFile->saveLogFileFields();
 			throw new Exception($message);
 			return;
 		}
+		$this->logFile->setStartProcessTime();
 		Billrun_Factory::log()->log('Parameters are valid for file type ' .  $this->configByType['file_type'] . '. Starting to pull entities..' , Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';

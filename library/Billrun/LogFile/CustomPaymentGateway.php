@@ -54,7 +54,6 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data['warnings'] = [];
 			$this->data['info'] = [];
 			$this->data['rand'] = Billrun_Util::generateRandomNum();
-			$this->setStartProcessTime();
 			$this->setStamp();
 			$this->save();
 		}
