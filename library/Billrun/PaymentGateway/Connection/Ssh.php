@@ -45,7 +45,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		$this->connection->changeDir($path);
 		try {
 			Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-			$files = $this->connection->getListOfFiles($path, true);
+			$files = $this->connection->getListOfFiles($path, $this->recursive_mode);
 			$type = $this->source;
 			$count = 0;
 			$targetPath = $this->workspace;
