@@ -62,9 +62,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
 		}
-		if(empty($this->invoices)) {
-			Billrun_Factory::dispatcher()->trigger('afterCycleConfirmed', array($invoicesIds, (string) $this->stamp));
-		}
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
