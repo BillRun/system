@@ -17,7 +17,7 @@ class Billrun_Utils_Esb  {
            $this->stompClient = new Stomp('tcp://'. $host .":" . $port, $user, $pass);
         } catch(Exception $ex){
             Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-        }	
+        }
     }
 
     /**
@@ -40,7 +40,10 @@ class Billrun_Utils_Esb  {
      * Get Messages  from the ESB for a given queue.
      */
     public function getMsg($queueName, $waitTime = 86400000,$ack = TRUE) {
-        do {
+        if(!isset($this->stompClient)){
+			return FALSE;
+		}
+		do {
         $starttime =  microtime(true);
 			$this->stompClient->setReadTimeout($waitTime/1000);
 			try {
@@ -66,7 +69,10 @@ class Billrun_Utils_Esb  {
      * Regster to given queues on the ESB
      */
     public function subscribeToQueues($queues, $headers = array()) {
-        foreach($queues as $qname) {
+        if(!isset($this->stompClient)){
+			return FALSE;
+		}
+		foreach($queues as $qname) {
             $this->stompClient->subscribe($qname, $headers);
         }	
     }
