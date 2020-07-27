@@ -54,6 +54,10 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 			}
 			foreach ($files as $file) {
 				Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
+				if (!$this->connection->isFile($path . "/" . $file)) {
+					Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::DEBUG);
+					continue;
+				}
 				Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 				if (!$this->isFileValid($file)) {
 					Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::DEBUG);
