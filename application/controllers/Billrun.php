@@ -447,45 +447,28 @@ class BillrunController extends ApiController {
 		foreach ($params as $name => $value) {
 			switch ($name) {
 				case 'date':
-					if (!strtotime($value)) {
-						return false;
-					}
-					break;
-				case 'invoices':
-					$invoices_array = !is_null($value) ? explode(",", $value) : null;
-					if (count($invoices_array) !== count(array_filter($invoices_array, 'is_numeric'))  && !is_null($invoices_array)) {
-						return false;
-					}
-					break;
-				case 'aids':
-					$aids_array = !is_null($value) ? explode(",", $value) : null;
-					if (count($aids_array) !== count(array_filter($aids_array, 'is_numeric')) && !is_null($aids_array)) {
-						return false;
-					}
-					break;
-				case 'billrun_key':
-					if (!is_numeric($value)) {
-						return false;
-					}
-					break;
 				case 'min_invoice_date':
 					if (!strtotime($value)) {
 						return false;
 					}
 					break;
+				case 'invoices':
+				case 'aids':
 				case 'exclude_accounts':
-					$accounts_array = !is_null($value) ? explode(",", $value) : null;
-					if (count($accounts_array) !== count(array_filter($accounts_array, 'is_numeric')) && !is_null($accounts_array)) {
+					$values_array = !is_null($value) ? explode(",", $value) : null;
+					if (count($values_array) !== count(array_filter($values_array, 'is_numeric'))  && !is_null($values_array)) {
+						return false;
+					}
+					break;
+				case 'billrun_key':
+					if (!Billrun_Util::isBillrunKey($value)) {
 						return false;
 					}
 					break;
 				case 'pay_mode':
-					if (!in_array($value, ['one_payment', 'multiple_payments'])) {
-						return false;
-					}
-					break;
 				case 'mode':
-					if (!in_array($value, ['refund', 'charge‎'])) {
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					if (!in_array($value, $array)) {
 						return false;
 					}
 					break;
