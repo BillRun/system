@@ -194,7 +194,21 @@ class Models_Action_Import extends Models_Action {
 
 	protected function getMapping() {
 		$collection = $this->getCollectionName();
-		return Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
+		$config = Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
+		$fields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
+		$importable_fields = array_replace_recursive(
+			array_column($config, null, 'field_name'),
+			array_column($fields, null, 'field_name'),
+		);
+		$importable_fields = array_filter($importable_fields, function($field) {
+			return Billrun_Util::getIn($field, 'importable', true);
+		});
+		$mapper = array_reduce($importable_fields, function ($acc, $field) {
+			$acc = array_merge($acc, $this->createRecursionMapperKey($field));
+			return $acc;
+		}, []);
+		
+		return $mapper;
 	}
 	
 	protected function importPredefinedMappingEntity($row, $mapping) {
@@ -246,11 +260,39 @@ class Models_Action_Import extends Models_Action {
 		
 		return $ret;
 	}
+	
+	protected function getExportMapper() {
+		$collection = $this->getCollectionName();
+		$fields = Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
+		$config = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.export.mapper", []);;
+		$exportable_fields = array_replace_recursive(
+			array_column($config, null, 'field_name'),
+			array_column($fields, null, 'field_name'),
+		);
+		$exportable_fields = array_filter($exportable_fields, function($field) {
+			return Billrun_Util::getIn($field, 'exportable', true);
+		});
+		$mapper = array_reduce($exportable_fields, function ($acc, $field) {
+			$acc = array_merge($acc, $this->createRecursionMapperKey($field));
+			return $acc;
+		}, []);
+		return $mapper;
+	}
 
 	protected function translateValue($row, $params) {
-		$rowFieldName = Billrun_Util::getIn($params, 'title', $params['field_name']);
+		$export_config = $this->getExportMapper();
+		$rowFieldName = Billrun_Util::getIn($params, 'title', $export_config[$params['field_name']]['title']);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
-		$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
+		$isMultiple = Billrun_Util::getIn($params, 'multiple', false);
+		$callback = Billrun_Util::getIn($params, 'callback', false);
+		if (!empty($callback) && method_exists($this, $callback)) {
+			$value = $this->{$callback}($row, $params);
+		} else {
+			$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
+		}
+		if ($isMultiple) {
+			$type = 'array';
+		}
 		
 		switch ($type) {
 			case 'int':
@@ -356,6 +398,26 @@ class Models_Action_Import extends Models_Action {
 			$details['updated'] = $updated;
 		}
 		return $details;
+	}
+	
+	protected function createRecursionMapperKey($config, $configs = []) {
+		$max_array_count = 1; // TODO:: TEMP need to find a way how to calculate it from DB
+		$path = $config['field_name'];
+		$title = isset($config['title']) ? $config['title'] : false;
+		$matches = [];
+		preg_match('/{[0-9]+}/', $path, $matches);
+		if (empty($matches)) {
+			$configs[$path] = $config;
+			return $configs;
+		}
+		for ($idx = 0; $idx < $max_array_count; $idx++) {
+			$config['field_name'] = str_replace($matches[0], $idx, $path);
+			if ($title !== false) {
+				$config['title'] = str_replace($matches[0], $idx, $title);
+			}
+			$configs = $this->createRecursionMapperKey($config, $configs);
+		}
+		return $configs;
 	}
 
 }

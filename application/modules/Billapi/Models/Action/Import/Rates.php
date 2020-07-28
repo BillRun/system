@@ -32,6 +32,51 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 * 
 	 */
 	
+	protected function setTaxValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$type = $data[$export_config['tax.0.type']['title']];
+		$taxation = $data[$export_config['tax.0.taxation']['title']];
+		$custom_logic = $data[$export_config['tax.0.custom_logic']['title']];
+		$custom_tax = $data[$export_config['tax.0.custom_tax']['title']];
+		return [[
+			"type" => $type,
+			"taxation" => $taxation,
+			"custom_logic" => $custom_logic,
+			"custom_tax" => $custom_tax,
+		]];
+	}
+	
+	protected function setPriceValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$from = $this->fromArray($data[$export_config['price.from']['title']]);
+		$to = $this->fromArray($data[$export_config['price.to']['title']]);
+		$interval = $this->fromArray($data[$export_config['price.interval']['title']]);
+		$price = $this->fromArray($data[$export_config['price.price']['title']]);
+		$uom_range = $this->fromArray($data[$export_config['price.uom_display.range']['title']]);
+		$uom_interval = $this->fromArray($data[$export_config['price.uom_display.interval']['title']]);
+
+		$rate = [];
+		foreach ($from as $idx => $value) {
+			$rate[] = [
+				'from' => floatval($value),
+				'to' => is_numeric($to[$idx]) ? floatval($to[$idx]) : $to[$idx],
+				'interval' => floatval($interval[$idx]),
+				'price' => floatval($price[$idx]),
+				'uom_display' => [
+					'range' => $uom_range[$idx],
+					'interval' => $uom_interval[$idx],
+				]
+			];
+		}
+		return [
+			$data[$export_config['usaget']['title']] => [
+				$data[$export_config['plan']['title']] => [
+					'rate' => $rate,
+				]
+			],
+		];
+	}
+	
 	protected function runQuery() {
 		$rates = array();
 		foreach ($this->update as $rate) {
