@@ -12,17 +12,19 @@ class Billrun_Utils_Esb {
 		$port = $this->queueConfig['port'] ?? '';
 		$user = $this->queueConfig['user'] ?? '';
 		$pass = $this->queueConfig['pass'] ?? '';
+		Billrun_Factory::log()->log("Connecting to Message Broker", Zend_Log::INFO);
+		// Check if Stomp class exists
+		$classname = 'Stomp';
+		if (!class_exists($classname)) {
+			throw new Exception('Something went wrong while trying to connect to Message Broker. Could not find class: ' . $classname);
+		}
+		if (empty($host)) {
+			throw new Exception('Something went wrong while trying to connect to Message Broker. Host empty.');
+		}
 		try {
-			Billrun_Factory::log()->log("Connecting to Message Broker", Zend_Log::INFO);
-			// Check if Stomp class exists
-			$classname = 'Stomp';
-			if (!class_exists($classname)) {
-				Billrun_Factory::log("Could not find class: " . $classname);
-				return;
-			}
 			$this->stompClient = new $classname('tcp://' . $host . ":" . $port, $user, $pass);
 		} catch (Exception $ex) {
-			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			throw new Exception('Something went wrong while trying to connect to Message Broker. Esb Recieve Error : ' . $ex->getMessage());
 		}
 	}
 
@@ -30,15 +32,15 @@ class Billrun_Utils_Esb {
 	 * Send a message to the ESB on a given queue.
 	 */
 	public function sendMsg($msg, $queueName, $headers = []) {
+		Billrun_Factory::log()->log('Sending message to queue: ' . $queueName, Zend_Log::INFO);
+		Billrun_Factory::log()->log('Message: ' . $msg, Zend_Log::INFO);
 		if (!isset($this->stompClient)) {
-			return FALSE;
+			throw new Exception('Something went wrong while trying to Send message to queue: ' . $queueName . '. Stomp not exist');
 		}
 		try {
-			Billrun_Factory::log()->log("Sending message", Zend_Log::INFO);
 			return $this->stompClient->send($queueName, $msg, $headers);
 		} catch (Exception $e) {
-			Billrun_Factory::log('Esb send Error : ' . $e->getMessage(), Zend_Log::CRIT);
-			return FALSE;
+			throw new Exception('Something went wrong while trying to Send message to queue: ' . $queueName . 'Esb send Error : ' . $e->getMessage());
 		}
 	}
 
@@ -46,8 +48,9 @@ class Billrun_Utils_Esb {
 	 * Get Messages  from the ESB for a given queue.
 	 */
 	public function getMsg($queueName, $waitTime = 86400000, $ack = TRUE) {
+		Billrun_Factory::log()->log("Geting messages from queue: " . $queueName, Zend_Log::INFO);
 		if (!isset($this->stompClient)) {
-			return FALSE;
+			throw new Exception('Something went wrong while trying to get messages from queue: ' . $queueName . '. Stomp not exist');
 		}
 		do {
 			$starttime = microtime(true);
@@ -60,13 +63,13 @@ class Billrun_Utils_Esb {
 						if ($ack) {
 							$this->stompClient->ack($esbFrame);
 						}
-
-						return $esbFrame->body;
+						$messages = $esbFrame->body;
+						Billrun_Factory::log()->log("messages: " . print_r($messages, true), Zend_Log::INFO);
+						return $messages;
 					}
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log('Esb Recieve Error : ' . $e->getMessage(), Zend_Log::CRIT);
-				return FALSE;
+				throw new Exception('Something went wrong while trying to get messages from queue: ' . $queueName . '. Esb Recieve Error : ' . $e->getMessage());
 			}
 			$waitTime -= microtime(true) - $starttime;
 		} while ($waitTime >= 0);
@@ -74,11 +77,12 @@ class Billrun_Utils_Esb {
 	}
 
 	/**
-	 * Regster to given queues on the ESB
+	 * Register to given queues on the ESB
 	 */
 	public function subscribeToQueues($queues, $headers = array()) {
+		Billrun_Factory::log()->log('Registering to queues: ' . print_r($queues, true), Zend_Log::INFO);
 		if (!isset($this->stompClient)) {
-			return FALSE;
+			throw new Exception('Something went wrong while trying to register to given queues. Stomp not exist');
 		}
 		foreach ($queues as $qname) {
 			$this->stompClient->subscribe($qname, $headers);
