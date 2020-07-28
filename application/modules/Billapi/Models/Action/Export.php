@@ -75,8 +75,8 @@ class Models_Action_Export extends Models_Action {
 		$fields = $this->getFieldsConfig();
 		$config = $this->getMapperConfig();
 		$exportable_fields = array_replace_recursive(
+			array_column($config, null, 'field_name'),
 			array_column($fields, null, 'field_name'),
-			array_column($config, null, 'field_name')
 		);
 		$exportable_fields = array_filter($exportable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
@@ -88,11 +88,16 @@ class Models_Action_Export extends Models_Action {
 		$mapper = $this->setCsvOrder($mapper);
 		return $mapper;
 	}
-
+	
 	protected function getRowValue($data, $path, $params) {
 		$defaultValue = Billrun_Util::getIn($params, 'default_value', null);
-		$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
+		$callback = Billrun_Util::getIn($params, 'callback', false);
+		if (!empty($callback) && method_exists($this, $callback)) {
+			$value = $this->{$callback}($data, $path, $params);
+		} else {
+			$value = Billrun_Util::getIn($data, explode('.', $path), $defaultValue);
+		}
 		if (empty($value) && $type !== 'boolean' && !in_array($value, [0, '0']) ) {
 			return '';
 		}
@@ -142,7 +147,13 @@ class Models_Action_Export extends Models_Action {
 		$query = [];
 		foreach ($this->query as $key => $value) {
 			if ($key === 'from') {
-				$query['to'] = ['$gte' => $value];
+				if (!empty($value)) {
+					$query['to'] = ['$gte' => $value];
+				}
+			} else if ($key === 'to') {
+				if (!empty($value)) {
+					$query['from'] = ['$lte' => $value];
+				}
 			} else {
 				$query[$key] = $value;
 			}
