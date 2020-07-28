@@ -885,6 +885,7 @@ function getServices() {
 	const alignedToCycleServices = db.services.find({
 		from: {$lte: time},
 		to: {$gt: time},
+		'include.groups': {$exists: true},
 		$or: [
 			{balance_period: {$exists: false}},
 			{balance_period: 'default'}
