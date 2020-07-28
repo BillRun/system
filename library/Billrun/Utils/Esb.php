@@ -12,18 +12,13 @@ class Billrun_Utils_Esb {
 		$port = $this->queueConfig['port'] ?? '';
 		$user = $this->queueConfig['user'] ?? '';
 		$pass = $this->queueConfig['pass'] ?? '';
-		try {
-			Billrun_Factory::log()->log("Connecting to Message Broker", Zend_Log::INFO);
-			// Check if Stomp class exists
-			$classname = 'Stomp';
-			if (!class_exists($classname)) {
-				Billrun_Factory::log("Could not find class: " . $classname);
-				return;
-			}
-			$this->stompClient = new $classname('tcp://' . $host . ":" . $port, $user, $pass);
-		} catch (Exception $ex) {
-			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+		Billrun_Factory::log()->log("Connecting to Message Broker", Zend_Log::INFO);
+		// Check if Stomp class exists
+		$classname = 'Stomp';
+		if (!class_exists($classname)) {
+			throw new Exception("Could not find class: " . $classname);
 		}
+		$this->stompClient = new $classname('tcp://' . $host . ":" . $port, $user, $pass);
 	}
 
 	/**
@@ -34,7 +29,8 @@ class Billrun_Utils_Esb {
 			return FALSE;
 		}
 		try {
-			Billrun_Factory::log()->log("Sending message", Zend_Log::INFO);
+			Billrun_Factory::log()->log("Sending message to queue: " . $queueName, Zend_Log::INFO);
+			Billrun_Factory::log()->log("Message: " . $msg, Zend_Log::INFO);
 			return $this->stompClient->send($queueName, $msg, $headers);
 		} catch (Exception $e) {
 			Billrun_Factory::log('Esb send Error : ' . $e->getMessage(), Zend_Log::CRIT);
