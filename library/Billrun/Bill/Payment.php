@@ -39,7 +39,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response');
 
 	protected static $aids;
-	/**
+        
+        const txIdLength = 13;
+        /**
 	 * 
 	 * @param type $options
 	 */
@@ -182,6 +184,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return Billrun_Bill_Payment
 	 */
 	public static function getInstanceByid($id) {
+                $id = self::padTxId($id);
 		$data = Billrun_Factory::db()->billsCollection()->query('txid', $id)->cursor()->current();
 		if ($data->isEmpty()) {
 			return NULL;
@@ -209,7 +212,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
-		unset($rawData['_id']);
+		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
 		return new $className($rawData);
@@ -400,6 +403,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->setPending(false);
+                $this->setConfirmationStatus(false);
 		return $this;
 	}
 
@@ -654,7 +659,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$payment->setPaymentStatus($response, $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
+				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
@@ -901,9 +906,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	public static function createTxid() {
 		$txid = Billrun_Factory::db()->billsCollection()->createAutoInc();
-		return str_pad($txid, 13, '0', STR_PAD_LEFT);
+		return self::padTxId($txid);
 	}
-	public static function createInstallmentAgreement($params) {
+        
+        public static function padTxId($txId) {
+            return str_pad($txId, self::txIdLength, '0', STR_PAD_LEFT);
+        }
+
+
+        public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
