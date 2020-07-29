@@ -323,7 +323,7 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		//Prevent command line injection
-		if (!is_bool($generatedPdf) || !is_numeric($billrunKey)) {
+		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
 			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
 		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
