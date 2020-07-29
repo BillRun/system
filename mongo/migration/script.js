@@ -817,55 +817,73 @@ services.forEach(function (service) {
 		const balances = getBalances(group);
 		balances.forEach(function (balance) {
 			// update/create add-on specific balance
-			db.balances.update(
-							{
-								aid: balance['aid'],
-								sid: balance['sid'],
-								from: balance['from'],
-								to: balance['to'],
-								period: balance['period'],
-								service_name: service['name'],
-								connection_type: 'postpaid',
-								priority: {
-									$exists: true,
-									$ne: 0
-								}
-							},
-							{
-								$setOnInsert: {
-									aid: balance['aid'],
-									sid: balance['sid'],
-									from: balance['from'],
-									to: balance['to'],
-									period: balance['period'],
-									start_period: balance['start_period'],
-									connection_type: balance['connection_type'],
-									current_plan: balance['current_plan'],
-									plan_description: balance['plan_description'],
-									priority: service['service_id'] || Math.floor(Math.random() * 10000000000000000) + 1,
-									service_name: service['name'],
-									added_by_script: ISODate(),
-									['balance.groups.' + group['name'] + '.total']: balance['balance']['groups'][group['name']]['total'],
-									['balance.totals.' + group['usaget'] + '.cost']: 0
-								},
-								$inc: {
-									['balance.groups.' + group['name'] + '.count']: balance['balance']['groups'][group['name']]['count'],
-									['balance.groups.' + group['name'] + '.usagev']: balance['balance']['groups'][group['name']]['usagev'],
-									['balance.totals.' + group['usaget'] + '.usagev']: balance['balance']['groups'][group['name']]['usagev'],
-									['balance.totals.' + group['usaget'] + '.count']: balance['balance']['groups'][group['name']]['count']
-								},
-								$set: {
-									['balance.groups.' + group['name'] + '.left']: balance['balance']['groups'][group['name']]['left']
-								}
-							},
-							{
-								upsert: true
-							}
-			);
+			const query = {
+				aid: balance['aid'],
+				sid: balance['sid'],
+				from: balance['from'],
+				to: balance['to'],
+				period: balance['period'],
+				service_name: service['name'],
+				connection_type: 'postpaid',
+				added_by_script: {$exists: true},
+				priority: {
+					$exists: true,
+					$ne: 0
+				}
+			};
+			
+			const setOnInsert = {
+				aid: balance['aid'],
+				sid: balance['sid'],
+				from: balance['from'],
+				to: balance['to'],
+				period: balance['period'],
+				start_period: balance['start_period'],
+				connection_type: balance['connection_type'],
+				current_plan: balance['current_plan'],
+				plan_description: balance['plan_description'],
+				priority: service['service_id'] || Math.floor(Math.random() * 10000000000000000) + 1,
+				service_name: service['name'],
+				added_by_script: ISODate(),
+				['balance.groups.' + group['name'] + '.total']: balance['balance']['groups'][group['name']]['total'],
+			};
+			
+			const inc = {
+				['balance.groups.' + group['name'] + '.count']: balance['balance']['groups'][group['name']]['count'],
+			};
+			
+			const set = {
+				['balance.groups.' + group['name'] + '.left']: balance['balance']['groups'][group['name']]['left'],
+			};
+			
+			// since monetary groups has no usaget - we can't update totals of monthly and add-on balances
+			// this might cause bugs if we have a case of monetary group, and event on usagev
+			// totals->[USAGET]->usagev will be incorrect in monthly and add-on balances
+			if (group['type'] == 'cost') {
+				inc['balance.groups.' + group['name'] + '.cost'] = balance['balance']['groups'][group['name']]['cost'];
+				setOnInsert['balance.cost'] = 0;
+			} else {
+				setOnInsert['balance.totals.' + group['usaget'] + '.cost'] = 0;
+				inc['balance.totals.' + group['usaget'] + '.usagev'] = balance['balance']['groups'][group['name']]['usagev'];
+				inc['balance.totals.' + group['usaget'] + '.count'] = balance['balance']['groups'][group['name']]['count'];
+				inc['balance.groups.' + group['name'] + '.usagev'] = balance['balance']['groups'][group['name']]['usagev'];
+				
+				// update monthly balance totals
+				balance['balance']['totals'][group['usaget']]['usagev'] -= balance['balance']['groups'][group['name']]['usagev'];
+				balance['balance']['totals'][group['usaget']]['count'] -= balance['balance']['groups'][group['name']]['count'];
+			}
+			
+			const update = {
+				$setOnInsert: setOnInsert,
+				$inc: inc,
+				$set: set,
+			};
+			
+			const options = {
+				upsert: true
+			};
 
-			// update balance totals
-			balance['balance']['totals'][group['usaget']]['usagev'] -= balance['balance']['groups'][group['name']]['usagev'];
-			balance['balance']['totals'][group['usaget']]['count'] -= balance['balance']['groups'][group['name']]['count'];
+			db.balances.update(query, update, options);
 
 			// remove group from monthly balance
 			delete balance['balance']['groups'][group['name']];
@@ -876,7 +894,6 @@ services.forEach(function (service) {
 			db.balances.save(balance);
 		});
 	});
-
 });
 
 // get services aligned to cycle that are not included in any plan
@@ -925,6 +942,7 @@ function getBalances(group) {
 	const ret = db.balances.find({
 		from: {$lte: time},
 		to: {$gt: time},
+		updated_by_script: {$exists: false},
 		['balance.groups.' + group['name']]: {$exists: true},
 		priority: 0
 	});
@@ -937,15 +955,18 @@ function getServiceGroups(service) {
 	if (typeof service['include'] == 'undefined' || typeof service['include']['groups'] == 'undefined') {
 		return ret;
 	}
-	
+
 	for (var group in service['include']['groups']) {
+		const type = typeof service['include']['groups'][group]['cost'] !== 'undefined' ? 'cost' : 'usaget';
 		ret.push({
 			name: group,
-			usaget: Object.keys(service['include']['groups'][group]['usage_types'])[0],
-			value: service['include']['groups'][group]['value'],
+			type,
+			usaget: type == 'usaget' ? Object.keys(service['include']['groups'][group]['usage_types'])[0] : '',
+			value: type == 'usaget' ? service['include']['groups'][group]['value'] : '',
+			cost: type == 'cost' ? service['include']['groups'][group]['cost'] : '',
 		});
 	}
-	
+
 	return ret;
 }
 // ============================= BRCD-2556: END ==============================================================================
