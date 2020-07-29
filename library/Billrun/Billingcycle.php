@@ -116,12 +116,8 @@ class Billrun_Billingcycle {
 	 * Return the date constructed from the current billrun key
 	 * @return string
 	 */
-	public static function getDatetime($billrunKey, $customer = null, $invoicing_day = null) {
-		$config = Billrun_Factory::config();
-		$dayofmonth =  !is_null(Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', null)) ? Billrun_Factory::config()->getConfigValue('billrun.invoicing_day', 1) : Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		if($config->isMultiDayCycle()){
-			$dayofmonth = (!is_null($customer) && !is_null($customer['invoicing_day'])) ? $customer['invoicing_day'] : !is_null($invoicing_day) ? $invoicing_day : $dayofmonth;
-		}
+	public static function getDatetime($billrunKey, $invoicing_day = null) {
+		$dayofmonth = $config->isMultiDayCycle() && !empty($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
 		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
@@ -723,4 +719,15 @@ class Billrun_Billingcycle {
             }
             return $invoicesArray;
         }
+		
+	public static function getCustomerInvoicingDay($customer) {
+		if (empty($customer)) {
+			return null;
+		}
+		if ($customer instanceof Mongodloid_Entity) {
+			$customer = $customer->getRawData();
+		}
+		return !empty($customer['invoicing_day']) ? $customer['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+	}
+	
 }
