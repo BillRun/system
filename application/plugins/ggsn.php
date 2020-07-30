@@ -334,27 +334,41 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				return $ret;
 			},
 			'location_information' => function($fieldData) {
+				Billrun_Factory::log(json_encode($fieldData));
 				list($locationType) = array_values(unpack('C1', $fieldData));
 				$ret = ['loc_type'=> $locationType];
 				if(isset($locationType)) {
 					$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,1));
 					$ret['mcc'] = substr($mcc,0,3);
 					$ret['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,3)). substr($mcc,3,1);
-					$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4)));
+// 					$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4)));
 
 					switch($locationType) {
-						case 0 : $ret['ci'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6)));
+						case 0 :
+						case 1:
+							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
+							$ret['ci'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
 							break;
-						case 1: $ret['sac'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6)));
+// 						case 1:
+// 							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
+// 							$ret['sac'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
+// 							break;
+						case 2:
+							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
+							$ret['rac'] =  intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
 							break;
-						case 2: $ret['rac'] =  intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6)));
+						case 24:
+							$ret['tac'] = implode('',unpack('H4', substr($fieldData,4)));
+							$ret['ecgi'] =  intval(Billrun_Util::bcd_unpack('C3', substr($fieldData,6)));
+							 $ret['eci'] =  implode('',unpack('H*', substr($fieldData,9)));
 							break;
+
 						default :
-							Billrun_Factory::log("Unidentified location information type... just keeping all the left overdata in 'unknown' field",Zend_log::WARN);
+							Billrun_Factory::log("Unidentified location information type... just keeping all the left over data in 'unknown' field.",Zend_log::WARN);
 							$ret['unknown'] =  Billrun_Util::bcd_unpack('C*', substr($fieldData,6));
  					}
 				}
-// 				Billrun_Factory::log(json_encode($ret));
+
 				return $ret;
 			},
 			'default' => function($type, $data) {
