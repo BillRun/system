@@ -799,8 +799,20 @@ class Billrun_Util {
 	 * @param int $binary
 	 * @return int
 	 */
-	public static function bcd_decode($binary) {
-		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
+	public static function bcd_decode($binary,$reverse = FALSE) {
+		return $reverse ?
+				((($binary >> 4) < 10) ? ($binary >> 4) : '' ) . ($binary & 0xF)
+				:
+				($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
+	}
+	/**
+	 * Unpack a bcd encoded binary value into a decoded string.
+	 * @param $byteDef how to decode the packed bytes (based on php pack/unpack funtion)
+	 * @param $data  the packed data to decode
+	 * @return the BCD decoded string
+	 */
+	public static function bcd_unpack($byteDef,$data,$reverse = FALSE) {
+		return implode('',array_map(function($b) use ($reverse) {return  Billrun_Util::bcd_decode($b,$reverse);},array_filter(unpack($byteDef, $data),function($a){return $a != 0xF;})));
 	}
 
 	/**

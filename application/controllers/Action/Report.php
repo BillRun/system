@@ -25,7 +25,7 @@ class ReportAction extends ApiAction {
 		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s'] ]],
 //		'sourceEndpointType' =>  ['$in'=>['']],
 //		'targetEndpointType' =>  ['$in'=>['']],
-		'sourceImsi' =>  ['$in'=>['imsi']],
+		'sourceImsi' =>  ['$in'=>['calling_imsi']],
 		'targetImsi' =>  ['$in'=>['called_imsi']],
 		'serviceType' =>  ['$in'=>['basic_service_type']],
 		'cellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci', 'called_subs_last_ci','calling_subs_last_ci']],
@@ -244,6 +244,10 @@ class ReportAction extends ApiAction {
 
 		$ipmQuery = $this->getMongoQueryFromInput($ipmappingInput);
 		$ipmCursor = Billrun_Factory::db()->ipmappingCollection()->query($ipmQuery)->cursor()->sort(['urt'=>-1])->setRawReturn(true);
+		$hint = $this->getHintForQuery($ipmQuery, $this->hintMapping);
+		if(!empty($hint)) {
+			$ipmCursor->hint($hint);
+		}
 		$upto = PHP_INT_MAX;
 		$ipmappings = [];
 		Billrun_Factory::log('loading ipmapping...',Zend_log::DEBUG);
@@ -265,10 +269,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
-		$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
-		if(!empty($hint)) {
-			$cursor->hint($hint);
-		}
+		$cursor->hint(['urt'=>1,'served_pdp_address'=>1]);
 
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
@@ -397,7 +398,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
-				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec) {
+				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec && $cdr['served_pdp_address'] == $mapping['internal_ip']) {
 					$cdr['ipmapping'] = array_intersect_key($mapping, $this->ipMapFieldsToReturn);
 					$retRows[] = $cdr;
 				}
