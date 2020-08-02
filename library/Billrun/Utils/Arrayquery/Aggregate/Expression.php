@@ -160,7 +160,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 
 	protected function _min($data, $expression, $pastValue = null) {
 		$currValue = $this->evaluate($data, $expression);
-		return is_null($pastValue) || $currValue < $pastValue ? $currValue : $pastValue ;
+		return is_null($pastValue) || !is_null($currValue) && $currValue < $pastValue ? $currValue : $pastValue ;
 	}
 
 	protected function _max($data, $expression, $pastValue = null) {
