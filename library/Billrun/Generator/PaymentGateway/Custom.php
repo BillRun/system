@@ -137,7 +137,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $account->loadAccountForQuery(array('aid' => $params['aid']));
                 $accountData = $account->getCustomerData();
                 if (is_null(Billrun_Util::getIn($accountData, $field))) {
-                    $message = "Field name $field does not exists under entity " . $entity;
+                    $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);
                     $this->logFile->updateLogFileField('errors', $message);
                 }
