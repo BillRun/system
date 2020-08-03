@@ -63,6 +63,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$className = $this->getGeneratorClassName();
 		$generatorOptions = $this->buildGeneratorOptions();
 		$this->createLogFile();
+		$extraFields = $this->getCustomPaymentGatewayFields();
+		$this->logFile->updateLogFileField(null, null, $extraFields);
 		try {
 			$this->fileGenerator = new $className($generatorOptions);
 		} catch (Exception $ex) {
@@ -75,13 +77,13 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$this->logFile->updateLogFileField('created_by', $options['created_by']);
 				}
 		$this->logFile->setStartProcessTime();
-				$this->logFile->updateLogFileField('file_status',Billrun_Util::getFieldVal(	$options['file_status'],
+		$this->logFile->updateLogFileField('file_status',Billrun_Util::getFieldVal(	$options['file_status'],
 		Billrun_Util::getFieldVal(	$this->configByType['file_status'], static::INITIAL_FILE_STATE)));
-                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
-				$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
-                $this->logFile->updateLogFileField('parameters_string', $parametersString);
+		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
+		$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
+		$this->logFile->updateLogFileField('parameters_string', $parametersString);
 	}
 
 	public function load() {
@@ -199,12 +201,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
-			$extraFields = [
-								'pg_request' => $this->billSavedFields,
-								'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-								'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
-								'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
-			];
+			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 		}
 		$numberOfRecordsToTreat = count($this->data);
@@ -212,7 +209,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->logFile->updateLogFileField('info', $message);
-				$this->logFile->updateLogFileField(null, null, $extraFields);
 		$this->headers[0] = $this->getHeaderLine();
 		$this->trailers[0] = $this->getTrailerLine();
 	}
@@ -282,7 +278,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		return false;
 	}
 	
-		protected function validateExtraParams() {
+	protected function validateExtraParams() {
 		$validated = true;
 		if (empty($this->extraParamsDef)) {
 			return $validated;
@@ -320,4 +316,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	public function getType() {
 		return "payment_gateways";
 	}
+	
+	public function getCustomPaymentGatewayFields () {
+		return [
+				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+				'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
+				'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
+			];
+        }
 }
