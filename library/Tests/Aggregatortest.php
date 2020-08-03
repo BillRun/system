@@ -1096,7 +1096,7 @@
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed NOT exists in billrun object" . $this->fail;
+                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
                          $this->message .= "plan filed exists in billrun object" . $this->pass;
