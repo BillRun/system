@@ -42,9 +42,6 @@ class CustompaymentgatewayController extends ApiController {
 		if (!is_null($options['pay_mode'])) {
 			$cmd .= " pay_mode=" . $options['pay_mode'];
 		}
-		if (!$this->validateApiParameters($options)) {
-			return $this->setError("One or more of the gateway parameters are not valid. ");
-		}
 		foreach ($options['params'] as $name => $value) {
 			$cmd .= " " . $name . "=" . $value;
 		}
@@ -82,39 +79,17 @@ class CustompaymentgatewayController extends ApiController {
 				return false;
 			}
 		}
-		return true;
-	}
-	
-	protected function validateApiParameters($options) {
-		if (!isset($options['params'])) {
-			return true;
-		}
-		$paymentsGatewaysConfig = Billrun_Factory::config()->getConfigValue('payment_gateways', []);
-		$gatewayConfig = current(array_filter($paymentsGatewaysConfig, function($gatewayConfig) use($options) {
-			return $gatewayConfig['name'] === $options['gateway_name'];
-		}));
-		if (empty($gatewayConfig['transactions_request'][0]['parameters'])) {
-			Billrun_Factory::log("No parameters were configured, so no parameters can be send through the API request", Zend_Log::ERR);
-			return false;
-		}
-		$parameters_config = $gatewayConfig['transactions_request'][0]['parameters'];
-		$parameters_names = array_column($parameters_config, 'name');
-		foreach($options['params'] as $name => $value) {
-			if (!in_array($name, $parameters_names)) {
-				Billrun_Factory::log($name . " parameter wasn't configured", Zend_Log::ERR);
-				return false;
-			}
-			$paramConfig = current(array_filter($parameters_config, function($param) use($name) {
-				return $param['name'] === $name;
-			}));
-			if (isset($paramConfig['regex']) && !preg_match($paramConfig['regex'], $value)) {
-				Billrun_Factory::log($name . " parameter's value isn't valid", Zend_Log::ERR);
+		if (!empty($options['params'])) {
+			$available_characters = array_merge_recursive(['-', ',', '/', '_', '&', '(', ')', '\'', '|', '+', '.'] , range('0', '9'));
+			$parameters_string = str_replace($available_characters, '', implode("", $options['params']));
+			if (!preg_match( '/^[a-zA-Z]+/', $parameters_string)) {
 				return false;
 			}
 		}
+
 		return true;
 	}
-	
+
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
