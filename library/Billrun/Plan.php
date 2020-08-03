@@ -470,7 +470,7 @@ class Billrun_Plan extends Billrun_Service {
 //		}
 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-			return ($diff->m + ($diff->y * 12)) * ($maxDate > $minDate ? 1 : -1) ;
+			return $diff->m + ($diff->y * 12);
 		}
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
 			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
