@@ -31,7 +31,7 @@ class CustompaymentgatewayController extends ApiController {
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
 		}
-		$options['params']['created_by'] = Billrun_Factory::user()->getUsername();
+		$options['params']['created_by'] = Billrun_Factory::user() ? Billrun_Factory::user()->getUsername() : null;
 
 		$options['pay_mode'] = !empty($request->get('pay_mode')) ? $request->get('pay_mode') : null;
 
@@ -41,6 +41,9 @@ class CustompaymentgatewayController extends ApiController {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['cpg_type'] . ' payment_gateway=' . $options['gateway_name'] . ' file_type=' . $options['file_type'];
 		if (!is_null($options['pay_mode'])) {
 			$cmd .= " pay_mode=" . $options['pay_mode'];
+		}
+		if (!$this->validateApiParameters($options)) {
+			return $this->setError("One or more of the gateway parameters are not valid. ");
 		}
 		foreach ($options['params'] as $name => $value) {
 			$cmd .= " " . $name . "=" . $value;
@@ -76,6 +79,36 @@ class CustompaymentgatewayController extends ApiController {
 			$gatewaysOptions = array_column($paymentsGatewaysConfig, 'name');
 			if (!in_array($options['gateway_name'], $gatewaysOptions)) {
 				Billrun_Factory::log("gateway_name parameter's value isn't valid", Zend_Log::ERR);
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	protected function validateApiParameters($options) {
+		if (!isset($options['params'])) {
+			return true;
+		}
+		$paymentsGatewaysConfig = Billrun_Factory::config()->getConfigValue('payment_gateways', []);
+		$gatewayConfig = current(array_filter($paymentsGatewaysConfig, function($gatewayConfig) use($options) {
+			return $gatewayConfig['name'] === $options['gateway_name'];
+		}));
+		if (empty($gatewayConfig['transactions_request'][0]['parameters'])) {
+			Billrun_Factory::log("No parameters were configured, so no parameters can be send through the API request", Zend_Log::ERR);
+			return false;
+		}
+		$parameters_config = $gatewayConfig['transactions_request'][0]['parameters'];
+		$parameters_names = array_column($parameters_config, 'name');
+		foreach($options['params'] as $name => $value) {
+			if (!in_array($name, $parameters_names)) {
+				Billrun_Factory::log($name . " parameter wasn't configured", Zend_Log::ERR);
+				return false;
+			}
+			$paramConfig = current(array_filter($parameters_config, function($param) use($name) {
+				return $param['name'] === $name;
+			}));
+			if (isset($paramConfig['regex']) && !preg_match($paramConfig['regex'], $value)) {
+				Billrun_Factory::log($name . " parameter's value isn't valid", Zend_Log::ERR);
 				return false;
 			}
 		}
