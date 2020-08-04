@@ -76,7 +76,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				if (!empty($options['created_by'])) {
 					$this->logFile->updateLogFileField('created_by', $options['created_by']);
 				}
-		$this->logFile->setStartProcessTime();
 		$this->logFile->updateLogFileField('file_status',Billrun_Util::getFieldVal(	$options['file_status'],
 		Billrun_Util::getFieldVal(	$this->configByType['file_status'], static::INITIAL_FILE_STATE)));
 		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
