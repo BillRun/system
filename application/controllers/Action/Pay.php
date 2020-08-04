@@ -148,6 +148,10 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function unfreezeDeposits($txIdArray, $request) {
+		if (!$this->idsAreDeposits($txIdArray)) {
+			$this->setError("One or more of the input IDs are not deposits");
+			return;
+		}
 		$unfreezedDeposits = array();
 		foreach ($txIdArray as $txid) {
 			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
@@ -369,4 +373,14 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			'details' => $success ? 'merged installments successfully' : 'failed merging installments',
 		)));
 	}
+	
+	protected function idsAreDeposits($txIdArray) {
+		$query = [
+			"deposit" => true,
+			"txid" => array('$in' => $txIdArray)
+		];
+		$db_deposits = Billrun_Bill::getBills($query);
+		return count($txIdArray) == count($db_deposits); 
+	}
+
 }
