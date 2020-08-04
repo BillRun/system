@@ -375,9 +375,14 @@
              'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
+		  //check that the subscriber isn't charge about one more day in case he subscribr between 1/7/2020 - 30/07/2020
+		  array('test' => array('test_number' => 66, "aid" => 187501, 'sid' => 187500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202008", "force_accounts" => array(187501))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
+         ),
 		array(
 			'preRun' => ('expected_invoice'),
-			'test' => array('test_number' => 66,),
+			'test' => array('test_number' => 67,),
 			'expected' => array(),
 		),
 		/* run full cycle */
