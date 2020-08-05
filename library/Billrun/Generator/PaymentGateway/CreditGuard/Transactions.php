@@ -130,7 +130,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			$params['txid'] = $currentPayment->getId();
 			$params['deal_type'] = !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision) ? '51' : '01'; // credit or debit
 			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			$cardExpired = $this->gateway->isCreditCardExpired($account['payment_gateway']['active']['card_expiration']);
+			$params['card_expiration'] = $cardExpired ? $this->gateway->extendCardExpiration($params, $account['payment_gateway']['active']) : $account['payment_gateway']['active']['card_expiration'];
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
