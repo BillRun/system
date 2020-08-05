@@ -54,7 +54,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!empty($options[$field_name])) {
 				if ($param['type'] === "string") {
 					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
-					$parametersString .= $field_name . "=" . $options[$field_name];
+					$parametersString .= $field_name . "=" . $options[$field_name] . ",";
 		}
 			}
 		}
