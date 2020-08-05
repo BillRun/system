@@ -359,6 +359,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 		$this->save();
 	}
 
@@ -979,6 +980,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
 	
 	public function isDenied($denialAmount) {
