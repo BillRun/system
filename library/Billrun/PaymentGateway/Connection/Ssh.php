@@ -134,6 +134,13 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		if (!empty($this->connection)){
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
+			if (!$this->connection->connected()) {
+				Billrun_Factory::log()->log("Connecting the ssh server...", Zend_Log::DEBUG);
+				$this->connection->connect($this->username);
+				Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
+			}
 			return $this->connection->put($local, $remote);
 		}
 		else {
