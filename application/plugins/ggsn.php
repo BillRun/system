@@ -334,42 +334,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				return $ret;
 			},
 			'location_information' => function($fieldData) {
-				Billrun_Factory::log(json_encode($fieldData));
-				list($locationType) = array_values(unpack('C1', $fieldData));
-				$ret = ['loc_type'=> $locationType];
-				if(isset($locationType)) {
-					$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,1));
-					$ret['mcc'] = substr($mcc,0,3);
-					$ret['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,3)). substr($mcc,3,1);
-// 					$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4)));
-
-					switch($locationType) {
-						case 0 :
-						case 1:
-							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
-							$ret['ci'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
-							break;
-// 						case 1:
-// 							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
-// 							$ret['sac'] = intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
-// 							break;
-						case 2:
-							$ret['lac'] = intval(Billrun_Util::bcd_unpack('C2', substr($fieldData,4),true));
-							$ret['rac'] =  intval(Billrun_Util::bcd_unpack('C*', substr($fieldData,6),true));
-							break;
-						case 24:
-							$ret['tac'] = implode('',unpack('H4', substr($fieldData,4)));
-							$ret['ecgi'] =  intval(Billrun_Util::bcd_unpack('C3', substr($fieldData,6)));
-							 $ret['eci'] =  implode('',unpack('H*', substr($fieldData,9)));
-							break;
-
-						default :
-							Billrun_Factory::log("Unidentified location information type... just keeping all the left over data in 'unknown' field.",Zend_log::WARN);
-							$ret['unknown'] =  Billrun_Util::bcd_unpack('C*', substr($fieldData,6));
- 					}
-				}
-
-				return $ret;
+				return $this->decodeLocationData($fieldData);
 			},
 			'default' => function($type, $data) {
 				return (is_array($data) ? '' : implode('', unpack($type, $data)));
@@ -618,4 +583,73 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		return $ret;
 	}
 
+	///////////////////////////////////////////////////////// Helper Function ////////////////////////////////////////////////////
+
+	protected function decodeLocationData($fieldData) {
+		$encoding = [
+			'cgi' => [
+				'bit' => 0x1,
+				'fields' => [
+					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+					'ci'=> ['encode' => 'C*','offset'=> 6 ,'bsd_rev' => true, 'byte_rev' => true]
+				]
+			],
+			'rai' => [
+				'bit' => 0x2,
+				'fields' => [
+					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+					'rac'=> ['encode' => 'C*','offset'=> 6 ,'bsd_rev' => true, 'byte_rev' => true]
+				]
+			],
+			'tai' => [
+				'bit' => 0x4,
+				'fields' => [
+					'tac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true]
+				]
+			],
+			'ecgi' => [
+				'bit' => 0x8,
+				'fields' => [
+					'eci'=> ['encode' => 'C3','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+				]
+			],
+			'lai' => [
+				'bit' => 0x10,
+				'fields' => [
+					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true]
+				]
+			],
+			'enodeb-id' => [
+				'bit' => 0x20,
+				'fields' => [
+					'macro_enodeb_id'=> ['encode' => 'C3','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+				]
+			],
+
+		];
+		list($locationType) = array_values(unpack('C1', $fieldData));
+		$ret = ['loc_type'=> decbin($locationType)];
+		if(isset($locationType)) {
+			$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,1));
+			$baseOffset = 0;
+			foreach($encoding as  $endcodedField => $encodeData) {
+				if($locationType & $encodeData['bit']) {
+					$decoded =[];
+					$decoded['mcc'] = substr($mcc,$baseOffset,3);
+					$decoded['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,$baseOffset+3)). substr($mcc,$baseOffset+3,1);
+					foreach($encodeData['fields'] as $fKey => $fData) {
+						$decoded[$fKey] = intval(Billrun_Util::bcd_unpack($fData['encode'], substr($fieldData,$baseOffset+$fData['offset']),$fData['bsd_rev'],$fData['byte_rev']));
+					}
+					foreach($decoded as $key => $val) {
+						if(empty($ret[$key]) && !empty($val)) {
+							$ret[$key] = $val;
+						}
+					}
+					$ret[$endcodedField] = $decoded;
+				}
+			}
+		}
+
+		return $ret;
+	}
 }
