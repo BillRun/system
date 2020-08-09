@@ -33,6 +33,8 @@ class Tests_Monthsdifftest extends UnitTestCase {
 		array('test number' => 9, 'from' => "2019-01-31", 'to' => "2019-02-01", 'expected_result' => '0.067972351'),
 		array('test number' => 10, 'from' => "2019-02-1", 'to' => "2020-02-29", 'expected_result' => '13'),
 		array('test number' => 11, 'from' => "2019-02-1", 'to' => "2020-02-28", 'expected_result' => '12.96551724'),
+		array('test number' => 12, 'from' => "2020-07-1", 'to' => "2020-07-30", 'expected_result' => '0.967741935483871'),
+		array('test number' => 13, 'from' => "2020-06-1", 'to' => "2020-07-30", 'expected_result' => '1.9677419354839'),
 	);
 
 	public function __construct($label = false) {
