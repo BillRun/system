@@ -313,7 +313,7 @@ class Billrun_Billrun {
 	/**
 	 * Gets a subscriber entry from the current billrun
 	 * @param int $sid the subscriber id
-	 * @return mixed the subscriber entry (array) or false if the subscriber does not exists in the billrun
+	 * @return mixed the subscriber entry (array) or false if the subscriber does not exist in the billrun
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data['subs'] as $sub_entry) {

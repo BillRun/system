@@ -17,6 +17,7 @@
  class Tests_Aggregator extends UnitTestCase {
 
      use Tests_SetUp;
+
      protected $fails;
      protected $ratesCol;
      protected $plansCol;
@@ -46,11 +47,11 @@
      protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
      protected $tests = array(
          /* check if the pagination work */
-         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination'), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
+         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination',), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
              'expected' => array(),
              'postRun' => array()),
          /* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
+         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'checkInvoiceId','invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
              'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
                  'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
              'postRun' => array()),
@@ -376,22 +377,26 @@
              'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
-   
+		  //check that the subscriber isn't charge about one more day in case he subscribr between 1/7/2020 - 30/07/2020
+		  array('test' => array('test_number' => 66, "aid" => 187501, 'sid' => 187500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202008", "force_accounts" => array(187501))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
+         ),
              array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
              'expected' => array('billrun' => array( 'billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat'=>0)),
              'line' => array('types' => array('flat', 'service')),'jiraLink' =>"https://billrun.atlassian.net/browse/BRCD-2492"
          ),
-         array(
-             'preRun' => ('expected_invoice'),
-             'test' => array('test_number' => 66,),
-             'expected' => array(),
-         ),
-         /* run full cycle */
-         array(
-             'preRun' => ('changeConfig'),
-             'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
-             'expected' => array(),
-         )
+		array(
+			'preRun' => ('expected_invoice'),
+			'test' => array('test_number' => 67,),
+			'expected' => array(),
+		),
+		/* run full cycle */
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'expected' => array(),
+		)
      );
 
      public function __construct($label = false) {
@@ -517,15 +522,13 @@
          $passed = TRUE;
          $billrun_key = $row['expected']['billrun']['billrun_key'];
          $aid = $row['expected']['billrun']['aid'];
-         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
-         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
          foreach ($jiraLink as $link) {
              $this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
-         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
+         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — billrun_key: ' . $billrun_key;
          $this->message .= '<br><b> Result: </b> <br>';
          if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
              $this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
@@ -539,25 +542,24 @@
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+         return $passed;
+     }
+	 public function checkInvoiceId($key, $returnBillrun, $row) {
+		 $passed = TRUE;
+         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
-
+             
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
                  $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
+				 '<br> — invoice_id: ' . $invoice_id . 
+                 $this->message .=  'invoice_id expected to be : ' .$invoice_id. ' result is '.$retun_invoice_id . $this->fail;
              }
-         } else {
-             if (!empty($retun_invoice_id) && $retun_invoice_id == $this->LatestResults[0][0]['invoice_id'] + 1) {
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
-             } else {
-                 $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
              }
          }
 
-         return $passed;
-     }
 
      /**
       * check if all subscribers was calculeted
@@ -954,7 +956,6 @@
          return $passed;
      }
 
-
      /**
       * Check override mode using passthrough_fields 
       * @param int $key number of the test case
@@ -1097,7 +1098,7 @@
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed NOT exists in billrun object" . $this->fail;
+                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
                          $this->message .= "plan filed exists in billrun object" . $this->pass;

@@ -66,6 +66,9 @@ class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 		foreach ($row as $field => $value) {
 			$width = Billrun_Util::getIn($this->config, array('exporter', 'format', 'widths', $widthMappingField, $field), strlen($value));
 			$row[$field] = str_pad($value, $width, ' ', STR_PAD_LEFT);
+                        if (strlen($row[$field]) > $width){
+                            $row[$field] = substr($row[$field], 0, $width);
+                        }
 		}
 		return $row;
 	}

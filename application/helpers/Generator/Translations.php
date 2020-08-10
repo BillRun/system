@@ -21,15 +21,19 @@ class Generator_Translations {
 				static::setLanguage($defaultLang);
 		}
 	}
-	
-	public static function setLanguage($lang = 'en_GB') {
-		if(!static::$languages[$lang]++)  {
-			static::setTranslation($lang, ['/conf/translations/'.$lang.'.ini' , '/conf/translations/overrides/'.$lang.'.ini']);
-		}
-		static::$currentLang = $lang;
-	}
-	
-	protected static function setTranslation($lang, $paths) {
+
+    public static function setLanguage($lang = null) {
+        if (is_null($lang)) {
+            static::setLanguage(static::getDefaultLanguage());
+        } else {
+            if (!static::$languages[$lang]++) {
+                static::setTranslation($lang, ['/conf/translations/' . $lang . '.ini', '/conf/translations/overrides/' . $lang . '.ini']);
+            }
+            static::$currentLang = $lang;
+        }
+    }
+
+    protected static function setTranslation($lang, $paths) {
 		$tr = [];
 		foreach ($paths as $path) {
 			$slugs = parse_ini_file(APPLICATION_PATH . $path);

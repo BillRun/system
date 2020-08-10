@@ -374,7 +374,7 @@ class Billrun_PaymentManager {
 						$billId = $bill['id'];
 						$billType = $bill['type'];
 						$amountPaid = $bill['amount'];
-						if ($this->isFileBasedCharge($params)) {
+						if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
 							$payment->setPending(true);
 						}
 

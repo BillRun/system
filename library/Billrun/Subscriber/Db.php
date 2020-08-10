@@ -33,7 +33,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @param array $options - Array of initialization parameters.
 	 */
 	public function __construct($options = array()) {
-		parent::__construct($options);	
+		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	
@@ -78,7 +78,17 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-				$subs[] = iterator_to_array($result);
+				$subsForQuery = iterator_to_array($result);
+				if (empty($subsForQuery)) {
+					continue;
+				}
+				foreach ($subsForQuery as $sub) {
+					if (isset($id)) {
+						$sub->set('id', $id);
+					}
+					$subs[] = $sub;
+				}
+				
 			}
 		}
 		return $subs;
