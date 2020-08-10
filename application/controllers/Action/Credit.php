@@ -204,7 +204,7 @@ class CreditAction extends ApiAction {
 	
 	protected function getCreditUsaget($row) {
 		if (!isset($row['aprice'])) {
-			return 'refund';
+			return isset($row['credit_type']) ? $row['credit_type'] : 'refund';
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
