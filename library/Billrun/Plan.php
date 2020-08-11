@@ -429,10 +429,11 @@ class Billrun_Plan extends Billrun_Service {
 //		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
 //			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
 //		}
-		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-			return $diff->m + ($diff->y * 12);
-		}
+// BRCD-2742 : Commented out as this cause werid edge cases as exampled in :  https://billrun.atlassian.net/browse/BRCD-2742 ,  https://billrun.atlassian.net/browse/BRCD-2741
+// 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
+// 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
+// 			return $diff->m + ($diff->y * 12);
+// 		}
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
 			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
 		}
