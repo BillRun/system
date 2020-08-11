@@ -300,6 +300,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 			}         
 			$this->extraParamsNames[] = $paramObj['name'];
+			Billrun_Factory::dispatcher()->trigger('validateParamOfTransactionRequest', array($paramObj['name'], $this->options[$paramObj['name']], &$validated));
 		}
 		
 		return $validated;
