@@ -78,6 +78,9 @@ class Models_Subscribers extends Models_Entity {
 				if (gettype($service) == 'string') {
 					$service = array('name' => $service);
 				}
+				if (!empty($service['to']) && gettype($service['to']) == 'string') {
+					$service['to'] = new MongoDate(strtotime($service['to']));
+				}
 				if (gettype($service['from']) == 'string') {
 					$service['from'] = new MongoDate(strtotime($service['from']));
 				}
