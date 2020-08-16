@@ -640,12 +640,12 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$ret = ['loc_type'=> decbin($locationType)];
 		if(isset($locationType)) {
 
-			$ret['field_data'] = bin2hex($fieldData);
+			//$ret['field_data'] = bin2hex($fieldData);
 			$baseOffset = 1;
 			foreach($encoding as  $endcodedField => $encodeData) {
 				if($locationType & $encodeData['bit']) {
 					$decoded =[];
-					$decoded['field_data'] = bin2hex(substr($fieldData,$baseOffset));
+					//$decoded['field_data'] = bin2hex(substr($fieldData,$baseOffset));
 					$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,$baseOffset));
 					$decoded['mcc'] = substr($mcc,0,3);
 					$decoded['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,$baseOffset+2)). substr($mcc,$baseOffset+2,1);
