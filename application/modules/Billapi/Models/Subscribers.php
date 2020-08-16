@@ -92,13 +92,9 @@ class Models_Subscribers extends Models_Entity {
 				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
 					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
 				}
-				//to can't be more then the updated 'to' of the subscription
-				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-				/* 
-				 * "$service['to'] <= $entityTo" - commented becuase when you try to push services by permanentchange with 'TO' value that is longer then the 'TO' of the current subscribers revision,
-				 * service TO will be set to the TO of the current subscribers for all future revisions too.
-				 */
-				$service['to'] = !empty($service['to']) /*&& $service['to'] <= $entityTo*/ ? $service['to'] : $entityTo;
+				if (empty($service['to'])) {
+					$service['to'] =  new MongoDate(strtotime('+149 years'));
+				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}
