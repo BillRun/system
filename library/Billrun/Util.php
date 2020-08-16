@@ -811,8 +811,12 @@ class Billrun_Util {
 	 * @param $data  the packed data to decode
 	 * @return the BCD decoded string
 	 */
-	public static function bcd_unpack($byteDef,$data,$reverse = FALSE) {
-		return implode('',array_map(function($b) use ($reverse) {return  Billrun_Util::bcd_decode($b,$reverse);},array_filter(unpack($byteDef, $data),function($a){return $a != 0xF;})));
+	public static function bcd_unpack($byteDef,$data,$bcdReverse = FALSE, $byteReverse = FALSE) {
+		$res = array_map(function($b) use ($bcdReverse) {return  Billrun_Util::bcd_decode($b,$bcdReverse);},array_filter(unpack($byteDef, $data),function($a){return $a != 0xF;}));
+		if($byteReverse) {
+			$res = array_reverse($res);
+		}
+		return implode('',$res);
 	}
 
 	/**
