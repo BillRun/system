@@ -354,6 +354,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
+
 		$processedData = &$processor->getData();
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 		if( !empty($headerPadding = intval(Billrun_Util::getFieldVal($this->ggsnConfig['revision_specific'][$this->currentRevision]['header_padding'],0))) ) {
@@ -367,6 +368,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			if (!isset($bytes[self::HEADER_LENGTH])) {
 				break;
 			}
+
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
 				$row['stamp'] = md5($bytes);
@@ -590,39 +592,46 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			'cgi' => [
 				'bit' => 0x1,
 				'fields' => [
-					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
-					'ci'=> ['encode' => 'C*','offset'=> 6 ,'bsd_rev' => true, 'byte_rev' => true]
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'ci'=> ['encode' => 'h2','size' => 2,'method'=> 'unpack','offset'=> 5 ]
+				]
+			],
+			'sai' => [
+				'bit' => 0x2,
+				'fields' => [
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'rac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 5 ]
 				]
 			],
 			'rai' => [
-				'bit' => 0x2,
+				'bit' => 0x4,
 				'fields' => [
-					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
-					'rac'=> ['encode' => 'C*','offset'=> 6 ,'bsd_rev' => true, 'byte_rev' => true]
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'rac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 5 ]
 				]
 			],
 			'tai' => [
-				'bit' => 0x4,
+				'bit' => 0x8,
 				'fields' => [
-					'tac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true]
+					'tac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ]
 				]
 			],
 			'ecgi' => [
-				'bit' => 0x8,
+				'bit' => 0x10,
 				'fields' => [
-					'eci'=> ['encode' => 'C3','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+					'eci'=> ['encode' => 'H8','size' => 4,'method'=> 'unpack','offset'=> 3 ],
 				]
 			],
 			'lai' => [
-				'bit' => 0x10,
+				'bit' => 0x20,
 				'fields' => [
-					'lac'=> ['encode' => 'C2','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true]
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ]
 				]
 			],
 			'enodeb-id' => [
-				'bit' => 0x20,
+				'bit' => 0x40,
 				'fields' => [
-					'macro_enodeb_id'=> ['encode' => 'C3','offset'=> 4 ,'bsd_rev' => true, 'byte_rev' => true],
+					'macro_enodeb_id'=> ['encode' => 'H6','size' => 3,'method'=> 'unpack','offset'=> 3 ],
 				]
 			],
 
@@ -630,21 +639,40 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		list($locationType) = array_values(unpack('C1', $fieldData));
 		$ret = ['loc_type'=> decbin($locationType)];
 		if(isset($locationType)) {
-			$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,1));
-			$baseOffset = 0;
+
+			$ret['field_data'] = bin2hex($fieldData);
+			$baseOffset = 1;
 			foreach($encoding as  $endcodedField => $encodeData) {
 				if($locationType & $encodeData['bit']) {
 					$decoded =[];
-					$decoded['mcc'] = substr($mcc,$baseOffset,3);
-					$decoded['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,$baseOffset+3)). substr($mcc,$baseOffset+3,1);
+					$decoded['field_data'] = bin2hex(substr($fieldData,$baseOffset));
+					$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,$baseOffset));
+					$decoded['mcc'] = substr($mcc,0,3);
+					$decoded['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,$baseOffset+2)). substr($mcc,$baseOffset+2,1);
+					$maxOffset = 0;
 					foreach($encodeData['fields'] as $fKey => $fData) {
-						$decoded[$fKey] = intval(Billrun_Util::bcd_unpack($fData['encode'], substr($fieldData,$baseOffset+$fData['offset']),$fData['bsd_rev'],$fData['byte_rev']));
+						$decodeFormat =$fData['encode'];
+
+						switch ((empty($fData['method']) ? "" : $fData['method']) ) {
+
+							case 'unpack' :
+									$result = implode('',unpack($decodeFormat, substr($fieldData,$baseOffset+$fData['offset'],$fData['size'])) );
+								break;
+
+							case 'bcd_decode' :
+							default:
+								$result = intval(Billrun_Util::bcd_unpack($decodeFormat, substr($fieldData,$baseOffset+$fData['offset']),$fData['bsd_rev'],$fData['byte_rev']));
+						}
+
+						$decoded[$fKey] = "" . !empty($fData['cast']) && function_exists($fData['cast'])? $fData['cast']($result) : $result;
+						$maxOffset = max($maxOffset,$fData['offset']+$fData['size']);
 					}
 					foreach($decoded as $key => $val) {
 						if(empty($ret[$key]) && !empty($val)) {
 							$ret[$key] = $val;
 						}
 					}
+					$baseOffset += $maxOffset;
 					$ret[$endcodedField] = $decoded;
 				}
 			}
