@@ -78,27 +78,23 @@ class Models_Subscribers extends Models_Entity {
 				if (gettype($service) == 'string') {
 					$service = array('name' => $service);
 				}
-				if (!empty($service['to']) && gettype($service['to']) == 'string') {
-					$service['to'] = new MongoDate(strtotime($service['to']));
-				}
 				if (gettype($service['from']) == 'string') {
 					$service['from'] = new MongoDate(strtotime($service['from']));
 				}
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
+				if (!empty($service['to']) && gettype($service['to']) == 'string') {
+					$service['to'] = new MongoDate(strtotime($service['to']));
+				}
 				//Handle custom period services
 				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
 				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
 					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
 				}
-				//to can't be more then the updated 'to' of the subscription
-				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-				/* 
-				 * "$service['to'] <= $entityTo" - commented becuase when you try to push services by permanentchange with 'TO' value that is longer then the 'TO' of the current subscribers revision,
-				 * service TO will be set to the TO of the current subscribers for all future revisions too.
-				 */
-				$service['to'] = !empty($service['to']) /*&& $service['to'] <= $entityTo*/ ? $service['to'] : $entityTo;
+				if (empty($service['to'])) {
+					$service['to'] =  new MongoDate(strtotime('+149 years'));
+				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}
