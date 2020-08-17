@@ -17,6 +17,7 @@
  class Tests_Aggregator extends UnitTestCase {
 
      use Tests_SetUp;
+
      protected $fails;
      protected $ratesCol;
      protected $plansCol;
@@ -376,22 +377,26 @@
              'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
-   
+		  //check that the subscriber isn't charge about one more day in case he subscribr between 1/7/2020 - 30/07/2020
+		  array('test' => array('test_number' => 66, "aid" => 187501, 'sid' => 187500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202008", "force_accounts" => array(187501))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
+         ),
              array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
              'expected' => array('billrun' => array( 'billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat'=>0)),
              'line' => array('types' => array('flat', 'service')),'jiraLink' =>"https://billrun.atlassian.net/browse/BRCD-2492"
          ),
-         array(
-             'preRun' => ('expected_invoice'),
-             'test' => array('test_number' => 66,),
-             'expected' => array(),
-         ),
-         /* run full cycle */
-         array(
-             'preRun' => ('changeConfig'),
-             'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
-             'expected' => array(),
-         )
+		array(
+			'preRun' => ('expected_invoice'),
+			'test' => array('test_number' => 67,),
+			'expected' => array(),
+		),
+		/* run full cycle */
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 67, 'aid' => 0, 'function' => array('fullCycle'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'expected' => array(),
+		)
      );
 
      public function __construct($label = false) {
@@ -537,7 +542,6 @@
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
-
          return $passed;
      }
 	 public function checkInvoiceId($key, $returnBillrun, $row) {
@@ -545,7 +549,7 @@
          $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
          $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
-
+             
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
@@ -553,10 +557,9 @@
 				 '<br> — invoice_id: ' . $invoice_id . 
                  $this->message .=  'invoice_id expected to be : ' .$invoice_id. ' result is '.$retun_invoice_id . $this->fail;
              }
-         } 
-	 }
-		 
-	 
+             }
+         }
+
 
      /**
       * check if all subscribers was calculeted
@@ -952,7 +955,6 @@
          }
          return $passed;
      }
-
 
      /**
       * Check override mode using passthrough_fields 
