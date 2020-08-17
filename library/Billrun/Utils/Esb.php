@@ -15,7 +15,7 @@ class Billrun_Utils_Esb {
 		Billrun_Factory::log()->log("Connecting to Message Broker", Zend_Log::INFO);
 		// Check if Stomp class exists
 		$classname = 'Stomp';
-		if (!class_exists($classname)) {
+		if (!@class_exists($classname)) {
 			throw new Exception('Something went wrong while trying to connect to Message Broker. Could not find class: ' . $classname);
 		}
 		if (empty($host)) {
