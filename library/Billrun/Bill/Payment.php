@@ -1004,7 +1004,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * 
 	 * @return true if the payment is deposit.
 	 */
-	protected function isDeposit() {
+	public function isDeposit() {
 		 return (!empty($this->data['deposit']) && isset($this->data['deposit_amount']));
 	}
 

@@ -376,10 +376,17 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 	
 	protected function idsAreDeposits($txIdArray) {
 		$query = [
-			"deposit" => true,
 			"txid" => array('$in' => $txIdArray)
 		];
-		$db_deposits = Billrun_Bill::getBills($query);
+		$bills = Billrun_Bill::getBills($query);
+		foreach($bills as $index => $bill) {
+			$className = Billrun_Bill_Payment::getClassByPaymentMethod($bill['method']);
+			$bills[$index] = new $className($bill);
+		}
+		$db_deposits = array_filter($bills, function($bill) {
+			return $bill->isDeposit();
+		});
+
 		return count($txIdArray) == count($db_deposits); 
 	}
 
