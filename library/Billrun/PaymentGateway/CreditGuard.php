@@ -316,7 +316,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function sendPaymentRequest($paymentArray) {
 		$additionalParams = array();
-		$codeResult = false;
+		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
