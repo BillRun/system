@@ -765,6 +765,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 	
+	public function getDenialsPayments($aid) {
+		$query = array(
+			'aid' => $aid,
+			'$or' => array(
+				array('is_denial' => array('$eq' => true)),
+				array('denied_by' => array('$exists' => true)),
+			),
+		);
+		return static::getBills($query);
+	}
+	
 	public static function buildFilterQuery($chargeFilters) {
 		$filtersQuery = array();
 		$errorMessage = self::validateChargeFilters($chargeFilters);
@@ -872,14 +883,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 	
 	protected static function getPaginationQuery($filtersQuery, $page, $size) {
-		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$nonRejectedOrCanceledOrDenied = Billrun_Bill::getNotRejectedOrCancelledOrDeniedQuery();
 		$notPaidBiils = array(
 			'$or' => array(
 				array('left' => array('$gt' => Billrun_Bill::precision)),
 				array('left_to_pay' => array('$gt' => Billrun_Bill::precision)),
 			),
 		);
-		$updatedQuery = array_merge($filtersQuery, $nonRejectedOrCanceled, $notPaidBiils);
+		$updatedQuery = array_merge($filtersQuery, $nonRejectedOrCanceledOrDenied, $notPaidBiils);
 		$pipelines[] = array(
 			'$match' => $updatedQuery,
 		);

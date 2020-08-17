@@ -273,11 +273,11 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function getOrigFileBills($fileStamp) {
-		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$nonRejectedOrCanceledOrDenied = Billrun_Bill::getNotRejectedOrCancelledOrDeniedQuery();
 		$query = array(
 			'generated_pg_file_log' => $fileStamp,
 		);
-		$query = array_merge($query, $nonRejectedOrCanceled);
+		$query = array_merge($query, $nonRejectedOrCanceledOrDenied);
 		return $this->bills->query($query)->cursor();
 	}
 
