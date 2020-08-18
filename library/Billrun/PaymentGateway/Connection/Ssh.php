@@ -140,7 +140,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 				if ($this->connection->connected()) {
 					Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
 				} else {
-					Billrun_Factory::log()->log("Couldn't connect to the server, file wasn't uploaded..", Zend_Log::ALERT);
+					Billrun_Factory::log()->log("Couldn't connect to the server. File wasn't uploaded.", Zend_Log::ALERT);
 					return;
 				}
 			} else {
