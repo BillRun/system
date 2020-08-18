@@ -119,7 +119,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
-				Billrun_Factory::dispatcher()->trigger('afterPaymentRejected', array($payment->getRawData()));
 				$this->informationArray['transactions']['rejected']++;
 				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));

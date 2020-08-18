@@ -222,7 +222,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
-				Billrun_Factory::dispatcher()->trigger('afterPaymentRejected', array($billToReject->getRawData()));
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
                 $this->informationArray['transactions']['rejected']++;
 				$this->informationArray['process_time'] = new MongoDate(time());
 			}
