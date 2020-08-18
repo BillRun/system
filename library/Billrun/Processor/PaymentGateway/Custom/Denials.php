@@ -73,6 +73,8 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
                                         $message = "Denied flagging failed for rec " . $row[$this->tranIdentifierField];
 					$this->informationArray['errors'][] = $message;
                                         Billrun_Factory::log()->log($message, Zend_Log::ALERT);
+				}else{
+					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAid());
 				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);

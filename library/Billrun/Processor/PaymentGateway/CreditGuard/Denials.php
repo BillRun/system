@@ -60,6 +60,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 					Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
 				} else {
 					$payment->updatePastRejectionsOnProcessingFiles();
+					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAid());
 				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
