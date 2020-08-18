@@ -266,7 +266,8 @@ class PayAction extends ApiAction {
 				$matchedPayment = Billrun_Bill_Payment::getInstanceByid($cancellation['txid']);
 				if (!empty($matchedPayment)) {
 					$matched = true;
-					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection()) {
+					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection() || 
+						$matchedPayment->isDeniedPayment() || $matchedPayment->isDenial()) {
 						$errors[] = "$txid cannot be cancelled";
 						$matched = false;
 					} else if (isset($cancellation['amount']) && ($cancellation['amount'] != $matchedPayment->getAmount())) {

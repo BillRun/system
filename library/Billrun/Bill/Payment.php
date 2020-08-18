@@ -305,7 +305,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			);
 		}
 		if (!$includeDenied) {
-			$query['denieded_by'] = array(// denieded payments
+			$query['denied_by'] = array(// denied payments
 				'$exists' => FALSE,
 			);
 			$query['is_denial'] = array(// denialing payments
@@ -435,7 +435,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function isCancellation() {
 		return isset($this->data['cancel']);
 	}
+	
+	/**
+	 * Find whether a payment has been denied or not
+	 * @return boolean
+	 */
+	public function isDeniedPayment() {
+		return isset($this->data['denied_by']);
+	}
 
+	/**
+	 * Find whether a payment is a denial of an existing payment
+	 * @return boolean
+	 */
+	public function isDenial() {
+		return isset($this->data['is_denial']) && $this->data['is_denial'];
+	}
+	
 	/**
 	 * Update payment status
 	 * @since 5.0
