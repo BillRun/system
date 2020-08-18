@@ -287,7 +287,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param type $amount
 	 * @return type
 	 */
-	public static function getPayments($aid = null, $dir = array('fc'), $methods = array(), $to = null, $from = null, $amount = null, $includeRejected = false, $includeCancelled = false) {
+	public static function getPayments($aid = null, $dir = array('fc'), $methods = array(), $to = null, $from = null, $amount = null, $includeRejected = false, $includeCancelled = false, $includeDenied = false) {
 		if (!$includeRejected) {
 			$query['rejected'] = array(// rejected payments
 				'$ne' => TRUE,
@@ -302,6 +302,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			);
 			$query['cancel'] = array(// cancelling payments
 				'$exists' => FALSE,
+			);
+		}
+		if (!$includeDenied) {
+			$query['denieded_by'] = array(// denieded payments
+				'$exists' => FALSE,
+			);
+			$query['is_denial'] = array(// denialing payments
+				'$ne' => TRUE,
 			);
 		}
 		if (!is_null($aid)) {
