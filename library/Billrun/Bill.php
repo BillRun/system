@@ -333,7 +333,7 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getUnpaidQuery() {
-		return array_merge(array('due' => array('$gt' => 0,), 'left_to_pay' => array('$gt' => 0), 'paid' => array('$nin' => array(TRUE, '1', '2'),),), static::getNotRejectedOrCancelledOrDeniedQuery()
+		return array_merge(array('due' => array('$gt' => 0,), 'left_to_pay' => array('$gt' => 0), 'paid' => array('$nin' => array(TRUE, '1', '2'),),), static::getNotRejectedOrCancelledQuery()
 		);
 	}
 
@@ -344,7 +344,7 @@ abstract class Billrun_Bill {
 
 	public static function getOverPayingBills($query = array(), $sort = array()) {
 		$billObjs = array();
-		$query = array_merge($query, array('left' => array('$gt' => 0,)), static::getNotRejectedOrCancelledOrDeniedQuery());
+		$query = array_merge($query, array('left' => array('$gt' => 0,)), static::getNotRejectedOrCancelledQuery());
 		$bills = static::getBills($query, $sort);
 		if ($bills) {
 			foreach ($bills as $bill) {
@@ -513,7 +513,7 @@ abstract class Billrun_Bill {
 		return isset($this->data['pays']) ? $this->data['pays'] : array();
 	}
 
-	public static function getNotRejectedOrCancelledOrDeniedQuery() {
+	public static function getNotRejectedOrCancelledQuery() {
 		return array(
 			'rejected' => array(
 				'$ne' => TRUE,
@@ -983,8 +983,8 @@ abstract class Billrun_Bill {
 	
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$nonRejectedOrCanceledOrDenied = Billrun_Bill::getNotRejectedOrCancelledOrDeniedQuery();
-		$filters = array_merge($filters, $nonRejectedOrCanceledOrDenied);
+		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+		$filters = array_merge($filters, $nonRejectedOrCanceled);
 		if (!empty($filters)) {
 			$match = array(
 				'$match' => $filters
