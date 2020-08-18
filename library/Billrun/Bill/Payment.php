@@ -359,8 +359,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
-		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 		$this->save();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
 
 	/**
