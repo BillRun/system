@@ -1085,13 +1085,16 @@ class Billrun_Billrun {
 	}
 	
         /**
-         * Function that brings back account last billrun object
+         * Function that brings back account last monthly billrun object
          * @param type $aid
          * @param type $currentBillrunKey
-         * @return array last billrun object
+         * @return array last monthly billrun object
          */
-	public static function getAccountLastBillrun($aid, $currentBillrunKey) {
-                $query['aid'] = $aid;
+	public static function getAccountLastMonthlyBillrun($aid, $currentBillrunKey) {
+                $query = [
+					'aid' => $aid,
+					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
+				];
                 $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
                 if (empty($billrun)) {
                     return null;
