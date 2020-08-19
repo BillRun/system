@@ -197,10 +197,12 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$cdrLine = false;
 
 		if (isset($this->ggsnConfig[$type])) {
+
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
 			}
+
 			//convert to unified time GMT  time.
 			$timeOffset =  date('P');
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
@@ -217,7 +219,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
 
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
+					if (@isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
 					}
@@ -236,6 +238,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		}
+		foreach(@$this->ggsnConfig['fields_override'] as $srcField => $dstField) {
+			if(!empty($cdrLine[$srcField])) {
+				if(!empty($cdrLine[$dstField])) {
+					$cdrLine['overriden_fields'][$dstField] = $cdrLine[$srcField];
+				}
+				$cdrLine[$dstField] = $cdrLine[$srcField];
+			}
 		}
 
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
