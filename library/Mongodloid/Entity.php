@@ -168,7 +168,7 @@ class Mongodloid_Entity implements ArrayAccess {
 			return $this;
 		}
 
-		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exists and hasn\'t been trapped in __call()');
+		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exist and hasn\'t been trapped in __call()');
 	}
 
 	/**

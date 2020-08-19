@@ -109,7 +109,7 @@ class Mongodloid_Query implements IteratorAggregate {
 					)
 			));
 		}
-		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exists and hasn\'t been trapped in call');
+		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exist and hasn\'t been trapped in call');
 	}
 
 	public function count() {

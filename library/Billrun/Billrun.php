@@ -313,7 +313,7 @@ class Billrun_Billrun {
 	/**
 	 * Gets a subscriber entry from the current billrun
 	 * @param int $sid the subscriber id
-	 * @return mixed the subscriber entry (array) or false if the subscriber does not exists in the billrun
+	 * @return mixed the subscriber entry (array) or false if the subscriber does not exist in the billrun
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data['subs'] as $sub_entry) {
@@ -1085,13 +1085,16 @@ class Billrun_Billrun {
 	}
 	
         /**
-         * Function that brings back account last billrun object
+         * Function that brings back account last monthly billrun object
          * @param type $aid
          * @param type $currentBillrunKey
-         * @return array last billrun object
+         * @return array last monthly billrun object
          */
-	public static function getAccountLastBillrun($aid, $currentBillrunKey) {
-                $query['aid'] = $aid;
+	public static function getAccountLastMonthlyBillrun($aid, $currentBillrunKey) {
+                $query = [
+					'aid' => $aid,
+					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
+				];
                 $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
                 if (empty($billrun)) {
                     return null;

@@ -62,6 +62,23 @@ class ReportAction extends ApiAction {
 		$this->response = $this->model->applyFilter(0, -1);
 	}
 	
+	public function exportCSVReport($report, $page, $size) {
+		$parsed_report = json_decode($report, TRUE);
+		$this->model = new ReportModel($parsed_report);
+		$this->type = 'csv';
+		$this->headers = array_reduce(
+			$parsed_report['columns'], 
+				function ($carry, $column) {
+				$carry[$column['key']] = $column['label'];
+				return $carry;
+			},
+			array()
+		);
+		// add 1 to check it next page exists
+		$limit = ($size === -1) ? $size : $size + 1;
+		$this->response = $this->model->applyFilter($page, $limit);
+	}
+	
 	public function generateReport($report, $page, $size) {
 		$parsed_report = json_decode($report, TRUE);
 		$this->model = new ReportModel($parsed_report);

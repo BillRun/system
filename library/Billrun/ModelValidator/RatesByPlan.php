@@ -22,7 +22,7 @@ class Billrun_ModelValidator_RatesByPlan extends Billrun_ModelValidator_Base {
 	 */
 	public function validate($plan, $rate) {
 		if (!Billrun_Plans_Util::isPlanExists($plan)) {
-			return 'Plan "' . $plan . '" does not exists';
+			return 'Plan "' . $plan . '" does not exist';
 		}
 		if (empty($rate['rate'])) {
 			return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
