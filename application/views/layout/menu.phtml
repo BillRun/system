@@ -25,6 +25,21 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/ipmapping">IP Mapping</a>
 			</li>
 		<?php endif; ?>
+				<?php if (AdminController::authorized('admin')) : ?>
+			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
+				<a class="dropdown-toggle"
+				   data-toggle="dropdown"
+				   href="#">
+					Admin
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
+					</li>
+				</ul>
+			</li>
+		<?php endif; ?>
 		<?php if (Billrun_Factory::user() === FALSE) : ?>
 			<li<?php echo ($active == 'login' ? ' class="login active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/login">Login</a>
