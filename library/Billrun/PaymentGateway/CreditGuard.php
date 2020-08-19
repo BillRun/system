@@ -360,7 +360,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function isCreditCardExpired($expiration) {
+	public function isCreditCardExpired($expiration) {
 		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
 		$oldestCardExpiration = $cgConfig['oldest_card_expiration'];
 		$expires = \DateTime::createFromFormat('my', $expiration);
@@ -529,7 +529,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function updateAccountCardExpiration($paymentParams, $gatewayDetails){
-		$this->account->load(array('aid' => $paymentParams['aid']));
+		$this->account->loadAccountForQuery(array('aid' => $paymentParams['aid']));
 		$accountGateway = $this->account->payment_gateway;
 		$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
 		if (isset($accountGateway['active']['generate_token_time']->sec)) {
