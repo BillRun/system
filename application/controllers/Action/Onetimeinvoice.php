@@ -324,14 +324,9 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function isValidGenerateResult($result, $billrunToBill) {
 		$tries = 0;
-		while($result['alreadyRunning'] || $result['releasingProblem']){
-			if ($tries >= 3) {
-				if ($result['alreadyRunning']){
-					throw new Exception("BillrunToBill is already running");
-				}
-				if ($result['releasingProblem']) {
-					throw new Exception("Problem in releasing operation");
-				}
+		while($result['alreadyRunning']){
+			if ($tries >= 3) {	
+				throw new Exception("BillrunToBill is already running");
 			}
 			$tries++;
 			sleep(1);
