@@ -92,7 +92,7 @@ class Zend_Ftp_Directory_Nsn extends Zend_Ftp_Directory  implements Zend_Ftp_Dir
 		fseek($outgoingFile, 0);
 		//upload the updated file to the server.
 		if (!ftp_fput( $this->_ftp->getConnection(), $processedPath, $outgoingFile, FTP_BINARY ) ) {
-			throw new Exception('couldnt upload ' . static::OUTGOING_FILE_NAME . ' File from NSN server');
+			throw new Exception('couldnt upload ' . $processedPath . ' File from NSN server');
 		}
 		
 		fclose($outgoingFile);
