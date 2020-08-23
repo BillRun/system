@@ -551,8 +551,67 @@
 					"prorated_termination": false,
 					"to": "time*2168-07-30T12:35:34Z",
 					"creation_time": "time*2018-07-31T00:00:00Z"
-				}
+				},
+						{
 
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TTT2",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+					"OBJID": "5ea1a2d4cd4acc4e0d336bc3",
+					"from": "time*2018-04-24T00:00:00Z",
+					"name": "NOT_TAXABLE_PLAN",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "not taxable plan",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2169-04-23T14:14:44Z",
+					"creation_time": "time*2018-04-24T00:00:00Z"
+				}
 
 
 			]

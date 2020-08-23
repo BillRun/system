@@ -182,10 +182,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function shouldFileBeReceived($file, $isFileReceivedMoreFields) {
 		$ret = true;
 		if (!$file->isFile()) {
-			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->isFileValid($file->name, $file->path)) {
-			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
 			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::INFO);

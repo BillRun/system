@@ -18,6 +18,7 @@
 
      use Tests_SetUp;
 
+     protected $fails;
      protected $ratesCol;
      protected $plansCol;
      protected $linesCol;
@@ -42,15 +43,15 @@
      );
      public $LatestResults;
      public $sumBillruns;
-     protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span></br>';
-     protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span></br>';
+     protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
+     protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
      protected $tests = array(
          /* check if the pagination work */
-         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination'), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
+         array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination',), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
              'expected' => array(),
              'postRun' => array()),
          /* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
+         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'checkInvoiceId','invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
              'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
                  'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
              'postRun' => array()),
@@ -277,107 +278,117 @@
           * sids end with :0 = full cycle ,1 = from mid month to infinity, 2 = from + to mid cycle, 3 reopen
           * 0 */
          array('test' => array('test_number' => 42, "aid" => 1200, 'sid' => 200, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1200))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1200, 'after_vat' => array("200" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1200, 'after_vat' => array("200" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 43, "aid" => 1300, 'sid' => 300, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1300))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1300, 'after_vat' => array("300" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1300, 'after_vat' => array("300" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 44, "aid" => 1400, 'sid' => 400, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1400))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1400, 'after_vat' => array("400" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1400, 'after_vat' => array("400" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 45, "aid" => 1500, 'sid' => 500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1500))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1500, 'after_vat' => array("500" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1500, 'after_vat' => array("500" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 46, "aid" => 1600, 'sid' => 600, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1600))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1600, 'after_vat' => array("600" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1600, 'after_vat' => array("600" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 47, "aid" => 1700, 'sid' => 700, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1700))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1700, 'after_vat' => array("700" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1700, 'after_vat' => array("700" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          /* 1 */
          array('test' => array('test_number' => 48, "aid" => 1201, 'sid' => 201, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1201))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1201, 'after_vat' => array("201" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1201, 'after_vat' => array("201" => 74.72903225805), 'total' => 74.72903225805, 'vatable' => 63.8709677424, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 49, "aid" => 1301, 'sid' => 301, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1301))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1301, 'after_vat' => array("301" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1301, 'after_vat' => array("301" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 50, "aid" => 1401, 'sid' => 401, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1401))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1401, 'after_vat' => array("401" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1401, 'after_vat' => array("401" => 74.72903225805), 'total' => 74.72903225805, 'vatable' => 63.8709677424, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 51, "aid" => 1501, 'sid' => 501, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1501))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1501, 'after_vat' => array("501" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1501, 'after_vat' => array("501" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 52, "aid" => 1601, 'sid' => 601, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1601))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1601, 'after_vat' => array("601" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1601, 'after_vat' => array("601" => 74.72903225805), 'total' => 74.72903225805, 'vatable' => 63.8709677424, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 53, "aid" => 1701, 'sid' => 701, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1701))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1701, 'after_vat' => array("701" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1701, 'after_vat' => array("701" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          /* 2 */
          array('test' => array('test_number' => 54, "aid" => 1202, 'sid' => 202, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1202))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1202, 'after_vat' => array("202" => 33.96774), 'total' => 33.96774, 'vatable' => 29.032258, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1202, 'after_vat' => array("202" => 74.729033), 'total' => 74.729033, 'vatable' => 63.8709668, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 55, "aid" => 1302, 'sid' => 302, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1302))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1302, 'after_vat' => array("302" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1302, 'after_vat' => array("302" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 56, "aid" => 1402, 'sid' => 402, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1402))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 33.96774), 'total' => 33.96774, 'vatable' => 29.032258, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1402, 'after_vat' => array("402" => 75.106451612903), 'total' => 75.106451612903, 'vatable' =>  64.19354838709, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
+         //start timezone GMT+2 ent timezone GMT +3
          array('test' => array('test_number' => 57, "aid" => 1502, 'sid' => 502, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1502))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.193548, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1502, 'after_vat' => array("502" =>98.50645), 'total' => 98.50645, 'vatable' =>  84.193548, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 58, "aid" => 1602, 'sid' => 602, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1602))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1602, 'after_vat' => array("602" => 33.96774), 'total' => 33.96774, 'vatable' => 29.032258, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1602, 'after_vat' => array("602" => 37.36451703), 'total' => 37.36451703, 'vatable' => 31.935483864, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 59, "aid" => 1702, 'sid' => 702, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1702))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1702, 'after_vat' => array("702" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1702, 'after_vat' => array("702" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          /* 3 */
          array('test' => array('test_number' => 60, "aid" => 1203, 'sid' => 203, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1203))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1203, 'after_vat' => array("203" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1203, 'after_vat' => array("203" => 40.76129119), 'total' => 40.76129119, 'vatable' => 34.83870926, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 61, "aid" => 1303, 'sid' => 303, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1303))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1303, 'after_vat' => array("303" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1303, 'after_vat' => array("303" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 62, "aid" => 1403, 'sid' => 403, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1403))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1403, 'after_vat' => array("403" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1403, 'after_vat' => array("403" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 63, "aid" => 1503, 'sid' => 503, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1503))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1503, 'after_vat' => array("503" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1503, 'after_vat' => array("503" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 64, "aid" => 1603, 'sid' => 603, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1603))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 75.1064516), 'total' => 75.1064516, 'vatable' => 64.1935483, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1603, 'after_vat' => array("603" => 40.76129119), 'total' => 40.76129119, 'vatable' => 34.83870926,  'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
          ),
          array('test' => array('test_number' => 65, "aid" => 1703, 'sid' => 703, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202004", "force_accounts" => array(1703))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+             'expected' => array('billrun' => array('billrun_key' => '202004', 'aid' => 1703, 'after_vat' => array("703" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
                  'line' => array('types' => array('flat', 'credit'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1913",
+         ),
+		  //check that the subscriber isn't charge about one more day in case he subscribr between 1/7/2020 - 30/07/2020
+		  array('test' => array('test_number' => 66, "aid" => 187501, 'sid' => 187500, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202008", "force_accounts" => array(187501))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
+         ),
+             array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat'=>0)),
+             'line' => array('types' => array('flat', 'service')),'jiraLink' =>"https://billrun.atlassian.net/browse/BRCD-2492"
          ),
 		array(
 			'preRun' => ('expected_invoice'),
-			'test' => array('test_number' => 66,),
+			'test' => array('test_number' => 67,),
 			'expected' => array(),
 		),
 		/* run full cycle */
@@ -437,7 +448,7 @@
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
-             $this->message .= 'test number : ' . $row['test']['test_number'];
+             $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'].'</span><br>';
              // run fenctions before the test begin 
              if (isset($row['preRun']) && !empty($row['preRun'])) {
                  $preRun = $row['preRun'];
@@ -459,7 +470,10 @@
                      $function = array($row['test']['function']);
                  }
                  foreach ($function as $func) {
-                     $this->assertTrue($this->$func($key, $returnBillrun, $row));
+                    $testFail = $this->assertTrue($this->$func($key, $returnBillrun, $row));
+                    if(!$testFail){
+                        $this->fails.="|---|<a href='#{$row['test']['test_number']}'>{$row['test']['test_number']}</a>";
+                    }
                  }
              }
              $this->saveLatestResults($returnBillrun, $row);
@@ -476,6 +490,9 @@
              }
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
          }
+         if ($this->fails){
+             $this->message.=$this->fails;
+         }       
          print_r($this->message);
          $this->restoreColletions();
      }
@@ -505,16 +522,14 @@
          $passed = TRUE;
          $billrun_key = $row['expected']['billrun']['billrun_key'];
          $aid = $row['expected']['billrun']['aid'];
-         $invoice_id = $row['expected']['billrun']['invoice_id']?$row['expected']['billrun']['invoice_id']:null;
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
-         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
          foreach ($jiraLink as $link) {
-             $this->message .= '</br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
+             $this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
-         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
-         $this->message .= '</br><b> Result: </b> <br>';
+         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — billrun_key: ' . $billrun_key;
+         $this->message .= '<br><b> Result: </b> <br>';
          if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
              $this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
          } else {
@@ -527,25 +542,24 @@
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
+         return $passed;
+     }
+	 public function checkInvoiceId($key, $returnBillrun, $row) {
+		 $passed = TRUE;
+         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
              
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
                  $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
+				 '<br> — invoice_id: ' . $invoice_id . 
+                 $this->message .=  'invoice_id expected to be : ' .$invoice_id. ' result is '.$retun_invoice_id . $this->fail;
              }
-         } else {
-             if (!empty($retun_invoice_id) && $retun_invoice_id == $this->LatestResults[0][0]['invoice_id']+1) {
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
-             } else {
-                 $passed = false;
-                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
              }
          }
 
-         return $passed;
-     }
 
      /**
       * check if all subscribers was calculeted
@@ -576,22 +590,22 @@
      public function totalsPrice($key, $returnBillrun, $row) {
          $passed = TRUE;
          $this->message .= "<b> total Price :</b> <br>";
-         if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.0000001)) {
+         if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.00001)) {
              $this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->pass;
          } else {
-             $this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->fail;
+             $this->message .= "expected total after vat is : {$row['expected']['billrun']['total']} <b>result is </b>: {$returnBillrun['totals']['after_vat']}" . $this->fail;
              $passed = FALSE;
          }
          $vatable = (isset($row['expected']['billrun']['vatable']) ) ? $row['expected']['billrun']['vatable'] : null;
          if ($vatable <> 0) {
              $vat = $this->calcVat($returnBillrun['totals']['before_vat'], $returnBillrun['totals']['after_vat'], $vatable);
-             if (Billrun_Util::isEqual($vat, $row['expected']['billrun']['vat'], 0.000001)) {
+             if (Billrun_Util::isEqual($vat, $row['expected']['billrun']['vat'], 0.00001)) {
                  $this->message .= "total befor vat is : " . $returnBillrun['totals']['before_vat'] . $this->pass;
              } else {
-                 $this->message .= "total befor vat is : " . $returnBillrun['totals']['before_vat'] . $this->fail;
+                 $this->message .= "expected total befor vat is : {$row['expected']['billrun'] ['vatable']} <b>result is </b>:  {$returnBillrun['totals']['before_vat']}" . $this->fail;
                  $passed = FALSE; /* Percentage of tax */
              }
-             $this->message .= "Percentage of tax :$vat %</br>";
+             $this->message .= "Percentage of tax :$vat %<br>";
          }
          return $passed;
      }
@@ -672,7 +686,7 @@
              $passed = FALSE;
              $this->message .= "these lines aren't created : ";
              foreach ($diff as $dif) {
-                 $this->message .= $dif . '</br>';
+                 $this->message .= $dif . '<br>';
              }
              $this->message .= $this->fail;
          } elseif (empty($diff) && empty($returnTypes) && !empty($row['expected']['line'])) {
@@ -830,7 +844,7 @@
          $this->message .= "<b> rounding :</b> <br>";
          $passed = true;
          if (round($returnBillrun['totals']['after_vat_rounded'], 2) == round($returnBillrun['totals']['after_vat'], 2)) {
-             $this->message .= "'totals.after_vat_rounded' is rounding of 'totals.after_vat' :</b>" . $this->pass;
+             $this->message .= "'totals.after_vat_rounded' is rounding of 'totals.after_vat' :" . $this->pass;
          } else {
              $this->message .= "'totals.after_vat_rounded' is<b>not</b>rounding of 'totals.after_vat' :</b>" . $this->fail;
              $passed = false;
@@ -951,9 +965,10 @@
       */
      public function passthrough($key, $returnBillrun, $row) {
          $passed = true;
-         $billrun = new Billrun_Account_Db;
+         $accounts = Billrun_Factory::account();
          $this->message .= "<b> passthrough_fields :</b> <br>";
-         $account = $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
+         $account = $accounts->loadAccountForQuery((array('aid' => $row['test']['aid'])));
+         $account = $accounts->getCustomerData();
          $address = $account['address'];
          if ($returnBillrun['attributes']['address'] === $address) {
              $this->message .= "passthrough work well" . $this->pass;
@@ -1083,7 +1098,7 @@
              foreach ($returnBillrun['subs'] as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
-                         $this->message .= "plan filed NOT exists in billrun object" . $this->fail;
+                         $this->message .= "plan filed does NOT exist in billrun object" . $this->fail;
                          $passed = false;
                      } else {
                          $this->message .= "plan filed exists in billrun object" . $this->pass;

@@ -32,10 +32,7 @@ class Billrun_Generator_PaymentGateway_Xml {
 
     
     public function __construct($options) {
-        $response = $this->validateOptions($options['configByType']);
-        if($response !== true){
-            throw new Exception($response);
-        }
+        $this->validateOptions($options['configByType']);
         $this->name_space = isset($options['configByType']['generator']['name_space']) ? $options['configByType']['generator']['name_space'] : $this->name_space;
         $this->root_NS = isset($options['configByType']['generator']['root_attribute']) ? $options['configByType']['generator']['root_attribute'] : $this->root_NS;
         $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
@@ -64,10 +61,7 @@ class Billrun_Generator_PaymentGateway_Xml {
                         if ((in_array('attributes', $curentPathes)) && (isset($structuresArray[$segment][$a]['attributes']))) {
                             for ($b = 0; $b < count($structuresArray[$segment][$a]['attributes']); $b++) {
                                 if(empty($structuresArray[$segment][$a]['attributes'][$b]['key']) || empty($structuresArray[$segment][$a]['attributes'][$b]['value'])){
-                                    $message = "One of the attributes's key/value is missing. No generate was made.";
-                                    Billrun_Factory::log($message, Zend_Log::ALERT);
-                                    $this->logFile->updateLogFileField('errors', $message);
-                                    return false;
+                                    throw new Exception("One of the attributes's key/value is missing. No generate was made.", Zend_Log::ALERT);
                                 }
                             }
                         }
@@ -132,26 +126,17 @@ class Billrun_Generator_PaymentGateway_Xml {
                     }
                 } else {
                     if ($segment === "data_structure") {
-                        $message = "No paths in data segment. No generate was made.";
-                        Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->logFile->updateLogFileField('errors', $message);
-                        return false;
+                        throw new Exception("No paths in data segment. No generate was made.", Zend_Log::ALERT);
                     }
                 }
             }
         }
         if($commonPath == ""){
-            $message = "Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.";
-            Billrun_Factory::log($message, Zend_Log::ALERT);
-            $this->logFile->updateLogFileField('errors', $message);
-            return false;
+            throw new Exception("Billrun_Generator_PaymentGateway_Xml: No common path was found. No generate was made.", Zend_Log::ALERT);
         }
         foreach($structuresArray as $segment => $data){
             if((count($structuresArray[$segment]) !== 0) && ((!isset($returnedValue[$segment]) || (count($returnedValue[$segment]) == 0) || empty($returnedValue[$segment]['repeatedTag'])))){
-                $message = $segment . " segment has paths, without repeated tag. No generate was made.";
-                Billrun_Factory::log($message, Zend_Log::ALERT);
-                $this->logFile->updateLogFileField('errors', $message);
-                return false;
+                throw new Exception($segment . " segment has paths, without repeated tag. No generate was made.", Zend_Log::ALERT);
             }
         }
         return true;    
