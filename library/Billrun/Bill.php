@@ -530,7 +530,8 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getContractorsInCollection($aids = array(), $include_exempted = false) {
+	public static function getContractorsInCollection($aids = array()) {
+		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
 		
@@ -551,7 +552,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
-		return $this->getCollectionBillsByAids($aidsQuery, true);
+		return static::getCollectionDebtsByAids($aidsQuery, true);
 	}
 
 	public function getDueBeforeVat() {
@@ -1067,14 +1068,12 @@ abstract class Billrun_Bill {
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
 		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		if (!empty($aids)) {
-			$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-			$currentAccounts = $account->getAccountsByQuery($accountQuery);
-			$validGatewaysAids = array();
-			foreach ($currentAccounts as $activeAccount) {
-				if (!empty($activeAccount['payment_gateway']['active'])) {
-					$validGatewaysAids[] = $activeAccount['aid'];
-				}
+		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
+		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$validGatewaysAids = array();
+		foreach ($currentAccounts as $activeAccount) {
+			if (!empty($activeAccount['payment_gateway']['active'])) {
+				$validGatewaysAids[] = $activeAccount['aid'];
 			}
 		}
 		
@@ -1089,7 +1088,7 @@ abstract class Billrun_Bill {
 		);
 		
 		if (!empty($aids)) {
-			$match['$match'] = $is_aids_query ? $aids : array('aid' => array('$in' => $aids));
+			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
 
 		$project = array(
