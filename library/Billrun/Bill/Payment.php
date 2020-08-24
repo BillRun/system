@@ -360,6 +360,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->detachPaidBills();
 		$this->detachPayingBills();
 		$this->save();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
 
 	/**
@@ -979,6 +980,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+		$paymentSaved = $this->save();
+		if (!$paymentSaved) {
+			$message = "Denied flagging failed for rec " . $txId;
+			Billrun_Factory::log($message, Zend_Log::ALERT);
+			return array('status'=> false, 'massage' => $message);
+		} else {
+			$this->updatePastRejectionsOnProcessingFiles();
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
+		}
+		return array('status'=> true);
 	}
 	
 	public function isDenied($denialAmount) {
