@@ -448,15 +448,15 @@ class BillrunController extends ApiController {
 			switch ($name) {
 				case 'date':
 				case 'min_invoice_date':
-					if (!strtotime($value)) {
+					if (!is_null($value) && !strtotime($value)) {
 						return false;
 					}
 					break;
 				case 'invoices':
 				case 'aids':
 				case 'exclude_accounts':
-					$values_array = !is_null($value) ? explode(",", $value) : null;
-					if (count($values_array) !== count(array_filter($values_array, 'is_numeric'))  && !is_null($values_array)) {
+					$values_array = !is_null($value) ? Billrun_Util::verify_array($value, 'int') : [];
+					if (!is_null($value) && empty($values_array)) {
 						return false;
 					}
 					break;
@@ -468,7 +468,7 @@ class BillrunController extends ApiController {
 				case 'pay_mode':
 				case 'mode':
 					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
-					if (!in_array($value, $array)) {
+					if (!is_null($value) && !in_array($value, $array)) {
 						return false;
 					}
 					break;
