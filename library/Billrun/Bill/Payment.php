@@ -789,17 +789,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return static::getBills($query);
 	}
 	
-	public function getDenialsPayments($aid) {
-		$query = array(
-			'aid' => $aid,
-			'$or' => array(
-				array('is_denial' => array('$eq' => true)),
-				array('denied_by' => array('$exists' => true)),
-			),
-		);
-		return static::getBills($query);
-	}
-	
 	public static function buildFilterQuery($chargeFilters) {
 		$filtersQuery = array();
 		$errorMessage = self::validateChargeFilters($chargeFilters);
