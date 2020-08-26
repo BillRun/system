@@ -306,6 +306,7 @@ class Billrun_Plan {
 			}
 			// not group included in the specific usage try to take iterate next group
 			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+				$groupSelected = FALSE;
 				continue;
 			}
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
