@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Charge.php';
+
 /**
  * This class manages billing cycle process.
  *
@@ -186,14 +188,71 @@ class BillrunController extends ApiController {
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
+		
+		if ($this->canSyncCharge($request)) {
+			return $this->chargeSync($mode, $params, $request);
+		}
+		
+		return $this->chargeAsync($mode, $params);
+	}
+	
+	/**
+	 * make an asynchronous charge request 
+	 * 
+	 * @param string $mode
+	 * @param array $params
+	 */
+	protected function chargeAsync($mode, $params) {
 		$success = self::processCharge($mode, $params);
-
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
+	}
+	
+	/**
+	 * make a synchronous charge request 
+	 * 
+	 * @param string $mode
+	 * @param array $params
+	 * @param Yaf_Request_Abstract $request
+	 */
+	protected function chargeSync($mode, $params, $request) {
+		$aid = intval($params['aids']);
+		$paymentData = json_decode($request->get('payment_data'), JSON_OBJECT_AS_ARRAY);
+		if (!empty($paymentData)) {
+			$params['payment_data'] = [
+				$aid => $paymentData,
+			];
+		}
+		$amount = $request->get('amount');
+		if ($amount) { // allow charge without existing bill
+			$params['bills'] = [
+				[
+					'aid' => $aid,
+					'left_to_pay' => $amount > 0 ? $amount : 0,
+					'left' => $amount < 0 ? abs($amount) : 0,
+					'payment_method' => $request->get('payment_method', 'automatic'),
+					'billrun_key' => $request->get('billrun_key', Billrun_Billingcycle::getBillrunKeyByTimestamp()),
+				],
+			];
+		}
+		$chargeAction = new ChargeAction();
+		$response = $chargeAction->charge($params);
+		$this->setSuccess($response);
+	}
+	
+	/**
+	 * checks if the charge can be done synchronously (1 payment request)
+	 * 
+	 * @param Yaf_Request_Abstract $request
+	 * @return boolean
+	 */
+	protected function canSyncCharge($request) {
+		$aids = Billrun_Util::verify_array($request->get('aids', []), 'int');
+		return (count($aids) == 1 && $request->get('pay_mode', '') == 'one_payment');
 	}
 
 	/**
@@ -273,7 +332,7 @@ class BillrunController extends ApiController {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
-		$from = date('Y/m/d', strtotime('12 months ago'));		
+		$from = date('Y/m/d', strtotime('24 months ago'));		
 		return $this->getCyclesInRange($from, $to, $newestFirst);
 	}
 

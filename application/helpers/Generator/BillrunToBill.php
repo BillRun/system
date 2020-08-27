@@ -15,11 +15,14 @@
 class Generator_BillrunToBill extends Billrun_Generator {
 	
 	use Billrun_Traits_Api_OperationsLock;
+	use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_ForeignFields;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
 	protected $billrunColl;
 	protected $logo = null;
+	protected $confirmDate;
 	protected $sendEmail = true;
 	protected $filtration = null;
 
@@ -33,6 +36,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
+		$this->confirmDate = time();
 	}
 
 	public function load() {
@@ -70,6 +74,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['releasingProblem'] = true;
 			}
 		}
+		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoicesIds, (string) $this->stamp));
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
@@ -87,7 +92,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'invoice_id' => $invoice['invoice_id'],
 				'aid' => $invoice['aid'],
 				'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
-				'due_date' => $invoice['due_date'],
+				'due_date' => $this->updateDueDate($invoice),
+				'charge' => ['not_before' => $this->updateChargeDate($invoice)],
 				'due' => $invoice['totals']['after_vat_rounded'],
 				'due_before_vat' => $invoice['totals']['before_vat'],
 				'customer_status' => 'open',//$invoice['attributes']['account_status'],
@@ -105,6 +111,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
+                                'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
@@ -119,7 +126,11 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
 		}
 		
+		$account = Billrun_Factory::account();
+		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
+		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating Bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('beforeInvoiceConfirmed', array(&$bill, $invoice));
 		$this->safeInsert(Billrun_Factory::db()->billsCollection(), array('invoice_id', 'billrun_key', 'aid', 'type'), $bill, $callback);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid']);
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill));
@@ -232,4 +243,41 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 	
+	protected function updateDueDate($invoice) {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
+				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+			}
+		}
+		return $invoice['due_date'];
+	}
+	
+	protected function updateChargeDate($invoice) {
+		$options = Billrun_Factory::config()->getConfigValue('charge.not_before', []);
+		$invoiceType = @$invoice['attributes']['invoice_type'];
+		
+		// go through all config options and try to match the relevant
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {				
+				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+			}
+			if (in_array($invoiceType, $option['invoice_type']) && !empty($invoice[$option['anchor_field']])) {	
+				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
+			}
+		}
+		
+		// if no config option was matched this could be an on-confirmation invoice - use invoice 'due_date' field
+		if (!empty($invoice['due_date'])) {
+			return $invoice['due_date'];
+		}
+		
+		// else - get config default value or temporerily use 'invoice_date' with offset
+		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'bills';
+	}
 }

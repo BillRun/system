@@ -17,10 +17,11 @@ class Billrun_Plan extends Billrun_Service {
 	const PLAN_SPAN_YEAR = 'year';
 	const PLAN_SPAN_MONTH = 'month';
 
-	protected static $plans = array();
+	protected static $cache = array();
 	protected $plan_ref = array();
 	protected $planActivation;
 	protected $planDeactivation = null;
+	protected static $cacheType = 'plans';
 
 	/**
 	 * constructor
@@ -75,7 +76,7 @@ class Billrun_Plan extends Billrun_Service {
 	 */
 	protected function constructWithActivePlan($params) {
 		$date = new MongoDate($params['time']);
-		$plan = self::getPlanByNameAndTime($params['name'], $date);
+		$plan = static::getByNameAndTime($params['name'], $date);
 		if ($plan) {
 			$this->data = $plan;
 			return;
@@ -122,27 +123,6 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->planDeactivation;
 	}
 
-	public static function initPlans() {
-		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
-		foreach ($plans as $plan) {
-			$plan->collection($plans_coll);
-			self::$plans['by_id'][strval($plan->getId())] = $plan;
-			self::$plans['by_name'][$plan['name']][] = array(
-				'plan' => $plan,
-				'from' => $plan['from'],
-				'to' => $plan['to'],
-			);
-		}
-	}
-
-	public static function getPlans() {
-		if (empty(self::$plans)) {
-			self::initPlans();
-		}
-		return self::$plans;
-	}
-
 	/**
 	 * get the plan by its id
 	 *
@@ -151,27 +131,8 @@ class Billrun_Plan extends Billrun_Service {
 	 * @return array of plan details if id exists else false
 	 */
 	protected function getPlanById($id) {
-		if (isset(self::$plans['by_id'][$id])) {
-			return self::$plans['by_id'][$id];
-		}
-		return false;
-	}
-
-	/**
-	 * get plan by name and date
-	 * plan is time-depend
-	 * @param string $name name of the plan
-	 * @param int $time unix timestamp
-	 * @return array with plan details if plan exists, else false
-	 */
-	protected static function getPlanByNameAndTime($name, $time) {
-		$plans = static::getPlans();
-		if (isset($plans['by_name'][$name])) {
-			foreach ($plans['by_name'][$name] as $planTimes) {
-				if ($planTimes['from'] <= $time && (!isset($planTimes['to']) || is_null($planTimes['to']) || $planTimes['to'] >= $time)) {
-					return $planTimes['plan'];
-				}
-			}
+		if (isset(self::$cache['by_id'][$id])) {
+			return self::$cache['by_id'][$id];
 		}
 		return false;
 	}
@@ -468,10 +429,11 @@ class Billrun_Plan extends Billrun_Service {
 //		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
 //			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
 //		}
-		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-			return $diff->m + ($diff->y * 12);
-		}
+// BRCD-2742 : Commented out as this cause werid edge cases as exampled in :  https://billrun.atlassian.net/browse/BRCD-2742 ,  https://billrun.atlassian.net/browse/BRCD-2741
+// 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
+// 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
+// 			return $diff->m + ($diff->y * 12);
+// 		}
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
 			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
 		}
@@ -555,9 +517,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($start_month == $end_month) {
 			$days_in_plan = (int) $end_day - (int) $start_day + 1;
 		} else {
-			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
-			$days_in_current_month = (int) $end_day;
-			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+			$days_in_plan = $days_in_month - (int) $start_day + 1;
 		}
 
 		$fraction = $days_in_plan / $days_in_month;

@@ -174,9 +174,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * Update the line/row with it related taxing data.
 	 * @param array $line The line to update it data.
 	 * @param array $subscriber  the subscriber that is associated with the line
+	 * @param array $params - additional parameters to sent to the function
 	 * @return array updated line/row with the tax data
 	 */
-	abstract protected function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData);
+	abstract public function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData, $params = []);
 	/**
 	 * Update the non-taxable/pre-taxed line/row with it related taxing data.
 	 * @param array $line The line to update it data.
