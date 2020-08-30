@@ -360,7 +360,7 @@ class ResetLinesModel {
 			$balanceUsaget = $line['usaget'];
 			$balanceUsagev = $line['usagev'];
 			if (isset($line['out_plan']) && $line['out_plan'] > 0 && $line['usagev'] > 0) {
-				$balanceUsaget = 'out_plan_' . $line['usaget'];
+				$balanceUsaget = $line['usaget'];
 				$balanceUsagev = $line['out_plan'];
 				if (isset($line['in_plan'])) {
 					$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;

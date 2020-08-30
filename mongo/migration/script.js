@@ -807,6 +807,32 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
 
+// BRCD-1246 fix deprecated out plan balance structure
+for (var i in lastConfig['usage_types']) {
+    print("BRCD-1246 " + i);
+    var _usage_type = lastConfig['usage_types'][i].usage_type;
+    var _balance_unset_key = "balance.totals.out_plan_" + _usage_type;
+    var _balance_set_key = "balance.totals." + _usage_type;
+//    print(_balance_unset_key);
+    var _query = {};
+    _query[_balance_unset_key] = {"$exists": true};
+    db.balances.find(_query).forEach(
+        function(obj) {
+            print("balance id: " + obj._id + " sid: " + obj.sid + " balance unset key " + _balance_unset_key);
+            var _inc_query_part = {}, _set_query_part = {}, _update_query = {}, _inc_entry_key = "$inc", _set_entry_key = "$set", _unset_entry_key = "$unset";
+            for (var j in obj.balance.totals['out_plan_' + _usage_type]) {
+                _inc_query_part[_balance_set_key + "." + j] = obj.balance.totals['out_plan_' + _usage_type][j];
+            }
+            _set_query_part['BRCD-1246_out_plan_' + _usage_type] = obj.balance.totals['out_plan_' + _usage_type]; // this will keep old entry with new name
+            _update_query[_inc_entry_key] = _inc_query_part;
+            _update_query[_set_entry_key] = _set_query_part;
+            _update_query[_unset_entry_key] = {};
+            _update_query[_unset_entry_key][_balance_unset_key] = 1;
+//            printjson(_update_query);
+            db.balances.update({_id:obj._id}, _update_query);
+        }
+    );
+}
 // ============================= BRCD-2556: split balances to monthly and add-on balance =====================================
 const time = ISODate();
 const services = getServices();
