@@ -284,11 +284,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return string
 	 */
 	public function getBalanceTotalsKey($pricingData) {
-		if (isset($pricingData['in_plan']) || isset($pricingData['over_plan']) ||
-			isset($pricingData['in_group']) || isset($pricingData['over_group'])) {
-			return $this->row['usaget'];
-		}
-		return 'out_plan_' . $this->row['usaget'];
+		return $this->row['usaget'];
 	}
 	
 	/**
