@@ -405,12 +405,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @deprecated since version 5.2
 	 */
 	public function getBalanceTotalsKey($usage_type, $rate) {
-		if ($this->isRateInBasePlan($rate, $usage_type)) {
-			$usage_class_prefix = "";
-		} else {
-			$usage_class_prefix = "out_plan_";
-		}
-		return $usage_class_prefix . $usage_type;
+		return $usage_type;
 	}
 
 	public function isUpfrontPayment() {
