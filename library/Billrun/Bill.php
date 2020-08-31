@@ -1054,17 +1054,18 @@ abstract class Billrun_Bill {
 		}
 		return $this->method;
 	}
-
+	
 	/**
-	 * Function to get all the accounts that are in collection, with their debts, by aids (aids list or query).
+	 * Function to get the debt or the credit balance, of all the accounts that are in collection, by aids (aids list or query).
 	 * @param array $aids - array of aids, or query array on "aid" field in bill
 	 * @param boolean $is_aids_query - true if "$aids" variable is query, true if it's a list of specific aids.
+	 * @param boolean $only_debts - true if we want to get all the accounts that are in collection, with their debts
+	 * (if they have credit balance they will not show) otherwise show also get all the accounts that are in collection that they have credit/debt
 	 * @return 
 	 */
-	public static function getCollectionDebtsByAids($aids = array(), $is_aids_query = false) {
+	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
 		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountCurrentRevisionQuery['type'] = 'account';
 		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
@@ -1076,15 +1077,10 @@ abstract class Billrun_Bill {
 				$validGatewaysAids[] = $activeAccount['aid'];
 			}
 		}
-		
-		$matchQuery = array(
-			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
-			'paid' => array('$in' => array(false, '0', 0)),
-		);
-		
-		
+			
+		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
-			'$match' => $matchQuery,
+			'$match' => $nonRejectedOrCanceled,
 		);
 		
 		if (!empty($aids)) {
@@ -1096,41 +1092,61 @@ abstract class Billrun_Bill {
 				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
 				'aid' => 1,
-				'left_to_pay' => 1
+				'left_to_pay' => 1, 
+				'left' => 1
 			)
 		);
-		
+		$debtQuery = array(
+			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
+			'paid' => array('$in' => array(false, '0', 0)),
+		);
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
-				'total_valid' => array(
+				'total_debt_valid' => array(
 					'$sum' => array(
 						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
 					),
 				),
-				'total_invalid' => array(
+				'total_debt_invalid' => array(
 					'$sum' => array(
 						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
 					),
 				),
+				'total_credit' => array(
+					'$sum' => array(
+						'$ifNull' => array(array('$multiply' => array('$left', -1)), 0)
+					),
+				),
 			),
 		);
-
 		$project3 = array(
 			'$project' => array(
 				'_id' => 0,
 				'aid' => '$_id',
-				'total' => array('$add' => array('$total_valid', '$total_invalid')),
 			),
 		);
-
-		$match2 = array(
-			'$match' => array(
-				'total' => array(
-					'$gte' => $minBalance
+		if ($only_debts) {
+			$project3['$project']['total'] = array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
+			$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
+			$match2 = array(
+				'$match' => array(
+					'total' => array(
+						'$gte' => $minBalance
+					)
 				)
-			)
-		);
+			);
+			
+		} else {
+			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
+			$match2 = array(
+				'$match' => array(
+					'total' => array(
+						'$ne' => 0
+					)
+				)
+			);
+		}
 		$results = iterator_to_array($billsColl->aggregate($match, $project, $group, $project3, $match2));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
