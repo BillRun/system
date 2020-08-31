@@ -809,7 +809,7 @@ if (db.serverStatus().ok == 0) {
 
 // BRCD-1246 fix deprecated out plan balance structure
 for (var i in lastConfig['usage_types']) {
-    print("BRCD-1246 " + i);
+//    print("BRCD-1246 " + i);
     var _usage_type = lastConfig['usage_types'][i].usage_type;
     var _balance_unset_key = "balance.totals.out_plan_" + _usage_type;
     var _balance_set_key = "balance.totals." + _usage_type;
