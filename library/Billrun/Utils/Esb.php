@@ -1,5 +1,15 @@
 <?php
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
 
+/**
+ * This a class for queue interfaces based on Stomp use.
+ * can use sengMsg and getMsg to communicate with the queue (after subscribing to a given queue)
+ * @package  Util
+ */
 class Billrun_Utils_Esb {
 
 	protected $stompClient = null;
@@ -59,7 +69,7 @@ class Billrun_Utils_Esb {
 				if ($this->stompClient->hasFrame()) {
 					$esbFrame = $this->stompClient->readFrame();
 					$inQname = $this->getActionFromMsgHeaders($esbFrame);
-					if ($inQname = $queueName) {
+					if ($inQname == $queueName) {
 						if ($ack) {
 							$this->stompClient->ack($esbFrame);
 						}
