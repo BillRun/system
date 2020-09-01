@@ -1077,45 +1077,63 @@ abstract class Billrun_Bill {
 				$validGatewaysAids[] = $activeAccount['aid'];
 			}
 		}
-			
+
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
 			'$match' => $nonRejectedOrCanceled,
 		);
-		
+
 		if (!empty($aids)) {
 			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
 		}
-
 		$project = array(
 			'$project' => array(
 				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
-				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
+				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
+				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
+				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
 				'aid' => 1,
-				'left_to_pay' => 1, 
+				'left_to_pay' => 1,
 				'left' => 1
 			)
 		);
-		$debtQuery = array(
-			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
-			'paid' => array('$in' => array(false, '0', 0)),
+		$addFields = array(
+			'$addFields' => array(
+				'total_debt_valid_cond' => array('$and' => array(array('$and' => array(
+								array('$eq' => array('$valid_gateway', true)),
+								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
+								array('$eq' => array('$valid_due_date', true)),
+								array('$eq' => array('$paid', false))))
+					)
+				),
+				'total_debt_invalid_cond' => array('$and' => array(
+						array('$and' => array(
+								array('$eq' => array('$valid_gateway', false)),
+								array('$eq' => array('$valid_due_date', true)))),
+						array('$eq' => array('$paid', false))
+					)
+				),
+				'total_credit_cond' => array(
+						'$cond' => array(array('$and'=> array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
+					),
+			)
 		);
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
 				'total_debt_valid' => array(
 					'$sum' => array(
-						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+						'$cond' => array(array('$eq' => array('$total_debt_valid_cond', true)), '$left_to_pay', 0)
 					),
 				),
 				'total_debt_invalid' => array(
 					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
+						'$cond' => array(array('$eq' => array('$total_debt_invalid_cond', true)), '$left_to_pay', 0)
 					),
 				),
 				'total_credit' => array(
 					'$sum' => array(
-						'$ifNull' => array(array('$multiply' => array('$left', -1)), 0)
+						'$cond' => array(array('$eq' => array('$total_credit_cond', true)), array('$multiply' => array('$left', -1)), 0)
 					),
 				),
 			),
@@ -1136,7 +1154,6 @@ abstract class Billrun_Bill {
 					)
 				)
 			);
-			
 		} else {
 			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
 			$match2 = array(
@@ -1147,10 +1164,9 @@ abstract class Billrun_Bill {
 				)
 			);
 		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $group, $project3, $match2));
+		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
 		return array_combine(array_map(function($ele) {
 				return $ele['aid'];
 			}, $results), $results);
-		
 	}
 }
