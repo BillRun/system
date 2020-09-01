@@ -66,7 +66,7 @@ trait Billrun_Traits_AsnParsing {
 				return $ret;
 			},
 			'ip' => function($fieldData) {
-				return !is_string($fieldData) ? null : implode('.', unpack('C*', $fieldData));
+				return !is_string($fieldData) ? null : (strlen($fieldData) > 4 ? preg_replace('/([\w\d]{4})(?!$)/','\1:',implode('', unpack('H*', $fieldData))) : implode('.', unpack('C*', $fieldData)));
 			},
 			'ip6' => function($fieldData) {
 				return !is_string($fieldData) ? null : implode(':', unpack('H*', $fieldData));
