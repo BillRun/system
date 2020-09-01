@@ -552,7 +552,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
-		return static::getCollectionDebtsByAids($aidsQuery, true);
+		return static::getBalanceByAids($aidsQuery, true, true);
 	}
 
 	public function getDueBeforeVat() {

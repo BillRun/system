@@ -132,7 +132,7 @@ class BillAction extends ApiAction {
 	 * 
 	 * @param type $request
 	 * @param type $only_debt - if true return only accounts with their debt, 
-	 * otherwise return account or withe their debt or with their credit balance
+	 * otherwise return account with their debt or with their credit balance
 	 *
 	 */
 	protected function getCollectionDebt($request, $only_debt = true) {
