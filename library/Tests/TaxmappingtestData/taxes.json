@@ -1,0 +1,39 @@
+{
+	"collection": "taxesCollection",
+	"data":
+			[
+				{
+					"OBJID": "5ce29d0a180ddaf017f56d24",
+					"key": "DEFAULT_VAT",
+					"from": "time*2019-01-01T00:00:00Z",
+					"creation_time": "time*2019-01-01T00:00:00Z",
+					"to": "time*2119-01-01T00:00:00Z",
+					"description": "Vat",
+					"rate": 0.17,
+					"params": {
+
+					}
+				},
+				{
+					"OBJID": "5ce29d7605e68c4a45693552",
+					"from": "time*2018-05-21T00:00:00Z",
+					"key": "A",
+					"description": "a",
+					"rate": 0.1,
+					"to": "time*2168-05-20T12:28:38Z",
+					"creation_time": "time*2018-05-21T00:00:00Z",
+					"params": {
+						"plan": "OVERRIDE_GLOBAL_TAX_PLAN"
+					}
+				},
+				{
+					"OBJID": "5ce4e40a05e68c33dd3611e4",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "B",
+					"description": "b",
+					"rate": 0.2,
+					"to": "time*2168-05-22T05:54:18Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				}
+			]
+}
