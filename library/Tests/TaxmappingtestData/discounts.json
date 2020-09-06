@@ -1,0 +1,111 @@
+{
+	"collection": "discountsCollection",
+	"data":
+			[
+				{
+					"OBJID": "5ce503fe7cbf797d96b503b5",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "NOT_VAT_PLANANDSERVICE",
+					"description": "NOT_VAT_PLANANDSERVICE",
+					"params": {
+						"plan": "NONTAX_PLAN",
+						"service": [
+							"NONTAX_SERVICE"
+						]
+					},
+					"discount_type": "monetary",
+					"discount_subject": {
+						"plan": {
+							"NONTAX_PLAN": 5
+						},
+						"service": {
+							"NONTAX_SERVICE": {
+								"value": 5
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2168-05-22T08:05:15Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				},
+				{
+					"OBJID": "5ce503fe7cbf797d96b503b6",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "USE_GLOBAL_PLANANDSERVICE",
+					"description": "USE_GLOBAL_PLANANDSERVICE",
+					"params": {
+						"plan": "USE_GLOBAL_TAX_PLAN",
+						"service": [
+							"USE_GLOBAL_TAX_SERVICE"
+						]
+					},
+					"discount_type": "monetary",
+					"discount_subject": {
+						"plan": {
+							"USE_GLOBAL_TAX_PLAN": 5
+						},
+						"service": {
+							"USE_GLOBAL_TAX_SERVICE": {
+								"value": 5
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2168-05-22T08:05:15Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				},
+				{
+					"OBJID": "5ce503fe7cbf797d96b503b7",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "OVERRIDE_GLOBAL_TAX_PLANANDSERVICE",
+					"description": "OVERRIDE_GLOBAL_TAX_PLANANDSERVICE",
+					"params": {
+						"plan": "OVERRIDE_GLOBAL_TAX_PLAN",
+						"service": [
+							"OVERRIDE_GLOBAL_TAX_SERVICE"
+						]
+					},
+					"discount_type": "monetary",
+					"discount_subject": {
+						"plan": {
+							"OVERRIDE_GLOBAL_TAX_PLAN": 5
+						},
+						"service": {
+							"OVERRIDE_GLOBAL_TAX_SERVICE": {
+								"value": 5
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2168-05-22T08:05:15Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				},
+				{
+					"OBJID": "5ce503fe7cbf797d96b503b8",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "DEFAULT_TAX_PLANANDSERVICE",
+					"description": "DEFAULT_TAX_PLANANDSERVICE",
+					"params": {
+						"plan": "DEFAULT_TAX_PLAN",
+						"service": [
+							"DEFAULT_TAX_SERVICE"
+						]
+					},
+					"discount_type": "monetary",
+					"discount_subject": {
+						"plan": {
+							"DEFAULT_TAX_PLAN": 5
+						},
+						"service": {
+							"DEFAULT_TAX_SERVICE": {
+								"value": 5
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2168-05-22T08:05:15Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				}
+
+			]
+}
