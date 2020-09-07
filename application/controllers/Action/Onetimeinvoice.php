@@ -334,10 +334,11 @@ class OnetimeinvoiceAction extends ApiAction {
 		$tries = 0;
 		while($result['alreadyRunning']){
 			if ($tries >= 3) {	
-				throw new Exception("BillrunToBill is already running");
+				throw new Exception("BillrunToBill is already running after " . $tries . " tries");
 			}
 			$tries++;
 			sleep(1);
+			Billrun_Factory::log('BillrunToBill is already running, try to generate again. Try number: '. $tries, Zend_Log::DEBUG);
 			$result = $billrunToBill->generate();
 		}
 	}
