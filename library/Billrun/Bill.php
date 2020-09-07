@@ -531,14 +531,10 @@ abstract class Billrun_Bill {
 	}
 
 	public static function getContractorsInCollection($aids = array()) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
 		$exempted = $account->getExcludedFromCollection($aids);
 		$subject_to = $account->getIncludedInCollection($aids);
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
-
+		
 		// white list exists but aids not included
 		if (!is_null($subject_to) && empty($subject_to)) {
 			return [];
@@ -548,11 +544,6 @@ abstract class Billrun_Bill {
 			$aids = $subject_to;
 		}
 		
-		$matchQuery = array(
-			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
-			'paid' => array('$in' => array(false, '0', 0)),
-		);
-		
 		if (!empty($aids)) {
 			$aidsQuery = array('aid' => array('$in' => $aids));			
 		} else if (!empty($exempted)){
@@ -560,70 +551,8 @@ abstract class Billrun_Bill {
 		} else {
 			$aidsQuery = array();
 		}
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
-		$validGatewaysAids = array();
-		foreach ($currentAccounts as $activeAccount) {
-			if (!empty($activeAccount['payment_gateway']['active'])) {
-				$validGatewaysAids[] = $activeAccount['aid'];
-			}
-		}
 
-		$match = array(
-			'$match' => $matchQuery,
-		);
-
-		if ($aids) {
-			$match['$match']['aid']['$in'] = $aids;
-		}
-		if ($exempted) {
-			$match['$match']['aid']['$nin'] = $exempted;
-		}
-
-		$project = array(
-			'$project' => array(
-				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
-				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
-				'aid' => 1,
-				'left_to_pay' => 1
-			)
-		);
-		
-		$group = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'total_valid' => array(
-					'$sum' => array(
-						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
-					),
-				),
-				'total_invalid' => array(
-					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
-					),
-				),
-			),
-		);
-
-		$project3 = array(
-			'$project' => array(
-				'_id' => 0,
-				'aid' => '$_id',
-				'total' => array('$add' => array('$total_valid', '$total_invalid')),
-			),
-		);
-
-		$match2 = array(
-			'$match' => array(
-				'total' => array(
-					'$gte' => $minBalance
-				)
-			)
-		);
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $group, $project3, $match2));
-		return array_combine(array_map(function($ele) {
-				return $ele['aid'];
-			}, $results), $results);
+		return static::getCollectionDebtsByAids($aidsQuery, true);
 	}
 
 	public function getDueBeforeVat() {
@@ -1126,4 +1055,86 @@ abstract class Billrun_Bill {
 		return $this->method;
 	}
 
+	/**
+	 * Function to get all the accounts that are in collection, with their debts, by aids (aids list or query).
+	 * @param array $aids - array of aids, or query array on "aid" field in bill
+	 * @param boolean $is_aids_query - true if "$aids" variable is query, true if it's a list of specific aids.
+	 * @return 
+	 */
+	public static function getCollectionDebtsByAids($aids = array(), $is_aids_query = false) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$account = Billrun_Factory::account();
+		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
+		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountCurrentRevisionQuery['type'] = 'account';
+		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
+		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$validGatewaysAids = array();
+		foreach ($currentAccounts as $activeAccount) {
+			if (!empty($activeAccount['payment_gateway']['active'])) {
+				$validGatewaysAids[] = $activeAccount['aid'];
+			}
+		}
+		
+		$matchQuery = array(
+			'due_date' => array('$exists' => true, '$lt' => new MongoDate()),
+			'paid' => array('$in' => array(false, '0', 0)),
+		);
+		
+		
+		$match = array(
+			'$match' => $matchQuery,
+		);
+		
+		if (!empty($aids)) {
+			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
+		}
+
+		$project = array(
+			'$project' => array(
+				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
+				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)) , array('$ne' => array('$past_rejections', [])))), true, false)),
+				'aid' => 1,
+				'left_to_pay' => 1
+			)
+		);
+		
+		$group = array(
+			'$group' => array(
+				'_id' => '$aid',
+				'total_valid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$and' => array(array('$eq' => array('$valid_gateway', true)) , array('$ne' => array('$past_rejections', false)))), '$left_to_pay', 0)
+					),
+				),
+				'total_invalid' => array(
+					'$sum' => array(
+						'$cond' => array(array('$eq' => array('$valid_gateway', false)), '$left_to_pay', 0),
+					),
+				),
+			),
+		);
+
+		$project3 = array(
+			'$project' => array(
+				'_id' => 0,
+				'aid' => '$_id',
+				'total' => array('$add' => array('$total_valid', '$total_invalid')),
+			),
+		);
+
+		$match2 = array(
+			'$match' => array(
+				'total' => array(
+					'$gte' => $minBalance
+				)
+			)
+		);
+		$results = iterator_to_array($billsColl->aggregate($match, $project, $group, $project3, $match2));
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
+		
+	}
 }

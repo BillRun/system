@@ -134,7 +134,7 @@ class V3_billAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		return Billrun_Bill::getContractorsInCollection($aids);
+		return Billrun_Bill::getCollectionDebtsByAids($aids);
 	}
 	
 	protected function getPermissionLevel() {
