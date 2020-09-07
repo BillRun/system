@@ -43,7 +43,7 @@ class Generator_Translations {
 	}
 	
 	public static function getDefaultLanguage() {
-		return Billrun_Factory::config()->getConfigValue(static::$defaultLangPath);
+		return Billrun_Factory::config()->getConfigValue(static::$defaultLangPath, 'en_GB');
 	}
 	
 	public static function translate($slug, $args = []) {

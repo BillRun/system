@@ -144,8 +144,6 @@ for (var i = 0; i < lastConfig['plugins'].length; i++) {
 		}
 	}
 }
-
-
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
 if(lastConfig.invoice_export) {
@@ -860,6 +858,7 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
+
 // BRCD-1241: convert events to new structure
 if (typeof lastConfig.events !== 'undefined') {
 	for (var eventType in lastConfig.events) {
@@ -909,6 +908,196 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+// BRCD-1246 fix deprecated out plan balance structure
+for (var i in lastConfig['usage_types']) {
+//    print("BRCD-1246 " + i);
+    var _usage_type = lastConfig['usage_types'][i].usage_type;
+    var _balance_unset_key = "balance.totals.out_plan_" + _usage_type;
+    var _balance_set_key = "balance.totals." + _usage_type;
+//    print(_balance_unset_key);
+    var _query = {};
+    _query[_balance_unset_key] = {"$exists": true};
+    db.balances.find(_query).forEach(
+        function(obj) {
+            print("balance id: " + obj._id + " sid: " + obj.sid + " balance unset key " + _balance_unset_key);
+            var _inc_query_part = {}, _set_query_part = {}, _update_query = {}, _inc_entry_key = "$inc", _set_entry_key = "$set", _unset_entry_key = "$unset";
+            for (var j in obj.balance.totals['out_plan_' + _usage_type]) {
+                _inc_query_part[_balance_set_key + "." + j] = obj.balance.totals['out_plan_' + _usage_type][j];
+            }
+            _set_query_part['BRCD-1246_out_plan_' + _usage_type] = obj.balance.totals['out_plan_' + _usage_type]; // this will keep old entry with new name
+            _update_query[_inc_entry_key] = _inc_query_part;
+            _update_query[_set_entry_key] = _set_query_part;
+            _update_query[_unset_entry_key] = {};
+            _update_query[_unset_entry_key][_balance_unset_key] = 1;
+//            printjson(_update_query);
+            db.balances.update({_id:obj._id}, _update_query);
+        }
+    );
+}
+// ============================= BRCD-2556: split balances to monthly and add-on balance =====================================
+const time = ISODate();
+const services = getServices();
+
+services.forEach(function (service) {
+	const groups = getServiceGroups(service);
+	groups.forEach(function (group) {
+		const balances = getBalances(group);
+		balances.forEach(function (balance) {
+			// update/create add-on specific balance
+			const query = {
+				aid: balance['aid'],
+				sid: balance['sid'],
+				from: balance['from'],
+				to: balance['to'],
+				period: balance['period'],
+				service_name: service['name'],
+				connection_type: 'postpaid',
+				added_by_script: {$exists: true},
+				priority: {
+					$exists: true,
+					$ne: 0
+				}
+			};
+			
+			const setOnInsert = {
+				aid: balance['aid'],
+				sid: balance['sid'],
+				from: balance['from'],
+				to: balance['to'],
+				period: balance['period'],
+				start_period: balance['start_period'],
+				connection_type: balance['connection_type'],
+				current_plan: balance['current_plan'],
+				plan_description: balance['plan_description'],
+				priority: service['service_id'] || Math.floor(Math.random() * 10000000000000000) + 1,
+				service_name: service['name'],
+				added_by_script: ISODate(),
+				['balance.groups.' + group['name'] + '.total']: balance['balance']['groups'][group['name']]['total'],
+			};
+			
+			const inc = {
+				['balance.groups.' + group['name'] + '.count']: balance['balance']['groups'][group['name']]['count'],
+			};
+			
+			const set = {
+				['balance.groups.' + group['name'] + '.left']: balance['balance']['groups'][group['name']]['left'],
+			};
+			
+			// since monetary groups has no usaget - we can't update totals of monthly and add-on balances
+			// this might cause bugs if we have a case of monetary group, and event on usagev
+			// totals->[USAGET]->usagev will be incorrect in monthly and add-on balances
+			if (group['type'] == 'cost') {
+				inc['balance.groups.' + group['name'] + '.cost'] = balance['balance']['groups'][group['name']]['cost'];
+				setOnInsert['balance.cost'] = 0;
+			} else {
+				setOnInsert['balance.totals.' + group['usaget'] + '.cost'] = 0;
+				inc['balance.totals.' + group['usaget'] + '.usagev'] = balance['balance']['groups'][group['name']]['usagev'];
+				inc['balance.totals.' + group['usaget'] + '.count'] = balance['balance']['groups'][group['name']]['count'];
+				inc['balance.groups.' + group['name'] + '.usagev'] = balance['balance']['groups'][group['name']]['usagev'];
+				
+				// update monthly balance totals
+				balance['balance']['totals'][group['usaget']]['usagev'] -= balance['balance']['groups'][group['name']]['usagev'];
+				balance['balance']['totals'][group['usaget']]['count'] -= balance['balance']['groups'][group['name']]['count'];
+			}
+			
+			const update = {
+				$setOnInsert: setOnInsert,
+				$inc: inc,
+				$set: set,
+			};
+			
+			const options = {
+				upsert: true
+			};
+
+			db.balances.update(query, update, options);
+
+			// remove group from monthly balance
+			delete balance['balance']['groups'][group['name']];
+			if (typeof Object.keys(balance['balance']['groups'])[0] == 'undefined') {
+				delete balance['balance']['groups'];
+			}
+			balance['updated_by_script'] = ISODate();
+			db.balances.save(balance);
+		});
+	});
+});
+
+// get services aligned to cycle that are not included in any plan
+function getServices() {
+	const ret = [];
+	const alignedToCycleServices = db.services.find({
+		from: {$lte: time},
+		to: {$gt: time},
+		'include.groups': {$exists: true},
+		$or: [
+			{balance_period: {$exists: false}},
+			{balance_period: 'default'}
+		]
+	});
+	var servicesIncludedInPlans = db.plans.aggregate([
+		{
+			$match: {
+				from: {$lte: time},
+				to: {$gt: time},
+				'include.services': {$exists: true}
+			}
+		},
+		{
+			$unwind: '$include.services'
+		},
+		{
+			$project: {
+				_id: 0,
+				service: '$include.services'
+			}
+		}
+	]);
+
+	const servicesIncludedInPlansNames = servicesIncludedInPlans.map(x => x['service']);
+	alignedToCycleServices.forEach(function (service) {
+		if (servicesIncludedInPlansNames.indexOf(service['name']) == -1) {
+			ret.push(service);
+		}
+	});
+
+	return ret;
+}
+
+// get monthly balances with existing group
+function getBalances(group) {
+	const ret = db.balances.find({
+		from: {$lte: time},
+		to: {$gt: time},
+		updated_by_script: {$exists: false},
+		['balance.groups.' + group['name']]: {$exists: true},
+		priority: 0
+	});
+
+	return ret;
+}
+
+function getServiceGroups(service) {
+	const ret = [];
+	if (typeof service['include'] == 'undefined' || typeof service['include']['groups'] == 'undefined') {
+		return ret;
+	}
+
+	for (var group in service['include']['groups']) {
+		const type = typeof service['include']['groups'][group]['cost'] !== 'undefined' ? 'cost' : 'usaget';
+		ret.push({
+			name: group,
+			type,
+			usaget: type == 'usaget' ? Object.keys(service['include']['groups'][group]['usage_types'])[0] : '',
+			value: type == 'usaget' ? service['include']['groups'][group]['value'] : '',
+			cost: type == 'cost' ? service['include']['groups'][group]['cost'] : '',
+		});
+	}
+
+	return ret;
+}
+// ============================= BRCD-2556: END ==============================================================================
+
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
