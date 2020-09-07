@@ -23,6 +23,8 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		'$last' => '_last',
 		'$cond' => '_cond',
 		'$substr' => '_substr',
+		'$min' => '_min',
+		'$max' => '_max',
 		'__aggregate' => '_aggregate',
 		'__callback' => '_callback'
 	);
@@ -155,7 +157,18 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $result + $pastValue;
 
 	}
-	
+
+	protected function _min($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return is_null($pastValue) || !is_null($currValue) && $currValue < $pastValue ? $currValue : $pastValue ;
+	}
+
+	protected function _max($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue ;
+	}
+
+
 	//======================================= String operations ===============================
 	
 	protected function _substr($data, $expression, $pastValue = 0) {
