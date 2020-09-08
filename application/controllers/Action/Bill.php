@@ -33,7 +33,7 @@ class BillAction extends ApiAction {
 				case 'collection_debt' :
 					$response = $this->getCollectionDebt($request);
 					break;
-				case 'get_outstanding_or_credit_balance' :
+				case 'get_balance' :
 					$response = $this->getCollectionDebt($request, false);
 					break;
 				case 'search_invoice' :
