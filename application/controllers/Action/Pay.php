@@ -380,8 +380,7 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 		];
 		$bills = Billrun_Bill::getBills($query);
 		foreach($bills as $index => $bill) {
-			$className = Billrun_Bill_Payment::getClassByPaymentMethod($bill['method']);
-			$bills[$index] = new $className($bill);
+			$bills[$index] = Billrun_Bill_Payment::getInstanceByData($bill);
 		}
 		$db_deposits = array_filter($bills, function($bill) {
 			return $bill->isDeposit();
