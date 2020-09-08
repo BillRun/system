@@ -185,6 +185,9 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
+		if (!$this->validateParams($params)) {
+			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
+		}
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
@@ -319,6 +322,10 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		//Prevent command line injection
+		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
+			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
@@ -360,7 +367,7 @@ class BillrunController extends ApiController {
 		}
 		if (!empty($invoicesId)) {
 			$invoicesArray = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
-			if (empty($invoicesArray)) {
+			if (empty($invoicesArray) || count($invoicesArray) !== count(array_filter($invoicesArray,'is_numeric'))) {
 				throw new Exception("Illgal invoices");
 			}
 			$invoicesId = implode(',', $invoicesArray);			
@@ -434,6 +441,42 @@ class BillrunController extends ApiController {
 		}
 		
 		return $paramsString;
+	}
+	
+	public function validateParams($params) {
+		foreach ($params as $name => $value) {
+			switch ($name) {
+				case 'date':
+				case 'min_invoice_date':
+					if (!is_null($value) && !strtotime(trim($value, '"'))) {
+						return false;
+					}
+					break;
+				case 'invoices':
+				case 'aids':
+				case 'exclude_accounts':
+					$values_array = !is_null($value) ? Billrun_Util::verify_array($value, 'int') : [];
+					if (!is_null($value) && empty($values_array)) {
+						return false;
+					}
+					break;
+				case 'billrun_key':
+					if (!Billrun_Util::isBillrunKey(trim($value, '"'))) {
+						return false;
+					}
+					break;
+				case 'pay_mode':
+				case 'mode':
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
+					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
+						return false;
+					}
+					break;
+				default:
+					return false;
+			}
+		}
+		return true;
 	}
 
 }
