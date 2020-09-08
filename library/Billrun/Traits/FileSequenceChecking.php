@@ -70,7 +70,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		}
 		//If there were any errors log them as high issues 
 		if ($mailMsg) {
-			Billrun_Factory::log()->log($mailMsg, Zend_Log::ALERT);
+			Billrun_Factory::log()->log($mailMsg, Zend_Log::WARN);
 		}
 	}
 
