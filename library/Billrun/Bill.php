@@ -527,6 +527,12 @@ abstract class Billrun_Bill {
 			'cancel' => array(
 				'$exists' => FALSE,
 			),
+			'is_denial' => array(
+				'$ne' => TRUE,
+			),
+			'denied_by' => array(
+				'$exists' => FALSE,
+			),
 		);
 	}
 
