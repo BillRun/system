@@ -602,6 +602,8 @@ class ConfigModel {
 			'subscribers.subscriber.fields' => 'subscribers',
 			'subscribers.account.fields' => 'accounts',
 			'rates.fields' => 'rates',
+			'plans.fields' => 'plans',
+			'services.fields' => 'services',
 		);
 	}
 	
@@ -1204,12 +1206,12 @@ class ConfigModel {
 		$defaultParametersKeys = array_keys($defaultParameters);
 		$diff = array_diff($defaultParametersKeys, $connectionParameters);
 		if (!empty($diff)) {
-			Billrun_Factory::log("Wrong parameters for connection to ", $name);
+			Billrun_Factory::log("Wrong parameters for connection to " . $name, Zend_Log::NOTICE);
 			return false;
 		}
 		$isAuth = $paymentGateway->authenticateCredentials($pg['params']);
 		if (!$isAuth){
-			throw new Exception('Wrong credentials for connection to ', $name); 
+			throw new Exception('Wrong credentials for connection to ' . $name, Zend_Log::NOTICE); 
 		}	
 		
  		return true;

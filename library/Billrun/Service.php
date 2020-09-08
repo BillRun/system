@@ -58,6 +58,8 @@ class Billrun_Service {
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**
@@ -174,7 +176,8 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat,$serviceStartDate));
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceCycleStartDate, $rowTime);
 		return $cyclesSpent > $serviceAvailableCycles;
 	}
 	

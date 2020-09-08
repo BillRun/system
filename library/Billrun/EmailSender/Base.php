@@ -136,8 +136,9 @@ abstract class Billrun_EmailSender_Base {
 		$emails = is_array($email) ? $email : array($email);
 		$msg = $this->translateMessage($this->getEmailBody($data), $data);
 		$subject = $this->translateMessage($this->getEmailSubject($data), $data);
+		$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 		try {
-			if (!Billrun_Util::sendMail($subject, $msg, $emails, $attachments, true)) {
+			if (!Billrun_Util::sendMail($encodedSubject, $msg, $emails, $attachments, true)) {
 				Billrun_Factory::log('sendEmail - error sending email. Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			}
 			$this->afterSend($data, $callback);
