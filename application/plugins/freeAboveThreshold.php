@@ -34,7 +34,7 @@ class freeAboveThresholdPlugin extends Billrun_Plugin_BillrunPluginBase
 
 		}
 		//Billrun_Factory::log(print_r($balanceToUpdate));
-		Billrun_Factory::log($updateKey);
+// 		Billrun_Factory::log($updateKey);
 // 		Billrun_Factory::log(print_r($update));
 // 		Billrun_Factory::log(print_r($this->pendingBalanceUpdates));
 	}
@@ -52,27 +52,28 @@ class freeAboveThresholdPlugin extends Billrun_Plugin_BillrunPluginBase
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if(!$this->isValidUsage($limits,$rate,$plan,$usageType)) {
-			Billrun_Factory::log("not VALID : ".json_encode($limits));
-			$groupSelected = FALSE;
+			if($this->isLegitimateGroup($limits,$rate,$plan,$usageType)) {
+				//Billrun_Factory::log("not VALID : ".json_encode($limits));
+				$groupSelected = FALSE;
+			}
 			return ;
 		}
 		// Below the threashold no usage included in the group
 		if(	empty($subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType]) ||
 			$subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType] < $rate['rates'][$usageType]['free_threshold']) {
 			$rateUsageIncluded = 0;
-			@Billrun_Factory::log("Below Threshold : ".  $rate['rates'][$usageType]['free_threshold']);
-			@Billrun_Factory::log("Below Threshold : ". $subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType]);
-			@Billrun_Factory::log(print_r($subscriberBalance['balance']['groups']));
+			//@Billrun_Factory::log("Below Threshold : ".  $rate['rates'][$usageType]['free_threshold']);
+			//@Billrun_Factory::log("Below Threshold : ". $subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType]);
+			//@Billrun_Factory::log(print_r($subscriberBalance['balance']['groups']));
 		} else {
 			// Above the threshold  so te usage if free / included
 			$rateUsageIncluded = PHP_INT_MAX;
 		}
-		Billrun_Factory::log("VALID : ".json_encode($limits) . "  returning : $rateUsageIncluded ");
+//		Billrun_Factory::log("VALID : ".json_encode($limits) . "  returning : $rateUsageIncluded ");
 		// save the rate tand the field to be updated in the balance
 		$update=['volumeIncKey'=>"balance.groups.{$groupSelected}.rates.{$rate['key']}.{$usageType}" ];
 		$updateKey=$this->getBalanceUpdateKey($subscriberBalance);
 		$this->pendingBalanceUpdates[$updateKey] = $update;
-		Billrun_Factory::log($updateKey);
 	}
 
 	protected function isValidUsage($limits,$rate,$plan,$usageType) {
@@ -82,6 +83,11 @@ class freeAboveThresholdPlugin extends Billrun_Plugin_BillrunPluginBase
 				!empty($rate['rates'][$usageType]) && !empty($rate['rates'][$usageType]['free_threshold'])
 			);
 	}
+
+	protected function isLegitimateGroup($limits,$rate,$plan,$usageType) {
+		return !empty($limits['free_above_threshold']);
+	}
+
 
 	protected function getBalanceUpdateKey($balanceToUpdate) {
 		return Billrun_Util::generateArrayStamp([$balanceToUpdate['billrun_month'],$balanceToUpdate['aid'],$balanceToUpdate['sid'],$balanceToUpdate['_id']]);
