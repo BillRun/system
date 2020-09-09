@@ -542,6 +542,10 @@ class Models_Entity {
 		}
 		return self::$minUpdateDatetime;
 	}
+	
+	public static function isAllowedChangeDuringClosedCycle() {
+		return Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+	}
 
 	/**
 	 * Gets an entity by a query
@@ -598,7 +602,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		if (is_null($action)) {
@@ -709,7 +713,7 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		return $ret;
 	}
-
+	
 	public function reopen() {
 		$this->action = 'reopen';
 
@@ -726,7 +730,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
 		
-		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+		$changeDuringClosedCycle = static::isAllowedChangeDuringClosedCycle();
 		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
@@ -1112,7 +1116,7 @@ class Models_Entity {
 	}
 
 	protected static function isDateMovable($timestamp) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		return self::getMinimumUpdateDate() <= $timestamp;
