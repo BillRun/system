@@ -227,6 +227,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<user>' . $this->transactionId . '</user>
 										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
+										 <customerData>
+											<userData1>' . $addonData['aid'] . '</userData1>
+	                                     </customerData>
 									</doDeal>
 								</request>
 						</ashrait>'
