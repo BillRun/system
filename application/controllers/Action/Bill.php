@@ -33,6 +33,9 @@ class BillAction extends ApiAction {
 				case 'collection_debt' :
 					$response = $this->getCollectionDebt($request);
 					break;
+				case 'get_balance' :
+					$response = $this->getCollectionDebt($request, false);
+					break;
 				case 'search_invoice' :
 				default :
 					$response = $this->getBalanceFor($request);
@@ -124,8 +127,15 @@ class BillAction extends ApiAction {
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
 		return Billrun_Bill_Invoice::getInvoices(json_decode($query, JSON_OBJECT_AS_ARRAY));
 	}
-
-	protected function getCollectionDebt($request) {
+	
+	/**
+	 * 
+	 * @param type $request
+	 * @param type $only_debt - if true return only accounts with their debt, 
+	 * otherwise return account with their debt or with their credit balance
+	 *
+	 */
+	protected function getCollectionDebt($request, $only_debt = true) {
 		$result = array();
 		$jsonAids = $request->get('aids', '[]');
 		$aids = json_decode($jsonAids, TRUE);
@@ -137,14 +147,14 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		$contractors= Billrun_Bill::getCollectionDebtsByAids($aids);
+		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
 		}	
 		return $result;
 	}
-
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
