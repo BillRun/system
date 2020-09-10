@@ -34,6 +34,24 @@ function removeFieldFromConfig(lastConf, field_names, entityName) {
 	return lastConf;
 }
 
+// Perform specific migrations only once
+// Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
+function runOnce(lastConfig, taskCode, callback) {
+    if (typeof lastConfig.past_migration_tasks === 'undefined') {
+        lastConfig['past_migration_tasks'] = [];
+    }
+    taskCode = taskCode.toUpperCase();
+    if (!lastConfig.past_migration_tasks.includes(taskCode)) {
+        if (new RegExp(/.*-\d+$/).test(taskCode)) {
+            callback();
+            lastConfig.past_migration_tasks.push(taskCode);
+        }
+        else {
+            print('Illegal task code ' + taskCode);
+        }
+    }
+    return lastConfig;
+}
 // =============================================================================
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -791,21 +809,7 @@ if (typeof lastConfig.events !== 'undefined') {
 	}
 }
 
-db.config.insert(lastConfig);
-
-db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
-db.archive.dropIndex('session_id_1_request_num_-1')
-db.archive.dropIndex('sid_1_call_reference_1')
-db.archive.dropIndex('call_reference_1')
-if (db.serverStatus().ok == 0) {
-	print('Cannot shard archive collection - no permission')
-} else if (db.serverStatus().process == 'mongos') {
-	sh.shardCollection("billing.archive", {"stamp": 1});
-	// BRCD-2099 - sharding rates, billrun and balances
-	sh.shardCollection("billing.rates", { "key" : 1 } );
-	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
-	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
-}
+lastConfig = runOnce(lastConfig, 'BRCD-2556', function () {
 
 // BRCD-1246 fix deprecated out plan balance structure
 for (var i in lastConfig['usage_types']) {
@@ -996,3 +1000,47 @@ function getServiceGroups(service) {
 	return ret;
 }
 // ============================= BRCD-2556: END ==============================================================================
+});
+
+
+// BRCD-2491 convert Import mappers to not use '.' as mongo key
+if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping !== 'undefined' && Array.isArray(lastConfig.import.mapping)) {
+	const mapping = lastConfig.import.mapping;
+	mapping.forEach((mapper, key) => {
+		if (typeof mapper.map !== 'undefined') {
+			let convertedMapper = [];
+			if (!Array.isArray(mapper.map)) {
+				Object.keys(mapper.map).forEach((field_name) => {
+					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
+				});
+			}
+			mapping[key].map = convertedMapper;
+		}
+		if (typeof mapper.multiFieldAction !== 'undefined') {
+			let convertedMultiFieldAction = [];
+			if (!Array.isArray(mapper.multiFieldAction)) {
+				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
+					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
+				});
+			}
+			mapping[key].multiFieldAction = convertedMultiFieldAction;
+		}
+	});
+	lastConfig.import.mapping = mapping;
+}
+
+db.config.insert(lastConfig);
+
+db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
+db.archive.dropIndex('session_id_1_request_num_-1')
+db.archive.dropIndex('sid_1_call_reference_1')
+db.archive.dropIndex('call_reference_1')
+if (db.serverStatus().ok == 0) {
+	print('Cannot shard archive collection - no permission')
+} else if (db.serverStatus().process == 'mongos') {
+	sh.shardCollection("billing.archive", {"stamp": 1});
+	// BRCD-2099 - sharding rates, billrun and balances
+	sh.shardCollection("billing.rates", { "key" : 1 } );
+	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
+}

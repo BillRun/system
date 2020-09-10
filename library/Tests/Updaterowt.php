@@ -425,14 +425,17 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 50, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 		array('row' => array('stamp' => 'w17', 'aid' => 43, 'sid' => 45, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'urt' => '2018-11-16 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
-		//w18 + w19 are test for https://billrun.atlassian.net/browse/BRCD-1493
-		array('row' => array('stamp' => 'w18', 'aid' => 50, 'sid' => 51, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 110, 'urt' => '2018-11-16 23:11:45+03:00',
+		//BRCD-2581 usage volume 0 - check the price isn't NaN
+		array('row' => array('stamp' => 'w18', 'aid' => 100, 'sid' => 101, 'rates' => array('pricing_method_volume' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 0, 'urt' => '2018-11-16 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//w19 + w20 are test for https://billrun.atlassian.net/browse/BRCD-1493
+		array('row' => array('stamp' => 'w19', 'aid' => 50, 'sid' => 51, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 110, 'urt' => '2018-11-16 23:11:45+03:00',
 				'services_data' => [
 					['name' => 'CALL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00', "plan_included" => false, "service_id" => "123", "quantity" => 1],
 					['name' => 'CALL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00', "plan_included" => false, "service_id" => "1234", "quantity" => 1]
 				]),
 			'expected' => array('in_group' => 110, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 110,))),
-		array('row' => array('stamp' => 'w19', 'aid' => 50, 'sid' => 51, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'urt' => '2018-11-16 23:11:45+03:00',
+		array('row' => array('stamp' => 'w20', 'aid' => 50, 'sid' => 51, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 100, 'urt' => '2018-11-16 23:11:45+03:00',
 				'services_data' => [
 					['name' => 'CALL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00', "plan_included" => false, "service_id" => "123", "quantity" => 1],
 					['name' => 'CALL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00', "plan_included" => false, "service_id" => "1234", "quantity" => 1]

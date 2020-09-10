@@ -202,7 +202,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
 			}
 			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
-		}		
+		}
+		$this->transactionId = $addonData['txid'];
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -223,9 +224,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionCode>Phone</transactionCode>
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
-										<user>' . $addonData['txid'] . '</user>
+										<user>' . $this->transactionId . '</user>
 										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
+										 <customerData>
+											<userData1>' . $addonData['aid'] . '</userData1>
+	                                     </customerData>
 									</doDeal>
 								</request>
 						</ashrait>'
@@ -315,6 +319,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function sendPaymentRequest($paymentArray) {
 		$additionalParams = array();
+		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -323,14 +328,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string) $xmlObj->response->result;
-		$this->transactionId = (string) $xmlObj->response->tranId;
-		$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
-		$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
-		$voucherNumber = $slaveNumber . $slaveSequence;
-		if (!empty($voucherNumber)) {
-			$additionalParams['payment_identifier'] = $voucherNumber;
-		}
+		if ($xmlObj !== false) {
+			$codeResult = (string) $xmlObj->response->result;
+			$this->transactionId = (string) $xmlObj->response->tranId;
+			$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
+			$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
+			$voucherNumber = $slaveNumber . $slaveSequence;
+			if (!empty($voucherNumber)) {
+				$additionalParams['payment_identifier'] = $voucherNumber;
+			}
+		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
 	
