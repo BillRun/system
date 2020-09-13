@@ -31,6 +31,10 @@ class freeAboveThresholdPlugin extends Billrun_Plugin_BillrunPluginBase
 			$updateField = $this->pendingBalanceUpdates[$updateKey]['volumeIncKey'];
 			//$previousValue = empty($balanceToUpdate[$updateKey]) ? 0 : $balanceToUpdate[$updateKey];
 			$update['$inc'][$updateField] = $row['usagev'];
+			if( !empty($this->pendingBalanceUpdates[$updateKey]['freeUsageKey'])) {
+				$freeUpdateField = $this->pendingBalanceUpdates[$updateKey]['freeUsageKey'];
+				$update['$inc'][$freeUpdateField] = $row['usagev'];
+			}
 
 		}
 		//Billrun_Factory::log(print_r($balanceToUpdate));
@@ -58,20 +62,22 @@ class freeAboveThresholdPlugin extends Billrun_Plugin_BillrunPluginBase
 			}
 			return ;
 		}
+
 		// Below the threashold no usage included in the group
 		if(	empty($subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType]) ||
 			$subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType] < $rate['rates'][$usageType]['free_threshold']) {
 			$rateUsageIncluded = 0;
-			//@Billrun_Factory::log("Below Threshold : ".  $rate['rates'][$usageType]['free_threshold']);
-			//@Billrun_Factory::log("Below Threshold : ". $subscriberBalance['balance']['groups'][$groupSelected]['rates'][$rate['key']][$usageType]);
-			//@Billrun_Factory::log(print_r($subscriberBalance['balance']['groups']));
+
 		} else {
 			// Above the threshold  so te usage if free / included
 			$rateUsageIncluded = PHP_INT_MAX;
 		}
 //		Billrun_Factory::log("VALID : ".json_encode($limits) . "  returning : $rateUsageIncluded ");
-		// save the rate tand the field to be updated in the balance
 		$update=['volumeIncKey'=>"balance.groups.{$groupSelected}.rates.{$rate['key']}.{$usageType}" ];
+		if(!empty($rateUsageIncluded)) {
+			$update['freeUsageKey'] = "balance.groups.{$groupSelected}.{$usageType}.free_usage";
+		}
+		// save the rate and the field to be updated in the balance
 		$updateKey=$this->getBalanceUpdateKey($subscriberBalance);
 		$this->pendingBalanceUpdates[$updateKey] = $update;
 	}
