@@ -1035,7 +1035,7 @@
 					"from": "time*2010-08-03T00:00:00Z",
 					"key": "pricing_method_volume",
 					"rates": {
-						"call_duration": {
+						"call": {
 							"BASE": {
 								"rate": [
 									{
