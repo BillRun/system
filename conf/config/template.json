@@ -137,6 +137,9 @@
 			}
 		]
 	},
+	"bills": {
+		"fields": []
+	},
         "discounts": {
     "fields": [
       {
