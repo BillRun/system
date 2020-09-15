@@ -255,8 +255,29 @@
 					"balance_period": "+1 months",
 					"to": "time*2167-01-10T08:15:43Z",
 					"creation_time": "time*2018-01-11T00:00:00Z"
+				},
+				{
+					"OBJID": "5ea1a308cd4acc7d23618933",
+					"from": "time*2018-04-24T00:00:00Z",
+					"name": "NOT_TAXABLE_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "not taxable service",
+					"prorated": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"to": "time*2169-04-23T14:15:36Z",
+					"creation_time": "time*2018-04-24T00:00:00Z"
 				}
-
 
 
 

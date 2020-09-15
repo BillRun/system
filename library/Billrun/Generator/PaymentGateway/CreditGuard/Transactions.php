@@ -69,15 +69,15 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$newAccount = Billrun_Factory::account();
-		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
-		$accounts = $newAccount->getAccountsByQuery($accountQuery);
+		$account = Billrun_Factory::account();
+		$accountQuery = array('aid' => array('$in' => $customersAids));
+		$accounts = $account->loadAccountsForQuery($accountQuery);
 		foreach ($accounts as $account){
-			$subscribers_in_array[$account['aid']] = $account;
+			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($this->customers as $customer) {
 			$paymentParams = array();
-			$account = $subscribers_in_array[$customer['aid']];
+			$account = $accounts_in_array[$customer['aid']];
 			if (!$this->isActiveGatewayCreditGuard($account)) {
 				continue;
 			}
@@ -117,7 +117,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['source'] = $customer['source'];
 			try {
-				$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+				$paymentResponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
+				$payment = $paymentResponse['payment'];
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log('Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage(), Zend_Log::ALERT);
 				continue;
@@ -129,7 +130,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			$params['txid'] = $currentPayment->getId();
 			$params['deal_type'] = !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision) ? '51' : '01'; // credit or debit
 			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			$cardExpired = $this->gateway->isCreditCardExpired($account['payment_gateway']['active']['card_expiration']);
+			$params['card_expiration'] = $cardExpired ? $this->gateway->extendCardExpiration($params, $account['payment_gateway']['active']) : $account['payment_gateway']['active']['card_expiration'];
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}

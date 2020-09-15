@@ -822,7 +822,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
-			return $this->responseError($collection . " collection not exists");
+			return $this->responseError($collection . " collection does not exist");
 		}
 
 		$data = @json_decode($flatData, true);

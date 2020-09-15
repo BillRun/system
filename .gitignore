@@ -15,3 +15,5 @@ conf/dori.ini
 /conf/tenants/*
 /scripts/locks/*
 shared
+docker/persist
+.vscode/

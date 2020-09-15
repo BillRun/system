@@ -251,4 +251,8 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
 
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+
 }

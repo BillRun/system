@@ -31,6 +31,7 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 			} else {
 				$row['urt'] = new MongoDate();
 			}
+			$row['account_level'] = $this->isAccountLevelLine($row);
 		}
 
 		return true;
@@ -70,6 +71,10 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 	}
 
 	protected function processLines() {
+	}
+	
+	protected function isAccountLevelLine($row) {
+		return !empty($row['aid']) && $row['sid'] == '0';
 	}
 
 }

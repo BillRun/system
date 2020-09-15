@@ -157,10 +157,10 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 	protected function shouldFileBeReceived($file, $isFileReceivedMoreFields) {
 		$ret = true;
 		if (!$file->isFile()) {
-			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->isFileValid($file->name, $file->path)) {
-			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::DEBUG);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, $this->source, $isFileReceivedMoreFields)) {
 			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::INFO);
