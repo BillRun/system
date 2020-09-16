@@ -20,7 +20,7 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 		} else {
 			// run all over the file with the parser helper
 			if (!is_resource($this->fileHandler)) {
-				Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+				Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::WARN);
 				return false;
 			}
 			$this->data['trailer'] = array();
