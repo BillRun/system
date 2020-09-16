@@ -252,8 +252,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
-        $connection->export($fileName);
-    }
+		$res = $connection->export($fileName);
+		if (!$res) {
+			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
+		}
+	}
 
     protected function getTranslationValue($paramObj) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {

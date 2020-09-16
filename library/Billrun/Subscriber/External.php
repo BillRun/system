@@ -12,7 +12,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static protected $type = 'external';
 	
-	protected static $queryBaseKeys = [ 'limit','id'];
+	protected static $queryBaseKeys = [ 'limit','time','id'];
 	
 	protected $remote;
 		

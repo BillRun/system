@@ -782,6 +782,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				//Save configurable data
 				$aggregatedEntity->addConfigurableData();
 			}
+                        if(!empty($aggregatedResults)){
+                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+                        }
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
@@ -789,7 +792,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function afterAggregate($results) {
 		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n"
 			. "Host:" . Billrun_Util::getHostName() . "\n"
-			. "Processed " . (count($results)) . " accounts";
+			. "Processed " . (count($this->successfulAccounts)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
 

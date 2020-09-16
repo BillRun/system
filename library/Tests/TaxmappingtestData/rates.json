@@ -1,0 +1,190 @@
+{
+	"collection": "ratesCollection",
+	"data":
+			[
+				{
+					"OBJID": "5ce4e6797cbf797d96b503a7",
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "NONTAX_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "NONTAX_CALL",
+					"params": [],
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:11:56Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"add_to_retail": true
+				},
+				{
+					"OBJID": "5ce4e6797cbf797d96b503a8",
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "USE_GLOBAL_TAX_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "USE_GLOBAL_TAX_CALL",
+					"params": [],
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:11:56Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"add_to_retail": true
+				},
+				{
+					"OBJID": "5ce4e6797cbf797d96b503a9",
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "OVERRIDE_GLOBAL_TAX_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "OVERRIDE_GLOBAL_TAX_CALL",
+					"params": [],
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:11:56Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "override",
+							"custom_tax": "A"
+						}
+					],
+					"add_to_retail": true
+				},
+				{
+					"OBJID": "5ce4e6797cbf797d96b503aa",
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "FALLBACK_TAX_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "FALLBACK_TAX_CALL",
+					"params": [],
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:11:56Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "fallback",
+							"custom_tax": "A"
+						}
+					],
+					"add_to_retail": true
+				},
+				{
+					"OBJID": "5ce4e70b05e68c1cc5502b63",
+					"from": "time*2018-05-23T00:00:00Z",
+					"key": "DEFAULT_TAX_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "default_tax_call",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "default"
+						}
+					],
+					"to": "time*2168-05-22T06:07:07Z",
+					"creation_time": "time*2018-05-23T00:00:00Z"
+				}
+
+			]
+}

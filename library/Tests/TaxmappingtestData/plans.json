@@ -1,0 +1,157 @@
+{
+	"collection": "plansCollection",
+	"data":
+			[
+				{
+					"OBJID": "5ce4ffe97cbf797d96b503ab",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "NONTAX_PLAN",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "NONTAX_PLAN",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:23:04Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no",
+							"custom_logic": "override",
+							"custom_tax": "A"
+						}
+					]
+				},
+				{
+					"OBJID": "5ce4ffe97cbf797d96b503ac",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "USE_GLOBAL_TAX_PLAN",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "USE_GLOBAL_TAX_PLAN",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:23:04Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global",
+							"custom_logic": "override",
+							"custom_tax": "A"
+						}
+					]
+				},
+				{
+					"OBJID": "5ce4ffe97cbf797d96b503ad",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "OVERRIDE_GLOBAL_TAX_PLAN",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "OVERRIDE_GLOBAL_TAX_PLAN",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:23:04Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "override",
+							"custom_tax": "A"
+						}
+					]
+				},
+				{
+					"OBJID": "5ce4ffe97cbf797d96b503ae",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "FALLBACK_TAX_PLAN",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "FALLBACK_TAX_PLAN",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:23:04Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "fallback",
+							"custom_tax": "A"
+						}
+					]
+				},
+				{
+					"OBJID": "5ce4ffe97cbf797d96b503af",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "DEFAULT_TAX_PLAN",
+					"price": [
+						{
+							"price": "100",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "DEFAULT_TAX_PLAN",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:23:04Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "default",
+							"custom_logic": "fallback",
+							"custom_tax": "A"
+						}
+					]
+				}
+
+			]
+}
