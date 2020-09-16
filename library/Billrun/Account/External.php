@@ -96,6 +96,9 @@ class Billrun_Account_External extends Billrun_Account {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
+			if (!isset($query['id'])) {
+				$query['id'] = uniqid();
+			}
 			$externalQuery['query'][] = $query;
 		}
 		if($globalLimit) {

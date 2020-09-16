@@ -33,6 +33,9 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
+			if (!isset($query['id'])) {
+				$query['id'] = uniqid();
+			}
 			$externalQuery['query'][] = $query;
 		}
 		if($globalLimit) {
