@@ -42,7 +42,7 @@ class Billrun_Account_External extends Billrun_Account {
 
 			//Check for errors
 			if(empty($results)) {
-				Billrun_Factory::log('Failed to retrive valid results  for billable, remote returned no data.',Zend_Log::WARN);
+				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
 				return [];
 			}
 			if( empty($results['status']) || !isset($results['data']) ) {
@@ -76,7 +76,7 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		$res = json_decode(Billrun_Util::sendRequest($this->remote, $requestData));
+		$res = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($requestData)));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
