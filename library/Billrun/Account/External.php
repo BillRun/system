@@ -104,7 +104,7 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
+		$results = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($externalQuery)), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
