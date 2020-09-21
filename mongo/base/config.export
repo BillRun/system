@@ -376,6 +376,7 @@
         },
     "invoice_export": {
       "export": "files/invoices/",
+	  "onetime_view_path" : "/views/invoices/onetime/",
       "generator": {
         "type": "WkPdf"
       },
