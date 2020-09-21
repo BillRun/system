@@ -46,7 +46,7 @@ class Billrun_Account_External extends Billrun_Account {
 				return [];
 			}
 			if( empty($results['status']) || !isset($results['data']) ) {
-				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams),Zend::WARN);
+				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
 
