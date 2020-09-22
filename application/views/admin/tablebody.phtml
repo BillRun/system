@@ -73,7 +73,14 @@ foreach ($this->data as $item) {
 				print number_format($data, 0);
 			}
 		} else if ($h == 'calc_time' && $data) {
-			print date("Y-m-d H:i:s", $data);
+			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
+			if (isset($data->sec)) {
+				$zend_date = new Zend_Date($data->sec);
+				print $zend_date->toString($dateFormat, 'php');
+			} else {
+				print date($dateFormat, $data);
+			}
+
 		} else if ($h == 'calc_name') {
 			$names = Billrun_Factory::config()->getConfigValue('queue.calculators');
 			if ($data) {
