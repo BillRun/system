@@ -76,7 +76,10 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		$res = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($requestData)));
+		$res = json_decode(Billrun_Util::sendRequest($this->remote,
+													 json_encode($requestData),
+													 Zend_Http_Client::POST,
+													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json'] ));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
@@ -107,7 +110,10 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, json_encode($externalQuery)), true);
+		$results = json_decode(Billrun_Util::sendRequest($this->remote,
+														 json_encode($externalQuery),
+														 Zend_Http_Client::POST,
+														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']), true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
 			return false;
