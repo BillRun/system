@@ -35,7 +35,7 @@ class Billrun_Account_External extends Billrun_Account {
 			];
 
 			if(!empty($aids)) {
-				$requestParams['aids'] = $aids;
+				$requestParams['aids'] = implode(',',$aids);
 			}
 			//Actually  do the request
 			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);
