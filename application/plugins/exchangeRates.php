@@ -40,7 +40,7 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 	 * @param $period string daily/hourly/...
 	 */
 	protected function shouldUpdate($period) {
-		return Billrun_CurrencyConversionManager::isMultiCurrencyEnabled() &&
+		return Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() &&
 			$this->getUpdatePeriod() == $period;
 	}
 
@@ -85,8 +85,8 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 	 * Update exchange rates in the system
 	 */
 	public function updateExchangeRates() {
-		$baseCurrency = Billrun_CurrencyConversionManager::getDefaultCurrency();
-		$targetCurrencies = Billrun_CurrencyConversionManager::getAvailableCurrencies();
+		$baseCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		$targetCurrencies = Billrun_CurrencyConvert_Manager::getAvailableCurrencies();
 		if (empty($targetCurrencies)) {
 			return;
 		}
