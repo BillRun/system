@@ -31,7 +31,7 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 			$size = 100;
 		}
 		$result = Billrun_Factory::account()->getBillable($cycle, $page, $size, $aids);
-                $billableResults = $result['data'];
+		$billableResults = $this->filterConfirmedAccounts($result['data'], $cycle);
 		usort($billableResults, function($a, $b){ return strcmp($a['from'],$b['from']);});
 		$retResults = [];
 		$idFields = ['aid','sid','plan','play','first_name','last_name','type','email','address','services'];
@@ -75,6 +75,13 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 
 	}
 	
+	public function filterConfirmedAccounts($billableResults, $mongoCycle) {
+		$confirmedAids = $this->getConfirmedAids($mongoCycle);
+		return array_filter($billableResults, function($billableAccount) use($confirmedAids) {
+			return !in_array($billableAccount['aid'], $confirmedAids);
+		});
+	}
+
 	//--------------------------------------------------------------
 
 }

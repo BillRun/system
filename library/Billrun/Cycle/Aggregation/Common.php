@@ -87,17 +87,19 @@ trait Billrun_Cycle_Aggregation_Common {
 				)
 			)
 		);
-
-		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
-		if ($confirmedAids) {
+		$confirmedAids = $this->getConfirmedAids($mongoCycle);
+		if($confirmedAids) {
 			$match['$match']['$and'][] = array(
 				'aid' => array(
 					'$nin' => $confirmedAids,
 				)
 			);
 		}
-
 		return $match;
+	}
+
+	protected function getConfirmedAids($mongoCycle) {
+		return Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
 	}
 
 	/**
