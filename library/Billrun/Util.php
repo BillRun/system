@@ -1115,9 +1115,10 @@ class Billrun_Util {
 	 * @param string $data parameters for the request
 	 * @param string $method should be POST or GET
 	 * 
+	 * @param returnResponse - true - function returns the whole response, false - returns only body.
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1158,7 +1159,7 @@ class Billrun_Util {
 			Billrun_Factory::log("Initiated HTTP request to " . $urlHost, Zend_Log::DEBUG);
 			$response = $client->request();
 			Billrun_Factory::log("Got HTTP response from " . $urlHost, Zend_Log::DEBUG);
-			$output = $response->getBody();
+			$output = !$returnResponse ? $response->getBody() : $response;
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
 			if(!$response) {
@@ -1640,6 +1641,39 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+
+	/**
+	 * Deeply unset an array values by path.
+	 *
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param type $clean_tree - if TRUE, all empty branches  in in keys will be removed
+	 */
+	public static function unsetInPath(&$arr, $keys, $clean_tree = false) {
+		if (empty($keys)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$prev_el = NULL;
+		$el = &$arr;
+		foreach ($keys as &$key) {
+			$prev_el = &$el;
+			$el = &$el[$key];
+		}
+		if ($prev_el !== NULL) {
+			unset($prev_el[$key]);
+		}
+		if ($clean_tree) {
+			array_pop($keys);
+			$prev_branch = static::getIn($arr, $keys);
+			if (empty($prev_branch)) {
+				static::unsetInPath($arr, $keys, true);
+			}
+		}
+	}
+
 	/**
 	 * Deeply unsets an array value.
 	 * 
@@ -1776,7 +1810,7 @@ class Billrun_Util {
 	public static function translateTemplateValue($str, $translations, $self = NULL, $customGateway = false) {
 		foreach ($translations as $key => $translation) {
 			if(is_string($translation) || is_numeric($translation)) {
-				$replace = is_numeric($translation) && !$customGateway ? '"[['.$key.']]"' : '[['.$key.']]';
+				$replace = !is_string($translation) && !$customGateway ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
 				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
@@ -1898,6 +1932,31 @@ class Billrun_Util {
 		}
 
 		return array_unique($fieldNames);
+	}
+	
+	/**
+	 * Aggregate strings representing time from some start point
+	 * @param array $relativeTimes - array of relative time strings
+	 * @param int $startTime - unix timestamp determine where to start the count
+	 * @return aggregated unix timestamp
+	 */
+	public static function calcRelativeTime($relativeTimes, $startTime) {
+		if (!is_array($relativeTimes)) {
+			$relativeTimes = array($relativeTimes);
+		}
+		foreach ($relativeTimes as $relativeTime) {
+			$actualTime = strtotime($relativeTime, $startTime);
+			$startTime = $actualTime;
+		}
+		
+		return $actualTime;
+	}
+	
+	public static function addGetParameters($url, $queryData) {
+		$query = parse_url($url, PHP_URL_QUERY);	
+		$url .= ($query ? "&" : "?") . http_build_query($queryData);
+		$url = htmlspecialchars($url);
+		return $url;
 	}
 
 }

@@ -58,7 +58,13 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $update = array();
-
+	
+	/**
+	 * The update data from request without changes
+	 * @var array
+	 */
+	protected $originalUpdate = array();
+	
 	/**
 	 * Additional data to save
 	 * @var array
@@ -169,6 +175,7 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		$this->originalUpdate = $update;
 		$options = isset($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
@@ -542,6 +549,10 @@ class Models_Entity {
 		}
 		return self::$minUpdateDatetime;
 	}
+	
+	public static function isAllowedChangeDuringClosedCycle() {
+		return Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+	}
 
 	/**
 	 * Gets an entity by a query
@@ -598,7 +609,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		if (is_null($action)) {
@@ -709,7 +720,7 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		return $ret;
 	}
-
+	
 	public function reopen() {
 		$this->action = 'reopen';
 
@@ -726,7 +737,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
 		
-		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+		$changeDuringClosedCycle = static::isAllowedChangeDuringClosedCycle();
 		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
@@ -818,11 +829,26 @@ class Models_Entity {
 		}
 		return true;
 	}
+
+	/**
+	 * Convert keys that was received as dot annotation back to dot annotation
+	 */	
+	protected function dataToDbUpdateFormat(&$data, $originalUpdate) {
+		foreach ($this->originalUpdate as $update_key => $value) {
+			$keys = explode('.', $update_key);
+			if (count($keys) > 1) {
+				$val = Billrun_Util::getIn($originalUpdate, $update_key);
+				$data[$update_key] = $val;
+				Billrun_Util::unsetInPath($data, $keys, true);
+			}
+		}
+	}
 	
 	protected function generateUpdateParameter($data, $options = array()) {
 		$update = array();
 		unset($data['_id']);
 		if(!empty($data)) {
+			$this->dataToDbUpdateFormat($data, $this->originalUpdate);
 			$update = array(
 				'$set' => $data,
 			);
@@ -1112,7 +1138,7 @@ class Models_Entity {
 	}
 
 	protected static function isDateMovable($timestamp) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		return self::getMinimumUpdateDate() <= $timestamp;

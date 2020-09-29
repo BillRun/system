@@ -26,6 +26,8 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	protected static $cache = array();
+	protected static $cacheType = 'services';
 	
 	
 	/**
@@ -58,6 +60,8 @@ class Billrun_Service {
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**
@@ -144,6 +148,40 @@ class Billrun_Service {
 		return $this->data;
 	}
 	
+	public static function getByNameAndTime($name, $time) {
+		$items = self::getCacheItems();
+		if (isset($items['by_name'][$name])) {
+			foreach ($items['by_name'][$name] as $itemTimes) {
+				if ($itemTimes['from'] <= $time && (!isset($itemTimes['to']) || is_null($itemTimes['to']) || $itemTimes['to'] >= $time)) {
+					return $itemTimes['plan'];
+				}
+			}
+		}
+		return false;
+	}
+	
+	public static function getCacheItems() {
+		if (empty(static::$cache)) {
+			self::initCacheItems();
+		}
+		return static::$cache;
+	}
+	
+	public function initCacheItems() {
+		$coll = Billrun_Factory::db()->{static::$cacheType . 'Collection'}();
+		$items = $coll->query()->cursor();
+		foreach ($items as $item) {
+			$item->collection($coll);
+			static::$cache['by_id'][strval($item->getId())] = $item;
+			static::$cache['by_name'][$item['name']][] = array(
+				'plan' => $item,
+				'from' => $item['from'],
+				'to' => $item['to'],
+			);
+		}
+		return static::$cache;
+	}
+
 	/**
 	 * Validates that the service still have cycles left (not exhausted yet)
 	 * If this is custom period service it will check if the duration is still aligned to the row time
@@ -174,7 +212,8 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat,$serviceStartDate));
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceCycleStartDate, $rowTime);
 		return $cyclesSpent > $serviceAvailableCycles;
 	}
 	
