@@ -36,8 +36,9 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 
 	/**
 	 * Should exchange rate update be done
-	 * 
-	 * @param $period string daily/hourly/...
+	 *
+	 * @param  string $period daily/hourly/...
+	 * @return boolean
 	 */
 	protected function shouldUpdate($period) {
 		return Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() &&
@@ -46,6 +47,7 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 
 	/**
 	 * Get period on which we want to update the exchange rates
+	 * 
 	 * @return string daily/hourly/...
 	 */
 	protected function getUpdatePeriod() {
@@ -55,8 +57,8 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 	/**
 	* Get updated exchange rates from $baseCurrency to $targetCurrencie
 	* 
-	* @param $baseCurrency string currency from which the exchange rate will be taken
-	* @param $targetCurrencie array currencies to which the exchage rate will be taken
+	* @param string $baseCurrency currency from which the exchange rate will be taken
+	* @param array $targetCurrencie currencies to which the exchage rate will be taken
 	* @return array list of currencies and the exchange rate to them from the $baseCurrency
 	 */
 	public function getExchangeRates($baseCurrency, $targetCurrencies = []) {

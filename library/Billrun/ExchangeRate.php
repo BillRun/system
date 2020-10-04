@@ -12,27 +12,37 @@
 class Billrun_ExchangeRate {
 
 	/**
-	 * Mongodloid_Connection
+	 * DB collection to store exchange rates
+	 *
+	 * @var Mongodloid_Connection
 	 */
 	protected $collection;
 	
 	/**
-	 * string - base currency for the exchange rate
+	 * base currency for the exchange rate
+	 *
+	 * @var string
 	 */
 	protected $baseCurrency;
 
 	/**
-	 * string - target currency of the exchange rate
+	 * target currency of the exchange rate
+	 *
+	 * @var string
 	 */
 	protected $targetCurrency;
 
 	/**
-	 * float - the exchange rate from $baseCurrency to $targetCurrency
+	 * the exchange rate from $baseCurrency to $targetCurrency
+	 *
+	 * @var float
 	 */
 	protected $rate;
 
 	/**
-	 * unixtimestamp - rate update time
+	 * rate update time
+	 *
+	 * @var int unixtimestamp
 	 */
 	protected $time;
 
@@ -46,7 +56,7 @@ class Billrun_ExchangeRate {
 
 	/**
 	 * Add the current exchange rate to the DB
-	 * 
+	 *
 	 * @return boolean true on success, false otherwise
 	 */
 	public function add() {
@@ -65,6 +75,8 @@ class Billrun_ExchangeRate {
 	/**
 	 * Saves the current exchange rate in the DB.
 	 * Will add the exchange rate as a new revision
+	 *
+	 * @return void
 	 */
 	public function save() {
 		$this->add();
@@ -73,7 +85,7 @@ class Billrun_ExchangeRate {
 
 	/**
 	 * Close previous revisions of the exchange rate
-	 * 
+	 *
 	 * @return boolean true on success, false otherwise
 	 */
 	public function closePrevious() {
@@ -119,10 +131,10 @@ class Billrun_ExchangeRate {
 	public function getTargetCurrency() {
 		return $this->targetCurrency;
 	}
-
+		
 	/**
 	 * get exchange rate from $baseCurrency to $targetCurrency
-	 * 
+	 *
 	 * @return string currency
 	 */
 	public function getRate() {
