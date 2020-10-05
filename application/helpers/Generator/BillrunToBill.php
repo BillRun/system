@@ -24,6 +24,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $logo = null;
 	protected $confirmDate;
 	protected $sendEmail = true;
+	protected $filtration = null;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -58,14 +59,27 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 	public function generate() {
 		$invoicesIds = array();
+		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
 		foreach ($this->data as $invoice) {
-			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			$this->filtration = $invoice['aid'];
+			if (!$this->lock()) {
+				Billrun_Factory::log("Generator for aid " . $invoice['aid'] . " is already running", Zend_Log::NOTICE);
+				$result['alreadyRunning'] = true;
+				continue;
+			}
+			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
+			if (!$this->release()) {
+				Billrun_Factory::log("Problem in releasing operation for aid " . $invoice['aid'], Zend_Log::ALERT);
+				$result['releasingProblem'] = true;
+			}
 		}
+		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoicesIds, (string) $this->stamp));
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
+		return $result;
 	}
 	
 	/**
@@ -196,30 +210,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery() {	
-		if (!empty($this->invoices)){
-			return array(
-				'$or' => array(
-					array('filtration' => 'all'),
-					array('filtration' => array('$in' => $this->invoices)),
-				),
-			);
-		}
-		
-		return array();	
+	protected function getConflictingQuery() {
+                return array('filtration' => $this->filtration);
 	}
 	
 	protected function getInsertData() {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'filtration' => $this->filtration,
 		);
 	}
 	
 	protected function getReleaseQuery() {
 		return array(
 			'action' => 'confirm_cycle',
-			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'filtration' => $this->filtration,
 			'end_time' => array('$exists' => false)
 		);
 	}
