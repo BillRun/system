@@ -93,19 +93,24 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						continue;
 					}
 					Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
-					if (!$this->isFileValid($file, '')) {
-						Billrun_Factory::log()->log($file . " is not valid.", Zend_Log::DEBUG);
+					$filename = basename($file);
+					if (!$this->ssh->isFile($ssh_path."/" . $file)) {
+							Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::DEBUG);
+							continue;
+					}
+					if (!$this->isFileValid($filename, '')) {
+						Billrun_Factory::log()->log($filename . " is not valid.", Zend_Log::DEBUG);
 						continue;
 					}
 
 					// Lock
-					if (!$this->lockFileForReceive($file, $type)) {
-						Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
+					if (!$this->lockFileForReceive($filename, $type)) {
+						Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::INFO);
 						continue;
 					}
 					
 					// Copy file from remote directory
-					$fileData = $this->getFileLogData($file, $type);
+					$fileData = $this->getFileLogData($filename, $type);
 
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
@@ -156,7 +161,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						// Delete from remote
 						if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-							if(!$this->deleteRemote($ssh_path . '/' . $fileData['file_name'])) {
+							if(!$this->deleteRemote($ssh_path . '/' . $file)) {
 								Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
 							}
 						}
