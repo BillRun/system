@@ -26,7 +26,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $template;
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
-        protected $invoice_extra_params = [];
+    protected $invoice_extra_params = [];
+	protected $header_path = "";
+	protected $footer_path = "";
+	protected $header_content = "";
+	protected $footer_content = "";
 	
 
 
@@ -110,6 +114,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
+		$this->header_path =  $this->setHeaderAndFooterPathAndContent('header');
 		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
 		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.footer_path', '/footer/footer_tpl.phtml' ));
 		$this->custom = array(
@@ -607,14 +612,34 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function addExtraParamsToCurrentView($extraParams) {
-		if(!empty($extraParams)) {
-			foreach($extraParams as $paramKey => $paramVal) {
-				$this->view->assign('extra_'.$paramKey, $paramVal);
+		if (!empty($extraParams)) {
+			foreach ($extraParams as $paramKey => $paramVal) {
+				$this->view->assign('extra_' . $paramKey, $paramVal);
 			}
 		}
 	}
-        public function setBillrunExportPath($object, $paths) {
-            $object->set('export_path', $paths);
-        }
+
+	public function setBillrunExportPath($object, $paths) {
+		$object->set('export_path', $paths);
+	}
+
+	public function setHeaderAndFooterPathAndContent($options) {
+		if(isset($options['header'])) {
+			if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.(html))$/', $options['header'])) {
+				$this->header_path = $options['header'];
+			} else {
+				$this->header_content = $options['header'];
+			}
+		} else {
+			if (isset($options['header_path']) && isset($options['header_content'])) {
+				$this->header_path = $options['header_path'];
+				$this->header_content = $options['header_content'];
+			} else {
+				$this->header_path = $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
+				Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
+			}
+		}
+		$this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
+	}
 
 }
