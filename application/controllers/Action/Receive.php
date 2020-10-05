@@ -57,12 +57,10 @@ class ReceiveAction extends Action_Base {
 					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
 					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
 						foreach ($fileTypeSettings['connections'] as $connectionDetails) {
-							if ($fileType === $options['file_type']) {
-								$connectionDetails['file_type'] = $fileType;
-								$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
-								$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
-								$connection->receive();
-							}
+							$connectionDetails['file_type'] = $fileType;
+							$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+							$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
+							$connection->receive();
 						}
 					}
 				}
