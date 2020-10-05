@@ -51,6 +51,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
+		$this->logFile->updateLogFileField('process_time', new MongoDate(time()));
         $this->logFile->saveLogFileFields();
     }
 
@@ -136,7 +137,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $account->loadAccountForQuery(array('aid' => $params['aid']));
                 $accountData = $account->getCustomerData();
                 if (is_null(Billrun_Util::getIn($accountData, $field))) {
-                    $message = "Field name $field does not exists under entity " . $entity;
+                    $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);
                     $this->logFile->updateLogFileField('errors', $message);
                 }
@@ -251,8 +252,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
-        $connection->export($fileName);
-    }
+		$res = $connection->export($fileName);
+		if (!$res) {
+			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
+		}
+	}
 
     protected function getTranslationValue($paramObj) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
@@ -359,15 +363,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         return $line;
     }
-	
+
 	/**
 	 * Function to create the cpg log file
 	 */
 	protected function createLogFile() {
-		$logOptions = $this->chargeOptions;
+        $logOptions = $this->chargeOptions;
 		$logOptions['source'] = "custom_payment_files";
 		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
-		$this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
+        $this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
 		$this->logFile->save();
 	}
 	
@@ -375,16 +379,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	 * Function to initialize the created log file, only if it was created successfully.
 	 */
 	protected function initLogFile() {
-		$this->logFile->setSequenceNumber();
-		$this->logFile->setFileName($this->getFilename());
-		$this->logFile->setStamp();
-		$this->generatedLogFileStamp = $this->logFile->getStamp();
+        $this->logFile->setSequenceNumber();
+        $this->logFile->setFileName($this->getFilename());
+        $this->generatedLogFileStamp = $this->logFile->getStamp();
 		Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
 		Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
-		$this->logFile->save();
-	}
-
-	/**
+        $this->logFile->save();
+    }
+    
+    /**
      * Function returns line's attributes, if exists
      * @param type $field
      * @return array $attributes.

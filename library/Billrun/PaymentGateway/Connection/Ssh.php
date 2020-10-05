@@ -45,7 +45,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		$this->connection->changeDir($path);
 		try {
 			Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
-			$files = $this->connection->getListOfFiles($path, true);
+			$files = $this->connection->getListOfFiles($path, $this->recursive_mode);
 			$type = $this->source;
 			$count = 0;
 			$targetPath = $this->workspace;
@@ -54,6 +54,10 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 			}
 			foreach ($files as $file) {
 				Billrun_Factory::dispatcher()->trigger('beforeFileReceive', array($this, &$file, $type));
+				if (!$this->connection->isFile($path . "/" . $file)) {
+					Billrun_Factory::log("SSH: " . $file . " is not a file", Zend_Log::DEBUG);
+					continue;
+				}
 				Billrun_Factory::log()->log("SSH: Found file " . $file, Zend_Log::DEBUG);
 				$filename = basename($file);
 				if (!$this->isFileValid($filename)) {
@@ -135,7 +139,26 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		if (!empty($this->connection)){
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
-			$this->connection->put($local, $remote);
+			if (!$this->connection->connected()) {
+				Billrun_Factory::log()->log("Connecting the ssh server...", Zend_Log::DEBUG);
+				$this->connection->connect($this->username);
+				if ($this->connection->connected()) {
+					Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+				} else {
+					Billrun_Factory::log()->log("Couldn't connect to the server. File wasn't uploaded.", Zend_Log::ALERT);
+					return;
+				}
+			} else {
+				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
+			}
+			if (!$this->connection->connected()) {
+				Billrun_Factory::log()->log("Connecting the ssh server...", Zend_Log::DEBUG);
+				$this->connection->connect($this->username);
+				Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
+			}
+			return $this->connection->put($local, $remote);
 		}
 		else {
 			if ($this->move_exported) {

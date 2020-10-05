@@ -135,7 +135,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				}
 			}
 		    if (isset($options['uf']) && is_array($options['uf'])) {
-				$data = array_merge($this->getRawData(), $options['uf']);
+				$data = array_merge($this->getRawData(), ['uf' => $options['uf']]);
 				$this->data->setRawData($data);
                                }
 			$this->known_sources = Billrun_Factory::config()->getConfigValue('payments.offline.sources') !== null? array_merge(Billrun_Factory::config()->getConfigValue('payments.offline.sources'),array('POS','web')) : array('POS','web');
@@ -243,7 +243,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getCancellationPayment() {
 		$className = Billrun_Bill_Payment::getClassByPaymentMethod($this->getBillMethod());
 		$rawData = $this->getRawData();
-		unset($rawData['_id']);
+		unset($rawData['_id'], $rawData['generated_pg_file_log']);
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
 		return new $className($rawData);
@@ -318,7 +318,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param type $amount
 	 * @return type
 	 */
-	public static function getPayments($aid = null, $dir = array('fc'), $methods = array(), $to = null, $from = null, $amount = null, $includeRejected = false, $includeCancelled = false) {
+	public static function getPayments($aid = null, $dir = array('fc'), $methods = array(), $to = null, $from = null, $amount = null, $includeRejected = false, $includeCancelled = false, $includeDenied = false) {
 		if (!$includeRejected) {
 			$query['rejected'] = array(// rejected payments
 				'$ne' => TRUE,
@@ -333,6 +333,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			);
 			$query['cancel'] = array(// cancelling payments
 				'$exists' => FALSE,
+			);
+		}
+		if (!$includeDenied) {
+			$query['denied_by'] = array(// denied payments
+				'$exists' => FALSE,
+			);
+			$query['is_denial'] = array(// denialing payments
+				'$ne' => TRUE,
 			);
 		}
 		if (!is_null($aid)) {
@@ -391,6 +399,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->detachPaidBills();
 		$this->detachPayingBills();
 		$this->save();
+		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
 	}
 
 	/**
@@ -434,6 +443,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+                $this->setPending(false);
+                $this->setConfirmationStatus(false);
 		return $this;
 	}
 
@@ -456,7 +467,23 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function isCancellation() {
 		return isset($this->data['cancel']);
 	}
+	
+	/**
+	 * Find whether a payment has been denied or not
+	 * @return boolean
+	 */
+	public function isDeniedPayment() {
+		return isset($this->data['denied_by']);
+	}
 
+	/**
+	 * Find whether a payment is a denial of an existing payment
+	 * @return boolean
+	 */
+	public function isDenial() {
+		return isset($this->data['is_denial']) && $this->data['is_denial'];
+	}
+	
 	/**
 	 * Update payment status
 	 * @since 5.0
@@ -1057,6 +1084,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
 		$this->detachPaidBills();
 		$this->detachPayingBills();
+		$paymentSaved = $this->save();
+		if (!$paymentSaved) {
+			$message = "Denied flagging failed for rec " . $txId;
+			Billrun_Factory::log($message, Zend_Log::ALERT);
+			return array('status'=> false, 'massage' => $message);
+		} else {
+			$this->updatePastRejectionsOnProcessingFiles();
+			Billrun_Bill::payUnpaidBillsByOverPayingBills($this->getAid());
+		}
+		return array('status'=> true);
 	}
 	
 	public function isDenied($denialAmount) {
@@ -1136,6 +1173,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					}			
 				}
 			}
+		} else if (!empty($data['uf'])) {
+			unset($data['uf']);
 		}
 		if ($unsetOriginalUfFromData) {
 			unset($paymentData['uf']);

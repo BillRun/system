@@ -310,15 +310,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
+                $addToLogMesaage =  !empty($aids) ? " for aids " . implode(',', $aids) : null;
+                Billrun_Factory::log("Removing flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
 		$linesColl->remove($linesRemoveQuery);
+                Billrun_Factory::log("Removed flat and service lines" . $addToLogMesaage, Zend_Log::DEBUG);
+                
+                Billrun_Factory::log("Removing billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
 		$billrunColl->remove($billrunRemoveQuery);
-		if (empty($aids)) {
-			Billrun_Factory::log("Removing flat and service lines", Zend_Log::DEBUG);
-			Billrun_Factory::log("Removing billrun of " . $billrunKey, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
-			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
-		}
+                Billrun_Factory::log("Removed billrun of " . $billrunKey . $addToLogMesaage, Zend_Log::DEBUG);
 	}
 
 	public function isFakeCycle() {
@@ -783,6 +782,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				//Save configurable data
 				$aggregatedEntity->addConfigurableData();
 			}
+                        if(!empty($aggregatedResults)){
+                                    array_push($this->successfulAccounts, $aggregatedEntity->getInvoice()->getAid());
+                        }
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
@@ -790,7 +792,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function afterAggregate($results) {
 		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . round(memory_get_usage() / 1048576, 1) . " MB\n"
 			. "Host:" . Billrun_Util::getHostName() . "\n"
-			. "Processed " . (count($results)) . " accounts";
+			. "Processed " . (count($this->successfulAccounts)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
 

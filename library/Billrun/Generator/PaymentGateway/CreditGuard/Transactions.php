@@ -130,7 +130,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			$params['txid'] = $currentPayment->getId();
 			$params['deal_type'] = !Billrun_Util::isEqual($customer['left'], 0, Billrun_Bill::precision) ? '51' : '01'; // credit or debit
 			$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-			$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
+			$cardExpired = $this->gateway->isCreditCardExpired($account['payment_gateway']['active']['card_expiration']);
+			$params['card_expiration'] = $cardExpired ? $this->gateway->extendCardExpiration($params, $account['payment_gateway']['active']) : $account['payment_gateway']['active']['card_expiration'];
 			$line = $this->getDataLine($params);
 			$this->data[] = $line;
 		}
@@ -190,9 +191,17 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 	}
 
 	public function generate() {
+		if (!$this->lock()) {
+			Billrun_Factory::log("Generator is already running", Zend_Log::NOTICE);
+			return;
+		}
 		parent::generate();
 		$this->cgLogFile->setProcessTime();
 		$this->cgLogFile->save();
+		if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return;
+		}
 	}
 
 	protected function initLogFile() {
