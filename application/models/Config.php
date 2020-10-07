@@ -717,6 +717,8 @@ class ConfigModel {
 		
 		if ($category === 'taxation') {
 			$this->updateTaxationSettings($currentConfig, $data);
+		} else if ($category === 'pricing') {
+			$this->updateExchaneRates($data, $currentConfig);
 		}
 		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
@@ -1764,6 +1766,27 @@ class ConfigModel {
 	 */
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
+	}
+	
+	/**
+	 * update exchange rates in case base currency or additional currencies were changed
+	 *
+	 * @param  array $pricingConfig
+	 * @param  array $config
+	 * @return void
+	 */
+	protected function updateExchaneRates($pricingConfig, $config) {
+		$newBaseCurrency = $pricingConfig['currency'] ?? '';
+		$prevBaseCurrency = $config['pricing']['currency'] ?? '';
+		$newCurrencies = $pricingConfig['additional_currencies'] ?? [];
+		$prevCurrencies = $config['pricing']['additional_currencies'] ?? [];
+		sort($newCurrencies);
+		sort($prevCurrencies);
+		if (($newBaseCurrency !== $prevBaseCurrency) ||
+			($newCurrencies != $prevCurrencies && count($newCurrencies) > 0)) {
+			$exchangeRatesPlugin = new exchangeRatesPlugin();
+			$exchangeRatesPlugin->updateExchangeRates($newBaseCurrency, $newCurrencies);
+		}
 	}
 
 }

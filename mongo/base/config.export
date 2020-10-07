@@ -23,7 +23,8 @@
         }
     },
     "pricing": {
-        "currency": "USD"
+        "currency": "USD",
+        "additional_currencies": []
     },
     "log": {
         "debug": {

@@ -196,5 +196,9 @@
 	},
 	"plays": [
 		{ "name": "Default", "enabled": true, "default": true }
-	]
+	],
+	"pricing": {
+        "currency": "USD",
+        "additional_currencies": []
+    }
 }
