@@ -79,11 +79,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $rates_query = array();
 
 	/**
-     * is the calculator part of queue calculators
-     *
-     * @var bool
+	 * is the calculator part of queue calculators
+	 *
+	 * @var bool
 	 */
-	 protected $isQueueCalc = true;
+	protected $isQueueCalc = true;
 
 	/**
 	 * constructor of the class
