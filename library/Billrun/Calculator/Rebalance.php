@@ -18,6 +18,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		$this->isQueueCalc = false;
 	}
 
 	public function calc() {
