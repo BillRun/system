@@ -350,8 +350,6 @@ var paymentGateway = {
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], paymentGateway, 'account');
 
-
-
 // BRCD-1636 Add new custom 'play' field to Subscribers.
 var fields = lastConfig['subscribers']['subscriber']['fields'];
 var found = false;
@@ -518,7 +516,6 @@ var defaultVatMapping = {
 if (typeof lastConfig['taxation']['mapping'] === 'undefined') {
     lastConfig['taxation']['mapping'] = defaultVatMapping;
 }
-
 // BRCD-1843 - Service is taxable but shown as non-taxable
 var servicesFields = lastConfig['services']['fields'];
 if (servicesFields) {
@@ -646,7 +643,6 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
-
 // Migrate audit records in log collection into separated audit collection
 db.log.find({"source":"audit"}).forEach(
 	function(obj) {
@@ -783,4 +779,4 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
-
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
