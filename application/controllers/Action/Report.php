@@ -50,6 +50,7 @@ class ReportAction extends ApiAction {
 		'endPort' =>  ['$lte'=> 'end_port'],
 		'counterpartCarrier' =>  ['$in'=>['outgoiging_circuit_group','incoming_circuit_group']],
 		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
+		'served_pdp_address' =>  ['$in'=> ['served_pdp_address']],
 	];
 
 
@@ -93,6 +94,7 @@ class ReportAction extends ApiAction {
 		'incoming_circuit_group' => 'counterpartCarrier',
 		'outgoiging_circuit_group' => 'counterpartCarrier',
 		'serving_network' => 'countryOfOrigin',
+		'served_pdp_address' =>  'served_pdp_address',
 	];
 
 	protected $ipmappingInputFields = [
