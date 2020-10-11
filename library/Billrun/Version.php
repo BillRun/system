@@ -21,10 +21,10 @@ class Billrun_Version {
 	public static $RELEASE = '5.12';
 
 	/** @var  string  Maintenance version. */
-	public static $DEV_LEVEL = '';
+	public static $DEV_LEVEL = '1';
 
 	/** @var  string  Development STATUS. */
-	public static $DEV_STATUS = '1';
+	public static $DEV_STATUS = '';
 
 	/** @var  string  Build number. */
 	public static $BUILD = '';
