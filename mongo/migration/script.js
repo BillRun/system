@@ -479,3 +479,5 @@ db.subscribers.getIndexes().forEach(function(index){
 //if (db.lines.stats().sharded) {
 //	sh.shardCollection("billing.subscribers", { "aid" : 1 } );
 //}
+
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
