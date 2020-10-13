@@ -367,7 +367,7 @@ class Billrun_Cycle_Account_Invoice {
 		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
 			return true;
 		}
-		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("accountActivenessLinesHistory", 3);
+		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
 		if (is_numeric($accountActivenessLinesHistory)) {
 			$accountActivenessDate = strtotime($accountActivenessLinesHistory . ' months ago');
 		} else {
