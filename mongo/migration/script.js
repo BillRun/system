@@ -824,9 +824,12 @@ for (var i in lastConfig['usage_types']) {
     var _usage_type = lastConfig['usage_types'][i].usage_type;
     var _balance_unset_key = "balance.totals.out_plan_" + _usage_type;
     var _balance_set_key = "balance.totals." + _usage_type;
+    var _current_date = new Date();
+    var _3months_ago = new Date(_current_date.setDate(_current_date.getDate()-90));
 //    print(_balance_unset_key);
     var _query = {};
     _query[_balance_unset_key] = {"$exists": true};
+    _query['to'] = {"$gte": _3months_ago};
     db.balances.find(_query).forEach(
         function(obj) {
             print("balance id: " + obj._id + " sid: " + obj.sid + " balance unset key " + _balance_unset_key);
