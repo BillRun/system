@@ -77,9 +77,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
-		if(count($invoicesIds) >0){
-		$this->handleSendInvoicesByMail($invoicesIds);
-		}else{
+		if (count($invoicesIds) > 0) {
+			$this->handleSendInvoicesByMail($invoicesIds);
+		} else {
 			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
 		}
 		if(empty($this->invoices)) {
