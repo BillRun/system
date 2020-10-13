@@ -1105,7 +1105,7 @@ abstract class Billrun_Bill {
 		$accountCurrentRevisionQuery['type'] = 'account';
 		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
 		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
-		$currentAccounts = $account->getAccountsByQuery($accountQuery);
+		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
 			if (!empty($activeAccount['payment_gateway']['active'])) {

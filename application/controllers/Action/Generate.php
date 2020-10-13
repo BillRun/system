@@ -51,14 +51,7 @@ class GenerateAction extends Action_Base {
             $this->_controller->addOutput("Generator cannot be loaded");
             return;
         }
-
-        if (method_exists($generator, 'lock')) {
-            if (!$generator->lock()) {
-                $this->_controller->addOutput("Generator is already running");
-                return;
-            }
-        }
-
+        
         $this->_controller->addOutput("Generator loaded");
         $this->_controller->addOutput("Loading data to Generate...");
         try{
@@ -76,12 +69,6 @@ class GenerateAction extends Action_Base {
             Billrun_Factory::log()->log('Something went wrong while generating. Please pay attention.', Zend_Log::ERR);
         }
         $this->_controller->addOutput("Finished generating.");
-        if (method_exists($generator, 'release')) {
-            if (!$generator->release()) {
-                $this->_controller->addOutput("Problem in releasing operation");
-                return;
-            }
-        }
         if ($generator->shouldFileBeMoved()) {
             $this->_controller->addOutput("Exporting the file");
             $generator->move();

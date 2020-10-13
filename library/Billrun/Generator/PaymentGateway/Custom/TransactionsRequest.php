@@ -290,6 +290,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		foreach ($this->extraParamsDef as $paramObj) {
 			$field_name = !empty($paramObj['field_name']) ? $paramObj['field_name'] : $paramObj['name'];
+			Billrun_Factory::dispatcher()->trigger('beforeTransactionsRequestParamValidation', array($field_name, &$this->options[$field_name], &$validated));
 			if (empty($field_name)) {
 				$validated = false;
 				break;
@@ -313,8 +314,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 			}         
 			$this->extraParamsNames[] = $field_name;
+			Billrun_Factory::dispatcher()->trigger('afterTransactionsRequestParamValidation', array($field_name, &$this->options[$field_name], &$validated));
+			if($validated === false){
+				break;
+			}
 		}
-		
 		return $validated;
 	}
 

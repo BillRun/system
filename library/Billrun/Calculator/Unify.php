@@ -64,7 +64,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($unificationPerType as $type => $unificationFields) {
 			foreach ($unificationFields as $settings) {
 				$updateFields[$type] = array();
-				foreach ($settings['fields'] as $fieldSpecific) {
+				$fields = !empty($settings['fields']) && is_array($settings['fields']) ? $settings['fields'] : array();
+				foreach ($fields as $fieldSpecific) {
 					$updateFields[$type] = array_merge_recursive($updateFields[$type], $fieldSpecific['update']);
 				}
 			}
