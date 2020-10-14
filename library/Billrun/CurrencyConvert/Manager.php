@@ -60,6 +60,16 @@ class Billrun_CurrencyConvert_Manager {
 	}
 
 	/**
+	 * get customer's (account's) currency
+	 * 
+	 * @param  array $customer
+	 * @return string currency
+	 */
+	public static function getCustomerCurrency($customer) {
+		return !empty($customer['currency']) ? $customer['currency'] : self::getDefaultCurrency();
+	}
+
+	/**
 	 * Convert given amount from $baseCurrency to $targetCurrency.
 	 * Conversion is done according to the $time received (default is now)
 	 * 
@@ -70,13 +80,29 @@ class Billrun_CurrencyConvert_Manager {
 	 * 
 	 * @return float converted amount on success, false otherwise
 	 */
-	public function convert($baseCurrency, $targetCurrency, $amount, $time = null) {
-		$exchangeRate = new Billrun_ExchangeRate($baseCurrency, $targetCurrency, null, $time);
-		$rate = $exchangeRate->getRate();
-        if ($rate === false || is_null($rate)) {
-            return false;
-        }
+	public static function convert($baseCurrency, $targetCurrency, $amount, $time = null) {
+		$converter = self::getConverter('base');
+		return $converter->convert($baseCurrency, $targetCurrency, $amount, $time);
+	}
+		   
+	public static function getPrice($targetCurrency, $rate, $params = []) {
+		$converter = self::getConverter($params);
+		return $converter->getPrice($targetCurrency, $rate);
+	}
+		   
+	public static function getPriceForCustomer($customer, $rate, $params = []) {
+		$converter = self::getConverter($params);
+		return $converter->getPriceForCustomer($customer, $rate);
+	}
 
-        return $amount * $rate;
+	protected static function getConverter($params = []) {
+		$baseClass = 'Billrun_CurrencyConvert';
+		$entityType = $params['type'] ?? 'base';
+		$converterClass = "{$baseClass}_" . ucfirst($entityType);
+		if (!class_exists($converterClass)) {
+			$converterClass = "{$baseClass}_Base";
+		}		 
+		
+		return new $converterClass($params);
 	}
 }
