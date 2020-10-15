@@ -21,6 +21,7 @@ class Billrun_Tariff_Util {
 	 * Gets correct access price from tariff
 	 * @param array $tariff the tariff structure
 	 * @return float Access price
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
 	 */
 	public static function getAccessPrice($tariff) {
 		if (isset($tariff['access'])) {
@@ -29,6 +30,9 @@ class Billrun_Tariff_Util {
 		return 0;
 	}
 
+	/**
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
+	 */
 	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
 			$pricingMethod = self::PRICING_METHOD_TIERED;
@@ -45,6 +49,9 @@ class Billrun_Tariff_Util {
 		return ($isNegative ? $ret * (-1) : $ret);
 	}
 
+	/**
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
+	 */
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
 			$pricingMethod = self::PRICING_METHOD_TIERED;
@@ -122,6 +129,7 @@ class Billrun_Tariff_Util {
 	 * @param array $rate - The rate to be built.
 	 * @param array $other - Rate to build according to.
 	 * @return array rate instance.
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
 	 */
 	protected static function buildRate($rate, $other) {
 		if (isset($rate['rate'])) {
@@ -141,6 +149,7 @@ class Billrun_Tariff_Util {
 	 * @param int $charge - Reference to the current charge
 	 * @param array $rate - The current rate.
 	 * @return int Volume value after handling.
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
 	 */
 	protected static function handleChargeAndVolume($volume, &$charge, $rate, $pricingMethod) {
 		$maxVolumeInRate = ($rate['to'] === Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX : $rate['to']) - $rate['from'];
@@ -162,6 +171,7 @@ class Billrun_Tariff_Util {
 	 * @param type $volume
 	 * @param type $rate
 	 * @return type
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
 	 */
 	protected static function getChargeValueForRateStep($volume, $rate) {
 		$ceil = true;

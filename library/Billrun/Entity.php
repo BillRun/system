@@ -113,7 +113,7 @@ abstract class Billrun_Entity {
 	 * @return mixed
 	 */
 	public function get($name, $default = null) {
-		return $this->data->get($name, $default);
+		return $this->data[$name] ?? $default;
 	}
 		
 	/**

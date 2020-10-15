@@ -122,8 +122,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected $servicesUsed = array();
 
-	protected $account = null;
-
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
@@ -141,7 +139,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
-		$this->account = Billrun_Factory::account()->loadAccountForQuery(['aid' => (int)$this->row['aid']]);
 	}
 
 	/**
@@ -703,7 +700,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if ($keyRequired == 'cost') {
 						$comparedValue = $this->getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
 					} else {
-						$comparedValue = $this->getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);//TODO: move to rate class
 					}
 				} else {
 					$comparedValue = $value;
@@ -1100,11 +1097,23 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	//TODO: use Rate class and fix function implementation
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
-		$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume, $plan, $services = [], $offset, $time);
-		if (empty($this->account)) {
-			return $charges;
-		}
+		// $charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume, $plan, $services, $offset, $time);
+		// return $charges;
+		$rateObj = new Billrun_Rate(['data' => $rate]);
+		$params = [
+			'plan_name' => $plan,
+			'services' => $services,
+			'offset' => $offset,
+			'time' => $time,
+		];
+		return $rateObj->getTotalCharge($usageType, $volume, $params);
+		
+		
+		// $accountCurrency = $this->row['currency'] ?? ''; //TODO: add curency as foreign field
+		// if (empty($accountCurrency)) {
+		// 	return $charges;
+		// }
 
-		return Billrun_CurrencyConvert_Manager::getPriceForCustomer($this->account, $rate);
+		// return Billrun_CurrencyConvert_Manager::getPrice($accountCurrency, $rate);
 	}
 }
