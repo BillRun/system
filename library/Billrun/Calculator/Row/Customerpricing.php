@@ -1106,9 +1106,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param  float $offset
 	 * @param  int $time
 	 * @return float
+	 * @todo add currency as foreign field + somehow update $this->row with conversion details
 	 */
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
-		// $rateObj = new Billrun_Rate(['data' => $rate]);
 		$rateObj = new Billrun_Rate($rate->getRawData());
 		$params = [
 			'plan_name' => $plan,
@@ -1119,13 +1119,5 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		];
 		
 		return $rateObj->getTotalCharge($usageType, $volume, $params);
-		
-		
-		// $accountCurrency = $this->row['currency'] ?? ''; //TODO: add curency as foreign field
-		// if (empty($accountCurrency)) {
-		// 	return $charges;
-		// }
-
-		// return Billrun_CurrencyConvert_Manager::getPrice($accountCurrency, $rate);
 	}
 }

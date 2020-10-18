@@ -53,6 +53,7 @@ class Billrun_Rate extends Mongodloid_Entity {
     public function getCharges($usageType, $volume, $params = []) {
 		$tariff = new Billrun_Rate_Tariff($this, $usageType, $params);
 		$offset = $params['offset'] ?? 0;
+		
 		if ($offset) {
 			$chargeWoIC = $tariff->getChargeByVolume($offset + $volume) - $tariff->getChargeByVolume($offset);
 		} else {
@@ -60,6 +61,7 @@ class Billrun_Rate extends Mongodloid_Entity {
 		}
 		
 		$chargeWoIC *= $tariff->getPercentage();
+
 		return [
 			'total' => $chargeWoIC,
 		];

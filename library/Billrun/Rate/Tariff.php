@@ -41,6 +41,8 @@ class Billrun_Rate_Tariff {
 	 * @var Billrun_Rate
 	 */
 	protected $rate;
+
+	protected $params = [];
 	
 	/**
 	 * plan name
@@ -50,6 +52,7 @@ class Billrun_Rate_Tariff {
 	protected $planName;
 
 	public function __construct($rate, $usageType, $params = []) {
+		$this->params = $params;
 		$this->load($rate, $usageType, $params);
 	}
 		
@@ -170,7 +173,13 @@ class Billrun_Rate_Tariff {
      * @return float
      */
     public function getAccessPrice() {
-		return $this->get('access', 0);
+		$price = $this->get('access', 0);
+		$currency = $params['currency'] ?? '';
+		if (empty($currency) || empty($price)) {
+			return $price;
+		}
+
+		return Billrun_CurrencyConvert_Manager::convert(Billrun_CurrencyConvert_Manager::getDefaultCurrency(), $currency, $price);
     }
         
     /**
@@ -185,7 +194,7 @@ class Billrun_Rate_Tariff {
 		$lastStep = null;
 		$volumeCount = $volume;
 		foreach ($steps as $currStep) {
-			$step = new Billrun_Rate_Step($currStep, $lastStep);
+			$step = new Billrun_Rate_Step($currStep, $lastStep, $this->params);
 			if (!$step->isValid()) {
 				Billrun_Factory::log("Invalid rate step. " . print_r($currStep, 1), Zend_Log::WARN);
 				continue;

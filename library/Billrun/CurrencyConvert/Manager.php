@@ -81,18 +81,18 @@ class Billrun_CurrencyConvert_Manager {
 	 * @return float converted amount on success, false otherwise
 	 */
 	public static function convert($baseCurrency, $targetCurrency, $amount, $time = null) {
-		$converter = self::getConverter('base');
+		$converter = self::getConverter();
 		return $converter->convert($baseCurrency, $targetCurrency, $amount, $time);
 	}
 		   
-	public static function getPrice($targetCurrency, $rate, $params = []) {
+	public static function getPrice($targetCurrency, Billrun_Rate_Step $step, $params = []) {
 		$converter = self::getConverter($params);
-		return $converter->getPrice($targetCurrency, $rate);
+		return $converter->getPrice($targetCurrency, $step);
 	}
 		   
-	public static function getPriceForCustomer($customer, $rate, $params = []) {
+	public static function getPriceForCustomer($customer, Billrun_Rate_Step $step, $params = []) {
 		$converter = self::getConverter($params);
-		return $converter->getPriceForCustomer($customer, $rate);
+		return $converter->getPriceForCustomer($customer, $step);
 	}
 
 	protected static function getConverter($params = []) {

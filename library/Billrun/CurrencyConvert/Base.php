@@ -34,46 +34,42 @@ class Billrun_CurrencyConvert_Base {
 	 * get price for customer
 	 *
 	 * @param  mixed $customer
-	 * @param  mixed $rate
+	 * @param  Billrun_Rate_Step $step
 	 * @return void
 	 */
-	public function getPriceForCustomer($customer, $rate) {
+	public function getPriceForCustomer($customer, Billrun_Rate_Step $step) {
 		$targetCurrency = Billrun_CurrencyConvert_Manager::getCustomerCurrency($customer);
 		if ($targetCurrency === false) {
 			Billrun_Factory::log("Failed to get currency for customer: " . print_R($customer, 1), Billrun_Log::ERR);
 			return false;
 		}
 		
-		return $this->getPrice($targetCurrency, $rate);
+		return $this->getPrice($targetCurrency, $step);
 	}
 
-	public function getPrice($targetCurrency, $rate) {
-		$price = $this->getBasePrice($rate);
+	public function getPrice($targetCurrency, Billrun_Rate_Step $step) {
+		$price = $step->get('price');
 		
 		if ($targetCurrency === $this->baseCurrency) {
 			return $price;
 		}
 
-		$overrideCurrencyPrice = $this->getOverrideCurrencyPrice($rate, $price);
+		$overrideCurrencyPrice = $this->getOverrideCurrencyPrice($step, $price);
 		if ($overrideCurrencyPrice !== false) {
 			return $overrideCurrencyPrice;
 		}
 
-		$convertedPrice = Billrun_CurrencyConvert_Manager::getInstance()->convert($this->baseCurrency, $targetCurrency, $price);
+		$convertedPrice = Billrun_CurrencyConvert_Manager::convert($this->baseCurrency, $targetCurrency, $price);
 		if ($convertedPrice === false) {
-			Billrun_Factory::log("Failed to convert currency from {$targetCurrency}) on rate: " . print_R($rate, 1), Billrun_Log::ERR);
+			Billrun_Factory::log("Failed to convert currency from {$targetCurrency}) on rate step: " . print_R($step, 1), Billrun_Log::ERR);
 			return false;
 		}
 
 		return $convertedPrice;
 	}
 
-	protected function getBasePrice($rate) {
-		return $rate['price'];
-	}
-
-	protected function getOverrideCurrencyPrice($rate, $price) {
-		foreach ($rate['currency_rates'] ?? [] as $currencyRate) {
+	protected function getOverrideCurrencyPrice(Billrun_Rate_Step $step, $price) {
+		foreach ($step->get('currency_rates', []) as $currencyRate) {
 			if ($currencyRate['currency'] === $this->targetCurrency) {
 				if (isset($currencyRate['value'])) {
 					return floatval($currencyRate['value']);

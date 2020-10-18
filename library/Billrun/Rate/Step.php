@@ -28,7 +28,9 @@ class Billrun_Rate_Step {
 	 */
 	protected $data = null;
 
-	public function __construct(array $step, Billrun_Rate_Step $prevStep = null) {
+	protected $params = [];
+
+	public function __construct(array $step, Billrun_Rate_Step $prevStep = null, $params = []) {
 		if (empty($step)) {
 			return;
 		}
@@ -39,6 +41,7 @@ class Billrun_Rate_Step {
 		
 		$this->data = $step;
 		$this->prevStep = $prevStep;
+		$this->params = $params;
 	}
 	
 	/**
@@ -64,7 +67,17 @@ class Billrun_Rate_Step {
 			$toCharge = ceil($toCharge);
 		}
 	
-		return floatval($toCharge * $this->get('price'));
+		return floatval($toCharge * $this->getPrice($this->params));
+	}
+
+	public function getPrice($params = []) {
+		$price = $this->get('price');
+		$currency = $params['currency'] ?? '';
+		if (empty($currency)) {
+			return $price;
+		}
+
+		return Billrun_CurrencyConvert_Manager::getPrice($currency, $this);
 	}
 
 	/**
