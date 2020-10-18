@@ -12,29 +12,13 @@
  * @package  Rate
  * @since    5.12
  */
-class Billrun_Rate extends Billrun_Entity {
+class Billrun_Rate extends Mongodloid_Entity {
 
     const PRICING_METHOD_TIERED = 'tiered';
 	const PRICING_METHOD_VOLUME = 'volume';
 
-    /**
-     * see parent::getCollection
-     */
-    public static function getCollection() {
-        return Billrun_Factory::db()->ratesCollection();
-    }
-	
-	/**
-     * see parent::getLoadQueryByParams
-     */
-	protected function getLoadQueryByParams($params = []) {
-        if (isset($params['key'])) {
-            return [
-                'key' => $params['key'],
-            ];
-        }
-
-        return false;
+	public function __construct($data = []) {
+		parent::__construct($data, Billrun_Factory::db()->ratesCollection());
 	}
 		
 	/**
@@ -43,7 +27,7 @@ class Billrun_Rate extends Billrun_Entity {
 	 * @return string one of tiered/volume
 	 */
 	public function getPricingMethod() {
-		return $this->get('pricing_method', self::PRICING_METHOD_TIERED);
+		return $this->get('pricing_method') ?? self::PRICING_METHOD_TIERED;
 	}
     
     /**

@@ -1108,12 +1108,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return float
 	 */
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
-		$rateObj = new Billrun_Rate(['data' => $rate]);
+		// $rateObj = new Billrun_Rate(['data' => $rate]);
+		$rateObj = new Billrun_Rate($rate->getRawData());
 		$params = [
 			'plan_name' => $plan,
 			'services' => $services,
 			'offset' => $offset,
 			'time' => $time,
+			'currency' => $this->row['currency'] ?? '',
 		];
 		
 		return $rateObj->getTotalCharge($usageType, $volume, $params);
