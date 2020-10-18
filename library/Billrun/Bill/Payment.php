@@ -44,7 +44,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected static $aids;
         
         const txIdLength = 13;
-        /**
+	/**
 	 * 
 	 * @param type $options
 	 */
@@ -760,7 +760,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$payment->setPaymentStatus($response, $gatewayName);
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
+				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
@@ -1018,7 +1018,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         }
 
 
-        public static function createInstallmentAgreement($params) {
+	public static function createInstallmentAgreement($params) {
 		$installmentAgreement = new Billrun_Bill_Payment_InstallmentAgreement($params);
 		return $installmentAgreement->splitBill();
 	}
@@ -1109,7 +1109,6 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['uf'] = $fields;
 	}
 	
-	
 	/**
 	 * Checks if possible to deny a requested amount according to the bill amount.
 	 * @param $denialAmount- the amount to deny.
@@ -1129,7 +1128,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$mergedInstallmentsObj = new Billrun_Bill_Payment_MergeInstallments($params);
 		return $mergedInstallmentsObj->merge();
 	}
-
+    
     /**
      * get bills affected by payment
      * 
