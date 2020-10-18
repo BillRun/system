@@ -13,9 +13,19 @@
  * @since    5.12
  */
 class Billrun_Rate_Step {
-
+	
+	/**
+	 * previous step
+	 *
+	 * @var Billrun_Rate_Step
+	 */
 	protected $prevStep = null;
-
+	
+	/**
+	 * Step's data
+	 *
+	 * @var array
+	 */
 	protected $data = null;
 
 	public function __construct(array $step, Billrun_Rate_Step $prevStep = null) {
@@ -30,11 +40,22 @@ class Billrun_Rate_Step {
 		$this->data = $step;
 		$this->prevStep = $prevStep;
 	}
-
+	
+	/**
+	 * is the step valid
+	 *
+	 * @return boolean
+	 */
 	public function isValid() {
 		return is_array($this->data) && !empty($this->data);
 	}
-    
+        
+    /**
+     * get charge value of the given $volume inside the current step
+     *
+     * @param  float $volume
+     * @return float
+     */
     public function getChargeValue($volume) {
 		$ceil = $this->get('ceil', true);
 		$toCharge = $volume / $this->get('interval');
@@ -56,11 +77,21 @@ class Billrun_Rate_Step {
 	public function get($prop, $default = null) {
 		return $this->data[$prop] ?? $default;
 	}
-
+	
+	/**
+	 * get Step's data
+	 *
+	 * @return array
+	 */
 	public function getData() {
 		return $this->data;
 	}
-
+	
+	/**
+	 * get previous step
+	 *
+	 * @return Billrun_Step
+	 */
 	public function getPrevStep() {
 		return $this->prevStep;
 	}

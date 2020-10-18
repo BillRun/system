@@ -1094,11 +1094,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		return $quantity;
 	}
-
-	//TODO: use Rate class and fix function implementation
+	
+	/**
+	 * get total charges for the account according to his currency
+	 *
+	 * @param  array $rate
+	 * @param  stirng $usageType
+	 * @param  float $volume
+	 * @param  string $plan
+	 * @param  array $services
+	 * @param  float $offset
+	 * @param  int $time
+	 * @return float
+	 */
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
-		// $charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume, $plan, $services, $offset, $time);
-		// return $charges;
 		$rateObj = new Billrun_Rate(['data' => $rate]);
 		$params = [
 			'plan_name' => $plan,
@@ -1106,6 +1115,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'offset' => $offset,
 			'time' => $time,
 		];
+		
 		return $rateObj->getTotalCharge($usageType, $volume, $params);
 		
 		

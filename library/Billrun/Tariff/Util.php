@@ -11,6 +11,7 @@
  *
  * @package  Util
  * @since    5.1
+ * @deprecated since version 5.12 - use Billrun_Rate instead
  */
 class Billrun_Tariff_Util {
 	

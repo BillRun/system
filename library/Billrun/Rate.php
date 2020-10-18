@@ -36,37 +36,46 @@ class Billrun_Rate extends Billrun_Entity {
 
         return false;
 	}
-	
+		
+	/**
+	 * get Rate's pricing method
+	 *
+	 * @return string one of tiered/volume
+	 */
 	public function getPricingMethod() {
 		return $this->get('pricing_method', self::PRICING_METHOD_TIERED);
 	}
-
-    public function getTotalCharge($usageType, $volume, $params = []) {//$usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
+    
+    /**
+     * get total charge
+     *
+     * @param  string $usageType
+     * @param  float $volume
+     * @param  array $params
+     * @return float
+     */
+    public function getTotalCharge($usageType, $volume, $params = []) {
 		return $this->getCharges($usageType, $volume, $params)['total'];
 	}
-
+    
+    /**
+     * get all charges
+     *
+     * @param  string $usageType
+     * @param  float $volume
+     * @param  array $params
+     * @return array
+     */
     public function getCharges($usageType, $volume, $params = []) {
-		$tariff = Billrun_Rate_Tariff::getInstance($this, $usageType, $params);
+		$tariff = new Billrun_Rate_Tariff($this, $usageType, $params);
 		$offset = $params['offset'] ?? 0;
-		$percentage = 1;
-		
-		//TODO: handle this case
-		$tariff2 = $tariff->getData();
-		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
-		if (array_keys($tariff2)[0] === 'percentage') {
-			$rates = $this->get('rates', []);
-			if (isset($rates[$usageType]['BASE'])) {
-				$percentage = array_values($tariff2)[0];
-				$tariff = $rates[$usageType]['BASE'];
-			}
-		}
-		
 		if ($offset) {
 			$chargeWoIC = $tariff->getChargeByVolume($offset + $volume) - $tariff->getChargeByVolume($offset);
 		} else {
 			$chargeWoIC = $tariff->getChargeByVolume($volume);
 		}
-		$chargeWoIC *= $percentage;
+		
+		$chargeWoIC *= $tariff->getPercentage();
 		return [
 			'total' => $chargeWoIC,
 		];
