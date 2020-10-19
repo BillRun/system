@@ -33,19 +33,34 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 		$definedPlugins = Billrun_Factory::config()->getConfigValue('plugins');
 		if (isset($definedPlugins) && is_array($definedPlugins)) {
-			$allPlugins = array_merge($definedPlugins, $plugins);
-			$plugins = array_unique($allPlugins);
+			$allPlugins = array_merge_recursive($definedPlugins, $plugins);
+			$plugins = $this->handlePluginsConf($allPlugins);
 		}
 		if (!empty($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
-			foreach ($plugins as $plugin) {
-				$dispatcher->attach(new $plugin);
+			foreach ($plugins as $plugin_name => $plugins_conf) {
+				if (!empty($plugins_conf['configuration']['values'])) {
+					$pluginObject = new $plugin_name($plugins_conf['configuration']['values']);
+				} else {
+					$pluginObject = new $plugin_name();
+				}
+				
+				$dispatcher->attach($pluginObject);
+				$pluginObject->setAvailability($plugins_conf['enabled']);
+				if (isset($plugins_conf['configuration']['values'])) {
+					$pluginObject->setOptions($plugins_conf['configuration']['values']);
+				}
 			}
 		}
 
 		if (isset($config->chains)) {
 			$chains = $config->chains->toArray();
+			$definedChains = Billrun_Factory::config()->getConfigValue('chains');
+			if (isset($definedChains) && is_array($definedChains)) {
+				$allChains = array_merge($definedChains, $chains);
+				$chains = array_unique($allChains);
+			}
 			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 
 			foreach ($chains as $chain) {
@@ -116,6 +131,45 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		);
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("billapi", $routeRegex);
+		
+		// add API versions backward compatibility
+		$match = "#^/api/v/(\w+)/(\w+)#";
+		$route = array(
+			'controller' => 'api',
+			'action' => 'versionsbc',
+		);
+		$map = array(
+			1 => "api_version",
+			2 => "api_action",
+		);
+		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
+		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
 	}
-
+	
+	/**
+	 * Rearrange all the plugins from db and ini - to be in the latest plugins structure, and prevent duplications.
+	 * @param array $plugins
+	 * @return array.
+	 */
+	public function	handlePluginsConf($plugins) {
+		$plugins_list = [];
+		foreach ($plugins as $key => $plugin) {
+			$pluginName = is_array($plugin) ? $plugin['name'] : $plugin;
+			if (!isset($plugins_list[$pluginName])) {
+				if (is_array($plugin)) {
+					$pluginName = $plugin['name'];
+					if (in_array($plugin['name'], $plugins)) {
+						array_splice($plugins, array_search($plugin['name'], $plugins), 1);
+					}
+					$plugins_list[$pluginName] = $plugin;
+				} else {
+					$pluginName = $plugin;
+					$hideFromUI = ($pluginName == 'calcCpuPlugin') ? false : true;
+					$system = in_array($pluginName, ['calcCpuPlugin', 'csiPlugin', 'autorenewPlugin', 'fraudPlugin']) ? true : false;
+					$plugins_list[$pluginName] = ['name' => $pluginName, 'enabled' => true, 'system' => $system, 'hide_from_ui' => $hideFromUI];
+				}
+			}
+		}
+		return $plugins_list;
+	}
 }

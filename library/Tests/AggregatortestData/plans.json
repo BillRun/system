@@ -22,7 +22,13 @@
 					"connection_type": "postpaid",
 					"prorated": true,
 					"to": "time*2167-05-02T16:17:51Z",
-					"creation_time": "time*2017-12-31T22:00:00Z"
+					"creation_time": "time*2017-12-31T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5af2ddb405e68c1ab43a4597",
@@ -43,7 +49,13 @@
 					"connection_type": "postpaid",
 					"prorated": false,
 					"to": "time*2167-05-09T12:38:28Z",
-					"creation_time": "time*2018-01-09T22:00:00Z"
+					"creation_time": "time*2018-01-09T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5af2e04505e68c6dbd791222",
@@ -64,7 +76,13 @@
 					"connection_type": "postpaid",
 					"prorated": true,
 					"to": "time*2167-05-09T12:48:07Z",
-					"creation_time": "time*2018-01-09T22:00:00Z"
+					"creation_time": "time*2018-01-09T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5af2e75e05e68c419119e68b",
@@ -90,7 +108,13 @@
 					},
 					"prorated": true,
 					"to": "time*2167-05-09T13:19:42Z",
-					"creation_time": "time*2017-12-31T22:00:00Z"
+					"creation_time": "time*2017-12-31T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5af44c8e05e68c42b71a6ab5",
@@ -116,7 +140,13 @@
 					},
 					"prorated": true,
 					"to": "time*2167-05-10T14:43:42Z",
-					"creation_time": "time*2017-12-31T22:00:00Z"
+					"creation_time": "time*2017-12-31T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5b03d51f05e68c10537e21b2",
@@ -163,7 +193,13 @@
 					"rates": [],
 					"prorated": true,
 					"to": "time*2167-06-14T10:16:13Z",
-					"creation_time": "time*2018-01-14T22:00:00Z"
+					"creation_time": "time*2018-01-14T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5b30ee5305e68c5f5f545509",
@@ -185,7 +221,13 @@
 					"rates": [],
 					"prorated": true,
 					"to": "time*2167-06-25T13:29:55Z",
-					"creation_time": "time*2018-06-26T00:00:00Z"
+					"creation_time": "time*2018-06-26T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5c2b34e905e68c5dd90152d2",
@@ -207,7 +249,13 @@
 					"rates": [],
 					"prorated": true,
 					"to": "time*2168-01-01T09:37:45Z",
-					"creation_time": "time*2018-01-02T00:00:00Z"
+					"creation_time": "time*2018-01-02T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
 				},
 				{
 					"OBJID": "5c2b373c05e68c5dd90152d4",
@@ -229,8 +277,342 @@
 					"rates": [],
 					"prorated": true,
 					"to": "time*2168-01-01T09:47:40Z",
-					"creation_time": "time*2018-01-02T00:00:00Z"
+					"creation_time": "time*2018-01-02T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				},
+				{
+					"OBJID": "5a55ca8b6d5b99344e5226c3",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "FREE_WITH_NOTHING",
+					"price": [
+						{
+							"price": "",
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "free_with_nothing",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"prorated": true,
+					"to": "time*2167-01-10T08:10:51Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				},
+
+				{
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TTF",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": false,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "FFF",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": false,
+					"prorated_end": false,
+					"prorated_termination": false,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TFF",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": false,
+					"prorated_termination": false,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "FTT",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": false,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TTT",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "FFT",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": false,
+					"prorated_end": false,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TFT",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": false,
+					"prorated_end": false,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "FTF",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": false,
+					"prorated_end": true,
+					"prorated_termination": false,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+						{
+
+					"from": "time*2018-12-31T22:00:00Z",
+					"name": "TTT2",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "st",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2168-07-30T12:35:34Z",
+					"creation_time": "time*2018-07-31T00:00:00Z"
+				},
+				{
+					"OBJID": "5ea1a2d4cd4acc4e0d336bc3",
+					"from": "time*2018-04-24T00:00:00Z",
+					"name": "NOT_TAXABLE_PLAN",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "not taxable plan",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2169-04-23T14:14:44Z",
+					"creation_time": "time*2018-04-24T00:00:00Z"
 				}
+
 
 			]
 }

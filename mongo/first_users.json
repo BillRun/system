@@ -1,0 +1,1 @@
+{"username":"admin","password":"$2y$10$qCd1BvxMFyHULGL23x1XVu/B/0o9afab/zPdNzmfPZlz.7L1u6GU6","roles":["read","write","admin"],"from":{"$date":"2012-09-01T00:00:00.000Z"},"to":{"$date":"2168-03-25T09:43:10.000Z"},"creation_time":{"$date":"2012-09-01T00:00:00.000Z"}}

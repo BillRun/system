@@ -23,6 +23,8 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		'$last' => '_last',
 		'$cond' => '_cond',
 		'$substr' => '_substr',
+		'$min' => '_min',
+		'$max' => '_max',
 		'__aggregate' => '_aggregate',
 		'__callback' => '_callback'
 	);
@@ -65,6 +67,20 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $ret;
 	}
 
+
+		/**
+	*
+	*/
+	protected static function clearLeadingDollar($fieldsWithDollar) {
+		if(!is_array($fieldsWithDollar)) {
+			return preg_replace('/^\$/', '', $fieldsWithDollar);
+		}
+		foreach($fieldsWithDollar as &$value) {
+			$value = preg_replace('/^\$/', '', $value);
+		}
+		return $fieldsWithDollar;
+	}
+
 	//======================================= instancing logic  ==============================
 	protected function _first($data, $expression, $pastValue = FALSE) {
 		$result = $pastValue;
@@ -83,8 +99,8 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $result;
 	}
 	
-	protected function _push($data, $expression, $pastValue) {
-		$result = empty($pastValue) ? array() : $pastValue;
+	protected function _push($data, $expression, $pastValue = FALSE) {
+		$result = empty($pastValue) ? array() : is_array($pastValue)  ? $pastValue : [$pastValue];
 		if(is_array($expression)) {
 			foreach($expression as $dstKey => $subExpression) {
 				$addedData[$dstKey] = $this->evaluate($data, $subExpression);
@@ -141,7 +157,18 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $result + $pastValue;
 
 	}
-	
+
+	protected function _min($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return is_null($pastValue) || !is_null($currValue) && $currValue < $pastValue ? $currValue : $pastValue ;
+	}
+
+	protected function _max($data, $expression, $pastValue = null) {
+		$currValue = $this->evaluate($data, $expression);
+		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue ;
+	}
+
+
 	//======================================= String operations ===============================
 	
 	protected function _substr($data, $expression, $pastValue = 0) {
@@ -162,7 +189,16 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	//==================================== Programatic extenstions logic (Unsupported by mongo) =======================
 	
 	protected function _callback($data, $expression, $pastValue = FALSE) {
-		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],array($data,$expression['arguments'],$pastValue));
+		$arr = [];
+		foreach ($expression['arguments'] as $arg) {
+			$arr[] = $arg;
+		}
+                if(isset($expression['extra_params'])){
+                    foreach ($expression['extra_params'] as $key => $value) {
+                            $arr[] = $value;
+                    }
+                }
+		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],$arr);
 	}
 	
 	protected function _aggregate($data, $expression, $pastValue) {

@@ -13,6 +13,7 @@
  * @since    0.5
  */
 class Billrun_Billrun {
+	use Billrun_Traits_ConditionsCheck;
 
 	static public $accountsLines = array();
 	protected $aid;
@@ -56,7 +57,7 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('taxation.vat', 0.18);
+		$this->vat = Billrun_Rates_Util::getVat(0.18); // TODO: this should not be in use since there is no single TAX
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
@@ -224,13 +225,13 @@ class Billrun_Billrun {
 	 * @param boolean $rawData
 	 * @return array
 	 */
-	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
+	public static function getBillrunData($aid, $billrun_key, $rawData = true, $project = []) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
 				))
-				->cursor()->limit(1)->current();
+				->project($project)->cursor()->limit(1)->current();
 		return $rawData ? $data->getRawData() : $data;
 	}
 
@@ -248,6 +249,7 @@ class Billrun_Billrun {
 			),
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
@@ -311,7 +313,7 @@ class Billrun_Billrun {
 	/**
 	 * Gets a subscriber entry from the current billrun
 	 * @param int $sid the subscriber id
-	 * @return mixed the subscriber entry (array) or false if the subscriber does not exists in the billrun
+	 * @return mixed the subscriber entry (array) or false if the subscriber does not exist in the billrun
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data['subs'] as $sub_entry) {
@@ -732,18 +734,22 @@ class Billrun_Billrun {
 
 	/**
 	 * Load all rates from db into memory
+	 * 
+	 * @deprecated since version 5.12
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		self::loadFromDB($rates_coll);
+		self::loadFromDB($rates_coll, 'rates');
 	}
 
 	/**
 	 * Load all plans from db into memory
+	 * 
+	 * @deprecated since version 5.12
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		self::loadFromDB($plans_coll);
+		self::loadFromDB($plans_coll, 'plans');
 	}
 
 	/**
@@ -752,11 +758,15 @@ class Billrun_Billrun {
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
-	protected static function loadFromDB($colls) {
+	protected static function loadFromDB($colls, $type) {
 		$data = $colls->query()->cursor();
 		foreach ($data as $record) {
 			$record->collection($colls);
-			self::$plans[strval($record->getId())] = $record;
+			if ($type == 'plans') {
+				self::$plans[strval($record->getId())] = $record;
+			} else if ($type == 'rates') {
+				self::$rates[strval($record->getId())] = $record;
+			}
 		}
 	}
 
@@ -961,7 +971,7 @@ class Billrun_Billrun {
 	 */
 	public static function getActiveBillrun() {
 		$query = array(
-			'attributes.invoice_type' => array('$ne' => 'immediate'),
+			'billrun_key' => array('$regex' => '^\d{6}$'),
 		);
 		$now = time();
 		$sort = array(
@@ -1039,12 +1049,28 @@ class Billrun_Billrun {
 	}
 
 	protected function initBillrunDates() {
-		$billrunDate = self::getEndTime($this->getBillrunKey());
+		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$this->data['creation_date'] = new MongoDate(time());
 		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$this->data['end_date'] = new MongoDate($billrunDate);
-		$this->data['start_date'] = new MongoDate(self::getStartTime($this->getBillrunKey()));
-		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$this->data['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
+		$this->data['due_date'] = $this->generateDueDate($billrunDate);
+	}
+	
+	/**
+	 * 
+	 * @param string $billrunDate
+	 * @return \MongoDate
+	 */
+	protected function generateDueDate($billrunDate) {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
+		foreach ($options as $option) {
+			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
+				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
+			}
+		}
+		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
+		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	protected function getVatFromRow($row,$rate) {
@@ -1065,8 +1091,22 @@ class Billrun_Billrun {
 	public function getInvoiceID() {
 		return @$this->data['invoice_id'];
 	}
+	
+        /**
+         * Function that brings back account last monthly billrun object
+         * @param type $aid
+         * @param type $currentBillrunKey
+         * @return array last monthly billrun object
+         */
+	public static function getAccountLastMonthlyBillrun($aid, $currentBillrunKey) {
+                $query = [
+					'aid' => $aid,
+					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
+				];
+                $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
+                if (empty($billrun)) {
+                    return null;
+                }
+                return $billrun;
+	}
 }
-
-// TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
-Billrun_Billrun::loadRates();
-Billrun_Billrun::loadPlans();

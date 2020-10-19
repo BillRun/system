@@ -37,7 +37,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 		$this->importerName = $this->getImporterName();
 
 		if (!file_exists($path) || is_dir($path)) {
-			Billrun_Factory::log("File not exists or path is directory", Zend_Log::ALERT);
+			Billrun_Factory::log("File does not exist or path is a directory", Zend_Log::ALERT);
 			return FALSE;
 		}
 

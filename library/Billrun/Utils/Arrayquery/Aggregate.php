@@ -8,7 +8,7 @@
  * @author eran
  */
 class Billrun_Utils_Arrayquery_Aggregate {
-
+	
 	protected $mapping = array(
 		'$match' => '_match',
 		'$group' => '_group',
@@ -84,12 +84,10 @@ class Billrun_Utils_Arrayquery_Aggregate {
 	}
 
 	protected function _project($expression, $data) {
-		$retData = array();
-
-		foreach ($expression as $key => $value) {
-			if($value) {
-				$retData[$key] = Billrun_Util::getIn($data, (is_numeric($value) ? $key : $this->clearLeadingDollar($value)) );
-			}
+		$retData = [];
+		$aggregateExpretion = new Billrun_Utils_Arrayquery_Aggregate_Expression();
+		foreach($data as $key => $dataValue) {
+			$retData[$key] = $aggregateExpretion->evaluate($dataValue, $expression ,$dataValue);
 		}
 
 		return $retData;

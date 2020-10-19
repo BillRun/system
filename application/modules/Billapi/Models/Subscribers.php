@@ -86,15 +86,17 @@ class Models_Subscribers extends Models_Entity {
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
+				if (!empty($service['to']) && gettype($service['to']) == 'string') {
+					$service['to'] = new MongoDate(strtotime($service['to']));
+				}
 				//Handle custom period services
 				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
 				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
 					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
 				}
-
-				//to can't be more then the updated 'to' of the subscription
-				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+				if (empty($service['to'])) {
+					$service['to'] =  new MongoDate(strtotime('+149 years'));
+				}
 				if (!isset($service['service_id'])) {
 					$service['service_id'] = hexdec(uniqid());
 				}
@@ -113,7 +115,8 @@ class Models_Subscribers extends Models_Entity {
 	 * validates that the plan added to the subscriber matches his play
 	 */
 	protected function validatePlan() {
-		return $this->validateServicePlay($this->update['plan'], 'plan');
+		$plan = isset($this->update['plan']) ? $this->update['plan'] : '';
+		return $this->validateServicePlay($plan, 'plan');
 	}
 	
 	/**
@@ -341,7 +344,12 @@ class Models_Subscribers extends Models_Entity {
 			$this->update['deactivation_date'] = $this->update['to'];
 		}
 		if (Billrun_Utils_Plays::isPlaysInUse() && empty($this->update['play'])) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Mandatory update parameter play missing');
+			if ($defaultPlay = Billrun_Utils_Plays::getDefaultPlay()) {
+				$this->update['play'] = $defaultPlay['name'];
+			}
+			else {
+				throw new Billrun_Exceptions_Api(0, array(), 'Mandatory update parameter play missing');
+			}
 		}
 		
 		parent::create();
@@ -375,19 +383,27 @@ class Models_Subscribers extends Models_Entity {
 			$currentPlan = $revision['plan'];
 			if ($currentPlan != $previousPlan && (empty($previousRevision) || $previousRevision['to'] == $revision['from']) || 
 				(isset($previousRevision['to']) && $previousRevision['to'] != $revision['from'])) {
+				if (!empty($previousPlan) && !(isset($previousRevision['to']) && $previousRevision['to'] != $revision['from'])) {
+					$formerPlan = $previousPlan;
+				}
 				$previousPlan = $currentPlan;
 				$planActivation = $revision['from'];
 				$planDeactivation = $revision['to'];
 				$indicator += 1;
-			}
+			}		
 			if (empty($revision['plan_activation']) || $planActivation != $revision['plan_activation']) {
 				$needUpdate[$revisionId]['plan_activation'] = $planActivation;
+			}
+			if (!empty($formerPlan) && ($formerPlan != $currentPlan)) {
+				$needUpdate[$revisionId]['former_plan'] = $formerPlan;
+			} else if (!empty($revision['former_plan'])) {
+				$needUpdate[$revisionId]['former_plan'] = 'unset';
 			}
 			$futureDeactivation = $revision['to'];
 			if ($planDeactivation < $futureDeactivation) {
 				$planDeactivation = $futureDeactivation;
 			}
-			$revision['indicator'] = $indicator;
+			$revision['indicator'] = $indicator;	
 			$plansDeactivation[$indicator] = $planDeactivation;
 			$previousRevision = $revision;
 		}
@@ -405,6 +421,10 @@ class Models_Subscribers extends Models_Entity {
 			$update = array();
 			$query = array('_id' => new MongoId($revisionId));
 			foreach ($updateValue as $field => $value) {
+				if ($field == 'former_plan' && $value == 'unset') {
+					$update['$unset'][$field] = true;
+					continue;
+				}
 				$update['$set'][$field] = $value;
 			}
 			$this->collection->update($query, $update);

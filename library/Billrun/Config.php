@@ -97,16 +97,20 @@ class Billrun_Config {
 
 	/**
 	 * Merge to  configuration into one overiding  the  less important config  with  a newer config
-	 * @param type $lessImportentConf the configuration array to merge into and override
+	 * @param type $lessImportantConf the configuration array to merge into and override
 	 * @param type $moreImportantConf the  configuration array to merge from.
 	 * @return type array containing the  overriden values.
 	 */
-	public static function mergeConfigs($lessImportentConf, $moreImportantConf) {
+	public static function mergeConfigs($lessImportantConf, $moreImportantConf) {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
+		}
+		$NewlessImportantConf = null;
+		if (is_array($moreImportantConf) && !is_array($lessImportantConf)) {
+			$NewlessImportantConf = [];
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -114,17 +118,21 @@ class Billrun_Config {
 				continue;
 			}
 
-			// If the key exists in the less importent config array then we have
+			// If the key exists in the less important config array then we have
 			// another level of config values to process.
-			if(isset($lessImportentConf[$key])) {
-				$confValue = self::mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			if(isset($lessImportantConf[$key])) {
+				$confValue = self::mergeConfigs($lessImportantConf[$key], $moreImportantConf[$key]);
 			} else {
 				$confValue = $moreImportantConf[$key];
 			}
-			$lessImportentConf[$key] = $confValue;
+			if (is_array($NewlessImportantConf)) {
+				$NewlessImportantConf[$key] = $confValue;
+			} else {
+				$lessImportantConf[$key] = $confValue;
+			}
 		}
 
-		return $lessImportentConf;
+		return !empty($NewlessImportantConf) ? $NewlessImportantConf : $lessImportantConf;
 	}
 
 	/**
@@ -483,4 +491,27 @@ class Billrun_Config {
 		}
 		return 'string';
 	}
+	
+	/**
+	 * method to get all input processors settings
+	 * 
+	 * @param boolean $enabledOnly - indicates if input processor enabled or not
+	 * @return array - input processors settings
+	 */
+	public function getFileTypesSettings($enabledOnly = false) {		
+		$fileTypes = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($enabledOnly) {
+			return (!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
+		});
+
+		return $fileTypes;
+	}
+	
+	/**
+	 * method to get monthly invoice's display config
+	 * @return invoice display options if was configured, else returns null.
+	 */
+	public function getInvoiceDisplayConfig() {		
+		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
+
 }

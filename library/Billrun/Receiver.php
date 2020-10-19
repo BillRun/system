@@ -84,16 +84,21 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-
+		$file_types = Billrun_Factory::config()->getFileTypes();
+                
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
 		);
-
-		$addData = array(
+                
+        $addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => new MongoDate()
-		);
+                    );
+		
+		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {
+			$addData['type'] = 'input_processor';
+		}
 
 		$update = array(
 			'$set' => array_merge($fileData, $addData)
@@ -132,6 +137,10 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 		self::$instance[$stamp] = new $class($args);
 		return self::$instance[$stamp];
+	}
+	
+	public function getReceiver() {
+		
 	}
 
 }

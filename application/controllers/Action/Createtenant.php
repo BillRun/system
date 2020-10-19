@@ -154,6 +154,10 @@ class CreatetenantAction extends ApiAction {
 		$options['user'] = $this->db_user;
 		$options['password'] = $this->db_pass;
 		$options['name'] = $this->db_name;
+		if (!isset($options['options'])) {
+			$options['options'] = array();
+		}
+		$options['options']['authSource'] = $this->db_name;
 		$options['host'] = "localhost:27017"; // this is a hack because mongo does not create new instance otherwise
 		$this->db = Billrun_Factory::db($options);
 		if (empty($this->db)) {

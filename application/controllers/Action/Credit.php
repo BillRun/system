@@ -16,8 +16,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class CreditAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
+	const INSTALLMENTS_PRECISION = 2;
+	
 	protected $request = null;
-	protected $event = null;
+	protected $events = [];
 	protected $status = 1;
 	protected $desc = 'success';
 	
@@ -27,19 +29,113 @@ class CreditAction extends ApiAction {
 	 */
 	public function execute() {
 		$this->allowed();
+		$request = $this->getRequest();
+		try {
+			switch ($request->get('action')) {
+				case 'prepone' :
+					$response = $this->preponeCreditInstallments($request);
+					break;
+				default :
+					Billrun_Factory::log("Execute credit", Zend_Log::INFO);
+					$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
+					$this->setEventsData();
+					$this->process();
+					return $this->response();
+			}
+			if ($response !== FALSE) {
+				$this->getController()->setOutput(array(array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request->getPost(),
+						'details' => $response,
+				)));
+			}
+		} catch (Exception $ex) {
+			$this->setError($ex->getMessage(), $request->getPost());
+			return;
+		}
+	}
+	
+	protected function preponeCreditInstallments($request){
+		$sid = $request->get('sid');
+		$aid = $request->get('aid');
+		if(!is_numeric($sid) || !is_numeric($aid)){
+			$this->setError('Illegal sid/aid', $request->getPost());
+			return FALSE;
+		}		
+		$accountArray = [intval($aid) => [intval($sid)]];
+		Billrun_Aggregator_Customer::preponeInstallments($accountArray);
+	}
+	
+	protected function setEventsData() {
+		$basicEvent = $this->setEventData();
+		$this->events[] = $basicEvent;
 		
-		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
-		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
-		$this->setEventData();
-		$this->process();
-		return $this->response();
+		if ($this->hasInstallments()) {
+			$this->setInstallmentsData();
+		}
 	}
 	
 	protected function setEventData() {
-		$this->event = $this->parse($this->request);
-		$this->event['source'] = 'credit';
-		$this->event['rand'] = rand(1, 1000000);
-		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
+		$event = $this->parse($this->request);
+		$event['source'] = 'credit';
+		$event['rand'] = rand(1, 1000000);
+		if ($this->hasInstallments()) {
+			$event['installment_no'] = 1;
+			$event['invoice_label'] = $event['label'] ?: '';
+		}
+		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
+		return $event;
+	}
+	
+	protected function hasInstallments() {
+		return isset($this->request['installments']) && is_numeric($this->request['installments']);
+	}
+	
+	protected function setInstallmentsData() {
+		$firstInstallment = &$this->events[0];
+		
+		if (!isset($firstInstallment['aprice'])) {
+			$this->setError('Installments can only be applied on credit by price');
+		}
+		
+		if (!isset($firstInstallment['installments'])) {
+			$this->setError('Missing field: number of installments');
+		}
+		
+		$numOfInstallments = $firstInstallment['installments'];
+		if ($numOfInstallments <= 0) {
+			$this->setError('Number of installments must be a positive number');
+		}
+		
+		if ($numOfInstallments == 1) {
+			return;
+		}
+		
+		
+		$totalPrice = $firstInstallment['aprice'];
+		$installmentPrice = $totalPrice / $numOfInstallments;
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($firstInstallment['credit_time']);
+		
+		// handle first installment
+		$firstInstallment['aprice'] = $installmentPrice;
+		unset($firstInstallment['stamp']);
+		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
+		$firstInstallment['first_installment'] = $firstInstallment['stamp'];
+		// handle other installments
+		for ($i = 2; $i <= $numOfInstallments; $i++) {
+			$billrunKey = Billrun_Billingcycle::getFollowingBillrunKey($billrunKey);
+			$installmentData = $firstInstallment;
+			$installmentData['installment_no'] = $i;
+			$installmentData['aprice'] = $installmentPrice;
+			$installmentData['first_installment'] = $firstInstallment['stamp'];
+			$installmentData['credit_time'] = Billrun_Billingcycle::getStartTime($billrunKey) + 1;
+			$installmentData['rand'] = rand(1, 1000000);
+			unset($installmentData['stamp']);
+			$installmentData['stamp'] = Billrun_Util::generateArrayStamp($installmentData);
+			
+			$this->events[] = $installmentData;
+		}
 	}
 	
 	/**
@@ -54,10 +150,15 @@ class CreditAction extends ApiAction {
 			'parser' => 'none',
 		);
 		$processor = Billrun_Processor::getInstance($options);
-		$processor->addDataRow($this->event);
+		
+		foreach ($this->events as $event) {
+			$processor->addDataRow($event);
+		}
+		
 		if ($processor->process() === false) {
 			$this->status = 0;
 			$this->desc = 'Processor error';
+			$this->handleProcessError();
 		}
 		Billrun_Factory::log("Process of credit ended", Zend_Log::INFO);
 //		return current($processor->getAllLines());
@@ -103,16 +204,13 @@ class CreditAction extends ApiAction {
 	
 	protected function getCreditUsaget($row) {
 		if (!isset($row['aprice'])) {
-			return 'refund';
+			return (isset($row['credit_type']) && in_array($row['credit_type'], ['charge' , 'refund'])) ? $row['credit_type'] : 'refund';
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
 	
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if(!empty($row['aid']) && $row['sid'] == '0') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
-            $skipArray[] = 'customer';
-		}
 		return $skipArray;
 	}
 	
@@ -125,11 +223,16 @@ class CreditAction extends ApiAction {
 				if (isset($credit_row[$fieldName])) {
 					$ret[$fieldName] = $credit_row[$fieldName];
 				} else if (isset($field['alternative_fields']) && is_array($field['alternative_fields'])) {
+					$found = false;
 					foreach ($field['alternative_fields'] as $alternativeFieldName) {
 						if (isset($credit_row[$alternativeFieldName])) {
 							$ret[$fieldName] = $credit_row[$alternativeFieldName];
+							$found = true;
 							break;
 						}
+					}
+					
+					if (!$found) {
 						$this->setError('Following field/s are missing: one of: (' . implode(', ', array_merge(array($fieldName), $field['alternative_fields']))) . ')';
 					}
 				} else {
@@ -161,20 +264,40 @@ class CreditAction extends ApiAction {
 		return $ret;
 	}
 	
+	/**
+	 * Handles the case of an error while processing credit lines
+	 */
+	protected function handleProcessError() {
+		if (!$this->hasInstallments()) {
+			return;
+		}
+		
+		// delete all processed lines
+		$stamps = array_column($this->events, 'stamp');
+		Billrun_Lines_Util::removeLinesByStamps($stamps, ['type' => 'credit']);
+		$this->setError('Process error');
+	}
+	
 	protected function proccess() {
 		
 	}
 	
 	protected function response() {
-		$this->getController()->setOutput(array(
-			array(
-				'status' => $this->status,
-				'desc' => $this->desc,
-				'stamp' => $this->event['stamp'],
-				'input' => $this->request,
-			)
-		));
-		Billrun_Factory::log("done credit line " . $this->event['stamp'], Zend_Log::INFO);
+		$ret = [
+			'status' => $this->status,
+			'desc' => $this->desc,
+			'input' => $this->request,
+		];
+		
+		$stamps = array_column($this->events, 'stamp');
+		$ret['stamp'] = Billrun_Util::getIn($stamps, 0, ''); // in case of installments this will be the first installments' stamp
+		
+		if ($this->hasInstallments()) {
+			$ret['stamps'] = $stamps;
+		}
+		
+		$this->getController()->setOutput([$ret]);
+		Billrun_Factory::log("done credit line/s: " . implode(',', $stamps), Zend_Log::INFO);
 		return true;
 	}
 
