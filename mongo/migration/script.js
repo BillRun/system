@@ -1160,6 +1160,35 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
 
+/*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
+lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
+    // Find all services that are limited by cycles and align to the cycle
+    var _limited_aligned_cycles_services = db.services.distinct("name", {balance_period:{$exists:0}, "price.to":{$ne:"UNLIMITED"}});
+    //printjson(_limited_aligned_cycles_services);
+    // we are assuming that the script will be run until 2030 (services will be created until 2030), and will be expired until 2050 (limited cycles applied)
+    db.subscribers.find({to:{$gt:ISODate()}, services:{$elemMatch:{name:{$in:_limited_aligned_cycles_services}, to:{$gt:ISODate("2050-01-01")}, creation_time:{$lt:ISODate("2030-01-01")}}}}).forEach(
+                function(obj) {
+    //                printjson(obj); // debug log
+                    for (var subServiceObj in obj.services) {
+    //                    print("handle " + subServiceObj + " " + obj.services[subServiceObj].name);
+                        serviceObj = db.services.findOne({name:obj.services[subServiceObj].name, to:{$gt:ISODate()}});
+                        cycleCount = serviceObj.price[serviceObj.price.length-1].to;
+    //                    print("add months: " + cycleCount);
+                        if (cycleCount != 'UNLIMITED' && !(serviceObj.hasOwnProperty('balance_period'))) {
+//                            print("to before: " + obj.services[subServiceObj].to);
+                            obj.services[subServiceObj].to = new Date(obj.services[subServiceObj].from);
+                            obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].to.getMonth()+parseInt(cycleCount));
+                            obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+                            obj.services[subServiceObj].to.setHours(0,0,0,0);
+    //                        print("to after: " + obj.services[subServiceObj].to);
+                        }
+                    }
+    //                printjson(obj); // debug log
+                    db.subscribers.save(obj);
+                }
+    );
+});
+
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {

@@ -93,6 +93,14 @@ class Models_Subscribers extends Models_Entity {
 				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
 				if (!empty($serviceRate) && !empty($servicePeriod = @$serviceRate->get('balance_period')) && $servicePeriod !== "default") {
 					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+				} else {
+					// Handle limited cycle services
+					$serviceAvailableCycles = $serviceRate->getServiceCyclesCount();
+					if ($serviceAvailableCycles !== Billrun_Service::UNLIMITED_VALUE) {
+						$vDate = date(Billrun_Base::base_datetimeformat, $service['from']->sec);
+						$to = strtotime('+' . $serviceAvailableCycles . ' months', Billrun_Billingcycle::getBillrunStartTimeByDate($vDate));
+						$service['to'] = new MongoDate($to);
+					}
 				}
 				if (empty($service['to'])) {
 					$service['to'] =  new MongoDate(strtotime('+149 years'));
