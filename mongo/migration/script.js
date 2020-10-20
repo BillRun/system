@@ -1243,3 +1243,40 @@ bills.forEach(function (bill) {
 		db.bills.save(bill);
 	}
 });
+
+//BRCD-2855 Oauth support
+lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
+    // create collections
+    db.createCollection("oauth_clients");
+    db.createCollection("oauth_access_tokens");
+    db.createCollection("oauth_authorization_codes");
+    db.createCollection("oauth_refresh_tokens");
+    db.createCollection("oauth_users");
+    db.createCollection("oauth_scopes");
+    db.createCollection("oauth_jwt");
+
+    // create indexes
+    db.oauth_clients.ensureIndex({'client_id': 1 });
+    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
+    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
+    db.oauth_users.ensureIndex({'username': 1 });
+    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
+    
+    var _obj;
+    for (var secretKey in lastConfig.shared_secret) {
+        secret = lastConfig.shared_secret[secretKey]
+        if (secret.name == null || secret.name == '') {
+            continue;
+        }
+        _obj = {
+            "client_id": secret.name,
+            "client_secret": secret.key,
+            "grant_types": null,
+            "scope": null,
+            "user_id": null
+        };
+        db.oauth_clients.insert(_obj)
+    }
+
+})
