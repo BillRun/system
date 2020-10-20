@@ -64,6 +64,7 @@ class Billrun_Rate extends Mongodloid_Entity {
 
 		return [
 			'total' => $chargeWoIC,
+			'currency_conversions' => $tariff->getCurrencyConversions(),
 		];
     }
 }

@@ -35,6 +35,13 @@ class Billrun_Rate_Step {
 	 */
 	protected $params = [];
 
+	/**
+	 * store currency conversion done
+	 *
+	 * @var array
+	 */
+	protected $currencyConversion = [];
+
 	public function __construct(array $step, Billrun_Rate_Step $prevStep = null, $params = []) {
 		if (empty($step)) {
 			return;
@@ -82,7 +89,16 @@ class Billrun_Rate_Step {
 			return $price;
 		}
 
-		return Billrun_CurrencyConvert_Manager::getPrice($currency, $this);
+		$currencyConversion = [
+			'type' => 'rate_step',
+			'to_currency' => $currency,
+			'base_price' => $price,
+			'rate_step' => $this->getData(),
+		];
+		
+		$currencyConversion['price'] = Billrun_CurrencyConvert_Manager::getPrice($currency, $this);
+		$this->currencyConversion = $currencyConversion;
+		return $currencyConversion['price'];
 	}
 
 	/**
@@ -112,5 +128,14 @@ class Billrun_Rate_Step {
 	 */
 	public function getPrevStep() {
 		return $this->prevStep;
+	}
+
+	/**
+	 * get currency conversions done
+	 *
+	 * @return array
+	 */
+	public function getCurrencyConversion() {
+		return $this->currencyConversion;
 	}
 }

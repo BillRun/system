@@ -50,6 +50,13 @@ class Billrun_Rate_Tariff {
 	protected $params = [];
 	
 	/**
+	 * store currency conversions done
+	 *
+	 * @var array
+	 */
+	protected $currencyConversions = [];
+	
+	/**
 	 * plan name
 	 *
 	 * @var string
@@ -184,7 +191,16 @@ class Billrun_Rate_Tariff {
 			return $price;
 		}
 
-		return Billrun_CurrencyConvert_Manager::convert(Billrun_CurrencyConvert_Manager::getDefaultCurrency(), $currency, $price);
+		$fromCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		$currencyConversion = [
+			'type' => 'access_price',
+			'to_currency' => $currency,
+			'base_price' => $price,
+		];
+		
+		$currencyConversion['price'] = Billrun_CurrencyConvert_Manager::convert($fromCurrency, $currency, $price);
+		$this->currencyConversions[] = $currencyConversion;
+		return $currencyConversion['price'];
     }
         
     /**
@@ -214,6 +230,9 @@ class Billrun_Rate_Tariff {
 			}
 
 			$volumeCount = $this->handleChargeAndVolume($volumeCount, $charge, $step);
+			if (!empty($currencyConversion = $step->getCurrencyConversion())) {
+				$this->currencyConversions[] = $currencyConversion;
+			}
 		}
 		
 		return $this->pricingMethod === Billrun_Rate::PRICING_METHOD_TIERED ? $charge : $lastStep->getChargeValue($volume);
@@ -248,6 +267,15 @@ class Billrun_Rate_Tariff {
 	 */
 	public function getPercentage() {
 		return $this->percentage;
+	}
+	
+	/**
+	 * get currency conversions done
+	 *
+	 * @return array
+	 */
+	public function getCurrencyConversions() {
+		return $this->currencyConversions;
 	}
 	
 	/**

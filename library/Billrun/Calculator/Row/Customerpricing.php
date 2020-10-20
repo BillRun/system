@@ -1098,9 +1098,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'services' => $services,
 			'offset' => $offset,
 			'time' => $time,
-			'currency' => $this->row['currency'] ?? '',
+			'currency' => Billrun_Util::getIn($this->row, 'foreign.currency', ''),
 		];
+
+		$charges = $rateObj->getCharges($usageType, $volume, $params);
+		if (!empty($charges['currency_conversions'])) {
+			$this->row['currency_conversions'] = $charges['currency_conversions'];
+		}
 		
-		return $rateObj->getTotalCharge($usageType, $volume, $params);
+		return $charges['total'];
 	}
 }
