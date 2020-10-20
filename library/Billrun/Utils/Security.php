@@ -40,10 +40,17 @@ class Billrun_Utils_Security {
 	
 	/**
 	 * Validates the input data.
+	 * 
 	 * @param array $request
+	 * @param bool $throwException if true method will throw auth exception, else will return value accordingly
+	 * 
 	 * @return data - Request data if validated, null if error.
 	 */
-	public static function validateData(array $request) {
+	public static function validateData(array $request, $throwException = false) {
+		// first let's check with oauth2
+		if (self::validateOauth($throwException)) {
+			return true;
+		}
 		// Validate the signature and the timestamp.
 		if(!isset($request[self::SIGNATURE_FIELD], $request[self::TIMESTAMP_FIELD])) {
 			return false;
@@ -72,6 +79,34 @@ class Billrun_Utils_Security {
 			if (hash_equals($signature, $hashResult)) {
 				return true;
 			}
+		}
+		if ($throwException) {
+			throw new Billrun_Exceptions_Auth(40002, array(), 'Invalid Signature');
+		}
+		return false;
+	}
+	
+	/**
+	 * oauth2 authentication including validation
+	 * 
+	 * @param bool $throwException if required to throw exception when oauth rejected
+	 * 
+	 * @return bool true if oauth2 authentication passed
+	 * @throws Billrun_Exceptions_Auth
+	 */
+	protected static function validateOauth($throwException = false) {
+		$oauth = Billrun_Factory::oauth2();
+		$oauthRequest = OAuth2\Request::createFromGlobals();
+		$oauth->getResourceController();
+		$oauthToken = $oauth->getTokenType();
+		if (!$oauthToken->requestHasToken($oauthRequest)) {
+			return false;
+		}
+		if ($oauth->verifyResourceRequest($oauthRequest)) {
+			return true;
+		} 
+		if ($throwException) {
+			throw new Billrun_Exceptions_Auth(40001, array(), 'Invalid Token');
 		}
 		return false;
 	}
