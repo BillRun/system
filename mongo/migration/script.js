@@ -736,6 +736,16 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
 }
 
+// BRCD-2714: add currency as custom field to row
+var currencyForeignField = {
+	field_name: "foreign.currency",
+	foreign: { 
+		entity: "account",
+		field: "currency",
+	},
+};
+lastConfig = addFieldToConfig(lastConfig, currencyForeignField, 'lines');
+
 db.config.insert(lastConfig);
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
