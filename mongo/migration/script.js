@@ -1244,6 +1244,9 @@ bills.forEach(function (bill) {
 	}
 });
 
+// BRCD-2772 - add webhooks supports all audit collection field should be lowercase
+db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
+
 //BRCD-2855 Oauth support
 lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     // create collections
