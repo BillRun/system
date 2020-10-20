@@ -377,6 +377,10 @@ class ConfigModel {
 		if ($saveResult) {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
+			if ($category === 'shared_secret') {
+				// save into oauth_clients
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+			}
 		}
 
 		return $saveResult;
@@ -934,6 +938,11 @@ class ConfigModel {
  		}
  
 		$ret = $this->collection->insert($updatedData);
+		
+		if ($category === 'shared_secret') {
+			// remove into oauth_clients
+			Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+		}
 		return !empty($ret['ok']);
 	}
 	
