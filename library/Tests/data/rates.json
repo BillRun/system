@@ -1064,7 +1064,78 @@
 					],
 					"to": "time*2169-08-02T16:33:39Z",
 					"creation_time": "time*2010-08-03T00:00:00Z"
+				},
+				{
+
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_A",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call overide",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:49:08Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
+				},
+				{
+
+					"from": "time*2010-10-21T00:00:00Z",
+					"key": "CALL_OVERRIDE_B",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "CALL OVERRIDE B",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-20T15:50:11Z",
+					"creation_time": "time*2010-10-21T00:00:00Z"
 				}
+
 
 
 

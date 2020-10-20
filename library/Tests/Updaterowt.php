@@ -441,7 +441,7 @@ class Tests_Updaterowt extends UnitTestCase {
 					['name' => 'CALL', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2030-09-01 00:00:00+03:00', "plan_included" => false, "service_id" => "1234", "quantity" => 1]
 				]),
 			'expected' => array('in_group' => 90, 'over_group' => 10, 'aprice' => 10, 'charge' => array('retail' => 110,))),
-		/*test for BRCD-2627 - subscriber purchase service for one cycle at 2020-05-10, the cdr is from 2020-06-05, it will not create/use in the service balance */
+		/* test for BRCD-2627 - subscriber purchase service for one cycle at 2020-05-10, the cdr is from 2020-06-05, it will not create/use in the service balance */
 		array('row' => array('stamp' => 'x1', 'aid' => 52, 'sid' => 53, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [
 					["name" => "ONE_CYCLE_ADDON",
 						"from" => "2020-05-10 00:00:00+03:00",
@@ -451,6 +451,21 @@ class Tests_Updaterowt extends UnitTestCase {
 				],
 				'urt' => '2020-06-05 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber without override plan - will charge full price 
+		array('row' => array('stamp' => 'x2', 'aid' => 52, 'sid' => 54, 'rates' => array('CALL_OVERRIDE_B' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber with override plan - override 100% will charge 0 
+		array('row' => array('stamp' => 'x3', 'aid' => 52, 'sid' => 55, 'rates' => array('CALL_OVERRIDE_B' => 'retail'), 'plan' => 'OVERRIDE', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber with override plan - override 50% will charge 50%
+		array('row' => array('stamp' => 'x4', 'aid' => 52, 'sid' => 55, 'rates' => array('CALL_OVERRIDE_A' => 'retail'), 'plan' => 'OVERRIDE', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 25, 'charge' => array('retail' => 25,))),
 	];
 
 	public function __construct($label = false) {
