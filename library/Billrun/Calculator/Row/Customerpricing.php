@@ -162,25 +162,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
 			$charges = $this->getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges);
-			// $pricingData = ['aprice' => 132]
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
-			// $pricingData = $pricingData = [
-					// 	'in_group' => 123,
-					// 	'in_plan' => 123,
-					// 	'over_group' => 0,
-					// 	'over_plan' => 0,
-					// 	'aprice' => 123,
-					// 	'arategroups' => [
-					// 		[
-					// 			'name' => '',
-					// 			'cost/usagev' => '',
-					// 			'left' => '',
-					// 			'total' => '',
-					// 			'balance' => '',
-					// 		]
-					// 	],
-				// ]
 		}
 
 		if ($pricingData === false) {
