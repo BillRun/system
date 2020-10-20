@@ -27,7 +27,12 @@ class Billrun_Rate_Step {
 	 * @var array
 	 */
 	protected $data = null;
-
+	
+	/**
+	 * general parameters
+	 *
+	 * @var array
+	 */
 	protected $params = [];
 
 	public function __construct(array $step, Billrun_Rate_Step $prevStep = null, $params = []) {

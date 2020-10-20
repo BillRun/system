@@ -41,7 +41,12 @@ class Billrun_Rate_Tariff {
 	 * @var Billrun_Rate
 	 */
 	protected $rate;
-
+	
+	/**
+	 * general parameters
+	 *
+	 * @var array
+	 */
 	protected $params = [];
 	
 	/**
@@ -174,7 +179,7 @@ class Billrun_Rate_Tariff {
      */
     public function getAccessPrice() {
 		$price = $this->get('access', 0);
-		$currency = $params['currency'] ?? '';
+		$currency = $this->params['currency'] ?? '';
 		if (empty($currency) || empty($price)) {
 			return $price;
 		}
