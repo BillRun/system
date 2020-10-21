@@ -311,6 +311,7 @@ class Billrun_EventsManager {
 			} catch (Exception $e) {
 				$this->unlockNotifyEvent($event);
 			}
+			Billrun_Factory::dispatcher()->trigger('afterEventNotify', array(&$event));
 		}
 		$this->handleEmailNotification($emailNotificationEvents);
 	}
