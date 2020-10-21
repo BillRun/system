@@ -49,7 +49,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 														 Zend_Http_Client::POST,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']), true);
 		if (!$results) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {

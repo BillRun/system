@@ -82,7 +82,7 @@ class Billrun_Account_External extends Billrun_Account {
 													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json'] ));
 		$accounts = [];
 		if (!$res) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		foreach ($res as $account) {
@@ -115,7 +115,7 @@ class Billrun_Account_External extends Billrun_Account {
 														 Zend_Http_Client::POST,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']), true);
 		if (!$results) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentAcc) {
