@@ -31,7 +31,7 @@ class CustompaymentgatewayController extends ApiController {
 				return $this->setError("Wrong parameters structure, no file was generated");
 			}
 		}
-		$options['params']['created_by'] = Billrun_Factory::user()->getUsername();
+		$options['params']['created_by'] = Billrun_Factory::user() ? Billrun_Factory::user()->getUsername() : null;
 
 		$options['pay_mode'] = !empty($request->get('pay_mode')) ? $request->get('pay_mode') : null;
 
@@ -79,9 +79,15 @@ class CustompaymentgatewayController extends ApiController {
 				return false;
 			}
 		}
+		if (!empty($options['params'])) {
+			if (!preg_match( '/^[\w\d_-]+$/', implode("", $options['params']))) {
+				return false;
+			}
+		}
+
 		return true;
 	}
-	
+
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}

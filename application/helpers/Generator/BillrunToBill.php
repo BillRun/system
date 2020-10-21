@@ -60,6 +60,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	public function generate() {
 		$invoicesIds = array();
 		$result = array('alreadyRunning' => false, 'releasingProblem'=> false);//help in case it's a onetimeinvoice generate
+		$invoices = array();
 		foreach ($this->data as $invoice) {
 			$this->filtration = $invoice['aid'];
 			if (!$this->lock()) {
@@ -69,12 +70,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			}
 			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
+			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation for aid " . $invoice['aid'], Zend_Log::ALERT);
 				$result['releasingProblem'] = true;
 			}
 		}
-		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoicesIds, (string) $this->stamp));
+		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
 		$this->handleSendInvoicesByMail($invoicesIds);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
