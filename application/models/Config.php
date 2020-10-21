@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse', 'range');
         
 	/**
 	 * reserved names of File Types.
@@ -377,6 +377,10 @@ class ConfigModel {
 		if ($saveResult) {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
+			if ($category === 'shared_secret') {
+				// save into oauth_clients
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+			}
 		}
 
 		return $saveResult;
@@ -934,6 +938,11 @@ class ConfigModel {
  		}
  
 		$ret = $this->collection->insert($updatedData);
+		
+		if ($category === 'shared_secret') {
+			// remove into oauth_clients
+			Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+		}
 		return !empty($ret['ok']);
 	}
 	
@@ -1374,7 +1383,7 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget', 'file', 'connection_type');
+			$billrunFields = array('type', 'usaget', 'file', 'connection_type', 'urt');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));

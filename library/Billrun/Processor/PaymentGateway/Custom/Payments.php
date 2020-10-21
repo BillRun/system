@@ -67,9 +67,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
-		$created_payment = $ret['payment'][0];
-		$customFields = $this->getCustomPaymentGatewayFields();
-		$created_payment->setExtraFields($customFields, array_keys($customFields));
+		if (isset($ret['payment'])) {
+			$customFields = $this->getCustomPaymentGatewayFields();
+			foreach ($ret['payment'] as $index => $returned_payment) {
+				$returned_payment->setExtraFields($customFields, array_keys($customFields));
+			}
+		}
         $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
         $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);

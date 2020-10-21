@@ -422,7 +422,7 @@ class Billrun_PaymentManager {
 
 	protected function setUserFields (&$prePayment) {
 		$payment = $prePayment->getPayment();
-		$payment->setUserFields($prePayment->getData());
+		$payment->setUserFields($prePayment->getData(), true);
 	}
 
 

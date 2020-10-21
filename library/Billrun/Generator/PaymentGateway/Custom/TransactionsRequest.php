@@ -64,10 +64,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->createLogFile();
 		$extraFields = $this->getCustomPaymentGatewayFields();
 		$this->logFile->updateLogFileField(null, null, $extraFields);
-		try {
+                try{
                 $this->fileGenerator = new $className($generatorOptions);
-		} catch (Exception $ex) {
-			$this->logFile->updateLogFileField('errors', $ex->getMessage());
+                }catch(Exception $ex){
+                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
 			$this->logFile->save();
                     throw new Exception($ex->getMessage());
                 }
@@ -173,7 +173,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$options['waiting_for_confirmation'] = false;
 				}
 				$paymentReseponse = Billrun_PaymentManager::getInstance()->pay($customer['payment_method'], array($paymentParams), $options);
-				$payment = $paymentReseponse['payment'];
+                                $payment = $paymentReseponse['payment'];
                                 Billrun_Factory::log()->log('Updated debt payment details - aid: ' . $paymentParams['aid'] .' ,amount: ' . $paymentParams['amount'] . '. This payment is wating for approval.' , Zend_Log::INFO);
                             } catch (Exception $e) {
                                 $message = 'Error paying debt for account ' . $paymentParams['aid'] . ' when generating Credit Guard file, ' . $e->getMessage();
@@ -186,7 +186,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if($this->isAssumeApproved()) {
 				$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 			}
-                            $currentPayment->save();
                             $params['amount'] = $paymentParams['amount'];
                             $params['aid'] = $currentPayment->getAid();
                             $params['txid'] = $currentPayment->getId();
@@ -200,6 +199,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
                             $this->data[] = $line;
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
+			$currentPayment->save();
 		}
                 $numberOfRecordsToTreat = count($this->data);
                 $message = 'generator entities treated: ' . $numberOfRecordsToTreat;
