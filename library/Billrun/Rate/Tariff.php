@@ -50,11 +50,11 @@ class Billrun_Rate_Tariff {
 	protected $params = [];
 	
 	/**
-	 * store currency conversions done
+	 * store original currency charges, without currency conversions
 	 *
 	 * @var array
 	 */
-	protected $currencyConversions = [];
+	protected $origCurrency = [ 'price' => 0];
 	
 	/**
 	 * plan name
@@ -186,21 +186,13 @@ class Billrun_Rate_Tariff {
      */
     public function getAccessPrice() {
 		$price = $this->get('access', 0);
-		$currency = $this->params['currency'] ?? '';
-		if (empty($currency) || empty($price)) {
-			return $price;
+		if (!empty($price) && $this->useCurrency()) {
+			$currency = $this->getCurrency();
+			$price = Billrun_CurrencyConvert_Manager::convert(Billrun_CurrencyConvert_Manager::getDefaultCurrency(), $currency, $price);
+			$this->origCurrency['price'] += $price;
 		}
-
-		$fromCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
-		$currencyConversion = [
-			'type' => 'access_price',
-			'to_currency' => $currency,
-			'base_price' => $price,
-		];
 		
-		$currencyConversion['price'] = Billrun_CurrencyConvert_Manager::convert($fromCurrency, $currency, $price);
-		$this->currencyConversions[] = $currencyConversion;
-		return $currencyConversion['price'];
+		return $price;
     }
         
     /**
@@ -215,7 +207,7 @@ class Billrun_Rate_Tariff {
 		$lastStep = null;
 		$volumeCount = $volume;
 		foreach ($steps as $currStep) {
-			$step = new Billrun_Rate_Step($currStep, $lastStep, $this->params);
+			$step = new Billrun_Rate_Step($currStep, $lastStep);
 			if (!$step->isValid()) {
 				Billrun_Factory::log("Invalid rate step. " . print_r($currStep, 1), Zend_Log::WARN);
 				continue;
@@ -230,12 +222,9 @@ class Billrun_Rate_Tariff {
 			}
 
 			$volumeCount = $this->handleChargeAndVolume($volumeCount, $charge, $step);
-			if (!empty($currencyConversion = $step->getCurrencyConversion())) {
-				$this->currencyConversions[] = $currencyConversion;
-			}
 		}
 		
-		return $this->pricingMethod === Billrun_Rate::PRICING_METHOD_TIERED ? $charge : $lastStep->getChargeValue($volume);
+		return $this->pricingMethod === Billrun_Rate::PRICING_METHOD_TIERED ? $charge : $this->getChargeValue($lastStep, $volume, true);
 	}
 		
 	/**
@@ -253,11 +242,27 @@ class Billrun_Rate_Tariff {
 		$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
 		
 		if ($this->pricingMethod === Billrun_Rate::PRICING_METHOD_TIERED) {
-			$charge += $step->getChargeValue($volumeToPriceCurrentRating);
+			$charge += $this->getChargeValue($step, $volumeToPriceCurrentRating);
 		}
 
 		// decrease the volume that was priced
 		return $volume - $volumeToPriceCurrentRating;
+	}
+
+	protected function getChargeValue($step, $volume, $alreadyCalculated = false) {
+		$defaultCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		if ($this->useCurrency()) {
+			$currency = $this->getCurrency();
+			$stepCharge = $step->getChargeValue($volume, $currency);
+			if (!$alreadyCalculated) {
+				$this->origCurrency['price'] += $stepCharge[$defaultCurrency];
+			}
+		} else {
+			$currency = $defaultCurrency;
+			$stepCharge = $step->getChargeValue($volume);
+		}
+	
+		return $stepCharge[$currency];
 	}
 		
 	/**
@@ -270,12 +275,30 @@ class Billrun_Rate_Tariff {
 	}
 	
 	/**
-	 * get currency conversions done
+	 * is the tariff calculation uses currency conversions
 	 *
-	 * @return array
+	 * @return boolean
 	 */
-	public function getCurrencyConversions() {
-		return $this->currencyConversions;
+	public function useCurrency() {
+		return !in_array($this->getCurrency(), ['', Billrun_CurrencyConvert_Manager::getDefaultCurrency()]);
+	}
+	
+	/**
+	 * get used currency
+	 *
+	 * @return string
+	 */
+	public function getCurrency() {
+		return $this->params['currency'] ?? '';
+	}
+	
+	/**
+	 * get price in base currency
+	 *
+	 * @return float
+	 */
+	public function getOriginalCurrencyPrice() {
+		return $this->origCurrency['price'];
 	}
 	
 	/**

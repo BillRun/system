@@ -1089,21 +1089,22 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param  float $offset
 	 * @param  int $time
 	 * @return float
-	 * @todo add currency as foreign field + somehow update $this->row with conversion details
 	 */
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
 		$rateObj = new Billrun_Rate($rate->getRawData());
+		$currency = Billrun_Util::getIn($this->row, 'foreign.currency', '');
 		$params = [
 			'plan_name' => $plan,
 			'services' => $services,
 			'offset' => $offset,
 			'time' => $time,
-			'currency' => Billrun_Util::getIn($this->row, 'foreign.currency', ''),
+			'currency' => $currency,
 		];
 
 		$charges = $rateObj->getCharges($usageType, $volume, $params);
-		if (!empty($charges['currency_conversions'])) {
-			$this->row['currency_conversions'] = $charges['currency_conversions'];
+		$this->row['currency'] = $currency;
+		if ($currency !== Billrun_CurrencyConvert_Manager::getDefaultCurrency() && !empty($charges['original_currency'])) {
+			$this->row['original_currency'] = $charges['original_currency'];
 		}
 		
 		return $charges['total'];

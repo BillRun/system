@@ -27,22 +27,8 @@ class Billrun_Rate_Step {
 	 * @var array
 	 */
 	protected $data = null;
-	
-	/**
-	 * general parameters
-	 *
-	 * @var array
-	 */
-	protected $params = [];
 
-	/**
-	 * store currency conversion done
-	 *
-	 * @var array
-	 */
-	protected $currencyConversion = [];
-
-	public function __construct(array $step, Billrun_Rate_Step $prevStep = null, $params = []) {
+	public function __construct(array $step, Billrun_Rate_Step $prevStep = null) {
 		if (empty($step)) {
 			return;
 		}
@@ -53,7 +39,6 @@ class Billrun_Rate_Step {
 		
 		$this->data = $step;
 		$this->prevStep = $prevStep;
-		$this->params = $params;
 	}
 	
 	/**
@@ -67,11 +52,13 @@ class Billrun_Rate_Step {
         
     /**
      * get charge value of the given $volume inside the current step
+	 * in the default currency, and (if given) in other currency also
      *
      * @param  float $volume
-     * @return float
+     * @param  string $currency
+     * @return array
      */
-    public function getChargeValue($volume) {
+    public function getChargeValue($volume, $currency = null) {
 		$ceil = $this->get('ceil', true);
 		$toCharge = $volume / $this->get('interval');
 		
@@ -79,26 +66,29 @@ class Billrun_Rate_Step {
 			$toCharge = ceil($toCharge);
 		}
 	
-		return floatval($toCharge * $this->getPrice($this->params));
-	}
-
-	public function getPrice($params = []) {
-		$price = $this->get('price');
-		$currency = $params['currency'] ?? '';
-		if (empty($currency)) {
-			return $price;
-		}
-
-		$currencyConversion = [
-			'type' => 'rate_step',
-			'to_currency' => $currency,
-			'base_price' => $price,
-			'rate_step' => $this->getData(),
+		$ret = [
+			Billrun_CurrencyConvert_Manager::getDefaultCurrency() => floatval($toCharge * $this->getPrice()),
 		];
 		
-		$currencyConversion['price'] = Billrun_CurrencyConvert_Manager::getPrice($currency, $this);
-		$this->currencyConversion = $currencyConversion;
-		return $currencyConversion['price'];
+		if (!empty($currency)) {
+			$ret[$currency] = floatval($toCharge * $this->getPrice($currency));
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * get step's price in given currency if received, otherwise in default currency
+	 *
+	 * @param  string $currency
+	 * @return float
+	 */
+	public function getPrice($currency = null) {
+		if (empty($currency)) {
+			return $this->get('price');
+		}
+
+		return Billrun_CurrencyConvert_Manager::getPrice($currency, $this);
 	}
 
 	/**
@@ -128,14 +118,5 @@ class Billrun_Rate_Step {
 	 */
 	public function getPrevStep() {
 		return $this->prevStep;
-	}
-
-	/**
-	 * get currency conversions done
-	 *
-	 * @return array
-	 */
-	public function getCurrencyConversion() {
-		return $this->currencyConversion;
 	}
 }
