@@ -146,7 +146,7 @@ class Billrun_Account_External extends Billrun_Account {
 					foreach ($value as $currKey => $currVal) {
 						$params[] = [
 						'key' => $key,
-						'operator' => $currKey,
+						'operator' => preg_replace('/^\$/', '',$currKey), // match the docs
 						'value' => $currVal
 						];
 					}
