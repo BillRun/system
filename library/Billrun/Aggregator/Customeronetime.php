@@ -90,8 +90,8 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];
-			$invalidAccountFunctions = ['getActivePlan','getPlanNextTeirDate','getPlay'];
-			$invalidFields = ['services'];
+			$invalidAccountFunctions = Billrun_Factory::config()->getConfigValue('customeronetime.aggregate.invalid_account_functions',['getActivePlan','getPlanNextTeirDate','getPlay']);
+			$invalidFields = Billrun_Factory::config()->getConfigValue('customeronetime.aggregate.invalid_fields',['services']);
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				$raw = array_diff_key($subscriberPlan['id'] ,array_flip($invalidFields));
