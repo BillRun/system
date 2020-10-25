@@ -137,7 +137,7 @@ class Billrun_Factory {
 	 * 
 	 * @var Oauth2\Server
 	 */
-	protected static $oauth2 = null;
+	protected static $oauth2 = array();
 	
 	/**
 	 * Collection instance
@@ -576,23 +576,30 @@ class Billrun_Factory {
 	/**
 	 * method to receive the oauth2 authenticator instance
 	 * 
-	 * @param array $params future compatibility
+	 * @param array $params oauth2 server params; see OAuth2\Server constructor
 	 * 
 	 * @return OAuth2\Server
 	 */
 	public static function oauth2($params = array()) {
-		if (is_null(self::$oauth2)) {
+		$stamp = Billrun_Util::generateArrayStamp($params);
+		if (!isset(self::$oauth2[$stamp])) {
+			$configParams = Billrun_Factory::config()->getConfigValue('oauth2', array()); // see OAuth2\Server constructor for available options
+			forEach ($configParams as $key => $value) {
+				if (!isset($params[$key])) {
+					$params[$key] = is_numeric($value) ? (int) $value : $value;
+				}
+			}
 			OAuth2\Autoloader::register();
 			$storage = new OAuth2\Storage\MongoDB(Billrun_Factory::db()->getDb()->getDb());
-			self::$oauth2 = new OAuth2\Server($storage);
-			self::$oauth2->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
 			// Future compatibility
-//			self::$oauth->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
-//			self::$oauth->addGrantType(new OAuth2\GrantType\JwtBearer($storage));
-//			self::$oauth->addGrantType(new OAuth2\GrantType\RefreshToken($storage));
-//			self::$oauth->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\RefreshToken($storage));
+//			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 		}
-		return self::$oauth2;
+		return self::$oauth2[$stamp];
 	}
 
 
