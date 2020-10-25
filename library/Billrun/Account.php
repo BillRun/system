@@ -258,8 +258,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 			$query[$key] = $value;
 		}
-
-		$query['limit'] = $limit;
+		if($limit){
+			$query['limit'] = $limit;
+		}
 		return $query;
 	}
 	
