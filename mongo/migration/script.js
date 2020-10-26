@@ -1144,6 +1144,30 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	lastConfig.import.mapping = mapping;
 }
 
+// BRCD-2713: add exchange rate configuration
+if (typeof lastConfig.exchange_rate == 'undefined') {
+	lastConfig.exchange_rate = {
+		update_period: 'daily',
+		url: 'http://localhost:8082/exchange-rates/get',
+		method: 'GET',
+		api_key: '9YFqUbYJJtjHVWr3',
+	};
+}
+
+var found = false;
+for (var i in lastConfig['plugins']) {
+	if (lastConfig['plugins'][i]['name'] == 'exchangeRatesPlugin') {
+		found = true;
+	}
+}
+if (!found) {
+	lastConfig['plugins'].push({
+		"name": "exchangeRatesPlugin",
+		"enabled": true,
+		"system": true,
+	});
+}
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
