@@ -26,14 +26,24 @@ class BillrunController extends ApiController {
 	protected $size;
 	
 	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
+	
+	protected $model;
 
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		if (in_array($this->getRequest()->action, $this->permissionReadAction)) {
 			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 		}
+		$this->initializeModel();
 		$this->allowed();
 		parent::init();
+	}
+
+	/**
+	 * This method is for initializing controller's model.
+	 */
+	protected function initializeModel() {
+		$this->model = new ConfigModel();
 	}
 
 	/**
@@ -274,15 +284,27 @@ class BillrunController extends ApiController {
 		$params['billrun_key'] = $request->get('stamp');
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
+		$invoicing_day = $request->get('invoicing_day');
+		if ($default_invoicing_day = $this->model->isMultiDayCycleMode()) {
+			if (empty($invoicing_day)) {
+				$params['invoicing_day'] = $default_invoicing_day;
+				Billrun_Factory::log('No invoicing day was passed, the default one was taken', Zend_Log::DEBUG);
+			} else {
+				$params['invoicing_day'] = ltrim($invoicing_day, "0");
+			}
+		}
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
-			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));	
+			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicing_day));
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day));	
 			if (empty($params['timeStatus'])) {
-				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicing_day);
 			} else {
-				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey);
+				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey, $invoicing_day);
+			}	
+			if (!empty($invoicing_day)) {
+				$setting['invoicing_day'] = $invoicing_day;
 			}	
 			$settings[] = $setting;
 		}
@@ -340,24 +362,25 @@ class BillrunController extends ApiController {
 	}
 
 	protected function getCyclesKeys($params) {
+		$invoicing_day = !empty($params['invoicing_day']) ? $params['invoicing_day'] : null;
 		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		if (!empty($params['from']) && !empty($params['to'])) {
-			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst);
+			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst, $invoicing_day);
 		}
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
 		$from = date('Y/m/d', strtotime('24 months ago'));		
-		return $this->getCyclesInRange($from, $to, $newestFirst);
+		return $this->getCyclesInRange($from, $to, $newestFirst, $invoicing_day);
 	}
 
-	public function getCyclesInRange($from, $to, $newestFirst = TRUE) {
+	public function getCyclesInRange($from, $to, $newestFirst = TRUE, $invoicing_day = null) {
 		$limit = 0;
-		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
-		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
-		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime);
+		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from, null, $invoicing_day);
+		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to, null, $invoicing_day);
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1, $invoicing_day);
+		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime, $invoicing_day);
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
