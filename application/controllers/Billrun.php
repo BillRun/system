@@ -416,13 +416,17 @@ class BillrunController extends ApiController {
 	public function resetCycleAction() {
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
+		$invoicingDay = !empty($request->get('invoicing_day')) ? ltrim($request->get('invoicing_day'), "0") : null;
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		if (empty($invoicingDay) && Billrun_Factory::config()->isMultiDayCycle()) {
+			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
+		}
 		$success = false;
-		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay) == 'finished') {
 			Billrun_Factory::log("Starting reset cycle for " . $billrunKey, Zend_Log::DEBUG);
-			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey, $invoicingDay);
 			Billrun_Factory::log("Finished reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			$success = true;
 		}
