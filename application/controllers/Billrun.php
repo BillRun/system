@@ -327,11 +327,11 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function processCycle($billrunKey, $generatedPdf = true) {
+	protected function processCycle($billrunKey, $generatedPdf = true, $invoicing_day = null) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . $invoicing_day : "");
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 
