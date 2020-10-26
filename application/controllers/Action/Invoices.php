@@ -125,6 +125,9 @@ class AccountInvoicesAction extends ApiAction {
 			'aid' => $params['aid'],
 			'stamp' => $params['billrun_key'],
 		);
+		if (!empty($params['invoicing_day'])) {
+			$options['invoicing_day'];
+		}
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->load();
 		$pdfPath = $generator->generate();
