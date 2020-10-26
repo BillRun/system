@@ -160,7 +160,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
+			$charges = $this->getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -273,6 +273,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	/**
 	 * initial the minimum values allowed for finding a balance 
+	 *  @todo add currency conversion
 	 */
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
@@ -452,7 +453,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$balanceType = key($groupVolumeLeft); // usagev or cost
 				$value = current($groupVolumeLeft);
 				if ($balanceType == 'cost') {
-					$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
+					$cost = $this->getTotalCharge($rate, $usageType, $volume);
 					$valueToCharge = $cost - $value;
 				} else {
 					$valueToCharge = $volume - $value;
@@ -514,7 +515,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			$charges = (float) $prepriced;
 		} else if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = $this->getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
 			$charges = $valueToCharge;
 		}
@@ -680,9 +681,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				if ($balanceType != $keyRequired) {
 					if ($keyRequired == 'cost') {
-						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
+						$comparedValue = $this->getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
 					} else {
-						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);//TODO: move to rate class
 					}
 				} else {
 					$comparedValue = $value;
@@ -1075,5 +1076,37 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		return $quantity;
+	}
+	
+	/**
+	 * get total charges for the account according to his currency
+	 *
+	 * @param  array $rate
+	 * @param  stirng $usageType
+	 * @param  float $volume
+	 * @param  string $plan
+	 * @param  array $services
+	 * @param  float $offset
+	 * @param  int $time
+	 * @return float
+	 */
+	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
+		$rateObj = new Billrun_Rate($rate->getRawData());
+		$currency = Billrun_Util::getIn($this->row, 'foreign.currency', '');
+		$params = [
+			'plan_name' => $plan,
+			'services' => $services,
+			'offset' => $offset,
+			'time' => $time,
+			'currency' => $currency,
+		];
+
+		$charges = $rateObj->getCharges($usageType, $volume, $params);
+		$this->row['currency'] = $currency;
+		if ($currency !== Billrun_CurrencyConvert_Manager::getDefaultCurrency() && !empty($charges['original_currency'])) {
+			$this->row['original_currency'] = $charges['original_currency'];
+		}
+		
+		return $charges['total'];
 	}
 }

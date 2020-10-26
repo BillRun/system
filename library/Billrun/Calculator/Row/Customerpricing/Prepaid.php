@@ -191,8 +191,8 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	 */
 	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
-		$realPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
-		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
+		$realPricing = $this->getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
+		$chargedPricing = $this->getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
 		return $realPricing - $chargedPricing;
 	}
 	

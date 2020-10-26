@@ -61,6 +61,9 @@ class Billrun_Rates_Util {
 		return false;
 	}
 
+	/**
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
+	 */
 	public static function getTariff($rate, $usage_type, $planName = null, $services = array(), $time = null) {
 		foreach ($services as $service) {
 			$rates = $service->get('rates');
@@ -97,6 +100,7 @@ class Billrun_Rates_Util {
 	 * @param int $offset call start offset in seconds
 	 * @param int $time start of the call (unix timestamp)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
 	 * 
 	 * @return array the calculated charges
 	 */
@@ -159,6 +163,9 @@ class Billrun_Rates_Util {
 		return $price;
 	}
 
+	/**
+	 * @deprecated since version 5.12 - use Billrun_Rate instead
+	 */
 	public static function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		return static::getCharges($rate, $usageType, $volume, $plan, $services, $offset, $time)['total'];
 	}
