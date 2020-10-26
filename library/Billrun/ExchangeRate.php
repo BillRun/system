@@ -48,7 +48,7 @@ class Billrun_ExchangeRate {
 
 	public function __construct($baseCurrency, $targetCurrency, $rate = null, $time = null) {
 		$this->time = is_null($time) ? time() : $time;
-		$this->collection = Billrun_Factory::db()->exchange_ratesCollection();
+		$this->collection = Billrun_Factory::db()->exchangeratesCollection();
 		$this->baseCurrency = $baseCurrency;
 		$this->targetCurrency = $targetCurrency;
 		$this->rate = is_null($rate) ? $this->getRate() : floatval($rate);
