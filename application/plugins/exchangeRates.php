@@ -82,13 +82,22 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 		
 		return !empty($rates['status']) ? $rates['details'] : [];
 	}
-
+	
 	/**
 	 * Update exchange rates in the system
+	 *
+	 * @param  string $baseCurrency currency to convert from, default is system's base currency
+	 * @param  array $targetCurrencies currencies to convert to, default is system's additional currencies
+	 * @return void
 	 */
-	public function updateExchangeRates() {
-		$baseCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
-		$targetCurrencies = Billrun_CurrencyConvert_Manager::getAvailableCurrencies();
+	public function updateExchangeRates($baseCurrency = null, $targetCurrencies = null) {
+		if (is_null($baseCurrency)) {
+			$baseCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		}
+
+		if (is_null($targetCurrencies)) {
+			$targetCurrencies = Billrun_CurrencyConvert_Manager::getAvailableCurrencies();
+		}
 		if (empty($targetCurrencies)) {
 			return;
 		}

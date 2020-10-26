@@ -38,7 +38,8 @@ class Billrun_CurrencyConvert_Manager {
 	 * @return boolean
 	 */
 	public static function isMultiCurrencyEnabled() {
-		return Billrun_Factory::config()->getConfigValue('pricing.multi_currency', false);
+		$availableCurrencies = self::getAvailableCurrencies();
+		return count($availableCurrencies) > 0;
 	}
 
 	/**
@@ -56,7 +57,7 @@ class Billrun_CurrencyConvert_Manager {
 	 * @return array currencies
 	 */
 	public static function getAvailableCurrencies() {
-		return Billrun_Factory::config()->getConfigValue('pricing.available_currencies', []);
+		return Billrun_Factory::config()->getConfigValue('pricing.additional_currencies', []);
 	}
 
 	/**
