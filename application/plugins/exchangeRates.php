@@ -96,7 +96,7 @@ class exchangeRatesPlugin extends Billrun_Plugin_Base {
 		}
 
 		if (is_null($targetCurrencies)) {
-			$targetCurrencies = Billrun_CurrencyConvert_Manager::getAvailableCurrencies();
+			$targetCurrencies = Billrun_CurrencyConvert_Manager::getCurrenciesToSync();
 		}
 		if (empty($targetCurrencies)) {
 			return;
