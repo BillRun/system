@@ -57,7 +57,48 @@ class Billrun_CurrencyConvert_Manager {
 	 * @return array currencies
 	 */
 	public static function getAvailableCurrencies() {
+		return array_column(self::getCurrenciesConfig(), 'currency');
+	}
+	
+	/**
+	 * get additional currencies configuration
+	 *
+	 * @return array
+	 */
+	public static function getCurrenciesConfig() {
 		return Billrun_Factory::config()->getConfigValue('pricing.additional_currencies', []);
+	}
+		
+	/**
+	 * get currencies that is required to sync their exchange rate
+	 *
+	 * @return array
+	 */
+	public static function getCurrenciesToSync() {
+		$ret = [];
+		foreach (self::getCurrenciesConfig() as $currencyConfig) {
+			if (Billrun_Util::getIn($currencyConfig, 'auto_sync', true)) {
+				$ret[] = $currencyConfig['currency'];
+			}
+		}
+
+		return $ret;
+	}
+	
+	/**
+	 * is the given currency editable
+	 *
+	 * @param  string $currency
+	 * @return boolean
+	 */
+	public static function canEditCurrency($currency) {
+		foreach (self::getCurrenciesConfig() as $currencyConfig) {
+			if ($currencyConfig['currency'] === $currency) {
+				return !Billrun_Util::getIn($currencyConfig, 'auto_sync', true);
+			}
+		}
+
+		return false;
 	}
 
 	/**
