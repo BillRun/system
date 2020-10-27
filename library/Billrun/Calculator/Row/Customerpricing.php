@@ -265,6 +265,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Found balance for subscriber " . $this->sid, Zend_Log::DEBUG);
 		}
 		$this->balance = $loadedBalance;
+		
+		if (!empty($currency = $this->getCurrency())) {
+			$this->balance['currency'] = $currency;
+		}
+		
 		if (isset($this->row['realtime']) && $this->row['realtime']) {
 			$this->row['balance_ref'] = $this->balance->createRef();
 		}
@@ -1092,7 +1097,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	public function getTotalCharge($rate, $usageType, $volume, $plan = null, $services = [], $offset = 0, $time = null) {
 		$rateObj = new Billrun_Rate($rate->getRawData());
-		$currency = Billrun_Util::getIn($this->row, 'foreign.currency', '');
+		$currency = $this->getCurrency();
 		$params = [
 			'plan_name' => $plan,
 			'services' => $services,
@@ -1108,5 +1113,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		
 		return $charges['total'];
+	}
+	
+	/**
+	 * get line's custom currency
+	 *
+	 * @return string
+	 */
+	protected function getCurrency() {
+		return Billrun_Util::getIn($this->row, 'foreign.currency', '');
 	}
 }
