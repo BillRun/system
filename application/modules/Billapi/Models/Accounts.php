@@ -96,7 +96,7 @@ class Models_Accounts extends Models_Entity {
 	 * @return boolean true on success, throws exception otherwise
 	 */
 	protected function verifyCurrencyUpdate() {
-		if (empty($this->update['currency']) || $this->before['currency'] === $this->update['currency']) {
+		if (!isset($this->update['currency']) || $this->before['currency'] === $this->update['currency']) {
 			return true;
 		}
 
