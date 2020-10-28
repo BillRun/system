@@ -19,6 +19,7 @@ class Models_Accounts extends Models_Entity {
 		$this->update['type'] = 'account';
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 		$this->verifyAllowances();
+		$this->verifyCurrencyUpdate();
 	}
 
 	public function get() {
@@ -87,6 +88,37 @@ class Models_Accounts extends Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), "Allowances for subscriber IDs {$sid_duplicate} belong to another account.");
 		}
 		return true;
+	}
+	
+	/**
+	 * checks if the account updated it's currency and is it allowed
+	 *
+	 * @return boolean true on success, throws exception otherwise
+	 */
+	protected function verifyCurrencyUpdate() {
+		if (empty($this->update['currency']) || $this->before['currency'] === $this->update['currency']) {
+			return true;
+		}
+
+		if (!$this->canUpdateCurrency()) {
+			throw new Billrun_Exceptions_Api(0, [], 'Cannot update account\'s currency because he already has lines and/or bills.');
+		}
+
+		return true;
+	}
+	
+	/**
+	 * can account update it's currency
+	 *
+	 * @return boolean
+	 */
+	protected function canUpdateCurrency() {
+		$account = Billrun_Factory::account();
+		if (empty($account->loadAccountForQuery(['aid' => $this->before['aid']]))) {
+			return true;
+		}
+		
+		return !$account->hasLines() && !$account->hasBills();
 	}
 
 }
