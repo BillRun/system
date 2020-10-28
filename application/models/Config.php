@@ -722,7 +722,7 @@ class ConfigModel {
 		if ($category === 'taxation') {
 			$this->updateTaxationSettings($currentConfig, $data);
 		} else if ($category === 'pricing') {
-			$this->updateExchaneRates($data, $currentConfig);
+			$this->updateExchangeRates($data, $currentConfig);
 		}
 		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
@@ -1784,7 +1784,7 @@ class ConfigModel {
 	 * @param  array $config
 	 * @return void
 	 */
-	protected function updateExchaneRates($pricingConfig, &$config) {
+	protected function updateExchangeRates($pricingConfig, &$config) {
 		$newBaseCurrency = $pricingConfig['currency'] ?? '';
 		$prevBaseCurrency = $config['pricing']['currency'] ?? '';
 		$newCurrencies = $pricingConfig['additional_currencies'] ?? [];
@@ -1798,14 +1798,13 @@ class ConfigModel {
 		}
 
 		if (count($newCurrencies) > 0) {
-			$newCurrenciesOptions = array_column($newCurrencies, 'currency');
-			
+			$newCurrenciesOptions = implode(',', array_column($newCurrencies, 'currency'));
 			$fieldParams = [
 				'system' => true,
 				'mandatory' => false,
 				'display' => true,
 				'select_list' => true,
-				'select_options' => implode(',', $newCurrenciesOptions),
+				'select_options' => $newCurrenciesOptions,
 				'default_value' => null,
 			];
 			$this->setModelField($config['subscribers'], 'account', 'currency', 'Currency', $fieldParams);
