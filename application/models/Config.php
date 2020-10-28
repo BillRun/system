@@ -1682,29 +1682,29 @@ class ConfigModel {
 		$mandatoryTaxationFields = $this->getTaxationFields();
 		foreach ($modelsWithTaxation as $model) {
 		   foreach ($mandatoryTaxationFields as $field => $fieldData) {
-			   $this->setModelField($config, $model, $field, $fieldData['title'], $mandatory && $fieldData['mandatory'], $mandatory );
+			   $fieldParams = [
+				   'mandatory' => $mandatory && $fieldData['mandatory'],
+				   'display' => $mandatory,
+			   ];
+			   $this->setModelField($config, $model, $field, $fieldData['title'], $fieldParams);
 		   }
 		}
 	}
 	
-	protected function setModelField(&$config, $model, $fieldName, $title, $mandatory = true, $display = true) {
+	protected function setModelField(&$config, $model, $fieldName, $title, $fieldParams = []) {
 		foreach ($config[$model]['fields'] as &$field) {
 			if ($field['field_name'] === $fieldName) {
 				$field['title'] = $title;
-				$field['display'] = $display;
-				$field['editable'] = $display;
-				$field['mandatory'] = $mandatory;
+				$fieldParams['editable'] = $fieldParams['display'];
+				$field = array_merge($field, $fieldParams);
 				return;
 			}
 		}
 		
-		$config[$model]['fields'][] = array(
-			'field_name' => $fieldName,
-			'title' => $title,
-			'display' => $mandatory,
-			'editable' => $mandatory,
-			'mandatory' => $mandatory,
-		);
+		$fieldParams['field_name'] = $fieldName;
+		$fieldParams['title'] = $title;
+		$fieldParams['editable'] = $fieldParams['mandatory'];
+		$config[$model]['fields'][] = $fieldParams;
 	}
 	
 	/**
@@ -1784,7 +1784,7 @@ class ConfigModel {
 	 * @param  array $config
 	 * @return void
 	 */
-	protected function updateExchaneRates($pricingConfig, $config) {
+	protected function updateExchaneRates($pricingConfig, &$config) {
 		$newBaseCurrency = $pricingConfig['currency'] ?? '';
 		$prevBaseCurrency = $config['pricing']['currency'] ?? '';
 		$newCurrencies = $pricingConfig['additional_currencies'] ?? [];
@@ -1795,6 +1795,20 @@ class ConfigModel {
 			($newCurrencies != $prevCurrencies && count($newCurrencies) > 0)) {
 			$exchangeRatesPlugin = new exchangeRatesPlugin();
 			$exchangeRatesPlugin->updateExchangeRates($newBaseCurrency, $newCurrencies);
+		}
+
+		if (count($newCurrencies) > 0) {
+			$newCurrenciesOptions = array_column($newCurrencies, 'currency');
+			
+			$fieldParams = [
+				'system' => true,
+				'mandatory' => false,
+				'display' => true,
+				'select_list' => true,
+				'select_options' => implode(',', $newCurrenciesOptions),
+				'default_value' => null,
+			];
+			$this->setModelField($config['subscribers'], 'account', 'currency', 'Currency', $fieldParams);
 		}
 	}
 
