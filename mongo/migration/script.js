@@ -1178,6 +1178,11 @@ if (!found) {
 	});
 }
 
+//BRCD-2727: set max additional currencies
+if (typeof lastConfig.pricing.max_currencies === 'undefined') {
+	lastConfig.pricing.max_currencies = 5;
+}
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
