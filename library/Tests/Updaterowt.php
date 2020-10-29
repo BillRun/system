@@ -525,7 +525,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-	//	$this->restoreColletions();
+		$this->restoreColletions();
 	}
 
 	protected function runT($stamp) {
