@@ -359,7 +359,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			'aid' => $this->aid,
 		];
 
-		return Billrun_Factory::db()->linesCollection()->query($query)->cursor()->count() > 0;
+		return Billrun_Factory::db()->linesCollection()->find($query)->limit(1)->count() > 0;
 	}
 	
 	/**
@@ -372,7 +372,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			'aid' => $this->aid,
 		];
 
-		return Billrun_Factory::db()->billsCollection()->query($query)->cursor()->count() > 0;
+		return Billrun_Factory::db()->billsCollection()->find($query)->limit(1)->count() > 0;
 	}
 
 	//============================ Static function =========================
