@@ -466,6 +466,34 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('row' => array('stamp' => 'x4', 'aid' => 52, 'sid' => 55, 'rates' => array('CALL_OVERRIDE_A' => 'retail'), 'plan' => 'OVERRIDE', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
 				'urt' => '2020-06-05 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 25, 'charge' => array('retail' => 25,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber without override service - will charge full price 
+		array('row' => array('stamp' => 'x5', 'aid' => 52, 'sid' => 54, 'rates' => array('CALL_OVERRIDE_SERVICE_A' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber with override services - override 100% will charge 0 
+		array('row' => array('stamp' => 'x6', 'aid' => 52, 'sid' => 56, 'rates' => array('CALL_OVERRIDE_SERVICE_B' => 'retail'), 'plan' => 'OVERRIDE', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00','services_data' => [
+					["name" => "OVERRIDE_BY_PERCENTAGE",
+						"from" => "2020-05-10 00:00:00+03:00",
+						"to" => "2130-09-01 00:00:00+03:00",
+						"service_id" => "123",
+						"creation_time" => "time*2020-05-17T11=>26=>09.286Z"],
+				],),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		//BRCD-2865 Override product's price by percentage 
+		//subscriber with override service - override 50% will charge 50%
+		array('row' => array('stamp' => 'x7', 'aid' => 52, 'sid' => 56, 'rates' => array('CALL_OVERRIDE_SERVICE_A' => 'retail'), 'plan' => 'OVERRIDE', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50,
+				'urt' => '2020-06-05 23:11:45+03:00','services_data' => [
+					["name" => "OVERRIDE_BY_PERCENTAGE",
+						"from" => "2020-05-10 00:00:00+03:00",
+						"to" => "2130-09-01 00:00:00+03:00",
+						"service_id" => "123",
+						"creation_time" => "time*2020-05-17T11=>26=>09.286Z"],
+				],),
+			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 25, 'charge' => array('retail' => 25,))),
+		
 	];
 
 	public function __construct($label = false) {
@@ -497,7 +525,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$this->restoreColletions();
+	//	$this->restoreColletions();
 	}
 
 	protected function runT($stamp) {

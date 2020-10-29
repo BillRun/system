@@ -1234,6 +1234,33 @@
 					"creation_time": "time*2017-12-03T00:00:00Z",
 					"activation_date": "time*2017-12-03T00:00:00Z",
 					"plan_deactivation": "time*2167-12-03T12:56:42Z"
+				},
+				{
+
+					"from": "time*2017-12-03T00:00:00Z",
+					"aid": 52,
+					"sid": 56,
+					"plan": "OVERRIDE",
+					"services": [
+						{
+							"name": "OVERRIDE_BY_PERCENTAGE",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}
+					],
+					"firstname": "a",
+					"lastname": "a",
+					"address": "a",
+					"country": "a",
+					"type": "subscriber",
+					"plan_activation": "time*2017-12-03T00:00:00Z",
+					"to": "time*2167-12-03T12:56:42Z",
+					"deactivation_date": "time*2167-12-03T12:56:42Z",
+					"creation_time": "time*2017-12-03T00:00:00Z",
+					"activation_date": "time*2017-12-03T00:00:00Z",
+					"plan_deactivation": "time*2167-12-03T12:56:42Z"
 				}
 
 
