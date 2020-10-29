@@ -117,7 +117,7 @@ class Billrun_Billingcycle {
 	 * @return string
 	 */
 	public static function getDatetime($billrunKey, $invoicing_day = null) {
-		$dayofmonth = $config->isMultiDayCycle() && !empty($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
+		$dayofmonth = Billrun_Factory::config()->isMultiDayCycle() && !empty($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
 		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
