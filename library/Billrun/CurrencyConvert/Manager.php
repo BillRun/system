@@ -68,6 +68,20 @@ class Billrun_CurrencyConvert_Manager {
 	public static function getCurrenciesConfig() {
 		return Billrun_Factory::config()->getConfigValue('pricing.additional_currencies', []);
 	}
+
+	/**
+	 * get additional currency configuration
+	 *
+	 * @return array
+	 */
+	public static function getCurrencyConfig($currency) {
+		foreach(self::getCurrenciesConfig() as $currencyConfig) {
+			if ($currencyConfig['currency'] == $currency) {
+				return $currencyConfig;
+			}
+		}
+		return [];
+	}
 		
 	/**
 	 * get currencies that is required to sync their exchange rate
