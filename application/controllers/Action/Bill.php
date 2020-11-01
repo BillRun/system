@@ -103,10 +103,15 @@ class BillAction extends ApiAction {
 	 * @todo make it more efficient (with 1 query)
 	 */
 	protected function getBalances($request) {
-		$aids = explode(',', $request->get('aids'));
+		$jsonAids = $request->get('aids', '[]');
+		$aids = json_decode($jsonAids, TRUE);
+		if (!is_array($aids) || json_last_error()) {
+			$this->setError('Illegal account ids', $request->getPost());
+			return FALSE;
+		}
 
 		if (empty($aids)) {
-			$this->setError('Illegal aids arguments', $request->getPost());
+			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
 		$balances = array();
