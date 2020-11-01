@@ -36,7 +36,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		// set the actions autoloader
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
 		

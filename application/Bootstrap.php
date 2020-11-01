@@ -6,6 +6,25 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+/** 
+ * method to register namespace to path with backward compatibility to old yaf versions
+ * 
+ * @param string $namespace the namespace to register
+ * @param string $path path attached to the namespace
+ * 
+ * @since version 5.13
+ */
+function br_yaf_register_autoload($namespace, $path) {
+	if (version_compare(phpversion('yaf'), '3.2.0', '>=')) {
+		$mapping = array(
+			$namespace => $path . '/' . $namespace,
+		);
+		Yaf_Loader::getInstance()->registerNamespace($mapping);
+	} else {
+		Yaf_Loader::getInstance($path)->registerLocalNamespace($namespace);
+	}
+}
+
 /**
  * Billing bootstrap class
  *
@@ -69,7 +88,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 
 		// make the base action auto load (required by controllers actions)
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
+		br_yaf_register_autoload('Action', APPLICATION_PATH . '/application/helpers');
 	}
 
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {

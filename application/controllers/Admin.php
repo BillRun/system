@@ -55,7 +55,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function initConfig() {
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		br_yaf_register_autoload('Admin', APPLICATION_PATH . '/application/helpers');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}

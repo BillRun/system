@@ -59,7 +59,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 	}
 
 	public function getOptions() {
