@@ -103,15 +103,13 @@ class BillAction extends ApiAction {
 	 * @todo make it more efficient (with 1 query)
 	 */
 	protected function getBalances($request) {
-		$jsonAids = $request->get('aids', '[]');
-		$aids = json_decode($jsonAids, TRUE);
-		if (!is_array($aids) || json_last_error()) {
-			$this->setError('Illegal account ids', $request->getPost());
-			return FALSE;
-		}
-
+		$aids = explode(',', $request->get('aids'));
 		if (empty($aids)) {
 			$this->setError('Must supply at least one aid', $request->getPost());
+			return FALSE;
+		}
+		if (!$this->isLegalAccountIds($aids)){
+			$this->setError('Illegal account ids', $request->getPost());
 			return FALSE;
 		}
 		$balances = array();
@@ -170,12 +168,22 @@ class BillAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
-        protected function getAllCollectionDebts($request) {
-                $contractors= Billrun_Bill::getContractorsInCollection();
+	protected function getAllCollectionDebts($request) {
+		$contractors = Billrun_Bill::getContractorsInCollection();
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
-		}	
+		}
 		return $result;
-        }
+	}
+
+	protected function isLegalAccountIds($aids) {
+		$res = array_filter($aids, function($aid){
+			return !is_numeric($aid);
+		});
+		if(empty($res)){
+			return true;
+		}
+		return false;
+	}
 }
