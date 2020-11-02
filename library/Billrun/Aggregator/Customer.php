@@ -918,6 +918,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'identifingQuery' => array('billrun_key' => $this->stamp),
 
 		);
+		if (!empty($this->invoicing_days)) {
+			$pagerConfiguration = array_merge($pagerConfiguration, ['invoicing_day' => current($this->invoicing_days)]);
+		}
 		$pager = new Billrun_Cycle_Paging( $pagerConfiguration, $this->billingCycle );
 
 		return $pager->getPage($zeroPages, $retries);
