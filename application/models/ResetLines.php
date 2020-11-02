@@ -336,7 +336,9 @@ class ResetLinesModel {
 		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
-		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec);
+		$this->getLineInvoicingDay($line);
+		$lineInvoicingDay = isset($line['foreign']) && isset($line['foreign']) ? $line['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		foreach ($arategroups as $arategroup) {
 			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
@@ -381,7 +383,7 @@ class ResetLinesModel {
 		}
 	}
 
-	protected function getRelevantBalance($balances, $balanceId, $params = array()) {
+	protected function getRelevantBalance($balances, $balanceId, $params = array(),  $invoicing_day = null) {
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
@@ -389,8 +391,8 @@ class ResetLinesModel {
 			}
 
 			if (empty($balanceId) && !empty($params)) {
-				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
-				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
+				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key'], $invoicing_day);
+				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key'], $invoicing_day);
 				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
 					return $rawData;
 				}
@@ -452,6 +454,8 @@ class ResetLinesModel {
 		);
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
+			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
 				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
 				if (empty($balanceToUpdate)) {
@@ -480,9 +484,11 @@ class ResetLinesModel {
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
+			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
+					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
 					if (empty($balanceToUpdate)) {
 						continue;
 					}
@@ -569,6 +575,13 @@ class ResetLinesModel {
 	protected function translateCondition($condition) {
 		$op = $condition['op'];
 		return array($condition['field_name'] => array("$op" => $condition['value']));
+	}
+	
+	protected function getLineInvoicingDay($line) {
+		if(isset($line['foregin']) && isset($line['foregin']['account']) && isset($line['foregin']['account']['invoicing_day'])) {
+			return $line['foregin']['account']['invoicing_day'];
+		}
+		return Billrun_Factory::config()->getConfigChargingDay();
 	}
 
 }
