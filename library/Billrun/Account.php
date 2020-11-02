@@ -348,6 +348,32 @@ abstract class Billrun_Account extends Billrun_Base {
 		}	
 		return array_intersect($aids, $includeIds);
 	}
+	
+	/**
+	 * does the account has lines
+	 *
+	 * @return boolean
+	 */
+	public function hasLines() {
+		$query = [
+			'aid' => $this->aid,
+		];
+
+		return Billrun_Factory::db()->linesCollection()->count($query) > 0;
+	}
+	
+	/**
+	 * does the account has bills
+	 *
+	 * @return boolean
+	 */
+	public function hasBills() {
+		$query = [
+			'aid' => $this->aid,
+		];
+
+		return Billrun_Factory::db()->billsCollection()->count($query) > 0;
+	}
 
 	//============================ Static function =========================
 
