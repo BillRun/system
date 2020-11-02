@@ -199,7 +199,7 @@
 	],
 	"pricing": {
 		"currency": "USD",
-		"max_currencies": 5,
+		"max_currencies": 3,
         "additional_currencies": []
     }
 }

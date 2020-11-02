@@ -1788,7 +1788,7 @@ class ConfigModel {
 		$newBaseCurrency = $pricingConfig['currency'] ?? '';
 		$prevBaseCurrency = $config['pricing']['currency'] ?? '';
 		$newCurrencies = $pricingConfig['additional_currencies'] ?? [];
-		$maxCurrencies = Billrun_Factory::config()->getConfigValue('pricing.max_currencies', 5);
+		$maxCurrencies = Billrun_Factory::config()->getConfigValue('pricing.max_currencies', 3);
 		if (count($newCurrencies) > $maxCurrencies) {
 			throw new Exception("Cannot set more than {$maxCurrencies} additional currencies");
 		}

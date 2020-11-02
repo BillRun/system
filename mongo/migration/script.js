@@ -1180,7 +1180,7 @@ if (!found) {
 
 //BRCD-2727: set max additional currencies
 if (typeof lastConfig.pricing.max_currencies === 'undefined') {
-	lastConfig.pricing.max_currencies = 5;
+	lastConfig.pricing.max_currencies = 3;
 }
 
 db.config.insert(lastConfig);
