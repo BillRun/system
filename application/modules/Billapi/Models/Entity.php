@@ -468,10 +468,8 @@ class Models_Entity {
 		if (is_null($time)) {
 			$time = time();
 		}
-		if ($this instanceof Models_Accounts) {
-			$invoicing_day = !is_null($this->getInvoicingDay()) ? $this->getInvoicingDay() : Billrun_Factory::config()->getConfigChargingDay();
-		}
-		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate()) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate($invoicing_day)) {
 			return false;
 		}
 		return true;
@@ -625,8 +623,8 @@ class Models_Entity {
 		if (is_null($action)) {
 			$action = $this->action;
 		}
-
-		$fromMinTime = self::getMinimumUpdateDate();
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		$fromMinTime = self::getMinimumUpdateDate($invoicing_day);
 		if (isset($params[$field]->sec) && $params[$field]->sec < $fromMinTime) {
 			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
@@ -748,7 +746,8 @@ class Models_Entity {
 		}
 
 		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
-		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate()) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate($invoicing_day)) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
 
@@ -922,7 +921,8 @@ class Models_Entity {
 	 * @return boolean - is reopen required
 	 */
 	protected function shouldReopenPreviousEntry() {
-		if (!(isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate())) {
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		if (!(isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate($invoicing_day))) {
 			return false;
 		}
 		$this->previousEntry = $this->getPreviousEntity();
@@ -1135,7 +1135,8 @@ class Models_Entity {
 		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
 			return true;
 		}
-		return self::getMinimumUpdateDate() <= $timestamp;
+		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
+		return self::getMinimumUpdateDate($invoicing_day) <= $timestamp;
 	}
 
 	/**
