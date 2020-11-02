@@ -419,6 +419,38 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
+	 * method to apply query update hash
+	 * 
+	 * @param array $query the query to filter
+	 * @param array $update the update to be applied
+	 * @param Collection $queue the mongodb collection
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function applyQueueHash($query, $update, $queue) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && Billrun_Factory::db()->compareClientVersion('1.5.0', '>=')) {
+			$session = Billrun_Factory::db()->startSession();
+			if ($session !== false) {
+				$session->startTransaction();
+				try {
+					$queue->update($query, $update, array('multiple' => true, 'session' => $session));
+					$session->commitTransaction();
+					return true;
+				} catch (Exception $ex) {
+					$session->abortTransaction();
+					return false;
+				}
+			}
+			Billrun_Factory::log("No support for transactions as you're running on mongodb standalone", Zend_Log::NOTICE);
+		} else {
+			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
+		}
+		
+		$queue->update($query, $update, array('multiple' => true));
+		return true;
+	}
+
+	/**
 	 * (Stab) Check if a given rate is a valid rate for rating
 	 * @param type $rate the rate to check
 	 * @return boolean true  if the rate is ok for use  false otherwise.

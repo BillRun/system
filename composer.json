@@ -1,5 +1,12 @@
 {
     "require": {
-        "phpoffice/phpspreadsheet": "^1.6"
+        "phpoffice/phpspreadsheet": "^1.6",
+        "mongodb/mongodb": "^1.7",
+        "alcaeus/mongo-php-adapter": "^1.1"
+    },
+    "config": {
+        "platform": {
+            "ext-mongo": "1.6.16"
+        }
     }
 }
