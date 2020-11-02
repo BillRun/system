@@ -531,8 +531,11 @@ class Billrun_Billingcycle {
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
-	public static function getLastNonRerunnableCycle() {
+	public static function getLastNonRerunnableCycle($invoicing_day = null) {
 		$query = array('billed' => 1, 'billrun_key' => array('$regex' => '^\d{6}$'));
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$query['invoicing_day'] = !is_null($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
+		}
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
