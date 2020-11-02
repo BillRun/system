@@ -176,7 +176,12 @@ class BillAction extends ApiAction {
 		}
 		return $result;
 	}
-
+	
+	/**
+	 * Validate that aids are valid aids (numric type)
+	 * @param type $aids
+	 * @return boolean- return true if all aids are numric type, false otherwise
+	 */
 	protected function isLegalAccountIds($aids) {
 		$res = array_filter($aids, function($aid){
 			return !is_numeric($aid);
