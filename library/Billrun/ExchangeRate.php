@@ -49,7 +49,7 @@ class Billrun_ExchangeRate {
 	/**
 	 * exchange rate multiplier
 	 *
-	 * @var flaot
+	 * @var float
 	 */
 	protected $multiplier;
 
