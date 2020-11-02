@@ -18,11 +18,8 @@ namespace Matrix;
  */
 function antidiagonal($matrix)
 {
-    if (is_array($matrix)) {
+    if (!is_object($matrix) || !($matrix instanceof Matrix)) {
         $matrix = new Matrix($matrix);
-    }
-    if (!$matrix instanceof Matrix) {
-        throw new Exception('Must be Matrix or array');
     }
 
     return Functions::antidiagonal($matrix);

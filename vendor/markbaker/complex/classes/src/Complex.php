@@ -176,11 +176,8 @@ class Complex
                 list($realPart, $imaginaryPart, $suffix) = self::parseComplex($realPart);
             }
         }
-
-        if ($imaginaryPart != 0.0 && empty($suffix)) {
+        if ($imaginaryPart <> 0.0 && empty($suffix)) {
             $suffix = 'i';
-        } elseif ($imaginaryPart == 0.0 && !empty($suffix)) {
-            $suffix = '';
         }
 
         // Set parsed values in our properties

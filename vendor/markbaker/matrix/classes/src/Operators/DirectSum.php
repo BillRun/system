@@ -11,16 +11,16 @@ class DirectSum extends Operator
      * Execute the addition
      *
      * @param mixed $value The matrix or numeric value to add to the current base value
-     * @return $this The operation object, allowing multiple additions to be chained
      * @throws Exception If the provided argument is not appropriate for the operation
-     */
+     * @return $this The operation object, allowing multiple additions to be chained
+     **/
     public function execute($value)
     {
         if (is_array($value)) {
             $value = new Matrix($value);
         }
 
-        if ($value instanceof Matrix) {
+        if (is_object($value) && ($value instanceof Matrix)) {
             return $this->directSumMatrix($value);
         }
 
@@ -32,29 +32,30 @@ class DirectSum extends Operator
      *
      * @param Matrix $value The numeric value to concatenate/direct sum with the current base value
      * @return $this The operation object, allowing multiple additions to be chained
+     * @throws Exception If the provided argument is not appropriate for the operation
      **/
-    private function directSumMatrix($value)
+    protected function directSumMatrix(Matrix $value)
     {
         $originalColumnCount = count($this->matrix[0]);
         $originalRowCount = count($this->matrix);
-        $valColumnCount = $value->columns;
-        $valRowCount = $value->rows;
+        $additionalColumnCount = $value->columns;
+        $additionalRowCount = $value->rows;
         $value = $value->toArray();
 
         for ($row = 0; $row < $this->rows; ++$row) {
-            $this->matrix[$row] = array_merge($this->matrix[$row], array_fill(0, $valColumnCount, 0));
+            $this->matrix[$row] = array_merge($this->matrix[$row], array_fill(0, $additionalColumnCount, 0));
         }
 
         $this->matrix = array_merge(
             $this->matrix,
-            array_fill(0, $valRowCount, array_fill(0, $originalColumnCount, 0))
+            array_fill(0, $additionalRowCount, array_fill(0, $originalColumnCount, 0))
         );
 
-        for ($row = $originalRowCount; $row < $originalRowCount + $valRowCount; ++$row) {
+        for ($row = $originalRowCount; $row < $originalRowCount + $additionalRowCount; ++$row) {
             array_splice(
                 $this->matrix[$row],
                 $originalColumnCount,
-                $valColumnCount,
+                $additionalColumnCount,
                 $value[$row - $originalRowCount]
             );
         }

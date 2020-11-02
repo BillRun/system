@@ -65,6 +65,8 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'aa53dcba601214d17ad405b7c291b7e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/multiply.php',
         '75c79eb1b25749b05a47976f32b0d8a2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideby.php',
         '6ab8ad87a734f276a6bcd5a0fe1289be' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideinto.php',
+        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -72,14 +74,24 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             'Psr\\SimpleCache\\' => 16,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
+            'PackageVersions\\' => 16,
         ),
         'M' => 
         array (
+            'MongoDB\\' => 8,
             'Matrix\\' => 7,
+        ),
+        'J' => 
+        array (
+            'Jean85\\' => 7,
         ),
         'C' => 
         array (
             'Complex\\' => 8,
+        ),
+        'A' => 
+        array (
+            'Alcaeus\\MongoDbAdapter\\' => 23,
         ),
     );
 
@@ -92,13 +104,39 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
         ),
+        'PackageVersions\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/package-versions-deprecated/src/PackageVersions',
+        ),
+        'MongoDB\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mongodb/mongodb/src',
+        ),
         'Matrix\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
         ),
+        'Jean85\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
+        ),
+        'Alcaeus\\MongoDbAdapter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Alcaeus/MongoDbAdapter',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'M' => 
+        array (
+            'Mongo' => 
+            array (
+                0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo',
+            ),
         ),
     );
 
@@ -107,6 +145,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }

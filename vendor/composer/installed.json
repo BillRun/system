@@ -1,33 +1,225 @@
 [
     {
-        "name": "markbaker/complex",
-        "version": "1.4.8",
-        "version_normalized": "1.4.8.0",
+        "name": "alcaeus/mongo-php-adapter",
+        "version": "1.1.13",
+        "version_normalized": "1.1.13.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/MarkBaker/PHPComplex.git",
-            "reference": "8eaa40cceec7bf0518187530b2e63871be661b72"
+            "url": "https://github.com/alcaeus/mongo-php-adapter.git",
+            "reference": "cdc54b06dcdf330ec73ca2f02f2275e7fc711715"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/MarkBaker/PHPComplex/zipball/8eaa40cceec7bf0518187530b2e63871be661b72",
-            "reference": "8eaa40cceec7bf0518187530b2e63871be661b72",
+            "url": "https://api.github.com/repos/alcaeus/mongo-php-adapter/zipball/cdc54b06dcdf330ec73ca2f02f2275e7fc711715",
+            "reference": "cdc54b06dcdf330ec73ca2f02f2275e7fc711715",
+            "shasum": ""
+        },
+        "require": {
+            "ext-ctype": "*",
+            "ext-hash": "*",
+            "ext-mongodb": "^1.2.0",
+            "mongodb/mongodb": "^1.0.1",
+            "php": "^5.6 || ^7.0"
+        },
+        "provide": {
+            "ext-mongo": "1.6.14"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^5.7.27 || ^6.0 || ^7.0",
+            "squizlabs/php_codesniffer": "^3.2"
+        },
+        "time": "2020-10-30T15:25:07+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Mongo": "lib/Mongo"
+            },
+            "psr-4": {
+                "Alcaeus\\MongoDbAdapter\\": "lib/Alcaeus/MongoDbAdapter"
+            },
+            "files": [
+                "lib/Mongo/functions.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "alcaeus",
+                "email": "alcaeus@alcaeus.org"
+            },
+            {
+                "name": "Olivier Lechevalier",
+                "email": "olivier.lechevalier@gmail.com"
+            }
+        ],
+        "description": "Adapter to provide ext-mongo interface on top of mongo-php-library",
+        "keywords": [
+            "database",
+            "mongodb"
+        ]
+    },
+    {
+        "name": "composer/package-versions-deprecated",
+        "version": "1.11.99",
+        "version_normalized": "1.11.99.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/composer/package-versions-deprecated.git",
+            "reference": "c8c9aa8a14cc3d3bec86d0a8c3fa52ea79936855"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/composer/package-versions-deprecated/zipball/c8c9aa8a14cc3d3bec86d0a8c3fa52ea79936855",
+            "reference": "c8c9aa8a14cc3d3bec86d0a8c3fa52ea79936855",
+            "shasum": ""
+        },
+        "require": {
+            "composer-plugin-api": "^1.1.0 || ^2.0",
+            "php": "^7 || ^8"
+        },
+        "replace": {
+            "ocramius/package-versions": "1.11.99"
+        },
+        "require-dev": {
+            "composer/composer": "^1.9.3 || ^2.0@dev",
+            "ext-zip": "^1.13",
+            "phpunit/phpunit": "^6.5 || ^7"
+        },
+        "time": "2020-08-25T05:50:16+00:00",
+        "type": "composer-plugin",
+        "extra": {
+            "class": "PackageVersions\\Installer",
+            "branch-alias": {
+                "dev-master": "1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "PackageVersions\\": "src/PackageVersions"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Marco Pivetta",
+                "email": "ocramius@gmail.com"
+            },
+            {
+                "name": "Jordi Boggiano",
+                "email": "j.boggiano@seld.be"
+            }
+        ],
+        "description": "Composer plugin that provides efficient querying for installed package versions (no runtime IO)",
+        "funding": [
+            {
+                "url": "https://packagist.com",
+                "type": "custom"
+            },
+            {
+                "url": "https://github.com/composer",
+                "type": "github"
+            },
+            {
+                "url": "https://tidelift.com/funding/github/packagist/composer/composer",
+                "type": "tidelift"
+            }
+        ]
+    },
+    {
+        "name": "jean85/pretty-package-versions",
+        "version": "1.5.1",
+        "version_normalized": "1.5.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/Jean85/pretty-package-versions.git",
+            "reference": "a917488320c20057da87f67d0d40543dd9427f7a"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/Jean85/pretty-package-versions/zipball/a917488320c20057da87f67d0d40543dd9427f7a",
+            "reference": "a917488320c20057da87f67d0d40543dd9427f7a",
+            "shasum": ""
+        },
+        "require": {
+            "composer/package-versions-deprecated": "^1.8.0",
+            "php": "^7.0|^8.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^6.0|^8.5|^9.2"
+        },
+        "time": "2020-09-14T08:43:34+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Jean85\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Alessandro Lai",
+                "email": "alessandro.lai85@gmail.com"
+            }
+        ],
+        "description": "A wrapper for ocramius/package-versions to get pretty versions strings",
+        "keywords": [
+            "composer",
+            "package",
+            "release",
+            "versions"
+        ]
+    },
+    {
+        "name": "markbaker/complex",
+        "version": "1.4.7",
+        "version_normalized": "1.4.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/MarkBaker/PHPComplex.git",
+            "reference": "1ea674a8308baf547cbcbd30c5fcd6d301b7c000"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/MarkBaker/PHPComplex/zipball/1ea674a8308baf547cbcbd30c5fcd6d301b7c000",
+            "reference": "1ea674a8308baf547cbcbd30c5fcd6d301b7c000",
             "shasum": ""
         },
         "require": {
             "php": "^5.6.0|^7.0.0"
         },
         "require-dev": {
-            "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
-            "phpcompatibility/php-compatibility": "^9.0",
+            "dealerdirect/phpcodesniffer-composer-installer": "^0.4.3",
+            "phpcompatibility/php-compatibility": "^8.0",
             "phpdocumentor/phpdocumentor": "2.*",
             "phploc/phploc": "2.*",
             "phpmd/phpmd": "2.*",
             "phpunit/phpunit": "^4.8.35|^5.4.0",
             "sebastian/phpcpd": "2.*",
-            "squizlabs/php_codesniffer": "^3.4.0"
+            "squizlabs/php_codesniffer": "^3.3.0"
         },
-        "time": "2020-03-11T20:15:49+00:00",
+        "time": "2018-10-13T23:28:42+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -98,32 +290,33 @@
     },
     {
         "name": "markbaker/matrix",
-        "version": "1.2.0",
-        "version_normalized": "1.2.0.0",
+        "version": "1.1.4",
+        "version_normalized": "1.1.4.0",
         "source": {
             "type": "git",
             "url": "https://github.com/MarkBaker/PHPMatrix.git",
-            "reference": "5348c5a67e3b75cd209d70103f916a93b1f1ed21"
+            "reference": "6ea97472b5baf12119b4f31f802835b820dd6d64"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/MarkBaker/PHPMatrix/zipball/5348c5a67e3b75cd209d70103f916a93b1f1ed21",
-            "reference": "5348c5a67e3b75cd209d70103f916a93b1f1ed21",
+            "url": "https://api.github.com/repos/MarkBaker/PHPMatrix/zipball/6ea97472b5baf12119b4f31f802835b820dd6d64",
+            "reference": "6ea97472b5baf12119b4f31f802835b820dd6d64",
             "shasum": ""
         },
         "require": {
             "php": "^5.6.0|^7.0.0"
         },
         "require-dev": {
-            "dealerdirect/phpcodesniffer-composer-installer": "dev-master",
-            "phpcompatibility/php-compatibility": "dev-master",
-            "phploc/phploc": "^4",
-            "phpmd/phpmd": "dev-master",
-            "phpunit/phpunit": "^5.7",
-            "sebastian/phpcpd": "^3.0",
-            "squizlabs/php_codesniffer": "^3.0@dev"
+            "dealerdirect/phpcodesniffer-composer-installer": "^0.4.3",
+            "phpcompatibility/php-compatibility": "^8.0",
+            "phpdocumentor/phpdocumentor": "2.*",
+            "phploc/phploc": "2.*",
+            "phpmd/phpmd": "2.*",
+            "phpunit/phpunit": "^4.8.35|^5.4.0",
+            "sebastian/phpcpd": "2.*",
+            "squizlabs/php_codesniffer": "^3.3.0"
         },
-        "time": "2019-10-06T11:29:25+00:00",
+        "time": "2018-11-04T22:12:12+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -168,18 +361,85 @@
         ]
     },
     {
-        "name": "phpoffice/phpspreadsheet",
-        "version": "1.12.0",
-        "version_normalized": "1.12.0.0",
+        "name": "mongodb/mongodb",
+        "version": "1.7.1",
+        "version_normalized": "1.7.1.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/PHPOffice/PhpSpreadsheet.git",
-            "reference": "f79611d6dc1f6b7e8e30b738fc371b392001dbfd"
+            "url": "https://github.com/mongodb/mongo-php-library.git",
+            "reference": "b35af66631a11ee730ff1fde295f71e89f01f121"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/f79611d6dc1f6b7e8e30b738fc371b392001dbfd",
-            "reference": "f79611d6dc1f6b7e8e30b738fc371b392001dbfd",
+            "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/b35af66631a11ee730ff1fde295f71e89f01f121",
+            "reference": "b35af66631a11ee730ff1fde295f71e89f01f121",
+            "shasum": ""
+        },
+        "require": {
+            "ext-hash": "*",
+            "ext-json": "*",
+            "ext-mongodb": "^1.8",
+            "jean85/pretty-package-versions": "^1.2",
+            "php": "^7.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^6.4 || ^8.3",
+            "sebastian/comparator": "^2.0 || ^3.0",
+            "squizlabs/php_codesniffer": "^3.5, <3.5.5",
+            "symfony/phpunit-bridge": "^4.4@dev"
+        },
+        "time": "2020-09-22T13:26:09+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.7.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "MongoDB\\": "src/"
+            },
+            "files": [
+                "src/functions.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "Andreas Braun",
+                "email": "andreas.braun@mongodb.com"
+            },
+            {
+                "name": "Jeremy Mikola",
+                "email": "jmikola@gmail.com"
+            }
+        ],
+        "description": "MongoDB driver library",
+        "homepage": "https://jira.mongodb.org/browse/PHPLIB",
+        "keywords": [
+            "database",
+            "driver",
+            "mongodb",
+            "persistence"
+        ]
+    },
+    {
+        "name": "phpoffice/phpspreadsheet",
+        "version": "1.6.0",
+        "version_normalized": "1.6.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/PHPOffice/PhpSpreadsheet.git",
+            "reference": "bf00f0cc5f55c354018f9a9ef15e6e3e1a229051"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/bf00f0cc5f55c354018f9a9ef15e6e3e1a229051",
+            "reference": "bf00f0cc5f55c354018f9a9ef15e6e3e1a229051",
             "shasum": ""
         },
         "require": {
@@ -197,19 +457,20 @@
             "ext-zip": "*",
             "ext-zlib": "*",
             "markbaker/complex": "^1.4",
-            "markbaker/matrix": "^1.2",
-            "php": "^7.1",
+            "markbaker/matrix": "^1.1",
+            "php": "^5.6|^7.0",
             "psr/simple-cache": "^1.0"
         },
         "require-dev": {
-            "dompdf/dompdf": "^0.8.3",
-            "friendsofphp/php-cs-fixer": "^2.16",
+            "doctrine/instantiator": "^1.0.0",
+            "dompdf/dompdf": "^0.8.0",
+            "friendsofphp/php-cs-fixer": "@stable",
             "jpgraph/jpgraph": "^4.0",
-            "mpdf/mpdf": "^8.0",
-            "phpcompatibility/php-compatibility": "^9.3",
-            "phpunit/phpunit": "^7.5",
-            "squizlabs/php_codesniffer": "^3.5",
-            "tecnickcom/tcpdf": "^6.3"
+            "mpdf/mpdf": "^7.0.0",
+            "phpcompatibility/php-compatibility": "^8.0",
+            "phpunit/phpunit": "^5.7",
+            "squizlabs/php_codesniffer": "^3.3",
+            "tecnickcom/tcpdf": "^6.2"
         },
         "suggest": {
             "dompdf/dompdf": "Option for rendering PDF with PDF Writer",
@@ -217,7 +478,7 @@
             "mpdf/mpdf": "Option for rendering PDF with PDF Writer",
             "tecnickcom/tcpdf": "Option for rendering PDF with PDF Writer"
         },
-        "time": "2020-04-27T08:12:48+00:00",
+        "time": "2019-01-02T04:42:54+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -227,9 +488,15 @@
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "MIT"
+            "LGPL-2.1-or-later"
         ],
         "authors": [
+            {
+                "name": "Erik Tilt"
+            },
+            {
+                "name": "Adrien Crivelli"
+            },
             {
                 "name": "Maarten Balliauw",
                 "homepage": "https://blog.maartenballiauw.be"
@@ -241,12 +508,6 @@
             {
                 "name": "Franck Lefevre",
                 "homepage": "https://rootslabs.net"
-            },
-            {
-                "name": "Erik Tilt"
-            },
-            {
-                "name": "Adrien Crivelli"
             }
         ],
         "description": "PHPSpreadsheet - Read, Create and Write Spreadsheet documents in PHP - Spreadsheet engine",

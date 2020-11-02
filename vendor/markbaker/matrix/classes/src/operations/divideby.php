@@ -7,7 +7,6 @@
  * @copyright  Copyright (c) 2013-2018 Mark Baker (https://github.com/MarkBaker/PHPComplex)
  * @license    https://opensource.org/licenses/MIT    MIT
  */
-
 namespace Matrix;
 
 use Matrix\Operators\Division;
@@ -15,23 +14,18 @@ use Matrix\Operators\Division;
 /**
  * Divides two or more matrix numbers
  *
- * @param array<int, mixed> $matrixValues The matrices to divide
- * @return Matrix
- * @throws Exception
+ * @param     mixed[]    $matrixValues   The matrices to divide
+ * @return    Matrix
  */
 function divideby(...$matrixValues)
 {
     if (count($matrixValues) < 2) {
-        throw new Exception('Division operation requires at least 2 arguments');
+        throw new \Exception('This function requires at least 2 arguments');
     }
 
     $matrix = array_shift($matrixValues);
-
-    if (is_array($matrix)) {
+    if (!is_object($matrix) || !($matrix instanceof Matrix)) {
         $matrix = new Matrix($matrix);
-    }
-    if (!$matrix instanceof Matrix) {
-        throw new Exception('Division arguments must be Matrix or array');
     }
 
     $result = new Division($matrix);
