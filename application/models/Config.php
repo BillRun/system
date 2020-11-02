@@ -1788,17 +1788,24 @@ class ConfigModel {
 		$newBaseCurrency = $pricingConfig['currency'] ?? '';
 		$prevBaseCurrency = $config['pricing']['currency'] ?? '';
 		$newCurrencies = $pricingConfig['additional_currencies'] ?? [];
+		$maxCurrencies = Billrun_Factory::config()->getConfigValue('pricing.max_currencies', 3);
+		if (count($newCurrencies) > $maxCurrencies) {
+			throw new Exception("Cannot set more than {$maxCurrencies} additional currencies");
+		}
 		$prevCurrencies = $config['pricing']['additional_currencies'] ?? [];
-		sort($newCurrencies);
-		sort($prevCurrencies);
+		$newCurrenciesNames = array_column($newCurrencies, 'currency');
+		$prevCurrenciesNames = array_column($prevCurrencies, 'currency');
+		$this->checkRemovedCurrencies($newCurrenciesNames, $prevCurrenciesNames);
+		sort($newCurrenciesNames);
+		sort($prevCurrenciesNames);
 		if (($newBaseCurrency !== $prevBaseCurrency) ||
-			($newCurrencies != $prevCurrencies && count($newCurrencies) > 0)) {
+			($newCurrenciesNames != $prevCurrenciesNames && count($newCurrenciesNames) > 0)) {
 			$exchangeRatesPlugin = new exchangeRatesPlugin();
-			$exchangeRatesPlugin->updateExchangeRates($newBaseCurrency, $newCurrencies);
+			$exchangeRatesPlugin->updateExchangeRates($newBaseCurrency, $newCurrenciesNames);
 		}
 
 		if (count($newCurrencies) > 0) {
-			$newCurrenciesOptions = implode(',', array_column($newCurrencies, 'currency'));
+			$newCurrenciesOptions = implode(',', $newCurrenciesNames);
 			$fieldParams = [
 				'system' => true,
 				'mandatory' => false,
@@ -1809,6 +1816,33 @@ class ConfigModel {
 			];
 			$this->setModelField($config['subscribers'], 'account', 'currency', 'Currency', $fieldParams);
 		}
+	}
+	
+	/**
+	 * verifies that there are no active accounts with one or more of the removed currencies
+	 *
+	 * @param  array $newCurrencies
+	 * @param  array $prevCurrencies
+	 * @return boolean true on success, throws exception on error
+	 */
+	protected function checkRemovedCurrencies($newCurrencies, $prevCurrencies) {
+		$removedCurrencies = array_values(array_diff($prevCurrencies, $newCurrencies));
+		if (empty($removedCurrencies)) {
+			return true;
+		}
+
+		$query = [
+			'currency' => [
+				'$in' => $removedCurrencies,
+			],
+		];
+
+		$account = Billrun_Factory::account();
+		if (!empty($account->loadAccountsForQuery($query))) {
+			throw new Exception('There are active accounts with one or more of the removed currencies: ' . implode(',', $removedCurrencies));
+		}
+
+		return true;
 	}
 
 }

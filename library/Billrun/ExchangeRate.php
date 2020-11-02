@@ -45,6 +45,13 @@ class Billrun_ExchangeRate {
 	 * @var int unixtimestamp
 	 */
 	protected $time;
+	
+	/**
+	 * exchange rate multiplier
+	 *
+	 * @var float
+	 */
+	protected $multiplier;
 
 	public function __construct($baseCurrency, $targetCurrency, $rate = null, $time = null) {
 		$this->time = is_null($time) ? time() : $time;
@@ -52,6 +59,7 @@ class Billrun_ExchangeRate {
 		$this->baseCurrency = $baseCurrency;
 		$this->targetCurrency = $targetCurrency;
 		$this->rate = is_null($rate) ? $this->getRate() : floatval($rate);
+		$this->rate *= $this->getMultiplier();
 	}
 
 	/**
@@ -154,5 +162,19 @@ class Billrun_ExchangeRate {
 		}
 
 		return $this->rate;
+	}
+	
+	/**
+	 * get multiplier of exchange rate
+	 *
+	 * @return float
+	 */
+	public function getMultiplier() {
+		if (is_null($this->multiplier)) {
+			$currencyConfig = Billrun_CurrencyConvert_Manager::getCurrencyConfig($this->targetCurrency);
+			$this->multiplier = floatval($currencyConfig['multiplier'] ?? 1);
+		}
+
+		return $this->multiplier;
 	}
 }

@@ -198,7 +198,8 @@
 		{ "name": "Default", "enabled": true, "default": true }
 	],
 	"pricing": {
-        "currency": "USD",
+		"currency": "USD",
+		"max_currencies": 3,
         "additional_currencies": []
     }
 }
