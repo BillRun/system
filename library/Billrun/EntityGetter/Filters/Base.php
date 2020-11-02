@@ -149,9 +149,6 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
-		if($operator === '$existsFalse') {
-			$res = !$res;
-		}
 		return $this->getComputedValueResult($row, $res);
 	}
 
