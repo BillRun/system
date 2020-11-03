@@ -746,7 +746,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
 }
 
-db.config.insert(lastConfig);
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -1144,8 +1143,6 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	lastConfig.import.mapping = mapping;
 }
 
-db.config.insert(lastConfig);
-
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
 db.archive.dropIndex('session_id_1_request_num_-1')
 db.archive.dropIndex('sid_1_call_reference_1')
@@ -1283,3 +1280,17 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     }
 
 })
+
+// BRCD-2772 add webhooks plugin to the UI
+runOnce(lastConfig, 'BRCD-2772', function () {
+    _webhookPluginsSettings = {
+        "name": "webhooksPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    };
+    lastConfig['plugins'].push(_webhookPluginsSettings);
+});
+
+
+db.config.insert(lastConfig);
