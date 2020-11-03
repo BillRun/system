@@ -1144,6 +1144,16 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	lastConfig.import.mapping = mapping;
 }
 
+
+// BRCD-2888 -adjusting config to the new invoice templates
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
+}
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
+}
+
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
