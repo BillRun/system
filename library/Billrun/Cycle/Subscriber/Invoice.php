@@ -570,6 +570,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
 		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
 		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
+
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled()) {
+			$this->data['totals']['grouping'][$index]['currency'] = $row['currency'] ?? Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+		}
 	}
 
 	protected function addGroupToTotalGrouping($row) {
