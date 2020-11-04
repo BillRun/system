@@ -31,6 +31,13 @@ abstract class Billrun_Plans_Charge_Base {
 	protected $currency;
 	
 	/**
+	 * stores default currency
+	 *
+	 * @var string
+	 */
+	protected $defaultCurrency;
+	
+	/**
 	 * Create a new instance of the plans charge base class
 	 * @param array $plan - Raw plan data
 	 */
@@ -38,6 +45,7 @@ abstract class Billrun_Plans_Charge_Base {
 		$this->cycle = $plan['cycle'];
 		$this->price = $plan['price'];
 		$this->currency = $plan['currency'] ?? '';
+		$this->defaultCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
 		$this->proratedStart = !isset($plan['prorated_start']) || $plan['prorated_start'] != FALSE;
 		$this->proratedEnd = !isset($plan['prorated_end']) || $plan['prorated_end'] != FALSE;
 		$this->proratedTermination = !isset($plan['prorated_termination']) || $plan['prorated_termination'] != FALSE;

@@ -25,13 +25,22 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 				if (!empty($price)) {
 					$convertedPrice = $this->getConvertedPrice($tariff);
 					$multiplier =  $price['multiplier'] ?? 1;
-					$charges[] = array(
+					$charge = array(
 						'value' => $convertedPrice * $multiplier * $quantity,
 						'cycle' => $tariff['from'],
 						'full_price' => $convertedPrice,
 						'prorated_start' => false,
 						'prorated_end' =>false,
 					);
+
+					if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+						$charge['original_currency'] = [
+							'aprice' => $price['price'],
+							'currency' => $this->defaultCurrency,
+						];
+					}
+
+					$charges[] = $charge;
 				}
 			}
 		}

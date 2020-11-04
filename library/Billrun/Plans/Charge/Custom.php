@@ -30,7 +30,7 @@ class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
 				$convertedPrice = $this->getConvertedPrice($tariff);
 				$multiplier =  $price['multiplier'] ?? 1;
 				if (!empty($price)) {
-					$charges[] = array(
+					$charge = array(
 						'value' => $convertedPrice * $multiplier * $quantity,
 						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
 						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
@@ -38,6 +38,14 @@ class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
 						'full_price' => $convertedPrice,
 					);
 
+					if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+						$charge['original_currency'] = [
+							'aprice' => $price['price'],
+							'currency' => $this->defaultCurrency,
+						];
+					}
+					
+					$charges[] = $charge;
 				}
 			}
 		}

@@ -34,17 +34,28 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	public function getPrice($quantity = 1) {
 		
-		$price = $this->getPriceForcycle($this->cycle);
+		$priceForCycle = $this->getPriceForcycle($this->cycle);
+		$price = $priceForCycle['price'];
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
 		}
-		return array(
+		
+		$charge = array(
 			'value'=> $price * $fraction, 
 			'start' => $this->activation, 
 			'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
 			'full_price' => floatval($price)
 			);
+
+		if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+			$charge['original_currency'] = [
+				'aprice' => $priceForCycle['orig_price'],
+				'currency' => $this->defaultCurrency,
+			];
+		}
+
+		return $charge;
 	}
 
 	protected function getPriceForcycle($cycle) {
@@ -62,11 +73,14 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getPriceByOffset($startOffset) {
 		foreach ($this->price as $tariff) {
 			if ($tariff['from'] <= $startOffset && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $startOffset) {
-				return $this->getConvertedPrice($tariff);
+				return [
+					'orig_price' => $tariff['price'],
+					'price' => $this->getConvertedPrice($tariff),
+				];
 			}
 		}
 		
-		return 0;
+		return ['price' => 0];
 	}
 	
 }
