@@ -48,7 +48,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			'full_price' => floatval($price)
 			);
 
-		if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+		if ($this->shouldAddOriginalCurrency()) {
 			$charge['original_currency'] = [
 				'aprice' => $priceForCycle['orig_price'],
 				'currency' => $this->defaultCurrency,

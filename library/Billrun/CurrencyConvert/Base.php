@@ -50,7 +50,7 @@ class Billrun_CurrencyConvert_Base {
 	public function getPrice($targetCurrency, Billrun_Rate_Step $step) {
 		$price = $step->get('price');
 		
-		if ($targetCurrency === $this->baseCurrency) {
+		if (!Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() || $targetCurrency === $this->baseCurrency) {
 			return $price;
 		}
 

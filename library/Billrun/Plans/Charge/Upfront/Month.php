@@ -65,7 +65,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			'start' => $this->activation, 
 			'end' => $this->deactivation);
 
-		if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+			if ($this->shouldAddOriginalCurrency()) {
 			$refund['original_currency'] = [
 				'aprice' => $lastUpfrontCharge['orig_price'],
 				'currency' => $this->defaultCurrency,

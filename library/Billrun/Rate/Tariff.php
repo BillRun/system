@@ -280,7 +280,8 @@ class Billrun_Rate_Tariff {
 	 * @return boolean
 	 */
 	public function useCurrency() {
-		return !in_array($this->getCurrency(), ['', Billrun_CurrencyConvert_Manager::getDefaultCurrency()]);
+		return Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() && 
+			!in_array($this->getCurrency(), ['', Billrun_CurrencyConvert_Manager::getDefaultCurrency()]);
 	}
 	
 	/**

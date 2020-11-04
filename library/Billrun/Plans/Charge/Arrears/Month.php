@@ -44,7 +44,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 					'full_price' => $convertedPrice,
 				);
 
-				if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+				if ($this->shouldAddOriginalCurrency()) {
 					$charge['original_currency'] = [
 						'aprice' => $price['price'],
 						'currency' => $this->defaultCurrency,

@@ -33,7 +33,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 						'prorated_end' =>false,
 					);
 
-					if (!empty($this->currency) && $this->currency !== $this->defaultCurrency) {
+					if ($this->shouldAddOriginalCurrency()) {
 						$charge['original_currency'] = [
 							'aprice' => $price['price'],
 							'currency' => $this->defaultCurrency,

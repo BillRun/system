@@ -72,4 +72,14 @@ abstract class Billrun_Plans_Charge_Base {
 		return $planStep->getPrice($this->currency);
 	}
 	
+	/**
+	 * whether or not currency was done and required to add original currency to the charge response
+	 *
+	 * @return boolean
+	 */
+	protected function shouldAddOriginalCurrency() {
+		return Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() &&
+			(!empty($this->currency) && $this->currency !== $this->defaultCurrency);
+	}
+	
 }

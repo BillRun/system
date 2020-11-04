@@ -80,6 +80,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		}
 
 		if (!empty($chargeData['original_currency'])) {
+			$entry['currency'] = $entry['foreign']['currency'] ?? '';
 			$entry['original_currency'] = $chargeData['original_currency'];
 		}
 		
