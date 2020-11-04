@@ -27,12 +27,16 @@ class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
 		if($this->activation >= $this->cycle->start() && $this->activation < $this->cycle->end() ) {
 			foreach ($this->price as $tariff) {
 				$price = Billrun_Plan::getPriceByTariff($tariff, 0, 1,$this->activation);
+				$convertedPrice = $this->getConvertedPrice($tariff);
+				$multiplier =  $price['multiplier'] ?? 1;
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity,
+					$charges[] = array(
+						'value' => $convertedPrice * $multiplier * $quantity,
 						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
 						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
 						'cycle' => $tariff['from'],
-						'full_price' => floatval($tariff['price']) );
+						'full_price' => $convertedPrice,
+					);
 
 				}
 			}

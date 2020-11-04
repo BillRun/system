@@ -259,6 +259,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
+		$currency = $data['currency'];
 
 		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$mongoServices,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
@@ -274,6 +275,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
 			$serviceData['line_stump'] = $stumpLine;
+			$serviceData['currency'] = $currency;
 			if (Billrun_Utils_Plays::isPlaysInUse()) {
 				$serviceData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
 			}
@@ -299,6 +301,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
+		$currency = $data['currency'];
 
 		foreach ($plans as &$value) {
 			// Plan name
@@ -318,6 +321,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
 			} 
 			$planData['line_stump'] = $stumpLine;
+			$planData['currency'] = $currency;
 			$planData['deactivation_date'] = $data['deactivation_date'];
 			$this->records['plans'][] = $planData;
 		}

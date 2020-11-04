@@ -54,7 +54,7 @@ class Billrun_CurrencyConvert_Base {
 			return $price;
 		}
 
-		$overrideCurrencyPrice = $this->getOverrideCurrencyPrice($step, $price);
+		$overrideCurrencyPrice = $this->getOverrideCurrencyPrice($step, $price, $targetCurrency);
 		if ($overrideCurrencyPrice !== false) {
 			return $overrideCurrencyPrice;
 		}
@@ -67,10 +67,18 @@ class Billrun_CurrencyConvert_Base {
 
 		return $convertedPrice;
 	}
-
-	protected function getOverrideCurrencyPrice(Billrun_Rate_Step $step, $price) {
+	
+	/**
+	 * get price for currency if defined on the rate step
+	 *
+	 * @param  Billrun_Rate_Step $step
+	 * @param  float $price
+	 * @param  string $targetCurrency
+	 * @return float converted price if set, false otherwise
+	 */
+	protected function getOverrideCurrencyPrice(Billrun_Rate_Step $step, $price, $targetCurrency) {
 		foreach ($step->get('currency_rates', []) as $currencyRate) {
-			if ($currencyRate['currency'] === $this->targetCurrency) {
+			if ($currencyRate['currency'] === $targetCurrency) {
 				if (isset($currencyRate['value'])) {
 					return floatval($currencyRate['value']);
 				}

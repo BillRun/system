@@ -32,14 +32,18 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 			$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 			if (!empty($price)) {
-				$charges[] = array('value' => $price['price'] * $quantity,
+				$convertedPrice = $this->getConvertedPrice($tariff);
+				$multiplier =  $price['multiplier'] ?? 1;
+				$charges[] = array(
+					'value' => $convertedPrice * $multiplier * $quantity,
 					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ) : $this->cycle->end(),
 					'prorated_end' =>  $endProration,
 
 					'cycle' => $tariff['from'],
-					'full_price' => floatval($tariff['price']) );
+					'full_price' => $convertedPrice,
+				);
 					
 			}
 		}

@@ -330,6 +330,7 @@ class Billrun_Plan extends Billrun_Service {
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
 		return array('start' => $fullMonth ? FALSE : $startPricing,
 			'end' => $fullMonth ? FALSE : $endPricing,
+			'multiplier' => $endPricing - $startPricing,
 			'price' => ($endPricing - $startPricing) * $tariff['price']);
 	}
 
