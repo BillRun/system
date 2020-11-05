@@ -18,7 +18,7 @@ class Billrun_EntityGetter_Filters_Base {
 
 	protected $specialQueries = array(
 		'$exists' => array('$exists' => 1),
-		'$existsFalse' => array('$exists' => 1), // this should be $exists result revered (otherwise we have an issue with empty values)
+		'$existsFalse' => array('$exists' => 0),
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
 	);
