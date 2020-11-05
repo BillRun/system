@@ -62,17 +62,6 @@ abstract class Billrun_Plans_Charge_Base {
 	public abstract function getPrice($quantity = 1);
 	
 	/**
-	 * get price according to the currency defined
-	 *
-	 * @param  array $planStep
-	 * @return float
-	 */
-	protected function getConvertedPrice($planStep) {
-		$planStep = new Billrun_Plans_Step($planStep);
-		return $planStep->getPrice($this->currency);
-	}
-	
-	/**
 	 * whether or not currency was done and required to add original currency to the charge response
 	 *
 	 * @return boolean

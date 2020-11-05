@@ -28,25 +28,24 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 
 		$charges = array();
 		foreach ($this->price as $tariff) {
-			$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset ,$this->activation);
+			$step = new Billrun_Plans_Step($tariff);
+			$price = $step->getRelativePrice($this->startOffset, $this->endOffset ,$this->activation, $this->currency);
 			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
 			$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
 			if (!empty($price)) {
-				$convertedPrice = $this->getConvertedPrice($tariff);
-				$multiplier =  $price['multiplier'] ?? 1;
 				$charge = array(
-					'value' => $convertedPrice * $multiplier * $quantity,
+					'value' => $price['price'] * $quantity,
 					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ) : $this->cycle->end(),
 					'prorated_end' =>  $endProration,
 					'cycle' => $tariff['from'],
-					'full_price' => $convertedPrice,
+					'full_price' => $price['full_price'],
 				);
 
 				if ($this->shouldAddOriginalCurrency()) {
 					$charge['original_currency'] = [
-						'aprice' => $price['price'],
+						'aprice' => $price['orig_price'],
 						'currency' => $this->defaultCurrency,
 					];
 				}

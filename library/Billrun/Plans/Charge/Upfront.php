@@ -73,9 +73,10 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getPriceByOffset($startOffset) {
 		foreach ($this->price as $tariff) {
 			if ($tariff['from'] <= $startOffset && (Billrun_Plan::isValueUnlimited($tariff['to']) ? PHP_INT_MAX : $tariff['to']) > $startOffset) {
+				$step = new Billrun_Plans_Step($tariff);
 				return [
-					'orig_price' => $tariff['price'],
-					'price' => $this->getConvertedPrice($tariff),
+					'orig_price' => $step->getPrice(),
+					'price' => $step->getPrice($this->currency),
 				];
 			}
 		}
