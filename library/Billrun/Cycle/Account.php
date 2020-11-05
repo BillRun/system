@@ -338,9 +338,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	public function getCurrency() {
 		if (empty($this->currency)) {
 			$accountRevs = $this->revisions[0] ?? [];
+			usort($accountRevs, function ($a, $b) {
+				return $b['from']->sec > $a['from']->sec;
+			});
 			foreach ($accountRevs as $accountRev) {
 				if (!empty($accountRev['currency'])) {
 					$this->currency = $accountRev['currency'];
+					break;
 				}
 			}
 
