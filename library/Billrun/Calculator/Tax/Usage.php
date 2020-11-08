@@ -236,6 +236,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			}
 			
 			$taxesData[] = $taxData;
+			$this->updateTaxOriginalCurrency($line, $tax);
 		}
 		
 		$ret = [
@@ -519,6 +520,17 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Function to update the tax amount for the original currency 
+	 * @param array $line
+	 * @param array $tax_data
+	 */
+	protected function updateTaxOriginalCurrency(&$line, $tax_data) {
+		if(isset($line['original_currency'])) {
+			$line['original_currency'][$tax_data['key']] = $tax_data['rate'] * $line['original_currency']['aprice'];
+		}
 	}
 
 
