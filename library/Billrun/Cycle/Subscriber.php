@@ -265,7 +265,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			// Service name
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
-				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1));
+				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
