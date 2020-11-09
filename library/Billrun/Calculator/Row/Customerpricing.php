@@ -333,8 +333,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			$overPlanVolume = $balancePricingData['out_plan'] ?? 0;
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $overPlanVolume);
+			$outPlanVolume = $balancePricingData['out_plan'] ?? 0;
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $outPlanVolume);
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
@@ -343,7 +343,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			
 			$updatedPricingData = $this->getLineIncludedPricingData($pricingData);
-			$volume -= $overPlanVolume;
+			$volume -= $outPlanVolume;
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 //			return $pricingData;
