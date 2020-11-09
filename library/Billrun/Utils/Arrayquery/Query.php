@@ -69,6 +69,17 @@ class Billrun_Utils_Arrayquery_Query {
 	protected static function _exists($array, $query) {
 		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',array()));
 		$ret = $expression->evaluate($array, $query) ? TRUE : FALSE;
+		$op = key($query) === '$and' ? '&' : '|';
+		if(empty($ret)) {
+			foreach($array as $value) {
+				if($op === '&'){
+					$ret &= $expression->evaluate($value, $query);
+				}else {
+					$ret |= $expression->evaluate($value, $query);
+				}
+				if($ret) {	break;	}
+			}
+		}
 		return $ret;
 	}
 }
