@@ -22,6 +22,10 @@ class Billrun_EntityGetter_Filters_Base {
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
 	);
+	
+	protected $andQueries = array(	
+		'$existsFalse',
+	);
 
 	protected $datePreFunctions = array(
 		'minute_of_hour' => 'i' , // with leading zeros
@@ -138,7 +142,7 @@ class Billrun_EntityGetter_Filters_Base {
 		);
 		if (!empty($this->specialQueries[$operator]) ) {
 			$data = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
-			$op = '$or';
+			$op = in_array($operator, $this->andQueries) ? '$and' : '$or';
 
 			$query = array(
 				$op => [

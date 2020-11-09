@@ -65,11 +65,11 @@ class Billrun_Utils_Arrayquery_Expression {
 					
 					$ret &= $this->evaluate(@$field[$key], $value);
 					
-				} else if(!isset($field) && isset($value)){
-                                    
-                                        $ret &= $this->evaluate($field, $value);  
-                                        
-                                } else {
+				} else if (!isset($field) && isset($value)) {
+
+					$ret &= $this->evaluate($field, $value);
+					
+				} else {
 					$ret = FALSE;
 				}
 			}
