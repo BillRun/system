@@ -52,8 +52,10 @@ class Billrun_Utils_Arrayquery_Query {
 	protected static function _query($array, $query) {
 
 		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',array()));
-		$ret =  $expression->evaluate($array, $query) ? $array : array();
-		if(empty($ret)) {
+		//evealuate document 
+		if (Billrun_Util::isAssoc($array)) {
+			$ret = $expression->evaluate($array, $query) ? $array : array();
+		} else {//evealuate documents
 			foreach($array as $key => $value) {
 				if($expression->evaluate($value, $query)) {
 					$ret[] = $value;
@@ -61,22 +63,18 @@ class Billrun_Utils_Arrayquery_Query {
 					$ret[$key]= $tmpRet;
 				}
 			}
-
 		}
 		return $ret;
 	}
 
 	protected static function _exists($array, $query) {
 		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',array()));
-		$ret = $expression->evaluate($array, $query) ? TRUE : FALSE;
-		$op = key($query) === '$and' ? '&' : '|';
-		if(empty($ret)) {
+		//evealuate document 
+		if (Billrun_Util::isAssoc($array)) {
+			$ret = $expression->evaluate($array, $query) ? TRUE : FALSE;
+		} else { //evealuate documents
 			foreach($array as $value) {
-				if($op === '&'){
-					$ret &= $expression->evaluate($value, $query);
-				}else {
-					$ret |= $expression->evaluate($value, $query);
-				}
+				$ret |= $expression->evaluate($value, $query);
 				if($ret) {	break;	}
 			}
 		}
