@@ -24,7 +24,7 @@ class Billrun_Generator_PaymentGateway_Csv {
         protected $encoding = 'utf-8';
         protected $transactionsCounter = 0;
 
-        public function __construct($options) {
+        public function __construct($options) {//need to add  here the other options if set 
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
                 $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {

@@ -109,7 +109,227 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$this->query = $this->getQuery();
 		$this->logCollection = Billrun_Factory::db()->logCollection();
 	}
+	////////////////////// need to be in separate class /////////////////////////////////////
+	protected function buildGeneratorOptions() {
+
+        $options['data'] = $this->loadRows();
+		$headers[0] = $this->getHeaderLine();
+        $options['headers'] = $headers;
+		$trailers[0] = $this->getTrailerLine();
+        $options['trailers'] = $trailers;
+        $options['type'] = $this->config['generator']['type'];
+        $options['configByType'] = $this->config;
+        if (isset($this->config['generator']['separator'])) {
+            $options['delimiter'] = $this->config['generator']['separator'];
+        }
+        $options['file_type'] = $this->config['file_type'];
+		$localDir = $this->getExportFilePath();
+        $options['local_dir'] = $localDir;
+        return $options;
+    }
 	
+	protected function getGeneratorClassName() {
+        if (!isset($this->config['generator']['type'])) {
+            $message = 'Missing generator type for ' . $this->config['file_type'];
+            $this->logFile->updateLogFileField('errors', $message);
+            throw new Exception($message);
+        }
+        switch ($this->config['generator']['type']) {
+            case 'fixed':
+            case 'separator':
+                $generatorType = 'Csv';
+                break;
+            case 'xml':
+                $generatorType = 'Xml';
+                break;
+            default:
+                $message = 'Unknown generator type for ' . $this->config['file_type'];
+                throw new Exception($message);
+        }
+
+        $className = "Billrun_Generator_PaymentGateway_" . $generatorType;
+        return $className;
+    }
+	
+	protected function getHeaderLine() {
+        $headerStructure = $this->config['generator']['header_structure'];
+        return $this->buildLineFromStructure($headerStructure);
+    }
+
+    protected function getTrailerLine() {
+        $trailerStructure = $this->config['generator']['trailer_structure'];
+        return $this->buildLineFromStructure($trailerStructure);
+    }
+	
+	    protected function getDataLine($params) {//TODO:: check why not to use buildLineFromStructure??? 
+        $dataLine = array();
+        $dataStructure = $this->config['generator']['data_structure'];
+        foreach ($dataStructure as $dataField) {
+            try{
+				if (!isset($dataField['path'])) {
+					$message = "Exporter " . $this->config['file_type'] . " data structure is missing a path";
+					Billrun_Factory::log($message, Zend_Log::ERR);
+					continue;
+				}
+				if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
+					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+					$dataLine[$dataField['path']] = date($dateFormat, time());
+				}
+				if (isset($dataField['hard_coded_value'])) {
+					$dataLine[$dataField['path']] = $dataField['hard_coded_value'];
+				}
+				if (isset($dataField['linked_entity'])) {
+					$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
+				}
+				if (isset($dataField['type']) && $dataField['type'] == 'date') {
+					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+					$date = strtotime($dataLine[$dataField['path']]);
+					if ($date) {
+						$dataLine[$dataField['path']] = date($dateFormat, $date);
+					} else {
+						$message = "Couldn't convert date string when generating file type " . $this->config['file_type'];
+						Billrun_Factory::log($message, Zend_Log::NOTICE);
+					}
+				}
+				if (isset($dataField['number_format'])) {
+					$dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+				}
+				$attributes = $this->getLineAttributes($dataField);
+				if (!isset($dataLine[$dataField['path']])) {
+					$configObj = $dataField['name'];
+					$message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->config['file_type'];
+					throw new Exception($message);
+				}
+				$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+            } catch(Exception $ex){
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                continue;
+			}
+        }
+        if ($this->config['generator']['type'] == 'fixed' || $this->config['generator']['type'] == 'separator') {
+            ksort($dataLine);
+        }
+        return $dataLine;
+    }
+	
+	protected function buildLineFromStructure($structure) {
+        $line = array();
+        foreach ($structure as $field) {
+            if (!isset($field['path'])) {
+                $message = "Exporter " . $this->config['file_type'] . " header/trailer structure is missing a path";
+                Billrun_Factory::log($message, Zend_Log::ERR);
+                continue;
+            }
+            if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
+                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
+                $line[$field['path']] = date($dateFormat, time());
+            }
+            if (isset($field['hard_coded_value'])) {
+                $line[$field['path']] = $field['hard_coded_value'];
+            }
+            if ((isset($field['type']) && $field['type'] == 'date') && (!isset($field['predefined_values']) && $field['predefined_values'] !== 'now')) {
+                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
+                $date = strtotime($line[$field['path']]);
+                if ($date) {
+                    $line[$field['path']] = date($dateFormat, $date);
+                } else {
+                    $message = "Couldn't convert date string when generating file type " . $this->config['file_type'];
+                    Billrun_Factory::log($message, Zend_Log::ERR);
+                }
+            }
+            if (!isset($line[$field['path']])) {
+                $configObj = $field['name'];
+                $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->config['file_type'];
+                throw new Exception($message);
+            }
+            
+            $attributes = $this->getLineAttributes($field);
+            
+            if (isset($field['number_format'])) {
+                $line[$field['path']] = $this->setNumberFormat($field, $line);
+            }
+            $line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
+        }
+        if ($this->config['generator']['type'] == 'fixed' || $this->config['generator']['type'] == 'separator') {
+            ksort($line);
+        }
+        return $line;
+    }
+	
+	protected function setNumberFormat($field, $line) {
+        if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
+            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'];
+            Billrun_Factory::log($message, Zend_Log::WARN);
+            $this->logFile->updateLogFileField('warning', $message);
+        }
+        if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
+            return number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
+        } else {
+            if (isset($field['number_format']['decimals'])){
+                return number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
+            }
+        }
+    }
+	
+	    /**
+     * Function returns line's attributes, if exists
+     * @param type $field
+     * @return array $attributes.
+     */
+    protected function getLineAttributes($field){
+        if(isset($field['attributes'])){
+            return $field['attributes'];
+        } else {
+            return [];
+        }
+    }
+	
+	protected function getLinkedEntityData($entity, $params, $field) {
+        switch ($entity) {
+//            case 'account':
+//                if (!isset($params['aid'])) {
+//                    throw new Exception('Missing account id');
+//                }
+//                $account = Billrun_Factory::account();
+//                $account->loadAccountForQuery(array('aid' => $params['aid']));
+//                $accountData = $account->getCustomerData();
+//                if (is_null(Billrun_Util::getIn($accountData, $field))) {
+//                    $message = "Field name $field does not exist under entity " . $entity;
+//                    Billrun_Factory::log($message, Zend_Log::ERR);
+//                    $this->logFile->updateLogFileField('errors', $message);
+//                }
+//                return Billrun_Util::getIn($accountData, $field);
+//
+//            case 'payment_request':
+//                if (!isset($params[$field])) {
+//                    $message = 'Unknown field in payment_request';
+//                    $this->logFile->updateLogFileField('errors', $message);
+//                    throw new Exception($message);
+//                }
+//
+//                return $params[$field];
+//            default:
+//                $message = "Unknown entity: " . $entity . ", as 'linked entity' in the config.";
+//                $this->logFile->updateLogFileField('errors', $message);
+//                Billrun_Factory::log($message, Zend_Log::ERR);
+        }
+    }
+	
+	protected function prepareLineForGenerate($lineValue, $addedData, $attributes) {
+        $newLine = array();
+		$newLine['value'] = $lineValue;
+        $newLine['name'] = $addedData['name'];
+        if (count($attributes) > 0) {
+            for ($i = 0; $i < count($attributes); $i++) {
+                $newLine['attributes'][] = $attributes[$i];
+            }
+        }
+        if (isset($addedData['padding'])) {
+            $newLine['padding'] = $addedData['padding'];
+        }
+        return $newLine;
+    }
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	public static function getInstance() {
 		$args = func_get_args();
 		$stamp = md5(static::class . serialize($args));
@@ -197,8 +417,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	function export() {
 		Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
 		$this->beforeExport();
-		$this->prepareDataToExport();
-		$exportedData = $this->handleExport();
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		$this->fileGenerator = new $className($generatorOptions);
+		$this->prepareDataToExport();//need to remove this
+		$exportedData = $this->handleExport();//need to remove this and use the line bellow
+		//$this->fileGenerator->
 		$this->afterExport();
 		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$exportedData, $this));
 		return $exportedData;
@@ -352,12 +576,15 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		$collection = $this->getCollection();
 		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
 		$rows = $collection->query($this->query)->cursor();
+		$data = array();
 		foreach ($rows as $row) {
 			$rawRow = $row->getRawData();
 			$this->rawRows[] = $rawRow;
 			$this->rowsToExport[] = $this->getRecordData($rawRow);
+			$data[] = $rawRow; //maybe - $this->getRecordData($rawRow);
 		}
 		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+		return $data;
 	}
 	
 	/**
@@ -449,8 +676,8 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 */
 	protected function prepareDataToExport() {
 		$this->loadRows();
-		$this->loadHeader();
-		$this->loadFooter();
+		$this->loadHeader();//remove this
+		$this->loadFooter();//remove this
 	}
 	
 	public function mapFields($fieldsMapping, $row = array()) {
