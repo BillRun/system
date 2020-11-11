@@ -179,7 +179,7 @@ abstract class Billrun_PaymentGateway {
 			}
 			$account = Billrun_Factory::account();
 			$query = array('aid' => intval($aid));
-			if (!$account->loadAccountsForQuery($query)) {
+			if (!$account->loadAccountForQuery($query)) {
 				throw new Exception("The account is not active");
 			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
