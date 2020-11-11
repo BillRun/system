@@ -27,7 +27,7 @@ class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->fixedWidth = Billrun_Util::getIn($this->config, 'type', 'separator') === 'fixed';
+		$this->fixedWidth = Billrun_Util::getIn($this->config, 'exporter.format.type', 'delimiter') === 'fixed_width';
 		$this->delimiter = $this->getDelimiter();
 	}
 	
@@ -40,7 +40,7 @@ class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 		if ($this->fixedWidth) {
 			return '';
 		}
-		return Billrun_Util::getIn($this->config, 'separator', ',');
+		return Billrun_Util::getIn($this->config, 'format.delimiter', ',');
 	}
 	
 	/**
