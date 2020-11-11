@@ -153,7 +153,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		return $this->data;
 	}
 	
-	public function load($queries) {
+	protected function load($queries) {
 		$accounts = $this->getAccountDetails($queries);
 		return $accounts;
 	}

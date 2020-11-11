@@ -178,8 +178,8 @@ abstract class Billrun_PaymentGateway {
 				throw new Exception("Single payment amount different from installments amount");
 			}
 			$account = Billrun_Factory::account();
-			$queries = array(array('aid' => intval($aid)));
-			if (!$account->load($queries)) {
+			$query = array('aid' => intval($aid));
+			if (!$account->loadAccountsForQuery($query)) {
 				throw new Exception("The account is not active");
 			}
 			$singlePaymentParams['amount'] = floatval($data['amount']);
