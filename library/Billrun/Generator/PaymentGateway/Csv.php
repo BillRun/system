@@ -25,17 +25,32 @@ class Billrun_Generator_PaymentGateway_Csv {
         protected $transactionsCounter = 0;
 
         public function __construct($options) {//need to add  here the other options if set 
+		$this->validateOptions($options);
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
-                $this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
+		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
 			$this->delimiter = '';
 		}
-		$this->validateOptions($options);
-                if (isset($options['local_dir'])) {
-                    $this->local_dir = $options['local_dir'];
-                }
+		if (isset($options['local_dir'])) {
+			$this->local_dir = $options['local_dir'];
+		}
+		if (isset($options['file_path'])) {
+			$this->file_path = $options['file_path'];
+		}
+		if (isset($options['file_name'])) {
+			$this->file_name = $options['file_name'];
+		}
+        if(isset($options['headers'])){
+			$this->headers = $options['headers'];
+		}
+		if(isset($options['data'])){
+			$this->data = $options['data'];
+		}
+		if(isset($options['trailers'])){
+			$this->trailers = $options['trailers'];
+		}
 	}
         
 	/**
