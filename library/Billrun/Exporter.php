@@ -124,8 +124,11 @@ abstract class Billrun_Exporter extends Billrun_Base {
             $options['delimiter'] = $this->config['generator']['separator'];
         }
         $options['file_type'] = $this->config['file_type'];
-		$localDir = $this->getExportFilePath();
-        $options['local_dir'] = $localDir;
+		$localDir = $this->getFilePath();
+        $options['file_path'] = $localDir;
+		$options['local_dir'] = $localDir;
+		$fileName = $this->getFilename();
+		$options['file_name'] = $fileName;
         return $options;
     }
 	
@@ -281,6 +284,10 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	//abstract getLinkedEntityData()- who generate from the new class need ro implement this function  
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
+	protected function getFilePath() {
+		$sharedPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($this->config, 'workspace', 'workspace'));
+		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7) . DIRECTORY_SEPARATOR;
+	}
 	
 	protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
