@@ -17,7 +17,7 @@
  * @package  Billing
  * @since    5.9
  */
-abstract class Billrun_Exporter extends Billrun_Base {
+class Billrun_Exporter extends Billrun_Base {
 
 	/**
 	 * Type of exporter
@@ -382,7 +382,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	 *
 	 * @return array list of lines exported
 	 */
-	abstract function handleExport();
+	//abstract function handleExport();
 	
 	/**
 	 * general function to handle the export
@@ -392,12 +392,12 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	function export() {
 		Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
 		$this->beforeExport();
-		//$className = $this->getGeneratorClassName();
-		//$generatorOptions = $this->buildGeneratorOptions();
-		//$this->fileGenerator = new $className($generatorOptions);
-		$this->prepareDataToExport();//need to remove this
-		$exportedData = $this->handleExport();//need to remove this and use the line bellow
-		//$this->fileGenerator->generate();
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
+		$this->fileGenerator = new $className($generatorOptions);
+		//$this->prepareDataToExport();//need to remove this
+		//$exportedData = $this->handleExport();//need to remove this and use the line bellow
+		$this->fileGenerator->generate();
 		$this->afterExport();
 		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$exportedData, $this));
 		return $exportedData;

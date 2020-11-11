@@ -46,7 +46,13 @@ class ExportAction extends Action_Base {
 		
 		foreach ($export_generators_options as $export_generator_options) {
 			$this->getController()->addOutput("Loading exporter");
-			$exporter = Billrun_Exporter::getInstance($export_generator_options);
+			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type']);
+			if (!$exportGeneratorSettings) {
+				Billrun_Factory::log("Can't get configurarion: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
+				return false;
+			}
+			$params = array_merge($exportGeneratorSettings, $export_generator_options);
+			$exporter = new Billrun_Exporter($params);
 			$exporter_name = $exporter->getType();
 			$this->getController()->addOutput("Exporter {$exporter_name} loaded");
 
