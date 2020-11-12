@@ -59,8 +59,8 @@ class ExportAction extends Action_Base {
 			if ($exporter) {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
-					$exported = $exporter->export();
-					$this->getController()->addOutput("Exported " . count($exported) . " lines");
+					$exported = $exporter->generate();
+					$this->getController()->addOutput("Exported " . $exported . " lines");
 				} catch (Exception $exc) {
 					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
 				}

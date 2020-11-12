@@ -25,7 +25,6 @@ class Billrun_Generator_PaymentGateway_Csv {
         protected $transactionsCounter = 0;
 
         public function __construct($options) {//need to add  here the other options if set 
-		$this->validateOptions($options);
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		if (isset($options['delimiter'])) {
@@ -51,6 +50,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if(isset($options['trailers'])){
 			$this->trailers = $options['trailers'];
 		}
+		$this->validateOptions($options);
 	}
         
 	/**
@@ -88,7 +88,10 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	protected function writeToFile($str) {
-                $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
+        $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
+		if (!file_exists($this->local_dir)) {
+			mkdir($this->local_dir, 0777, true);
+		}
 		return file_put_contents($this->file_path, $str, FILE_APPEND);
 	}
 
@@ -147,7 +150,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents = '';
 				$counter = 0;
 			}
-                        $this->transactionsCounter++;
+            $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
 			$fileContents.= PHP_EOL;

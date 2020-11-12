@@ -113,11 +113,12 @@ class Billrun_Exporter extends Billrun_Base {
 	protected function buildGeneratorOptions() {
 		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : '';
 		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : '';
-        $options['data'] = $this->loadRows();
-		$headers[0] = $this->getHeaderLine();
-        $options['headers'] = $headers;
-		$trailers[0] = $this->getTrailerLine();
-        $options['trailers'] = $trailers;
+		$this->rowsToExport = $this->loadRows();
+        $options['data'] = $this->rowsToExport;
+		$this->headerToExport[0] = $this->getHeaderLine();
+        $options['headers'] = $this->headerToExport;
+		$this->footerToExport[0] = $this->getTrailerLine();
+        $options['trailers'] = $this->footerToExport;
         $options['type'] = $this->config['generator']['type'];
         $options['configByType'] = $this->config;
         if (isset($this->config['generator']['separator'])) {
@@ -125,17 +126,16 @@ class Billrun_Exporter extends Billrun_Base {
         }
         $options['file_type'] = $this->config['file_type'];
 		$localDir = $this->getFilePath();
-        $options['file_path'] = $localDir;
 		$options['local_dir'] = $localDir;
 		$fileName = $this->getFilename();
 		$options['file_name'] = $fileName;
+		$options['file_path'] = $localDir . DIRECTORY_SEPARATOR . $fileName;
         return $options;
     }
 	
 	protected function getGeneratorClassName() {
         if (!isset($this->config['generator']['type'])) {
             $message = 'Missing generator type for ' . $this->config['file_type'];
-            $this->logFile->updateLogFileField('errors', $message);
             throw new Exception($message);
         }
         switch ($this->config['generator']['type']) {
@@ -165,7 +165,7 @@ class Billrun_Exporter extends Billrun_Base {
         return $this->buildLineFromStructure($trailerStructure);
     }
 	
-	    protected function getDataLine($params) {
+	    protected function getDataLine($params =  null) {
         $dataStructure = $this->config['generator']['data_structure'];
         return $this->buildLineFromStructure($dataStructure, $params);
     }
@@ -178,25 +178,14 @@ class Billrun_Exporter extends Billrun_Base {
                 Billrun_Factory::log($message, Zend_Log::ERR);
                 continue;
             }
-            if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
-                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $line[$field['path']] = date($dateFormat, time());
-            }
             if (isset($field['hard_coded_value'])) {
                 $line[$field['path']] = $field['hard_coded_value'];
             }
 			if (isset($field['linked_entity'])) {
 				$line[$field['path']] = $this->getLinkedEntityData($field['linked_entity']['entity'], $params, $field['linked_entity']['field_name']);
 			}
-            if ((isset($field['type']) && $field['type'] == 'date') && (!isset($field['predefined_values']) && $field['predefined_values'] !== 'now')) {
-                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $date = strtotime($line[$field['path']]);
-                if ($date) {
-                    $line[$field['path']] = date($dateFormat, $date);
-                } else {
-                    $message = "Couldn't convert date string when generating file type " . $this->config['file_type'];
-                    Billrun_Factory::log($message, Zend_Log::ERR);
-                }
+            if (isset($field['type']) && $field['type'] !== 'string') {
+                $line[$field['path']] = $this->getTranslationValue(array_merge($field, array('value' => 'now')));
             }
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
@@ -219,9 +208,8 @@ class Billrun_Exporter extends Billrun_Base {
 	
 	protected function setNumberFormat($field, $line) {
         if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
-            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'];
+            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->config['file_type'];
             Billrun_Factory::log($message, Zend_Log::WARN);
-            $this->logFile->updateLogFileField('warning', $message);
         }
         if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
             return number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
@@ -275,59 +263,122 @@ class Billrun_Exporter extends Billrun_Base {
                 $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
             }
         }
-
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
         return $this->fileName;
     }
 	
+	protected function getTranslationValue($paramObj) {
+        if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+            $message = "Missing filename params definitions for file type " . $this->config['file_type'];
+            Billrun_Factory::log($message, Zend_Log::ERR);
+        }
+        switch ($paramObj['type']) {
+            case 'date':
+                $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                return date($dateFormat, $dateValue);
+            case 'autoinc':
+                $minValue = $paramObj['min_value'] ?? 1;
+                $maxValue = $paramObj['max_value'] ?? ($paramObj['padding']['length'] ? intval(str_repeat("9", $paramObj['padding']['length'])) : null);
+				if (!isset($minValue) && !isset($maxValue)) {
+                    $message = "Missing filename params definitions for file type " . $this->config['file_type'];
+                    Billrun_Factory::log($message, Zend_Log::ERR);
+                    return;
+                }
+                $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
+                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $date = date($dateGroup, $dateValue);
+                $this->action = 'export_generators';//need to give by the constractor 
+				 $this->generateType = '';//need to give by the constractor 
+                $fakeCollectionName = '$pgf' . $this->generateType . '_' .  $this->action . '_' . $this->config['file_type'] . '_' . $date;
+                $seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+                if ($seq > $maxValue) {
+                    $message = "Sequence exceeded max value when generating file for file type " . $this->config['file_type'];
+                    throw new Exception($message);
+                }
+                if (isset($paramObj['padding'])) {
+                    $seq = $this->padSequence($seq, $paramObj['padding']);
+                }
+                return $seq;
+			case 'number_of_records':
+				return count($this->rowsToExport);
+            default:
+                $message = "Unsupported filename_params type for file type " . $this->config['file_type'];
+                Billrun_Factory::log($message, Zend_Log::ERR);
+                break;
+        }
+    }
 	
-	//abstract getLinkedEntityData()- who generate from the new class need ro implement this function  
+	protected function padSequence($seq, $padding) {
+		
+		if(isset($padding['character'])){
+			$padChar = $padding['character'];
+			$padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
+			switch ($padDir) {
+				case 'right':
+					$padDir = STR_PAD_RIGHT;
+				case 'left':
+				default:
+					$padDir = STR_PAD_LEFT;
+			}
+			$length = isset($padding['length']) ? $padding['length'] : strlen($seq);
+			$input = (string)$seq;
+			return str_pad($input, $length, $padChar, $padDir);
+		}
+		return $seq;
+    }
+	//abstract getLinkedEntityData()- who generate from the new class need ro implement this function 
+	//abstract generate()
+	//abstract getFilePath()
+	//abstract shouldFileBeMoved
+	//abstract move()
+	//public static function getInstance
+	
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	protected function getFilePath() {
 		$sharedPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($this->config, 'workspace', 'workspace'));
-		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7) . DIRECTORY_SEPARATOR;
+		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7);
 	}
 	
 	protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'line':
-                if (!isset($params[$field])) {
+				$value = Billrun_Util::getIn($params, $field, null);
+                if (!isset($value)) {
                     $message = 'Unknown field in line';
                     throw new Exception($message);
                 }
-
-                return $params[$field];
+                return $value;
             default:
                 $message = "Unknown entity: " . $entity . ", as 'linked entity' in the config.";
-                $this->logFile->updateLogFileField('errors', $message);
                 Billrun_Factory::log($message, Zend_Log::ERR);
         }
     }
 	
-	public static function getInstance() {
-		$args = func_get_args();
-		$stamp = md5(static::class . serialize($args));
-		if (isset(self::$instance[$stamp])) {
-			return self::$instance[$stamp];
-		}
-
-		$args = $args[0];
-		$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($args['type']);
-		if (!$exportGeneratorSettings) {
-			Billrun_Factory::log("Can't get configurarion: " . print_R($args, 1), Zend_Log::EMERG);
-			return false;
-		}
-		$params = array_merge($exportGeneratorSettings, $args);
-		$exporterType = Billrun_Util::getIn($exportGeneratorSettings, 'exporter.type', '');
-		$class = 'Billrun_Exporter_' . ucfirst($exporterType);
-		if (!@class_exists($class, true)) {
-			Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
-			return false;
-		}
-		self::$instance[$stamp] = new $class($params);
-		return self::$instance[$stamp];
-	}
+//	public static function getInstance() {
+//		$args = func_get_args();
+//		$stamp = md5(static::class . serialize($args));
+//		if (isset(self::$instance[$stamp])) {
+//			return self::$instance[$stamp];
+//		}
+//
+//		$args = $args[0];
+//		$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($args['type']);
+//		if (!$exportGeneratorSettings) {
+//			Billrun_Factory::log("Can't get configurarion: " . print_R($args, 1), Zend_Log::EMERG);
+//			return false;
+//		}
+//		$params = array_merge($exportGeneratorSettings, $args);
+//		$exporterType = Billrun_Util::getIn($exportGeneratorSettings, 'exporter.type', '');
+//		$class = 'Billrun_Exporter_' . ucfirst($exporterType);
+//		if (!@class_exists($class, true)) {
+//			Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
+//			return false;
+//		}
+//		self::$instance[$stamp] = new $class($params);
+//		return self::$instance[$stamp];
+//	}
 	
 	/**
 	 * get stamp for the current run of the exporter
@@ -389,7 +440,7 @@ class Billrun_Exporter extends Billrun_Base {
 	 *
 	 * @return array list of lines exported
 	 */
-	function export() {
+	public function generate() {
 		Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
 		$this->beforeExport();
 		$className = $this->getGeneratorClassName();
@@ -398,6 +449,7 @@ class Billrun_Exporter extends Billrun_Base {
 		//$this->prepareDataToExport();//need to remove this
 		//$exportedData = $this->handleExport();//need to remove this and use the line bellow
 		$this->fileGenerator->generate();
+		$exportedData = $this->fileGenerator->getTransactionsCounter();
 		$this->afterExport();
 		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$exportedData, $this));
 		return $exportedData;
@@ -426,7 +478,7 @@ class Billrun_Exporter extends Billrun_Base {
 	 * @param array $row
 	 * @return array
 	 */
-	protected function getRecordData($row) {
+	protected function getRecordData($row) {//TODO::need to try support this 
 		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
 		$recordType = $this->getRecordType($row);
 		$fieldsMapping = Billrun_Util::getIn($this->config, array('fields_mapping', $recordType));
@@ -435,53 +487,53 @@ class Billrun_Exporter extends Billrun_Base {
 		return $ret;
 	}
 	
-	/**
-	 * checks if there is a header
-	 * 
-	 * @return boolean
-	 */
-	protected function hasHeader() {
-		$headerMapping = Billrun_Util::getIn($this->config, 'header_mapping');
-		return !empty($headerMapping);
-	}
-
-	/**
-	 * checks if there is a footer
-	 * 
-	 * @return boolean
-	 */
-	protected function hasFooter() {
-		$footerMapping = Billrun_Util::getIn($this->config, 'footer_mapping');
-		return !empty($footerMapping);
-	}
-	
-	/**
-	 * loads the header data (first line in file)
-	 * 
-	 * @return array
-	 */
-	protected function loadHeader() {
-		if (!$this->hasHeader()) {
-			return false;
-		}
-		$headerMapping = Billrun_Util::getIn($this->config, 'header_mapping');
-		$this->headerToExport = $this->mapFields($headerMapping);
-		Billrun_Factory::dispatcher()->trigger('ExportAfterGetHeader', array(&$this->headerToExport, $this));
-	}
-	
-	/**
-	 * loads the footer data (last line in file)
-	 * 
-	 * @return array
-	 */
-	protected function loadFooter() {
-		if (!$this->hasFooter()) {
-			return false;
-		}
-		$footerMapping = Billrun_Util::getIn($this->config, 'footer_mapping');
-		$this->footerToExport = $this->mapFields($footerMapping);
-		Billrun_Factory::dispatcher()->trigger('ExportAfterGetFooter', array(&$this->headerToExport, $this));
-	}
+//	/**
+//	 * checks if there is a header
+//	 * 
+//	 * @return boolean
+//	 */
+//	protected function hasHeader() {
+//		$headerMapping = Billrun_Util::getIn($this->config, 'header_mapping');
+//		return !empty($headerMapping);
+//	}
+//
+//	/**
+//	 * checks if there is a footer
+//	 * 
+//	 * @return boolean
+//	 */
+//	protected function hasFooter() {
+//		$footerMapping = Billrun_Util::getIn($this->config, 'footer_mapping');
+//		return !empty($footerMapping);
+//	}
+//	
+//	/**
+//	 * loads the header data (first line in file)
+//	 * 
+//	 * @return array
+//	 */
+//	protected function loadHeader() {
+//		if (!$this->hasHeader()) {
+//			return false;
+//		}
+//		$headerMapping = Billrun_Util::getIn($this->config, 'header_mapping');
+//		$this->headerToExport = $this->mapFields($headerMapping);
+//		Billrun_Factory::dispatcher()->trigger('ExportAfterGetHeader', array(&$this->headerToExport, $this));
+//	}
+//	
+//	/**
+//	 * loads the footer data (last line in file)
+//	 * 
+//	 * @return array
+//	 */
+//	protected function loadFooter() {
+//		if (!$this->hasFooter()) {
+//			return false;
+//		}
+//		$footerMapping = Billrun_Util::getIn($this->config, 'footer_mapping');
+//		$this->footerToExport = $this->mapFields($footerMapping);
+//		Billrun_Factory::dispatcher()->trigger('ExportAfterGetFooter', array(&$this->headerToExport, $this));
+//	}
 	
 	/**
 	 * method to log the export process
@@ -555,8 +607,8 @@ class Billrun_Exporter extends Billrun_Base {
 		foreach ($rows as $row) {
 			$rawRow = $row->getRawData();
 			$this->rawRows[] = $rawRow;
-			$this->rowsToExport[] = $this->getRecordData($rawRow);
-			$data[] = $rawRow; //maybe - $this->getRecordData($rawRow);
+			//$this->rowsToExport[] = $this->getRecordData($rawRow);
+			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
 		}
 		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
 		return $data;
@@ -644,106 +696,106 @@ class Billrun_Exporter extends Billrun_Base {
 		$this->logDB($this->getLogStamp(), $this->getLogData());
 	}
 
-	/**
-	 * prepare the data to be exported
-	 * 
-	 * @return array
-	 */
-	protected function prepareDataToExport() {
-		$this->loadRows();
-		$this->loadHeader();//remove this
-		$this->loadFooter();//remove this
-	}
+//	/**
+//	 * prepare the data to be exported
+//	 * 
+//	 * @return array
+//	 */
+//	protected function prepareDataToExport() {
+//		$this->loadRows();
+//		$this->loadHeader();//remove this
+//		$this->loadFooter();//remove this
+//	}
+//	
+//	public function mapFields($fieldsMapping, $row = array()) {
+//		$data = array();
+//		foreach ($fieldsMapping as $fieldMapping) {
+//			Billrun_Factory::dispatcher()->trigger('ExportBeforeMapField', array(&$row, &$fieldMapping, $this));
+//			$val = '';
+//			$fieldName = $fieldMapping['field_name'];
+//			$mapping = $fieldMapping['mapping'];
+//			if (!is_array($mapping)) {
+//				$val = Billrun_Util::getIn($row, $mapping, $mapping);
+//			} else if (isset($mapping['field'])) {
+//				$val = Billrun_Util::getIn($row, $mapping['field'], '');
+//			} else if(isset ($mapping['hard_coded'])) {
+//				$val = $mapping['hard_coded'];
+//			} else if (isset ($mapping['conditions'])) {
+//				$val = isset($mapping['default']) ? $mapping['default'] : '';
+//				foreach ($mapping['conditions'] as $condition) {
+//					if (Billrun_Util::isConditionMet($row, $condition)) {
+//						$val = $condition['result'];
+//						break;
+//					}
+//				}
+//			} else if (isset($mapping['func'])) {
+//				$funcName = $mapping['func']['func_name'];
+//				if (!method_exists($this, $funcName)) {
+//					Billrun_Log::getInstance()->log('Bulk exporter: mapping pre-defined function "' . $funcName . '" does not exist in class "' . $className . '"', Zend_log::WARN);
+//				} else {
+//					$val = $this->{$funcName}($row, $mapping);
+//				}
+//			} else {
+//				Billrun_Log::getInstance()->log('Bulk exporter: invalid mapping: ' . print_R($fieldMapping, 1), Zend_log::WARN);
+//			}
+//			Billrun_Factory::dispatcher()->trigger('ExportAfterMapField', array(&$row, &$fieldMapping, &$val, $this));
+//			
+//			if (!is_null($val)) {
+//				$val = self::formatMappingValue($val, $mapping);
+//				Billrun_Util::setIn($data, explode('>', $fieldName), $val);
+//			}
+//		}
+//		
+//		return $data;
+//	}
+//	
+//	protected function formatMappingValue($value, $mapping) {
+//		Billrun_Factory::dispatcher()->trigger('ExportBeforeFormatValue', array(&$value, $mapping, $this));
+//		if (isset($mapping['format']['regex'])) {
+//			$value = preg_replace($mapping['format']['regex'], '', $value);
+//		}
+//		if (isset($mapping['format']['date'])) {
+//			$value = $this->formatDate($value, $mapping);
+//		}
+//		if (isset($mapping['format']['number'])) {
+//			$value = $this->formatNumber($value, $mapping);
+//		}
+//		if (isset($mapping['padding'])) {
+//			$padding = Billrun_Util::getIn($mapping, 'padding.character', ' ');
+//			$length = Billrun_Util::getIn($mapping, 'padding.length', strlen($value));
+//			$padDirection = strtolower(Billrun_Util::getIn($mapping, 'padding.direction', 'left')) == 'right' ? STR_PAD_RIGHT : STR_PAD_LEFT;
+//			$value = str_pad($value, $length, $padding, $padDirection);
+//		}
+//		return $value;
+//	}
+//	
+//	protected function formatDate($date, $mapping) {
+//		if ($date instanceof MongoDate) {
+//			$date = $date->sec;
+//		} else if (is_string($date)) {
+//			$date = strtotime($date);
+//		}
+//		$dateFormat = Billrun_Util::getIn($mapping, 'format.date', 'YmdHis');
+//		return date($dateFormat, $date);
+//	}
+//	
+//	protected function formatNumber($number, $mapping) {
+//		$multiply = Billrun_Util::getIn($mapping, 'format.number.multiply', 1);
+//		$decimals = Billrun_Util::getIn($mapping, 'format.number.decimals', 0);
+//		$dec_point = Billrun_Util::getIn($mapping, 'format.number.dec_point', '.');
+//		$thousands_sep = Billrun_Util::getIn($mapping, 'format.number.thousands_sep', ',');
+//		return number_format(($number * $multiply), $decimals, $dec_point, $thousands_sep);
+//	}
 	
-	public function mapFields($fieldsMapping, $row = array()) {
-		$data = array();
-		foreach ($fieldsMapping as $fieldMapping) {
-			Billrun_Factory::dispatcher()->trigger('ExportBeforeMapField', array(&$row, &$fieldMapping, $this));
-			$val = '';
-			$fieldName = $fieldMapping['field_name'];
-			$mapping = $fieldMapping['mapping'];
-			if (!is_array($mapping)) {
-				$val = Billrun_Util::getIn($row, $mapping, $mapping);
-			} else if (isset($mapping['field'])) {
-				$val = Billrun_Util::getIn($row, $mapping['field'], '');
-			} else if(isset ($mapping['hard_coded'])) {
-				$val = $mapping['hard_coded'];
-			} else if (isset ($mapping['conditions'])) {
-				$val = isset($mapping['default']) ? $mapping['default'] : '';
-				foreach ($mapping['conditions'] as $condition) {
-					if (Billrun_Util::isConditionMet($row, $condition)) {
-						$val = $condition['result'];
-						break;
-					}
-				}
-			} else if (isset($mapping['func'])) {
-				$funcName = $mapping['func']['func_name'];
-				if (!method_exists($this, $funcName)) {
-					Billrun_Log::getInstance()->log('Bulk exporter: mapping pre-defined function "' . $funcName . '" does not exist in class "' . $className . '"', Zend_log::WARN);
-				} else {
-					$val = $this->{$funcName}($row, $mapping);
-				}
-			} else {
-				Billrun_Log::getInstance()->log('Bulk exporter: invalid mapping: ' . print_R($fieldMapping, 1), Zend_log::WARN);
-			}
-			Billrun_Factory::dispatcher()->trigger('ExportAfterMapField', array(&$row, &$fieldMapping, &$val, $this));
-			
-			if (!is_null($val)) {
-				$val = self::formatMappingValue($val, $mapping);
-				Billrun_Util::setIn($data, explode('>', $fieldName), $val);
-			}
-		}
-		
-		return $data;
-	}
 	
-	protected function formatMappingValue($value, $mapping) {
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeFormatValue', array(&$value, $mapping, $this));
-		if (isset($mapping['format']['regex'])) {
-			$value = preg_replace($mapping['format']['regex'], '', $value);
-		}
-		if (isset($mapping['format']['date'])) {
-			$value = $this->formatDate($value, $mapping);
-		}
-		if (isset($mapping['format']['number'])) {
-			$value = $this->formatNumber($value, $mapping);
-		}
-		if (isset($mapping['padding'])) {
-			$padding = Billrun_Util::getIn($mapping, 'padding.character', ' ');
-			$length = Billrun_Util::getIn($mapping, 'padding.length', strlen($value));
-			$padDirection = strtolower(Billrun_Util::getIn($mapping, 'padding.direction', 'left')) == 'right' ? STR_PAD_RIGHT : STR_PAD_LEFT;
-			$value = str_pad($value, $length, $padding, $padDirection);
-		}
-		return $value;
-	}
-	
-	protected function formatDate($date, $mapping) {
-		if ($date instanceof MongoDate) {
-			$date = $date->sec;
-		} else if (is_string($date)) {
-			$date = strtotime($date);
-		}
-		$dateFormat = Billrun_Util::getIn($mapping, 'format.date', 'YmdHis');
-		return date($dateFormat, $date);
-	}
-	
-	protected function formatNumber($number, $mapping) {
-		$multiply = Billrun_Util::getIn($mapping, 'format.number.multiply', 1);
-		$decimals = Billrun_Util::getIn($mapping, 'format.number.decimals', 0);
-		$dec_point = Billrun_Util::getIn($mapping, 'format.number.dec_point', '.');
-		$thousands_sep = Billrun_Util::getIn($mapping, 'format.number.thousands_sep', ',');
-		return number_format(($number * $multiply), $decimals, $dec_point, $thousands_sep);
-	}
-	
-	
-	/** pre-defined functions start **/
-	
-	protected function callCustomFunction($row = array(), $mapping = array()) {
-		$customFuncName = $mapping['func']['custom_func_name'];
-		$ret = '';
-		Billrun_Factory::dispatcher()->trigger($customFuncName, array($row, $mapping, &$ret));
-		return $ret;
-	}
+//	/** pre-defined functions start **/
+//	
+//	protected function callCustomFunction($row = array(), $mapping = array()) {
+//		$customFuncName = $mapping['func']['custom_func_name'];
+//		$ret = '';
+//		Billrun_Factory::dispatcher()->trigger($customFuncName, array($row, $mapping, &$ret));
+//		return $ret;
+//	}
 	
 	/**
 	 * gets current sequence number for the file
@@ -778,34 +830,34 @@ class Billrun_Exporter extends Billrun_Base {
 		return $this->sequenceNum;
 	}
 	
-	protected function getTimeStamp($row = array(), $mapping = array()) {
-		$format = Billrun_Util::getIn($mapping, 'func.date_format', Billrun_Util::getIn($mapping, 'format', 'YmdHis'));
-		return date($format, $this->exportTime);
-	}
+//	protected function getTimeStamp($row = array(), $mapping = array()) {
+//		$format = Billrun_Util::getIn($mapping, 'func.date_format', Billrun_Util::getIn($mapping, 'format', 'YmdHis'));
+//		return date($format, $this->exportTime);
+//	}
+//	
+//	protected function getNumberOfRecords($row = array(), $mapping = array()) {
+//		$numberOfRecords = count($this->rowsToExport);
+//		$includeHeader = Billrun_Util::getIn($mapping, 'func.include_header', true);
+//		$includeFooter = Billrun_Util::getIn($mapping, 'func.include_footer', true);
+//		if ($includeHeader && $this->hasHeader()) {
+//			$numberOfRecords++;
+//		}
+//		if ($includeFooter && $this->hasFooter()) {
+//			$numberOfRecords++;
+//		}
+//		return $this->formatMappingValue($numberOfRecords, $mapping);
+//	}
 	
-	protected function getNumberOfRecords($row = array(), $mapping = array()) {
-		$numberOfRecords = count($this->rowsToExport);
-		$includeHeader = Billrun_Util::getIn($mapping, 'func.include_header', true);
-		$includeFooter = Billrun_Util::getIn($mapping, 'func.include_footer', true);
-		if ($includeHeader && $this->hasHeader()) {
-			$numberOfRecords++;
-		}
-		if ($includeFooter && $this->hasFooter()) {
-			$numberOfRecords++;
-		}
-		return $this->formatMappingValue($numberOfRecords, $mapping);
-	}
-	
-	protected function sumField($row = array(), $mapping = array()) {
-		$sum = 0;
-		$fieldName = Billrun_Util::getIn($mapping, 'func.field', '');
-		foreach ($this->rowsToExport as $i => $rowToExport) {
-			$value = Billrun_Util::getIn($rowToExport, $fieldName, Billrun_Util::getIn($this->rawRows[$i], $fieldName, 0));
-			$sum += $value;
-		}
-		
-		return $this->formatMappingValue($sum, $mapping);
-	}
+//	protected function sumField($row = array(), $mapping = array()) {
+//		$sum = 0;
+//		$fieldName = Billrun_Util::getIn($mapping, 'func.field', '');
+//		foreach ($this->rowsToExport as $i => $rowToExport) {
+//			$value = Billrun_Util::getIn($rowToExport, $fieldName, Billrun_Util::getIn($this->rawRows[$i], $fieldName, 0));
+//			$sum += $value;
+//		}
+//		
+//		return $this->formatMappingValue($sum, $mapping);
+//	}
 	
 	/** pre-defined functions end **/
 }
