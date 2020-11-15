@@ -307,7 +307,7 @@ abstract class Billrun_Generator_File {
 	 */
 	protected function getCollection() {
 		if (is_null($this->collection)) {
-			$querySettings = $this->config['queries'][0]; // TODO: currenly, supporting 1 query might support more in the future
+			$querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
 			$collectionName = $querySettings['collection'];
 			$this->collection = Billrun_Factory::db()->{"{$collectionName}Collection"}();
 		}

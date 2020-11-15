@@ -22,6 +22,11 @@ trait Billrun_Traits_ConditionsCheck {
 	 * @return boolean
 	 */
 	public function isConditionsMeet($entity, $conditions = [], $params = [], $logic = '$and') {
+		$query = $this->getConditionsQuery($conditions, $entity, $params, $logic);
+		return $this->isConditionMeet($entity, $query, $params);
+	}
+	
+	public function getConditionsQuery($conditions = [], $entity = [], $params = [], $logic = '$and') {
 		if (empty($conditions)) {
 			return $this->getNoConditionsResult($entity, $params);
 		}
@@ -29,15 +34,14 @@ trait Billrun_Traits_ConditionsCheck {
 		$query = [
 			$logic => [],
 		];
-
+		
 		foreach ($conditions as $condition) {
 			$cond = $this->getConditionQuery($entity, $condition, $params);
 			if (!is_null($cond)) {
 				$query[$logic][] = $cond;
 			}
 		}
-
-		return $this->isConditionMeet($entity, $query, $params);
+		return $query;
 	}
 
 	/**
@@ -254,6 +258,26 @@ trait Billrun_Traits_ConditionsCheck {
 	 */
 	protected function getNoConditionsResult($entity, $params = []) {
 		return true;
+	}
+	
+	/**
+	 * get rows to be exported
+	 * 
+	 * @return array
+	 */
+	protected function loadRows() {
+		$collection = $this->getCollection();
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
+		$rows = $collection->query($this->query)->cursor();
+		$data = array();
+		foreach ($rows as $row) {
+			$rawRow = $row->getRawData();
+			$this->rawRows[] = $rawRow;
+			//$this->rowsToExport[] = $this->getRecordData($rawRow);
+			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
+		}
+		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+		return $data;
 	}
 
 }

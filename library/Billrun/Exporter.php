@@ -18,7 +18,7 @@
  * @since    5.9
  */
 class Billrun_Exporter extends Billrun_Generator_File {
-
+	use Billrun_Traits_ConditionsCheck;
 	/**
 	 * Type of exporter
 	 *
@@ -74,7 +74,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		parent::__construct($options);
 		$this->exportTime = time();
 		$this->exportStamp = $this->getExportStamp();
-		$this->query = $this->getQuery();//need to be in another class
+		$this->query = $this->getFiltrationQuery();//need to be in another class??
 		$this->logCollection = Billrun_Factory::db()->logCollection();
 	}
 	
@@ -107,9 +107,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	/**
 	 * get query to load data from the DB
 	 */
-	protected function getQuery() {
-		$querySettings = $this->config['queries'][0]; // TODO: currenly, supporting 1 query might support more in the future
-		$query = json_decode($querySettings['query'], JSON_OBJECT_AS_ARRAY);
+	protected function getFiltrationQuery() {
+		$querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
+		$query = $this->getConditionsQuery($querySettings['query']);
 		if (isset($querySettings['time_range'])) {
 			$timeRange = $querySettings['time_range'];
 			if (isset($querySettings['time_range_hour'])) {
@@ -351,5 +351,24 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$this->sequenceNum = sprintf('%0' . $length . 'd', $this->sequenceNum % pow(10, $length));
 		return $this->sequenceNum;
 	}
-
+	
+	/**
+	 * get rows to be exported
+	 * 
+	 * @return array
+	 */
+	protected function loadRows() {
+		$collection = $this->getCollection();
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
+		$rows = $collection->query($this->query)->cursor();
+		$data = array();
+		foreach ($rows as $row) {
+			$rawRow = $row->getRawData();
+			$this->rawRows[] = $rawRow;
+			//$this->rowsToExport[] = $this->getRecordData($rawRow);
+			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
+		}
+		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+		return $data;
+	}
 }
