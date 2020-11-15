@@ -51,6 +51,8 @@ abstract class Billrun_Generator_File {
 	 */
 	protected $rawRows = array();
 	
+	protected $localDir = null;
+	
 	public function __construct($options) {
 		$this->config = $options;
 	}
@@ -71,11 +73,11 @@ abstract class Billrun_Generator_File {
             $options['delimiter'] = $this->config['generator']['separator'];
         }
         $options['file_type'] = $this->config['file_type'];
-		$localDir = $this->getFilePath();
-		$options['local_dir'] = $localDir;
+		$this->localDir = $this->getFilePath();
+		$options['local_dir'] = $this->localDir;
 		$fileName = $this->getFilename();
 		$options['file_name'] = $fileName;
-		$options['file_path'] = $localDir . DIRECTORY_SEPARATOR . $fileName;
+		$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $fileName;
         return $options;
     }
 	
@@ -321,8 +323,6 @@ abstract class Billrun_Generator_File {
 	abstract public function generate();
 	
 	abstract public function move();
-	
-	//public static function getInstance
 	
 }
 

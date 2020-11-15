@@ -394,7 +394,19 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	public function move() {
-		
+		foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $senderConfig) {
+			$sender = Billrun_Sender::getInstance($senderConfig);
+			if (!$sender) {
+				Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($senderConfig, 1), Zend_Log::ERR);
+				continue;
+			}
+			$sender->send($this->getExportFilePath());
+		}
+	}
+	
+	protected function getExportFilePath(){
+		$filePath = $this->getFilePath();
+		return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
 	}
 	
 }
