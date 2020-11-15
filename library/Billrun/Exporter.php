@@ -74,7 +74,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		parent::__construct($options);
 		$this->exportTime = time();
 		$this->exportStamp = $this->getExportStamp();
-		$this->query = $this->getFiltrationQuery();//need to be in another class??
+		$this->query = $this->getFiltrationQuery();
 		$this->logCollection = Billrun_Factory::db()->logCollection();
 	}
 	
@@ -140,42 +140,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$generatorOptions = $this->buildGeneratorOptions();
 		$this->fileGenerator = new $className($generatorOptions);
 		$this->fileGenerator->generate();
-		$exportedData = $this->fileGenerator->getTransactionsCounter();
+		$transactionCounter = $this->fileGenerator->getTransactionsCounter();
 		$this->afterExport();
-		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$exportedData, $this));
-		return $exportedData;
-	}
-	
-	/**
-	 * gets record type according to configuration mapping
-	 * 
-	 * @return string
-	 */
-	protected function getRecordType($row) {
-		foreach (Billrun_Util::getIn($this->config, 'record_type_mapping', array()) as $recordTypeMapping) {
-			foreach ($recordTypeMapping['conditions'] as $condition) {
-				if (!Billrun_Util::isConditionMet($row, $condition)) {
-					continue 2;
-				}
-			}
-			return $recordTypeMapping['record_type'];
-		}
-		return '';
-	}
-	
-	/**
-	 * translate row to the format it should be exported
-	 * 
-	 * @param array $row
-	 * @return array
-	 */
-	protected function getRecordData($row) {//TODO::need to try support this 
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
-		$recordType = $this->getRecordType($row);
-		$fieldsMapping = Billrun_Util::getIn($this->config, array('fields_mapping', $recordType));
-		$ret = $this->mapFields($fieldsMapping, $row);
-		Billrun_Factory::dispatcher()->trigger('ExportAfterGetRecordData', array(&$row, &$ret, $this));
-		return $ret;
+		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
+		Billrun_Factory::log("Exported " . $transactionCounter . " " . $this->getCollectionName());
 	}
 	
 	/**
@@ -320,7 +288,30 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	/**
-	 * gets current sequence number for the file
+	 * gets collection to load data from DB
+	 * 
+	 * @return string
+	 */
+	protected function getCollection() {
+		if (is_null($this->collection)) {
+			$collectionName = $this->getCollectionName();
+			$this->collection = Billrun_Factory::db()->{"{$collectionName}Collection"}();
+		}
+		return $this->collection;
+	}
+	
+	/**
+	 * gets collection to load data from DB
+	 * 
+	 * @return string
+	 */
+	protected function getCollectionName() {
+		$querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
+		return $querySettings['collection'];
+	}
+	
+	/**
+	 * gets Collection name
 	 * 
 	 * @return string - number in the range of 00001-99999
 	 */
@@ -365,10 +356,41 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		foreach ($rows as $row) {
 			$rawRow = $row->getRawData();
 			$this->rawRows[] = $rawRow;
-			//$this->rowsToExport[] = $this->getRecordData($rawRow);
-			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
+			$data[] = $this->getRecordData($rawRow);
 		}
 		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
 		return $data;
 	}
+	
+	/**
+	 * translate row to the format it should be exported
+	 * 
+	 * @param array $row
+	 * @return array
+	 */
+	protected function getRecordData($row) { 
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
+		$recordType = $this->getRecordType($row);
+		$ret = $this->getDataLine($row, $recordType);
+		Billrun_Factory::dispatcher()->trigger('ExportAfterGetRecordData', array(&$row, &$ret, $this));
+		return $ret;
+	}
+	
+	/**
+	 * gets record type according to configuration mapping
+	 * 
+	 * @return string
+	 */
+	protected function getRecordType($row) {
+		foreach (Billrun_Util::getIn($this->config, 'record_type_mapping', array()) as $recordTypeMapping) {
+			foreach ($recordTypeMapping['conditions'] as $condition) {
+				if (!Billrun_Util::isConditionMet($row, $condition)) {
+					continue 2;
+				}
+			}
+			return $recordTypeMapping['record_type'];
+		}
+		return '';
+	}
+	
 }

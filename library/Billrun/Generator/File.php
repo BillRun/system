@@ -28,12 +28,6 @@ abstract class Billrun_Generator_File {
 	protected $collection = null;
 	
 	/**
-	 * query by which data should be fetched from DB
-	 * @var array
-	 */
-	protected $query = array();
-	
-	/**
 	 * data to export (after translation)
 	 * @var array
 	 */
@@ -117,9 +111,13 @@ abstract class Billrun_Generator_File {
         return $this->buildLineFromStructure($trailerStructure);
     }
 	
-	    protected function getDataLine($params =  null) {
-        $dataStructure = $this->config['generator']['data_structure'];
-        return $this->buildLineFromStructure($dataStructure, $params);
+	    protected function getDataLine($params =  null, $recordType = null) {
+		if(isset($recordType)){
+			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure', $recordType));
+		}else{
+			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure'));
+		}
+		return $this->buildLineFromStructure($dataStructure, $params);
     }
 	
 	protected function buildLineFromStructure($structure, $params = null) {
@@ -281,40 +279,6 @@ abstract class Billrun_Generator_File {
     }
 	
 	/**
-	 * get rows to be exported
-	 * 
-	 * @return array
-	 */
-	protected function loadRows() {
-		$collection = $this->getCollection();
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-		$rows = $collection->query($this->query)->cursor();
-		$data = array();
-		foreach ($rows as $row) {
-			$rawRow = $row->getRawData();
-			$this->rawRows[] = $rawRow;
-			//$this->rowsToExport[] = $this->getRecordData($rawRow);
-			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
-		}
-		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
-		return $data;
-	}
-	
-	/**
-	 * gets collection to load data from DB
-	 * 
-	 * @return string
-	 */
-	protected function getCollection() {
-		if (is_null($this->collection)) {
-			$querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
-			$collectionName = $querySettings['collection'];
-			$this->collection = Billrun_Factory::db()->{"{$collectionName}Collection"}();
-		}
-		return $this->collection;
-	}
-	
-	/**
 	 * get file path
 	 */
 	protected function getFilePath() {
@@ -345,7 +309,7 @@ abstract class Billrun_Generator_File {
     }
 
     public function move() {
-        $exportDetails = $this->configByType['export'];
+        $exportDetails = $this->config['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
 		$res = $connection->export($fileName);
