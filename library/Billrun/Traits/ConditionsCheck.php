@@ -259,25 +259,5 @@ trait Billrun_Traits_ConditionsCheck {
 	protected function getNoConditionsResult($entity, $params = []) {
 		return true;
 	}
-	
-	/**
-	 * get rows to be exported
-	 * 
-	 * @return array
-	 */
-	protected function loadRows() {
-		$collection = $this->getCollection();
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-		$rows = $collection->query($this->query)->cursor();
-		$data = array();
-		foreach ($rows as $row) {
-			$rawRow = $row->getRawData();
-			$this->rawRows[] = $rawRow;
-			//$this->rowsToExport[] = $this->getRecordData($rawRow);
-			$data[] = $this->getDataLine($rawRow); //maybe - $this->getRecordData($rawRow);
-		}
-		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
-		return $data;
-	}
 
 }
