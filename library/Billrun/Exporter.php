@@ -409,4 +409,43 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		return rtrim($filePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->getFileName();
 	}
 	
+	protected function buildGeneratorOptions() {
+		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : '';
+		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : '';
+		$this->rowsToExport = $this->loadRows();
+        $options['data'] = $this->rowsToExport;
+		$this->headerToExport[0] = $this->getHeaderLine();
+        $options['headers'] = $this->headerToExport;
+		$this->footerToExport[0] = $this->getTrailerLine();
+        $options['trailers'] = $this->footerToExport;
+        $options['type'] = $this->config['generator']['type'];
+        $options['configByType'] = $this->config;
+        if (isset($this->config['generator']['separator'])) {
+            $options['delimiter'] = $this->config['generator']['separator'];
+        }
+        $options['file_type'] = $this->getType();
+		$this->localDir = $this->getFilePath();
+		$options['local_dir'] = $this->localDir;
+		$fileName = $this->getFilename();
+		$options['file_name'] = $fileName;
+		$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $fileName;
+        return $options;
+    }
+	
+	/**
+	 * Get the type name of the current object.
+	 * @return string conatining the current.
+	 */
+	public function getType() {
+		return static::$type ;
+	}
+
+	public function getFileType() {
+		return $this->config['name'] ;
+	}
+	
+	public function getAction() {
+		return "export_generators";
+	}
+
 }

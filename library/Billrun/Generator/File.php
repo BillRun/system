@@ -56,34 +56,10 @@ abstract class Billrun_Generator_File {
 	public function __construct($options) {
 		$this->config = $options;
 	}
-
-
-	protected function buildGeneratorOptions() {
-		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : '';
-		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : '';
-		$this->rowsToExport = $this->loadRows();
-        $options['data'] = $this->rowsToExport;
-		$this->headerToExport[0] = $this->getHeaderLine();
-        $options['headers'] = $this->headerToExport;
-		$this->footerToExport[0] = $this->getTrailerLine();
-        $options['trailers'] = $this->footerToExport;
-        $options['type'] = $this->config['generator']['type'];
-        $options['configByType'] = $this->config;
-        if (isset($this->config['generator']['separator'])) {
-            $options['delimiter'] = $this->config['generator']['separator'];
-        }
-        $options['file_type'] = $this->config['file_type'];
-		$this->localDir = $this->getFilePath();
-		$options['local_dir'] = $this->localDir;
-		$fileName = $this->getFilename();
-		$options['file_name'] = $fileName;
-		$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $fileName;
-        return $options;
-    }
 	
 	protected function getGeneratorClassName() {
         if (!isset($this->config['generator']['type'])) {
-            $message = 'Missing generator type for ' . $this->config['file_type'];
+            $message = 'Missing generator type for ' . $this->getFileType();
             throw new Exception($message);
         }
         switch ($this->config['generator']['type']) {
@@ -95,7 +71,7 @@ abstract class Billrun_Generator_File {
                 $generatorType = 'Xml';
                 break;
             default:
-                $message = 'Unknown generator type for ' . $this->config['file_type'];
+                $message = 'Unknown generator type for ' . $this->getFileType();
                 throw new Exception($message);
         }
 
@@ -113,7 +89,7 @@ abstract class Billrun_Generator_File {
         return $this->buildLineFromStructure($trailerStructure);
     }
 	
-	    protected function getDataLine($params =  null, $recordType = null) {
+	protected function getDataLine($params =  null, $recordType = null) {
 		if(isset($recordType)){
 			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure', $recordType));
 		}else{
@@ -126,7 +102,7 @@ abstract class Billrun_Generator_File {
         $line = array();
         foreach ($structure as $field) {
             if (!isset($field['path'])) {
-                $message = "Exporter " . $this->config['file_type'] . " header/trailer structure is missing a path";
+                $message = "Exporter " . $this->getFileType() . " header/trailer structure is missing a path";
                 Billrun_Factory::log($message, Zend_Log::ERR);
                 continue;
             }
@@ -141,7 +117,7 @@ abstract class Billrun_Generator_File {
             }
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
-                $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->config['file_type'];
+                $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->getFileType();
                 throw new Exception($message);
             }
             
@@ -160,7 +136,7 @@ abstract class Billrun_Generator_File {
 	
 	protected function setNumberFormat($field, $line) {
         if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
-            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->config['file_type'];
+            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->getFileType();
             Billrun_Factory::log($message, Zend_Log::WARN);
         }
         if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
@@ -221,7 +197,7 @@ abstract class Billrun_Generator_File {
 	
 	protected function getTranslationValue($paramObj) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
-            $message = "Missing filename params definitions for file type " . $this->config['file_type'];
+            $message = "Missing filename params definitions for file type " . $this->getFileType();
             Billrun_Factory::log($message, Zend_Log::ERR);
         }
         switch ($paramObj['type']) {
@@ -233,19 +209,17 @@ abstract class Billrun_Generator_File {
                 $minValue = $paramObj['min_value'] ?? 1;
                 $maxValue = $paramObj['max_value'] ?? ($paramObj['padding']['length'] ? intval(str_repeat("9", $paramObj['padding']['length'])) : null);
 				if (!isset($minValue) && !isset($maxValue)) {
-                    $message = "Missing filename params definitions for file type " . $this->config['file_type'];
+                    $message = "Missing filename params definitions for file type " . $this->getFileType();
                     Billrun_Factory::log($message, Zend_Log::ERR);
                     return;
                 }
                 $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
                 $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
                 $date = date($dateGroup, $dateValue);
-                $this->action = 'export_generator';//need to give by the constractor 
-				$this->generateType = '';//need to give by the constractor 
-                $fakeCollectionName = '$gf' . $this->config['name'] . '_' .  $this->action . '_' . $this->config['file_type'] . '_' . $date;
+                $fakeCollectionName = '$gf' . $this->config['name'] . '_' .  $this->getAction() . '_' . $this->getFileType() . '_' . $date;
                 $seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
                 if ($seq > $maxValue) {
-                    $message = "Sequence exceeded max value when generating file for file type " . $this->config['file_type'];
+                    $message = "Sequence exceeded max value when generating file for file type " . $this->getFileType();
                     throw new Exception($message);
                 }
                 if (isset($paramObj['padding'])) {
@@ -255,7 +229,7 @@ abstract class Billrun_Generator_File {
 			case 'number_of_records':
 				return count($this->rowsToExport);
             default:
-                $message = "Unsupported filename_params type for file type " . $this->config['file_type'];
+                $message = "Unsupported filename_params type for file type " . $this->getFileType();
                 Billrun_Factory::log($message, Zend_Log::ERR);
                 break;
         }
@@ -310,19 +284,17 @@ abstract class Billrun_Generator_File {
         Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::WARN);
     }
 	
-	/**
-	 * Get the type name of the current object.
-	 * @return string conatining the current.
-	 */
-	public function getType() {
-		return static::$type;
-	}
+	abstract protected function getFileType();
+	
+	abstract public function getAction();
 	
 	abstract protected function getLinkedEntityData($entity, $params, $field);
 	
 	abstract public function generate();
 	
 	abstract public function move();
+	
+	abstract protected function buildGeneratorOptions();
 	
 }
 
