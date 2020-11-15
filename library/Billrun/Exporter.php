@@ -393,4 +393,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		return '';
 	}
 	
+	public function move() {
+		
+	}
+	
 }

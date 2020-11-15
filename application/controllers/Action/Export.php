@@ -63,6 +63,11 @@ class ExportAction extends Action_Base {
 				} catch (Exception $exc) {
 					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
 				}
+				if ($exporter->shouldFileBeMoved()) {
+					$this->getController()->addOutput("Exporting the file");
+					$exporter->move();
+					$this->getController()->addOutput("Finished exporting");
+				}
 			} else {
 				$this->getController()->addOutput("Exporter cannot be loaded");
 			}

@@ -307,16 +307,6 @@ abstract class Billrun_Generator_File {
         }
         Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::WARN);
     }
-
-    public function move() {
-        $exportDetails = $this->config['export'];
-        $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
-        $fileName = $this->getFilename();
-		$res = $connection->export($fileName);
-		if (!$res) {
-			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
-		}
-	}
 	
 	/**
 	 * Get the type name of the current object.
@@ -330,6 +320,7 @@ abstract class Billrun_Generator_File {
 	
 	abstract public function generate();
 	
+	abstract public function move();
 	
 	//public static function getInstance
 	
