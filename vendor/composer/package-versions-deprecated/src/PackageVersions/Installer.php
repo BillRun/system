@@ -245,7 +245,11 @@ PHP;
 
         $lockData['packages-dev'] = $lockData['packages-dev'] ?? [];
 
-        foreach (array_merge($lockData['packages'], $lockData['packages-dev']) as $package) {
+        $packages = $lockData['packages'];
+        if (getenv('COMPOSER_DEV_MODE') !== '0') {
+            $packages = array_merge($packages, $lockData['packages-dev']);
+        }
+        foreach ($packages as $package) {
             yield $package['name'] => $package['version'] . '@' . (
                 $package['source']['reference'] ?? $package['dist']['reference'] ?? ''
             );

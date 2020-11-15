@@ -33,15 +33,22 @@ final class Versions
      * @internal
      */
     const VERSIONS          = array (
-  'alcaeus/mongo-php-adapter' => '1.1.13@cdc54b06dcdf330ec73ca2f02f2275e7fc711715',
-  'composer/package-versions-deprecated' => '1.11.99@c8c9aa8a14cc3d3bec86d0a8c3fa52ea79936855',
+  'alcaeus/mongo-php-adapter' => '1.2.0@b828ebc06cd3c270997b13c97dadc94731b36354',
+  'bshaffer/oauth2-server-php' => 'v1.11.1@5a0c8000d4763b276919e2106f54eddda6bc50fa',
+  'composer/package-versions-deprecated' => '1.11.99.1@7413f0b55a051e89485c5cb9f765fe24bb02a7b6',
   'jean85/pretty-package-versions' => '1.5.1@a917488320c20057da87f67d0d40543dd9427f7a',
-  'markbaker/complex' => '1.4.7@1ea674a8308baf547cbcbd30c5fcd6d301b7c000',
-  'markbaker/matrix' => '1.1.4@6ea97472b5baf12119b4f31f802835b820dd6d64',
-  'mongodb/mongodb' => '1.7.1@b35af66631a11ee730ff1fde295f71e89f01f121',
-  'phpoffice/phpspreadsheet' => '1.6.0@bf00f0cc5f55c354018f9a9ef15e6e3e1a229051',
+  'maennchen/zipstream-php' => '2.1.0@c4c5803cc1f93df3d2448478ef79394a5981cc58',
+  'markbaker/complex' => '2.0.0@9999f1432fae467bc93c53f357105b4c31bb994c',
+  'markbaker/matrix' => '2.0.0@9567d9c4c519fbe40de01dbd1e4469dbbb66f46a',
+  'mongodb/mongodb' => '1.7.2@38b685191c047a57275d6ccd2ea5c50f23638485',
+  'myclabs/php-enum' => '1.7.7@d178027d1e679832db9f38248fcc7200647dc2b7',
+  'phpoffice/phpspreadsheet' => '1.15.0@a8e8068b31b8119e1daa5b1eb5715a3a8ea8305f',
+  'psr/http-client' => '1.0.1@2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
+  'psr/http-factory' => '1.0.1@12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
+  'psr/http-message' => '1.0.1@f6561bf28d520154e4b0ec72be95418abe6d9363',
   'psr/simple-cache' => '1.0.1@408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
-  '__root__' => 'dev-billrun_mongodb_4x_support5@0ebd556012f8094eff1b2ec753d826827dd6ee35',
+  'symfony/polyfill-mbstring' => 'v1.20.0@39d483bdf39be819deabf04ec872eb0b2410b531',
+  '__root__' => 'dev-master@16661ef7b352ce98cb7145d8ff0e5a46a33cb879',
 );
 
     private function __construct()

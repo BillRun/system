@@ -7,6 +7,8 @@ namespace Composer\Autoload;
 class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
 {
     public static $files = array (
+        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
         '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
         '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
@@ -65,19 +67,29 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'aa53dcba601214d17ad405b7c291b7e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/multiply.php',
         '75c79eb1b25749b05a47976f32b0d8a2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideby.php',
         '6ab8ad87a734f276a6bcd5a0fe1289be' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideinto.php',
-        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
         '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'Z' => 
+        array (
+            'ZipStream\\' => 10,
+        ),
+        'S' => 
+        array (
+            'Symfony\\Polyfill\\Mbstring\\' => 26,
+        ),
         'P' => 
         array (
             'Psr\\SimpleCache\\' => 16,
+            'Psr\\Http\\Message\\' => 17,
+            'Psr\\Http\\Client\\' => 16,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PackageVersions\\' => 16,
         ),
         'M' => 
         array (
+            'MyCLabs\\Enum\\' => 13,
             'MongoDB\\' => 8,
             'Matrix\\' => 7,
         ),
@@ -96,9 +108,26 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     );
 
     public static $prefixDirsPsr4 = array (
+        'ZipStream\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
+        ),
+        'Symfony\\Polyfill\\Mbstring\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
         'Psr\\SimpleCache\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/simple-cache/src',
+        ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Psr\\Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-client/src',
         ),
         'PhpOffice\\PhpSpreadsheet\\' => 
         array (
@@ -107,6 +136,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'PackageVersions\\' => 
         array (
             0 => __DIR__ . '/..' . '/composer/package-versions-deprecated/src/PackageVersions',
+        ),
+        'MyCLabs\\Enum\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
         ),
         'MongoDB\\' => 
         array (
@@ -131,6 +164,13 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     );
 
     public static $prefixesPsr0 = array (
+        'O' => 
+        array (
+            'OAuth2' => 
+            array (
+                0 => __DIR__ . '/..' . '/bshaffer/oauth2-server-php/src',
+            ),
+        ),
         'M' => 
         array (
             'Mongo' => 
@@ -140,12 +180,17 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         ),
     );
 
+    public static $classMap = array (
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$classMap;
 
         }, null, ClassLoader::class);
     }
