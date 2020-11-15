@@ -378,6 +378,8 @@ class ConfigModel {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
 			if ($category === 'shared_secret') {
+				// remove previous defined clientof the same secret (in case of multiple saves or name change)
+				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
 				// save into oauth_clients
 				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
 			}
