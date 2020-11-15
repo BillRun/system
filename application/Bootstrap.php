@@ -12,7 +12,7 @@
  * @param string $namespace the namespace to register
  * @param string $path path attached to the namespace
  * 
- * @since version 5.13
+ * @since version 5.14
  */
 function br_yaf_register_autoload($namespace, $path) {
 	if (version_compare(phpversion('yaf'), '3.2.0', '>=')) {
