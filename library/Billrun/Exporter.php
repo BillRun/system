@@ -301,7 +301,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	/**
-	 * gets collection to load data from DB
+	 * gets Collection name
 	 * 
 	 * @return string
 	 */
@@ -311,7 +311,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	/**
-	 * gets Collection name
+	 * gets current sequence number for the file
 	 * 
 	 * @return string - number in the range of 00001-99999
 	 */
