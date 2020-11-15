@@ -105,6 +105,19 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	/**
+	 * gets collection to load data from DB
+	 * 
+	 * @return string
+	 */
+	protected function getCollection() {
+		if (is_null($this->collection)) {
+			$collectionName = $this->getCollectionName();
+			$this->collection = Billrun_Factory::db()->{"{$collectionName}Collection"}();
+		}
+		return $this->collection;
+	}
+	
+	/**
 	 * get query to load data from the DB
 	 */
 	protected function getFiltrationQuery() {
@@ -144,6 +157,56 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$this->afterExport();
 		Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
 		Billrun_Factory::log("Exported " . $transactionCounter . " " . $this->getCollectionName());
+	}
+	
+	/**
+	 * gets record type according to configuration mapping
+	 * 
+	 * @return string
+	 */
+	protected function getRecordType($row) {
+		foreach (Billrun_Util::getIn($this->config, 'record_type_mapping', array()) as $recordTypeMapping) {
+			foreach ($recordTypeMapping['conditions'] as $condition) {
+				if (!Billrun_Util::isConditionMet($row, $condition)) {
+					continue 2;
+				}
+			}
+			return $recordTypeMapping['record_type'];
+		}
+		return '';
+	}
+	
+	/**
+	 * translate row to the format it should be exported
+	 * 
+	 * @param array $row
+	 * @return array
+	 */
+	protected function getRecordData($row) { 
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
+		$recordType = $this->getRecordType($row);
+		$ret = $this->getDataLine($row, $recordType);
+		Billrun_Factory::dispatcher()->trigger('ExportAfterGetRecordData', array(&$row, &$ret, $this));
+		return $ret;
+	}
+	
+		/**
+	 * get rows to be exported
+	 * 
+	 * @return array
+	 */
+	protected function loadRows() {
+		$collection = $this->getCollection();
+		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
+		$rows = $collection->query($this->query)->cursor();
+		$data = array();
+		foreach ($rows as $row) {
+			$rawRow = $row->getRawData();
+			$this->rawRows[] = $rawRow;
+			$data[] = $this->getRecordData($rawRow);
+		}
+		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+		return $data;
 	}
 	
 	/**
@@ -288,19 +351,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	/**
-	 * gets collection to load data from DB
-	 * 
-	 * @return string
-	 */
-	protected function getCollection() {
-		if (is_null($this->collection)) {
-			$collectionName = $this->getCollectionName();
-			$this->collection = Billrun_Factory::db()->{"{$collectionName}Collection"}();
-		}
-		return $this->collection;
-	}
-	
-	/**
 	 * gets Collection name
 	 * 
 	 * @return string
@@ -341,56 +391,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$length = intval(Billrun_Util::getIn($mapping, 'func.length', 5));
 		$this->sequenceNum = sprintf('%0' . $length . 'd', $this->sequenceNum % pow(10, $length));
 		return $this->sequenceNum;
-	}
-	
-	/**
-	 * get rows to be exported
-	 * 
-	 * @return array
-	 */
-	protected function loadRows() {
-		$collection = $this->getCollection();
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-		$rows = $collection->query($this->query)->cursor();
-		$data = array();
-		foreach ($rows as $row) {
-			$rawRow = $row->getRawData();
-			$this->rawRows[] = $rawRow;
-			$data[] = $this->getRecordData($rawRow);
-		}
-		Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
-		return $data;
-	}
-	
-	/**
-	 * translate row to the format it should be exported
-	 * 
-	 * @param array $row
-	 * @return array
-	 */
-	protected function getRecordData($row) { 
-		Billrun_Factory::dispatcher()->trigger('ExportBeforeGetRecordData', array(&$row, $this));
-		$recordType = $this->getRecordType($row);
-		$ret = $this->getDataLine($row, $recordType);
-		Billrun_Factory::dispatcher()->trigger('ExportAfterGetRecordData', array(&$row, &$ret, $this));
-		return $ret;
-	}
-	
-	/**
-	 * gets record type according to configuration mapping
-	 * 
-	 * @return string
-	 */
-	protected function getRecordType($row) {
-		foreach (Billrun_Util::getIn($this->config, 'record_type_mapping', array()) as $recordTypeMapping) {
-			foreach ($recordTypeMapping['conditions'] as $condition) {
-				if (!Billrun_Util::isConditionMet($row, $condition)) {
-					continue 2;
-				}
-			}
-			return $recordTypeMapping['record_type'];
-		}
-		return '';
 	}
 	
 	public function move() {
