@@ -37,14 +37,15 @@ abstract class Billrun_Generator_File {
 	 * header to export (after translation)
 	 * @var type 
 	 */
-	protected $headerToExport = null;
+	protected $headerToExport = array();
 	
 	/**
 	 * footer to export (after translation)
 	 * @var type 
 	 */
-	protected $footerToExport = null;
+	protected $footerToExport = array();
 	
+	protected $params = array();
 	/**
 	 * raw lines from DB that should be exported (before translation)
 	 * @var type 
@@ -112,9 +113,17 @@ abstract class Billrun_Generator_File {
 			if (isset($field['linked_entity'])) {
 				$line[$field['path']] = $this->getLinkedEntityData($field['linked_entity']['entity'], $params, $field['linked_entity']['field_name']);
 			}
-            if (isset($field['type']) && $field['type'] !== 'string') {
-                $line[$field['path']] = $this->getTranslationValue(array_merge($field, array('value' => 'now')));
+			if (isset($field['predefined_values']) && (!isset($field['type']) || $field['type'] !== 'date')){
+					$line[$field['path']] = $this->getTranslationValueOfPredefinedValues($field);
+			}else if (isset($field['type']) && $field['type'] !== 'string') {
+				$value = $line[$field['path']]->sec ?? ($field['predefined_values'] ?? null);
+                $line[$field['path']] = $this->getTranslationValueOfType(array_merge($field, array('value' => $value)));
             }
+			if(isset($field['param_name'])){
+				if(isset($this->params[$field['param_name']])){
+					$line[$field['path']] = $this->params[$field['param_name']];
+				}	
+			}
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->getFileType();
@@ -185,36 +194,45 @@ abstract class Billrun_Generator_File {
         if (!empty($this->fileName)) {
             return $this->fileName;
         }
-        $translations = array();
         if(is_array($this->fileNameParams)){
             foreach ($this->fileNameParams as $paramObj) {
-                $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+				if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+					$message = "Missing filename params definitions for file type " . $this->getFileType();
+					throw new Exception($message);
+				}
+                $this->params[$paramObj['param']] = $this->getTranslationValueOfType($paramObj);
             }
         }
-        $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
+        $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $this->params, null, true);
         return $this->fileName;
     }
 	
-	protected function getTranslationValue($paramObj) {
-        if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
-            $message = "Missing filename params definitions for file type " . $this->getFileType();
-            Billrun_Factory::log($message, Zend_Log::ERR);
-        }
-        switch ($paramObj['type']) {
+	protected function getTranslationValueOfType($paramObj) {   
+        return $this->getTranslationValue($paramObj, 'type');
+    }
+	
+	protected function getTranslationValueOfPredefinedValues($paramObj){
+		return $this->getTranslationValue($paramObj, 'predefined_values');
+	}
+
+
+	protected function getTranslationValue($paramObj, $filed){
+		switch ($paramObj[$filed]) {
             case 'date':
                 $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $dateValue = intval($paramObj['value'])? $paramObj['value'] : strtotime($paramObj['value']);
                 return date($dateFormat, $dateValue);
             case 'autoinc':
                 $minValue = $paramObj['min_value'] ?? 1;
                 $maxValue = $paramObj['max_value'] ?? ($paramObj['padding']['length'] ? intval(str_repeat("9", $paramObj['padding']['length'])) : null);
 				if (!isset($minValue) && !isset($maxValue)) {
-                    $message = "Missing filename params definitions for file type " . $this->getFileType();
-                    Billrun_Factory::log($message, Zend_Log::ERR);
-                    return;
+					return;
                 }
                 $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                if(!isset($paramObj['value'])){
+					return;
+				}
+				$dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
                 $date = date($dateGroup, $dateValue);
                 $fakeCollectionName = '$gf' . $this->config['name'] . '_' .  $this->getAction() . '_' . $this->getFileType() . '_' . $date;
                 $seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
@@ -227,13 +245,22 @@ abstract class Billrun_Generator_File {
                 }
                 return $seq;
 			case 'number_of_records':
+				$numberOfRecords = count($this->rowsToExport);
+				if ($this->hasHeader()) {
+					$numberOfRecords ++;
+				}
+				if ($this->hasFooter()) {
+					$numberOfRecords++;
+				}
+				return $numberOfRecords;
+			case 'number_of_data_records':
 				return count($this->rowsToExport);
             default:
-                $message = "Unsupported filename_params type for file type " . $this->getFileType();
+                $message = "Unsupported " . $paramObj[$filed]. " type for file type " . $this->getFileType();
                 Billrun_Factory::log($message, Zend_Log::ERR);
                 break;
         }
-    }
+	}
 	
 	protected function padSequence($seq, $padding) {
 		
@@ -283,6 +310,27 @@ abstract class Billrun_Generator_File {
         }
         Billrun_Factory::log()->log('Failed removing empty file ' . $localPath, Zend_Log::WARN);
     }
+	
+	/**
+	 * checks if there is a header
+	 * 
+	 * @return boolean
+	 */
+	protected function hasHeader() {
+		$headerMapping = Billrun_Util::getIn($this->config, 'generator.header_structure');
+		return !empty($headerMapping);
+	}
+
+	/**
+	 * checks if there is a footer
+	 * 
+	 * @return boolean
+	 */
+	protected function hasFooter() {
+		$footerMapping = Billrun_Util::getIn($this->config, 'generator.trailer_structure');
+		return !empty($footerMapping);
+	}
+
 	
 	abstract protected function getFileType();
 	

@@ -412,6 +412,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	protected function buildGeneratorOptions() {
 		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : '';
 		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : '';
+		$this->fileName = $this->getFilename();
+		$options['file_name'] = $this->fileName;
+		$options['file_type'] = $this->getType();
+		$this->localDir = $this->getFilePath();
+		$options['local_dir'] = $this->localDir;
+		$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $this->fileName;
 		$this->rowsToExport = $this->loadRows();
         $options['data'] = $this->rowsToExport;
 		$this->headerToExport[0] = $this->getHeaderLine();
@@ -423,12 +429,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
         if (isset($this->config['generator']['separator'])) {
             $options['delimiter'] = $this->config['generator']['separator'];
         }
-        $options['file_type'] = $this->getType();
-		$this->localDir = $this->getFilePath();
-		$options['local_dir'] = $this->localDir;
-		$fileName = $this->getFilename();
-		$options['file_name'] = $fileName;
-		$options['file_path'] = $this->localDir . DIRECTORY_SEPARATOR . $fileName;
         return $options;
     }
 	
