@@ -19,14 +19,14 @@ class ReportAction extends ApiAction {
 	protected $fieldMapping = [
 		'duration' => ['$in'=>['duration']],
 		'usageType' => ['$in'=>['usaget']],
-		'sourcePhoneNumber' => ['$in'=>['calling_number']],
-		'targetPhoneNumber' => ['$in'=>['called_number']],
+		'sourcePhoneNumber' => ['$in'=>['calling_number','orig_calling_number']],
+		'targetPhoneNumber' => ['$in'=>['called_number', 'forwarding_number','forwarded_to_number','orig_called_number']],
 		'sourceImei' => ['$regex'=>[ ['field'=> 'calling_imei' , 'modifier' => '^%s'] ]],
-		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s'] ]],
+		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s'] ,['field'=> 'forwarding_imeisv', 'modifier' => '^%s'],['field'=> 'forwarded_to_imeisv', 'modifier' => '^%s'],['field'=> 'forwarded_to_imei', 'modifier' => '^%s'] ]],
 //		'sourceEndpointType' =>  ['$in'=>['']],
 //		'targetEndpointType' =>  ['$in'=>['']],
 		'sourceImsi' =>  ['$in'=>['calling_imsi']],
-		'targetImsi' =>  ['$in'=>['called_imsi']],
+		'targetImsi' =>  ['$in'=>['called_imsi','forwarding_imsi','forwarded_to_imsi']],
 		'serviceType' =>  ['$in'=>['basic_service_type']],
 		'cellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci', 'called_subs_last_ci','calling_subs_last_ci']],
 		'startCellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci']],
@@ -334,7 +334,7 @@ class ReportAction extends ApiAction {
 			$input['searchColumns'] =  is_array($input['searchColumns']) ? $input['searchColumns'] : [$input['searchColumns']];
 			$input['searchValue'] =  is_array($input['searchValue']) ? $input['searchValue'] : [$input['searchValue']];
 			foreach($queries as  $query) {
-				foreach($input['searchColumns'] as $field) {
+				foreach($input['searchColumns'] as  $field) {
 					foreach($input['searchValue'] as $value) {
 						foreach($this->mapToFields([$field => $value]) as $mappedQuery) {
 								$mappedQueryOr = $mappedQuery['$or'];
