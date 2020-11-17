@@ -60,13 +60,13 @@ class ExportAction extends Action_Base {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
 					$exporter->generate();
+					if ($exporter->shouldFileBeMoved()) {
+						$this->getController()->addOutput("Exporting the file");
+						$exporter->move();
+						$this->getController()->addOutput("Finished exporting");
+					}
 				} catch (Exception $exc) {
 					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
-				}
-				if ($exporter->shouldFileBeMoved()) {
-					$this->getController()->addOutput("Exporting the file");
-					$exporter->move();
-					$this->getController()->addOutput("Finished exporting");
 				}
 			} else {
 				$this->getController()->addOutput("Exporter cannot be loaded");
