@@ -309,6 +309,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function apiResponse($ret, $response) {
 		$response->setBody(json_encode($ret));
 		$response->setHeader('Content-Type', 'application/json');
+		return true;
 	}
 
 	/**
@@ -322,7 +323,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function apiCreate($params, $request, $response) {
 		if ($params['plugin'] != $this->getName()) {
-			return;
+			return true;
 		}
 		
 		$webhook = array(
@@ -342,6 +343,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		
 		$response->setBody(json_encode($ret));
+		return true;
 	}
 
 	/**
@@ -355,7 +357,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function apiRead($params, $request, $response) {
 		if ($params['plugin'] != $this->getName()) {
-			return;
+			return true;
 		}
 		
 		$id = $params['id'] ?? $request->get('webhook_id');
@@ -371,6 +373,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$this->apiResponse($ret, $response);
+		return true;
 	}
 
 	/**
@@ -384,7 +387,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function apiUpdate($params, $request, $response) {
 		if ($params['plugin'] != $this->getName()) {
-			return;
+			return true;
 		}
 		
 		$id = $params['id'] ?? $request->get('webhook_id');
@@ -411,6 +414,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$this->apiResponse($ret, $response);
+		return true;
 	}
 	
 	/**
@@ -424,7 +428,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function apiDelete($params, $request, $response) {
 		if ($params['plugin'] != $this->getName()) {
-			return;
+			return true;
 		}
 		
 		$id = $params['id'] ?? $request->get('webhook_id');
@@ -445,6 +449,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$this->apiResponse($ret, $response);
+		return true;
 	}
 
 	/**
