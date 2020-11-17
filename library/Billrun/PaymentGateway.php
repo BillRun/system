@@ -103,7 +103,7 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $htmlForm;
-
+	
 	protected function __construct() {
 
 		if ($this->supportsOmnipay()) {
@@ -134,7 +134,9 @@ abstract class Billrun_PaymentGateway {
 		if (isset(self::$paymentGateways[$name])) {
 			$paymentGateway = self::$paymentGateways[$name];
 		} else {
-			$subClassName = __CLASS__ . '_' . $name;
+			$instance_separator = Billrun_Factory::config()->getConfigValue('PaymentGateways.instance.separator');
+			$newName = explode($instance_separator, $name)[0];
+			$subClassName = __CLASS__ . '_' . $newName;
 			if (@class_exists($subClassName)) {
 				$paymentGateway = new $subClassName();
 				self::$paymentGateways[$name] = $paymentGateway;
@@ -596,13 +598,17 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCredentials() {
+		$gatewayDetails = $this->getGateway();
+		return $gatewayDetails['params'];
+	}
+	
+	protected function getGateway(){
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
 		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
-		$gatewayDetails = current($gateway);
-		return $gatewayDetails['params'];
+		return current($gateway);
 	}
 	
 	/**
@@ -611,12 +617,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayExport() {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		return $gatewayDetails['export'];
 	}
 	
@@ -626,12 +627,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayReceiver($type) {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		return $gatewayDetails[$type]['receiver'];
 	}
 
@@ -821,12 +817,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return Array - the status and stage of the payment.
 	 */
 	public function getGatewayCustomParams() {
-		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
+		$gatewayDetails = $this->getGateway();
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}
