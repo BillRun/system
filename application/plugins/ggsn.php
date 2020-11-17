@@ -191,16 +191,18 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getRawDataLength() + self::RECORD_PADDING);
+		$parser->setLastParseLength($asnObject->getRawDataLength() + intval(Billrun_Util::getFieldVal($this->ggsnConfig['revision_specific'][$this->currentRevision]['record_padding'],self::RECORD_PADDING)));
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
 
 		if (isset($this->ggsnConfig[$type])) {
+
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
 			}
+
 			//convert to unified time GMT  time.
 			$timeOffset =  date('P');
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
@@ -210,14 +212,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			else {
 				$cdrLine['callEventStartTimeStamp'] = $cdrLine['record_opening_time'];
 			}
-			if (is_array($cdrLine['rating_group'])) {
+			if (!empty($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
 
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
+					if (@isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
 					}
@@ -225,7 +227,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 				$cdrLine['rating_group'] = 0;
-			} else if ($cdrLine['rating_group'] == 10) {
+			} else if (!empty($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 				return false;
 			}
 		} else {
@@ -236,6 +238,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		}
+		foreach(@$this->ggsnConfig['fields_override'] as $srcField => $dstField) {
+			if(!empty($cdrLine[$srcField])) {
+				if(!empty($cdrLine[$dstField])) {
+					$cdrLine['overriden_fields'][$dstField] = $cdrLine[$srcField];
+				}
+				$cdrLine[$dstField] = $cdrLine[$srcField];
+			}
 		}
 
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
@@ -254,7 +264,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$nx16Data = unpack("N", substr($data, 0x16, 4));
 		$header['next_file_number'] = reset($nx16Data);
 		//Billrun_Factory::log(print_r($header,1));
-
+		$rev = unpack("C", substr($data, 0x7, 1));
+		$this->currentRevision = $header['revision'] = decoct( reset($rev) );
 		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $header;
@@ -332,6 +343,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				}
 				return $ret;
 			},
+			'location_information' => function($fieldData) {
+				return $this->decodeLocationData($fieldData);
+			},
 			'default' => function($type, $data) {
 				return (is_array($data) ? '' : implode('', unpack($type, $data)));
 			},
@@ -339,6 +353,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
 	}
+
 
 	//////////////////////////////////////////// Processor ////////////////////////////////////////////
 
@@ -349,9 +364,12 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
+
 		$processedData = &$processor->getData();
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
-
+		if( !empty($headerPadding = intval(Billrun_Util::getFieldVal($this->ggsnConfig['revision_specific'][$this->currentRevision]['header_padding'],0))) ) {
+			fread($fileHandle,$headerPadding);
+		}
 		$bytes = null;
 		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
@@ -360,6 +378,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			if (!isset($bytes[self::HEADER_LENGTH])) {
 				break;
 			}
+
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
 				$row['stamp'] = md5($bytes);
@@ -412,7 +431,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		foreach ($config as $key => $val) {
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
 			if ($tmpVal !== FALSE) {
-				$valueArr[$key] = $tmpVal;
+				$valueArr[preg_replace('/_\d$/','',$key)]  = $tmpVal;
 			}
 		}
 		return count($valueArr) ? $valueArr : false;
@@ -576,4 +595,99 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		return $ret;
 	}
 
+	///////////////////////////////////////////////////////// Helper Function ////////////////////////////////////////////////////
+
+	protected function decodeLocationData($fieldData) {
+		$encoding = [
+			'cgi' => [
+				'bit' => 0x1,
+				'fields' => [
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'ci'=> ['encode' => 'h2','size' => 2,'method'=> 'unpack','offset'=> 5 ]
+				]
+			],
+			'sai' => [
+				'bit' => 0x2,
+				'fields' => [
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'rac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 5 ]
+				]
+			],
+			'rai' => [
+				'bit' => 0x4,
+				'fields' => [
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
+					'rac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 5 ]
+				]
+			],
+			'tai' => [
+				'bit' => 0x8,
+				'fields' => [
+					'tac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ]
+				]
+			],
+			'ecgi' => [
+				'bit' => 0x10,
+				'fields' => [
+					'eci'=> ['encode' => 'H8','size' => 4,'method'=> 'unpack','offset'=> 3 ],
+				]
+			],
+			'lai' => [
+				'bit' => 0x20,
+				'fields' => [
+					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ]
+				]
+			],
+			'enodeb-id' => [
+				'bit' => 0x40,
+				'fields' => [
+					'macro_enodeb_id'=> ['encode' => 'H6','size' => 3,'method'=> 'unpack','offset'=> 3 ],
+				]
+			],
+
+		];
+		list($locationType) = array_values(unpack('C1', $fieldData));
+		$ret = ['loc_type'=> decbin($locationType)];
+		if(isset($locationType)) {
+
+			//$ret['field_data'] = bin2hex($fieldData);
+			$baseOffset = 1;
+			foreach($encoding as  $endcodedField => $encodeData) {
+				if($locationType & $encodeData['bit']) {
+					$decoded =[];
+					//$decoded['field_data'] = bin2hex(substr($fieldData,$baseOffset));
+					$mcc = Billrun_Util::bcd_unpack('C2', substr($fieldData,$baseOffset));
+					$decoded['mcc'] = substr($mcc,0,3);
+					$decoded['mnc'] = Billrun_Util::bcd_unpack('C', substr($fieldData,$baseOffset+2)). substr($mcc,$baseOffset+2,1);
+					$maxOffset = 0;
+					foreach($encodeData['fields'] as $fKey => $fData) {
+						$decodeFormat =$fData['encode'];
+
+						switch ((empty($fData['method']) ? "" : $fData['method']) ) {
+
+							case 'unpack' :
+									$result = implode('',unpack($decodeFormat, substr($fieldData,$baseOffset+$fData['offset'],$fData['size'])) );
+								break;
+
+							case 'bcd_decode' :
+							default:
+								$result = intval(Billrun_Util::bcd_unpack($decodeFormat, substr($fieldData,$baseOffset+$fData['offset']),$fData['bsd_rev'],$fData['byte_rev']));
+						}
+
+						$decoded[$fKey] = "" . !empty($fData['cast']) && function_exists($fData['cast'])? $fData['cast']($result) : $result;
+						$maxOffset = max($maxOffset,$fData['offset']+$fData['size']);
+					}
+					foreach($decoded as $key => $val) {
+						if(empty($ret[$key]) && !empty($val)) {
+							$ret[$key] = $val;
+						}
+					}
+					$baseOffset += $maxOffset;
+					$ret[$endcodedField] = $decoded;
+				}
+			}
+		}
+
+		return $ret;
+	}
 }

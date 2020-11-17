@@ -21,16 +21,18 @@ class ReportAction extends ApiAction {
 		'usageType' => ['$in'=>['usaget']],
 		'sourcePhoneNumber' => ['$in'=>['calling_number','orig_calling_number']],
 		'targetPhoneNumber' => ['$in'=>['called_number', 'forwarding_number','forwarded_to_number','orig_called_number']],
-		'sourceImei' => ['$in'=>[ 'imei' ]],
-		'targetImei' => ['$in'=>[ 'called_imei','forwarding_imeisv','forwarded_to_imeisv','forwarded_to_imei' ]],
+		'sourceImei' => ['$regex'=>[ ['field'=> 'calling_imei' , 'modifier' => '^%s'] ]],
+		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s'] ,['field'=> 'forwarding_imeisv', 'modifier' => '^%s'],['field'=> 'forwarded_to_imeisv', 'modifier' => '^%s'],['field'=> 'forwarded_to_imei', 'modifier' => '^%s'] ]],
 //		'sourceEndpointType' =>  ['$in'=>['']],
 //		'targetEndpointType' =>  ['$in'=>['']],
-		'sourceImsi' =>  ['$in'=>['imsi']],
+		'sourceImsi' =>  ['$in'=>['calling_imsi']],
 		'targetImsi' =>  ['$in'=>['called_imsi','forwarding_imsi','forwarded_to_imsi']],
 		'serviceType' =>  ['$in'=>['basic_service_type']],
+		'cellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci', 'called_subs_last_ci','calling_subs_last_ci']],
 		'startCellId' =>  ['$in'=>['called_subs_first_ci','calling_subs_first_ci']],
 // 		'startSector' =>  ['$in'=>['']],
 //		'startCgi' =>  ['$in'=>['']],
+		'lac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac', 'called_subs_last_lac', 'callling_subs_last_lac']],
 		'startLac' =>  ['$in'=>['called_subs_first_lac', 'callling_subs_first_lac']],
 		'startSiteName' =>  ['$in'=>['apnni']],
 		'startSiteAddress' =>  ['$in'=>['sgsn_address']],
@@ -48,6 +50,7 @@ class ReportAction extends ApiAction {
 		'endPort' =>  ['$lte'=> 'end_port'],
 		'counterpartCarrier' =>  ['$in'=>['outgoiging_circuit_group','incoming_circuit_group']],
 		'countryOfOrigin' =>  ['$in'=> ['alpha3']],
+		'served_pdp_address' =>  ['$in'=> ['served_pdp_address']],
 	];
 
 
@@ -57,6 +60,8 @@ class ReportAction extends ApiAction {
 		'usaget' => 'usageType',
 		'calling_number' => 'sourcePhoneNumber',
 		'called_number' => 'targetPhoneNumber',
+		'calling_imei'=>'sourceImei',
+		'served_imeisv'=>'sourceImei',
 		'imei'=>'sourceImei',
 		'called_imei'=>'targetImei',
 // 		'' => 'sourceEndpointType',
@@ -89,6 +94,7 @@ class ReportAction extends ApiAction {
 		'incoming_circuit_group' => 'counterpartCarrier',
 		'outgoiging_circuit_group' => 'counterpartCarrier',
 		'serving_network' => 'countryOfOrigin',
+		'served_pdp_address' =>  'served_pdp_address',
 	];
 
 	protected $ipmappingInputFields = [
@@ -240,6 +246,10 @@ class ReportAction extends ApiAction {
 
 		$ipmQuery = $this->getMongoQueryFromInput($ipmappingInput);
 		$ipmCursor = Billrun_Factory::db()->ipmappingCollection()->query($ipmQuery)->cursor()->sort(['urt'=>-1])->setRawReturn(true);
+		$hint = $this->getHintForQuery($ipmQuery, $this->hintMapping);
+		if(!empty($hint)) {
+			$ipmCursor->hint($hint);
+		}
 		$upto = PHP_INT_MAX;
 		$ipmappings = [];
 		Billrun_Factory::log('loading ipmapping...',Zend_log::DEBUG);
@@ -261,10 +271,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($queries)->cursor()->setRawReturn(true);
 
-		$hint = $this->getHintForInput(array_merge($input,array_flip($input['searchColumns'])), $this->hintMapping);
-		if(!empty($hint)) {
-			$cursor->hint($hint);
-		}
+		$cursor->hint(['urt'=>1,'served_pdp_address'=>1]);
 
 		if(!empty($input['sortColumn'])) {
 			$cursor->sort([ $input['sortColumn'] => (empty($input['sortDir']) ? intval($input['sortDir']) : 1)]);
@@ -330,7 +337,11 @@ class ReportAction extends ApiAction {
 				foreach($input['searchColumns'] as  $field) {
 					foreach($input['searchValue'] as $value) {
 						foreach($this->mapToFields([$field => $value]) as $mappedQuery) {
-														$retQueries[] = array_merge($query,  $mappedQuery);
+								$mappedQueryOr = $mappedQuery['$or'];
+								unset($mappedQuery['$or']);
+								foreach($mappedQueryOr as $mappedOr) {
+										$retQueries[] = array_merge($query, $mappedQuery, $mappedOr);
+								}
 						}
 					}
 				}
@@ -350,16 +361,23 @@ class ReportAction extends ApiAction {
 				foreach($toMap as $equalOp => $internalFields) {
 					if(is_array($internalFields)) {
 						foreach($internalFields as $internalField) {
-							$localOr['$or'][]  = [ $internalField => [$equalOp => is_array($input[$inputField]) ? $input[$inputField] : ["".$input[$inputField]] ] ];
+							$localOr['$or'][]  = $this->fieldResolution($input[$inputField], $internalField, $equalOp);
 						}
 					} else {
-						$localOr['$or'][]  = [ $internalFields => [$equalOp => "".$input[$inputField]] ];
+						$localOr['$or'][]  = [ $internalFields => [$equalOp => $input[$inputField]] ];
 					}
 				}
 				$query[] = $localOr;
 			}
 		}
 		return $query;
+	}
+
+	protected function fieldResolution($input, $field, $equalOp) {
+		if(is_array($field)) {
+			return [ $field['field'] => [$equalOp => is_array($input) ? array_map(function ($i) use($field) {return sprintf($field['modifier'],$i);},$input)  : sprintf($field['modifier'],$input) ] ];
+		}
+		return [ $field => [$equalOp => is_array($input) ? $input : [$input] ] ];
 	}
 
 	protected function translateResults($results) {
@@ -382,7 +400,7 @@ class ReportAction extends ApiAction {
 		Billrun_Factory::log('Associating ipmapping...',Zend_log::DEBUG);
 		foreach($ipmapping as $mapping) {
 			foreach($results as $cdr) {
-				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec) {
+				if($cdr['urt'] > new MongoDate($mapping['urt']->sec-$this->ipMapppingTimeDelay) && $mapping['end_map_date'] > $cdr['urt']->sec && $cdr['served_pdp_address'] == $mapping['internal_ip']) {
 					$cdr['ipmapping'] = array_intersect_key($mapping, $this->ipMapFieldsToReturn);
 					$retRows[] = $cdr;
 				}
