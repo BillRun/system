@@ -165,7 +165,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	 * @return string
 	 */
 	protected function getRecordType($row) {
-		foreach (Billrun_Util::getIn($this->config, 'record_type_mapping', array()) as $recordTypeMapping) {
+		foreach (Billrun_Util::getIn($this->config, 'generator.record_type_mapping', array()) as $recordTypeMapping) {
 			foreach ($recordTypeMapping['conditions'] as $condition) {
 				if (!Billrun_Util::isConditionMet($row, $condition)) {
 					continue 2;
