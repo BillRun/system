@@ -116,6 +116,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
+		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
@@ -124,7 +125,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (isset($accountsInArray[$customer['aid']])) {
 				$account = $accountsInArray[$customer['aid']];
 			} else {
-				$message = "Didn't find account with aid : " . $customer['aid'];
+				$message = "The aid in one of the payments is : " . $customer['aid'] . " - didn't find account with this aid. Skipping this payment process";
 				Billrun_Factory::log($message, Zend_Log::ALERT);
 				$this->logFile->updateLogFileField('errors', $message);
 				continue;
