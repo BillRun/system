@@ -18,9 +18,13 @@ class Billrun_EntityGetter_Filters_Base {
 
 	protected $specialQueries = array(
 		'$exists' => array('$exists' => 1),
-		'$existsFalse' => array('$exists' => 1), // this should be $exists result revered (otherwise we have an issue with empty values)
+		'$existsFalse' => array('$exists' => 0),
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
+	);
+	
+	protected $andQueries = array(	
+		'$existsFalse',
 	);
 
 	protected $datePreFunctions = array(
@@ -138,7 +142,7 @@ class Billrun_EntityGetter_Filters_Base {
 		);
 		if (!empty($this->specialQueries[$operator]) ) {
 			$data = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
-			$op = '$or';
+			$op = in_array($operator, $this->andQueries) ? '$and' : '$or';
 
 			$query = array(
 				$op => [
@@ -149,9 +153,6 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
-		if($operator === '$existsFalse') {
-			$res = !$res;
-		}
 		return $this->getComputedValueResult($row, $res);
 	}
 
