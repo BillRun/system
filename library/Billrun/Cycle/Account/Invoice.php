@@ -432,8 +432,20 @@ class Billrun_Cycle_Account_Invoice {
 		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
 			return true;
 		}
-		$hasUsageLines = !$this->lines->query(['aid'=>$this->aid,'billrun'=>$this->key,'usaget'=>['$nin'=>['flat']]])->cursor()->limit(1)->current()->isEmpty();
-		return !empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);})) || $hasUsageLines;
+		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
+		if (is_numeric($accountActivenessLinesHistory)) {
+			$accountActivenessDate = strtotime($accountActivenessLinesHistory . ' months ago');
+		} else {
+			$accountActivenessDate = strtotime((string) $accountActivenessLinesHistory);
+		}
+		$query = [
+			'aid'=>$this->aid,
+			'urt' => ['$gte' => new MongoDate($accountActivenessDate)],
+			'billrun'=>$this->key,
+			'usaget'=>['$nin'=>['flat']],
+		];
+		$hasUsageLines = !$this->lines->query($query)->cursor()->limit(1)->current()->isEmpty();
+		return $hasUsageLines;
 	}
 
 	public function getAid() {

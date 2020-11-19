@@ -427,6 +427,16 @@ var detailedField = {
 
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], detailedField, 'account');
 
+// BRCD-2404: Fix payment gateways redirection for token (add payment gateway to custom field)
+var paymentGateway = {
+	"field_name" : "payment_gateway",
+	"system" : true,
+	"editable" : false,
+}
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], paymentGateway, 'account');
+
+
 
 // BRCD-1636 Add new custom 'play' field to Subscribers.
 var fields = lastConfig['subscribers']['subscriber']['fields'];
@@ -736,7 +746,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
 }
 
-db.config.insert(lastConfig);
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -919,9 +928,12 @@ for (var i in lastConfig['usage_types']) {
     var _usage_type = lastConfig['usage_types'][i].usage_type;
     var _balance_unset_key = "balance.totals.out_plan_" + _usage_type;
     var _balance_set_key = "balance.totals." + _usage_type;
+    var _current_date = new Date();
+    var _3months_ago = new Date(_current_date.setDate(_current_date.getDate()-90));
 //    print(_balance_unset_key);
     var _query = {};
     _query[_balance_unset_key] = {"$exists": true};
+    _query['to'] = {"$gte": _3months_ago};
     db.balances.find(_query).forEach(
         function(obj) {
             print("balance id: " + obj._id + " sid: " + obj.sid + " balance unset key " + _balance_unset_key);
@@ -1131,7 +1143,20 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	lastConfig.import.mapping = mapping;
 }
 
-db.config.insert(lastConfig);
+// BRCD-2888 -adjusting config to the new invoice templates
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
+}
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
+}
+// BRCD-2888 -adjusting config to the new invoice templates
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
+}
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
+}
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
 db.archive.dropIndex('session_id_1_request_num_-1')
@@ -1146,6 +1171,35 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
+
+/*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
+lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
+    // Find all services that are limited by cycles and align to the cycle
+    var _limited_aligned_cycles_services = db.services.distinct("name", {balance_period:{$exists:0}, "price.to":{$ne:"UNLIMITED"}});
+    //printjson(_limited_aligned_cycles_services);
+    // we are assuming that the script will be run until 2030 (services will be created until 2030), and will be expired until 2050 (limited cycles applied)
+    db.subscribers.find({to:{$gt:ISODate()}, services:{$elemMatch:{name:{$in:_limited_aligned_cycles_services}, to:{$gt:ISODate("2050-01-01")}, creation_time:{$lt:ISODate("2030-01-01")}}}}).forEach(
+                function(obj) {
+    //                printjson(obj); // debug log
+                    for (var subServiceObj in obj.services) {
+    //                    print("handle " + subServiceObj + " " + obj.services[subServiceObj].name);
+                        serviceObj = db.services.findOne({name:obj.services[subServiceObj].name, to:{$gt:ISODate()}});
+                        cycleCount = serviceObj.price[serviceObj.price.length-1].to;
+    //                    print("add months: " + cycleCount);
+                        if (cycleCount != 'UNLIMITED' && !(serviceObj.hasOwnProperty('balance_period'))) {
+//                            print("to before: " + obj.services[subServiceObj].to);
+                            obj.services[subServiceObj].to = new Date(obj.services[subServiceObj].from);
+                            obj.services[subServiceObj].to.setMonth(obj.services[subServiceObj].to.getMonth()+parseInt(cycleCount));
+                            obj.services[subServiceObj].to.setDate(lastConfig.billrun.charging_day.v)
+                            obj.services[subServiceObj].to.setHours(0,0,0,0);
+    //                        print("to after: " + obj.services[subServiceObj].to);
+                        }
+                    }
+    //                printjson(obj); // debug log
+                    db.subscribers.save(obj);
+                }
+    );
+});
 
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
@@ -1201,3 +1255,56 @@ bills.forEach(function (bill) {
 		db.bills.save(bill);
 	}
 });
+
+// BRCD-2772 - add webhooks supports all audit collection field should be lowercase
+db.audit.update({"collection" : "Login"}, {$set:{"collection":"login"}}, {"multi":1});
+
+//BRCD-2855 Oauth support
+lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
+    // create collections
+    db.createCollection("oauth_clients");
+    db.createCollection("oauth_access_tokens");
+    db.createCollection("oauth_authorization_codes");
+    db.createCollection("oauth_refresh_tokens");
+    db.createCollection("oauth_users");
+    db.createCollection("oauth_scopes");
+    db.createCollection("oauth_jwt");
+
+    // create indexes
+    db.oauth_clients.ensureIndex({'client_id': 1 });
+    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
+    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
+    db.oauth_users.ensureIndex({'username': 1 });
+    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
+    
+    var _obj;
+    for (var secretKey in lastConfig.shared_secret) {
+        secret = lastConfig.shared_secret[secretKey]
+        if (secret.name == null || secret.name == '') {
+            continue;
+        }
+        _obj = {
+            "client_id": secret.name,
+            "client_secret": secret.key,
+            "grant_types": null,
+            "scope": null,
+            "user_id": null
+        };
+        db.oauth_clients.insert(_obj)
+    }
+
+})
+// BRCD-2772 add webhooks plugin to the UI
+runOnce(lastConfig, 'BRCD-2772', function () {
+    _webhookPluginsSettings = {
+        "name": "webhooksPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    };
+    lastConfig['plugins'].push(_webhookPluginsSettings);
+});
+
+
+db.config.insert(lastConfig);

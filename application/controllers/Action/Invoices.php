@@ -93,7 +93,7 @@ class AccountInvoicesAction extends ApiAction {
 		$invoiceId = $invoice['invoice_id'];
 		$invoiceData = $invoice->getRawData();
 
-		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
+		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
 		$pdf = $invoiceData['invoice_file'];
 
 		if( $request->get('detailed') ) {
@@ -102,6 +102,7 @@ class AccountInvoicesAction extends ApiAction {
 			$generator->generate();
 		}
 		if (!file_exists($pdf)){
+                        Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
 			$cont = file_get_contents($pdf);

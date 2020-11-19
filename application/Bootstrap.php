@@ -144,6 +144,19 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		);
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
+		
+		$match = "#^/plugins/(\w+)/(\w+)/?(\w*)#";
+		$route = array(
+			'controller' => 'plugins',
+			'action' => 'index',
+		);
+		$map = array(
+			1 => "plugin",
+			2 => "action",
+			3 => "id",
+		);
+		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
+		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("plugins", $routeRegex);
 	}
 	
 	/**

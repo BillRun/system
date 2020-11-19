@@ -208,6 +208,24 @@ class Models_Entity {
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 	}
 
+	/** 
+	 * method to retrieve entity name that we are running on
+	 * 
+	 * @return string
+	 */
+	public function getEntityName() {
+		return $this->entityName;
+	}
+	
+	/** 
+	 * method to retrieve action that we are running
+	 * 
+	 * @return string
+	 */
+	public function getAction() {
+		return $this->action;
+	}
+
 	/**
 	 * method to add entity custom fields values from request
 	 * 
