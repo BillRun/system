@@ -28,22 +28,22 @@ class CalculateAction extends Action_Base {
 
 		$possibleOptions = array('type' => false);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
 
-		$this->_controller->addOutput("Loading Calculator");
+		$this->getController()->addOutput("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);
-		$this->_controller->addOutput("Calculator loaded");
+		$this->getController()->addOutput("Calculator loaded");
 
 		if (!$calculator) {
-			$this->_controller->addOutput("Calculator cannot be loaded");
+			$this->getController()->addOutput("Calculator cannot be loaded");
 		} else {
-			$this->_controller->addOutput("Starting to calculate. This action can take a while...");
+			$this->getController()->addOutput("Starting to calculate. This action can take a while...");
 			$calculator->calc();
-			$this->_controller->addOutput("Writing calculated data.");
+			$this->getController()->addOutput("Writing calculated data.");
 			$calculator->write();
-			$this->_controller->addOutput("Calculation finished.");
+			$this->getController()->addOutput("Calculation finished.");
 			$calculator->removeFromQueue();
 		}
 	}
