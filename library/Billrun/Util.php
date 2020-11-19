@@ -1587,7 +1587,6 @@ class Billrun_Util {
 																										   $userData) );
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
 						}
 						break;
 					//Handle regex translation
@@ -1600,12 +1599,10 @@ class Billrun_Util {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {
