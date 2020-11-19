@@ -86,8 +86,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->logo_path = $this->getLogoPath();
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->wkpdf_exec = Billrun_Util::getFieldVal($options['exec'], Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf'));
-		$view_type = empty($options['is_onetime']) ? 'view_path' : 'onetime_view_path';
-		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.'.$view_type, '/views/invoices/') ;
+		$this->view_path =  Billrun_Factory::config()->getConfigValue('application.directory') .
+								( empty($options['is_onetime']) ?
+									Billrun_Factory::config()->getConfigValue(self::$type . '.view_path', '/views/invoices/')  :
+									Billrun_Factory::config()->getConfigValue(self::$type . '.onetime_view_path', '/views/invoices/onetime/'));
+		 ;
 		$this->linesColl = Billrun_Factory::db()->linesCollection();
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
 		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
