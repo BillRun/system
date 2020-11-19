@@ -114,13 +114,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
-		$this->header_path =  $this->setHeaderAndFooterPathAndContent('header');
-		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
-		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.footer_path', '/footer/footer_tpl.phtml' ));
-		$this->custom = array(
-			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header_content', '') : false,
-			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer_content', '') : false,
-		);
+		$this->setHeaderAndFooterPathAndContent($options);
 
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
@@ -624,22 +618,28 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function setHeaderAndFooterPathAndContent($options) {
-		if(isset($options['header'])) {
-			if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.(html))$/', $options['header'])) {
-				$this->header_path = $options['header'];
+		foreach (['header', 'footer'] as $index => $segment) {
+			$path = $segment . "_path";
+			$content = $segment . "_content";
+			$tpl = $segment . "_tpl";
+			if (isset($options[$path]) && isset($options[$content])) {
+				$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
+				$this->{$path} = $options[$path];
+				$this->custom[$segment] = $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.' . $content, '') : false;
 			} else {
-				$this->header_content = $options['header'];
-			}
-		} else {
-			if (isset($options['header_path']) && isset($options['header_content'])) {
-				$this->header_path = $options['header_path'];
-				$this->header_content = $options['header_content'];
-			} else {
-				$this->header_path = $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
-				Billrun_Factory::log("Unsupported filename_params value for param: " . $paramObj['param'] . ". type is'nt string/date. None customized file name was chosen.", Zend_Log::ERR);
+				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
+				if (isset($options[$segment])) {
+					if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.(html))$/', $options[$segment])) {
+						$this->{$path} = $options[$segment];
+					} else {
+						$this->custom[$segment] = $options[$segment];
+					}
+				} else {
+					$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], Billrun_Factory::config()->getConfigValue(self::$type . '.' . $path, '/' . $segment . '/' . $tpl . '.phtml'));
+					Billrun_Factory::log($segment . " field wasn't set in config, default path was taken..", Zend_Log::ERR);
+				}
 			}
 		}
-		$this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], Billrun_Factory::config()->getConfigValue(self::$type . '.header_path', '/header/header_tpl.phtml'));
 	}
 
 }
