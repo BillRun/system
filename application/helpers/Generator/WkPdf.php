@@ -622,20 +622,25 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$path = $segment . "_path";
 			$content = $segment . "_content";
 			$tpl = $segment . "_tpl";
+			$this->custom[$segment] = false;
+			$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], Billrun_Factory::config()->getConfigValue(self::$type . '.' . $segment, '/' . $segment . '/' . $tpl . '.html'));
 			if (isset($options[$path]) && isset($options[$content])) {
-				$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
-				$this->{$path} = $options[$path];
-				$this->custom[$segment] = $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.' . $content, '') : false;
+				$enableCustomSegment = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
+				if($enableCustomSegment) {
+					$this->custom[$segment] = Billrun_Factory::config()->getConfigValue(self::$type . '.' . $content, '');
+					$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], '/' . $segment . '/' . $tpl . '.html');
+				} else {
+					$this->{$path} = !empty($options[$path]) ? $this->view_path . $options[$path] : $this->{$path};
+				}
 			} else {
 				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
 				if (isset($options[$segment])) {
 					if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.(html))$/', $options[$segment])) {
-						$this->{$path} = $options[$segment];
+						$this->{$path} = $this->view_path . $options[$segment];
 					} else {
 						$this->custom[$segment] = $options[$segment];
 					}
 				} else {
-					$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], Billrun_Factory::config()->getConfigValue(self::$type . '.' . $path, '/' . $segment . '/' . $tpl . '.phtml'));
 					Billrun_Factory::log($segment . " field wasn't set in config, default path was taken..", Zend_Log::ERR);
 				}
 			}
