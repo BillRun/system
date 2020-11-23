@@ -494,7 +494,7 @@ class Tests_Aggregator extends UnitTestCase {
 			$this->message .= $this->fails;
 		}
 		print_r($this->message);
-		//    $this->restoreColletions();
+		 $this->restoreColletions();
 	}
 
 	/**
