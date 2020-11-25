@@ -25,6 +25,13 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @var Yaf_Request_Http
 	 */
 	protected $request;
+	
+	/**
+	 * holds request's raw body
+	 *
+	 * @var array
+	 */
+	protected $requestBody = [];
 		
 	/**
 	 * the response object
@@ -65,6 +72,7 @@ class PortalController extends Yaf_Controller_Abstract {
 		}
 		
 		$this->request = $this->getRequest();
+		$this->requestBody = json_decode($this->request->getRaw(), JSON_OBJECT_AS_ARRAY);
 		$this->response = $this->getResponse();
 		$this->action = array_keys($this->request->getParams())[0] ?? '';
 		$this->setUser();
@@ -122,9 +130,9 @@ class PortalController extends Yaf_Controller_Abstract {
 	public function accountAction() {
 		$params = [
 			'query' => $this->getAccountQuery(),
-			'update' => $this->request->getRequest()['update'] ?? [],
+			'update' => $this->requestBody['update'] ?? [],
 		];
-		
+
 		$module = Portal_Actions::getInstance(['type' => 'account']);
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
