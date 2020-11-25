@@ -379,7 +379,7 @@ class ConfigModel {
 			Billrun_Config::getInstance()->refresh();
 			if ($category === 'shared_secret') {
 				// save into oauth_clients
-				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl(), 'client_credentials', 'global');
 			}
 		}
 
