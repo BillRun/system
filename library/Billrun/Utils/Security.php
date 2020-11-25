@@ -102,7 +102,7 @@ class Billrun_Utils_Security {
 		if (!$oauthToken->requestHasToken($oauthRequest)) {
 			return false;
 		}
-		if ($oauth->verifyResourceRequest($oauthRequest)) {
+		if ($oauth->verifyResourceRequest($oauthRequest, null, 'global')) {
 			return true;
 		} 
 		if ($throwException) {

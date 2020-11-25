@@ -1287,8 +1287,8 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
         _obj = {
             "client_id": secret.name,
             "client_secret": secret.key,
-            "grant_types": null,
-            "scope": null,
+            "grant_types": 'client_credentials',
+            "scope": 'global',
             "user_id": null
         };
         db.oauth_clients.insert(_obj)
@@ -1304,6 +1304,17 @@ runOnce(lastConfig, 'BRCD-2772', function () {
         "hide_from_ui": false
     };
     lastConfig['plugins'].push(_webhookPluginsSettings);
+});
+
+// BRCD-2897 add customer portal plugin to the UI
+runOnce(lastConfig, 'BRCD-2897', function () {
+    _customerPortalPluginsSettings = {
+        "name": "portalPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    };
+    lastConfig['plugins'].push(_customerPortalPluginsSettings);
 });
 
 
