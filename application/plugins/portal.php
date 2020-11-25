@@ -49,7 +49,12 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 				],
 			];
 	}
-
+	
+	/**
+	 * get account field marked as unique and searchable
+	 *
+	 * @return array
+	 */
 	protected function getAccountUniqueFields() {
 		$customFields = array_merge(
 			Billrun_Factory::config()->getConfigValue('subscribers.fields', []),
