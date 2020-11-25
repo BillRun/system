@@ -142,4 +142,15 @@ class Portal_Actions_Account extends Portal_Actions {
 
 		return $ret;
 	}
+
+	/**
+	 * Authenticate the request.
+	 * Currently, all actions are on the account which logged-in so no need for further authentication
+	 *
+	 * @return boolean
+	 */
+    protected function authenticate() {
+		return true;
+	}
+
 }

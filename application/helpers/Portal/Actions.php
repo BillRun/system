@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Account.php
  * @package  Billing
  * @since    5.14
  */
-class Portal_Actions {
+abstract class Portal_Actions {
     
     /**
      * action general parameters
@@ -112,12 +112,9 @@ class Portal_Actions {
     }
     
     /**
-	 * Authenticate the request.
-	 * Currently, all actions are on the account which logged-in so no need for further authentication
+     * Authenticate the request
 	 *
 	 * @return boolean
 	 */
-	protected function authenticate() {
-		return true;
-	}
+    protected abstract function authenticate();
 }
