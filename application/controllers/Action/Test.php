@@ -18,18 +18,7 @@ class TestAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	public function execute() {
-		$query = ['aid' => 515814];
-		$countStart = microtime(true);
-		$b = Billrun_Factory::db()->linesCollection()->count($query);
-		$countTime = number_format((microtime(true) - $countStart), 3);
-		$findStart = microtime(true);
-		$a = Billrun_Factory::db()->linesCollection()->find($query)->limit(1)->count();
-		$findTime = number_format((microtime(true) - $findStart), 3);
-		die(print_R(['count time' => $countTime, 'find time' => $findTime], 1));
 		$this->allowed();
-		$test = new Billrun_Rate(['key' => 'TEST_SMS']);
-		$test = new Billrun_Rate(['id' => '5f4cb9d59be6144137c618f2']);
-		print_R($test->getData());die;
 		$this->getController()->setOutput(array(array("test" => "action"), true));
 	}
 
