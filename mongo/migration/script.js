@@ -745,7 +745,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 	};
 	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
 }
-
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -1171,7 +1170,6 @@ if (db.serverStatus().ok == 0) {
 	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
 	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
 }
-
 /*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
 lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     // Find all services that are limited by cycles and align to the cycle
@@ -1319,3 +1317,4 @@ runOnce(lastConfig, 'BRCD-2897', function () {
 
 
 db.config.insert(lastConfig);
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

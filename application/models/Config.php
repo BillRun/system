@@ -59,7 +59,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 	}
 
 	public function getOptions() {
@@ -378,6 +378,8 @@ class ConfigModel {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
 			if ($category === 'shared_secret') {
+				// remove previous defined clientof the same secret (in case of multiple saves or name change)
+				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
 				// save into oauth_clients
 				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl(), 'client_credentials', 'global');
 			}
