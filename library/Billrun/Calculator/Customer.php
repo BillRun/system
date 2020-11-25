@@ -185,9 +185,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		if ($this->bulkAccounts) {
 			$this->accountsByStamp();
-			$account = isset($this->accounts[$row['stamp']]) ? $this->accounts[$row['stamp']] : FALSE;	
+			$account = isset($this->accounts[$row['stamp']]) ? $this->accounts[$row['stamp']] : FALSE;
+			$row = $this->enrichWithSubscriberInformation($row, $subscriber, $account);
+		}else{
+			$row = $this->enrichWithSubscriberInformation($row, $subscriber);
 		}
-		$row = $this->enrichWithSubscriberInformation($row, $subscriber, $account);
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {

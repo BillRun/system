@@ -461,7 +461,7 @@ class BillrunController extends ApiController {
 					}
 					break;
 				case 'billrun_key':
-					if (!Billrun_Util::isBillrunKey(trim($value, '"'))) {
+					if (!is_null($value) && !Billrun_Util::isBillrunKey(trim($value, '"'))) {
 						return false;
 					}
 					break;
