@@ -77,7 +77,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 	protected $rates_query = array();
-	
+
+	/**
+	 * is the calculator part of queue calculators
+	 *
+	 * @var bool
+	 */
+	protected $isQueueCalc = true;
 
 	/**
 	 * constructor of the class
@@ -128,15 +134,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->lines = array();
 		}
 
-		$this->lines = $this->getLines();
-
-		/* foreach ($resource as $entity) {
-		  $this->data[] = $entity;
-		  } */
-
-		Billrun_Factory::log("Entities loaded: " . count($this->lines), Zend_Log::INFO);
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
+		if ($this->isEnabled()) {
+			$this->lines = $this->getLines();
+			
+			/* foreach ($resource as $entity) {
+			$this->data[] = $entity;
+			} */
+			
+			Billrun_Factory::log("Entities loaded: " . count($this->lines), Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
+		}
 	}
 
 	/**
@@ -517,5 +524,33 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $this->getAddedFoerignFields();
 	}
 	
+	/**
+	 * is the calculator type in queue.calculators
+	 *
+	 * @return boolean
+	 */
+	public function isInQueueCalculators() {
+		$queueCalculators = Billrun_Factory::config()->getConfigValue('queue.calculators', []);
+		$calculatorType = $this->getCalculatorQueueType();
+		return in_array($calculatorType, $queueCalculators);
+	}
+	
+	/**
+	 * should the calculator be configured as a queue calculator
+	 *
+	 * @return boolean
+	 */
+	public function isQueueType() {
+		return $this->isQueueCalc;
+	}
+		
+	/**
+	 * is the calculator enabled (allowed to run)
+	 *
+	 * @return boolean
+	 */
+	public function isEnabled() {
+		return !$this->isQueueType() || $this->isInQueueCalculators();
+	}
 
 }

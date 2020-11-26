@@ -745,7 +745,6 @@ if (typeof lastConfig['taxes'] !== 'undefined' && typeof lastConfig['taxes']['fi
 	};
 	lastConfig = addFieldToConfig(lastConfig, embedTaxField, 'taxes')
 }
-
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -1176,7 +1175,6 @@ if (db.serverStatus().ok == 0) {
         // BRCD-2185 sharding queue as added support for sharded collection transaction
 	sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
 }
-
 /*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
 lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     // Find all services that are limited by cycles and align to the cycle
@@ -1313,3 +1311,4 @@ runOnce(lastConfig, 'BRCD-2772', function () {
 
 
 db.config.insert(lastConfig);
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

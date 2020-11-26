@@ -29,7 +29,6 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . $credentials['Version'] . "/accounts/" . $credentials['Account'] . "/auths";
 			$this->redirectHostUrl = "https://api.test.netbanx.com/hosted/" . $credentials['Version'] . "/orders";
 		}
-		$this->account = Billrun_Factory::account();
 	}
 
 	public function updateSessionTransactionId() {

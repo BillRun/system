@@ -38,6 +38,8 @@ class CalculateAction extends Action_Base {
 
 		if (!$calculator) {
 			$this->getController()->addOutput("Calculator cannot be loaded");
+		} else if (!$calculator->isEnabled()) {
+			$this->_controller->addOutput("Calculator type " . $calculator->getCalculatorQueueType() . " is disabled");
 		} else {
 			$this->getController()->addOutput("Starting to calculate. This action can take a while...");
 			$calculator->calc();

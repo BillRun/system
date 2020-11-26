@@ -33,7 +33,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://test.authorize.net';
 		}
-		$this->account = Billrun_Factory::account();
 	}
 
 	public function updateSessionTransactionId() {
