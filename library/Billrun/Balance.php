@@ -166,6 +166,15 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		$options = array(
 			'new' => TRUE,
 		);
+		
+		// this is for balances sharding, although this is _id query
+		if (!isset($query['sid'])) {
+			$query['sid'] = $this->row['sid'];
+		}
+		if (!isset($query['aid'])) {
+			$query['aid'] = $this->row['aid'];
+		}
+		
 		$ret = $this->collection()->findAndModify($query, $update, null, $options);
 		if ($ret->isEmpty()) {
 			return FALSE;
@@ -178,6 +187,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (!$skipEvents) {
 			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec)));
 		}
+		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdate', array($this->row, $after));
 		$this->setRawData($after);
 		return $ret;
 	}

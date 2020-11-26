@@ -10,11 +10,18 @@
 	"collection" : {
 		"steps": [],
 		"settings": {
+			"run_on_holidays": true,
+			"run_on_days": [true,true,true,true,true,true,true],
+			"run_on_hours": [],
 			"step_ttl_value": 90,
 			"step_ttl_type": "days",
 			"min_debt": 10,
 			"change_state_url" : "",
-			"change_state_method": ""
+			"change_state_method": "",
+			"customers": {
+				"subject_to_collection": [],
+				"exempted_from_collection":[]
+			}
 		}
 	},
 	"invoice_export" : {
@@ -74,7 +81,7 @@
 		}
 	},
 	"taxation" :{
-		"tax_type": "vat",
+		"tax_type": "usage",
 		 "CSI": {
 				"available_providers" :  {
 											"00":"ILEC",
@@ -88,11 +95,62 @@
 				"provider": "",
 				"auth_code": "",
 				"apply_optional_charges": true
-		 },
-		 "vat" : 0,
-		 "vat_label": "VAT"
+		},
+		"vat" : 0,
+		"vat_label": "Vat"
 	},
-	"discounts": {
+        "import": {
+            "mapping": []
+        },
+	"taxes": {
+		"fields": [
+			{
+				"field_name": "key",
+				"system": true,
+				"mandatory": true
+			},
+			{
+				"field_name": "from",
+				"system": true,
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "to",
+				"system": true,
+				"mandatory": true,
+				"type": "date"
+			},
+			{
+				"field_name": "description",
+				"system": true,
+				"mandatory": true
+			},
+			{
+				"field_name": "rate",
+				"system": true,
+				"title": "Rate",
+				"mandatory": true,
+				"type": "percentage",
+				"editable": true,
+				"display": true
+			},
+			{
+				"field_name": "embed_tax",
+				"system": true,
+				"title": "Embed Tax",
+				"mandatory": true,
+				"type": "boolean",
+				"editable": true,
+				"display": true,
+				"description": "In case the tax should be embedded (included in the customer price), please check the box"
+			}
+		]
+	},
+	"bills": {
+		"fields": []
+	},
+        "discounts": {
     "fields": [
       {
         "field_name": "key",
@@ -115,6 +173,11 @@
     ]
   },
   "billrun" : {
+        "allowances" : {
+            "enabled": false,
+            "included_in_allowance": false,
+            "taxable_paid_first": false
+        },
 	"detailed_invoices":{
 		"v": false,
 		"t": "Boolean"

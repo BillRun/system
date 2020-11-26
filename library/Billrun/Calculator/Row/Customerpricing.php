@@ -80,6 +80,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected $services = array();
 
 	/**
+	 * row services IDs (keys matching $services array)
+	 * 
+	 * @param array Array of integers
+	 */
+	protected $servicesIds = array();
+
+	/**
 	 * End time of the active billrun (unix timestamp)
 	 * @var int
 	 */
@@ -96,6 +103,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @var string
 	 */
 	protected $nextActiveBillrun;
+
+	/**
+	 * End time of the next active billrun (unix timestamp)
+	 * @var int
+	 */
+	protected $nextActiveBillrunEndTime;
 
 	/**
 	 * current configuration
@@ -229,7 +242,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if (!isset($this->row['plan_ref'])) {
 			$plan_ref = $this->plan->createRef();
 			if (is_null($plan_ref)) {
-				Billrun_Factory::log('No plan found for subscriber ' . $this->sid, Zend_Log::ALERT);
+				Billrun_Factory::log('No plan found for subscriber ' . $this->sid . ', line ' . $this->row['stamp'], Zend_Log::ALERT);
 				$this->usagev = 0;
 				$this->apr = 0;
 				return false;
@@ -320,21 +333,28 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
-
+			$notInGroupVolume = $balancePricingData['out_group'] ?? ($balancePricingData['over_group'] ?? 0);
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $notInGroupVolume);
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
-				Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
+				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 				return false;
 			}
+			
+			$updatedPricingData = $this->getLineIncludedPricingData($pricingData);
+			$volume -= $notInGroupVolume;
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 //			return $pricingData;
 		}
 			
 		if (isset($pricingData['arategroups'])) {
-			$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			if (isset($updatedPricingData)) {
+				$balancePricingData = array_diff_key($updatedPricingData, array('arategroups' => 'val')); // clone issue
+			} else {
+				$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			}
 			$pricingData['arategroups'] = $pricingData['arategroups'];
 			$arategroups = array(); // will used to flat the structure of pricingData['arategroups'] item
 			foreach ($pricingData['arategroups'] as /* $balance_key => */ &$balanceData) {
@@ -362,7 +382,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this));
 				$ret = $balance->update($query, $update);
 				if ($ret === FALSE) {
-					Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
+					Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 					return false;
 				}
 				Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
@@ -392,6 +412,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 		return false;
+	}
+	
+	/**
+	 * "clean" pricing data from over group/plan charges and keep only included pricing data.
+	 * removes pricing data that is relevant for monthly balance
+	 * 
+	 * @param array $pricingData
+	 * @return array
+	 */
+	protected function getLineIncludedPricingData($pricingData) {
+		$pricingData['aprice'] = 0;
+		unset($pricingData['over_group']);
+		unset($pricingData['over_plan']);
+		return $pricingData;
 	}
 
 	/**
@@ -513,20 +547,22 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function loadSubscriberServices($services, $time) {
 		$ret = array();
+		$servicesIds = [];
 		foreach ($services as $service) {
 			$serviceId = isset($service['service_id']) ? $service['service_id'] : 0;
 			$serviceName = isset($service['name']) ? $service['name'] : $service;
 			$serviceSettings = array(
-				'service_id' => $serviceId,
 				'name' => $serviceName,
-				'time' => $time
+				'time' => $time,
+				'disableCache' => true,
+				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
 			
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
 			
-			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
+			if (!($serviceObject = Billrun_Factory::service($serviceSettings))) {
 				continue;
 			}
 			
@@ -546,9 +582,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			
 			$ret[$sortKey] = $serviceObject;
+			$servicesIds[$sortKey] = $serviceId;
 		}
 		
 		ksort($ret);
+		ksort($servicesIds);
+		$this->servicesIds = array_values($servicesIds);
 
 		return array_values($ret); // array of service objects
 	}
@@ -587,7 +626,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function usageLeftInServicesGroups($rate, $usageType, $services, $required, &$arategroups) {
 		$keyRequired = key($required);
 		$valueRequired = current($required);
-		foreach ($services as $service) {
+		foreach ($services as $key => $service) {
 			if ($valueRequired < 0) {
 				break;
 			}
@@ -598,7 +637,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
-					'service_id' => $service->get('service_id'),
+					'service_id' => $this->servicesIds[$key],
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
 					'service_start_date' => $service->get('service_start_date'),
 				);
@@ -619,6 +658,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if (!$service->get('plan_included')) {
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
+					$instanceOptions['add_on'] = true;
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else { // use same balance as plan balance
 					$balance = $this->balance;
@@ -1002,6 +1047,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 				$aprice *= $apriceMult;
+			}
+			if(Billrun_Calculator_Tax::isLinePreTaxed($this->row)) {
+				$aprice = Billrun_Calculator::getInstance(['type'=>'tax'])->removeTax($aprice, $this->row);
 			}
 			return $aprice;
 		}

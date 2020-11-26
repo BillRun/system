@@ -45,6 +45,12 @@ class ResetLinesModel {
 	 */
 	protected $balanceSubstract;
 	
+	/**
+	 * used for rebalance multiple balances affected by the same line
+	 * @var type 
+	 */
+	protected $alreadyUpdated = [];
+	
 	protected $balances;
 	
 	/**
@@ -354,7 +360,7 @@ class ResetLinesModel {
 			$balanceUsaget = $line['usaget'];
 			$balanceUsagev = $line['usagev'];
 			if (isset($line['out_plan']) && $line['out_plan'] > 0 && $line['usagev'] > 0) {
-				$balanceUsaget = 'out_plan_' . $line['usaget'];
+				$balanceUsaget = $line['usaget'];
 				$balanceUsagev = $line['out_plan'];
 				if (isset($line['in_plan'])) {
 					$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
@@ -371,32 +377,34 @@ class ResetLinesModel {
 				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] = $outGroupUsage + $line['out_group'];
 			}
 			if ($balanceUsagev > 0 || isset($line['over_group'])) {
-				$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
-				$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
-				@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
+			$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
+			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
+			$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
+			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
+			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
 			}
 			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['cost'] += $line['aprice'];
 		}
 	}
 
-	protected function getRelevantBalance($balances, $balanceId, $params = array()) {
+	protected function getRelevantBalances($balances, $balanceId, $params = array()) {
+		$this->alreadyUpdated = [];
+		$ret = [];
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
-				return $rawData;
+				return [$rawData];
 			}
 
 			if (empty($balanceId) && !empty($params)) {
 				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
 				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
 				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
-					return $rawData;
+					$ret[] = $rawData;
 				}
 			}
 		}
-		return false;
+		return !empty($ret) ? $ret : false;
 	}
 
 	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
@@ -404,29 +412,34 @@ class ResetLinesModel {
 		foreach ($volumeToSubstract as $group => $usaget) {
 			foreach ($usaget as $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
-					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
+					$usage = min($usagev['usage'] - ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
+					$count = min($usagev['count'] - ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usage;
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
-						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usage;
 					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
-						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usage;
 					}
-					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $count;
+					$this->alreadyUpdated[$group]['usage'] = ($this->alreadyUpdated[$group]['usage'] ?? 0) + $usage;
+					$this->alreadyUpdated[$group]['count'] = ($this->alreadyUpdated[$group]['count'] ?? 0) + $count;
 				}
 			}
 		}
 
 		foreach ($totalsUsage as $usageType => $usage) {
-			if (isset($balance['balance']['totals'])) {			
+			if (isset($balance['balance']['totals'])) {
 				if (isset($usage['usage'])) {
-					$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
+				$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
 				}
 				if (isset($usage['cost'])) {
-					$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
+				$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
 				}
 				if (isset($usage['count'])) {
-					$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
+				$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
 				}
-				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;	
+				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;
 				if (isset($usage['out_group'])) {
 					$update['$set']['balance.totals.' . $usageType . '.out_group.usagev'] = $balance['balance']['totals'][$usageType]['out_group']['usagev'] - $usage['out_group']['usage'];
 				}
@@ -453,16 +466,21 @@ class ResetLinesModel {
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
-				if (empty($balanceToUpdate)) {
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId);
+				if (empty($relevantBalances)) {
 					continue;
 				}
-				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
-				$query = array(
-					'_id' => new MongoId($balanceId),
-				);
-				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
-				$balancesColl->update($query, $updateData);
+				foreach ($relevantBalances as $balanceToUpdate) {
+					if (empty($balanceToUpdate)) {
+						continue;
+					}
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+					$query = array(
+						'_id' => new MongoId($balanceId),
+					);
+					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
+					$balancesColl->update($query, $updateData);
+				}
 			}
 		}
 
@@ -482,22 +500,25 @@ class ResetLinesModel {
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
-					if (empty($balanceToUpdate)) {
-						continue;
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
+					foreach ($relevantBalances as $balanceToUpdate) {
+						if (empty($balanceToUpdate)) {
+							continue;
+						}
+						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
+						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
+						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
+						if (empty($updateData)) {
+							continue;
+						}
+						
+						$query = array(
+							'_id' => $balanceToUpdate['_id'],
+						);
+						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
+						$ret = $balancesColl->update($query, $updateData);
 					}
-					$groups = !empty($usage['groups']) ? $usage['groups'] : array();
-					$totals = !empty($usage['totals']) ? $usage['totals'] : array();
-					$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
-					if (empty($updateData)) {
-						continue;
-					}
-					$query = array(
-						'_id' => $balanceToUpdate['_id'],
-					);
-					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
-					$ret = $balancesColl->update($query, $updateData);
 				}
 			}
 		}

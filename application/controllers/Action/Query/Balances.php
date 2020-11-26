@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @deprecated since version 4.0
  */
 class BalancesAction extends QueryAction {
-
+	protected $type = 'balances';
 	/**
 	 * Get the max list count.
 	 * @return int The maximum number allowed for the query.
@@ -67,12 +67,11 @@ class BalancesAction extends QueryAction {
 	 * @return array lines to return for the action.
 	 */
 	protected function getLinesData($request, $linesRequestQueries) {
-		$cacheParams = array(
+		$params = array(
 			'fetchParams' => $linesRequestQueries
 		);
 
-		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
-		return $this->cache($cacheParams);
+		return $this->getLinesDataForQuery($params);
 	}
 
 	/**

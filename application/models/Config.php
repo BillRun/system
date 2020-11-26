@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse', 'range');
         
 	/**
 	 * reserved names of File Types.
@@ -59,7 +59,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate', 'export');
 		$this->loadConfig();
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 	}
 
 	public function getOptions() {
@@ -146,6 +146,24 @@ class ConfigModel {
 			return $tokens;
 		} else if ($category == 'minimum_entity_start_date'){
 			return Models_Entity::getMinimumUpdateDate();
+		} else if ($category === 'plugin_actions') {
+			if (!empty($data['actions']) && is_array($data['actions'])) {
+				$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+				foreach ($data['actions'] as $methodName) {
+					$plugins[$methodName] = $dispatcherChain->getImplementors($methodName);
+				}
+			}
+			return $plugins;
+		} else if ($category === 'plugins') {
+			$plugins = $this->_getFromConfig($currentConfig, $category, $data);
+			// Add configuration fields array to plugins
+			$configuration = Billrun_Factory::dispatcher()->trigger('getConfigurationDefinitions');
+			foreach ($plugins as $key => $plugin) {
+				if (!is_string($plugin) && !empty($configuration[$plugin['name']])) {
+					$plugins[$key]['configuration']['fields'] = $configuration[$plugin['name']];
+				}
+			}
+			return $plugins;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -321,6 +339,33 @@ class ConfigModel {
 			if ($this->validateEvent($eventType, $data)) {
 				$updatedData['events'][$eventType][] = $data;
 			}
+		} else if ($category === 'plugins') {
+			throw new Exception('Only one plugin can be saved');
+		} else if ($category === 'plugin') {
+			if (empty($data['name'])) {
+				throw new Exception('Missing plugin name');
+			}
+			// Search for plugin in old structure - as array of classNames
+			$old_strucrute_plugin_index = array_search($data['name'], $updatedData['plugins']);
+			if ($old_strucrute_plugin_index !== FALSE) {
+				// allow only in this case to set all parameters to convert class_name to new plugin structure
+				$updatedData['plugins'][$old_strucrute_plugin_index] = $data;
+			} else {
+				$plugins_names = array_map(function($plugin) {
+					return is_string($plugin) ? $plugin : $plugin['name'];
+				}, $updatedData['plugins']);
+				$plugin_index = array_search($data['name'], $plugins_names);
+				if ($plugin_index === FALSE) {
+					throw new Exception("Plugin {$data['name']} not found");
+				}
+				// Allow to update only 'enabled' flag and configuration values
+				if (isset($data['enabled'])) {
+					$updatedData['plugins'][$plugin_index]['enabled'] = $data['enabled'];
+				}
+				if (isset( $data['configuration']['values'])) {
+					$updatedData['plugins'][$plugin_index]['configuration']['values'] = $data['configuration']['values'];
+				}
+			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -332,6 +377,12 @@ class ConfigModel {
 		if ($saveResult) {
 			// Reload timezone.
 			Billrun_Config::getInstance()->refresh();
+			if ($category === 'shared_secret') {
+				// remove previous defined clientof the same secret (in case of multiple saves or name change)
+				Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+				// save into oauth_clients
+				Billrun_Factory::oauth2()->getStorage('access_token')->setClientDetails($data['name'], $data['key'], Billrun_Util::getForkUrl());
+			}
 		}
 
 		return $saveResult;
@@ -385,6 +436,7 @@ class ConfigModel {
 		$uniqueFields = array();
 		foreach ($data as &$field) {
 			$fieldName = $field['field_name'];
+			$plays = Billrun_Util::getIn($field, 'plays', []);
 			$prevField = false;
 			foreach ($prevData as $f) {
 				if ($f['field_name'] === $fieldName) {
@@ -398,20 +450,26 @@ class ConfigModel {
 			}
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
-				$mandatoryFields[] = $fieldName;
+				$mandatoryFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 			
 			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
-				$uniqueFields[] = $fieldName;
+				$uniqueFields[] = [
+					'name' => $fieldName,
+					'plays' => $plays,
+				];
 			}
 		}
 
 		if (!$this->validateMandatoryFields($entityModel, $mandatoryFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $mandatoryFields) .'] mandatory because there is an entity missing one of those fields');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($mandatoryFields, 'name')) .'] mandatory because there is an entity missing one of those fields');
 		}
 
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
-			throw new Exception('cannot make field\s [' . implode(', ', $uniqueFields) .'] unique because for one of those fields there is more than one entity with the same value');
+			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
 		
 		return true;
@@ -459,7 +517,15 @@ class ConfigModel {
 			'$in' => $plays,
 		);
 		
-		return !Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->isEmpty();
+		$checkInEntities = ['plans', 'services', 'rates', 'subscribers'];
+		foreach ($checkInEntities as $entity) {
+			$inUseInEntity = !Billrun_Factory::db()->{$entity . 'Collection'}()->query($query)->cursor()->current()->isEmpty();
+			if ($inUseInEntity) {
+				return true;
+			}
+		}
+		return false;
+		
 	}
 	
 	/**
@@ -493,8 +559,19 @@ class ConfigModel {
 		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
 		$mandatoryQuery['$or'] = array();
 		foreach ($mandatoryFields as $field) {
-			$mandatoryQuery['$or'][] = array($field => '');
-			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => ''
+				);
+				$mandatoryQuery['$or'][] = array(
+					'play' => array('$in' => $field['plays']),
+					$field['name'] => array('$exists' => false)
+				);
+			} else {
+				$mandatoryQuery['$or'][] = array($field['name'] => '');
+				$mandatoryQuery['$or'][] = array($field['name'] => array('$exists' => false));
+			}
 		}
 		
 		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
@@ -519,16 +596,22 @@ class ConfigModel {
 		);
 		
 		foreach ($uniqueFields as $field) {
-			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
-			$unwind = '$' . $field;
+			$matchFields = array(
+				$field['name'] => array('$exists' => true),
+			);
+			if (Billrun_Utils_Plays::isPlaysInUse() && !empty($field['plays'])) {
+				$matchFields['play'] = ['$in' => $field['plays']];
+			}
+			$match = array_merge($basicMatch, $matchFields);
+			$unwind = '$' . $field['name'];
 			$project = array(
-				$field => 1,
+				$field['name'] => 1,
 				't.from' => '$from',
 				't.to' => '$to',
 			);
 			
 			$group = array(
-				'_id' => '$' . $field,
+				'_id' => '$' . $field['name'],
 				'ts' => array('$push' => '$t'),
 				's' => array('$sum' => 1),
 			);
@@ -562,6 +645,8 @@ class ConfigModel {
 			'subscribers.subscriber.fields' => 'subscribers',
 			'subscribers.account.fields' => 'accounts',
 			'rates.fields' => 'rates',
+			'plans.fields' => 'plans',
+			'services.fields' => 'services',
 		);
 	}
 	
@@ -855,6 +940,11 @@ class ConfigModel {
  		}
  
 		$ret = $this->collection->insert($updatedData);
+		
+		if ($category === 'shared_secret') {
+			// remove into oauth_clients
+			Billrun_Factory::oauth2()->getStorage('access_token')->unsetClientDetails(null, $data['key']);
+		}
 		return !empty($ret['ok']);
 	}
 	
@@ -944,9 +1034,19 @@ class ConfigModel {
 	
 	
 	protected function setPaymentGatewaySettings(&$config, $pgSettings) {
- 		$paymentGateway = $pgSettings['name'];
+ 		$paymentGatewayName = $pgSettings['name'];
  		foreach ($config['payment_gateways'] as &$somePgSettings) {
- 			if ($somePgSettings['name'] == $paymentGateway) {
+ 			if ($somePgSettings['name'] == $paymentGatewayName) {
+				if (!empty($pgSettings['transactions']['receiver'])) {
+					foreach ($pgSettings['transactions']['receiver']['connections'] as $key => $connection) {
+						$pgSettings['transactions']['receiver']['connections'][$key]['receiver_type'] = $paymentGatewayName;
+					}
+				}
+				if (!empty($pgSettings['denials']['receiver'])) {
+					foreach ($pgSettings['denials']['receiver']['connections'] as $key => $connection) {
+						$pgSettings['denials']['receiver']['connections'][$key]['receiver_type'] = $paymentGatewayName;
+					}
+				}	
  				$somePgSettings = $pgSettings;
  				return;
  			}
@@ -992,18 +1092,18 @@ class ConfigModel {
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetFileTypeSettings(&$config, $fileType) {
-		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
+		$config['file_types'] = array_values(array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
-		});
+		}));
 	}
 	
 	/**
 	 * TODO change to unsetSettingsArrayElement
 	 */
 	protected function unsetPaymentGatewaySettings(&$config, $pg) {
- 		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
+ 		$config['payment_gateways'] = array_values(array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] !== $pg;
- 		});
+ 		}));
  	}
 	
 	protected function unsetExportGeneratorSettings(&$config, $name) {
@@ -1016,9 +1116,9 @@ class ConfigModel {
 	}
 	
 	protected function unsetSharedSecretSettings(&$config, $secret) {
- 		$config['shared_secret'] = array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
+ 		$config['shared_secret'] = array_values(array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
  			return $secretSettings['key'] !== $secret;
- 		});
+ 		}));
  	}
  
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
@@ -1058,7 +1158,7 @@ class ConfigModel {
 							}
 
 							if (isset($fileSettings['unify'])) {
-								$updatedFileSettings['unify'] = $fileSettings['unify'];
+								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
 							
 							if (isset($fileSettings['filters'])) {
@@ -1154,12 +1254,12 @@ class ConfigModel {
 		$defaultParametersKeys = array_keys($defaultParameters);
 		$diff = array_diff($defaultParametersKeys, $connectionParameters);
 		if (!empty($diff)) {
-			Billrun_Factory::log("Wrong parameters for connection to ", $name);
+			Billrun_Factory::log("Wrong parameters for connection to " . $name, Zend_Log::NOTICE);
 			return false;
 		}
 		$isAuth = $paymentGateway->authenticateCredentials($pg['params']);
 		if (!$isAuth){
-			throw new Exception('Wrong credentials for connection to ', $name); 
+			throw new Exception('Wrong credentials for connection to ' . $name, Zend_Log::NOTICE); 
 		}	
 		
  		return true;
@@ -1252,9 +1352,7 @@ class ConfigModel {
 					}, $customerIdentification);
 					$subscriberFields = array_map(function($field) {
 						return $field['field_name'];
-					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-							return !empty($field['unique']);
-						}));
+					}, $config['subscribers']['subscriber']['fields']);
 					if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
 						throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 					}
@@ -1287,13 +1385,13 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget', 'file');
+			$billrunFields = array('type', 'usaget', 'file', 'connection_type', 'urt');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
 			$additionalFields = array('computed');
 			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
-				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
+				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
 		}
 		}
 		return true;
@@ -1571,9 +1669,9 @@ class ConfigModel {
 	
 	protected function getTaxationFields() {
 		$ret = array(
-			'tax.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
-			'tax.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
-			'tax.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
+			'taxation.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
+			'taxation.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
+			'taxation.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
 		);
 		return $ret;
 	}
@@ -1653,6 +1751,30 @@ class ConfigModel {
 		return array_column(array_filter($parserStructure, function($field) {
 				return isset($field['checked']) && $field['checked'] === true;
 			}),'name');
+	}
+	
+	/**
+	 * Get final unify configuration 
+	 * 
+	 * @param array $config - current configuration
+	 * @param array $unifyConfig - unify configuration received
+	 * @return array
+	 */
+	protected function getUnifyConfig($config, $unifyConfig) {
+		if (empty($unifyConfig) && !empty($config['realtime']) && empty($config['realtime']['postpay_charge'])) { // prepaid request
+			$unifyConfig = $this->getPrepaidUnifyConfig();
+		}
+		
+		return $unifyConfig;
+	}
+	
+	/**
+	 * Get's unify configuration for prepaid input processors (taken from global unify configuration)
+	 * 
+	 * @return array
+	 */
+	protected function getPrepaidUnifyConfig() {
+		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
 
 }

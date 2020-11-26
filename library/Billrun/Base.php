@@ -169,7 +169,23 @@ abstract class Billrun_Base {
 			$args = array_merge(Billrun_Factory::config()->getConfigValue($called_class)->toArray(), $args);
 		}
 
-		$class_type = $type;
+		if (!isset($args['payment_gateway'])) {
+			$class_type = $type;
+		} else {
+			$class_type = 'PaymentGateway_' . $args['payment_gateway'] . '_' . ucfirst($type);
+			$gatewayName = $args['payment_gateway'];
+			$typeInConfig = array_filter(Billrun_Factory::config()->payment_gateways->toArray(), function($pgSettings) use ($gatewayName) {
+				return $pgSettings['name'] === $gatewayName;
+			});
+			if ($typeInConfig) {
+				$typeInConfig = current($typeInConfig);
+			}
+			if (!empty($typeInConfig['custom'])) {
+				$args = array_merge($typeInConfig, $args);
+				$args['type'] = $type;
+				$class_type = 'PaymentGateway_Custom_' . str_replace('_', '', ucwords($type, '_'));
+			}
+		}
 		if ($config_type) {
 			if (is_object($config_type)) {
 				$config_type = $config_type->toArray();
@@ -199,7 +215,7 @@ abstract class Billrun_Base {
 			$external_class = str_replace('Billrun_', '', $class);
 			if (($pos = strpos($external_class, "_")) !== FALSE) {
 				$namespace = substr($external_class, 0, $pos);
-				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
+				br_yaf_register_autoload($namespace, APPLICATION_PATH . '/application/helpers');
 			}
 			// TODO: We need a special indication for this case.
 			// There are places in the code that try to create clases in a loop,

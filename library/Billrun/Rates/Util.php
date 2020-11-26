@@ -102,12 +102,22 @@ class Billrun_Rates_Util {
 	 */
 	public static function getCharges($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time);
+		$percentage = 1;
+		
+		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
+		if (array_keys($tariff)[0] === 'percentage') {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
+		$chargeWoIC *= $percentage;
 		return array(
 			'total' => $chargeWoIC,
 		);
@@ -153,9 +163,16 @@ class Billrun_Rates_Util {
 		return static::getCharges($rate, $usageType, $volume, $plan, $services, $offset, $time)['total'];
 	}
 
-	// TODO: This is a temporary function
-	public static function getVat($default = 0.17) {
-		return Billrun_Factory::config()->getConfigValue('taxation.vat', $default);
+	/**
+	 * Get system's VAT rate
+	 * 
+	 * @param float $default
+	 * @return float in range 0-1
+	 * @deprecated since version 5.9 - use Tax calculator
+	 */
+	public static function getVat($default = 0.17, $time = null) {
+		$defaultTax = Billrun_Calculator_Tax_Usage::getDetaultTax($time);
+		return !empty($defaultTax) && isset($defaultTax['rate']) ? $defaultTax['rate'] : $default;
 	}
 
 	/**
@@ -191,12 +208,22 @@ class Billrun_Rates_Util {
 	 */
 	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $services, $time);
+		$percentage = 1;
+		
+		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
+		if (array_keys($tariff)[0] === 'percentage') {
+			if (isset($rate['rates'][$usageType]['BASE'])) {
+				$percentage = array_values($tariff)[0];
+				$tariff = $rate['rates'][$usageType]['BASE'];
+			}
+		}
 		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
 			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
+		$chargeWoIC *= $percentage;
 		return array(
 			'total' => $chargeWoIC,
 		);

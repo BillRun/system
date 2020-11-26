@@ -241,15 +241,10 @@ class Billrun_Util {
 	 * 
 	 * @return float the VAT at the current timestamp
 	 * @todo move to specific VAT object
+	 * @deprecated since version 5.9 - use Tax calculator
 	 */
 	public static function getVATAtDate($timestamp) {
-		$mongo_date = new MongoDate($timestamp);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+		return Billrun_Rates_Util::getVat(0.17, $timestamp);
 	}
 
 	/**
@@ -1120,9 +1115,10 @@ class Billrun_Util {
 	 * @param string $data parameters for the request
 	 * @param string $method should be POST or GET
 	 * 
+	 * @param returnResponse - true - function returns the whole response, false - returns only body.
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null, $returnResponse  = false) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1163,7 +1159,7 @@ class Billrun_Util {
 			Billrun_Factory::log("Initiated HTTP request to " . $urlHost, Zend_Log::DEBUG);
 			$response = $client->request();
 			Billrun_Factory::log("Got HTTP response from " . $urlHost, Zend_Log::DEBUG);
-			$output = $response->getBody();
+			$output = !$returnResponse ? $response->getBody() : $response;
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
 			if(!$response) {
@@ -1591,7 +1587,6 @@ class Billrun_Util {
 																										   $userData) );
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
 						}
 						break;
 					//Handle regex translation
@@ -1604,15 +1599,13 @@ class Billrun_Util {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
-				if (!is_null($val) || !empty($trans['nullable'])) {
+				if (!is_null($val) || empty($trans['ignore_null'])) {
 					$retData[$key] = $val;
 				}
 			}
@@ -1645,6 +1638,39 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+
+	/**
+	 * Deeply unset an array values by path.
+	 *
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param type $clean_tree - if TRUE, all empty branches  in in keys will be removed
+	 */
+	public static function unsetInPath(&$arr, $keys, $clean_tree = false) {
+		if (empty($keys)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$prev_el = NULL;
+		$el = &$arr;
+		foreach ($keys as &$key) {
+			$prev_el = &$el;
+			$el = &$el[$key];
+		}
+		if ($prev_el !== NULL) {
+			unset($prev_el[$key]);
+		}
+		if ($clean_tree) {
+			array_pop($keys);
+			$prev_branch = static::getIn($arr, $keys);
+			if (empty($prev_branch)) {
+				static::unsetInPath($arr, $keys, true);
+			}
+		}
+	}
+
 	/**
 	 * Deeply unsets an array value.
 	 * 
@@ -1652,7 +1678,7 @@ class Billrun_Util {
 	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
 	 * @param mixed $value - value to unset
 	 */
-	public static function unsetIn(&$arr, $keys, $value) {
+	public static function unsetIn(&$arr, $keys, $value = null) {
 		if (!is_array($arr)) {
 			return;
 		}
@@ -1663,9 +1689,13 @@ class Billrun_Util {
 		foreach($keys as $key) {
 			$current = &$current[$key];
 		}
-		unset($current[$value]);
+		
+		if (!is_null($value)) {
+			$current = &$current[$value];
+		}
+		
+		unset($current);
 	}
-
 
 	/**
 	 * Gets the value from an array.
@@ -1774,10 +1804,10 @@ class Billrun_Util {
 	 * @param type $self
 	 * @return type
 	 */
-	public static function translateTemplateValue($str, $translations, $self = NULL) {
+	public static function translateTemplateValue($str, $translations, $self = NULL, $customGateway = false) {
 		foreach ($translations as $key => $translation) {
 			if(is_string($translation) || is_numeric($translation)) {
-				$replace = is_numeric($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
+				$replace = !is_string($translation) && !$customGateway ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
 				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
@@ -1820,6 +1850,110 @@ class Billrun_Util {
 		);
 		
 		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
+	}
+	
+	/**
+	 * try to fork, and if successful update the process log stamp
+	 * to match the correct pid after the fork
+	 * 
+	 * @return $pid the result from fork attempt
+	 */
+	public static function fork() {
+		$pid = pcntl_fork();
+		if ($pid !== -1) {
+			Billrun_Factory::log()->updateStamp();
+		}	
+		return $pid;
+	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function findInArray($array, $fields, $defaultVal = null, $retArr = FALSE) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField, $attr);
+		if (!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=", Billrun_Util::getFieldVal($attr[1], FALSE));
+		}
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField);
+		$aggregate = $retArr && ($field == '*');
+		$keys = ($field != "*") ? array($field) : array_keys($array);
+
+		$retVal = $aggregate ? array() : $defaultVal;
+		foreach ($keys as $key) {
+			if (isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] )) {
+				if (!$aggregate) {
+					$retVal[$key] = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($retVal[$key] === $defaultVal) {
+						unset($retVal[$key]);
+					}
+					break;
+				} else {
+					$tmpRet = empty($fields) ? $array[$key] : static::findInArray($array[$key], $fields, $defaultVal, $retArr);
+					if ($tmpRet !== $defaultVal) {
+						$retVal[$key] = $tmpRet;
+					}
+				}
+			}
+		}
+
+		return $retVal;
+	}
+
+	/**
+	 *  Get all user fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user fields names
+	 */
+	public static function getCustomerAndRateUf($type) {
+		$fieldNames = array();
+		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
+		foreach ($customerIdentificationFields as $fields) {
+			$customerFieldNames = array_column($fields, 'src_key');
+			$fieldNames = array_merge($fieldNames, $customerFieldNames);
+		}
+		$rateCalculators = $fileTypeConfig['rate_calculators'];
+		foreach ($rateCalculators as $rateByUsaget) {
+			foreach ($rateByUsaget as $priorityByUsaget) {
+				foreach ($priorityByUsaget as $priority) {
+					$rateFieldNames = array_column($priority, 'line_key');
+					$fieldNames = array_merge($fieldNames, $rateFieldNames);
+				}
+			}
+		}
+
+		return array_unique($fieldNames);
+	}
+	
+	/**
+	 * Aggregate strings representing time from some start point
+	 * @param array $relativeTimes - array of relative time strings
+	 * @param int $startTime - unix timestamp determine where to start the count
+	 * @return aggregated unix timestamp
+	 */
+	public static function calcRelativeTime($relativeTimes, $startTime) {
+		if (!is_array($relativeTimes)) {
+			$relativeTimes = array($relativeTimes);
+		}
+		foreach ($relativeTimes as $relativeTime) {
+			$actualTime = strtotime($relativeTime, $startTime);
+			$startTime = $actualTime;
+		}
+		
+		return $actualTime;
+	}
+	
+	public static function addGetParameters($url, $queryData) {
+		$query = parse_url($url, PHP_URL_QUERY);	
+		$url .= ($query ? "&" : "?") . http_build_query($queryData);
+		$url = htmlspecialchars($url);
+		return $url;
 	}
 
 }

@@ -38,8 +38,8 @@ class AccountInvoicesAction extends ApiAction {
 					'input' => $request->getRequest()
 			)));
 		} catch (Exception $ex) {
+			Billrun_Factory::log('AccountInvoices Error: ' . print_r(array('input' => $request->getPost(), 'error'=> $ex->getMessage(), 'trace' => $ex->getTraceAsString()),1),Zend_Log::ERR);
 			$this->setError($ex->getMessage(), $request->getPost());
-			Billrun_Factory::log(print_r(array('error'=> $ex->getMessage(), 'input' => $request->getPost()),1),Zend_Log::ERR);
 			return;
 		}
 	}
@@ -91,10 +91,10 @@ class AccountInvoicesAction extends ApiAction {
 			}
 		}
 		$invoiceId = $invoice['invoice_id'];
-		
-		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
-		$pdf = $files_path . $billrun_key . '/pdf/' . $file_name;
+		$invoiceData = $invoice->getRawData();
+
+		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
+		$pdf = $invoiceData['invoice_file'];
 
 		if( $request->get('detailed') ) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
@@ -102,6 +102,7 @@ class AccountInvoicesAction extends ApiAction {
 			$generator->generate();
 		}
 		if (!file_exists($pdf)){
+                        Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
 			$cont = file_get_contents($pdf);
@@ -147,7 +148,7 @@ class AccountInvoicesAction extends ApiAction {
 	
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		Billrun_Plan::initPlans();
+		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
 			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);

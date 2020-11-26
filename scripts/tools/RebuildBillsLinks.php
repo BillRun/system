@@ -1,12 +1,13 @@
 <?php
 
+// Example: php scripts/tools/RebuildBillsLinks.php --accounts=123 --env <env> --tenant <tenant>
 
 $dir = '/var/www/billrun/';
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', $dir);
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap();
-Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 
 /**
  * Reset and update linking fields between bills (invoices, payments)

@@ -53,7 +53,7 @@ class PaymentGatewaysController extends ApiController {
 		);
 		$this->setOutput(array($output));
 	}
-
+	
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
@@ -176,9 +176,7 @@ class PaymentGatewaysController extends ApiController {
 	 * exception if the input is invalid
 	 */
 	protected function validatePaymentGateway($name, $aid) {
-		// Get the accound object.
-		$accountQuery = $this->getAccountQuery($aid);
-		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
 		if($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
 			// Check the payment gateway
 			if($account['payment_gateway']['active']['name'] != $name) {
@@ -241,6 +239,61 @@ class PaymentGatewaysController extends ApiController {
 			$this->getView()->outputMethod = 'header';
 			$this->getView()->output = "Location: " . $returnUrl;
 		}
+	}
+	
+	/**
+	 * handling the response from the payment gateway and saving the details to db.
+	 * 
+	 */
+	public function createRecurringBillingProfileAction() {
+		$this->allowed();
+		$request = $this->getRequest();
+		$aid = intval($request->get('aid'));
+		$gatewayDetails = json_decode($request->get('payment_data'), JSON_OBJECT_AS_ARRAY);
+		if (empty($aid) || empty($gatewayDetails)) {
+			return $this->setError("Missing patameter/s", $request);
+		}
+		$paymentGateway = $this->getPaymentGateway($gatewayDetails['name']);
+		try {
+			$profileId = $paymentGateway->createRecurringBillingProfile($aid, $gatewayDetails);
+			if (empty($profileId)) {
+				$errorMessage = "Failed to create recurring billing profile for {$aid}";
+				Billrun_Factory::log("{$errorMessage}. Request: " . print_R($request, 1), Billrun_Log::ERR);
+				return $this->setError($errorMessage, $request);
+			}
+		} catch (Exception $ex) {
+			Billrun_Factory::log("CreateRecurringBillingProfile got exception: {$ex->getCode()} - {$ex->getMessage()}", Billrun_Log::ERR);
+			return $this->setError($ex->getMessage(), $request);
+		}
+		
+		return $this->responseSuccess(['profile_id' => $profileId]);
+	}
+	
+	/**
+	 * get payment gateway from request
+	 * 
+	 * @return Billrun_PaymentGateway
+	 */
+	protected function getPaymentGateway($paymentGatewayName) {
+		if (is_null($paymentGatewayName)) {
+			return $this->setError('Missing payment gateway name', $request);
+		}
+		$paymentGateway = Billrun_PaymentGateway::getInstance($paymentGatewayName);
+		if (!$paymentGateway) {
+			return $this->setError("Cannot get payment gateway {$paymentGatewayName}", $request);
+		}
+		
+		return $paymentGateway;
+	}
+	
+	protected function responseSuccess($details, $desc = 'success') {
+		$output = [
+			'status' => 1,
+			'desc' => $desc,
+			'details' => $details,
+		];
+		$this->getView()->outputMethod = ['Zend_Json', 'encode'];
+		$this->setOutput([$output]);
 	}
 
 	public function successAction() {

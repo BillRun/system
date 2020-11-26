@@ -137,7 +137,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return void
 	 */
 	public function put($local, $remote) {
-		$this->getConnection()->put($remote, $local, \phpseclib\Net\SFTP::SOURCE_LOCAL_FILE);
+		return $this->getConnection()->put($remote, $local, \phpseclib\Net\SFTP::SOURCE_LOCAL_FILE);
 	}
 
 	/**
@@ -380,6 +380,33 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 			return $this->connection;
 		}
 		return $this->connection = new phpseclib\Net\SFTP($this->host, $this->port);
+	}
+	
+	/**
+	 * Rename a remote file.
+	 * 
+	 * @return string
+	 */
+	public function renameFile($oldname, $newname) {
+		return $this->getConnection()->rename($oldname, $newname);
+	}
+	
+	/**
+	 * Change working directory.
+	 * 
+	 * @return boolean
+	 */
+	public function changeDir($newPath) {
+		return $this->getConnection()->chdir($newPath);
+	}
+        
+        
+        /**
+	 * Verify that the path is a file. 
+	 * @return boolean true if the path is a file false otherwise.
+	 */
+        public function isFile($path) {
+		return $this->getConnection()->is_file($path);
 	}
 
 }

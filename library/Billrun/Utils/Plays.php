@@ -47,9 +47,30 @@ class Billrun_Utils_Plays {
 			return $fields;
 		}
 		
+		if (!is_array($play)) {
+			$play = [$play];
+		}
+		
 		return array_filter($fields, function($field) use ($play) {
-			return !isset($field['plays']) || in_array($play, $field['plays']);
+			return !isset($field['plays']) || count(array_intersect($play, $field['plays'])) > 0;
 		});
+	}
+	
+	/**
+	 * Returns the default play
+	 * 
+	 * @return String - default play
+	 */
+	public static function getDefaultPlay() {
+		$plays = self::getAvailablePlays();
+		$defaultPlay = array();
+		foreach ($plays as $play) {
+			if (!empty($play['default'])) {
+				$defaultPlay = $play;
+				break;
+			}
+		}
+		return $defaultPlay;
 	}
 	
 }

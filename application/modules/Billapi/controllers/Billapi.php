@@ -67,7 +67,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 		$pluginStatus = true;
 		Billrun_Factory::dispatcher()->trigger('beforeBillApi', array($this->collection, $this->action, &$request, &$pluginStatus));
 		if ($pluginStatus !== true) {
@@ -81,9 +81,10 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest();
 		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
 		$this->params['settings'] = $this->settings;
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiRunOperation', array($this->collection, $this->action, &$this->params['request']));
 		$this->runOperation();
 		$this->getResponse()->setHeader('Content-Type', 'application/json');
-		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
+		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, &$this->output));
 	}
 
 	protected function runOperation() {

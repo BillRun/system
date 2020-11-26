@@ -25,7 +25,7 @@ class Billrun_Cycle_Paging {
 	public function __construct($options, $pagingCollection) {
 		$this->options = Billrun_Util::getFieldVal($options, $this->defaultOptions);
 		$this->pagerCollection = $pagingCollection;
-		$this->host = gethostname();
+		$this->host = Billrun_Util::getHostName();
 	}
 	
 	/**
@@ -48,7 +48,8 @@ class Billrun_Cycle_Paging {
 			return false;
 		}
 		
-		if($this->checkExists($nextPage)) {
+
+		if($this->checkExists($nextPage)) { // we couldn't lock the next page (other process did it)
 			$error = "Page number ". $nextPage ." already exists.";
 			Billrun_Factory::log($error . " Trying Again...", Zend_Log::NOTICE);
 			usleep($this->sleepTime);

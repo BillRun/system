@@ -400,6 +400,9 @@ class Mongodloid_Collection {
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
+				if ($doc instanceof Mongodloid_Entity) {
+					$doc = $doc->getRawData();
+				}
 				$batch->add($doc);
 			}
 			return $batch->execute($options);
@@ -495,7 +498,7 @@ class Mongodloid_Collection {
 		while (1) {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->setReadPreference('RP_PRIMARY')->sort(array('seq' => -1))->limit(1)->current()->get('seq');
-			if (is_null($lastSeq)) {
+			if (is_null($lastSeq) || $lastSeq < $init_id) {
 				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;

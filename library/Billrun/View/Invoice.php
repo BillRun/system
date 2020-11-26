@@ -22,6 +22,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		'data' => 1024*1024
 	);
 	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
+	public $invoice_flat_tabels = [];
+	public $invoice_usage_tabels = [];
 	
 	/*
 	 * get and set lines of the account
@@ -89,8 +91,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
 				$rate = $this->getRateForLine($line);
 				$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
-				
-				$line->collection(Billrun_Factory::db()->linesCollection());
+				if ($line instanceof Mongodloid_Entity) {
+					$line->collection(Billrun_Factory::db()->linesCollection());
+				}
 				$name = $this->getLineUsageName($line);
 				$key = $this->getLineAggregationKey($line, $rate, $name);
 				$subscriptionList[$key]['desc'] = $name;	
@@ -210,7 +213,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function shouldProvideDetails() {
-		return !empty($this->data['attributes']['detailed_invoice']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
+		return !empty($this->data['attributes']['invoice_details']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
 	}
 	
 	public function getInvoicePhonenumber($rawNumber) {
@@ -250,11 +253,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	}
 	
 	public function getSubscriberMessages($sid) {
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($this->data['invoice_date']->sec);
+		$query['time'] = date(Billrun_Base::base_datetimeformat, $this->data['invoice_date']->sec);
 		$query['sid'] = $sid;
-		$query['type'] = 'subscriber';
-		$sub = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current();
-		$msgs = !$sub->isEmpty() && !empty($sub['invoice_messages']) ? $sub['invoice_messages'] : [];
+		$subData = Billrun_Factory::subscriber()->loadSubscriberForQuery($query);
+		$msgs = !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
 			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);
@@ -265,4 +267,87 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $retMsgs;
 	}
 	
+	public function createSubscriberInvoiceTables($lines, $flatTypes = [], $usageTypes = [], $details_keys = []) {
+		$config = Billrun_Factory::config();
+		$invoice_display = $config->getInvoiceDisplayConfig();
+		$lines = array_filter($lines, function($line) {
+			return $line['sid'] != 0;
+		});
+		$this->buildNotCustomTabels($lines, $flatTypes, false, $details_keys);
+		if (!empty($tabels_config = $invoice_display['usage_details']['tables'])) {
+			foreach ($lines as $index => $line) {
+				if (in_array($line['type'], $usageTypes)) {
+					$this->associateLineToTable($line, $tabels_config, $details_keys);
+				}
+			}
+		} else {
+			$this->buildNotCustomTabels($lines, $usageTypes, true, $details_keys);
+		}
+	}
+
+	public function associateLineToTable($line, $tabels_config, $details_keys = []) {
+		$meetConditions = 0;
+		foreach ($tabels_config as $tabel_index => $tabel_config) {
+			foreach ($tabel_config['conditions'] as $condition) {
+				if (Billrun_Util::isConditionMet($line, $condition)) {
+					$meetConditions = 1;
+				}
+			}
+			if ($meetConditions) {
+				$this->invoice_usage_tabels[$line['sid']][$tabel_index][] = $this->getTableRow($line, $tabel_config['columns'], $details_keys);
+				return;
+			}
+		}
+	}
+
+	public function getTableRow($line, $columns, $details_keys = [], $is_flat_type = false) {
+		$row = [];
+		$datetime_format = Billrun_Factory::config()->getConfigValue('invoice_export.datetime_format', 'd/m/Y H:i:s');
+		$flippedKeys = array_flip($details_keys);
+		foreach ($columns as $index => $column) {
+			switch ($column['field_name']) {
+				case 'urt':
+					$row['Date & Time'] = date($datetime_format, $line['urt']->sec - ($is_flat_type ? 1 : 0));
+					break;
+				case 'usaget':
+					$row['Type'] = (!empty($flippedKeys[$line['usaget']]) ? $flippedKeys[$line['usaget']] : (empty($flippedKeys[$line['type']]) ? $line['type'] : $flippedKeys[$line['type']]));
+					break;
+				case 'arate_key':
+					$row['Rate'] = $this->getLineUsageName($line);
+					break;
+				case 'usagev':
+					$row['Volume'] = $this->getLineUsageVolume($line);
+					break;
+				case 'aprice':
+					$row['Amount'] = number_format($line['aprice'], 2);
+					break;
+				default:
+					$row[$column['label']] = Billrun_Util::getIn($line, $column['field_name'], "");
+					break;
+			}
+		}
+		return $row;
+	}
+
+	public function buildNotCustomTabels($lines, $types, $is_usage_types = false, $details_keys = []) {
+		$fields = ['Date & Time' => 'urt',
+			'Type' => 'usaget',
+			'Rate' => 'arate_key',
+			'Volume' => 'usagev',
+			'Amount' => 'aprice'
+		];
+		$columns = [];
+		foreach ($fields as $label => $field_name) {
+			$columns[] = ['field_name' => $field_name, 'label' => $label];
+		}
+		foreach ($lines as $index => $line) {
+			if (in_array($line['type'], $types)) {
+				if (!$is_usage_types) {
+					$this->invoice_flat_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys, true);
+				} else {
+					$this->invoice_usage_tabels[$line['sid']][0][] = $this->getTableRow($line, $columns, $details_keys);
+				}
+			}
+		}
+	}
 }

@@ -77,6 +77,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type string
 	 */
 	protected $timeZone = null;
+	
+	/**
+	 * 
+	 * user fields to include in stamp calculation
+	 * @var array
+	 */
+	protected $stampFields = array();
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -143,7 +150,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-
+                $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
+                
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
@@ -152,7 +160,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
-		$row['usaget'] = $this->getLineUsageType($row['uf']);
+		$row['usaget'] = $this->getLineUsageType($row);
 		$usagev = $this->getLineUsageVolume($row['uf'], $row['usaget']);
 		if ($usagev === false) {
 			return false;
@@ -163,7 +171,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			$row['prepriced'] = true;
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
-		$row['stamp'] = md5(serialize($row));
+		$row['stamp'] = md5(serialize(!empty($this->stampFields) ? $this->stampFields : $row));
 		$row['type'] = static::$type;
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
@@ -204,6 +212,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 		return $row;
 	}
+        
+        /**
+         * According to the configuration get computed fields (cf)
+         * @param Array     $uf - all the user-defined fields in the input processor
+         * @param string    $type - Input processor name
+         * @return Array    computed fields (cf)
+         */
+        protected function getCalculatedFields($uf, $type) {
+                $row = array();
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
+                foreach ($configurations as $calculatedConf){ 
+                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+                    $targetFieldName = $calculatedConf['target_field'];
+                    Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
+                }
+                return $row;
+	}
 
 //	protected function buildHeader($line) {
 //		$this->parser->setStructure($this->header_structure);
@@ -228,7 +253,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $trailer;
 	}
 
-	protected function getLineUsageType($userFields) {
+	protected function getLineUsageType($row) {
+		$this->stampFields = [];
+		$userFields = $row['uf'];
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
 				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field']) && !isset($usagetMapping['conditions'])) {
@@ -263,10 +290,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					}
 				}
 
-				if (($matchedConditions)) {
+				if ($matchedConditions) {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
+					// set the fields that will be used for line stamp calaulation
+					$stampFields = Billrun_Util::getIn($usagetMapping, 'stamp_fields', []);
+					$this->stampFields = $this->getStampFields($stampFields, $row);
 					return $usagetMapping['usaget'];
 				}
 			}
@@ -302,6 +332,19 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			}
 		}
 		return $volume;
+	}
+	
+	protected function getStampFields($paths = [], $row = []) {
+		$stampFields = array();
+		if ($paths) {
+			foreach ($paths as $fieldPath) {
+				$stampFields[$fieldPath] = Billrun_Util::getIn($row, $fieldPath, []);
+			}
+			if (!empty($row['type'])) {
+				$stampFields['type'] = $row['type'];
+			}
+		}
+		return $stampFields;
 	}
 	
 	/**

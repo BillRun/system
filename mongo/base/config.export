@@ -255,6 +255,15 @@
 			"mandatory":true,
 			"select_options":"retail",
 			"changeable_props": ["select_options"]
+		},
+		{
+			"system":true,
+			"display":true,
+			"editable":true,
+			"field_name":"invoice_label",
+			"default_value":"retail",
+			"show_in_list":true,
+			"title":"Invoice label"
 		}]
     },
     "plans": {
@@ -285,6 +294,48 @@
             "system": true,
             "mandatory": true,
             "type": "boolean"
+        }]
+    },
+    "discounts": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }]
+    },
+    "charges": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
         }]
     },
    "services": {
@@ -359,23 +410,21 @@
       "html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
     }
   },
-  "taxation" :{
-    "tax_type": "vat",
-     "CSI": {
-        "taxation_mapping": [],
-        "provider": "",
-        "auth_code": "",
-        "apply_optional_charges": true
-     },
-     "vat": {
-       "v": 0.17,
-       "t": "Float",
-       "range": {
-         "max": 1,
-         "min" : 0
-       }
-     }
-  },
+	
+	"taxation" : {
+		"tax_type" : "usage",
+		"default" : {
+			"key" : "DEFAULT_VAT"
+		},
+		"mapping" : {
+			"vat" : {
+				"priorities" : [ ],
+				"default_fallback" : true
+			}
+		},
+		"vat" : 0
+	},
+
   "property_types": [
 		{
 			"system": true,
@@ -448,7 +497,7 @@
 								"connection_type",
 								"aid",
 								"sid",
-								"msisdn"
+								"tax_data"
 							]
 						},
 						{
@@ -466,7 +515,8 @@
 								"apr",
 								"out_balance_usage",
 								"in_balance_usage",
-								"aprice"
+								"aprice",
+								"final_charge"
 							]
 						}
 					]
