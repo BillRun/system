@@ -137,6 +137,18 @@ class PortalController extends Yaf_Controller_Abstract {
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
+
+	/**
+	 * Registration entry point
+	 *
+	 * @return void
+	 */
+	public function registrationAction() {
+		$params = $this->requestBody;
+		$module = Portal_Actions::getInstance(['type' => 'registration']);
+		$res = $module->run($this->action, $params);
+		$this->setResponse($res);
+	}
 	
 	/**
 	 * get account query from OAuth2 credentials (username)

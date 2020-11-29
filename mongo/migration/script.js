@@ -1315,6 +1315,20 @@ runOnce(lastConfig, 'BRCD-2897', function () {
     lastConfig['plugins'].push(_customerPortalPluginsSettings);
 });
 
+// BRCD-2936: add email authentication template
+if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined') {
+	lastConfig['email_templates']['email_authentication'] = {
+		'subject': 'BillRun Customer Portal - Email Address Verification',
+		'content': '<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n',
+		'html_translation': [
+			'name',
+			'token',
+			'verification_link',
+			'company_email',
+        	'company_name',
+		]
+	};
+}
 
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

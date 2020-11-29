@@ -30,13 +30,9 @@ class Portal_Exception extends Exception {
             'code' => 4001,
             'desc' => 'No account found',
         ],
-        'missing_query' => [
+        'missing_parameter' => [
             'code' => 4501,
-            'desc' => 'Missing query parameter',
-        ],
-        'missing_update' => [
-            'code' => 4502,
-            'desc' => 'Missing update parameter',
+            'desc' => 'Missing parameter/s',
         ],
         'account_get_failure' => [
             'code' => 4510,
@@ -45,6 +41,10 @@ class Portal_Exception extends Exception {
         'account_update_failure' => [
             'code' => 4511,
             'desc' => 'Failed to update account',
+        ],
+        'send_email_failed' => [
+            'code' => 4601,
+            'desc' => 'Failed to send Email',
         ],
     ];
 
