@@ -6,6 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Registration.php';
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Account.php';
 
 /**
@@ -41,7 +42,7 @@ abstract class Portal_Actions {
      * @return Portal_Actions
      */
     public static function getInstance($params = []) {
-        $type = $params['type'] ?? '';
+        $type = ucfirst($params['type'] ?? '');
         $className = "Portal_Actions_{$type}";
         return new $className($params);
     }
@@ -57,11 +58,11 @@ abstract class Portal_Actions {
         $this->log("Starting action {$action}", Billrun_Log::DEBUG);
         $this->loggerID = uniqid();
         try {
-            if (!$this->authenticate()) {
+            if (!$this->authenticate($params)) {
                 throw new Portal_Exception('authentication_failed');
             }
             
-            if (!method_exists($this, $action)) {
+            if (!$this->actionExists($action)) {
 				$this->log("Invalid action {$action}. Params: " . print_R($params, 1), Billrun_Log::ERR);
 				throw new Portal_Exception('permission_denied');
 			}
@@ -76,6 +77,21 @@ abstract class Portal_Actions {
             $this->log("{$action} got Exception: {$ex->getCode()} - {$ex->getMessage()}", Billrun_Log::ERR);
             return $this->response(0, 1500, 'General Error');
 		}
+    }
+    
+    /**
+     * check if the given action exists and allowed
+     *
+     * @param  string $action
+     * @return void
+     */
+    protected function actionExists($action) {
+        if (!method_exists($this, $action)) {
+            return false;
+        }
+        
+        $reflection = new ReflectionMethod($this, $action);
+        return $reflection->isPublic();
     }
     
     /**
@@ -114,7 +130,8 @@ abstract class Portal_Actions {
     /**
      * Authenticate the request
 	 *
-	 * @return boolean
-	 */
-    protected abstract function authenticate();
+     * @param  array $params
+     * @return boolean
+	 */    
+    protected abstract function authenticate($params = []);
 }
