@@ -165,6 +165,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$before = $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
 			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
 			$after = $before + $currentUsage;
+		} else if(is_array($rule['usaget']) && in_array($usaget, $rule['usaget'])) {
+			$before = 0;
+			foreach($rule['usaget'] as $ruleUsageType) {
+				$before += !empty($balance['usage_before'][$ruleUsageType]) ? $balance['usage_before'][$ruleUsageType] : 0;
+			}
+			$after = $before +  $row['usagev'];
 		}
 		if (!isset($before)) {
 			return;
@@ -348,7 +354,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
 			$groupName = $row['plan'];
-			$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);	
+			$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
 		} else {
 			$threshold = $rule['threshold'];
 		}
@@ -575,7 +581,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function insertRoamingGgsn($lines) {
 		$roamingLines = array();
 		foreach ($lines as $line) {
-			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2))/', $line['sgsn_address'])) {
+// 			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2))/', $line['sgsn_address'])) {
+			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167|91\.135\.96\.|91\.135\.99\.(19[2-9]|2)|10\.224\.213|10\.192\.213)/', $line['sgsn_address'])) {
 				$roamingLines[] = $line;
 			}
 		}
