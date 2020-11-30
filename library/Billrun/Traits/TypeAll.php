@@ -101,7 +101,7 @@ trait Billrun_Traits_TypeAll {
 			if(!isset($current[$name]) || !Billrun_Config::isFileTypeConfigEnabled($current)) {
 				continue;
 			}
-			$typeArray[$current['file_type']] = $current[$name]['buffer_timeout'];
+			$typeArray[$current['file_type']] = $current[$name]['buffer_timeout'] ?? '';
 		}
 		return $typeArray;
 	}
