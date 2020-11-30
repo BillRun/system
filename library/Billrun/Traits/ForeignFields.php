@@ -112,5 +112,11 @@ trait Billrun_Traits_ForeignFields  {
 		}, Billrun_Factory::config()->getConfigValue('lines.fields', array()));
 		return in_array($entity, $foreignEntities) ? TRUE : FALSE;
 	}
+	
+	protected function getForeignFieldsConfOfEntity($entity){
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->getForeignFieldsEntity() .'.fields', array()),  function($value) use($entity){
+			return isset($value['foreign']['entity'])&& $value['foreign']['entity'] === $entity;	
+		});
+	}
 
 }
