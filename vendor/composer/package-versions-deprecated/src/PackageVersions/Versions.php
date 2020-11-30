@@ -48,7 +48,7 @@ final class Versions
   'psr/http-message' => '1.0.1@f6561bf28d520154e4b0ec72be95418abe6d9363',
   'psr/simple-cache' => '1.0.1@408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
   'symfony/polyfill-mbstring' => 'v1.20.0@39d483bdf39be819deabf04ec872eb0b2410b531',
-  '__root__' => 'dev-master@16661ef7b352ce98cb7145d8ff0e5a46a33cb879',
+  '__root__' => 'dev-master@c1b22d8d4c086f3badee338380b4d90fa9cf9b12',
 );
 
     private function __construct()
