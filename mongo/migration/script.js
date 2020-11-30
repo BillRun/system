@@ -380,6 +380,9 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
 }
+if (typeof lastConfig['collection']['settings'] === 'undefined') {
+	lastConfig['collection']['settings'] = {};
+}
 if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
     lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
 }
