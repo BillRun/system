@@ -19,7 +19,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '16661ef7b352ce98cb7145d8ff0e5a46a33cb879',
+    'reference' => 'c1b22d8d4c086f3badee338380b4d90fa9cf9b12',
     'name' => '__root__',
   ),
   'versions' => 
@@ -31,7 +31,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '16661ef7b352ce98cb7145d8ff0e5a46a33cb879',
+      'reference' => 'c1b22d8d4c086f3badee338380b4d90fa9cf9b12',
     ),
     'alcaeus/mongo-php-adapter' => 
     array (
