@@ -55,7 +55,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->logFile->saveLogFileFields();
     }
 
-    protected function getDataLine($params) {
+	protected function validateLineDataExists($account, $entity = 'account') {
+		
+	}
+
+	protected function getDataLine($params) {
         $dataLine = array();
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
@@ -117,7 +121,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $dataLine;
     }
 
-    protected function getHeaderLine() {
+	protected function getHeaderLine() {
         $headerStructure = $this->configByType['generator']['header_structure'];
         return $this->buildLineFromStructure($headerStructure);
     }

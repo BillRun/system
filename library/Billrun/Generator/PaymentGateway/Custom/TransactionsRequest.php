@@ -177,6 +177,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (!$this->isPaymentUpholdPlaceholders($paymentParams, $placeHoldersConditions)) {
 				continue;
 			}
+			$this->validateLineDataExists($account, 'account');
 			try {
 				$options['account'] = $account->getRawData();
 				if ($this->isAssumeApproved()) {
