@@ -34,11 +34,10 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
-		if (!isset($options['w'])) {
+		if ((isset($options['session']) && $options['session']->isInTransaction())) {
+			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
+		} else if (!isset($options['w'])) {
 			$options['w'] = $this->w;
-		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
