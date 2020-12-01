@@ -27,6 +27,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $gatewayLogName;
     protected $fileGenerator;
 	protected $billSavedFields = array();
+	protected $mandatory_fields_per_entity = [];
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -55,8 +56,26 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->logFile->saveLogFileFields();
     }
 
-	protected function validateLineDataExists($account, $entity = 'account') {
-		
+	protected function setFileMandatoryFields() {
+		$dataStructure = $this->configByType['generator']['data_structure'];
+		foreach($dataStructure as $dataField) {
+			if (isset($dataField['linked_entity'])) {
+				$this->mandatory_fields_per_entity[$dataField['linked_entity']['entity']][] = $dataField['linked_entity']['field_name'];
+            }
+		}
+	}
+	
+	protected function validateMandatoryFieldsExistence($entity, $entity_type = 'account') {
+		$entity = $entity->getRawData();
+		foreach($entity as $field_name => $field_value) {
+			if(!in_array($field_name, $this->mandatory_fields_per_entity[$entity_type])) {
+				return false;
+			}
+			if(empty($field_value)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	protected function getDataLine($params) {
