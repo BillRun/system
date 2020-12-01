@@ -10,7 +10,7 @@
  *
  * @author yossi
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
