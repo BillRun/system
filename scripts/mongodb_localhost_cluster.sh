@@ -18,7 +18,7 @@ then
 	echo "Command to install mongo cluster on localhost"
 	echo
 	echo "-d installation  directory (mandatory)"
-	echo "-p port suffix (default: 276)"
+	echo "-p port prefix (default: 276)"
 	echo "-h print help"
 	echo
 	echo "BillRun Technologies Ltd. Product"
