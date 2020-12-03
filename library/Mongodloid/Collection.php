@@ -514,7 +514,7 @@ class Mongodloid_Collection {
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 					// try again with the next seq
 					continue;
 				}
