@@ -245,6 +245,7 @@ trait Billrun_Traits_EntityGetter {
 		
 		if (empty($entity)) {
 			$coll = $this->getCollection($params);
+			$results = iterator_to_array($coll->aggregate($query));
 			$entity = $coll->aggregate($query)->current();
 			if ($useCache && isset($entity['from']) && isset($entity['to'])) {
 				self::$entities[$cacheKey][] = [
@@ -288,7 +289,7 @@ trait Billrun_Traits_EntityGetter {
 		$matchQuery = [['$match' => $match]];
 		$sortQuery = !empty($sort) ? [['$sort' => $sort]] : [];
 		$groupQuery = [['$group' => $group]];
-		$limitQuery = [['$limit' => 1]];
+		$limitQuery = true ? [] : [['$limit' => 1]];
 		
 		return array_merge($matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
 	}
