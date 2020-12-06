@@ -57,6 +57,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
 		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
 	}
 
 	/**
@@ -215,6 +218,26 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
+        
+        /**
+	 * @param array $queries to load one subscriber per query
+	 * @return array of account instances
+	 */
+	public function loadAccountsForQueries($queries, $extraData = []) {
+		$query = [];
+		
+		// build a single big query, using the passed params for each subquery
+		foreach($queries as $subQuery) {
+			$query[] = $this->buildQuery($subQuery);
+		}
+		$result = $this->getAccountDetails($query);
+		if (!$result) {
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
+			return false;
+		}
+
+                return $result;
+	}
 
 	/**
 	 * @param array $params - Input params to get an account by.
@@ -238,8 +261,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 			$query[$key] = $value;
 		}
-
-		$query['limit'] = $limit;
+		if($limit){
+			$query['limit'] = $limit;
+		}
 		return $query;
 	}
 	
@@ -344,5 +368,8 @@ abstract class Billrun_Account extends Billrun_Base {
 
 		throw new Exception("No subscriber aggregation identified");
 	}
-
+	
+	public function getData() {
+		return $this->data;
+	}
 }

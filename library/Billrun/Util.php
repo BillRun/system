@@ -1596,7 +1596,6 @@ class Billrun_Util {
 																										   $userData) );
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
 						}
 						break;
 					//Handle regex translation
@@ -1609,12 +1608,10 @@ class Billrun_Util {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {
@@ -1650,6 +1647,39 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+
+	/**
+	 * Deeply unset an array values by path.
+	 *
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param type $clean_tree - if TRUE, all empty branches  in in keys will be removed
+	 */
+	public static function unsetInPath(&$arr, $keys, $clean_tree = false) {
+		if (empty($keys)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$prev_el = NULL;
+		$el = &$arr;
+		foreach ($keys as &$key) {
+			$prev_el = &$el;
+			$el = &$el[$key];
+		}
+		if ($prev_el !== NULL) {
+			unset($prev_el[$key]);
+		}
+		if ($clean_tree) {
+			array_pop($keys);
+			$prev_branch = static::getIn($arr, $keys);
+			if (empty($prev_branch)) {
+				static::unsetInPath($arr, $keys, true);
+			}
+		}
+	}
+
 	/**
 	 * Deeply unsets an array value.
 	 * 

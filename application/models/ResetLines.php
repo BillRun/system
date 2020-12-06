@@ -45,6 +45,12 @@ class ResetLinesModel {
 	 */
 	protected $balanceSubstract;
 	
+	/**
+	 * used for rebalance multiple balances affected by the same line
+	 * @var type 
+	 */
+	protected $alreadyUpdated = [];
+	
 	protected $balances;
 	
 	/**
@@ -356,7 +362,7 @@ class ResetLinesModel {
 			$balanceUsaget = $line['usaget'];
 			$balanceUsagev = $line['usagev'];
 			if (isset($line['out_plan']) && $line['out_plan'] > 0 && $line['usagev'] > 0) {
-				$balanceUsaget = 'out_plan_' . $line['usaget'];
+				$balanceUsaget = $line['usaget'];
 				$balanceUsagev = $line['out_plan'];
 				if (isset($line['in_plan'])) {
 					$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
@@ -383,22 +389,24 @@ class ResetLinesModel {
 		}
 	}
 
-	protected function getRelevantBalance($balances, $balanceId, $params = array(),  $invoicing_day = null) {
+	protected function getRelevantBalances($balances, $balanceId, $params = array(),  $invoicing_day = null) {
+		$this->alreadyUpdated = [];
+		$ret = [];
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
-				return $rawData;
+				return [$rawData];
 			}
 
 			if (empty($balanceId) && !empty($params)) {
 				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key'], $invoicing_day);
 				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key'], $invoicing_day);
 				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
-					return $rawData;
+					$ret[] = $rawData;
 				}
 			}
 		}
-		return false;
+		return !empty($ret) ? $ret : false;
 	}
 
 	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
@@ -406,13 +414,18 @@ class ResetLinesModel {
 		foreach ($volumeToSubstract as $group => $usaget) {
 			foreach ($usaget as $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
-					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
+					$usage = min($usagev['usage'] - ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
+					$count = min($usagev['count'] - ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usage;
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
-						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usage;
 					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
-						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usage;
 					}
-					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $count;
+					$this->alreadyUpdated[$group]['usage'] = ($this->alreadyUpdated[$group]['usage'] ?? 0) + $usage;
+					$this->alreadyUpdated[$group]['count'] = ($this->alreadyUpdated[$group]['count'] ?? 0) + $count;
 				}
 			}
 		}
@@ -457,7 +470,11 @@ class ResetLinesModel {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId);
+				if (empty($relevantBalances)) {
+					continue;
+				}
+				foreach ($relevantBalances as $balanceToUpdate) {
 				if (empty($balanceToUpdate)) {
 					continue;
 				}
@@ -468,6 +485,7 @@ class ResetLinesModel {
 				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 				$balancesColl->update($query, $updateData);
 			}
+		}
 		}
 
 		$this->extendedBalanceUsageSubtract = array();
@@ -488,7 +506,8 @@ class ResetLinesModel {
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+					foreach ($relevantBalances as $balanceToUpdate) {
 					if (empty($balanceToUpdate)) {
 						continue;
 					}
@@ -499,11 +518,13 @@ class ResetLinesModel {
 					if (empty($updateData)) {
 						continue;
 					}
+						
 					$query = array(
 						'_id' => $balanceToUpdate['_id'],
 					);
 					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
 					$ret = $balancesColl->update($query, $updateData);
+					}
 				}
 			}
 		}

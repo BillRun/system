@@ -1134,7 +1134,17 @@
 										"format": "Y-m-d H:i:s"
 									}
 								}
+							},
+							{
+								"field_name": "foreign.discount.description",
+								"title": "discount's description",
+								"foreign": {
+									"entity": "discount",
+									"field": "description"
+								},
+								"conditions": []
 							}
+
 						]
 					}
 				}

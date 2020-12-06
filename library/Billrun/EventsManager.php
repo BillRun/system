@@ -79,11 +79,11 @@ class Billrun_EventsManager {
 			foreach ($event['conditions'] as $rawsEventSettings) {
 				$conditionSettings = [];
 				$additionalEventData = array(
-					'unit' => $rawsEventSettings['unit'],
-					'usaget' => $rawsEventSettings['usaget'],
-					'property_type' => $rawsEventSettings['property_type'],
-					'type' => $rawsEventSettings['type'],
-					'value' => $rawsEventSettings['value'],
+					'unit' => $rawsEventSettings['unit'] ?? '',
+					'usaget' => $rawsEventSettings['usaget'] ?? '',
+					'property_type' => $rawsEventSettings['property_type'] ?? '',
+					'type' => $rawsEventSettings['type'] ?? '',
+					'value' => $rawsEventSettings['value'] ?? '',
 				);
 				$pathsMatched = [];
 				
@@ -311,6 +311,7 @@ class Billrun_EventsManager {
 			} catch (Exception $e) {
 				$this->unlockNotifyEvent($event);
 			}
+			Billrun_Factory::dispatcher()->trigger('afterEventNotify', array(&$event));
 		}
 		$this->handleEmailNotification($emailNotificationEvents);
 	}

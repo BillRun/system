@@ -32,7 +32,7 @@ class Billrun_Plan extends Billrun_Service {
 	public function __construct(array $params = array()) {
 		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) && (!isset($params['data']))) {
 			//throw an error
-			throw new Exception("plan constructor was called  without the appropriate parameters , got : " . print_r($params, 1));
+			throw new Exception("Plan constructor was called without the appropriate parameters. Got : " . print_r($params, 1));
 		}
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
@@ -405,12 +405,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @deprecated since version 5.2
 	 */
 	public function getBalanceTotalsKey($usage_type, $rate) {
-		if ($this->isRateInBasePlan($rate, $usage_type)) {
-			$usage_class_prefix = "";
-		} else {
-			$usage_class_prefix = "out_plan_";
-		}
-		return $usage_class_prefix . $usage_type;
+		return $usage_type;
 	}
 
 	public function isUpfrontPayment() {
@@ -429,10 +424,11 @@ class Billrun_Plan extends Billrun_Service {
 //		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
 //			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
 //		}
-		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-			return $diff->m + ($diff->y * 12);
-		}
+// BRCD-2742 : Commented out as this cause werid edge cases as exampled in :  https://billrun.atlassian.net/browse/BRCD-2742 ,  https://billrun.atlassian.net/browse/BRCD-2741
+// 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
+// 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
+// 			return $diff->m + ($diff->y * 12);
+// 		}
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
 			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
 		}
@@ -516,9 +512,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($start_month == $end_month) {
 			$days_in_plan = (int) $end_day - (int) $start_day + 1;
 		} else {
-			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
-			$days_in_current_month = (int) $end_day;
-			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+			$days_in_plan = $days_in_month - (int) $start_day + 1;
 		}
 
 		$fraction = $days_in_plan / $days_in_month;

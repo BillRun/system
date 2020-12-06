@@ -47,6 +47,9 @@ class PayAction extends ApiAction {
 					return;
 				case 'cancel_payments': 
 					$this->cancelPayments($request);
+					return;					
+				case 'merge_installments': 
+					$this->mergeInstallments($request);
 					return;
 				default:
 					break;
@@ -145,6 +148,10 @@ class PayAction extends ApiAction {
 	 * 
 	 */
 	protected function unfreezeDeposits($txIdArray, $request) {
+		if (!$this->idsAreDeposits($txIdArray)) {
+			$this->setError("One or more of the input IDs are not deposits");
+			return;
+		}
 		$unfreezedDeposits = array();
 		foreach ($txIdArray as $txid) {
 			$deposit = Billrun_Bill_Payment::getInstanceByid($txid);
@@ -305,7 +312,8 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 				$matchedPayment = Billrun_Bill_Payment::getInstanceByid($cancellation['txid']);
 				if (!empty($matchedPayment)) {
 					$matched = true;
-					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection()) {
+					if ($matchedPayment->isCancellation() || $matchedPayment->isCancelled() || $matchedPayment->isRejected() || $matchedPayment->isRejection() || 
+						$matchedPayment->isDeniedPayment() || $matchedPayment->isDenial()) {
 						$errors[] = "$txid cannot be cancelled";
 						$matched = false;
 					} else if (isset($cancellation['amount']) && ($cancellation['amount'] != $matchedPayment->getAmount())) {
@@ -343,4 +351,43 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 		return 'bills';
 	}
 	
+	protected function mergeInstallments($request) {
+		$params['split_bill_id'] = !empty($request->get('split_bill_id')) ? intval($request->get('split_bill_id')) : '';
+		$params['aid'] = !empty($request->get('aid')) ? intval($request->get('aid')) : '';
+		if (empty($params['split_bill_id']) || empty($params['aid'])) {
+			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
+		}
+		if (!empty($request->get('due_date'))) {
+			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+		}
+		if (!empty($request->get('first_charge_date'))) {
+			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
+			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+		}
+		$params['autoload'] = true;
+		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);
+		
+		$this->getController()->setOutput(array(array(
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? '' : 'failure',
+			'input' => $request->getPost(),
+			'details' => $success ? 'merged installments successfully' : 'failed merging installments',
+		)));
+	}
+	
+	protected function idsAreDeposits($txIdArray) {
+		$query = [
+			"txid" => array('$in' => $txIdArray)
+		];
+		$bills = Billrun_Bill::getBills($query);
+		foreach($bills as $index => $bill) {
+			$bills[$index] = Billrun_Bill_Payment::getInstanceByData($bill);
+		}
+		$db_deposits = array_filter($bills, function($bill) {
+			return $bill->isDeposit();
+		});
+
+		return count($txIdArray) == count($db_deposits); 
+	}
+
 }

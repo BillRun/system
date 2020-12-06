@@ -57,6 +57,7 @@ class Billrun_Cycle_Paging {
 			return false;
 		}
 		
+
 		if($this->checkExists($nextPage)) { // we couldn't lock the next page (other process did it)
 			$error = "Page number ". $nextPage ." already exists.";
 			Billrun_Factory::log($error . " Trying Again...", Zend_Log::NOTICE);
@@ -116,8 +117,15 @@ class Billrun_Cycle_Paging {
 		}
 		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new MongoDate()));
 		$modify = array('$setOnInsert' => $modifyQuery);
-		$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));
-		
+		try {
+			$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));
+		} catch(Exception $e) {
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+				Billrun_Factory::log()->log('Exception: ' . $e->getMessage(), Zend_Log::ALERT);
+				return true;	
+			}
+			throw $e;
+		}
 		return !$checkExists->isEmpty();
 	}
 	
