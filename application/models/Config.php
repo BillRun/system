@@ -122,10 +122,10 @@ class ConfigModel {
  				return 0;
  			}
  			if (empty($data['name'])) {
- 				return $this->_getFromConfig($currentConfig, $category, $data);
+ 				return $this->getSecurePaymentGateways($this->_getFromConfig($currentConfig, $category, $data));
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
- 				return $pgSettings;
+ 				return $this->getSecurePaymentGateway($pgSettings);
 			}
 			throw new Exception('Unknown payment gateway ' . $data['name']);
 		} else if ($category == 'export_generators') {
@@ -978,7 +978,7 @@ class ConfigModel {
  		if ($filtered = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] === $pg;
  		})) {
- 			return current($filtered);
+			return current($filtered);
  		}
  		return FALSE;
  	}
@@ -1782,5 +1782,28 @@ class ConfigModel {
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
+	
+	protected function getSecurePaymentGateway($paymentGatewaySetting){
+		$securePaymentGateway = $paymentGatewaySetting; 
+		$name  = Billrun_Util::getIn($paymentGatewaySetting, 'name');
+		$paymentGateway = Billrun_Factory::paymentGateway($name);
+		if(is_null($paymentGateway)){
+			throw new Exception('Unsupported payment gateway ' . $name);
+		}
+		$secretFields = $paymentGateway->getSecretFields(); 
+		foreach ($secretFields as $secretField){
+			if(isset($securePaymentGateway['params'][$secretField])){
+				$securePaymentGateway['params'][$secretField] = '';
+			}
+		}
+		return $securePaymentGateway;
+	}
 
+	protected function getSecurePaymentGateways($paymentGateways){
+		$securePaymentGateways = [];
+		foreach ($paymentGateways as $paymentGateway){
+			$securePaymentGateways[] = $this->getSecurePaymentGateway($paymentGateway);
+		}
+		return $securePaymentGateways;
+	}
 }
