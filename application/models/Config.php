@@ -257,15 +257,19 @@ class ConfigModel {
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
+			$secretFields = $paymentGateway->getSecretFields();
+			$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 			$defaultParameters = $paymentGateway->getDefaultParameters();
 			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
 			$neededParameters = array_keys($releventParameters);
+			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			foreach ($data['params'] as $key => $value) {
 				if (!in_array($key, $neededParameters)){
 					unset($data['params'][$key]);
+				} elseif (in_array($key, $secretFields) && $value === $fakePassword && isset ($rawPgSettings['params'][$key])){
+					$data['params'][$key] = $rawPgSettings['params'][$key];
 				}
 			}
-			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			if ($rawPgSettings) {
 				$pgSettings = array_merge($rawPgSettings, $data);
 			} else {
@@ -1784,6 +1788,7 @@ class ConfigModel {
 	}
 	
 	protected function getSecurePaymentGateway($paymentGatewaySetting){
+		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 
 		$name  = Billrun_Util::getIn($paymentGatewaySetting, 'name');
 		$paymentGateway = Billrun_Factory::paymentGateway($name);
@@ -1793,7 +1798,7 @@ class ConfigModel {
 		$secretFields = $paymentGateway->getSecretFields(); 
 		foreach ($secretFields as $secretField){
 			if(isset($securePaymentGateway['params'][$secretField])){
-				$securePaymentGateway['params'][$secretField] = '';
+				$securePaymentGateway['params'][$secretField] = $fakePassword;
 			}
 		}
 		return $securePaymentGateway;
