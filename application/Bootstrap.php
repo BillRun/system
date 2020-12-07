@@ -6,6 +6,25 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+/** 
+ * method to register namespace to path with backward compatibility to old yaf versions
+ * 
+ * @param string $namespace the namespace to register
+ * @param string $path path attached to the namespace
+ * 
+ * @since version 5.14
+ */
+function br_yaf_register_autoload($namespace, $path) {
+	if (version_compare(phpversion('yaf'), '3.2.0', '>=')) {
+		$mapping = array(
+			$namespace => $path . '/' . $namespace,
+		);
+		Yaf_Loader::getInstance()->registerNamespace($mapping);
+	} else {
+		Yaf_Loader::getInstance($path)->registerLocalNamespace($namespace);
+	}
+}
+
 /**
  * Billing bootstrap class
  *
@@ -13,6 +32,15 @@
  * @since    0.5
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
+	
+    public function _initLoader(Yaf_Dispatcher $dispatcher) {
+		// set composer vendor autoload
+		Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
+		// set include paths of the system.
+		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath()); // this is for Zend FW & Billrun objects
+		// make the base action auto load (required by controllers actions)
+		br_yaf_register_autoload('Action', APPLICATION_PATH . '/application/helpers');
+	}
 
 	public function _initEnvironment(Yaf_Dispatcher $dispatcher) {
 		if (!isset($_SERVER['HTTP_USER_AGENT'])) {
@@ -21,10 +49,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	}
 	
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
-
-		// set include paths of the system.
-		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
-
 		/* register a billrun plugin system from config */
 		$config = Yaf_Application::app()->getConfig();
 		$plugins = array();
@@ -67,9 +91,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 				$dispatcherChain->attach(new $chain);
 			}
 		}
-
-		// make the base action auto load (required by controllers actions)
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
 	}
 
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {
@@ -144,6 +165,19 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		);
 		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
 		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("versions_bc", $routeRegex);
+		
+		$match = "#^/plugins/(\w+)/(\w+)/?(\w*)#";
+		$route = array(
+			'controller' => 'plugins',
+			'action' => 'index',
+		);
+		$map = array(
+			1 => "plugin",
+			2 => "action",
+			3 => "id",
+		);
+		$routeRegex = new Yaf_Route_Regex($match, $route, $map);
+		Yaf_Dispatcher::getInstance()->getRouter()->addRoute("plugins", $routeRegex);
 	}
 	
 	/**

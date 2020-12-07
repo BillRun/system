@@ -60,6 +60,12 @@ class Models_Entity {
 	protected $update = array();
 
 	/**
+	 * The update data from request without changes
+	 * @var array
+	 */
+	protected $originalUpdate = array();
+	
+	/**
 	 * Additional data to save
 	 * @var array
 	 */
@@ -169,6 +175,7 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		$this->originalUpdate = $update;
 		$options = isset($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
@@ -199,6 +206,24 @@ class Models_Entity {
 
 		//transalte all date fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+	}
+
+	/**
+	 * method to retrieve entity name that we are running on
+	 * 
+	 * @return string
+	 */
+	public function getEntityName() {
+		return $this->entityName;
+	}
+	
+	/** 
+	 * method to retrieve action that we are running
+	 * 
+	 * @return string
+	 */
+	public function getAction() {
+		return $this->action;
 	}
 
 	/**
@@ -269,8 +294,8 @@ class Models_Entity {
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
-		$startTime = strtotime(isset($data['from']) ? $data['from'] : $this->getDefaultFrom());
-		$endTime = strtotime(isset($data['to']) ? $data['to'] : $this->getDefaultTo());
+		$startTime = strtotime(isset($data['from'])? $data['from'] : $this->getDefaultFrom());
+		$endTime = strtotime(isset($data['to'])? $data['to'] : $this->getDefaultTo());
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
@@ -393,7 +418,7 @@ class Models_Entity {
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
-
+			
 			$key = $oldRevision[$field];
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
@@ -414,7 +439,7 @@ class Models_Entity {
 		unset($update['from']);
 		return $this->generateUpdateParameter($update, $this->queryOptions);
 	}
-
+	
 	/**
 	 * Performs the changepassword action by a query and data to update
 	 * @param array $query
@@ -557,9 +582,13 @@ class Models_Entity {
 			} else {
 				$invoicing_day = !is_null($invoicing_day) ? $invoicing_day : Billrun_Factory::config()->getConfigChargingDay();
 				self::$minUpdateDatetime[$invoicing_day] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle($invoicing_day)) ? Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day) : 0;
-			}
+		}
 		}
 		return is_null($invoicing_day) ? self::$minUpdateDatetime[0] : self::$minUpdateDatetime[$invoicing_day];
+	}
+
+	public static function isAllowedChangeDuringClosedCycle() {
+		return Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
 	}
 
 	/**
@@ -617,7 +646,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		if (is_null($action)) {
@@ -744,8 +773,8 @@ class Models_Entity {
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
-
-		$changeDuringClosedCycle = Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false);
+		
+		$changeDuringClosedCycle = static::isAllowedChangeDuringClosedCycle();
 		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
 		if (!$changeDuringClosedCycle && $this->update['from']->sec < self::getMinimumUpdateDate($invoicing_day)) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
@@ -838,16 +867,31 @@ class Models_Entity {
 		}
 		return true;
 	}
-
+	
+	/**
+	 * Convert keys that was received as dot annotation back to dot annotation
+	 */	
+	protected function dataToDbUpdateFormat(&$data, $originalUpdate) {
+		foreach ($this->originalUpdate as $update_key => $value) {
+			$keys = explode('.', $update_key);
+			if (count($keys) > 1) {
+				$val = Billrun_Util::getIn($originalUpdate, $update_key);
+				$data[$update_key] = $val;
+				Billrun_Util::unsetInPath($data, $keys, true);
+			}
+		}
+	}
+	
 	protected function generateUpdateParameter($data, $options = array()) {
 		$update = array();
 		unset($data['_id']);
-		if (!empty($data)) {
+		if(!empty($data)) {
+			$this->dataToDbUpdateFormat($data, $this->originalUpdate);
 			$update = array(
 				'$set' => $data,
 			);
 		}
-		if (!empty($options)) {
+		if(!empty($options)) {
 			$update = array_merge($update, $options);
 		}
 		return $update;
@@ -950,7 +994,7 @@ class Models_Entity {
 	public function setUpdate($u) {
 		$this->update = $u;
 	}
-
+	
 	/**
 	 * method to update the update options instruct
 	 * @param array $o mongo update options instruct
@@ -966,7 +1010,7 @@ class Models_Entity {
 		}
 		if (isset($o['pull_fields'])) {
 			foreach ($o['pull_fields'] as $pull_field) {
-				if (isset($pull_field['pull_by_key'])) {
+				if(isset($pull_field['pull_by_key'])) {
 					$queryOptions['$pull'][$pull_field['field_name']][$pull_field['pull_by_key']]['$in'] = $pull_field['field_values'];
 				} else {
 					$queryOptions['$pull'][$pull_field['field_name']]['$in'] = $pull_field['field_values'];
@@ -1132,7 +1176,7 @@ class Models_Entity {
 	}
 
 	protected static function isDateMovable($timestamp) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
 		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
@@ -1211,7 +1255,7 @@ class Models_Entity {
 	}
 
 	protected function updateCreationTime($keyField, $edge) {
-		if (isset($this->update['_id'])) {
+		if(isset($this->update['_id'])) {
 			$queryCreation = array(
 				$keyField => $this->before[$keyField],
 			);
@@ -1250,25 +1294,25 @@ class Models_Entity {
 	protected function fixEntityFields($entity) {
 		return;
 	}
-
+	
 	protected function getDefaultFrom() {
 		switch ($this->action) {
 			case 'permanentchange':
 				return '1970-01-02 00:00:00';
 			case 'create':
 				return Billrun_Util::generateCurrentTime();
-
+			
 			default:
 				return $this->before['from'];
 		}
 	}
-
+	
 	protected function getDefaultTo() {
 		switch ($this->action) {
 			case 'permanentchange':
 			case 'create':
 				return '+100 years';
-
+			
 			default:
 				return $this->before['to'];
 		}

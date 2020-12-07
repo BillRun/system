@@ -107,7 +107,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			return array('status' => $success, 'payment_agreement' => $paymentAgreementData);
 		}
 		
-		Billrun_Factory::log("Faild creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
+		Billrun_Factory::log("Failed creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
 	
@@ -146,9 +146,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 				$installment['note'] = $installmentPayment['note'];
 			}
 			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
-			$installment['uf'] = array_filter($installmentPayment, function($field) {
-						return preg_match('/^uf/', $field);
-			},ARRAY_FILTER_USE_KEY);
+			$installment['uf'] = $installmentPayment['uf'];
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
 			$installmentObj->setUserFields($installmentObj->getRawData(), true);

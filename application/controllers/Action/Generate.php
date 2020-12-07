@@ -28,14 +28,14 @@ class GenerateAction extends Action_Base {
             'size' => true,
         );
 
-        if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+        if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
             return;
         }
 
-        $this->_controller->addOutput("Loading generator");
+        $this->getController()->addOutput("Loading generator");
 
 
-        $extraParams = $this->_controller->getParameters();
+        $extraParams = $this->getController()->getParameters();
         if (!empty($extraParams)) {
             $options = array_merge($extraParams, $options);
         }
@@ -48,19 +48,12 @@ class GenerateAction extends Action_Base {
         }
 
         if (!$generator) {
-            $this->_controller->addOutput("Generator cannot be loaded");
+            $this->getController()->addOutput("Generator cannot be loaded");
             return;
         }
-
-        if (method_exists($generator, 'lock')) {
-            if (!$generator->lock()) {
-                $this->_controller->addOutput("Generator is already running");
-                return;
-            }
-        }
-
-        $this->_controller->addOutput("Generator loaded");
-        $this->_controller->addOutput("Loading data to Generate...");
+        
+        $this->getController()->addOutput("Generator loaded");
+        $this->getController()->addOutput("Loading data to Generate...");
         try{
             $generator->load();
         } catch(Exception $ex){
@@ -68,24 +61,18 @@ class GenerateAction extends Action_Base {
             Billrun_Factory::log()->log('Something went wrong while loading. No generate was made.', Zend_Log::ALERT);
             return;
         }
-        $this->_controller->addOutput("Starting to Generate. This action can take a while...");
+        $this->getController()->addOutput("Starting to Generate. This action can take a while...");
         try{
             $generator->generate();
         } catch(Exception $ex){
             Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
             Billrun_Factory::log()->log('Something went wrong while generating. Please pay attention.', Zend_Log::ERR);
         }
-        $this->_controller->addOutput("Finished generating.");
-        if (method_exists($generator, 'release')) {
-            if (!$generator->release()) {
-                $this->_controller->addOutput("Problem in releasing operation");
-                return;
-            }
-        }
+        $this->getController()->addOutput("Finished generating.");
         if ($generator->shouldFileBeMoved()) {
-            $this->_controller->addOutput("Exporting the file");
+            $this->getController()->addOutput("Exporting the file");
             $generator->move();
-            $this->_controller->addOutput("Finished exporting");
+            $this->getController()->addOutput("Finished exporting");
         }
     }
 }

@@ -32,10 +32,10 @@ class ReceiveAction extends Action_Base {
 			'workspace' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-		$extraParams = $this->_controller->getParameters();
+		$extraParams = $this->getController()->getParameters();
 		if (!empty($extraParams)) {
 			$options = array_merge($extraParams, $options);
 		}
@@ -56,11 +56,13 @@ class ReceiveAction extends Action_Base {
 				if (empty($paymentGatewayReceiver)) {
 					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
 					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
-						foreach ($fileTypeSettings['connections'] as $connectionDetails) {
-							$connectionDetails['file_type'] = $fileType;
-							$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
-							$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
-							$connection->receive();
+						if($fileType === $options['file_type']) {
+							foreach ($fileTypeSettings['connections'] as $connectionDetails) {
+								$connectionDetails['file_type'] = $fileType;
+								$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+								$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
+								$connection->receive();
+							}
 						}
 					}
 				}
