@@ -170,6 +170,7 @@
     ]
   },
   "billrun" : {
+        "multi_day_cycle":  false,
         "allowances" : {
             "enabled": false,
             "included_in_allowance": false,
