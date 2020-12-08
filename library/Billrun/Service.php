@@ -41,6 +41,11 @@ class Billrun_Service {
 	 * @var array
 	 */
 	protected static $entities = [];
+	
+	/**
+	 * This holds the used services quantity for the included product groups calculations.
+	 */
+	protected $serviceMaximumQuantityByAid = array();
 
 	/**
 	 * constructor
@@ -463,6 +468,13 @@ class Billrun_Service {
 		}
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
+	
+	public function isGroupQuantityAffected($group = null) {
+		if (is_null($group)) {
+			$group = $this->getEntityGroup();
+		}
+		return isset($this->data['include']['groups'][$group]['quantity_affected']) && $this->data['include']['groups'][$group]['quantity_affected'];
+	}
 
 	public function getGroupVolume($usageType, $aid, $group = null, $time = null, $serviceQuantity = 1) {
 		if (is_null($group)) {
@@ -684,6 +696,35 @@ class Billrun_Service {
 			return true;
 		}
 		return false;
+	}
+	
+	public function getServiceMaximumQuantityByAid($aid) {
+		return isset($this->serviceMaximumQuantityByAid[$aid]) ? $this->serviceMaximumQuantityByAid[$aid] : $this->calculateServiceMaximumQuantity($aid);
+	}
+	
+	public function calculateServiceMaximumQuantity($aid) {
+		$query = array(
+			'aid' => $aid,
+			'type' => 'subscriber',
+			'to' => array('$gt' => new MongoDate($this->data['to']->sec)),
+			'from' => array('$lt' => new MongoDate($this->data['from']->sec)),
+		);
+		$aggregateMatch = array(
+			'$match' => $query,
+		);
+
+		$unwindServices = array('$unwind' => '$services');
+
+		$aggregateServices = array(
+			'$match' => array(
+				'services.name' => $this->getName()
+			)
+		);
+		$aggreagateArray = array($aggregateMatch);
+		array_push($aggreagateArray, $unwindServices, $aggregateServices, $limit);
+		$queries = [$aggreagateArray];
+		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries($queries);
+		return is_array($results) ? $results : [];
 	}
 
 }

@@ -121,7 +121,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * This holds the services used when pricing the row.
 	 */
 	protected $servicesUsed = array();
-
+	
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
@@ -642,6 +642,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'service_start_date' => $service->get('service_start_date'),
 				);
 				$isGroupShared = $service->isGroupAccountShared($rate, $usageType, $serviceGroup);
+				$isGroupQuantityAffected = $service->isGroupQuantityAffected($serviceGroup);
 				// pre-check if need to switch to other balance with the new service
 				if ($isGroupShared && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
@@ -671,6 +672,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				if (!$isGroupShared || ($isGroupShared && $service->isGroupAccountPool($serviceGroup))) {
 					$serviceQuantity = $this->getServiceQuantity($this->row['services_data'], $serviceName);
 				}
+				
+				if($isGroupShared && !$service->isGroupAccountPool($serviceGroup) && $isGroupQuantityAffected) {
+					$ServiceMaximumQuantity = $service->getServiceMaximumQuantityByAid($this->row->getRawData()['aid']);
+				}
+				
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity);
 				$balanceType = key($groupVolume); // usagev or cost
 				$value = current($groupVolume);
@@ -1066,7 +1072,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	public function isPrepriced() {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 	}
-	
+
 	protected function getServiceQuantity($servicesData = array(), $serviceName) {
 		$quantity = 1;
 		foreach ($servicesData as $service) {
