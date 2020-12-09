@@ -22,6 +22,10 @@ class Billrun_EntityGetter_Filters_Base {
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
 	);
+	
+	protected $andQueries = array(	
+		'$existsFalse',
+	);
 
 	protected $datePreFunctions = array(
 		'minute_of_hour' => 'i' , // with leading zeros
@@ -104,7 +108,7 @@ class Billrun_EntityGetter_Filters_Base {
 	 * @param array $row
 	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
-	protected function getComputedValue($row) {
+	public function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
@@ -137,8 +141,9 @@ class Billrun_EntityGetter_Filters_Base {
 			),
 		);
 		if (!empty($this->specialQueries[$operator]) ) {
-			$data = $row;
-			$op = in_array($operator, []) ? '$and' : '$or';
+			$data = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
+			$op = in_array($operator, $this->andQueries) ? '$and' : '$or';
+
 			$query = array(
 				$op => [
 					[$firstValKey => $this->specialQueries[$operator]],
@@ -148,9 +153,6 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
-		if($operator === '$existsFalse') {
-			$res = !$res;
-		}
 		return $this->getComputedValueResult($row, $res);
 	}
 

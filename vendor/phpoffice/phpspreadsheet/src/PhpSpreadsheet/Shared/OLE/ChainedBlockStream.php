@@ -71,7 +71,7 @@ class ChainedBlockStream
         $this->data = '';
         if (isset($this->params['size']) && $this->params['size'] < $this->ole->bigBlockThreshold && $blockId != $this->ole->root->startBlock) {
             // Block id refers to small blocks
-            $rootPos = $this->ole->_getBlockOffset($this->ole->root->startBlock);
+            $rootPos = $this->ole->getBlockOffset($this->ole->root->startBlock);
             while ($blockId != -2) {
                 $pos = $rootPos + $blockId * $this->ole->bigBlockSize;
                 $blockId = $this->ole->sbat[$blockId];
@@ -81,7 +81,7 @@ class ChainedBlockStream
         } else {
             // Block id refers to big blocks
             while ($blockId != -2) {
-                $pos = $this->ole->_getBlockOffset($blockId);
+                $pos = $this->ole->getBlockOffset($blockId);
                 fseek($this->ole->_file_handle, $pos);
                 $this->data .= fread($this->ole->_file_handle, $this->ole->bigBlockSize);
                 $blockId = $this->ole->bbat[$blockId];
@@ -101,7 +101,7 @@ class ChainedBlockStream
     /**
      * Implements support for fclose().
      */
-    public function stream_close() // @codingStandardsIgnoreLine
+    public function stream_close(): void // @codingStandardsIgnoreLine
     {
         $this->ole = null;
         unset($GLOBALS['_OLE_INSTANCES']);
@@ -179,7 +179,7 @@ class ChainedBlockStream
     {
         return [
             'size' => strlen($this->data),
-            ];
+        ];
     }
 
     // Methods used by stream_wrapper_register() that are not implemented:

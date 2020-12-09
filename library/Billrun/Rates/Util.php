@@ -16,15 +16,24 @@ class Billrun_Rates_Util {
 	
 	protected static $currencyList;
 
+	protected static $ratesCache=[];
+
 	/**
 	 * Get a rate by reference
 	 * @param type $rate_ref
 	 * @return type
 	 */
-	public static function getRateByRef($rate_ref) {
+	public function getRateByRef($rate_ref, $useCache = FALSE) {
+		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rate = $rates_coll->getRef($rate_ref);
-		return $rate;
+
+		if($useCache && !isset(static::$ratesCache[$refStr])) {
+			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
+		} else {
+			return $rates_coll->getRef($rate_ref);
+		}
+
+		return static::$ratesCache[$refStr];
 	}
 
 	/**
