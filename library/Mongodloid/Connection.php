@@ -160,4 +160,30 @@ class Mongodloid_Connection {
 		$this->_server = (string) $server;
 	}
 
+	/**
+	 * get PHP Mongodb client driver
+	 * @return MongoDB\Client
+	 */
+	protected function getClient() {
+		return $this->_connection->getClient();
+	}
+	
+	/**
+	 * method to start session and retrieve it
+	 * 
+	 * @return MongoDB\Driver\Session
+	 */
+	public function startSession() {
+		return $this->getClient()->startSession();
+	}
+	
+	/**
+	 * method to get the MongoDB servers
+	 *
+	 * @return array of MongoDB\Driver\Server instances to which this manager is connected.
+	 */
+	public function getServers() {
+		return $this->getClient()->getManager()->getServers();
+ 	}
+
 }

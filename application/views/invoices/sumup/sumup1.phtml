@@ -25,6 +25,12 @@
 
 								<td><?php echo date($date_format); ?></td>
 							</tr>
+							<?php if ((!array_key_exists('due_date', $invoice_display_options) || !empty($invoice_display_options['due_date'])) && $data->get('due_date') ) { ?>
+								<tr>
+									<td>Due Date</td>
+									<td><?php echo date($date_format, $data->get('due_date')->sec); ?></td>
+								</tr>
+							<?php } ?>
 						</tbody></table>
 				</td>
 			</tr>

@@ -46,7 +46,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
 
 		$collection = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines,$collection);
+		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
 
 	//--------------------------------------------------------------------------------------------
@@ -174,19 +174,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			)),
 		);
 		
-		$pipelines[] = $this->getSortPipeline();
-
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => '$_id',
-				'plan_dates' => 1,
-				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project'],
-			)
-		);
-		$collection = Billrun_Factory::db()->subscribersCollection();
-		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
+		return $pipelines;
 	}
 	
 	/**
@@ -208,7 +196,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$project = array();
 		$sub_push = array();
 		foreach ($this->passthroughFields as $accountField) {
-			$group[$accountField] = array('$addToSet' => '$' . $accountField);
+			$group[$accountField] = array('$addToSet' => ['$cond' => [['$eq' => ['$type','account']], '$' . $accountField, '$$REMOVE']]);
 			$group2[$accountField] = array('$first' => '$' . $accountField);
 			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
 		}

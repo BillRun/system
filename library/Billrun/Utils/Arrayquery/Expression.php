@@ -61,10 +61,10 @@ class Billrun_Utils_Arrayquery_Expression {
 					
 					$ret &= $this->{$this->mapping[$key]}($field,$value);
 					
-				} else if(($field instanceof ArrayAccess || is_array($field)) /*&& isset($field[$key])*/) {
-					
-					$ret &= $this->evaluate(@$field[$key], $value);
-					
+				} else if (isset($value)) {
+
+					$fieldVal = $field instanceof ArrayAccess || is_array($field) ? @$field[$key] : $field;
+					$ret &= $this->evaluate($fieldVal, $value);
 				} else {
 					$ret = FALSE;
 				}

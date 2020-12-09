@@ -23,7 +23,7 @@ class Billrun_ActionManagers_Realtime_Responder_Manager {
 		$config = $params['config'];
 		$responderClassName = self::getResponderClassName($data);
 		if (!class_exists($responderClassName)) {
-			Billrun_Factory::log("Could not send respond. class $responderClassName not exists. Data:" . print_r($data, 1), Zend_Log::ERR);
+			Billrun_Factory::log("Could not send respond. class $responderClassName does not exist. Data:" . print_r($data, 1), Zend_Log::ERR);
 			return false;
 		}
 

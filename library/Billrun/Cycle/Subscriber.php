@@ -265,7 +265,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			// Service name
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
-				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1));
+				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
@@ -361,13 +361,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			if($name === null) {
 				$name = $subPlan['plan'];
 				$from = $subPlan['plan_activation']->sec;
-				$to = $subPlan['to']->sec;
+				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if($name == $currName) {
-				$to = $subPlan['to']->sec;
+			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
+				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
 

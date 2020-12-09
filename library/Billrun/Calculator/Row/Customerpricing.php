@@ -333,21 +333,28 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
-
+			$notInGroupVolume = $balancePricingData['out_group'] ?? ($balancePricingData['over_group'] ?? 0);
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $notInGroupVolume);
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
 				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
 				return false;
 			}
+			
+			$updatedPricingData = $this->getLineIncludedPricingData($pricingData);
+			$volume -= $notInGroupVolume;
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 //			return $pricingData;
 		}
 			
 		if (isset($pricingData['arategroups'])) {
-			$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			if (isset($updatedPricingData)) {
+				$balancePricingData = array_diff_key($updatedPricingData, array('arategroups' => 'val')); // clone issue
+			} else {
+				$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+			}
 			$pricingData['arategroups'] = $pricingData['arategroups'];
 			$arategroups = array(); // will used to flat the structure of pricingData['arategroups'] item
 			foreach ($pricingData['arategroups'] as /* $balance_key => */ &$balanceData) {
@@ -405,6 +412,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 		return false;
+	}
+	
+	/**
+	 * "clean" pricing data from over group/plan charges and keep only included pricing data.
+	 * removes pricing data that is relevant for monthly balance
+	 * 
+	 * @param array $pricingData
+	 * @return array
+	 */
+	protected function getLineIncludedPricingData($pricingData) {
+		$pricingData['aprice'] = 0;
+		unset($pricingData['over_group']);
+		unset($pricingData['over_plan']);
+		return $pricingData;
 	}
 
 	/**
@@ -533,7 +554,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceSettings = array(
 				'name' => $serviceName,
 				'time' => $time,
-				'disableCache' => true
+				'disableCache' => true,
+				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
 			
 			if (isset($service['from']->sec)) {
@@ -636,6 +658,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if (!$service->get('plan_included')) {
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
+					$instanceOptions['add_on'] = true;
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else { // use same balance as plan balance
 					$balance = $this->balance;

@@ -26,9 +26,13 @@ class Api_Translator_DatetimearrayModel extends Api_Translator_DatetimeModel {
 		try {
 			$ret = array();
 			foreach ($data as $cond => $date) {
-				$ret[$cond] = parent::internalTranslateField($date);
-				if ($ret[$cond] === false) {
-					return false;
+				if ($cond === '$exists') {
+					$ret[$cond] = boolval($date);
+				} else {
+					$ret[$cond] = parent::internalTranslateField($date);
+					if ($ret[$cond] === false) {
+						return false;
+					}
 				}
 			}
 			return $ret;

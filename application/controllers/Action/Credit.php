@@ -113,16 +113,15 @@ class CreditAction extends ApiAction {
 		}
 		
 		
-		$totalPrice = round($firstInstallment['aprice'], self::INSTALLMENTS_PRECISION);
-		$installmentPrice = round($totalPrice / $numOfInstallments, self::INSTALLMENTS_PRECISION);
-		$firstInstallmentPrice = round($totalPrice - ($installmentPrice * ($numOfInstallments - 1)), self::INSTALLMENTS_PRECISION);
+		$totalPrice = $firstInstallment['aprice'];
+		$installmentPrice = $totalPrice / $numOfInstallments;
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($firstInstallment['credit_time']);
 		
 		// handle first installment
-		$firstInstallment['aprice'] = $firstInstallmentPrice;
+		$firstInstallment['aprice'] = $installmentPrice;
 		unset($firstInstallment['stamp']);
 		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
-		
+		$firstInstallment['first_installment'] = $firstInstallment['stamp'];
 		// handle other installments
 		for ($i = 2; $i <= $numOfInstallments; $i++) {
 			$billrunKey = Billrun_Billingcycle::getFollowingBillrunKey($billrunKey);
@@ -205,7 +204,7 @@ class CreditAction extends ApiAction {
 	
 	protected function getCreditUsaget($row) {
 		if (!isset($row['aprice'])) {
-			return 'refund';
+			return (isset($row['credit_type']) && in_array($row['credit_type'], ['charge' , 'refund'])) ? $row['credit_type'] : 'refund';
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}

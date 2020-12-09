@@ -110,8 +110,6 @@ class Layout
 
     /**
      * Create a new Layout.
-     *
-     * @param array $layout
      */
     public function __construct(array $layout = [])
     {
@@ -153,7 +151,7 @@ class Layout
      *
      * @param string $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setLayoutTarget($value)
     {
@@ -175,13 +173,13 @@ class Layout
     /**
      * Set X-Mode.
      *
-     * @param X-Mode $value
+     * @param string $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setXMode($value)
     {
-        $this->xMode = $value;
+        $this->xMode = (string) $value;
 
         return $this;
     }
@@ -199,13 +197,13 @@ class Layout
     /**
      * Set Y-Mode.
      *
-     * @param Y-Mode $value
+     * @param string $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setYMode($value)
     {
-        $this->yMode = $value;
+        $this->yMode = (string) $value;
 
         return $this;
     }
@@ -223,13 +221,13 @@ class Layout
     /**
      * Set X-Position.
      *
-     * @param X-Position $value
+     * @param float $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setXPosition($value)
     {
-        $this->xPos = $value;
+        $this->xPos = (float) $value;
 
         return $this;
     }
@@ -247,13 +245,13 @@ class Layout
     /**
      * Set Y-Position.
      *
-     * @param Y-Position $value
+     * @param float $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setYPosition($value)
     {
-        $this->yPos = $value;
+        $this->yPos = (float) $value;
 
         return $this;
     }
@@ -273,7 +271,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setWidth($value)
     {
@@ -297,7 +295,7 @@ class Layout
      *
      * @param float $value
      *
-     * @return Layout
+     * @return $this
      */
     public function setHeight($value)
     {
@@ -322,7 +320,7 @@ class Layout
      *
      * @param bool $value Show legend key
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowLegendKey($value)
     {
@@ -347,7 +345,7 @@ class Layout
      *
      * @param bool $value Show val
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowVal($value)
     {
@@ -372,7 +370,7 @@ class Layout
      *
      * @param bool $value Show cat name
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowCatName($value)
     {
@@ -397,7 +395,7 @@ class Layout
      *
      * @param bool $value Show series name
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowSerName($value)
     {
@@ -422,7 +420,7 @@ class Layout
      *
      * @param bool $value Show percentage
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowPercent($value)
     {
@@ -447,7 +445,7 @@ class Layout
      *
      * @param bool $value Show bubble size
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowBubbleSize($value)
     {
@@ -472,7 +470,7 @@ class Layout
      *
      * @param bool $value Show leader lines
      *
-     * @return Layout
+     * @return $this
      */
     public function setShowLeaderLines($value)
     {

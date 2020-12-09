@@ -12,4 +12,5 @@ RUN apt-get update && apt-get install -y \
 
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
+COPY xdebug.ini /usr/local/etc/php/conf.d/
 CMD ["php-fpm"]

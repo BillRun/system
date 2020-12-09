@@ -12,13 +12,13 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	
 	static protected $type = 'external';
 	
-	protected static $queryBaseKeys = ['id', 'time', 'limit'];
+	protected static $queryBaseKeys = [ 'limit','time','id'];
 	
 	protected $remote;
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.external_url', '');
+		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
 	}
 	
 	public function delete() {
@@ -29,15 +29,27 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		return array();
 	}
 
-	protected function getSubscriberDetails($queries) {
+	protected function getSubscriberDetails($queries, $globalLimit = FALSE, $globalDate = FALSE) {
 		$externalQuery = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			$externalQuery[] = $query;
+			if (!isset($query['id'])) {
+				$query['id'] = Billrun_Util::generateArrayStamp($query);
+			}
+			$externalQuery['query'][] = $query;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote, $externalQuery), true);
+		if($globalLimit) {
+			$externalQuery['limit'] = $globalLimit;
+		}
+		if($globalDate) {
+			$externalQuery['date'] = $globalDate;
+		}
+		$results = json_decode(Billrun_Util::sendRequest($this->remote,
+														 json_encode($externalQuery),
+														 Zend_Http_Client::POST,
+														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']), true);
 		if (!$results) {
-			Billrun_Factory::log()->log(get_class() . ': could not complete request to' . $this->remote, Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentSub) {
@@ -60,6 +72,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			unset($query['EXTRAS']);
 		}
 		$params = [];
+
 		foreach ($query as $key => $value) {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$params[] = [

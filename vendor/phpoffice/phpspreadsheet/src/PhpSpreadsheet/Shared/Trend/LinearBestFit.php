@@ -58,7 +58,7 @@ class LinearBestFit extends BestFit
      * @param float[] $xValues The set of X-values for this regression
      * @param bool $const
      */
-    private function linearRegression($yValues, $xValues, $const)
+    private function linearRegression($yValues, $xValues, $const): void
     {
         $this->leastSquareFit($yValues, $xValues, $const);
     }
@@ -72,7 +72,9 @@ class LinearBestFit extends BestFit
      */
     public function __construct($yValues, $xValues = [], $const = true)
     {
-        if (parent::__construct($yValues, $xValues) !== false) {
+        parent::__construct($yValues, $xValues);
+
+        if (!$this->error) {
             $this->linearRegression($yValues, $xValues, $const);
         }
     }

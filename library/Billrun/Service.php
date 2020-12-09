@@ -28,7 +28,12 @@ class Billrun_Service {
 	protected $strongestGroup = null;
 	protected static $cache = array();
 	protected static $cacheType = 'services';
-	
+
+	/**
+	 * number of cycles the service apply to
+	 * @var mixed int or UNLIMITED_VALUE constant
+	 */
+	protected $cyclesCount;
 	
 	/**
 	 * local cache to store all entities (services/plans), so on run-time they will be fetched from memory instead of from DB
@@ -60,6 +65,8 @@ class Billrun_Service {
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
+		
+		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
 	
 	/**
@@ -165,7 +172,7 @@ class Billrun_Service {
 		return static::$cache;
 	}
 	
-	public function initCacheItems() {
+	public static function initCacheItems() {
 		$coll = Billrun_Factory::db()->{static::$cacheType . 'Collection'}();
 		$items = $coll->query()->cursor();
 		foreach ($items as $item) {
@@ -210,7 +217,8 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat,$serviceStartDate));
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceCycleStartDate, $rowTime);
 		return $cyclesSpent > $serviceAvailableCycles;
 	}
 	
@@ -654,4 +662,28 @@ class Billrun_Service {
 		return new Mongodloid_Entity(array(), self::getCollection());
 	}
 	
+	/**
+	 * method to receive the number of cycles to charge
+	 * @return mixed true is service is infinite (unlimited)
+	 */
+	public function getServiceCyclesCount() {
+		if (is_null($this->cyclesCount)) {
+			$lastEntry = array_slice($this->data['price'], -1)[0];
+			$this->cyclesCount = Billrun_Util::getIn($lastEntry, 'to', 0);
+		}
+		return $this->cyclesCount;
+	}
+
+	/**
+	 * method to check if server is unlimited of cycles to charge
+	 * @return mixed true is service is infinite (unlimited)
+	 */
+	public function isServiceUnlimited() {
+		$serviceAvailableCycles = $this->getServiceCyclesCount();
+		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
+			return true;
+		}
+		return false;
+	}
+
 }

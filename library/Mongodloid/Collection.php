@@ -34,11 +34,10 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
-		if (!isset($options['w'])) {
+		if ((isset($options['session']) && $options['session']->isInTransaction())) {
+			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
+		} else if (!isset($options['w'])) {
 			$options['w'] = $this->w;
-		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -498,7 +497,7 @@ class Mongodloid_Collection {
 		while (1) {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->setReadPreference('RP_PRIMARY')->sort(array('seq' => -1))->limit(1)->current()->get('seq');
-			if (is_null($lastSeq)) {
+			if (is_null($lastSeq) || $lastSeq < $init_id) {
 				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;
@@ -515,7 +514,7 @@ class Mongodloid_Collection {
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 					// try again with the next seq
 					continue;
 				}

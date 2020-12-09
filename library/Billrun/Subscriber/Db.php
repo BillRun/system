@@ -33,7 +33,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @param array $options - Array of initialization parameters.
 	 */
 	public function __construct($options = array()) {
-		parent::__construct($options);	
+		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	
@@ -52,6 +52,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($query['limit'])) {
 				$limit = $query['limit'];
 				unset($query['limit']);
+			} else {
+				unset($limit);
 			}
 
 			if (isset($query['id'])) {
@@ -62,11 +64,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (isset($query['EXTRAS'])) {
 				unset($query['EXTRAS']);
 			}
-
-			if (isset($query['sid'])) {
+			if (isset($query['sid']) && is_numeric($query['sid'])) {
 				settype($query['sid'], 'int');
 			}
-			
 			$result = $this->collection->query($query)->cursor();
 			if (isset($limit) && $limit === 1) {
 				$sub = $result->limit(1)->current();
@@ -78,7 +78,17 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				}
 				$subs[] = $sub;
 			} else {
-				return iterator_to_array($result);
+				$subsForQuery = iterator_to_array($result);
+				if (empty($subsForQuery)) {
+					continue;
+				}
+				foreach ($subsForQuery as $sub) {
+					if (isset($id)) {
+						$sub->set('id', $id);
+					}
+					$subs[] = $sub;
+				}
+				
 			}
 		}
 		return $subs;

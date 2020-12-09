@@ -18,10 +18,9 @@ trait Billrun_Traits_ForeignFields  {
 	private $foreginFieldPrefix = 'foreign';
 
 	/**
-	 * This array  will hold all the  added foregin fields that  were added to the CDR/row/line.
+	 * This array  will hold all the  added foreign fields that  were added to the CDR/row/line.
 	 */
 	protected $addedForeignFields = array();
-	
 	
 	protected function getAddedFoerignFields() {
 		return array_keys($this->addedForeignFields);
@@ -33,8 +32,9 @@ trait Billrun_Traits_ForeignFields  {
 	
 
 	protected function getForeignFields($foreignEntities, $existsingFields = array(), $autoLoadEntities = FALSE, $fullData = array()) {
+		$entity = $this->getForeignFieldsEntity();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue($entity .'.fields', array()), function($value) {
 			return isset($value['foreign']);	
 		});
 		
@@ -53,7 +53,7 @@ trait Billrun_Traits_ForeignFields  {
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
 					$pathToInsert = $this->buildPathToInsert($fieldConf);
-					Billrun_Util::setIn($foreignFieldsData, $pathToInsert, $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));	
+					Billrun_Util::setIn($foreignFieldsData, $pathToInsert, $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));
 				} else {
 					foreach ($foreignEntities[$fieldConf['foreign']['entity']] as $idx => $foreignEntity) {
 						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']));
@@ -101,4 +101,16 @@ trait Billrun_Traits_ForeignFields  {
 		}
 		return $pathToInsert;
 	}
+	
+	protected function getForeignFieldsEntity () {
+		return 'lines';
+	}
+
+	protected function checkIfExistInForeignEntities($entity) {
+		$foreignEntities = array_map(function($value) {
+			return $value['foreign']['entity'];
+		}, Billrun_Factory::config()->getConfigValue('lines.fields', array()));
+		return in_array($entity, $foreignEntities) ? TRUE : FALSE;
+	}
+
 }

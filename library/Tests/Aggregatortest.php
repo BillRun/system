@@ -266,7 +266,11 @@
 ////			'preRun' => array('changeConfig',),
 ////			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
 ////			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
-////				'line' => array('types' => array('flat')),
+////				'line' => array(
+//			"discount_subject": {
+//				"plan": {
+//					"PLAN_A": 0.1
+//				}'types' => array('flat')),
 ////			)),'expected_invoice'
          //BRCD-1708
          array(

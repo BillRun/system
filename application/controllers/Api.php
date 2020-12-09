@@ -36,7 +36,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		// set the actions autoloader
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
 		
@@ -241,9 +240,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		if (!is_null($input)) {
 			$output['input'] = $input;
 		}
-if ($errorMessage === "Failed to authenticate") {
-	$errorMessage .= '. input was ' . json_encode($input);
-}
 		// Throwing a general exception.
 		// TODO: Debug default code
 		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
@@ -255,6 +251,22 @@ if ($errorMessage === "Failed to authenticate") {
 		}
 
 		return false;
+	}
+	
+	/**
+	 * set a response for a successful response to the controller
+	 * 
+	 * @param array $details
+	 * @param string $desc
+	 */
+	protected function setSuccess($details, $desc = 'success') {
+		$output = [
+			'status' => 1,
+			'desc' => $desc,
+			'details' => $details,
+		];
+		$this->getView()->outputMethod = ['Zend_Json', 'encode'];
+		$this->setOutput([$output]);
 	}
 	
 	public function localeAction() {

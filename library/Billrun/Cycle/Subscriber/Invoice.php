@@ -14,6 +14,8 @@
  */
 class Billrun_Cycle_Subscriber_Invoice {
 	
+	public $aggrResults = null;
+	
 	/**
 	 *
 	 * @var array
@@ -23,11 +25,16 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $rates = array();
 	
 	protected $invoicedLines = array();
-	
-	protected $shouldKeepLinesinMemory = true;
+        
+        protected $totalGroupHashMap = array();
+
+        protected $shouldKeepLinesinMemory = true;
 	protected $shouldAggregateUsage = true;
         
-	/**
+        protected $groupingExtraFields = array();
+        protected $groupingEnabled = true;
+
+        /**
 	 * 
 	 * @param array $data - Subscriber data
 	 * @param integer $sid
@@ -40,6 +47,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		} else {
 			$this->data = $data;
 		}
+                $this->groupingExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', array()); 
+                $this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true); 
 	}
 
 	/**
@@ -129,22 +138,22 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array() ) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array(), $overridePreviouslyAggregatedResults = false) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
-				$breakdowns['cost'] += $cost;
-				$breakdowns['usagev'] += $usagev;
+				$breakdowns['cost'] = !$overridePreviouslyAggregatedResults ? $breakdowns['cost'] + $cost : $cost;
+				$breakdowns['usagev'] = !$overridePreviouslyAggregatedResults ? $breakdowns['usagev'] + $usagev : $usagev;
 				$breakdowns['count'] += 1;
 				foreach($taxData as $tax ) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+                                                Billrun_Factory::log('Received tax with an empty description. Skipping...',Zend_log::DEBUG);
 						continue;
 					}
-					@$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+					@$breakdowns['taxes'][$tax['description']] = $overridePreviouslyAggregatedResults ? @$breakdowns['taxes'][$tax['description']] + $tax['amount'] : $tax['amount'];
 				}
 				if(!empty($addedData)) {
 					$breakdowns = array_merge($breakdowns,$addedData);
@@ -229,7 +238,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-
+                if($this->groupingEnabled){
+                        $this->addGroupToTotalGrouping($row);
+                }
 		$addedData = [];
 		if(!empty($row['start'])) {
 			$addedData['start'] = $row['start'];
@@ -238,7 +249,6 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$addedData['end'] = $row['end'];
 		}
 		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes'], $addedData);
-		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
 			$this->addLineGroupData($counters, $row);
@@ -402,7 +412,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * 
 	 * @param type $subLines
 	 */
-	public function aggregateLinesToBreakdown($subLines) {
+	public function aggregateLinesToBreakdown($subLines, $overridePreviouslyAggregatedResults = false) {
+		$subLines = array_map(function($subLine) {
+			return ($subLine instanceof Mongodloid_Entity) ? $subLine->getRawData() : $subLine;
+		}, $subLines);
 		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines', Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.subscriber.final_data',array()));
 		$translations = array('BillrunKey' => $this->data['key']);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
@@ -410,14 +423,15 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
 			foreach($brkdownConfigs['pipelines'] as $breakdownConfig) {
-				$aggrResults = $aggregate->aggregate($breakdownConfig, $subLines);
-				if($aggrResults) {
-					foreach($aggrResults as $aggregateValue) {
+				$pipeline_stamp = Billrun_Util::generateArrayStamp(array('pipeline' => $breakdownConfig));
+				$this->aggrResults[$pipeline_stamp] = $aggregate->aggregate($breakdownConfig, $subLines, $this->aggrResults[$pipeline_stamp]);
+				if($this->aggrResults[$pipeline_stamp]) {
+					foreach($this->aggrResults[$pipeline_stamp] as $aggregateValue) {
 						
 						//$this->data['breakdown'][$brkdwnKey] = array();
 						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
 						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(),  array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)),
-						array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+						array('conditions' =>json_encode($breakdownConfig[0]['$match']))), $overridePreviouslyAggregatedResults);
 					}
 				}
 			}
@@ -493,4 +507,118 @@ class Billrun_Cycle_Subscriber_Invoice {
 	public function getInvoicedLines() {
 		return $this->invoicedLines;
 	}
+
+	protected function getGroupingKeysforRow($row) {
+		$groupingKeys = array();
+		switch ($row['type']) {
+			case 'flat':
+				$groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'plan', null);
+				$groupingKeys['source'] = 'plan';
+				break;
+			case 'service':
+				$groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'service', null);
+				$groupingKeys['source'] = 'service';
+				break;
+			case 'credit':
+				switch ($row['usaget']) {
+					case 'discount':
+						$groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'key', null);
+						break;
+					case 'refund':
+					case 'charge':
+						$groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'arate_key', null);
+						break;
+				}
+				$groupingKeys['source'] = Billrun_Util::getIn($row, 'usaget', null);
+				break;
+			default:
+				$fileTypes = Billrun_Factory::config()->getFileTypes();
+				if (in_array($row['type'], $fileTypes)) {
+					$groupingKeys['entity_key'] = Billrun_Util::getIn($row, 'arate_key', null);
+					$groupingKeys['source'] = 'rate';
+				} else {
+					Billrun_Factory::log("Updating unknown type: " . $row['type'], Zend_Log::NOTICE);
+				}
+		}
+		$taxes = Billrun_Util::getIn($row, 'tax_data.taxes', array());
+		foreach ($taxes as $tax) {
+			$tax_key = isset($tax['key']) ? $tax['key'] : "";
+			$tax_type = isset($tax['type']) ? $tax['type'] : "";
+			$groupingKeys['tax_key'][$tax_key][] = $tax_type;
+		}
+
+
+		foreach ($this->groupingExtraFields as $field) {
+			$value = Billrun_Util::getIn($row, $field, null);
+			if (isset($value)) {
+				Billrun_Util::setIn($groupingKeys, $field, $value);
+			}
+		}
+		return $groupingKeys;
+	}
+
+	protected function createNewTotalsGrouping($groupingKeys, $row, $index) {
+		foreach ($groupingKeys as $field => $value) {
+			$this->data['totals']['grouping'][$index][$field] = $value;
+		}
+		$this->updateTotalsGrouping($row, $index);
+	}
+
+	protected function updateTotalsGrouping($row, $index) {
+		$this->data['totals']['grouping'][$index]['usagev'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['usagev'], 0) + Billrun_Util::getIn($row, 'usagev', 0);;
+		$this->data['totals']['grouping'][$index]['count'] =  Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['count'], 0) + 1;
+		$this->data['totals']['grouping'][$index]['before_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['before_taxes'], 0) + Billrun_Util::getIn($row, 'aprice', 0);
+		$this->data['totals']['grouping'][$index]['taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['taxes'], 0) + Billrun_Util::getIn($row, 'tax_data.total_amount', 0);
+		$this->data['totals']['grouping'][$index]['after_taxes'] = Billrun_Util::getFieldVal($this->data['totals']['grouping'][$index]['after_taxes'], 0) + Billrun_Util::getIn($row, 'final_charge', 0);
+	}
+
+	protected function addGroupToTotalGrouping($row) {
+		$groupingKeys = $this->getGroupingKeysforRow($row);
+		if (isset($groupingKeys['tax_key'])) {
+			foreach ($groupingKeys['tax_key'] as $key => $types) {
+				foreach ($types as $type) {
+					$uniqeGroupingKeys = $groupingKeys;
+					$uniqeGroupingKeys['tax_key'] = !empty($key) ? $key : null;
+					$uniqeGroupingKeys['tax_type'] = !empty($type) ? $type : null;
+					$this->addGroup($uniqeGroupingKeys, $row);
+				}
+			}
+		} else {
+			$this->addGroup($groupingKeys, $row);
+		}
+	}
+
+	protected function addGroup($uniqeGroupingKeys, $row) {
+		$result = $this->findGroupTotalByGroupingKey($uniqeGroupingKeys);
+		//if allready have group for this $uniqeGroupingKeys update this group
+		if ($result['status']) {
+			$this->updateTotalsGrouping($row, $result['index']);
+		} else {
+			//if dont have group for this $uniqeGroupingKeys creat new one.
+			$this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index']);
+		}
+	}
+
+	/**
+	 * This function find if for this subscriber already exist group (in the sub.totals of the billrun object)
+	 * for the $groupingkeys, if so return the index of the group
+	 * otherwise return the next index of the array and save it in $totalGroupHashMap for this new $groupingkeys.
+	 * @param $groupingkeys - the keys that distinguish a group.
+	 * @return if exist group return status=true and the index otherwise status=false and the the new index.
+	 */
+	protected function findGroupTotalByGroupingKey($groupingkeys) {
+		$result = array();
+		$stamp = Billrun_Util::generateArrayStamp($groupingkeys);
+		$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
+		if (isset($index)) {
+			$result['status'] = true;
+			$result['index'] = $index;
+		} else {
+			$result['status'] = false;
+			$result['index'] = count($this->totalGroupHashMap);
+			$this->totalGroupHashMap[$stamp] = $result['index'];
+		}
+		return $result;
+	}
+
 }

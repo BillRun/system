@@ -22,7 +22,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function __construct() {
 		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
-		$this->account = Billrun_Factory::account();
 	}
 
 	public function updateSessionTransactionId() {
@@ -58,6 +57,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (isset($xmlObj->response->doDeal->mpiHostedPageUrl)) {
 
 				$this->redirectUrl = (string)$xmlObj->response->doDeal->mpiHostedPageUrl;
+				$this->setRequestParams();
 			} else {
 				Billrun_Factory::log("Error: " . 'Error Code: ' . $xmlObj->response->result .
 					'Message: ' . $xmlObj->response->message .
@@ -67,6 +67,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+	}
+	
+	protected function setRequestParams($params = []) {
+		$this->requestParams = [
+			'url' => $this->redirectUrl,
+			'response_parameters' => [
+				'txId',
+			],
+		];
 	}
 
 	protected function buildTransactionPost($txId, $additionalParams) {
@@ -200,7 +209,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				Billrun_Factory::log("Z parameter " . $addonData['aid'] . " sent to Credit Guard is larger than 8 digits", Zend_Log::NOTICE);
 			}
 			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
-		}		
+		}
+		$this->transactionId = $addonData['txid'];
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -221,9 +231,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<transactionCode>Phone</transactionCode>
 										<transactionType>' . $transactionType . '</transactionType>
 										<total>' . abs($gatewayDetails['amount']) . '</total>
-										<user>' . $addonData['txid'] . '</user>
+										<user>' . $this->transactionId . '</user>
 										 ' . $ZParameter . '
 										<validation>AutoComm</validation>
+										 <customerData>
+											<userData1>' . $addonData['aid'] . '</userData1>
+	                                     </customerData>
 									</doDeal>
 								</request>
 						</ashrait>'
@@ -313,6 +326,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function sendPaymentRequest($paymentArray) {
 		$additionalParams = array();
+		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -321,14 +335,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string) $xmlObj->response->result;
-		$this->transactionId = (string) $xmlObj->response->tranId;
-		$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
-		$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
-		$voucherNumber = $slaveNumber . $slaveSequence;
-		if (!empty($voucherNumber)) {
-			$additionalParams['payment_identifier'] = $voucherNumber;
-		}
+		if ($xmlObj !== false) {
+			$codeResult = (string) $xmlObj->response->result;
+			$this->transactionId = (string) $xmlObj->response->tranId;
+			$slaveNumber = (string) $xmlObj->response->doDeal->slaveTerminalNumber;
+			$slaveSequence = (string) $xmlObj->response->doDeal->slaveTerminalSequence;
+			$voucherNumber = $slaveNumber . $slaveSequence;
+			if (!empty($voucherNumber)) {
+				$additionalParams['payment_identifier'] = $voucherNumber;
+			}
+		}	
 		return array('status' => $codeResult, 'additional_params' => $additionalParams);
 	}
 	
@@ -339,40 +355,20 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
 		$gatewayDetails = $paymentParams['gateway_details'];
 		$updatedPaymentParams = $paymentParams;
-		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'], $cgConfig['oldest_card_expiration'])) {
-			$this->account->loadAccountForQuery(array('aid' => $paymentParams['aid']));
-			$updatedPaymentParams['gateway_details']['card_expiration'] = $gatewayDetails['card_expiration'] = substr($gatewayDetails['card_expiration'], 0, 2) . ((substr($gatewayDetails['card_expiration'], 2, 4) + 3) % 100);
-			$accountGateway = $this->account->payment_gateway;
-			$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
-			if (isset($accountGateway['active']['generate_token_time']->sec)) {
-				$accountGateway['active']['generate_token_time'] = date("Y-m-d H:i:s", $accountGateway['active']['generate_token_time']->sec);
+		if ($responseFromGateway['status'] == $cgConfig['card_expiration_rejection_code'] && $this->isCreditCardExpired($gatewayDetails['card_expiration'])) {
+			$updatedPaymentParams['gateway_details']['card_expiration'] = $gatewayDetails['card_expiration'] = $this->getCardExpiration($gatewayDetails['card_expiration']);
+			if(!$this->updateAccountCardExpiration($paymentParams, $gatewayDetails)){
+					return false;
 			}
-			$time = date(Billrun_Base::base_datetimeformat);
-			$query = array(
-				'aid' => $paymentParams['aid'],
-				'type' => 'account',
-				'effective_date' => $time,
-			);
-			$update = array(
-				'from' => $time,
-				'payment_gateway' => $accountGateway,
-			);
-			Billrun_Factory::log("Updating expiration date for aid=" . $paymentParams['aid'] . " to date " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
-			try {
-				$this->account->permanentChange($query, $update);
-				Billrun_Factory::log("Expiration date was updated for aid=" . $paymentParams['aid'] . " to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
-			} catch (Exception $ex) {
-				Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::ALERT);
-				return false;
-			}
-			
 			return $updatedPaymentParams;
 		}
 		
 		return false;
 	}
 	
-	protected function isCreditCardExpired($expiration, $oldestCardExpiration) {
+	public function isCreditCardExpired($expiration) {
+		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+		$oldestCardExpiration = $cgConfig['oldest_card_expiration'];
 		$expires = \DateTime::createFromFormat('my', $expiration);
 		$dateTooOld = new DateTime($oldestCardExpiration);
 		if ($expires < $dateTooOld) {
@@ -526,6 +522,53 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function addLeadingZero($param) {
 		return str_pad($param, 2, "0", STR_PAD_LEFT);
+	}
+
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+	
+	protected function getCardExpiration($old_card_expiration){
+		$cgConfig = Billrun_Factory::config()->getConfigValue('creditguard');
+		$years = $cgConfig['years_to_extend_card_expiration'];
+		return substr($old_card_expiration, 0, 2) . ((substr($old_card_expiration, 2, 4) + $years) % 100);
+	}
+	
+	protected function updateAccountCardExpiration($paymentParams, $gatewayDetails){
+		$this->account->loadAccountForQuery(array('aid' => $paymentParams['aid']));
+		$accountGateway = $this->account->payment_gateway;
+		$accountGateway['active']['card_expiration'] = $gatewayDetails['card_expiration'];
+		if (isset($accountGateway['active']['generate_token_time']->sec)) {
+			$accountGateway['active']['generate_token_time'] = date("Y-m-d H:i:s", $accountGateway['active']['generate_token_time']->sec);
+		}
+		$time = date(Billrun_Base::base_datetimeformat);
+		$query = array(
+			'aid' => $paymentParams['aid'],
+			'type' => 'account',
+			'effective_date' => $time,
+		);
+		$update = array(
+			'from' => $time,
+			'payment_gateway' => $accountGateway,
+		);
+		Billrun_Factory::log("Updating expiration date for aid=" . $paymentParams['aid'] . " to date " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+		try {
+			$this->account->permanentChange($query, $update);
+			Billrun_Factory::log("Expiration date was updated for aid=" . $paymentParams['aid'] . " to " . $gatewayDetails['card_expiration'], Zend_Log::DEBUG);
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Expiration date " . $gatewayDetails['card_expiration'] . " was failed to update for aid=" . $paymentParams['aid'], Zend_Log::ALERT);
+			return false;
+		}
+		return true;
+	}
+	
+	public function extendCardExpiration($paymentParams, $gatewayDetails){
+		$old_card_expiration = $gatewayDetails['card_expiration'];
+		$gatewayDetails['card_expiration'] = $this->getCardExpiration($old_card_expiration);
+		if ($this->updateAccountCardExpiration($paymentParams, $gatewayDetails)){
+			return $gatewayDetails['card_expiration'];
+		}
+		return $old_card_expiration;
 	}
 
 }

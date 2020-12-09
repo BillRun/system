@@ -26,6 +26,7 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 	 * @var string
 	 */
 	protected $actionType;
+	protected $connectionsFields = array('port', 'delete_received');
 
 	public function __construct($options) {
 		if (!isset($options['receiver']['connection'])) {
@@ -61,15 +62,19 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		foreach ($this->receiverDefinitions  as $key => $value) {
 			$receiverIniDefinitions[$key] = $value;
 		}
+		if (!isset($receiverIniDefinitions['port'])) {
+			Billrun_Factory::log()->log("Missing port definition in " . $this->gatewayName . " configuration", Zend_Log::NOTICE);
+		}
 		$dbReceiverDefinitions = $this->gateway->getGatewayReceiver($type);
 		$connections = $dbReceiverDefinitions['connections'];
 		foreach ($connections as $key => $connection) {
-			if (isset($receiverIniDefinitions['port'])) {
-				$connections[$key]['port'] = $receiverIniDefinitions['port'];
-				unset($receiverIniDefinitions['port']);
-				continue;
+			foreach ($receiverIniDefinitions as $field => $value) {
+				if (in_array($field, $this->connectionsFields)) {
+					$connections[$key][$field] = $receiverIniDefinitions[$field];
+					unset($receiverIniDefinitions[$field]);
+					continue;
+				}
 			}
-			Billrun_Factory::log()->log("Missing port definition in " . $this->gatewayName . " configuration", Zend_Log::NOTICE);
 		}
 		$dbReceiverDefinitions['connections'] = $connections;
 		foreach ($dbReceiverDefinitions as $key => $value) {

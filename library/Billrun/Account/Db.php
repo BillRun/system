@@ -14,12 +14,12 @@
  * @since    5.0
  */
 class Billrun_Account_Db extends Billrun_Account {
-	
+
 	/**
 	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
-	
+
 	protected static $type = 'db';
 	
 	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
@@ -30,7 +30,8 @@ class Billrun_Account_Db extends Billrun_Account {
 	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
+		$this->collection = Billrun_Factory::db()->subscribersCollection();		
 	}
 
 	/**
@@ -46,14 +47,18 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountsDetails($query) {
-		return $this->collection->query($query)->cursor();
+	protected function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE) {
+		$cursor =  $this->collection->query($query)->cursor();
+		if($globalLimit) {
+			$cursor->limit($globalLimit);
+		}
+		return $cursor;
 	}
-		
+
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
 		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
@@ -63,20 +68,22 @@ class Billrun_Account_Db extends Billrun_Account {
 	/**
 	 * Overrides parent abstract method
 	 */
-	protected function getAccountDetails($queries) {
-		$accounts = [];		
+	protected function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE) {
+		$accounts = [];
 		foreach ($queries as &$query) {
 			$query = $this->buildParams($query);
-			if(isset($query['limit'])) {
+			if (isset($query['limit'])) {
 				$limit = $query['limit'];
 				unset($query['limit']);
 			}
-			if(isset($query['time'])) {
+
+			if (isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
 				unset($query['time']);
 			}
-			if(isset($query['id'])) {
+
+			if (isset($query['id'])) {
 				$id = $query['id'];
 				unset($query['id']);
 			}
@@ -91,7 +98,16 @@ class Billrun_Account_Db extends Billrun_Account {
 				}
 				$accounts[] = $account;
 			} else {
-				return iterator_to_array($result);
+				$accountsForQuery = iterator_to_array($this->collection->query($query)->cursor());
+				if (empty($accountsForQuery)) {
+					continue;
+				}
+				foreach ($accountsForQuery as $account) {
+					if (isset($id)) {
+						$account->set('id', $id);
+					}
+					$accounts[] = $account;
+				}
 			}
 		}
 		return $accounts;
@@ -108,9 +124,8 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
-	}
-	
-		
+		}
+
 	/**
 	 * 
 	 * Method to Save as 'Close And New' item
@@ -149,7 +164,7 @@ class Billrun_Account_Db extends Billrun_Account {
 			return FALSE;
 		}
 	}
-	
+
 	protected function buildParams($query) {
 		$type = 'account';
 		$query['type'] = $type;
@@ -157,11 +172,12 @@ class Billrun_Account_Db extends Billrun_Account {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$query[$key] = $value;
 				continue;
-			}
+		}
 			switch ($key) {
 				default:
-			}
 		}
+	}
+	
 		return $query;
 	}
 }
