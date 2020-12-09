@@ -425,6 +425,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$this->footerToExport[0] = $this->getTrailerLine();
         $options['trailers'] = $this->footerToExport;
         $options['type'] = $this->config['generator']['type'];
+		$options['force_header'] = $this->config['generator']['force_header'];
+		$options['force_footer'] = $this->config['generator']['force_footer'];
         $options['configByType'] = $this->config;
         if (isset($this->config['generator']['separator'])) {
             $options['delimiter'] = $this->config['generator']['separator'];

@@ -27,6 +27,8 @@ class Billrun_Generator_PaymentGateway_Csv {
         public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
+		$this->forceHeader = $options['force_header']?? false;
+		$this->forceFooter = $options['force_footer']?? false;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
@@ -79,9 +81,13 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 	
 	public function generate() {
-		if (count($this->data)) {
+		if (count($this->data) || $this->forceHeader){
 			$this->writeHeaders();
+		}
+		if (count($this->data)) {
 			$this->writeRows();
+		}
+		if (count($this->data)|| $this->forceFooter){
 			$this->writeTrailers();
 		}
 		return;
