@@ -43,13 +43,13 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (isset($options['file_name'])) {
 			$this->file_name = $options['file_name'];
 		}
-        if(isset($options['headers'])){
+		if (isset($options['headers'])) {
 			$this->headers = $options['headers'];
 		}
-		if(isset($options['data'])){
+		if (isset($options['data'])) {
 			$this->data = $options['data'];
 		}
-		if(isset($options['trailers'])){
+		if (isset($options['trailers'])) {
 			$this->trailers = $options['trailers'];
 		}
 		$this->validateOptions($options);

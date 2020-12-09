@@ -21,11 +21,6 @@ abstract class Billrun_Generator_File {
 	 */
 	protected $config = array();
 	
-	/**
-	 * collection name (DB) from which data should be fetched
-	 * @var string
-	 */
-	protected $collection = null;
 	
 	/**
 	 * data to export (after translation)
