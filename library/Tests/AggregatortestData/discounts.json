@@ -2,345 +2,122 @@
 	"collection": "discountsCollection",
 	"data": [
 		{
-
-			"from": "time*2018-03-31T21:00:00Z",
-			"key": "TT",
-			"description": "ttt",
-			"params": {
-				"conditions": [
+	"OBJID":"5aeeb4c105e68c6d4d758032",
+	"from" :"time*2018-03-31T21:00:00Z",
+	"key" : "TT",
+	"description" : "ttt",
+	"params" : {
+		"conditions" : [
+			{
+				"subscriber" : [
 					{
-						"subscriber": [
+						"fields" : [
 							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "PLAN_A"
-									}
-								]
+								"field" : "plan",
+								"op" : "eq",
+								"value" : "PLAN_A"
 							}
 						]
 					}
 				]
-			},
-			"to": "time*2167-05-06T08:54:41Z",
-			"creation_time": "time*2018-03-31T21:00:00Z",
-			"type": "percentage",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"PLAN_A": {
-						"value": 0.1
-					}
-				}
 			}
-		},
-		{
-
-			"from": "time*2017-12-31T22:00:00Z",
-			"key": "SER",
-			"description": "ser",
-			"params": {
-				"conditions": [
+		]
+	},
+	"to" :"time*2167-05-06T08:54:41Z",
+	"creation_time" :"time*2018-03-31T21:00:00Z",
+	"type" : "percentage",
+	"proration" : "inherited",
+	"subject" : {
+		"plan" : {
+			"PLAN_A" : {
+				"value" : 0.1
+			}
+		}
+	}
+},
+{
+	"OBJID":"5af452a805e68c420108665f",
+	"from" :"time*2017-12-31T22:00:00Z",
+	"key" : "SER",
+	"description" : "ser",
+	"params" : {
+		"conditions" : [
+			{
+				"subscriber" : [
 					{
-						"subscriber": [
-							{
-								"service": {
-									"any": [
+						"service" : {
+							"any" : [
+								{
+									"fields" : [
 										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"DISCOUNT_SERVICE"
-													]
-												}
+											"field" : "name",
+											"op" : "in",
+											"value" : [
+												"DISCOUNT_SERVICE"
 											]
 										}
 									]
 								}
-							}
-						]
+							]
+						}
 					}
 				]
-			},
-			"to": "time*2167-05-10T15:09:44Z",
-			"creation_time": "time*2017-12-31T22:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"service": {
-					"DISCOUNT_SERVICE": {
-						"value": "50"
-					}
-				}
 			}
-		},
-		{
-
-			"from": "time*2018-01-28T22:00:00Z",
-			"key": "D",
-			"description": "d",
-			"params": {
-				"conditions": [
+		]
+	},
+	"to" :"time*2167-05-10T15:09:44Z",
+	"creation_time" :"time*2017-12-31T22:00:00Z",
+	"type" : "monetary",
+	"proration" : "inherited",
+	"subject" : {
+		"service" : {
+			"DISCOUNT_SERVICE" : {
+				"value" : "50"
+			}
+		}
+	}
+},
+{
+	"OBJID":"5b34bee305e68c7fa55cb902",
+	"from" :"time*2018-01-28T22:00:00Z",
+	"key" : "D",
+	"description" : "d",
+	"params" : {
+		"conditions" : [
+			{
+				"subscriber" : [
 					{
-						"subscriber": [
-							{
-								"service": {
-									"any": [
+						"service" : {
+							"any" : [
+								{
+									"fields" : [
 										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"NOT_TAXABLE"
-													]
-												}
+											"field" : "name",
+											"op" : "in",
+											"value" : [
+												"NOT_TAXABLE"
 											]
 										}
 									]
 								}
-							}
-						]
+							]
+						}
 					}
 				]
-			},
-			"to": "time*2167-06-28T11:56:35Z",
-			"creation_time": "time*2018-01-28T22:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"service": {
-					"NOT_TAXABLE": {
-						"value": "10"
-					}
-				}
 			}
-		},
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "TTF",
-			"description": "TTF",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "TTF"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"TTF": {
-						"value": 10
-					}
-				}
+		]
+	},
+	"to" :"time*2167-06-28T11:56:35Z",
+	"creation_time" :"time*2018-01-28T22:00:00Z",
+	"type" : "monetary",
+	"proration" : "inherited",
+	"subject" : {
+		"service" : {
+			"NOT_TAXABLE" : {
+				"value" : "10"
 			}
 		}
-		,
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "FFF",
-			"description": "FFF",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "FFF"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"FFF": {
-						"value": 10
-					}
-				}
-			}
-		}
-		,
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "TFF",
-			"description": "TFF",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "TFF"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"TFF": {
-						"value": 10
-					}
-				}
-			}
-		}
-		,
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "FTT",
-			"description": "FTT",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "FTT"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"FTT": {
-						"value": 10
-					}
-				}
-			}
-		}
-		,
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "TTT",
-			"description": "TTT",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "TTT"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"TTT": {
-						"value": 10
-					}
-				}
-			}
-		},
-		{
-
-			"from": "time*2018-12-31T22:00:00Z",
-			"key": "FFT",
-			"description": "FFT",
-			"params": {
-				"conditions": [
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "eq",
-										"value": "FFT"
-									}
-								]
-							}
-						]
-					}
-				],
-				"min_subscribers": "",
-				"max_subscribers": ""
-			},
-			"to": "time*2167-01-10T08:26:34Z",
-			"creation_time": "time*2017-11-01T00:00:00Z",
-			"type": "monetary",
-			"proration": "inherited",
-			"subject": {
-				"plan": {
-					"FFT": {
-						"value": 10
-					}
-				}
-			}
-		}
-
-
-
+	}
+}
 	]
 }
