@@ -17,32 +17,33 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class Subscriber_UsageAction extends ApiAction {
 
 	public function execute() {
-		$request = $this->getRequest();
-		$sid = $request->get("sid");
+		$body = json_decode(file_get_contents('php://input'),true);
+		
+		$sid = $body["sid"];
 		if(empty($sid)) {
-			$sid = $request->get("subscriber_id");
+			$sid = $body["subscriber_id"];
 		}
 		Billrun_Factory::log()->log("Execute subscriber_usage api call to SID: " . $sid, Zend_Log::INFO);
 		if (!is_numeric($sid)) {
-			return $this->setError("SID is not numeric", $request);
+			return $this->setError("SID is not numeric", $body);
 		} else {
 			settype($sid, 'int');
 		}
-		$billrunKey = !empty($request->get("billrun")) ? $request->get("billrun") : Billrun_Util::getBillrunKey(time());
+		$billrunKey = !empty($body["billrun"]) ? strval($body["billrun"]) : Billrun_Util::getBillrunKey(time());
 		if(!Billrun_util::isBillrunKey($billrunKey)){
-			return $this->setError("billrun is not a valid billrun key", $request);
+			return $this->setError("billrun is not a valid billrun key", $body);
 		}
-		$offers = json_decode($request->get("offers"), TRUE);
-		if (!is_array($offers) || json_last_error()) {
-			return $this->setError('Illegal offers format', $request);
+		$offers = $body["offers"];
+		if (!is_array($offers)) {
+			return $this->setError('Illegal offers format', $body);
 		}
-		$addons_national = !empty($request->get('addons_national')) ? json_decode($request->get('addons_national'), TRUE): [];
-		if (!is_array($addons_national) || json_last_error()) {
-			return $this->setError('Illegal addons_national format', $request);
+		$addons_national = !empty($body['addons_national']) ? $body['addons_national']: [];
+		if (!is_array($addons_national)) {
+			return $this->setError('Illegal addons_national format', $body);
 		}
-		$addons = !empty($request->get('addons')) ? json_decode($request->get('addons'), TRUE): [];
-		if (!is_array($addons) || json_last_error()) {
-			return $this->setError('Illegal addons format', $request);
+		$addons = !empty($body['addons']) ? $body['addons']: [];
+		if (!is_array($addons)) {
+			return $this->setError('Illegal addons format', $body);
 		}
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -60,6 +61,8 @@ class Subscriber_UsageAction extends ApiAction {
 			$this->getController()->setOutput(array(array(
 				'status' => true,
 				'msg' => '',
+				'subscriber_id' => $sid,
+				'billrun' => intval($billrunKey),
 				'data' => $output
 			), true)); // hack
 		}
@@ -94,7 +97,7 @@ class Subscriber_UsageAction extends ApiAction {
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
 		if(empty($mainBalances) ) {
-			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $mainBalances, $params);
+			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 		}
 		//go though the  subscribers addons packages
 		$this->getActualUsagesOfPackages($packages, $mainBalances, $actualUsage);
@@ -104,19 +107,19 @@ class Subscriber_UsageAction extends ApiAction {
 		 //merge results with saved group keys
 		$output['usage_israel'] = [];
 		foreach($maxNationalUsage as  $type => $usageVal) {
-			$output['usage_israel']['current_'.$type.'_usage'] = 0;
-			$output['usage_israel']['total_'.$type.'_max'] = $usageVal;
+			$output['usage_israel'][$type.'_usage'] = 0;
+			$output['usage_israel'][$type.'_max'] = $usageVal;
 		}
 		foreach($actualNationalUsage as  $type => $usageVal) {
-			$output['usage_israel']['current_'.$type.'_usage'] = $usageVal;
+			$output['usage_israel'][$type.'_usage'] = $usageVal;
 		}
 		$output['usage_abroad'] = [];
 		foreach($maxUsage as  $type => $usageVal) {
-			$output['usage_abroad']['current_'.$type.'_usage'] = 0;
-			$output['usage_abroad']['total_'.$type.'_max'] = $usageVal;
+			$output['usage_abroad'][$type.'_usage'] = 0;
+			$output['usage_abroad'][$type.'_max'] = $usageVal;
 		}
 		foreach($actualUsage as  $type => $usageVal) {
-			$output['usage_abroad']['current_'.$type.'_usage'] = $usageVal;
+			$output['usage_abroad'][$type.'_usage'] = $usageVal;
 		}
 
 		//do some beutyfing of the data
