@@ -328,7 +328,7 @@ class Billrun_Service {
 	 * 
 	 * @return int usage left in the group
 	 */
-	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null, $serviceQuantity = 1) {
+	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null, $serviceQuantity = 1, $serviceMaximumQuantity = 1) {
 		if (is_null($staticGroup)) {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
@@ -357,7 +357,7 @@ class Billrun_Service {
 				return array('usagev' => 0);
 			}
 			
-			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
+			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity, $serviceMaximumQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
 				return array(
@@ -375,7 +375,7 @@ class Billrun_Service {
 				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
 			);
 		} else {
-			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity);
+			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity, $serviceMaximumQuantity);
 			if ($rateUsageIncluded === 'UNLIMITED') {
 				return array(
 					'usagev' => PHP_INT_MAX,
@@ -476,7 +476,7 @@ class Billrun_Service {
 		return isset($this->data['include']['groups'][$group]['quantity_affected']) && $this->data['include']['groups'][$group]['quantity_affected'];
 	}
 
-	public function getGroupVolume($usageType, $aid, $group = null, $time = null, $serviceQuantity = 1) {
+	public function getGroupVolume($usageType, $aid, $group = null, $time = null, $serviceQuantity = 1, $serviceMaximumQuantity = 1) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
@@ -486,8 +486,14 @@ class Billrun_Service {
 		if ($groupValue === FALSE) {
 			return 0;
 		}
-		if (!$isShared && $isquantityAffected) {
-			return $groupValue * $serviceQuantity;
+		if ($isquantityAffected) {
+			if (!$isShared) {
+				return $groupValue * $serviceQuantity;
+			} else {
+				if (!$this->isGroupAccountPool($group)) {
+					return $groupValue * $serviceMaximumQuantity;
+				}
+			}
 		}
 		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time, $isquantityAffected)) {
 			return $groupValue * $pool;
@@ -703,28 +709,27 @@ class Billrun_Service {
 	}
 	
 	public function calculateServiceMaximumQuantity($aid) {
+		$current_service_name = $this->getName();
 		$query = array(
 			'aid' => $aid,
-			'type' => 'subscriber',
 			'to' => array('$gt' => new MongoDate($this->data['to']->sec)),
 			'from' => array('$lt' => new MongoDate($this->data['from']->sec)),
 		);
-		$aggregateMatch = array(
-			'$match' => $query,
-		);
-
-		$unwindServices = array('$unwind' => '$services');
-
-		$aggregateServices = array(
-			'$match' => array(
-				'services.name' => $this->getName()
-			)
-		);
-		$aggreagateArray = array($aggregateMatch);
-		array_push($aggreagateArray, $unwindServices, $aggregateServices, $limit);
-		$queries = [$aggreagateArray];
-		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries($queries);
-		return is_array($results) ? $results : [];
+		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);
+		$maximum_quantity = 0;
+		foreach($results as $index => $sub) {
+			if(isset($sub['services']) && in_array($current_service_name, array_column($sub['services'], 'name'))) {
+				$relevant_service = current(array_filter($sub['services'], function($service) use ($current_service_name) {
+					return $service['name'] === $current_service_name;
+				}));
+				if (isset($relevant_service['quantity'])) {
+					if ($maximum_quantity < $relevant_service['quantity']) {
+						$maximum_quantity = $relevant_service['quantity'];
+					}
+				}
+			}
+		}
+		return $maximum_quantity;
 	}
 
 }
