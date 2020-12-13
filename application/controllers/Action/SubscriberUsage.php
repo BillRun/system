@@ -105,7 +105,7 @@ class Subscriber_UsageAction extends ApiAction {
 		 //merge results with saved group keys
 		$output['subscriber_id'] = $params['sid'];
 		$output['billrun'] = intval($params['billrun_key']);
-		$output['usage_israel'] = [];
+		$this->initializeUsagesTypes($output);
 		foreach($maxNationalUsage as  $type => $usageVal) {
 			$output['usage_israel'][$type.'_usage'] = 0;
 			$output['usage_israel'][$type.'_max'] = $usageVal;
@@ -113,7 +113,6 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($actualNationalUsage as  $type => $usageVal) {
 			$output['usage_israel'][$type.'_usage'] = $usageVal;
 		}
-		$output['usage_abroad'] = [];
 		foreach($maxUsage as  $type => $usageVal) {
 			$output['usage_abroad'][$type.'_usage'] = 0;
 			$output['usage_abroad'][$type.'_max'] = $usageVal;
@@ -155,5 +154,20 @@ class Subscriber_UsageAction extends ApiAction {
 					}
 			}
 		}
+	}
+	
+	
+	protected function initializeUsagesTypes(&$output) {
+		$usage_israel_types = ['data', 'calls', 'sms'];
+		$usage_abroad_types = ['data', 'calls', 'sms', 'days'];
+		foreach ($usage_israel_types as $type){
+			$output['usage_israel'][$type.'_usage'] = 0;
+			$output['usage_israel'][$type.'_max'] = 0;
+		}
+		foreach ($usage_abroad_types as $type){
+			$output['usage_abroad'][$type.'_usage'] = 0;
+			$output['usage_abroad'][$type.'_max'] = 0;
+		}
+		
 	}
 }
