@@ -1169,18 +1169,18 @@ class Models_Entity {
 			"closeandnewable" => $isCurrentCycle,
 			"movable" => $isCurrentCycle,
 			"removable" => $isCurrentCycle,
-			"movable_from" => self::isDateMovable($record['from']->sec),
-			"movable_to" => self::isDateMovable($record['to']->sec)
+			"movable_from" => self::isDateMovable($record['from']->sec, $invoicing_day),
+			"movable_to" => self::isDateMovable($record['to']->sec, $invoicing_day)
 		);
 		return $record;
 	}
 
-	protected static function isDateMovable($timestamp) {
+	protected static function isDateMovable($timestamp, $invoicing_day = null) {
 		if (static::isAllowedChangeDuringClosedCycle()) {
 			return true;
 		}
-		$invoicing_day = ($this instanceof Models_Accounts) ? $this->invoicing_day : null;
-		return self::getMinimumUpdateDate($invoicing_day) <= $timestamp;
+		$chosen_invoicing_day = is_null($invoicing_day) ? Billrun_Factory::config()->getConfigChargingDay() : $invoicing_day;
+		return self::getMinimumUpdateDate($chosen_invoicing_day) <= $timestamp;
 	}
 
 	/**
