@@ -61,8 +61,6 @@ class Subscriber_UsageAction extends ApiAction {
 			$this->getController()->setOutput(array(array(
 				'status' => true,
 				'msg' => '',
-				'subscriber_id' => $sid,
-				'billrun' => intval($billrunKey),
 				'data' => $output
 			), true)); // hack
 		}
@@ -105,6 +103,8 @@ class Subscriber_UsageAction extends ApiAction {
 		$this->getActualUsagesOfPackages($nationalPackages, $mainBalances, $actualNationalUsage);
 		
 		 //merge results with saved group keys
+		$output['subscriber_id'] = $params['sid'];
+		$output['billrun'] = intval($params['billrun_key']);
 		$output['usage_israel'] = [];
 		foreach($maxNationalUsage as  $type => $usageVal) {
 			$output['usage_israel'][$type.'_usage'] = 0;
