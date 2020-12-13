@@ -61,7 +61,8 @@ class Subscriber_UsageAction extends ApiAction {
 			$this->getController()->setOutput(array(array(
 				'status' => true,
 				'msg' => '',
-				'data' => $output
+				'data' => $output,
+				'input' => $body,
 			), true)); // hack
 		}
 	}
@@ -103,8 +104,6 @@ class Subscriber_UsageAction extends ApiAction {
 		$this->getActualUsagesOfPackages($nationalPackages, $mainBalances, $actualNationalUsage);
 		
 		 //merge results with saved group keys
-		$output['subscriber_id'] = $params['sid'];
-		$output['billrun'] = intval($params['billrun_key']);
 		$this->initializeUsagesTypes($output);
 		foreach($maxNationalUsage as  $type => $usageVal) {
 			$output['usage_israel'][$type.'_usage'] = 0;
@@ -158,8 +157,8 @@ class Subscriber_UsageAction extends ApiAction {
 	
 	
 	protected function initializeUsagesTypes(&$output) {
-		$usage_israel_types = ['data', 'calls', 'sms'];
-		$usage_abroad_types = ['data', 'calls', 'sms', 'days'];
+		$usage_israel_types = ['data', 'call', 'sms', 'mms'];
+		$usage_abroad_types = ['data', 'call', 'sms', 'mms', 'days'];
 		foreach ($usage_israel_types as $type){
 			$output['usage_israel'][$type.'_usage'] = 0;
 			$output['usage_israel'][$type.'_max'] = 0;
