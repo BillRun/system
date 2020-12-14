@@ -1,0 +1,164 @@
+<?php
+
+class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
+    public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) 
+	{
+		$is_anaa_relevant = false;
+		
+        if ($calculator->getType() == 'rate') {
+			$type = $row['type'];
+            $current = $row->getRawData();
+            $current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
+			
+            $current["cf"]["poin"] = $operator_entity["params"]["poin"];
+			if($current["cf"]["call_direction"] != "O") {
+				//TODO - change to parameter_incoming operator
+				$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+				$current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
+				if($current["cf"]["call_direction"] != "TO"){
+					$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				}
+				$row->setRawData($current);
+			}
+			if($current["cf"]["call_direction"] != "I") {
+				//TODO - change to parameter_outgoing_operator
+				$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+				$current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
+				if($current["cf"]["call_direction"] != "TI"){
+					$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				}
+				$row->setRawData($current);
+			}
+			//$row->setRawData(setParameter($current, ["operator", "poin"], $operator_entity));
+			
+			$product_entity = $this->getParameterProduct($type, "parameter_product", $row, $calculator);
+            $current["cf"]["product"] = $product_entity["params"]["product"];
+            $row->setRawData($current);
+			
+			$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
+            $current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
+            $row->setRawData($current);
+			
+			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
+            $current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
+            $row->setRawData($current);
+			
+			$scenario_entity = $this->getParameterProduct($type, "parameter_scenario", $row, $calculator);
+            $current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
+            $row->setRawData($current);
+			if($scenario_entity["params"]["anaa"] != "*") {
+				$is_Anaa_relevant = true;
+			}
+			
+			//TODO: check if there are multiple results and split
+			$component_entity = $this->getParameterProduct($type, "parameter_scenario", $row, $calculator);
+            $current["cf"]["component"] = $component_entity["params"]["component"];
+            $current["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
+            $current["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
+			if(["cf"]["tier_derivation"] == "N") {
+				$current["cf"]["tier"] = $component_entity["params"]["tier"];
+			}
+            $row->setRawData($current);
+			if($component_entity["params"]["anaa"] != "*") {
+				$is_anaa_relevant = true;
+			}
+			
+			if (["cf"]["tier_derivation"] != "N") {
+				$tier_entity = $this->getParameterProduct($type, "parameter_tier_ . {$current["cf"]["tier_derivation"]}", $row, $calculator);
+				$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+				$row->setRawData($current);
+			}
+			
+			switch (["cf"]["tier_derivation"]) {
+				case "N":
+					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					break;
+				case "CB":
+					//TODO: check twice for operators with *
+					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
+					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					break;
+				case "ABA":
+					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $row, $calculator);
+					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					break;
+				case "PB":
+					if($is_anaa_relevant) {
+						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $row, $calculator);
+						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					}
+					else {
+						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $row, $calculator);
+						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					}
+					break;
+			}
+			$row->setRawData($current);
+        }
+    }
+    
+    public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator)
+    {
+        $params = [
+                'type' => $type,
+                'usaget' => $parameter_name,
+        ];
+        $entity = $calculator->getMatchingEntitiesByCategories($row, $params);
+		if(isset($entity)){
+			return $entity["retail"]->getRawData();;
+		}
+        return false;
+    }
+	
+	public function setParameter($current, $params, $entity) {
+		foreach ($params as $param){
+			$current["cf"][$param] = $entity["params"][$param];
+		}
+		return $current;
+	}
+
+
+	public function determineCallDirection ($usaget) 
+	{
+		$call_direction = "";
+		switch ($usaget) {
+			case "incoming_call":
+				$call_direction = "I";
+				break;
+			case "outgoing_call":
+				$call_direction = "O";
+				break;
+			case "transit_incoming_call":
+				$call_direction = "TI";
+				break;
+			case "transit_outgoing_call":
+				$call_direction = "TO";
+				break;
+		}
+		
+		return $call_direction;
+	}
+	
+	public function setOperator($row, $current) {
+		$current["cf"]["poin"] = $operator_entity["params"]["poin"];
+		if($current["cf"]["call_direction"] != "O") {
+			//TODO - change to parameter_incoming operator
+			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			$current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
+			if($current["cf"]["call_direction"] != "TO"){
+				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+			}
+			$row->setRawData($current);
+			}
+		if($current["cf"]["call_direction"] != "I") {
+			//TODO - change to parameter_outgoing_operator
+			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			$current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
+			if($current["cf"]["call_direction"] != "TI"){
+				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+			}
+			$row->setRawData($current);
+		}
+		
+	}
+}
