@@ -26,14 +26,25 @@ class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
 		$charges = array();
 		if($this->activation >= $this->cycle->start() && $this->activation < $this->cycle->end() ) {
 			foreach ($this->price as $tariff) {
-				$price = Billrun_Plan::getPriceByTariff($tariff, 0, 1,$this->activation);
+				$step = new Billrun_Plans_Step($tariff);
+				$price = $step->getRelativePrice(0, 1, $this->activation, $this->currency);
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity,
-						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
-						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
-						'cycle' => $tariff['from'],
-						'full_price' => floatval($tariff['price']) );
+					$charge = array(
+						'value' => $price['price'] * $quantity,
+						'start' => Billrun_Plan::monthDiffToDate($step->get('start'), $this->activation),
+						'end' => Billrun_Plan::monthDiffToDate($step->get('end'), $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
+						'cycle' => $step->get('from'),
+						'full_price' => $price['full_price'],
+					);
 
+					if ($this->shouldAddOriginalCurrency()) {
+						$charge['original_currency'] = [
+							'aprice' => $price['orig_price'],
+							'currency' => $this->defaultCurrency,
+						];
+					}
+					
+					$charges[] = $charge;
 				}
 			}
 		}

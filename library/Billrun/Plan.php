@@ -242,8 +242,12 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		foreach ($this->data['price'] as $tariff) {
-			$price = self::getPriceByTariff($tariff, $startOffset, $endOffset);
-			$charges[] = array('value' => $price['price'], 'cycle' => $tariff['from']);
+			$step = new Billrun_Plans_Step($tariff);
+			$price = $step->getRelativePrice($startOffset, $endOffset);
+			$charges[] = array(
+				'value' => $price['price'],
+				'cycle' => $step->get('from'),
+			);
 		}
 		return $charges;
 	}
@@ -266,8 +270,10 @@ class Billrun_Plan extends Billrun_Service {
 	 * @param type $startOffset
 	 * @param type $endOffset
 	 * @return boolean
+	 * @deprecated since version 5.12 - use Billrun_Plan_Step->validate instead
 	 */
 	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
+		Billrun_Factory::log("Billrun_Plan::validatePriceByTariff is deprecated. Use Billrun_Plan_Step->validate instead.", Zend_Log::ERR);
 		if ($tariff['from'] > $tariff['to'] && !static::isValueUnlimited($tariff['to']) ) {
 			Billrun_Factory::log("getPriceByTariff received invalid tariff.", Zend_Log::CRIT);
 			return false;
@@ -296,8 +302,10 @@ class Billrun_Plan extends Billrun_Service {
 	 * @param type $startOffset
 	 * @param type $endOffset
 	 * @return int
+	 * @deprecated since version 5.12 - use Billrun_Plan_Step->getRelativePrice instead
 	 */
 	public static function getPriceByTariff($tariff, $startOffset, $endOffset ,$activation = FALSE) {
+		Billrun_Factory::log("Billrun_Plan::getPriceByTariff is deprecated. Use Billrun_Plan_Step->getRelativePrice instead.", Zend_Log::ERR);
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
@@ -330,6 +338,7 @@ class Billrun_Plan extends Billrun_Service {
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
 		return array('start' => $fullMonth ? FALSE : $startPricing,
 			'end' => $fullMonth ? FALSE : $endPricing,
+			'multiplier' => $endPricing - $startPricing,
 			'price' => ($endPricing - $startPricing) * $tariff['price']);
 	}
 

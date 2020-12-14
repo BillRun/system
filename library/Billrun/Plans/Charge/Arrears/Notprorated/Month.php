@@ -21,9 +21,25 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 		$charges = array();
 		if ($this->endOffset > 0 ) {
 			foreach ($this->price as $tariff) {
-				$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset);
+				$step = new Billrun_Plans_Step($tariff);
+				$price = $step->getRelativePrice($this->startOffset, $this->endOffset, false, $this->currency);
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false);
+					$charge = array(
+						'value' => $price['price'] * $quantity,
+						'cycle' => $tariff['from'],
+						'full_price' => $price['full_price'],
+						'prorated_start' => false,
+						'prorated_end' =>false,
+					);
+
+					if ($this->shouldAddOriginalCurrency()) {
+						$charge['original_currency'] = [
+							'aprice' => $price['orig_price'],
+							'currency' => $this->defaultCurrency,
+						];
+					}
+
+					$charges[] = $charge;
 				}
 			}
 		}

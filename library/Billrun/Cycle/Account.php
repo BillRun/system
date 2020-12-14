@@ -26,6 +26,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected $discounts= array();
 
+	/**
+	 * Account's currency
+	 * @var string
+	 */
+	protected $currency = '';
+
 
 	/**
 	 * Aggregate the data, store the results in the billrun container.
@@ -303,6 +309,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
 		$subConstratorData['subscriber_info']['line_stump'] = $this->getLineStump(end($sorted), $this->cycleAggregator->getCycle());
+		$subConstratorData['subscriber_info']['currency'] = $this->getCurrency();
 		$cycleSub =  new Billrun_Cycle_Subscriber($subConstratorData, $this->cycleAggregator);
 
 		return $cycleSub;
@@ -320,6 +327,33 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		);
 		
 		return $flatEntry;
+	}
+	
+	/**
+	 * Get relevant currency for the cycle
+	 * Currently, take account's currency (latest defined)
+	 *
+	 * @return string
+	 */
+	public function getCurrency() {
+		if (empty($this->currency)) {
+			$accountRevs = $this->revisions[0] ?? [];
+			usort($accountRevs, function ($a, $b) {
+				return $b['from']->sec > $a['from']->sec;
+			});
+			foreach ($accountRevs as $accountRev) {
+				if (!empty($accountRev['currency'])) {
+					$this->currency = $accountRev['currency'];
+					break;
+				}
+			}
+
+			if (empty($this->currency)) {
+				$this->currency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
+			}
+		}
+
+		return $this->currency;
 	}
 
 	//--------------------------------------------------

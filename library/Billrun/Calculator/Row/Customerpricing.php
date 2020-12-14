@@ -1108,7 +1108,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 		$charges = $rateObj->getCharges($usageType, $volume, $params);
 		$this->row['currency'] = $currency;
-		if ($currency !== Billrun_CurrencyConvert_Manager::getDefaultCurrency() && !empty($charges['original_currency'])) {
+		if (Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() && 
+			$currency !== Billrun_CurrencyConvert_Manager::getDefaultCurrency() && !empty($charges['original_currency'])) {
 			$this->row['original_currency'] = $charges['original_currency'];
 		}
 		

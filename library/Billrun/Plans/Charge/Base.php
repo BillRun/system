@@ -24,12 +24,28 @@ abstract class Billrun_Plans_Charge_Base {
 	protected $cycle;
 	
 	/**
+	 * currency on which we want to get prices by
+	 *
+	 * @var string
+	 */
+	protected $currency;
+	
+	/**
+	 * stores default currency
+	 *
+	 * @var string
+	 */
+	protected $defaultCurrency;
+	
+	/**
 	 * Create a new instance of the plans charge base class
 	 * @param array $plan - Raw plan data
 	 */
 	public function __construct($plan) {
 		$this->cycle = $plan['cycle'];
 		$this->price = $plan['price'];
+		$this->currency = $plan['currency'] ?? '';
+		$this->defaultCurrency = Billrun_CurrencyConvert_Manager::getDefaultCurrency();
 		$this->proratedStart = !isset($plan['prorated_start']) || $plan['prorated_start'] != FALSE;
 		$this->proratedEnd = !isset($plan['prorated_end']) || $plan['prorated_end'] != FALSE;
 		$this->proratedTermination = !isset($plan['prorated_termination']) || $plan['prorated_termination'] != FALSE;
@@ -44,5 +60,15 @@ abstract class Billrun_Plans_Charge_Base {
 	 * @return float the price of the plan without VAT.
 	 */
 	public abstract function getPrice($quantity = 1);
+	
+	/**
+	 * whether or not currency was done and required to add original currency to the charge response
+	 *
+	 * @return boolean
+	 */
+	protected function shouldAddOriginalCurrency() {
+		return Billrun_CurrencyConvert_Manager::isMultiCurrencyEnabled() &&
+			(!empty($this->currency) && $this->currency !== $this->defaultCurrency);
+	}
 	
 }
