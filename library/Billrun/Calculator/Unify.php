@@ -555,4 +555,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return $updateFailedLines;
 	}
+	
+	public static function restoreUnifyLines($rowStamp){
+		$linesToRestore = iterator_to_array(Billrun_Factory::db()->archiveCollection()->query(array('u_s' => $rowStamp)));
+		if(empty($linesToRestore)){
+			Billrun_Factory::log("Not found matching lines to the unify line. stamp:" . $rowStamp, Zend_Log::ALERT);
+			return;
+		}
+		foreach ($linesToRestore as $lineToRestore){
+			unset($lineToRestore['u_s']);
+			Billrun_Factory::db()->linesCollection()->insert($lineToRestore);
+		}
+		Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $rowStamp));
+		Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $rowStamp));
+		return $linesToRestore;
+	}
 }
