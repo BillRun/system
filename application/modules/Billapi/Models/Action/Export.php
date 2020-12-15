@@ -76,7 +76,7 @@ class Models_Action_Export extends Models_Action {
 		$config = $this->getMapperConfig();
 		$exportable_fields = array_replace_recursive(
 			array_column($config, null, 'field_name'),
-			array_column($fields, null, 'field_name'),
+			array_column($fields, null, 'field_name')
 		);
 		$exportable_fields = array_filter($exportable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
