@@ -83,7 +83,6 @@ class CycleAction extends Action_Base {
 
 		$stamp = $options['stamp'];
 		$size = (int)$options['size'];
-		//$invoicing_days = [];
         $allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$this->_controller->addOutput("Running on multi cycle day mode");
