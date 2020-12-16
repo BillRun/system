@@ -32,6 +32,15 @@ function br_yaf_register_autoload($namespace, $path) {
  * @since    0.5
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
+	
+    public function _initLoader(Yaf_Dispatcher $dispatcher) {
+		// set composer vendor autoload
+		Yaf_Loader::getInstance()->import(APPLICATION_PATH . '/vendor/autoload.php');
+		// set include paths of the system.
+		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath()); // this is for Zend FW & Billrun objects
+		// make the base action auto load (required by controllers actions)
+		br_yaf_register_autoload('Action', APPLICATION_PATH . '/application/helpers');
+	}
 
 	public function _initEnvironment(Yaf_Dispatcher $dispatcher) {
 		if (!isset($_SERVER['HTTP_USER_AGENT'])) {
@@ -40,10 +49,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	}
 	
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
-
-		// set include paths of the system.
-		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
-
 		/* register a billrun plugin system from config */
 		$config = Yaf_Application::app()->getConfig();
 		$plugins = array();
@@ -86,9 +91,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 				$dispatcherChain->attach(new $chain);
 			}
 		}
-
-		// make the base action auto load (required by controllers actions)
-		br_yaf_register_autoload('Action', APPLICATION_PATH . '/application/helpers');
 	}
 
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {
