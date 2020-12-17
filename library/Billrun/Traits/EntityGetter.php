@@ -127,6 +127,7 @@ trait Billrun_Traits_EntityGetter {
 		$matchedEntity = null;
 		foreach ($filters as $priority) {
 			$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
+			$params['multiple_entities'] = true;
 			$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
@@ -136,8 +137,7 @@ trait Billrun_Traits_EntityGetter {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
-			
-			$matchedEntity = $this->getEntity($row, $query, $params);
+			$matchedEntity = current($this->getEntity($row, $query, $params));
 			if ($matchedEntity && !$matchedEntity->isEmpty()) {
 				break;
 			}
@@ -226,39 +226,50 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $query
 	 * @param array $params
-	 * @return Mongodloid entity if found, false or empty Mongodloid otherwise
+	 * @return Mongodloid entity or entities if found
 	 */
 	protected function getEntity($row, $query, $params = []) {
 		$useCache = $this->shouldCacheEntity($params);
 		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
-		$entity = false;
+		$returned_entities = [];
 		
 		if ($useCache && !empty(self::$entities[$cacheKey])) {
 			$time = isset($row['urt']) ? $row['urt']->sec : time();
 			foreach (self::$entities[$cacheKey] as $cachedEntity) {
 				if ($cachedEntity['from'] <= $time && (!isset($cachedEntity['to']) || is_null($cachedEntity['to']) || $cachedEntity['to'] >= $time)) {
-					$entity = $cachedEntity['entity'];
+					$returned_entities[] = $cachedEntity['entity'];
+					if(isset($params['multiple_entities']) && $params['multiple_entities']) {
+						continue;
+					}
 					break;
 				}
 			}
 		}
 		
-		if (empty($entity)) {
+		if (empty($returned_entities)) {
 			$coll = $this->getCollection($params);
-			$results = iterator_to_array($coll->aggregate($query));
-			$entity = $coll->aggregate($query)->current();
-			if ($useCache && isset($entity['from']) && isset($entity['to'])) {
-				self::$entities[$cacheKey][] = [
-					'entity' => $entity,
-					'from' => $entity['from']->sec,
-					'to' => $entity['to']->sec,
-				];
+			if (!isset($params['multiple_entities'])) {
+				$returned_entities[] = $coll->aggregate($query)->current();
+			} else {
+				$returned_entities = iterator_to_array($coll->aggregate($query));
+			}
+
+			if ($useCache) {
+				foreach ($returned_entities as $index => $entity) {
+					if (isset($entity['from']) && isset($entity['to'])) {
+						self::$entities[$cacheKey][] = [
+							'entity' => $entity,
+							'from' => $entity['from']->sec,
+							'to' => $entity['to']->sec,
+						];
+					}
+				}
 			}
 		}
-		
-		return $entity;
+
+		return $returned_entities;
 	}
-	
+
 	/**
 	 * Builds aggregate query from configuration
 	 * 
@@ -289,7 +300,7 @@ trait Billrun_Traits_EntityGetter {
 		$matchQuery = [['$match' => $match]];
 		$sortQuery = !empty($sort) ? [['$sort' => $sort]] : [];
 		$groupQuery = [['$group' => $group]];
-		$limitQuery = true ? [] : [['$limit' => 1]];
+		$limitQuery = (isset($params['multiple_entities']) && $params['multiple_entities']) ? [] : [['$limit' => 1]];
 		
 		return array_merge($matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
 	}
