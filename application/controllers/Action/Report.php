@@ -28,7 +28,8 @@ class ReportAction extends ApiAction {
 		'targetImei' => ['$regex'=>[ ['field'=> 'called_imei'  , 'modifier' => '^%s']  ]],
 //		'sourceEndpointType' =>  ['$in'=>['']],
 //		'targetEndpointType' =>  ['$in'=>['']],
-		'sourceImsi' =>  ['$in'=>['calling_imsi']],
+// 		'sourceImsi' =>  ['$in'=>['calling_imsi']],
+		'sourceImsi' =>  ['$in'=>['imsi']],
 //		'targetImsi' =>  ['$in'=>['called_imsi','forwarding_imsi','forwarded_to_imsi']],
 		'targetImsi' =>  ['$in'=>['called_imsi']],
 		'serviceType' =>  ['$in'=>['basic_service_type']],
@@ -381,7 +382,9 @@ class ReportAction extends ApiAction {
 		if(is_array($field)) {
 			return [ $field['field'] => [$equalOp => is_array($input) ? array_map(function ($i) use($field) {return sprintf($field['modifier'],$i);},$input)  : sprintf($field['modifier'],$input) ] ];
 		}
-		return [ $field => [$equalOp => is_array($input) ? $input : [$input] ] ];
+		return $equalOp == '$in' && is_numeric($input) ?
+					[ $field => [$equalOp =>  [$input,intval($input)]] ] :
+					[ $field => [$equalOp => is_array($input) ? $input : [$input] ] ];
 	}
 
 	protected function translateResults($results) {
