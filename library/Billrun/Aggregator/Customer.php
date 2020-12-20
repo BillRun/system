@@ -583,37 +583,43 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function beforeAggregate($accounts) {
-            if(!$this->fakeCycle){
-		if ($this->overrideMode && $accounts) {
-			$aids = array();
-			foreach ($accounts as $account) {
-				$aids[] = $account->getInvoice()->getAid();
+		if (!$this->fakeCycle) {
+			if ($this->overrideMode && $accounts) {
+				$aids = array();
+				foreach ($accounts as $account) {
+					$aids[] = $account->getInvoice()->getAid();
+				}
+				$billrunKey = $this->billrun->key();
+				self::removeBeforeAggregate($billrunKey, $aids);
 			}
-			$billrunKey = $this->billrun->key();
-                        self::removeBeforeAggregate($billrunKey, $aids);
-		}
-		$accountsToPrepone = [];
-		if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
-			$accountsToPrepone = $this->handleInstallmentsPrepone($accounts);
-		}
-		$additionalAccountsToPrepone = [];
-		if (!empty($this->merge_credit_installments)) {
-			foreach (array_keys($this->merge_credit_installments) as $aid) {
-				if (in_array($aid, $accountsToPrepone)) {
-					if (!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone))) {
-						$additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone);
+			$accountsToPrepone = [];
+			if (Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
+				$accountsToPrepone = $this->handleInstallmentsPrepone($accounts);
+			}
+			$additionalAccountsToPrepone = [];
+			if (!empty($this->merge_credit_installments)) {
+				foreach (array_keys($this->merge_credit_installments) as $aid) {
+					if (in_array($aid, $accountsToPrepone)) {
+						if(!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]))){
+                            $additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]);
+						}
+					} else {
+						$additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
 					}
-				} else {
-					$additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
 				}
 			}
+			//check which accounts need to prepone 
+			foreach($additionalAccountsToPrepone as $aidToPrepone => $sids){
+				foreach($aids as $aid){
+					if ($aidToPrepone === $aid){ 
+						//prepone account
+						$this->preponeInstallments(array($aidToPrepone => $sids));  
+					}
+				}
+			}      
 		}
-		if (!empty($additionalAccountsToPrepone) && !$this->fakeCycle){
-			$this->preponeInstallments($additionalAccountsToPrepone); 
-		}
-            }
 	}
-	
+
 	/**
 	 * Handles the case of a future installments on a closed subscribers/accounts
 	 * 
