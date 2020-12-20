@@ -387,4 +387,7 @@ class Billrun_Rates_Util {
 		return $rate;
 	}
 
+	public static function getUsageTypeFromRate($rate){
+		return key($rate['rates']);
+	}
 }

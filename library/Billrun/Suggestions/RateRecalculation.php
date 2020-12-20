@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -18,7 +18,7 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 	}
 
 	protected function getRecalculateType() {
-		return 'Rate';
+		return 'rates';
 	}
 
 	protected function getCollectionName() {
@@ -44,15 +44,37 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 		return false;
 	}
 
+	protected function getFieldNameOfLine(){
+		return 'arate_key';
+	}
+	
+	protected function recalculationPrice($line){
+		$keyName = $this->getFieldNameOfLine();
+		$updateRate = Billrun_Rates_Util::getRateByName($line[$keyName], $line['urt']->sec);
+		if(!empty($updateRate)){
+			$usageType = Billrun_Rates_Util::getUsageTypeFromRate($updateRate);
+			$newPrice = Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);//todo:: check this!!
+		}
+		return $newPrice;
+	}
+
+	protected function addFiltersToFindMatchingLines($retroactiveChange) {
+		//check if this enough/right to know that 
+		//product isn't included / overridden in some plan/service
+		return array(
+			'arategroups' => array('$exists' => false)
+		);
+	}
+	
 	private function isFirstTierPriceChange($retroactiveChange) {
 		$tier = 1;
 		$oldPrice = $this->getRateTierPrice($retroactiveChange, $tier, 'old');
-		$newPrice = $this->getRateTierPrice($retroactiveChange, $tier, 'old');
+		$newPrice = $this->getRateTierPrice($retroactiveChange, $tier, 'new');
 		return $oldPrice !== $newPrice;
 	}
 
 	private function getNewRateNumberOfTiers($retroactiveChange) {
-		$unitType = $this->getRateUnitType();
+		$unitType = $this->getRateUnitType($retroactiveChange);
 		return count($retroactiveChange['new']['rates'][$unitType]['BASE']['rate']);
 	}
 
@@ -83,8 +105,8 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 		return true;
 	}
 
-	private function getRateUnitType($rate) {
-		return key($rate['rates']);
+	private function getRateUnitType($retroactiveChange) {
+		return key($retroactiveChange['new']['rates']);
 	}
 
 }
