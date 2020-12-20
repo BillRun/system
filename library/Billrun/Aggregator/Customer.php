@@ -600,8 +600,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			if (!empty($this->merge_credit_installments)) {
 				foreach (array_keys($this->merge_credit_installments) as $aid) {
 					if (in_array($aid, $accountsToPrepone)) {
-						if(!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]))){
-                            $additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]);
+						if (!empty(array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]))) {
+							$additionalAccountsToPrepone[$aid] = array_diff($this->merge_credit_installments[$aid], $accountsToPrepone[$aid]);
 						}
 					} else {
 						$additionalAccountsToPrepone[$aid] = $this->merge_credit_installments[$aid];
@@ -609,14 +609,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				}
 			}
 			//check which accounts need to prepone 
-			foreach($additionalAccountsToPrepone as $aidToPrepone => $sids){
-				foreach($aids as $aid){
-					if ($aidToPrepone === $aid){ 
+			foreach ($additionalAccountsToPrepone as $aidToPrepone => $sids) {
+				foreach ($aids as $aid) {
+					if ($aidToPrepone === $aid) {
 						//prepone account
-						$this->preponeInstallments(array($aidToPrepone => $sids));  
+						$this->preponeInstallments(array($aidToPrepone => $sids));
 					}
 				}
-			}      
+			}
 		}
 	}
 
