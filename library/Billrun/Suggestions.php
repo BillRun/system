@@ -26,8 +26,16 @@ abstract class Billrun_Suggestions {
 			return;
 		}
 		Billrun_Factory::log()->log('Starting to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
-		$suggestions = [];
 		$retroactiveChanges = $this->findAllTheRetroactiveChanges();
+		$suggestions = $this->getSuggestions($retroactiveChanges);
+		Billrun_Factory::log()->log('finished to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
+		if(!empty($suggestions)){
+			$this->addSuggestionsToDb($suggestions);
+		}
+	}
+	
+	protected function getSuggestions($retroactiveChanges){
+		$suggestions = [];
 		$lines = $this->findAllMatchingLines($retroactiveChanges);
 		foreach ($lines as $line){
 			$suggestionType = $this->getTypeOfSuggestionForLine($line);
@@ -35,12 +43,7 @@ abstract class Billrun_Suggestions {
 				$suggestions[] = $this->buildSuggestion($line, $suggestionType);
 			}
 		}
-		Billrun_Factory::log()->log('finished to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
-		if(!empty($suggestions)){
-			//insert suggestions to db. (new collection)
-			//אם קיימת חפיפה עם הצעה ישנה צריך לעדכן את ההצעה הישנה 
-			//לשים לב לסטטוס של ההצעה הישנה  +
-		}
+		return $suggestions;
 	}
 	
 	protected function findAllTheRetroactiveChanges(){
@@ -61,12 +64,12 @@ abstract class Billrun_Suggestions {
 			)
 		);
 		//check if can be done in one command. 
-		$retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query));
+		$retroactiveChanges = iterator_to_array(Billrun_Factory::db()->auditCollection()->find($query)->sort(array('_id' => 1)));
 		Billrun_Factory::db()->auditCollection()->update($query, $update, array('multiple' => true));	
 		
 		$validRetroactiveChanges = $this->getValidRetroactiveChanges($retroactiveChanges);
 		
-		Billrun_Factory::log()->log("found all the retroactive rate changes", Zend_Log::INFO);
+		Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive rate changes", Zend_Log::INFO);
 		return $validRetroactiveChanges;
 	}
 
@@ -78,7 +81,7 @@ abstract class Billrun_Suggestions {
 			$filters = array_merge(
 				array(
 					'urt' => array(
-						'$gt' => $retroactiveChange['new']['from'],
+						'$gte' => $retroactiveChange['new']['from'],
 						'$lt' => ($retroactiveChange['new']['to'] <  $now ? $retroactiveChange['new']['to'] : $now)
 					),
 					$this->getFieldNameOfLine() => $retroactiveChange['key'],
@@ -94,10 +97,13 @@ abstract class Billrun_Suggestions {
 							'aid' => '$aid',
 							'sid' => '$sid',
 							'billrun' => '$billrun',
-							$this->getFieldNameOfLine() => '$' . $this->getFieldNameOfLine()
+							'key' => '$' . $this->getFieldNameOfLine()
 						),
-						'urt' => array(
+						'from' => array(
 							'$min' => '$urt'
+						),
+						'to' => array(
+							'$max' => '$urt'
 						),
 						'aprice' => array(
 							'$sum' => '$aprice'
@@ -113,8 +119,9 @@ abstract class Billrun_Suggestions {
 						'aid' => '$_id.aid',
 						'sid' => '$_id.sid',
 						'billrun' => '$_id.billrun',
-						$this->getFieldNameOfLine() => '$_id.' . $this->getFieldNameOfLine(),
-						'urt' => 1,
+						'key' => '$_id.key',
+						'from' => 1,
+						'to' => 1,
 						'aprice' => 1,
 						'usagev' => 1
 					)
@@ -143,29 +150,31 @@ abstract class Billrun_Suggestions {
 	
 	protected function buildSuggestion($line, $suggestionType){
 		//params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
-		$keyName = $this->getFieldNameOfLine();
 		$suggestion =  array(
 			'recalculationType' => $this->getRecalculateType(),
 			'aid' => $line['aid'],
 			'sid' => $line['sid'],
 			'billrun_key' => $line['billrun'],
-			'urt' => $line['urt'],
+			'from' => $line['from'],
+			'to' => $line['to'],
 			'usagev' => $line['usagev'],
-			$keyName => $line[$keyName],
-			'status' => 'open'
+			'key' => $line['key'],
+			'status' => 'open',
 		);
 		if($suggestionType === 'rebalance'){
-			return $this->buildRebalanceSuggestion($suggestion);
+			$this->buildRebalanceSuggestion($suggestion);
 		}
 		if($suggestionType === 'immediate_invoice'){
 			//todo:: what to do when amount is zero 
-			return $this->buildImmediateInvoiceSuggestion($suggestion, $line);
-		}	
+			$this->buildImmediateInvoiceSuggestion($suggestion, $line);
+		}
+		$suggestion['stamp'] = $this->getSuggestionStamp($suggestion);
+		$suggestion['urt'] = new MongoDate();
+		return $suggestion;
 	}
 	
 	protected function buildRebalanceSuggestion(&$suggestion) {
 		$suggestion['suggestionType'] = 'rebalance';
-		return $suggestion;
 	}
 
 	protected function buildImmediateInvoiceSuggestion(&$suggestion, $line) {
@@ -173,9 +182,8 @@ abstract class Billrun_Suggestions {
 		$newPrice = $this->recalculationPrice($line);
 		$amount = $newPrice - $oldPrice;
 		$suggestion['suggestionType'] = 'immediate_invoice';
-		$suggestion['amount'] = $amount;
+		$suggestion['amount'] = abs($amount);
 		$suggestion['type'] = $amount > 0 ? 'debit' : 'credit';
-		return $suggestion;
 	}
 
 	protected function getValidRetroactiveChanges($retroactiveChanges) {
@@ -190,6 +198,51 @@ abstract class Billrun_Suggestions {
 	
 	protected function addFiltersToFindMatchingLines($retroactiveChange) {
 		return array();
+	}
+	
+	protected function addSuggestionsToDb($suggestions){
+		foreach($suggestions as $suggestion){
+			//אם קיימת חפיפה עם הצעה ישנה צריך לעדכן את ההצעה הישנה 
+		//לשים לב לסטטוס של ההצעה הישנה  +
+			$overlapSuggestion = $this->getOverlap($suggestion);
+			if(!$overlapSuggestion->isEmpty()){
+				if($this->checkIfTheSameSuggestion($overlapSuggestion, $suggestion)){
+					continue;
+				}else{
+					$this->handleOverlapSuggestion($overlapSuggestion, $suggestion);
+				}
+			}else{
+				Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+			}
+		}
+	}
+
+	protected function getOverlap($suggestion) {
+		$query = array(
+			'aid' => $suggestion['aid'],
+			'sid' => $suggestion['sid'],
+			'billrun_key' => $suggestion['billrun_key'],
+			'status' => 'open'
+		);
+		return Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
+	}
+	
+	protected function checkIfTheSameSuggestion($overlapSuggestion, $suggestion) {
+		return $overlapSuggestion['stamp'] === $suggestion['stamp'];
+	}
+	
+	protected function handleOverlapSuggestion($overlapSuggestion, $suggestion) {
+		
+//			Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
+//			Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
+
+	}
+
+	
+	protected function getSuggestionStamp($suggestion){
+		unset($suggestion['urt']);
+		unset($suggestion['stamp']);
+		return Billrun_Util::generateArrayStamp($suggestion);
 	}
 
 	abstract protected function checkIfValidRetroactiveChange($retroactiveChange);

@@ -32,13 +32,13 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 		}
 
 		//Doesn't contain more than one tier and if that tier's interval is 1
-		if ($this->getNewRateNumberOfTiers($retroactiveChange) === 1 && $this->getNewRateFirstTierInterval($retroactiveChange) === 1) {
+		if ($this->getNewRateNumberOfTiers($retroactiveChange) == 1 && $this->getNewRateFirstTierInterval($retroactiveChange) == 1) {
 			return true;
 		}
 
 		//Contains one tier with from=0, to=interval and others have a 0 price.
 		$excludeTiers = [1];
-		if ($this->getNewRateFirstTierInterval($retroactiveChange) === $this->getNewRateFirstTierTo($retroactiveChange) && $this->checkAllTiersPriceAreZero($retroactiveChange, $excludeTiers)) {
+		if ($this->getNewRateFirstTierInterval($retroactiveChange) == $this->getNewRateFirstTierTo($retroactiveChange) && $this->checkAllTiersPriceAreZero($retroactiveChange, $excludeTiers)) {
 			return true;
 		}
 		return false;
@@ -49,13 +49,9 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 	}
 	
 	protected function recalculationPrice($line){
-		$keyName = $this->getFieldNameOfLine();
-		$updateRate = Billrun_Rates_Util::getRateByName($line[$keyName], $line['urt']->sec);
-		if(!empty($updateRate)){
-			$usageType = Billrun_Rates_Util::getUsageTypeFromRate($updateRate);
-			$newPrice = Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);//todo:: check this!!
-		}
-		return $newPrice;
+		$updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['urt']->sec);
+		$usageType = Billrun_Rates_Util::getUsageTypeFromRate($updateRate);
+		return Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);
 	}
 
 	protected function addFiltersToFindMatchingLines($retroactiveChange) {
@@ -98,7 +94,7 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 			if (in_array($tier, $excludeTiers)) {
 				continue;
 			}
-			if ($this->getRateTierPrice($retroactiveChange, $tier) !== 0) {
+			if ($this->getRateTierPrice($retroactiveChange, $tier) != 0) {
 				return false;
 			}
 		}
