@@ -208,6 +208,9 @@ trait Models_Verification {
 		if ($entity->count() != 1) {
 			throw new Exception('No unique record was found');
 		}
+		if($entity->current() === null){
+			throw new Exception('No record was found. stack:' . debug_backtrace());
+		}
 		$data = $entity->current()->getRawData();
 		if (!isset($data['_id'])) {
 			throw new Exception('Missing Id for entity');
