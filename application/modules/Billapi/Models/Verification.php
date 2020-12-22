@@ -209,7 +209,7 @@ trait Models_Verification {
 			throw new Exception('No unique record was found');
 		}
 		if($entity->current() === null){
-			throw new Exception('No record was found. stack:' . debug_backtrace());
+			throw new Exception('No record was found. stack:' . print_r(debug_backtrace(), 1));
 		}
 		$data = $entity->current()->getRawData();
 		if (!isset($data['_id'])) {
