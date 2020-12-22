@@ -52,7 +52,7 @@ abstract class Billrun_Suggestions {
 			'collection' => $this->getCollectionName(),
 			'suggest_recalculations' => array('$ne' => true),
 			//TODO:: check all the relevant types (update/permanentchange through GUI / rates importer / API) 
-			'type' => array('$in' => ['update', 'closeandnew']),
+			'type' => array('$in' => ['update', 'closeandnew', 'permanentchange']),
 			//retroactive change
 			'new.from' => array(
 				'$lt' => new MongoDate()
@@ -86,7 +86,7 @@ abstract class Billrun_Suggestions {
 					),
 					$this->getFieldNameOfLine() => $retroactiveChange['key'],
 					'in_queue' => array('$ne' => true)
-				), $this->addFiltersToFindMatchingLines($retroactiveChange));
+				), $this->addFiltersToFindMatchingLines());
 			$query = array(
 				array(
 					'$match' => $filters
@@ -156,7 +156,7 @@ abstract class Billrun_Suggestions {
 			'sid' => $line['sid'],
 			'billrun_key' => $line['billrun'],
 			'from' => $line['from'],
-			'to' => $line['to'],
+			'to' => new MongoDate(strtotime('+1 sec', $line['to']->sec)),
 			'usagev' => $line['usagev'],
 			'key' => $line['key'],
 			'status' => 'open',
@@ -196,14 +196,13 @@ abstract class Billrun_Suggestions {
 		return $validRetroactiveChanges;
 	}
 	
-	protected function addFiltersToFindMatchingLines($retroactiveChange) {
+	protected function addFiltersToFindMatchingLines() {
 		return array();
 	}
 	
 	protected function addSuggestionsToDb($suggestions){
+		Billrun_Factory::log()->log("Adding suggestions to db", Zend_Log::INFO);
 		foreach($suggestions as $suggestion){
-			//אם קיימת חפיפה עם הצעה ישנה צריך לעדכן את ההצעה הישנה 
-		//לשים לב לסטטוס של ההצעה הישנה  +
 			$overlapSuggestion = $this->getOverlap($suggestion);
 			if(!$overlapSuggestion->isEmpty()){
 				if($this->checkIfTheSameSuggestion($overlapSuggestion, $suggestion)){
@@ -215,6 +214,7 @@ abstract class Billrun_Suggestions {
 				Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
 			}
 		}
+		Billrun_Factory::log()->log("finished adding suggestions to db", Zend_Log::INFO);
 	}
 
 	protected function getOverlap($suggestion) {
@@ -222,7 +222,9 @@ abstract class Billrun_Suggestions {
 			'aid' => $suggestion['aid'],
 			'sid' => $suggestion['sid'],
 			'billrun_key' => $suggestion['billrun_key'],
-			'status' => 'open'
+			'key' => $suggestion['key'],
+			'status' => 'open',
+			'recalculationType' => $suggestion['recalculationType']
 		);
 		return Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
 	}
@@ -233,11 +235,77 @@ abstract class Billrun_Suggestions {
 	
 	protected function handleOverlapSuggestion($overlapSuggestion, $suggestion) {
 		
-//			Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
-//			Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
+		$fakeRetroactiveChanges = $this->buildFakeRetroactiveChanges($overlapSuggestion, $suggestion);
+		$newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
+		$newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
+		Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
+		Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
 
 	}
 
+	protected function buildFakeRetroactiveChanges($overlapSuggestion, $suggestion){
+		$fakeRetroactiveChanges = array();
+		$fakeRetroactiveChange['key'] = $overlapSuggestion['key']; //equal to suggestion['key']
+		$oldFrom = min($overlapSuggestion['from'], $suggestion['from']);
+		$newFrom = max($overlapSuggestion['from'], $suggestion['from']);
+		$oldTo = min($overlapSuggestion['to'], $suggestion['to']);
+		$newTo = max($overlapSuggestion['to'], $suggestion['to']);
+		if($oldFrom !== $newFrom){
+			$fakeRetroactiveChange['new']['from'] = $oldFrom;
+			$fakeRetroactiveChange['new']['to'] =  new MongoDate(strtotime('-1 sec', $newFrom->sec));
+			$fakeRetroactiveChanges[] = $fakeRetroactiveChange;
+		}
+		if($oldTo !== $newTo){
+			$fakeRetroactiveChange['new']['from'] = $oldTo;
+			$fakeRetroactiveChange['new']['to'] = $newTo;
+			$fakeRetroactiveChanges[] = $fakeRetroactiveChange;
+		}
+		if($newFrom !== $oldTo){
+			$fakeRetroactiveChange['new']['from'] = $newFrom;
+			$fakeRetroactiveChange['new']['to'] =  $oldTo;
+			$fakeRetroactiveChanges[] = $fakeRetroactiveChange;
+		}
+		return $fakeRetroactiveChanges;
+	}
+	
+	protected function unifyOverlapSuggestions($suggestions) {
+		$newSuggestion = $suggestions[0];
+		$newSuggestion['usagev'] = 0;
+		if($newSuggestion['suggestionType'] === 'rebalance'){
+			$this->unifyOverlapRebalanceSuggestions($newSuggestion, $suggestions);
+		}else{//suggestionType equal to immediate invoice
+			$this->unifyOverlapImmediateInvoiceSuggestions($newSuggestion, $suggestions);
+		}
+		return $newSuggestion; 
+	}
+
+	protected function unifyOverlapRebalanceSuggestions(&$newSuggestion, $suggestions) {
+		foreach ($suggestions as $suggestion){
+			if($suggestion['suggestionType'] !== 'rebalance'){
+				throw new Exception("Something went wrong. all the suggestion must to have the same suggestionType");
+			}
+			$this->unifyOverlapSuggestion($newSuggestion, $suggestion);
+		}
+	}
+
+	protected function unifyOverlapImmediateInvoiceSuggestions(&$newSuggestion, $suggestions) {
+		$aprice = 0;
+		foreach ($suggestions as $suggestion){
+			if($suggestion['suggestionType'] !== 'immediate_invoice'){
+				throw new Exception("Something went wrong. all the suggestion must to have the same suggestionType");
+			}
+			$aprice += $suggestion['type'] === 'credit' ? (0 - $suggestion['amount']) : $suggestion['amount'];
+			$this->unifyOverlapSuggestion($newSuggestion, $suggestion);
+		}
+		$newSuggestion['type'] = $aprice < 0 ? 'credit' : 'debit';
+		$newSuggestion['amount'] = abs($aprice);
+	}
+
+	protected function unifyOverlapSuggestion(&$newSuggestion, $suggestion) {
+		$newSuggestion['from'] = min($suggestion['from'], $newSuggestion['from']);
+		$newSuggestion['to'] = max($suggestion['to'], $newSuggestion['to']);
+		$newSuggestion['usagev'] += $suggestion['usagev'];
+	}
 	
 	protected function getSuggestionStamp($suggestion){
 		unset($suggestion['urt']);

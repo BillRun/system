@@ -49,12 +49,12 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 	}
 	
 	protected function recalculationPrice($line){
-		$updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['urt']->sec);
+		$updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['from']->sec);
 		$usageType = Billrun_Rates_Util::getUsageTypeFromRate($updateRate);
 		return Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);
 	}
 
-	protected function addFiltersToFindMatchingLines($retroactiveChange) {
+	protected function addFiltersToFindMatchingLines() {
 		//check if this enough/right to know that 
 		//product isn't included / overridden in some plan/service
 		return array(
