@@ -103,6 +103,12 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		$extraData['month'] = date('Ym', filemtime($filepath));
 		$extraData['week'] = date('W', filemtime($filepath));
+		$stampSwitchTime= strtotime(Billrun_Factory::config()->getConfigValue('nsn.plugin.file_stamp.change_date','2120-01-01 00:00:00'));
+		$dirbaseSeperation= intval(Billrun_Factory::config()->getConfigValue('nsn.plugin.file_stamp.base_dir_seperation','0'));
+		$dirSeperationDepth= intval(Billrun_Factory::config()->getConfigValue('nsn.plugin.file_stamp.dir_seperation_depth','3'));
+		if($stampSwitchTime && $stampSwitchTime < time()) {
+			$extraData['orginal_dir_path'] = str_replace(substr(dirname($filepath),0,$dirSeperationDepth),'',substr(dirname($filepath),-$dirbaseSeperation));
+		}
 	}
 
 //	/**
