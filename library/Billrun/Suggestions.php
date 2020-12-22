@@ -38,10 +38,7 @@ abstract class Billrun_Suggestions {
 		$suggestions = [];
 		$lines = $this->findAllMatchingLines($retroactiveChanges);
 		foreach ($lines as $line){
-			$suggestionType = $this->getTypeOfSuggestionForLine($line);
-			if(!empty($suggestionType)){
-				$suggestions[] = $this->buildSuggestion($line, $suggestionType);
-			}
+			$suggestions[] = $this->buildSuggestion($line);
 		}
 		return $suggestions;
 	}
@@ -133,22 +130,7 @@ abstract class Billrun_Suggestions {
 		return $matchingLines;
 	}
 	
-	protected function getTypeOfSuggestionForLine($line){
-		$billrun_key = $line['billrun'];
-		//lines which have been included already in a confirmed billing cycle - suggest immediate invoice
-		if (Billrun_Billingcycle::getCycleStatus($billrun_key) === 'confirmed'){
-			return 'immediate_invoice';
-		}
-		//lines which have been included already in a running/finished billing cycle - do not suggest anything.
-		if (Billrun_Billingcycle::getCycleStatus($billrun_key) === 'running'  ||
-			Billrun_Billingcycle::getCycleStatus($billrun_key) === 'finished'){
-			return;
-		}
-		//lines which haven't been included yet in a billing cycle - suggest rebalance
-		return 'rebalance';
-	}
-	
-	protected function buildSuggestion($line, $suggestionType){
+	protected function buildSuggestion($line){
 		//params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
 		$suggestion =  array(
 			'recalculationType' => $this->getRecalculateType(),
@@ -161,29 +143,14 @@ abstract class Billrun_Suggestions {
 			'key' => $line['key'],
 			'status' => 'open',
 		);
-		if($suggestionType === 'rebalance'){
-			$this->buildRebalanceSuggestion($suggestion);
-		}
-		if($suggestionType === 'immediate_invoice'){
-			//todo:: what to do when amount is zero 
-			$this->buildImmediateInvoiceSuggestion($suggestion, $line);
-		}
-		$suggestion['stamp'] = $this->getSuggestionStamp($suggestion);
-		$suggestion['urt'] = new MongoDate();
-		return $suggestion;
-	}
-	
-	protected function buildRebalanceSuggestion(&$suggestion) {
-		$suggestion['suggestionType'] = 'rebalance';
-	}
-
-	protected function buildImmediateInvoiceSuggestion(&$suggestion, $line) {
 		$oldPrice = $line['aprice'];
 		$newPrice = $this->recalculationPrice($line);
 		$amount = $newPrice - $oldPrice;
-		$suggestion['suggestionType'] = 'immediate_invoice';
 		$suggestion['amount'] = abs($amount);
 		$suggestion['type'] = $amount > 0 ? 'debit' : 'credit';
+		$suggestion['stamp'] = $this->getSuggestionStamp($suggestion);
+		$suggestion['urt'] = new MongoDate();
+		return $suggestion;
 	}
 
 	protected function getValidRetroactiveChanges($retroactiveChanges) {
@@ -211,7 +178,9 @@ abstract class Billrun_Suggestions {
 					$this->handleOverlapSuggestion($overlapSuggestion, $suggestion);
 				}
 			}else{
-				Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+				if($suggestion['amount'] != 0){
+					Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+				}
 			}
 		}
 		Billrun_Factory::log()->log("finished adding suggestions to db", Zend_Log::INFO);
@@ -271,34 +240,14 @@ abstract class Billrun_Suggestions {
 	protected function unifyOverlapSuggestions($suggestions) {
 		$newSuggestion = $suggestions[0];
 		$newSuggestion['usagev'] = 0;
-		if($newSuggestion['suggestionType'] === 'rebalance'){
-			$this->unifyOverlapRebalanceSuggestions($newSuggestion, $suggestions);
-		}else{//suggestionType equal to immediate invoice
-			$this->unifyOverlapImmediateInvoiceSuggestions($newSuggestion, $suggestions);
-		}
-		return $newSuggestion; 
-	}
-
-	protected function unifyOverlapRebalanceSuggestions(&$newSuggestion, $suggestions) {
-		foreach ($suggestions as $suggestion){
-			if($suggestion['suggestionType'] !== 'rebalance'){
-				throw new Exception("Something went wrong. all the suggestion must to have the same suggestionType");
-			}
-			$this->unifyOverlapSuggestion($newSuggestion, $suggestion);
-		}
-	}
-
-	protected function unifyOverlapImmediateInvoiceSuggestions(&$newSuggestion, $suggestions) {
 		$aprice = 0;
 		foreach ($suggestions as $suggestion){
-			if($suggestion['suggestionType'] !== 'immediate_invoice'){
-				throw new Exception("Something went wrong. all the suggestion must to have the same suggestionType");
-			}
 			$aprice += $suggestion['type'] === 'credit' ? (0 - $suggestion['amount']) : $suggestion['amount'];
 			$this->unifyOverlapSuggestion($newSuggestion, $suggestion);
 		}
 		$newSuggestion['type'] = $aprice < 0 ? 'credit' : 'debit';
 		$newSuggestion['amount'] = abs($aprice);
+		return $newSuggestion; 
 	}
 
 	protected function unifyOverlapSuggestion(&$newSuggestion, $suggestion) {
