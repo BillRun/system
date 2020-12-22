@@ -30,15 +30,12 @@ class ResetLinesAction extends ApiAction {
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
+		$invoicing_day = null;
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
 			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 		}
-		if (!is_null($invoicing_day)) {
-			$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
-		} else {
-			$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp() : $request['billrun_key'];
-		}
+		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
 
 		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
