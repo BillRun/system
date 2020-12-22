@@ -375,6 +375,7 @@ class Models_Entity {
 	 * Performs the permanentchange action by a query.
 	 */
 	public function permanentChange() {
+		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
