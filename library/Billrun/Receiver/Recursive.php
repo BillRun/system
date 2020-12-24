@@ -109,7 +109,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		Billrun_Factory::dispatcher()->trigger('beforeLocalFileReceived', array(&$path, $this, FALSE, &$extraData));
 
 		if ( !$this->lockFileForReceive($file, $type, $extraData) ) {
-			Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
+			Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::DEBUG);
 			return FALSE;
 		}
 		Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
