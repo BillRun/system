@@ -118,6 +118,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		$fileData = $this->getFileLogData($file, $type, $extraData);
 
 		$fileData['path'] = $this->handleFile($path, $file);
+		$fileData['retrived_path'] = $path;
 
 		if (!$fileData['path']) {
 			Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
