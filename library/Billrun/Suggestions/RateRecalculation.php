@@ -26,8 +26,11 @@ class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
 	}
 
 	protected function checkIfValidRetroactiveChange($retroactiveChange) {
-		//check if price change
-		if (!$this->isFirstTierPriceChange($retroactiveChange)) {
+		
+		//if the price not change and the revision from/to not change then not valid retroactive change
+		if (!$this->isFirstTierPriceChange($retroactiveChange) &&
+			!$this->fromRevisionChange($retroactiveChange) &&
+			!$this->toRevisionChange($retroactiveChange)) {
 			return false;
 		}
 		$newRate = $retroactiveChange['new'];

@@ -50,7 +50,7 @@ abstract class Billrun_Suggestions {
 		$query = array(
 			'collection' => $this->getCollectionName(),
 			'suggest_recalculations' => array('$ne' => true),
-			//TODO:: check all the relevant types (update/permanentchange through GUI / rates importer / API) 
+			//check all the relevant types (update/permanentchange through GUI / rates importer / API) 
 			'type' => array('$in' => ['update', 'closeandnew', 'permanentchange']),
 			//retroactive change
 			'new.from' => array(
@@ -271,6 +271,14 @@ abstract class Billrun_Suggestions {
 		unset($suggestion['urt']);
 		unset($suggestion['stamp']);
 		return Billrun_Util::generateArrayStamp($suggestion);
+	}
+	
+	protected function fromRevisionChange($retroactiveChange){
+		return $retroactiveChange['old']['from']->sec !== $retroactiveChange['new']['from']->sec;
+	}
+	
+	protected function toRevisionChange($retroactiveChange){
+		return $retroactiveChange['old']['to']->sec !== $retroactiveChange['new']['to']->sec;
 	}
 
 	protected function addFiltersToFindMatchingLines() {
