@@ -18,14 +18,14 @@ class Mongodloid_Collection {
 
 	/**
 	 * Create a new instance of the collection object.
-	 * @param MongoCollection $collection
+	 * @param MongoDB\Collection $collection
 	 * @param Mongodloid_DB $db
 	 */
-	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
+	public function __construct(MongoDB\Collection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
-
+	
 	/**
 	 * Update a collection.
 	 * @param type $query - Query to filter records to update.
@@ -34,12 +34,85 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
+		$options = $this->beforeUpdate($options);
+		
+		$multiple = isset($options['multiple']) ? $options['multiple'] : false;
+		$isReplace = ! \MongoDB\is_first_key_operator($values);
+
+        if ($isReplace && $multiple) {
+            throw new \MongoWriteConcernException('multi update only works with $ operators', 9);
+        }
+        unset($options['multiple']);
+		
+		if($isReplace){
+			$result = $this->replaceOne($query, $values, $options);
+		}else if($multiple){
+			$result = $this->updateMany($query, $values, $options);
+		}else{
+			$result = $this->updateOne($query, $values, $options);
+		}
+		return $this->buildUpdateResult($result);
+	}
+	
+	/**
+	 * Update all documents that match the query.
+	 * @param type $query - Query to filter records to update
+	 * @param type $values - Query for updating new values.
+	 * @param type $options - Mongo options.
+	 * @return mongo update result
+	 */
+	private function updateMany($query, $values, $options = array()) {
+		return $this->_collection->updateMany($query, $values, $options);
+	}
+	
+	/**
+	 * Update at most one document that matches the query. 
+	 * If multiple documents match the query,
+	 * only the first matching document will be updated.
+	 * @param type $query - Query to filter record to update
+	 * @param type $values - Query for updating new values.
+	 * @param type $options - Mongo options.
+	 * @return mongo update result
+	 */
+	private function updateOne($query, $values, $options = array()) {
+		return $this->_collection->updateOne($query, $values, $options);
+	}
+	
+	/**
+	 * Replace at most one document that matches the query. 
+	 * If multiple documents match the query, 
+	 * only the first matching document will be replaced.
+	 * @param type $query- Query to filter record to replace
+	 * @param type $values - new values.
+	 * @param type $options - Mongo options.
+	 * @return mongo update result
+	 */
+	private function replaceOne($query, $values, $options = array()) {
+		return $this->_collection->replaceOne($query, $values, $options);
+	}
+	
+	private function beforeUpdate($options){
 		if ((isset($options['session']) && $options['session']->isInTransaction())) {
 			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
 		} else if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		return $this->_collection->update($query, $values, $options);
+		return $options;
+	}
+	
+	private function buildUpdateResult($result){
+		if (! $result->isAcknowledged()) {
+            return true;
+        }
+
+        return [
+            'ok' => 1.0,
+            'nModified' => $result->getModifiedCount(),
+            'n' => $result->getMatchedCount(),
+            'err' => null,
+            'errmsg' => null,
+            'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
+        ];
 	}
 
 	/**
@@ -73,19 +146,19 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 		
-		return $this->update($data, array('$set' => $fields));
+		return $this->buildUpdateResult($this->updateOne($data, array('$set' => $fields)));
 	}
 	
 	public function getName() {
-		return $this->_collection->getName();
+		return $this->_collection->getCollectionName();
 	}
 
 	public function dropIndexes() {
-		return $this->_collection->deleteIndexes();
+		return $this->_collection->dropIndexes();
 	}
 
 	public function dropIndex($field) {
-		return $this->_collection->deleteIndex($field);
+		return $this->_collection->dropIndex($field);
 	}
 
 	public function ensureUniqueIndex($fields, $dropDups = false) {
@@ -137,8 +210,17 @@ class Mongodloid_Collection {
 	}
 
 	public function save(Mongodloid_Entity $entity, $w = null) {
+		$options = $this->beforeSave($w);
 		$data = $entity->getRawData();
-
+		$result = $this->replaceOne($entity->getId(), $data, $options);
+		if (!$result){
+			return false;
+		}
+		$entity->setRawData($data);
+		return true;
+	}
+	
+	private function beforeSave($w) {
 		if (is_null($w)) {
 			$w = $this->w;
 		}
@@ -148,13 +230,8 @@ class Mongodloid_Collection {
 		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
-
-		$result = $this->_collection->save($data, $options);
-		if (!$result)
-			return false;
-
-		$entity->setRawData($data);
-		return true;
+		$options['upsert'] = true;
+		return $options;
 	}
 
 	public function findOne($id, $want_array = false) {
@@ -169,9 +246,9 @@ class Mongodloid_Collection {
 
 		$values = $this->_collection->findOne(array('_id' => $filter_id));
 
-		if ($want_array)
+		if ($want_array){
 			return $values;
-
+		}
 		return new Mongodloid_Entity($values, $this);
 	}
 
@@ -526,7 +603,7 @@ class Mongodloid_Collection {
 	
 	/**
 	 * 
-	 * @return MongoCollection
+	 * @return MongoDB\Collection
 	 */
 	public function getMongoCollection() {
 		return $this->_collection;
@@ -565,5 +642,5 @@ class Mongodloid_Collection {
 	public function distinct($key, array $query = array()) {
 		return $this->_collection->distinct($key, $query);
 	}
-
+	
 }
