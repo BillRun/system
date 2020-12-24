@@ -46,7 +46,7 @@ abstract class Billrun_Suggestions {
 	}
 
 	protected function findAllTheRetroactiveChanges() {
-		Billrun_Factory::log()->log("Searching all the retroactive rate changes", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Searching all the retroactive " . $this->getRecalculateType() . " changes", Zend_Log::INFO);
 		$query = array(
 			'collection' => $this->getCollectionName(),
 			'suggest_recalculations' => array('$ne' => true),
@@ -68,7 +68,7 @@ abstract class Billrun_Suggestions {
 
 		$validRetroactiveChanges = $this->getValidRetroactiveChanges($retroactiveChanges);
 
-		Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive rate changes", Zend_Log::INFO);
+		Billrun_Factory::log()->log("found " . count($retroactiveChanges) . " retroactive ". $this->getRecalculateType() ." changes", Zend_Log::INFO);
 		return $validRetroactiveChanges;
 	}
 
