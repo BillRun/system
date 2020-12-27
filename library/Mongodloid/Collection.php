@@ -25,7 +25,7 @@ class Mongodloid_Collection {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
-	
+
 	/**
 	 * Update a collection.
 	 * @param type $query - Query to filter records to update.
@@ -34,24 +34,24 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
-		
-		$multiple = isset($options['multiple']) ? $options['multiple'] : false;
-		$isReplace = ! \MongoDB\is_first_key_operator($values);
 
-        if ($isReplace && $multiple) {
-            throw new Exception('multi update only works with $ operators', 9);
-        }
-        unset($options['multiple']);
+		$multiple = isset($options['multiple']) ? $options['multiple'] : false;
+		$isReplace = !\MongoDB\is_first_key_operator($values);
+
+		if ($isReplace && $multiple) {
+			throw new Exception('multi update only works with $ operators', 9);
+		}
+		unset($options['multiple']);
 		$this->convertWriteConcernOptions($options);
-		if($isReplace){
+		if ($isReplace) {
 			return $this->replaceOne($query, $values, $options);
-		}else if($multiple){
+		} else if ($multiple) {
 			return $this->updateMany($query, $values, $options);
-		}else{
+		} else {
 			return $this->updateOne($query, $values, $options);
 		}
 	}
-	
+
 	/**
 	 * Update all documents that match the query.
 	 * @param type $query - Query to filter records to update
@@ -61,9 +61,8 @@ class Mongodloid_Collection {
 	 */
 	private function updateMany($query, $values, $options = array()) {
 		return self::getResult($this->_collection->updateMany($query, $values, $options));
-		 
 	}
-	
+
 	/**
 	 * Update at most one document that matches the query. 
 	 * If multiple documents match the query,
@@ -76,7 +75,7 @@ class Mongodloid_Collection {
 	private function updateOne($query, $values, $options = array()) {
 		return self::getResult($this->_collection->updateOne($query, $values, $options));
 	}
-	
+
 	/**
 	 * Replace at most one document that matches the query. 
 	 * If multiple documents match the query, 
@@ -101,29 +100,29 @@ class Mongodloid_Collection {
 			$entity->set($key, $value);
 		}
 	}
-	
+
 	/**
 	 * Update a collection by entity.
 	 * @param Mongodloid_Entity $entity - Entity to update in the collection.
 	 * @param array $fields - Array of keys and values to be updated in the entity.
 	 * @return mongo update result.
 	 */
-	public function updateEntity($entity, $fields=array()) {
+	public function updateEntity($entity, $fields = array()) {
 		if (empty($fields)) {
 			$fields = $entity->getRawData();
 			unset($fields['_id']);
 		}
-		
+
 		$data = array(
 			'_id' => $entity->getId()->getMongoID()
 		);
-		
+
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
-		
+
 		return $this->buildUpdateResult($this->updateOne($data, array('$set' => $fields)));
 	}
-	
+
 	public function getName() {
 		return self::getResult($this->_collection->getCollectionName());
 	}
@@ -135,17 +134,17 @@ class Mongodloid_Collection {
 	public function dropIndex($field) {
 		return self::getResult($this->_collection->dropIndex($field));
 	}
-	
+
 	public function ensureUniqueIndex($fields, $dropDups = false) {
 		return $this->ensureIndex($fields, $dropDups ? self::DROP_DUPLICATES : self::UNIQUE);
 	}
 
 	public function ensureIndex($fields, $params = array()) {
-		if (!is_array($fields)){
+		if (!is_array($fields)) {
 			$fields = array($fields => 1);
 		}
 		$ps = array();
-		if ($params == self::UNIQUE || $params == self::DROP_DUPLICATES){
+		if ($params == self::UNIQUE || $params == self::DROP_DUPLICATES) {
 			$ps['unique'] = true;
 		}
 		return self::getResult($this->_collection->createIndex($fields, $ps));
@@ -165,7 +164,7 @@ class Mongodloid_Collection {
 	}
 
 	public function getIndexes() {
-		return  self::getResult($this->_collection->listIndexes());
+		return self::getResult($this->_collection->listIndexes());
 	}
 
 	/**
@@ -185,13 +184,12 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options, $w);
 		$data = $entity->getRawData();
 		$result = $this->replaceOne(array('_id' => $entity->getId()->getMongoID()), $data, $options);
-		if (!$result){
+		if (!$result) {
 			return false;
 		}
 		$entity->setRawData($data);
 		return true;
 	}
-	
 
 	public function findOne($id, $want_array = false) {
 		if ($id instanceof Mongodloid_Id) {
@@ -205,7 +203,7 @@ class Mongodloid_Collection {
 
 		$values = self::getResult($this->_collection->findOne(array('_id' => $filter_id)));
 
-		if ($want_array){
+		if ($want_array) {
 			return $values;
 		}
 		return new Mongodloid_Entity($values, $this);
@@ -222,7 +220,7 @@ class Mongodloid_Collection {
 	public function clear() {//TODO:: check this - I dont think this works also before changes
 		return $this->remove(array());
 	}
-	
+
 	/**
 	 * Remove an entity from the collection.
 	 * @param Mongoldoid_Entity $entity - Entity to remove from the collection.
@@ -233,7 +231,7 @@ class Mongodloid_Collection {
 		$query = $entity->getId();
 		return $this->remove($query, $options);
 	}
-	
+
 	/**
 	 * Remove an entity from the collection.
 	 * @param Mongoldoid_Entity $id - ID of mongo record to be removed.
@@ -244,7 +242,7 @@ class Mongodloid_Collection {
 		$query = array('_id' => $id->getMongoId());
 		return $this->remove($query, $options);
 	}
-	
+
 	/**
 	 * Remove data from the collection.
 	 * @param Query $query - Query object or Mongoldoid_Entity to use to remove data.
@@ -266,18 +264,17 @@ class Mongodloid_Collection {
 			$query = array('_id' => $query->getMongoId());
 
 		$this->convertWriteConcernOptions($options);
-		if($multiple){
+		if ($multiple) {
 			return $this->deleteMany($query, $options);
 		}
 		return $this->deleteOne($query, $options);
-		
 	}
-	
-	private function deleteMany($query, $options){
+
+	private function deleteMany($query, $options) {
 		return self::getResult($this->_collection->deleteMany($query, $options));
 	}
-	
-	private function deleteOne($query, $options){
+
+	private function deleteOne($query, $options) {
 		return self::getResult($this->_collection->deleteOne($query, $options));
 	}
 
@@ -295,15 +292,15 @@ class Mongodloid_Collection {
 	 * @return boolean true if the query returned results.
 	 */
 	public function exists($query) {
-		if(!$query) {
+		if (!$query) {
 			return false;
 		}
-		
+
 		$cursor = $this->query($query)->cursor();
 		// TODO: Validation on everything.
 		return !$cursor->current()->isEmpty();
 	}
-	
+
 	/**
 	 * 
 	 * @deprecated since version 4.0 - backward compatibility
@@ -321,11 +318,9 @@ class Mongodloid_Collection {
 		return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
 	}
 
-	
-
 	public function aggregateWithOptions() {
-            $args = func_get_args();
-            return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
+		$args = func_get_args();
+		return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
 	}
 
 	public function setTimeout($timeout) {
@@ -355,21 +350,20 @@ class Mongodloid_Collection {
 			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 			$mode = $readPreference;
-		}else{
+		} else {
 			return false;
 		}
 		$options = [
 			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
-            'writeConcern' => $this->getWriteConcern(),
+			'writeConcern' => $this->getWriteConcern(),
 		];
 		return $this->withOptions($options);
-		
 	}
-	
+
 	/**
-     * @return \MongoDB\Collection
-     */
-	private function withOptions($options){
+	 * @return \MongoDB\Collection
+	 */
+	private function withOptions($options) {
 		return $this->_collection->withOptions($options);
 	}
 
@@ -405,7 +399,7 @@ class Mongodloid_Collection {
 		}
 		return $this->createRef($refData);
 	}
-	
+
 	/**
 	 * method to create Mongo DB reference object
 	 * 
@@ -415,24 +409,24 @@ class Mongodloid_Collection {
 	 */
 	public function createRef($document_or_id) {
 		if ($document_or_id instanceof Mongodloid_Id) {
-            $id = $document_or_id->getMongoID();
-        } elseif (is_object($document_or_id)) {
-            if (! isset($document_or_id->_id)) {
-                return null;
-            }
+			$id = $document_or_id->getMongoID();
+		} elseif (is_object($document_or_id)) {
+			if (!isset($document_or_id->_id)) {
+				return null;
+			}
 
-            $id = $document_or_id->_id;
-        } elseif (is_array($document_or_id)) {
-            if (! isset($document_or_id['_id'])) {
-                return null;
-            }
+			$id = $document_or_id->_id;
+		} elseif (is_array($document_or_id)) {
+			if (!isset($document_or_id['_id'])) {
+				return null;
+			}
 
-            $id = $document_or_id['_id'];
-        } else {
-            $id = $document_or_id;
-        }
+			$id = $document_or_id['_id'];
+		} else {
+			$id = $document_or_id;
+		}
 
-        return MongoDBRef::create($this->getName(), $id);
+		return MongoDBRef::create($this->getName(), $id);
 	}
 
 	/**
@@ -448,16 +442,16 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/class/MongoDBCollection/
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
-		if(isset($options['remove'])){
-			 unset($options['remove']);
+		if (isset($options['remove'])) {
+			unset($options['remove']);
 			$ret = $this->findOneAndDelete($query, $options);
-		}else{
+		} else {
 			if (isset($options['new'])) {
 				$options['returnDocument'] = \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER;
 				unset($options['new']);
 			}
 			$options['projection'] = $fields;
-			if (! \MongoDB\is_first_key_operator($update)) {
+			if (!\MongoDB\is_first_key_operator($update)) {
 				$ret = $this->findOneAndReplace($query, $update, $options);
 			} else {
 				$ret = $this->findOneAndUpdate($query, $update, $options);
@@ -469,15 +463,15 @@ class Mongodloid_Collection {
 		}
 		return $ret;
 	}
-	
+
 	private function findOneAndReplace(array $query, array $update = array(), array $options = array()) {
 		return self::getResult($this->_collection->findOneAndReplace($query, $update, $options));
 	}
-	
+
 	private function findOneAndUpdate(array $query, array $update = array(), array $options = array()) {
 		return self::getResult($this->_collection->findOneAndUpdate($query, $update, $options));
 	}
-	
+
 	private function findOneAndDelete(array $query, array $options = array()) {
 		return self::getResult($this->_collection->findOneAndDelete($query, $options));
 	}
@@ -491,23 +485,22 @@ class Mongodloid_Collection {
 	 * @return mixed If the w parameter is set to acknowledge the write, returns an associative array with the status of the inserts ("ok") and any error that may have occurred ("err"). Otherwise, returns TRUE if the batch insert was successfully sent, FALSE otherwise
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-insertMany/#phpmethod.MongoDB\Collection::insertMany
 	 */
-	public function batchInsert(array $a, array $options = array()) {		
+	public function batchInsert(array $a, array $options = array()) {
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
-			$documents =[];
-			foreach($a as $doc) {
+			$documents = [];
+			foreach ($a as $doc) {
 				if ($doc instanceof Mongodloid_Entity) {
 					$doc = $doc->getRawData();
 				}
 				$documents[] = $doc;
 			}
-		}else{
+		} else {
 			$documents = $a;
 		}
 		$this->convertWriteConcernOptions($options);
 		return $this->insertMany($documents, $options);
-		
 	}
-	
+
 	private function insertMany(array $documents, array $options = array()) {
 		return self::getResult($this->_collection->insertMany($documents, $options));
 	}
@@ -525,11 +518,11 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
-			$ret = $this->_collection->insert($a , $options);
+			$ret = $this->_collection->insert($a, $options);
 			$ins = new Mongodloid_Entity($a);
 		} else {
 			$a = $ins; // pass by reference - _id is not saved on by-ref var
-			$ret = $this->_collection->insert($a , $options);
+			$ret = $this->_collection->insert($a, $options);
 			$ins = $a;
 		}
 		return self::getResult($ret);
@@ -561,11 +554,12 @@ class Mongodloid_Collection {
 		}
 
 		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
-		
+
 		// Set the values to the entity.
 		$entity->set($field, $inc);
 		return $inc;
 	}
+
 	/**
 	 * Method to create auto increment of document
 	 * To use this method require counters collection (see create.ini)
@@ -587,7 +581,7 @@ class Mongodloid_Collection {
 				return $existingSec;
 			}
 		}
-			
+
 		// try to set last seq
 		while (1) {
 			// get last seq
@@ -601,11 +595,11 @@ class Mongodloid_Collection {
 				'coll' => $collection_name,
 				'seq' => $lastSeq
 			);
-			
+
 			if (!empty($params)) {
 				$insert['key'] = $key;
 			}
-			
+
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (Exception $e) {
@@ -618,7 +612,7 @@ class Mongodloid_Collection {
 		}
 		return $lastSeq;
 	}
-	
+
 	/**
 	 * 
 	 * @return MongoDB\Collection
@@ -626,6 +620,7 @@ class Mongodloid_Collection {
 	public function getMongoCollection() {
 		return $this->_collection;
 	}
+
 	/**
 	 * method to get collection stats
 	 * 
@@ -636,11 +631,11 @@ class Mongodloid_Collection {
 	public function stats($item) {
 		return $this->_db->stats(array('collStats' => $this->getName()), $item);
 	}
-	
+
 	public function distinct($key, array $query = array()) {
 		return self::getResult($this->_collection->distinct($key, $query));
 	}
-	
+
 	public function getWriteConcern($var = null) {
 		// backward compatibility with 1.4
 		if ($this->_db->compareClientVersion('1.5', '<')) {
@@ -650,7 +645,7 @@ class Mongodloid_Collection {
 			);
 		} else {
 			$writeConcern = $this->_collection->getWriteConcern();
-			if($writeConcern === null) {
+			if ($writeConcern === null) {
 				$writeConcern = new \MongoDB\Driver\WriteConcern($this->w);
 			}
 			$ret = array(
@@ -658,24 +653,23 @@ class Mongodloid_Collection {
 				'wtimeout' => $writeConcern->getWtimeout(),
 			);
 		}
-		
+
 		if (is_null($var)) {
 			return $ret;
 		}
-		
+
 		if (isset($ret[$var])) {
 			return $ret[$var];
 		}
 	}
-	
+
 	/**
-     * Converts legacy write concern options to a WriteConcern object
-     *
-     * @param array $options
-     * @return array
-     */
-    private function convertWriteConcernOptions(&$options, $w = null)
-    {
+	 * Converts legacy write concern options to a WriteConcern object
+	 *
+	 * @param array $options
+	 * @return array
+	 */
+	private function convertWriteConcernOptions(&$options, $w = null) {
 		if (is_null($w)) {
 			$w = $this->w;
 		}
@@ -684,32 +678,29 @@ class Mongodloid_Collection {
 		} else if (!isset($options['w'])) {
 			$options['w'] = $w;
 		}
-        if (isset($options['wtimeout']) && !isset($options['wTimeoutMS'])) {
-            $options['wTimeoutMS'] = $options['wtimeout'];
-        }
+		if (isset($options['wtimeout']) && !isset($options['wTimeoutMS'])) {
+			$options['wTimeoutMS'] = $options['wtimeout'];
+		}
 
-        if (isset($options['w']) || !isset($options['wTimeoutMS'])) {
-            $collectionWriteConcern = $this->getWriteConcern();
-			
-			$wstring =  $options['w'] ?? $collectionWriteConcern['w'];
+		if (isset($options['w']) || !isset($options['wTimeoutMS'])) {
+			$collectionWriteConcern = $this->getWriteConcern();
+
+			$wstring = $options['w'] ?? $collectionWriteConcern['w'];
 			$wtimeout = $options['wTimeoutMS'] ?? $collectionWriteConcern['wtimeout'];
-            $writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
-            $options['writeConcern'] = $writeConcern;
-        }
+			$writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
+			$options['writeConcern'] = $writeConcern;
+		}
 		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {//check if still relevant
 			$options['j'] = $this->j;
 		}
-        unset($options['w']);
-        unset($options['wTimeout']);
-        unset($options['wTimeoutMS']);
+		unset($options['w']);
+		unset($options['wTimeout']);
+		unset($options['wTimeoutMS']);
+	}
 
-
-    }
-
-	
-public static function getResult($result){
+	public static function getResult($result) {
 		$callingMethod = self::getCallingMethodName();
-		switch ($callingMethod){
+		switch ($callingMethod) {
 			case 'updateMany':
 			case 'updateOne':
 			case 'replaceOne':
@@ -720,115 +711,113 @@ public static function getResult($result){
 			default:
 				return self::toLegacy($result);
 		}
-		
 	}
-	
-	private static function buildRemoveResult($result){
-		if (!$result){
+
+	private static function buildRemoveResult($result) {
+		if (!$result) {
 			return false;
 		}
-		
-		if (! $result->isAcknowledged()) {
-            return true;
-        }
 
-        return [
-            'ok' => 1.0,
-            'n' => $result->getDeletedCount(),
-            'err' => null,
-            'errmsg' => null
-        ];
+		if (!$result->isAcknowledged()) {
+			return true;
+		}
+
+		return [
+			'ok' => 1.0,
+			'n' => $result->getDeletedCount(),
+			'err' => null,
+			'errmsg' => null
+		];
 	}
-	
-	private static function buildUpdateResult($result){
-		if (!$result){
+
+	private static function buildUpdateResult($result) {
+		if (!$result) {
 			return false;
 		}
-		
-		if (! $result->isAcknowledged()) {
-            return true;
-        }
 
-        return [
-            'ok' => 1.0,
-            'nModified' => $result->getModifiedCount(),
-            'n' => $result->getMatchedCount(),
-            'err' => null,
-            'errmsg' => null,
-            'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
-        ];
+		if (!$result->isAcknowledged()) {
+			return true;
+		}
+
+		return [
+			'ok' => 1.0,
+			'nModified' => $result->getModifiedCount(),
+			'n' => $result->getMatchedCount(),
+			'err' => null,
+			'errmsg' => null,
+			'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
+		];
 	}
 
 	/**
-     * Converts a BSON type to the legacy types
-     *
-     * This method handles type conversion from ext-mongodb to ext-mongo:
-     *  - For all instances of BSON\Type it returns an object of the
-     *    corresponding legacy type (MongoId, MongoDate, etc.)
-     *  - For arrays and objects it iterates over properties and converts each
-     *    item individually
-     *  - For other types it returns the value unconverted
-     *
-     * @param mixed $value
-     * @return mixed
-     */
-    public static function toLegacy($value)
-    {
-        switch (true) {
-            case $value instanceof BSON\Type:
-                return self::convertBSONObjectToLegacy($value);
-            case is_array($value):
-            case is_object($value):
-                $result = [];
+	 * Converts a BSON type to the legacy types
+	 *
+	 * This method handles type conversion from ext-mongodb to ext-mongo:
+	 *  - For all instances of BSON\Type it returns an object of the
+	 *    corresponding legacy type (MongoId, MongoDate, etc.)
+	 *  - For arrays and objects it iterates over properties and converts each
+	 *    item individually
+	 *  - For other types it returns the value unconverted
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public static function toLegacy($value) {
+		switch (true) {
+			case $value instanceof BSON\Type:
+				return self::convertBSONObjectToLegacy($value);
+			case is_array($value):
+			case is_object($value):
+				$result = [];
 
-                foreach ($value as $key => $item) {
-                    $result[$key] = self::toLegacy($item);
-                }
+				foreach ($value as $key => $item) {
+					$result[$key] = self::toLegacy($item);
+				}
 
-                return $result;
-            default:
-                return $value;
-        }
-    }
-	
+				return $result;
+			default:
+				return $value;
+		}
+	}
+
 	/**
-     * Converter method to convert a BSON object to its legacy type
-     *
-     * @param BSON\Type $value
-     * @return mixed
-     */
-    private static function convertBSONObjectToLegacy(BSON\Type $value)
-    {
-		
-        switch (true) {
-            case $value instanceof BSON\ObjectID:
-                return new \MongoId($value);
-            case $value instanceof BSON\Binary:
-                return new \MongoBinData($value);
-            case $value instanceof BSON\Javascript:
-                return new \MongoCode($value);
-            case $value instanceof BSON\MaxKey:
-                return new \MongoMaxKey();
-            case $value instanceof BSON\MinKey:
-                return new \MongoMinKey();
-            case $value instanceof BSON\Regex:
-                return new \MongoRegex($value);
-            case $value instanceof BSON\Timestamp:
-                return new \MongoTimestamp($value);
-            case $value instanceof BSON\UTCDatetime:
-                return new \MongoDate($value);
-            case $value instanceof Model\BSONDocument:
-            case $value instanceof Model\BSONArray:
-                return array_map(
-                    ['self', 'toLegacy'],
-                    $value->getArrayCopy()
-                );
-            default:
-                return $value;
-        }
-    }
-	
-	private static function getCallingMethodName(){
+	 * Converter method to convert a BSON object to its legacy type
+	 *
+	 * @param BSON\Type $value
+	 * @return mixed
+	 */
+	private static function convertBSONObjectToLegacy(BSON\Type $value) {
+
+		switch (true) {
+			case $value instanceof BSON\ObjectID:
+				return new \MongoId($value);
+			case $value instanceof BSON\Binary:
+				return new \MongoBinData($value);
+			case $value instanceof BSON\Javascript:
+				return new \MongoCode($value);
+			case $value instanceof BSON\MaxKey:
+				return new \MongoMaxKey();
+			case $value instanceof BSON\MinKey:
+				return new \MongoMinKey();
+			case $value instanceof BSON\Regex:
+				return new \MongoRegex($value);
+			case $value instanceof BSON\Timestamp:
+				return new \MongoTimestamp($value);
+			case $value instanceof BSON\UTCDatetime:
+				return new \MongoDate($value);
+			case $value instanceof Model\BSONDocument:
+			case $value instanceof Model\BSONArray:
+				return array_map(
+					['self', 'toLegacy'],
+					$value->getArrayCopy()
+				);
+			default:
+				return $value;
+		}
+	}
+
+	private static function getCallingMethodName() {
 		return debug_backtrace()[1]['function'];
 	}
+
 }
