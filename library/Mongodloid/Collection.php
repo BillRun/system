@@ -21,7 +21,7 @@ class Mongodloid_Collection {
 	 * @param MongoDB\Collection $collection
 	 * @param Mongodloid_DB $db
 	 */
-	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
+	public function __construct(MongoDB\Collection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
