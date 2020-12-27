@@ -49,7 +49,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 
 		$db = Billrun_Factory::db();
-		$prepaidIncludes = $db->prepaidincludesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$prepaidIncludes = $db->prepaidincludesCollection()->setReadPreference('RP_PRIMARY', array());
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
 			$errorCode =  8;

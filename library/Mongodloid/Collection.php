@@ -21,7 +21,7 @@ class Mongodloid_Collection {
 	 * @param MongoDB\Collection $collection
 	 * @param Mongodloid_DB $db
 	 */
-	public function __construct(MongoDB\Collection $collection, Mongodloid_DB $db) {
+	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
@@ -34,24 +34,22 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
-		$options = $this->beforeUpdate($options);
 		
 		$multiple = isset($options['multiple']) ? $options['multiple'] : false;
 		$isReplace = ! \MongoDB\is_first_key_operator($values);
 
         if ($isReplace && $multiple) {
-            throw new \MongoWriteConcernException('multi update only works with $ operators', 9);
+            throw new Exception('multi update only works with $ operators', 9);
         }
         unset($options['multiple']);
-		
+		$this->convertWriteConcernOptions($options);
 		if($isReplace){
-			$result = $this->replaceOne($query, $values, $options);
+			return $this->replaceOne($query, $values, $options);
 		}else if($multiple){
-			$result = $this->updateMany($query, $values, $options);
+			return $this->updateMany($query, $values, $options);
 		}else{
-			$result = $this->updateOne($query, $values, $options);
+			return $this->updateOne($query, $values, $options);
 		}
-		return $this->buildUpdateResult($result);
 	}
 	
 	/**
@@ -62,7 +60,8 @@ class Mongodloid_Collection {
 	 * @return mongo update result
 	 */
 	private function updateMany($query, $values, $options = array()) {
-		return $this->_collection->updateMany($query, $values, $options);
+		return self::getResult($this->_collection->updateMany($query, $values, $options));
+		 
 	}
 	
 	/**
@@ -75,7 +74,7 @@ class Mongodloid_Collection {
 	 * @return mongo update result
 	 */
 	private function updateOne($query, $values, $options = array()) {
-		return $this->_collection->updateOne($query, $values, $options);
+		return self::getResult($this->_collection->updateOne($query, $values, $options));
 	}
 	
 	/**
@@ -88,31 +87,7 @@ class Mongodloid_Collection {
 	 * @return mongo update result
 	 */
 	private function replaceOne($query, $values, $options = array()) {
-		return $this->_collection->replaceOne($query, $values, $options);
-	}
-	
-	private function beforeUpdate($options){
-		if ((isset($options['session']) && $options['session']->isInTransaction())) {
-			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
-		} else if (!isset($options['w'])) {
-			$options['w'] = $this->w;
-		}
-		return $options;
-	}
-	
-	private function buildUpdateResult($result){
-		if (! $result->isAcknowledged()) {
-            return true;
-        }
-
-        return [
-            'ok' => 1.0,
-            'nModified' => $result->getModifiedCount(),
-            'n' => $result->getMatchedCount(),
-            'err' => null,
-            'errmsg' => null,
-            'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
-        ];
+		return self::getResult($this->_collection->replaceOne($query, $values, $options));
 	}
 
 	/**
@@ -150,33 +125,30 @@ class Mongodloid_Collection {
 	}
 	
 	public function getName() {
-		return $this->_collection->getCollectionName();
+		return self::getResult($this->_collection->getCollectionName());
 	}
 
 	public function dropIndexes() {
-		return $this->_collection->dropIndexes();
+		return self::getResult($this->_collection->dropIndexes());
 	}
 
 	public function dropIndex($field) {
-		return $this->_collection->dropIndex($field);
+		return self::getResult($this->_collection->dropIndex($field));
 	}
-
+	
 	public function ensureUniqueIndex($fields, $dropDups = false) {
 		return $this->ensureIndex($fields, $dropDups ? self::DROP_DUPLICATES : self::UNIQUE);
 	}
 
 	public function ensureIndex($fields, $params = array()) {
-		if (!is_array($fields))
+		if (!is_array($fields)){
 			$fields = array($fields => 1);
-
+		}
 		$ps = array();
-		if ($params == self::UNIQUE || $params == self::DROP_DUPLICATES)
+		if ($params == self::UNIQUE || $params == self::DROP_DUPLICATES){
 			$ps['unique'] = true;
-		if ($params == self::DROP_DUPLICATES)
-			$ps['dropDups'] = true;
-
-
-		return $this->_collection->ensureIndex($fields, $ps);
+		}
+		return self::getResult($this->_collection->createIndex($fields, $ps));
 	}
 
 	public function getIndexedFields() {
@@ -193,8 +165,7 @@ class Mongodloid_Collection {
 	}
 
 	public function getIndexes() {
-		$indexCollection = $this->_db->getCollection('system.indexes');
-		return $indexCollection->query('ns', $this->_db->getName() . '.' . $this->getName());
+		return  self::getResult($this->_collection->listIndexes());
 	}
 
 	/**
@@ -210,9 +181,10 @@ class Mongodloid_Collection {
 	}
 
 	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options = $this->beforeSave($w);
+		$options['upsert'] = true;
+		$this->convertWriteConcernOptions($options, $w);
 		$data = $entity->getRawData();
-		$result = $this->replaceOne($entity->getId(), $data, $options);
+		$result = $this->replaceOne(array('_id' => $entity->getId()->getMongoID()), $data, $options);
 		if (!$result){
 			return false;
 		}
@@ -220,19 +192,6 @@ class Mongodloid_Collection {
 		return true;
 	}
 	
-	private function beforeSave($w) {
-		if (is_null($w)) {
-			$w = $this->w;
-		}
-
-		$options = array('w' => $w);
-		
-		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
-		}
-		$options['upsert'] = true;
-		return $options;
-	}
 
 	public function findOne($id, $want_array = false) {
 		if ($id instanceof Mongodloid_Id) {
@@ -244,7 +203,7 @@ class Mongodloid_Collection {
 			$filter_id = new MongoId((string) $id);
 		}
 
-		$values = $this->_collection->findOne(array('_id' => $filter_id));
+		$values = self::getResult($this->_collection->findOne(array('_id' => $filter_id)));
 
 		if ($want_array){
 			return $values;
@@ -253,14 +212,14 @@ class Mongodloid_Collection {
 	}
 
 	public function drop() {
-		return $this->_collection->drop();
+		return self::getResult($this->_collection->drop());
 	}
 
 	public function count() {
-		return $this->_collection->count();
+		return self::getResult($this->_collection->count());
 	}
 
-	public function clear() {
+	public function clear() {//TODO:: check this - I dont think this works also before changes
 		return $this->remove(array());
 	}
 	
@@ -297,7 +256,8 @@ class Mongodloid_Collection {
 		if (empty($query)) {
 			return false;
 		}
-		
+		$multiple = isset($options['justOne']) ? !$options['justOne'] : true;
+		unset($options['justOne']);
 		// TODO: Remove this conditions and use removeEntity and removeId instead.
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
@@ -305,14 +265,27 @@ class Mongodloid_Collection {
 		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
-		return $this->_collection->remove($query, $options);
+		$this->convertWriteConcernOptions($options);
+		if($multiple){
+			return $this->deleteMany($query, $options);
+		}
+		return $this->deleteOne($query, $options);
+		
+	}
+	
+	private function deleteMany($query, $options){
+		return self::getResult($this->_collection->deleteMany($query, $options));
+	}
+	
+	private function deleteOne($query, $options){
+		return self::getResult($this->_collection->deleteOne($query, $options));
 	}
 
 	/**
 	 * @return MongoCursor a cursor for the search results.
 	 */
 	public function find($query, $fields = array()) {
-		return $this->_collection->find($query, $fields);
+		return new Mongodloid_Cursor(self::getResult($this->_collection->find($query, $fields)));
 //		$cursor = $this->_collection->find($query, $fields);
 //		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
@@ -342,22 +315,22 @@ class Mongodloid_Collection {
 
 	public function aggregate() {
 		$args = func_get_args();
-		if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
+		if (count($args) > 1) { // Assume the array contains 'ops' for backward compatibility
 			$args = array($args);
 		}
-		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+		return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
 	}
 
 	
 
 	public function aggregateWithOptions() {
             $args = func_get_args();
-            return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+            return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
 	}
 
 	public function setTimeout($timeout) {
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {
-			@MongoCursor::$timeout = (int) $timeout;
+			@Mongodloid_Cursor::$timeout = (int) $timeout;
 		} else {
 			// see bugs:
 			// https://jira.mongodb.org/browse/PHP-1099
@@ -366,7 +339,7 @@ class Mongodloid_Collection {
 	}
 
 	public function getTimeout() {
-		return MongoCursor::$timeout;
+		return Mongodloid_Cursor::$timeout;
 	}
 
 	/**
@@ -378,12 +351,26 @@ class Mongodloid_Collection {
 	 * @return boolean TRUE on success, or FALSE otherwise.
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
-		if (defined('MongoClient::' . $readPreference)) {
-			$this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
-			$this->_collection->setReadPreference($readPreference, $tags);
+			$mode = $readPreference;
+		}else{
+			return false;
 		}
-		return $this;
+		$options = [
+			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
+            'writeConcern' => $this->getWriteConcern(),
+		];
+		return $this->withOptions($options);
+		
+	}
+	
+	/**
+     * @return \MongoDB\Collection
+     */
+	private function withOptions($options){
+		return $this->_collection->withOptions($options);
 	}
 
 	/**
@@ -397,10 +384,7 @@ class Mongodloid_Collection {
 		if (!MongoDBRef::isRef($ref)) {
 			return;
 		}
-		if (!($ref['$id'] instanceof MongoId)) {
-			$ref['$id'] = new MongoId($ref['$id']);
-		}
-		return new Mongodloid_Entity($this->_collection->getDBRef($ref));
+		return new Mongodloid_Entity(MongoDBRef::get($this->_db, $ref));
 	}
 
 	/**
@@ -419,7 +403,7 @@ class Mongodloid_Collection {
 		} else {
 			return false;
 		}
-		return $this->_collection->createDBRef($refData);
+		return $this->createRef($refData);
 	}
 	
 	/**
@@ -429,8 +413,26 @@ class Mongodloid_Collection {
 	 * 
 	 * @return MongoDBRef
 	 */
-	public function createRef($a) {
-		return $this->_collection->createDBRef($a);
+	public function createRef($document_or_id) {
+		if ($document_or_id instanceof Mongodloid_Id) {
+            $id = $document_or_id->getMongoID();
+        } elseif (is_object($document_or_id)) {
+            if (! isset($document_or_id->_id)) {
+                return null;
+            }
+
+            $id = $document_or_id->_id;
+        } elseif (is_array($document_or_id)) {
+            if (! isset($document_or_id['_id'])) {
+                return null;
+            }
+
+            $id = $document_or_id['_id'];
+        } else {
+            $id = $document_or_id;
+        }
+
+        return MongoDBRef::create($this->getName(), $id);
 	}
 
 	/**
@@ -443,16 +445,41 @@ class Mongodloid_Collection {
 	 * @param boolean $retEntity return Mongodloid entity instead of native return of FindAndModify
 	 * 
 	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
-	 * @throws MongoResultException on failure
-	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
+	 * @see https://docs.mongodb.com/php-library/current/reference/class/MongoDBCollection/
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
-		$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
+		if(isset($options['remove'])){
+			 unset($options['remove']);
+			$ret = $this->findOneAndDelete($query, $options);
+		}else{
+			if (isset($options['new'])) {
+				$options['returnDocument'] = \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER;
+				unset($options['new']);
+			}
+			$options['projection'] = $fields;
+			if (! \MongoDB\is_first_key_operator($update)) {
+				$ret = $this->findOneAndReplace($query, $update, $options);
+			} else {
+				$ret = $this->findOneAndUpdate($query, $update, $options);
+			}
+		}
 
 		if ($retEntity) {
 			return new Mongodloid_Entity($ret, $this);
 		}
 		return $ret;
+	}
+	
+	private function findOneAndReplace(array $query, array $update = array(), array $options = array()) {
+		return self::getResult($this->_collection->findOneAndReplace($query, $update, $options));
+	}
+	
+	private function findOneAndUpdate(array $query, array $update = array(), array $options = array()) {
+		return self::getResult($this->_collection->findOneAndUpdate($query, $update, $options));
+	}
+	
+	private function findOneAndDelete(array $query, array $options = array()) {
+		return self::getResult($this->_collection->findOneAndDelete($query, $options));
 	}
 
 	/**
@@ -462,30 +489,27 @@ class Mongodloid_Collection {
 	 * @param array $options options for the inserts.; see php documentation
 	 * 
 	 * @return mixed If the w parameter is set to acknowledge the write, returns an associative array with the status of the inserts ("ok") and any error that may have occurred ("err"). Otherwise, returns TRUE if the batch insert was successfully sent, FALSE otherwise
-	 * @see http://php.net/manual/en/mongocollection.batchinsert.php
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-insertMany/#phpmethod.MongoDB\Collection::insertMany
 	 */
-	public function batchInsert(array $a, array $options = array()) {
-		if (!isset($options['w'])) {
-			$options['w'] = $this->w;
-		}
-
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
-		}
-
+	public function batchInsert(array $a, array $options = array()) {		
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
-			$batch = new MongoInsertBatch($this->_collection);
+			$documents =[];
 			foreach($a as $doc) {
 				if ($doc instanceof Mongodloid_Entity) {
 					$doc = $doc->getRawData();
 				}
-				$batch->add($doc);
+				$documents[] = $doc;
 			}
-			return $batch->execute($options);
-		} else {
-			return $this->_collection->batchInsert($a, $options);
+		}else{
+			$documents = $a;
 		}
+		$this->convertWriteConcernOptions($options);
+		return $this->insertMany($documents, $options);
 		
+	}
+	
+	private function insertMany(array $documents, array $options = array()) {
+		return self::getResult($this->_collection->insertMany($documents, $options));
 	}
 
 	/**
@@ -498,13 +522,7 @@ class Mongodloid_Collection {
 	 * @see http://www.php.net/manual/en/mongocollection.insert.php
 	 */
 	public function insert(&$ins, array $options = array()) {
-		if (!isset($options['w'])) {
-			$options['w'] = $this->w;
-		}
-		
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
-		}
+		$this->convertWriteConcernOptions($options);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
 			$ret = $this->_collection->insert($a , $options);
@@ -514,7 +532,7 @@ class Mongodloid_Collection {
 			$ret = $this->_collection->insert($a , $options);
 			$ins = $a;
 		}
-		return $ret;
+		return self::getResult($ret);
 	}
 
 	/**
@@ -590,7 +608,7 @@ class Mongodloid_Collection {
 			
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
-			} catch (MongoException $e) {
+			} catch (Exception $e) {
 				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 					// try again with the next seq
 					continue;
@@ -619,6 +637,10 @@ class Mongodloid_Collection {
 		return $this->_db->stats(array('collStats' => $this->getName()), $item);
 	}
 	
+	public function distinct($key, array $query = array()) {
+		return self::getResult($this->_collection->distinct($key, $query));
+	}
+	
 	public function getWriteConcern($var = null) {
 		// backward compatibility with 1.4
 		if ($this->_db->compareClientVersion('1.5', '<')) {
@@ -627,7 +649,14 @@ class Mongodloid_Collection {
 				'wtimeout' => $this->getTimeout(),
 			);
 		} else {
-			$ret = $this->_collection->getWriteConcern();
+			$writeConcern = $this->_collection->getWriteConcern();
+			if($writeConcern === null) {
+				$writeConcern = new \MongoDB\Driver\WriteConcern($this->w);
+			}
+			$ret = array(
+				'w' => $writeConcern->getW(),
+				'wtimeout' => $writeConcern->getWtimeout(),
+			);
 		}
 		
 		if (is_null($var)) {
@@ -639,8 +668,167 @@ class Mongodloid_Collection {
 		}
 	}
 	
-	public function distinct($key, array $query = array()) {
-		return $this->_collection->distinct($key, $query);
+	/**
+     * Converts legacy write concern options to a WriteConcern object
+     *
+     * @param array $options
+     * @return array
+     */
+    private function convertWriteConcernOptions(&$options, $w = null)
+    {
+		if (is_null($w)) {
+			$w = $this->w;
+		}
+		if ((isset($options['session']) && $options['session']->isInTransaction())) {
+			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
+		} else if (!isset($options['w'])) {
+			$options['w'] = $w;
+		}
+        if (isset($options['wtimeout']) && !isset($options['wTimeoutMS'])) {
+            $options['wTimeoutMS'] = $options['wtimeout'];
+        }
+
+        if (isset($options['w']) || !isset($options['wTimeoutMS'])) {
+            $collectionWriteConcern = $this->getWriteConcern();
+			
+			$wstring =  $options['w'] ?? $collectionWriteConcern['w'];
+			$wtimeout = $options['wTimeoutMS'] ?? $collectionWriteConcern['wtimeout'];
+            $writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
+            $options['writeConcern'] = $writeConcern;
+        }
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {//check if still relevant
+			$options['j'] = $this->j;
+		}
+        unset($options['w']);
+        unset($options['wTimeout']);
+        unset($options['wTimeoutMS']);
+
+
+    }
+
+	
+public static function getResult($result){
+		$callingMethod = self::getCallingMethodName();
+		switch ($callingMethod){
+			case 'updateMany':
+			case 'updateOne':
+			case 'replaceOne':
+				return self::buildUpdateResult($result);
+			case 'deleteMany':
+			case 'deleteOne':
+				return self::buildRemoveResult($result);
+			default:
+				return self::toLegacy($result);
+		}
+		
 	}
 	
+	private static function buildRemoveResult($result){
+		if (!$result){
+			return false;
+		}
+		
+		if (! $result->isAcknowledged()) {
+            return true;
+        }
+
+        return [
+            'ok' => 1.0,
+            'n' => $result->getDeletedCount(),
+            'err' => null,
+            'errmsg' => null
+        ];
+	}
+	
+	private static function buildUpdateResult($result){
+		if (!$result){
+			return false;
+		}
+		
+		if (! $result->isAcknowledged()) {
+            return true;
+        }
+
+        return [
+            'ok' => 1.0,
+            'nModified' => $result->getModifiedCount(),
+            'n' => $result->getMatchedCount(),
+            'err' => null,
+            'errmsg' => null,
+            'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
+        ];
+	}
+
+	/**
+     * Converts a BSON type to the legacy types
+     *
+     * This method handles type conversion from ext-mongodb to ext-mongo:
+     *  - For all instances of BSON\Type it returns an object of the
+     *    corresponding legacy type (MongoId, MongoDate, etc.)
+     *  - For arrays and objects it iterates over properties and converts each
+     *    item individually
+     *  - For other types it returns the value unconverted
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    public static function toLegacy($value)
+    {
+        switch (true) {
+            case $value instanceof BSON\Type:
+                return self::convertBSONObjectToLegacy($value);
+            case is_array($value):
+            case is_object($value):
+                $result = [];
+
+                foreach ($value as $key => $item) {
+                    $result[$key] = self::toLegacy($item);
+                }
+
+                return $result;
+            default:
+                return $value;
+        }
+    }
+	
+	/**
+     * Converter method to convert a BSON object to its legacy type
+     *
+     * @param BSON\Type $value
+     * @return mixed
+     */
+    private static function convertBSONObjectToLegacy(BSON\Type $value)
+    {
+		
+        switch (true) {
+            case $value instanceof BSON\ObjectID:
+                return new \MongoId($value);
+            case $value instanceof BSON\Binary:
+                return new \MongoBinData($value);
+            case $value instanceof BSON\Javascript:
+                return new \MongoCode($value);
+            case $value instanceof BSON\MaxKey:
+                return new \MongoMaxKey();
+            case $value instanceof BSON\MinKey:
+                return new \MongoMinKey();
+            case $value instanceof BSON\Regex:
+                return new \MongoRegex($value);
+            case $value instanceof BSON\Timestamp:
+                return new \MongoTimestamp($value);
+            case $value instanceof BSON\UTCDatetime:
+                return new \MongoDate($value);
+            case $value instanceof Model\BSONDocument:
+            case $value instanceof Model\BSONArray:
+                return array_map(
+                    ['self', 'toLegacy'],
+                    $value->getArrayCopy()
+                );
+            default:
+                return $value;
+        }
+    }
+	
+	private static function getCallingMethodName(){
+		return debug_backtrace()[1]['function'];
+	}
 }

@@ -53,7 +53,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function __construct() {
 		parent::__construct(array());
-		$this->collection->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$this->collection->setReadPreference('RP_PRIMARY', array());
 	}
 
 	/**

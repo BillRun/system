@@ -93,7 +93,7 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @return array Query for set updating the balance.
 	 */
 	public function getUpdateBalanceQuery($query, $wallet, $defaultBalance, $isExisting) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY', array());
 
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.

@@ -37,7 +37,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected function queryRangeBalances() {
 		try {
-			$cursor = $this->collection->setReadPreference(MongoClient::RP_PRIMARY, array())->query($this->balancesQuery)->cursor();
+			$cursor = $this->collection->setReadPreference('RP_PRIMARY', array())->query($this->balancesQuery)->cursor();
 			$returnData = $this->availableBalances;
 			// Going through the lines
 			foreach ($cursor as $line) {

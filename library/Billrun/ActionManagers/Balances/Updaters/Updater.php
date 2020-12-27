@@ -219,7 +219,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// Get subscriber query.
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 
-		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference('RP_PRIMARY', array());
 		
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
@@ -383,7 +383,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY', array());
 
 		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$balance = $this->storeBalanceBeforeUpdate($balanceQuery, $balancesColl);

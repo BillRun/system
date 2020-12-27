@@ -160,4 +160,14 @@ class Mongodloid_Db {
 		return $servers[0]->getType() === MongoDB\Driver\Server::TYPE_STANDALONE;
 	}
 
+	/**
+     * Fetches the document pointed to by a database reference
+     *
+     * @link http://www.php.net/manual/en/mongocollection.getdbref.php
+     * @param array $ref A database reference.
+     * @return array Returns the database document pointed to by the reference.
+     */
+	public function getDBRef($ref){//todo:: need to implement 
+		
+	}
 }

@@ -15,6 +15,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
 	protected $getRaw = FALSE;
+
+	/**
+     * @var int
+     */
+    public static $timeout = 30000;
 	
 	/**
 	 * Parameter to ensure valid construction.
@@ -24,8 +29,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	
 	/**
 	 * Create a new instance of the cursor object.
-	 * @param MongoCursor $cursor - Mongo cursor pointing to a collection.
-	 * @param type $timeout
+	 * @param MongoDB\Driver\Cursor $cursor - Mongo cursor pointing to a collection.
 	 */
 	public function __construct($cursor) {
 		// Check that the cursor is a mongocursor
@@ -35,15 +39,10 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		}
 		$this->_cursor = $cursor;
 		
-		// mark-out due to new mongodb driver (PHP7+)
-//		if (!is_null($timeout)) {
-//			$this->_cursor->timeout((int) $timeout);
+//		if ($this->_cursor instanceof Traversable) {
+//			$this->rewind();
+//			$this->valid();
 //		}
-		
-		if ($this->_cursor instanceof MongoCommandCursor) {
-			$this->rewind();
-			$this->valid();
-		}
 		
 		$this->_isValid = true;
 	}
@@ -54,7 +53,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return type
 	 */
 	protected function validateInputCursor($cursor) {
-		return ($cursor) && ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor'));
+		return ($cursor) && ($cursor instanceof MongoDB\Driver\Cursor || (is_object($cursor) && get_class($cursor) == 'Traversable'));
 	}
 	
 	/**
@@ -149,8 +148,8 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (method_exists($this->_cursor, 'setReadPreference')) {
-			if (defined('MongoClient::' . $readPreference)) {
-				$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+				$this->_cursor->setReadPreference(constant('MongoDB\Driver\ReadPreference::' . $readPreference), $tags);
 			} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 				$this->_cursor->setReadPreference($readPreference, $tags);
 			}
@@ -176,18 +175,18 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		}
 		
 		switch ($ret['type']) {
-			case MongoClient::RP_PRIMARY:
+			case MongoDB\Driver\ReadPreference::RP_PRIMARY:
 				return 'RP_PRIMARY';
-			case MongoClient::RP_PRIMARY_PREFERRED:
+			case MongoDB\Driver\ReadPreference::RP_PRIMARY_PREFERRED:
 				return 'RP_PRIMARY_PREFERRED';
-			case MongoClient::RP_SECONDARY:
+			case MongoDB\Driver\ReadPreference::RP_SECONDARY:
 				return 'RP_SECONDARY';
-			case MongoClient::RP_SECONDARY_PREFERRED:
+			case MongoDB\Driver\ReadPreference::RP_SECONDARY_PREFERRED:
 				return 'RP_SECONDARY_PREFERRED';
-			case MongoClient::RP_NEAREST:
+			case MongoDB\Driver\ReadPreference::RP_NEAREST:
 				return 'RP_NEAREST';
 			default:
-				return MongoClient::RP_PRIMARY_PREFERRED;
+				return MongoDB\Driver\ReadPreference::RP_PRIMARY_PREFERRED;
 		}
 
 	}

@@ -16,11 +16,11 @@ class Mongodloid_Connection {
 	protected $username = '';
 	protected $password = '';
 	static public $availableReadPreferences = array(
-		MongoClient::RP_PRIMARY,
-		MongoClient::RP_PRIMARY_PREFERRED,
-		MongoClient::RP_SECONDARY,
-		MongoClient::RP_SECONDARY_PREFERRED,
-		MongoClient::RP_NEAREST,
+		MongoDB\Driver\ReadPreference::RP_PRIMARY,
+		MongoDB\Driver\ReadPreference::RP_PRIMARY_PREFERRED,
+		MongoDB\Driver\ReadPreference::RP_SECONDARY,
+		MongoDB\Driver\ReadPreference::RP_SECONDARY_PREFERRED,
+		MongoDB\Driver\ReadPreference::RP_NEAREST,
 	);
 
 	/**
@@ -109,8 +109,8 @@ class Mongodloid_Connection {
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
-		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
-			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$this->_connection->setReadPreference(constant('MongoDB\Driver\ReadPreference::' . $readPreference), $tags);
 		}
 
 		$this->_connected = true;
