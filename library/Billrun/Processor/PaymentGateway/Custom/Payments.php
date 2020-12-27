@@ -35,8 +35,6 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	}
 
 	protected function updatePayments($row, $payment = null) {
-		$customFields = $this->getCustomPaymentGatewayFields();
-		$payment->setExtraFields($customFields, array_keys($customFields));
 		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
 		if (count($bill) == 0) {
 			$message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
@@ -69,7 +67,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
-		
+		if (isset($ret['payment'])) {
+			$customFields = $this->getCustomPaymentGatewayFields();
+			foreach ($ret['payment'] as $index => $returned_payment) {
+				$returned_payment->setExtraFields($customFields, array_keys($customFields));
+			}
+		}
         $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
         $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);

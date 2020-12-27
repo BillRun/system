@@ -138,8 +138,6 @@ class Alignment extends Supervisor
      *
      * @param array $pStyles Array containing style information
      *
-     * @throws PhpSpreadsheetException
-     *
      * @return $this
      */
     public function applyFromArray(array $pStyles)
@@ -267,8 +265,6 @@ class Alignment extends Supervisor
      *
      * @param int $pValue
      *
-     * @throws PhpSpreadsheetException
-     *
      * @return $this
      */
     public function setTextRotation($pValue)
@@ -389,9 +385,11 @@ class Alignment extends Supervisor
     public function setIndent($pValue)
     {
         if ($pValue > 0) {
-            if ($this->getHorizontal() != self::HORIZONTAL_GENERAL &&
+            if (
+                $this->getHorizontal() != self::HORIZONTAL_GENERAL &&
                 $this->getHorizontal() != self::HORIZONTAL_LEFT &&
-                $this->getHorizontal() != self::HORIZONTAL_RIGHT) {
+                $this->getHorizontal() != self::HORIZONTAL_RIGHT
+            ) {
                 $pValue = 0; // indent not supported
             }
         }

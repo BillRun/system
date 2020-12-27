@@ -129,4 +129,35 @@ class Mongodloid_Db {
 		ini_set('mongo.native_long', $status);
 	}
 
+	/**
+	 * method to start session and retrieve it
+	 * 
+	 * @return MongoDB\Driver\Session
+	 */
+	public function startSession() {
+		if ($this->isStandalone()) {
+			return false;
+		}
+		return $this->_connection->startSession();
+	}
+
+	/**
+	 * method to get the mongo servers
+	 *
+	 * @return MongoDB\Driver\Session
+	 */
+	public function getServers() {
+		return $this->_connection->getServers();
+	}
+	
+	/**
+	 * method to check if the db server is standalone (not mongos and not replica-set)
+	 * 
+	 * @return boolean true if standalone else false
+	 */
+	public function isStandalone() {
+		$servers = $this->getServers();
+		return $servers[0]->getType() === MongoDB\Driver\Server::TYPE_STANDALONE;
+	}
+
 }

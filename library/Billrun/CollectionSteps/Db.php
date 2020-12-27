@@ -170,11 +170,18 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		return $results;
 	}
 
-	protected function runStep($step) {
+	/**
+	 * trigger the step
+	 * 
+	 * @param array $step collection step details
+	 * 
+	 * @return mixed array response details if success, else false
+	 */
+	protected function triggerStep($step) {
 		$notifier = new Billrun_CollectionSteps_Notifier($step);
 		return $notifier->notify();
 	}
-
+	
 	protected function markStepAsCompleted($step, $response) {
 		$query = array(
 			'_id' => $step['_id'],

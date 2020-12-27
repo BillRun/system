@@ -39,7 +39,7 @@ class Billrun_EventsManager {
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
-
+	protected $eventsSettingsCache = [];
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -59,13 +59,18 @@ class Billrun_EventsManager {
 	}
 	
 	public function getEventsSettings($type, $activeOnly = true) {
-		$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
-		if (!$activeOnly) {
-			return $events;
+		$cacheKey = $type.$activeOnly;
+		if(empty($this->eventsSettingsCache[$cacheKey])) {
+			$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
+			if (!$activeOnly) {
+				$this->eventsSettingsCache[$cacheKey] = $events;
+			} else {
+				$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
+					return isset($event['active']) ? !empty($event['active']) : true;
+				});
+			}
 		}
-		return array_filter($events, function ($event) {
-			return Billrun_Util::getIn($event, 'active', true);
-		});
+		return $this->eventsSettingsCache[$cacheKey];
 	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
@@ -311,6 +316,7 @@ class Billrun_EventsManager {
 			} catch (Exception $e) {
 				$this->unlockNotifyEvent($event);
 			}
+			Billrun_Factory::dispatcher()->trigger('afterEventNotify', array(&$event));
 		}
 		$this->handleEmailNotification($emailNotificationEvents);
 	}
@@ -465,7 +471,7 @@ class Billrun_EventsManager {
 					$fraudEventDetails[] = "Account id: {$aid}, Subscriber ids: {$sids}, {$eventCodeEmailNotification['desc']}";
 				}
 				$subjectTranslations = [
-					'event_code' => $eventCode,	
+					'event_code' => $eventCode,
 				];
 				$bodyTranslations = [
 					'fraud_event_details' => implode(PHP_EOL, $fraudEventDetails),

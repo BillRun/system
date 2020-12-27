@@ -29,31 +29,31 @@ class AggregateAction extends Action_Base {
 			'fetchonly' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-		$extraParams = $this->_controller->getParameters();
+		$extraParams = $this->getController()->getParameters();
 		if (!empty($extraParams)) {
 			$options = array_merge($extraParams, $options);
 		}
-		$this->_controller->addOutput("Loading aggregator");
+		$this->getController()->addOutput("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
-		$this->_controller->addOutput("Aggregator loaded");
+		$this->getController()->addOutput("Aggregator loaded");
 
 		if (!$aggregator || !$aggregator->isValid()) {
-			$this->_controller->addOutput("Aggregator cannot be loaded");
+			$this->getController()->addOutput("Aggregator cannot be loaded");
 			return;
 		}
 
-		$this->_controller->addOutput("Loading data to Aggregate...");
+		$this->getController()->addOutput("Loading data to Aggregate...");
 		$aggregator->load();
 		if (isset($options['fetchonly'])) {
-			$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
+			$this->getController()->addOutput("Only fetched aggregate accounts info. Exit...");
 		}
 
-		$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
+		$this->getController()->addOutput("Starting to Aggregate. This action can take a while...");
 		$aggregator->aggregate();
-		$this->_controller->addOutput("Finish to Aggregate.");
+		$this->getController()->addOutput("Finish to Aggregate.");
 	}
 	
 	
