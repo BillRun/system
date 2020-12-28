@@ -282,7 +282,7 @@ class Mongodloid_Collection {
 	 * @return MongoCursor a cursor for the search results.
 	 */
 	public function find($query, $fields = array()) {
-		return new Mongodloid_Cursor(self::getResult($this->_collection->find($query, $fields)));
+		return new Mongodloid_Cursor($this->_collection->find($query, $fields));
 //		$cursor = $this->_collection->find($query, $fields);
 //		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
@@ -315,12 +315,12 @@ class Mongodloid_Collection {
 		if (count($args) > 1) { // Assume the array contains 'ops' for backward compatibility
 			$args = array($args);
 		}
-		return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
+		return new Mongodloid_Cursor($this->_collection->aggregate($args));
 	}
 
 	public function aggregateWithOptions() {
 		$args = func_get_args();
-		return new Mongodloid_Cursor(self::getResult($this->_collection->aggregate($args)));
+		return new Mongodloid_Cursor($this->_collection->aggregate($args));
 	}
 
 	public function setTimeout($timeout) {

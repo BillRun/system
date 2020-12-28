@@ -39,10 +39,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		}
 		$this->_cursor = $cursor;
 		
-//		if ($this->_cursor instanceof Traversable) {
-//			$this->rewind();
-//			$this->valid();
-//		}
+		if ($this->_cursor instanceof Traversable) {
+			$this->_iterator = new IteratorIterator($cursor);
+			$this->rewind();
+			$this->valid();
+		}
 		
 		$this->_isValid = true;
 	}
@@ -66,7 +67,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 	
 	public function count($foundOnly = true) {//
-		return $this->_cursor->count($foundOnly);
+		return $this->_iterator->count($foundOnly);
 	}
 
 	/**
@@ -76,64 +77,64 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
-		if (method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) {
+		if (method_exists($this->_iterator, 'hasNext') && !$this->_iterator->current() && $this->_iterator->hasNext()) {
 			$this->next();
 		}
 		
-		return $this->getRaw ? $this->_cursor->current() :  new Mongodloid_Entity($this->_cursor->current(), null, false);
+		return $this->getRaw ? $this->_iterator->current() :  new Mongodloid_Entity($this->_iterator->current(), null, false);
 	}
 
 	public function key() {
-		return $this->_cursor->key();
+		return $this->_iterator->key();
 	}
 
 	public function next() {
-		return $this->_cursor->next();
+		return $this->_iterator->next();
 	}
 
 	public function rewind() {
-		$this->_cursor->rewind();
+		$this->_iterator->rewind();
 		return $this;
 	}
 
 	public function valid() {
-		return $this->_cursor->valid();
+		return $this->_iterator->valid();
 	}
 
 	public function sort(array $fields) {
-		if (method_exists($this->_cursor, 'sort')) {
-			$this->_cursor->sort($fields);
+		if (method_exists($this->_iterator, 'sort')) {
+			$this->_iterator->sort($fields);
 		}
 		return $this;
 	}
 
 	public function limit($limit) {
-		if (method_exists($this->_cursor, 'limit')) {
-			$this->_cursor->limit(intval($limit));
+		if (method_exists($this->_iterator, 'limit')) {
+			$this->_iterator->limit(intval($limit));
 		}
 		return $this;
 	}
 
 	public function skip($limit) {
-		if (method_exists($this->_cursor, 'skip')) {
-			$this->_cursor->skip(intval($limit));
+		if (method_exists($this->_iterator, 'skip')) {
+			$this->_iterator->skip(intval($limit));
 		}
 		return $this;
 	}
 
 	public function hint(array $key_pattern) {
-		if (method_exists($this->_cursor, 'hint')) {
+		if (method_exists($this->_iterator, 'hint')) {
 			if (empty($key_pattern)) {
 				return;
 			}
-			$this->_cursor->hint($key_pattern);
+			$this->_iterator->hint($key_pattern);
 		}
 		return $this;
 	}
 
 	public function explain() {
-		if (method_exists($this->_cursor, 'explain')) {
-			return $this->_cursor->explain();
+		if (method_exists($this->_iterator, 'explain')) {
+			return $this->_iterator->explain();
 		}
 		return false;
 	}
@@ -192,24 +193,24 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function timeout($ms) {
-		if (method_exists($this->_cursor, 'maxTimeMS')) {
-			$this->_cursor->maxTimeMS($ms);
-		} else if (method_exists($this->_cursor, 'timeout')) {
-			$this->_cursor->timeout($ms);
+		if (method_exists($this->_iterator, 'maxTimeMS')) {
+			$this->_iterator->maxTimeMS($ms);
+		} else if (method_exists($this->_iterator, 'timeout')) {
+			$this->_iterator->timeout($ms);
 		}
 		return $this;
 	}
 
 	public function immortal($liveForever = true) {
-		if (method_exists($this->_cursor, 'immortal')) {
-			$this->_cursor->immortal($liveForever);
+		if (method_exists($this->_iterator, 'immortal')) {
+			$this->_iterator->immortal($liveForever);
 		}
 		return $this;
 	}
 	
 	public function fields(array $fields) {
-		if (method_exists($this->_cursor, 'fields')) {
-			$this->_cursor->fields($fields);
+		if (method_exists($this->_iterator, 'fields')) {
+			$this->_iterator->fields($fields);
 		}
 		return $this;
 	}

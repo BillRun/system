@@ -27,19 +27,24 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @param \MongoDb $db
 	 * @param \Mongodloid_Connection $connection
 	 */
-	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
+	public function __construct(\MongoDB\Database $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		// TODO: refatoring the collections to factory (loose coupling)
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
 		if ($this->compareClientVersion('1.5.3', '<')) {
 			Billrun_Factory::log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
-			@MongoCursor::$timeout = $timeout;
+			@Mongodloid_Cursor::$timeout = (int) $timeout;
 		} else {
 			// see also bugs: 
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
-			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
+			$options = [
+				'readPreference' => $this->_db->getReadPreference(),
+				'writeConcern' => new \MongoDB\Driver\WriteConcern($this->_db->getWriteConcern()->getW() ?? 1, max($timeout, 0))
+			];
+			$this->_db = $this->_db->withOptions($options);
+//			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
 		}
 	}
 	

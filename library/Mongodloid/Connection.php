@@ -16,11 +16,11 @@ class Mongodloid_Connection {
 	protected $username = '';
 	protected $password = '';
 	static public $availableReadPreferences = array(
-		MongoDB\Driver\ReadPreference::RP_PRIMARY,
-		MongoDB\Driver\ReadPreference::RP_PRIMARY_PREFERRED,
-		MongoDB\Driver\ReadPreference::RP_SECONDARY,
-		MongoDB\Driver\ReadPreference::RP_SECONDARY_PREFERRED,
-		MongoDB\Driver\ReadPreference::RP_NEAREST,
+		MongoDB\Driver\ReadPreference::PRIMARY ,
+		MongoDB\Driver\ReadPreference::PRIMARY_PREFERRED ,
+		MongoDB\Driver\ReadPreference::SECONDARY,
+		MongoDB\Driver\ReadPreference::SECONDARY_PREFERRED,
+		MongoDB\Driver\ReadPreference::NEAREST,
 	);
 
 	/**
@@ -86,12 +86,15 @@ class Mongodloid_Connection {
 
 		if (isset($options['readPreference'])) {
 			$readPreference = $options['readPreference'];
+			if (substr($readPreference, 0, strlen('RP_')) == 'RP_') {
+				$readPreference = substr($readPreference, strlen('RP_'));
+			}
 			unset($options['readPreference']);
 		}
 		
-//		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
-//			$options['readPreference'] = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
-//		}
+		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$options['readPreference'] = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		}
 
 		if (isset($options['tags'])) {
 			$options['readPreferenceTags'] = (array) $options['tags'];
