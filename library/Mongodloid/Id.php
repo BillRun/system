@@ -18,16 +18,16 @@ class Mongodloid_Id {
 		return $this->_mongoID;
 	}
 
-	public function setMongoID(MongoID $id) {
+	public function setMongoID(MongoDB\BSON\ObjectId $id) {
 		$this->_mongoID = $id;
-		$this->_stringID = (string) $this->_mongoID;
+		$this->_stringID = $this->_mongoID->__toString();
 	}
 
 	public function __construct($base = null) {
-		if ($base instanceOf MongoID) {
+		if ($base instanceOf MongoDB\BSON\ObjectId) {
 			$this->setMongoID($base);
 		} else {
-			$this->setMongoID(new MongoID($base));
+			$this->setMongoID(new MongoDB\BSON\ObjectId($base));
 		}
 	}
 

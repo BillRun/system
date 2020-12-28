@@ -11,7 +11,7 @@ class Mongodloid_Db {
 	protected $_connection;
 	protected $_collections = array();
 
-	public function __construct(MongoDb $db, Mongodloid_Connection $connection) {
+	public function __construct(MongoDB\Database $db, Mongodloid_Connection $connection) {
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
@@ -24,7 +24,7 @@ class Mongodloid_Db {
 	}
 
 	public function getName() {
-		return (string) $this->_db;
+		return (string) $this->_db->getDatabaseName();
 	}
 
 	public function command(array $command, array $options = array()) {
@@ -103,7 +103,7 @@ class Mongodloid_Db {
 	 * 
 	 * @return string version
 	 */
-	public function getClientVersion() {
+	public function getClientVersion() {//
 		return MongoClient::VERSION;
 	}
 
@@ -112,7 +112,7 @@ class Mongodloid_Db {
 	 * 
 	 * @return string version
 	 */
-	public function getServerVersion() {
+	public function getServerVersion() {//
 		$mongodb_info = $this->_db->command(array('buildinfo' => true));
 		return $mongodb_info['version'];
 	}
@@ -160,14 +160,4 @@ class Mongodloid_Db {
 		return $servers[0]->getType() === MongoDB\Driver\Server::TYPE_STANDALONE;
 	}
 
-	/**
-     * Fetches the document pointed to by a database reference
-     *
-     * @link http://www.php.net/manual/en/mongocollection.getdbref.php
-     * @param array $ref A database reference.
-     * @return array Returns the database document pointed to by the reference.
-     */
-	public function getDBRef($ref){//todo:: need to implement 
-		
-	}
 }

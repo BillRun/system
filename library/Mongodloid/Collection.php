@@ -374,7 +374,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @return array
 	 */
-	public function getRef($ref) {
+	public function getRef($ref) {//
 		if (!MongoDBRef::isRef($ref)) {
 			return;
 		}
@@ -388,7 +388,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @return MongoDBRef
 	 */
-	public function createRefByEntity($entity) {
+	public function createRefByEntity($entity) {//
 		// TODO: Validate the entity?
 		if (is_array($entity)) {
 			$refData = $entity;
@@ -407,7 +407,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @return MongoDBRef
 	 */
-	public function createRef($document_or_id) {
+	public function createRef($document_or_id) {//
 		if ($document_or_id instanceof Mongodloid_Id) {
 			$id = $document_or_id->getMongoID();
 		} elseif (is_object($document_or_id)) {

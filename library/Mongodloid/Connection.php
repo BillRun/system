@@ -50,7 +50,7 @@ class Mongodloid_Connection {
 			}
 			$options['db'] = $db;
 			$this->forceConnect($options);
-			$newDb = $this->_connection->selectDB($db);
+			$newDb = $this->_connection->selectDatabase($db);
 
 			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
@@ -88,12 +88,14 @@ class Mongodloid_Connection {
 			$readPreference = $options['readPreference'];
 			unset($options['readPreference']);
 		}
+		
+//		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+//			$options['readPreference'] = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+//		}
 
 		if (isset($options['tags'])) {
-			$tags = (array) $options['tags'];
+			$options['readPreferenceTags'] = (array) $options['tags'];
 			unset($options['tags']);
-		} else {
-			$tags = array();
 		}
 
 		if (isset($options['context'])) {
@@ -105,13 +107,13 @@ class Mongodloid_Connection {
 		} else {
 			$driver_options = array();
 		}
-
-		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
-
-		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
-			$this->_connection->setReadPreference(constant('MongoDB\Driver\ReadPreference::' . $readPreference), $tags);
+		
+		if(isset($this->_server) && false === strpos($this->_server, '://')){
+			$this->_server = 'mongodb://' . $this->_server;
 		}
+		
+		// this can throw an Exception
+		$this->_connection = new MongoDB\Client($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
 		$this->_connected = true;
 	}
@@ -165,7 +167,7 @@ class Mongodloid_Connection {
 	 * @return MongoDB\Client
 	 */
 	protected function getClient() {
-		return $this->_connection->getClient();
+		return $this->_connection;
 	}
 	
 	/**
@@ -174,7 +176,7 @@ class Mongodloid_Connection {
 	 * @return MongoDB\Driver\Session
 	 */
 	public function startSession() {
-		return $this->getClient()->startSession();
+		return $this->getClient()->getManager()->startSession();
 	}
 	
 	/**

@@ -65,7 +65,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->_isValid;
 	}
 	
-	public function count($foundOnly = true) {
+	public function count($foundOnly = true) {//
 		return $this->_cursor->count($foundOnly);
 	}
 
@@ -166,7 +166,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return mixed array in case of include tage else string (the string would be the rp constant)
 	 */
 	public function getReadPreference($includeTage = false) {
-		if (!method_exists($this->_cursor, 'setReadPreference')) {
+		if (!method_exists($this->_cursor, 'getReadPreference')) {
 			return false;
 		}
 		$ret = $this->_cursor->getReadPreference();
