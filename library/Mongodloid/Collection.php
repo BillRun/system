@@ -714,9 +714,7 @@ class Mongodloid_Collection {
 	}
 
 	private static function buildRemoveResult($result) {
-		if (!$result) {
-			return false;
-		}
+
 
 		if (!$result->isAcknowledged()) {
 			return true;
@@ -731,9 +729,7 @@ class Mongodloid_Collection {
 	}
 
 	private static function buildUpdateResult($result) {
-		if (!$result) {
-			return false;
-		}
+		
 
 		if (!$result->isAcknowledged()) {
 			return true;
@@ -787,7 +783,9 @@ class Mongodloid_Collection {
 	 * @return mixed
 	 */
 	private static function convertBSONObjectToLegacy(BSON\Type $value) {
-
+		if (!$value) {
+			return false;
+		}
 		switch (true) {
 			case $value instanceof BSON\ObjectID:
 				return new \MongoId($value);
