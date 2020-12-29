@@ -196,9 +196,9 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$project = array();
 		$sub_push = array();
 		foreach ($this->passthroughFields as $accountField) {
-			$group[$accountField] = array('$addToSet' => ['$cond' => [['$eq' => ['$type','account']], '$' . $accountField, '$$REMOVE']]);
+			$group[$accountField] = array('$addToSet' => '$' . $accountField);
 			$group2[$accountField] = array('$first' => '$' . $accountField);
-			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
+			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, -1));
 		}
 		
 		foreach ($this->subsPassthroughFields as $subscriberField) {
