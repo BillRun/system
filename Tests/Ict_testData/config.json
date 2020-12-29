@@ -599,10 +599,16 @@
 						]
 					},
 					"file_types": [
+
 						{
-							"file_type": "Preprice_Dynamic",
+							"file_type": "abc",
 							"parser": {
 								"type": "separator",
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								},
 								"separator": ",",
 								"structure": [
 									{
@@ -624,10 +630,6 @@
 									{
 										"name": "rate",
 										"checked": true
-									},
-									{
-										"name": "preprice",
-										"checked": true
 									}
 								],
 								"csv_has_header": true,
@@ -637,62 +639,56 @@
 									"date",
 									"usage",
 									"volume",
-									"rate",
-									"preprice"
-								],
-								"line_types": {
-									"H": "/^none$/",
-									"D": "//",
-									"T": "/^none$/"
-								}
+									"rate"
+								]
 							},
 							"processor": {
 								"type": "Usage",
 								"date_field": "date",
 								"usaget_mapping": [
 									{
-										"usaget": "call",
-										"unit": "seconds",
-										"volume_type": "field",
-										"volume_src": [
-											"volume"
-										],
 										"conditions": [
 											{
 												"src_field": "usage",
 												"pattern": "call",
 												"op": "$eq"
 											}
-										]
-									},
-									{
-										"usaget": "sms",
-										"unit": "counter",
+										],
+										"usaget": "call",
+										"unit": "seconds",
 										"volume_type": "field",
 										"volume_src": [
 											"volume"
-										],
+										]
+									},
+									{
 										"conditions": [
 											{
 												"src_field": "usage",
 												"pattern": "sms",
 												"op": "$eq"
 											}
-										]
-									},
-									{
-										"usaget": "data",
-										"unit": "mb1000",
+										],
+										"usaget": "sms",
+										"unit": "counter",
 										"volume_type": "field",
 										"volume_src": [
 											"volume"
-										],
+										]
+									},
+									{
 										"conditions": [
 											{
 												"src_field": "usage",
 												"pattern": "data",
 												"op": "$eq"
 											}
+										],
+										"usaget": "data",
+										"unit": "mb1000",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
 										]
 									}
 								],
@@ -772,9 +768,7 @@
 							},
 							"pricing": {
 								"call": [],
-								"sms": {
-									"aprice_field": "preprice"
-								},
+								"sms": [],
 								"data": []
 							},
 							"receiver": {
@@ -784,533 +778,14 @@
 										"passive": false,
 										"delete_received": false,
 										"name": "Preprice_Dynamic",
-										"host": "",
+										"host": "127.0.0.1",
 										"user": "",
 										"password": "",
-										"remote_directory": "/yossi"
+										"remote_directory": "/yossi",
+										"receiver_type": "ftp"
 									}
 								],
 								"limit": 3
-							},
-							"unify": [],
-							"enabled": true
-						},
-						{
-							"file_type": "Static_Wholesale_Sftp_dateFormat",
-							"parser": {
-								"type": "separator",
-								"separator": ",",
-								"structure": [
-									{
-										"name": "sid",
-										"checked": true
-									},
-									{
-										"name": "date",
-										"checked": true
-									},
-									{
-										"name": "time",
-										"checked": true
-									},
-									{
-										"name": "usage",
-										"checked": true
-									},
-									{
-										"name": "volume",
-										"checked": true
-									},
-									{
-										"name": "RetailRate",
-										"checked": true
-									},
-									{
-										"name": "WholesaleRate",
-										"checked": true
-									}
-								],
-								"csv_has_header": true,
-								"csv_has_footer": false,
-								"custom_keys": [
-									"sid",
-									"date",
-									"time",
-									"usage",
-									"volume",
-									"RetailRate",
-									"WholesaleRate"
-								],
-								"line_types": {
-									"H": "/^none$/",
-									"D": "//",
-									"T": "/^none$/"
-								}
-							},
-							"processor": {
-								"type": "Usage",
-								"date_field": "date",
-								"default_usaget": "call",
-								"default_unit": "seconds",
-								"default_volume_src": [
-									"volume"
-								],
-								"time_field": "time",
-								"date_format": "Y-m-d",
-								"time_format": "H:i:s",
-								"orphan_files_time": "6 hours"
-							},
-							"customer_identification_fields": {
-								"call": [
-									{
-										"target_key": "sid",
-										"src_key": "sid",
-										"conditions": [
-											{
-												"field": "usaget",
-												"regex": "/.*/"
-											}
-										],
-										"clear_regex": "//"
-									}
-								]
-							},
-							"rate_calculators": {
-								"retail": {
-									"call": [
-										[
-											{
-												"type": "match",
-												"rate_key": "key",
-												"line_key": "RetailRate"
-											}
-										]
-									]
-								},
-								"wholesale": {
-									"call": [
-										[
-											{
-												"type": "match",
-												"rate_key": "key",
-												"line_key": "WholesaleRate"
-											}
-										]
-									]
-								}
-							},
-							"pricing": {
-								"call": []
-							},
-							"receiver": {
-								"type": "ssh",
-								"connections": [
-									{
-										"passive": false,
-										"host": "10.162.20.9",
-										"receiver_type": "ssh",
-										"name": "Static_Wholesale_Sftp_dateFormat",
-										"user": "yossi",
-										"remote_directory": "/home/yossi/files",
-										"delete_received": false,
-										"password": "",
-										"key": "Static_Wholesale_Sftp_dateFormat_1515665248"
-									}
-								],
-								"limit": 3
-							},
-							"unify": [],
-							"filters": [],
-							"enabled": true
-						},
-						{
-							"file_type": "computed_regex",
-							"parser": {
-								"type": "separator",
-								"separator": ",",
-								"structure": [
-									{
-										"name": "sid",
-										"checked": true
-									},
-									{
-										"name": "date",
-										"checked": true
-									},
-									{
-										"name": "usage",
-										"checked": true
-									},
-									{
-										"name": "volume",
-										"checked": true
-									},
-									{
-										"name": "rate",
-										"checked": true
-									}
-								],
-								"csv_has_header": true,
-								"csv_has_footer": false,
-								"custom_keys": [
-									"sid",
-									"date",
-									"usage",
-									"volume",
-									"rate"
-								],
-								"line_types": {
-									"H": "/^none$/",
-									"D": "//",
-									"T": "/^none$/"
-								}
-							},
-							"processor": {
-								"type": "Usage",
-								"date_field": "date",
-								"default_usaget": "call",
-								"default_unit": "seconds",
-								"default_volume_src": [
-									"volume"
-								],
-								"orphan_files_time": "6 hours"
-							},
-							"customer_identification_fields": {
-								"call": [
-									{
-										"target_key": "sid",
-										"src_key": "sid",
-										"conditions": [
-											{
-												"field": "usaget",
-												"regex": "/.*/"
-											}
-										],
-										"clear_regex": "/(123/"
-									}
-								]
-							},
-							"rate_calculators": {
-								"retail": {
-									"call": [
-										[
-											{
-												"type": "match",
-												"rate_key": "key",
-												"line_key": "computed",
-												"computed": {
-													"line_keys": [
-														{
-															"key": "rate"
-														},
-														{
-															"key": "rate"
-														}
-													],
-													"operator": "$eq",
-													"type": "condition",
-													"must_met": false,
-													"projection": {
-														"on_true": {
-															"key": "rate"
-														}
-													}
-												}
-											}
-										]
-									]
-								}
-							},
-							"pricing": {
-								"call": []
-							},
-							"receiver": {
-								"type": "ftp",
-								"connections": [
-									{
-										"passive": false,
-										"delete_received": false,
-										"name": "computed_regex",
-										"host": "46.101.149.208",
-										"user": "ftp_user",
-										"password": "",
-										"remote_directory": "/yossi"
-									}
-								],
-								"limit": 3
-							},
-							"unify": [],
-							"enabled": true
-						},
-						{
-							"file_type": "realTime",
-							"type": "realtime",
-							"parser": {
-								"type": "json",
-								"separator": "",
-								"structure": [
-									{
-										"name": "sid",
-										"checked": true
-									},
-									{
-										"name": "date",
-										"checked": true
-									},
-									{
-										"name": "usage",
-										"checked": true
-									},
-									{
-										"name": "volume",
-										"checked": true
-									},
-									{
-										"name": "rate",
-										"checked": true
-									}
-								],
-								"csv_has_header": false,
-								"csv_has_footer": false,
-								"custom_keys": [
-									"sid",
-									"date",
-									"usage",
-									"volume",
-									"rate"
-								],
-								"line_types": {
-									"H": "/^none$/",
-									"D": "//",
-									"T": "/^none$/"
-								}
-							},
-							"processor": {
-								"type": "Realtime",
-								"date_field": "date",
-								"default_usaget": "call",
-								"default_unit": "seconds",
-								"default_volume_src": [
-									"volume"
-								],
-								"orphan_files_time": "6 hours"
-							},
-							"customer_identification_fields": {
-								"call": [
-									{
-										"target_key": "sid",
-										"src_key": "sid",
-										"conditions": [
-											{
-												"field": "usaget",
-												"regex": "/.*/"
-											}
-										],
-										"clear_regex": "//"
-									}
-								]
-							},
-							"rate_calculators": {
-								"retail": {
-									"call": [
-										[
-											{
-												"type": "match",
-												"rate_key": "key",
-												"line_key": "rate"
-											}
-										]
-									]
-								}
-							},
-							"pricing": {
-								"call": []
-							},
-							"realtime": {
-								"postpay_charge": true
-							},
-							"response": {
-								"encode": "json",
-								"fields": [
-									{
-										"response_field_name": "requestNum",
-										"row_field_name": "request_num"
-									},
-									{
-										"response_field_name": "requestType",
-										"row_field_name": "request_type"
-									},
-									{
-										"response_field_name": "sessionId",
-										"row_field_name": "session_id"
-									},
-									{
-										"response_field_name": "returnCode",
-										"row_field_name": "granted_return_code"
-									},
-									{
-										"response_field_name": "sid",
-										"row_field_name": "sid"
-									},
-									{
-										"response_field_name": "grantedVolume",
-										"row_field_name": "usagev"
-									}
-								]
-							},
-							"unify": [],
-							"enabled": true
-						},
-						{
-							"file_type": "realTimePrepaid",
-							"type": "realtime",
-							"parser": {
-								"type": "json",
-								"separator": "",
-								"structure": [
-									{
-										"name": "sid",
-										"checked": true
-									},
-									{
-										"name": "date",
-										"checked": true
-									},
-									{
-										"name": "usage",
-										"checked": true
-									},
-									{
-										"name": "rate",
-										"checked": true
-									},
-									{
-										"name": "volume",
-										"checked": true
-									},
-									{
-										"name": "requset_type",
-										"checked": true
-									},
-									{
-										"name": "sessionID",
-										"checked": true
-									},
-									{
-										"name": "pretend0",
-										"checked": true
-									},
-									{
-										"name": "Rebalance",
-										"checked": true
-									}
-								],
-								"csv_has_header": false,
-								"csv_has_footer": false,
-								"custom_keys": [
-									"sid",
-									"date",
-									"usage",
-									"rate",
-									"volume",
-									"requset_type",
-									"sessionID",
-									"pretend0",
-									"Rebalance"
-								],
-								"line_types": {
-									"H": "/^none$/",
-									"D": "//",
-									"T": "/^none$/"
-								}
-							},
-							"processor": {
-								"type": "Realtime",
-								"date_field": "date",
-								"default_usaget": "call",
-								"default_unit": "seconds",
-								"default_volume_src": [
-									"volume"
-								],
-								"orphan_files_time": "6 hours"
-							},
-							"customer_identification_fields": {
-								"call": [
-									{
-										"target_key": "sid",
-										"src_key": "sid",
-										"conditions": [
-											{
-												"field": "usaget",
-												"regex": "/.*/"
-											}
-										],
-										"clear_regex": "//"
-									}
-								]
-							},
-							"rate_calculators": {
-								"retail": {
-									"call": [
-										[
-											{
-												"type": "match",
-												"rate_key": "key",
-												"line_key": "rate"
-											}
-										]
-									]
-								}
-							},
-							"pricing": {
-								"call": []
-							},
-							"realtime": {
-								"request_type_field": "requset_type",
-								"pretend_field": "pretend0",
-								"used_usagev_field": [
-									"Rebalance"
-								],
-								"session_id_fields": [
-									"sessionID"
-								],
-								"postpay_charge": false,
-								"rebalance_on_final": true,
-								"default_values": {
-									"initial_request": "10",
-									"update_request": "10",
-									"final_request": "0",
-									"default": "10"
-								}
-							},
-							"response": {
-								"encode": "json",
-								"fields": [
-									{
-										"response_field_name": "requestNum",
-										"row_field_name": "request_num"
-									},
-									{
-										"response_field_name": "requestType",
-										"row_field_name": "request_type"
-									},
-									{
-										"response_field_name": "sessionId",
-										"row_field_name": "session_id"
-									},
-									{
-										"response_field_name": "returnCode",
-										"row_field_name": "granted_return_code"
-									},
-									{
-										"response_field_name": "sid",
-										"row_field_name": "sid"
-									},
-									{
-										"response_field_name": "grantedVolume",
-										"row_field_name": "usagev"
-									}
-								]
 							},
 							"unify": [],
 							"filters": [],
