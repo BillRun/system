@@ -76,7 +76,7 @@ trait Tests_SetUp {
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
-		if (!$useExistingConfig) {
+		if ($useExistingConfig && $this->unitTestName == 'Ict_test') {
 			array_unshift($collectionsToSet, 'config');
 		}
 		foreach ($collectionsToSet as $file) {
