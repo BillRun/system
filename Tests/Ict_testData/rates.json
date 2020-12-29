@@ -1,0 +1,1074 @@
+{
+	"collection": "ratesCollection",
+	"data":
+			[
+				{
+					"key": "CALL-USA",
+					"code": "CALL-USA",
+					"description": "Calls to United States of America",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.5"
+									}
+								]
+							},
+							"PLAN-X3": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.4"
+									}
+								]
+							},
+
+							"groups": ["GROUPO", "AAA", "BBB"]
+						}
+					}
+				},
+				{
+					"key": "CALL-EUROPE",
+					"code": "CALL-EUROPE",
+					"description": "Calls to Europe",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "VEG",
+					"code": "VEG",
+					"description": "rate for basic vegtables",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"gr": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.2"
+									}
+								]
+							},
+							"groups": ["SR4", "AAA"]
+						}
+					}
+				},
+				{
+					"key": "NEW-CALL-USA",
+					"code": "NEW-CALL-USA",
+					"description": "Calls to United States of America",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.5"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "NEW-CALL-EUROPE",
+					"code": "NEW-CALL-EUROPE",
+					"description": "Calls to Europe",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "NEW-VEG",
+					"code": "NEW-VEG",
+					"description": "rate for basic vegtables",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"gr": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.2"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "SHARED-RATE",
+					"code": "SHARED-RATE",
+					"description": "rate for testing shared accounts",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-L3",
+					"code": "SHARED-RATE",
+					"description": "rate for testing shared accounts",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N1",
+					"code": "RATE-N1",
+					"description": "RATE-N1",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N1b",
+					"code": "RATE-N1b",
+					"description": "RATE-N1b",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"incoming_call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N3",
+					"code": "RATE-N3",
+					"description": "RATE-N3",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 30,
+										"price": 0.5
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O1",
+					"code": "RATE-O1",
+					"description": "RATE-O1",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.01
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O2",
+					"code": "RATE-O2",
+					"description": "RATE-O2",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 10,
+										"price": 0.01
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N5",
+					"code": "RATE-N5",
+					"description": "RATE-N5",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.5
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O4",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-Q1",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 10,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-Q2",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.05
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"from": "time*2016-10-04T04:00:00Z",
+					"key": "INTERNET",
+					"rates": {
+						"data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1000000,
+										"price": "1",
+										"uom_display": {
+											"range": "mb1000",
+											"interval": "mb1000"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "internet",
+					"params": {
+						"prefix": [],
+						"file_type": []
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-10-03T09:22:38Z",
+					"creation_time": "time*2016-10-04T04:00:00Z"
+				},
+				{
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call",
+					"params": {
+						"prefix": [
+							"770"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "retail"
+				},
+				{
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL_wholesale",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "0.5",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call_wholesale",
+					"params": [],
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "wholesale"
+				}, {
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL_A",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call",
+					"params": {
+						"phone": [
+							"972"
+						],
+						"code": [
+							"1"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "retail"
+				}, {
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL_B",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call",
+					"params": {
+						"phone": [
+							"97"
+						],
+						"code": [
+							"1234"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "retail"
+				},
+				{
+					"from": "time*2018-02-01T00:00:00Z",
+					"key": "SMS",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms",
+					"params": {
+						"code": [
+							"03"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:12:36Z",
+					"creation_time": "time*2017-11-01T00:00:00Z"
+				},
+				{
+
+					"from": "tim*2017-11-01T00:00:00Z",
+					"key": "SMS_OLD",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms",
+					"params": {
+						"code": [
+							"456789"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2018-02-01T00:00:00Z",
+					"creation_time": "time*2017-11-01T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-23T00:00:00Z",
+					"key": "SELF_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "0",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "self_call",
+					"params": {
+						"self": true
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-22T10:27:09Z",
+					"creation_time": "time*2017-03-23T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-23T00:00:00Z",
+					"key": "SELF_SMS",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "0",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "self_sms",
+					"params": {
+						"self": true
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-22T11:27:40Z",
+					"creation_time": "time*2017-03-23T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_A",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_a",
+					"params": {
+						"prefix_a": [
+							"1"
+						],
+						"prefix_b": [
+							"56"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T08:58:32Z",
+					"creation_time": "time*2017-03-26T00:00:00Z"
+				},
+				{
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_B",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 0,
+										"price": "",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_b",
+					"params": {
+						"prefix_b": [
+							"5"
+						],
+						"prefix_a": [
+							"12"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T08:59:44Z",
+					"creation_time": "time*2017-03-26T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_C",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_c",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T11:20:20Z",
+					"creation_time": "time*2017-03-26T00:00:00Z",
+					"params": {
+						"prefix_a": [
+							"123"
+						],
+						"prefix_b": [
+							"8"
+						]
+					}
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_GAZA",
+					"rates": {
+						"call_to_gaza": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_gaza",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:03:39",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_LA",
+					"rates": {
+						"call_to_la": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_la",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:04:32",
+					"creation_time": "time*2018-03-27T00:00:00",
+					"params": {
+						"abcdef": true
+					}
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_UK",
+					"rates": {
+						"call_uk": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_uk",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:03:10",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_USA",
+					"rates": {
+						"call_usa": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_usa",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:02:31",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "DATA",
+					"rates": {
+						"data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1000000,
+										"price": "1",
+										"uom_display": {
+											"range": "mb1000",
+											"interval": "mb1000"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "data",
+					"params": [],
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:13:13Z",
+					"creation_time": "time*2017-11-01T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-28T00:00:00Z",
+					"key": "MMS",
+					"rates": {
+						"mms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "mms",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-27T08:32:29Z",
+					"creation_time": "time*2017-03-28T00:00:00Z"
+				},
+				{
+					"from": "time*2017-03-28T00:00:00Z",
+					"key": "USA_DATA",
+					"rates": {
+						"roming_data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "byte",
+											"interval": "byte"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "usa_data",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-27T15:06:30Z",
+					"creation_time": "time*2017-03-28T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-04-11T21:00:00Z",
+					"key": "I_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": "0",
+										"to": "UNLIMITED",
+										"interval": "1",
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "i_call",
+					"params": {
+						"prefix": [
+							"051"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-04-11T13:35:36Z",
+					"creation_time": "time*2017-04-11T21:00:00Z"
+				}, {
+
+					"from": "time*2010-08-03T00:00:00Z",
+					"key": "pricing_method_volume",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 1,
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "pricing_method_volume",
+					"pricing_method": "volume",
+					"tariff_category": "retail",
+					"add_to_retail": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-08-02T16:33:39Z",
+					"creation_time": "time*2010-08-03T00:00:00Z"
+				}
+
+
+
+
+
+			]
+}
