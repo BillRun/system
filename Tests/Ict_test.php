@@ -39,12 +39,14 @@ class Tests_Icttest extends UnitTestCase {
 
 		}
 		parent::__construct("test Itc");
+		$request = new Yaf_Request_Http;
+		$this->useExistingConfig = $request->get('useExistingConfig');
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->TestsC = new Itc_test_cases();
 		$this->Tests = $this->TestsC->tests();
 		$this->configCol = Billrun_Factory::db()->configCollection();
 		$this->construct(basename(__FILE__, '.php'), ['queue']);
-		$this->setColletions();
+		$this->setColletions($this->useExistingConfig);
 		$this->loadDbConfig();
 	}
 
