@@ -6,9 +6,9 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
- * Billing calculator for  pricing  billing lines with customer price.
+ * All Billing calculators for  billing lines with uf.
  *
- * @package  calculator
+ * @package  calculators
  * @since    0.5
  */
 require_once(APPLICATION_PATH . '/library/Tests/Itc_test_cases.php');
@@ -20,19 +20,11 @@ class Tests_Icttest extends UnitTestCase {
 
 	use Tests_SetUp;
 
-	protected $db_name = billing_test;
-	protected $db;
-	protected $db_user = 'test';
-	protected $db_pass = 'test';
-	protected $ratesCol;
-	protected $plansCol;
-	protected $linesCol;
-	protected $calculator;
-	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
+	protected  $fails;
+	protected $message ='';
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
-	protected $rows = [
-	];
+	protected $rows = [];
 
 	public function __construct($label = false) {
 		//for PHP<7.3
@@ -50,12 +42,7 @@ class Tests_Icttest extends UnitTestCase {
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->TestsC = new Itc_test_cases();
 		$this->Tests = $this->TestsC->tests();
-		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
-		$this->plansCol = Billrun_Factory::db()->plansCollection();
-		$this->linesCol = Billrun_Factory::db()->linesCollection();
-		$this->queueCol = Billrun_Factory::db()->queueCollection();
 		$this->configCol = Billrun_Factory::db()->configCollection();
-		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$this->construct(basename(__FILE__, '.php'), ['queue']);
 		$this->setColletions();
 		$this->loadDbConfig();
@@ -64,14 +51,15 @@ class Tests_Icttest extends UnitTestCase {
 	public function loadDbConfig() {
 		Billrun_Config::getInstance()->loadDbConfig();
 	}
-       /**
-	    * test runer
-	    */
+
+	/**
+	 * test runer
+	 */
 	public function testUpdateRow() {
 		foreach ($this->Tests as $key => $row) {
 			$data = $this->process($row);
 			$id = array_key_first($row['data']);
-                        $this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'].'</span><br>';
+			$this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'] . '</span><br>';
 			$testFail = $this->assertTrue($this->compareExpected($key, $row['expected'], $data[$id]));
 			if (!$testFail) {
 				$this->fails .= "| <a href='#{$row['test_num']}'>{$row['test_num']}</a> | ";
@@ -79,7 +67,7 @@ class Tests_Icttest extends UnitTestCase {
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
 		if ($this->fails) {
-			$this->message .='links to fail tests : <br>'. $this->fails;
+			$this->message .= 'links to fail tests : <br>' . $this->fails;
 		}
 		print_r($this->message);
 		$this->restoreColletions();
@@ -96,27 +84,28 @@ class Tests_Icttest extends UnitTestCase {
 			'type' => $row['data'][$id]["type"]
 		);
 		$data['data'] = $row['data'];
-		$data["header"] = ["header" => 1];
-		$data["trailer"] = ["trailer" => 1];
-		$_id = new MongoID($row['data'][$id]);
-		$data['data'][$id]['_id'] = $_id;
-		$queueLine = $data;
-		$queueLine['data'][$id]['calc_name'] = false;
-		$queueLine['data'][$id]['calc_time'] = false;
-		$queueLine['data'][$id]['in_queue_since'] = new MongoDate(1608660082);
-		$processor = Billrun_Processor::getInstance($options);
-		$processor->setQueueRow($queueLine['data'][$id]);
+		$fileType = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);
+		$fileType['type'] = $row['data'][$id]["type"];
+		$usage = new Billrun_Processor_Usage($fileType);
+		$newRow = $usage->getBillRunLine($data['data'][$id]['uf']);
+		$data['data'][$id] = $newRow;
+		$queueLine = $newRow;
+		$queueLine['calc_name'] = false;
+		$queueLine['calc_time'] = false;
+		$queueLine['in_queue_since'] = new MongoDate(1608660082);
+		$usage->setQueueRow($queueLine);
 		$queueCalculators = new Billrun_Helpers_QueueCalculators($options);
-		$queueCalculators->run($processor, $data);
+		$queueCalculators->run($usage, $data);
 		return $data['data'];
 	}
-        /**
-		 * compare between expected and actual result
-		 * @param type $key
-		 * @param type $expected
-		 * @param type $data
-		 * @return boolean
-		 */
+
+	/**
+	 * compare between expected and actual result
+	 * @param type $key
+	 * @param type $expected
+	 * @param type $data
+	 * @return boolean
+	 */
 	protected function compareExpected($key, $expected, $data) {
 		$result = true;
 		foreach ($expected as $expectedKey => $expectedLine) {
@@ -128,23 +117,20 @@ class Tests_Icttest extends UnitTestCase {
 					$DataField = Billrun_Util::getIn($data, $k);
 					$nestedKey = explode('.', $k);
 					$k = end($nestedKey);
-
 					$nested = true;
 				}
 				$DataField = $nested ? $DataField : $data[$k];
-				//check the key existst
 				if (!$nested) {
-					if (empty(!array_key_exists($k, $array))) {
+					if (empty(array_key_exists($k, $data))) {
 						$this->message .= ' 	-- the result key isnt exists' . $this->fail;
 						$result = false;
 					}
 				}
-				//check the return value  isn't empty
+
 				if (empty($DataField)) {
 					$this->message .= '-- the result is empty' . $this->fail;
 					$result = false;
 				}
-				//check the return value is not diffrent from the expected 
 				if ($DataField != $v) {
 					$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
 					$result = false;
