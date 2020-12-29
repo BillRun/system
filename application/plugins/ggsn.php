@@ -450,7 +450,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = false;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+				//Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
@@ -603,7 +603,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				'bit' => 0x1,
 				'fields' => [
 					'lac'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 3 ],
-					'ci'=> ['encode' => 'h2','size' => 2,'method'=> 'unpack','offset'=> 5 ]
+					'ci'=> ['encode' => 'H4','size' => 2,'method'=> 'unpack','offset'=> 5 ]
 				]
 			],
 			'sai' => [
