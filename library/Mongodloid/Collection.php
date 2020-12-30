@@ -281,10 +281,8 @@ class Mongodloid_Collection {
 	/**
 	 * @return MongoCursor a cursor for the search results.
 	 */
-	public function find($query, $fields = array()) {
-		return new Mongodloid_Cursor($this->_collection->find($query, $fields));
-//		$cursor = $this->_collection->find($query, $fields);
-//		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
+	public function find($query, $options = array()) {
+		return new Mongodloid_Cursor($this->_collection->find($query, $options));
 	}
 
 	/**
@@ -709,7 +707,7 @@ class Mongodloid_Collection {
 			case 'deleteOne':
 				return self::buildRemoveResult($result);
 			default:
-				return $result;
+				return self::toLegacy($result);
 		}
 	}
 
@@ -745,50 +743,50 @@ class Mongodloid_Collection {
 		];
 	}
 
-//	/**
-//	 * Converts a BSON type to the legacy types
-//	 *
-//	 * This method handles type conversion from ext-mongodb to ext-mongo:
-//	 *  - For all instances of BSON\Type it returns an object of the
-//	 *    corresponding legacy type (MongoId, MongoDate, etc.)
-//	 *  - For arrays and objects it iterates over properties and converts each
-//	 *    item individually
-//	 *  - For other types it returns the value unconverted
-//	 *
-//	 * @param mixed $value
-//	 * @return mixed
-//	 */
-//	public static function toLegacy($value) {
-//		switch (true) {
-//			case $value instanceof BSON\Type:
-//				return self::convertBSONObjectToLegacy($value);
-//			case is_array($value):
-//			case is_object($value):
-//				$result = [];
-//
-//				foreach ($value as $key => $item) {
-//					$result[$key] = self::toLegacy($item);
-//				}
-//
-//				return $result;
-//			default:
-//				return $value;
-//		}
-//	}
+	/**
+	 * Converts a BSON type to the Mongodloid types
+	 *
+	 * This method handles type conversion from ext-mongodb to ext-mongo:
+	 *  - For all instances of BSON\Type it returns an object of the
+	 *    corresponding legacy type (MongoId, MongoDate, etc.)
+	 *  - For arrays and objects it iterates over properties and converts each
+	 *    item individually
+	 *  - For other types it returns the value unconverted
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public static function toLegacy($value) {
+		switch (true) {
+			case $value instanceof MongoDB\BSON\Type:
+				return self::convertBSONObjectToMongodloid($value);
+			case is_array($value):
+			case is_object($value):
+				$result = [];
+
+				foreach ($value as $key => $item) {
+					$result[$key] = self::toLegacy($item);
+				}
+
+				return $result;
+			default:
+				return $value;
+		}
+	}
 
 	/**
-	 * Converter method to convert a BSON object to its legacy type
+	 * Converter method to convert a BSON object to its Mongodloid type
 	 *
 	 * @param BSON\Type $value
 	 * @return mixed
 	 */
-//	private static function convertBSONObjectToLegacy(BSON\Type $value) {
-//		if (!$value) {
-//			return false;
-//		}
-//		switch (true) {
-//			case $value instanceof BSON\ObjectID:
-//				return new \MongoId($value);
+	private static function convertBSONObjectToMongodloid(MongoDB\BSON\Type $value) {
+		if (!$value) {
+			return false;
+		}
+		switch (true) {
+			case $value instanceof MongoDB\BSON\ObjectID:
+				return new Mongodloid_Id($value);
 //			case $value instanceof BSON\Binary:
 //				return new \MongoBinData($value);
 //			case $value instanceof BSON\Javascript:
@@ -797,22 +795,22 @@ class Mongodloid_Collection {
 //				return new \MongoMaxKey();
 //			case $value instanceof BSON\MinKey:
 //				return new \MongoMinKey();
-//			case $value instanceof BSON\Regex:
-//				return new \MongoRegex($value);
+			case $value instanceof MongoDB\BSON\Regex:
+				return new Mongodloid_Regex($value);
 //			case $value instanceof BSON\Timestamp:
 //				return new \MongoTimestamp($value);
-//			case $value instanceof BSON\UTCDatetime:
-//				return new \MongoDate($value);
-//			case $value instanceof Model\BSONDocument:
-//			case $value instanceof Model\BSONArray:
-//				return array_map(
-//					['self', 'toLegacy'],
-//					$value->getArrayCopy()
-//				);
-//			default:
-//				return $value;
-//		}
-//	}
+			case $value instanceof MongoDB\BSON\UTCDatetime:
+				return new Mongodloid_Date($value);
+			case $value instanceof MongoDB\Model\BSONDocument:
+			case $value instanceof MongoDB\Model\BSONArray:
+				return array_map(
+					['self', 'toLegacy'],
+					$value->getArrayCopy()
+				);
+			default:
+				return $value;
+		}
+	}
 
 	private static function getCallingMethodName() {
 		return debug_backtrace()[1]['function'];
