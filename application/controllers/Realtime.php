@@ -42,7 +42,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
-		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
+		$this->config = $this->getConfig();
 		if (!$this->config) {
 			Billrun_Factory::log('File type cannot be loaded', Zend_Log::ALERT);
 			throw new Billrun_Exceptions_Api(10000, 'Cannot load file type');
@@ -62,6 +62,16 @@ class RealtimeController extends ApiController {
 		}
 
 		$this->event['uf'] = $decoder->decode($requestBody);
+	}
+	
+	/**
+	 * get input processor configuration
+	 *
+	 * @return array
+	 */
+	protected function getConfig() {
+		$request = $this->getRequest()->getRequest();
+		return Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
 	}
 
 	/**
@@ -157,10 +167,15 @@ class RealtimeController extends ApiController {
 		$options['parser'] = 'none';
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
-			$processor->addDataRow($this->event);
+			$multiLines = !Billrun_Util::isAssoc($this->event);
+			$rows = $multiLines ? $this->event : [$this->event];
+			foreach ($rows as $row) {
+				$processor->addDataRow($row);
+			}
 			$processor->process($this->config);
 			$data = $processor->getData()['data'];
-			return current($processor->getAllLines());
+			$allLines = $processor->getAllLines();
+			return $multiLines ? $allLines : current($allLines);
 		}
 	}
 
@@ -210,6 +225,15 @@ class RealtimeController extends ApiController {
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
+	/**
+	 * allows setting an HTTP status code for the response
+	 *
+	 * @param  int $httpStatusCode
+	 */
+	protected function setHttpStatusCode($httpStatusCode) {
+		$this->getResponse()->setHeader($this->getRequest()->getServer('SERVER_PROTOCOL'), $httpStatusCode);
 	}
 
 }
