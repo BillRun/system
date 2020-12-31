@@ -757,9 +757,7 @@ abstract class Billrun_PaymentGateway {
 		return array();
 	}
 	
-	public function getSecretFields() {
-		return array();
-	}
+	abstract public function getSecretFields();
 
 	public function getExportParameters() {
 		return array();
