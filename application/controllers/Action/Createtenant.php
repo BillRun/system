@@ -47,7 +47,8 @@ class CreatetenantAction extends ApiAction {
 			!$this->createConfigFile() ||
 			!$this->createDB() ||
 			!$this->createUserInTenantBillrun() ||
-			!$this->createDbConfig() ||
+			!$this->createDbConfig('create_tenant.db_base_config', $this->db->configCollection()) ||
+			!$this->createDbConfig('create_tenant.db_taxes_config', $this->db->taxesCollection()) ||
 			!$this->createTenantFolders()) {
 			Billrun_Factory::log('Create Tenant - error: ' . $this->desc, Zend_Log::INFO);
 			$this->status = false;
@@ -56,11 +57,20 @@ class CreatetenantAction extends ApiAction {
 		$this->response();
 	}
 
+	/**
+	 * method that check if the request source IP is allowed to call create tenant
+	 * 
+	 * @return boolean true if allowed else false
+	 */
 	protected function isWhiteListed() {
-		$ip = $_SERVER['REMOTE_ADDR'];
-		Billrun_Factory::log('Create Tenant - Got request from: ' . $ip, Zend_Log::INFO);
+		$ip_list = array($_SERVER['REMOTE_ADDR']);
+		if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+			$ip_list_forward = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+			$ip_list = array_merge($ip_list, $ip_list_forward);
+		}
+		Billrun_Factory::log('Create Tenant - Got request from: ' . implode(', ', $ip_list), Zend_Log::INFO);
 		$whiteList = Billrun_Factory::config()->getConfigValue('create_tenant.remotes.white_list', array());
-		return in_array($ip, $whiteList);
+		return !empty(array_intersect($ip_list, $whiteList));
 	}
 
 	public function init() {
@@ -180,11 +190,11 @@ class CreatetenantAction extends ApiAction {
 	 * 
 	 * @return boolean
 	 */
-	protected function createDbConfig() {
-		Billrun_Factory::log('Create Tenant - Creating DB configuration', Zend_Log::INFO);
-		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue('create_tenant.db_base_config', '');
+	protected function createDbConfig($configPathKey, $collection) {
+		Billrun_Factory::log('Create Tenant - Creating DB configuration ' . $configPathKey, Zend_Log::INFO);
+		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue($configPathKey, '');
 		if (empty($baseDbConfigJson = file_get_contents($baseDbConfigPath))) {
-			$this->desc = 'Basic db config was not found in path: "' . $baseDbConfigPath . '"';
+			$this->desc = 'Basic db config ' . $configPathKey . ' was not found in path: "' . $baseDbConfigPath . '"';
 			return false;
 		}
 
@@ -192,9 +202,13 @@ class CreatetenantAction extends ApiAction {
 			$this->desc = 'Cannot parse basic DB config. Content: "' . $baseDbConfigJson . '"';
 			return false;
 		}
-		$this->addDbConfigData($dbConfig);
-		if (!$this->db->configCollection()->insert($dbConfig)) {
-			$this->desc = 'Cannot save config to DB.';
+		
+		if ($configPathKey == 'create_tenant.db_base_config') {
+			$this->addDbConfigData($dbConfig);
+		}
+		
+		if (!$collection->insert($dbConfig)) {
+			$this->desc = 'Cannot save config to DB ' . $configPathKey;
 			return false;
 		}
 		return true;

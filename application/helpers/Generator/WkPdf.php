@@ -530,6 +530,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', static::getCompanyName()) . DIRECTORY_SEPARATOR . $stamp . DIRECTORY_SEPARATOR;
 		if (!file_exists($tmpdirPath)) {
 			mkdir($tmpdirPath, 0775, true);
+			chmod($tmpdirPath, 0775);
 		}
 		return $tmpdirPath;
 	}
