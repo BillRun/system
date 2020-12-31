@@ -562,10 +562,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			Billrun_Factory::log("Not found matching lines to the unify line. stamp:" . $rowStamp, Zend_Log::ALERT);
 			return;
 		}
-		foreach ($linesToRestore as $lineToRestore){
-			unset($lineToRestore['u_s']);
-			Billrun_Factory::db()->linesCollection()->insert($lineToRestore);
-		}
+		Billrun_Factory::db()->linesCollection()->batchInsert($linesToRestore);
 		Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $rowStamp));
 		Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $rowStamp));
 		return $linesToRestore;
