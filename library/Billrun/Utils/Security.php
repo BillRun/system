@@ -94,7 +94,7 @@ class Billrun_Utils_Security {
 	 * @return bool true if oauth2 authentication passed
 	 * @throws Billrun_Exceptions_Auth
 	 */
-	protected static function validateOauth($throwException = false) {
+	public static function validateOauth($throwException = false, $scope = null) {
 		$oauth = Billrun_Factory::oauth2();
 		$oauthRequest = OAuth2\Request::createFromGlobals();
 		$oauth->getResourceController();
@@ -102,7 +102,7 @@ class Billrun_Utils_Security {
 		if (!$oauthToken->requestHasToken($oauthRequest)) {
 			return false;
 		}
-		if ($oauth->verifyResourceRequest($oauthRequest)) {
+		if ($oauth->verifyResourceRequest($oauthRequest, null, $scope)) {
 			return true;
 		} 
 		if ($throwException) {
