@@ -535,7 +535,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected function handleUpdatingFailure($query, $update, $key, $row) {
 		$updateFailedLines = array();
 		$incUpdate = $update;
-		unset($update['$inc']);
+		unset($update['$inc']['lcount']);
 		foreach ($update['$set'] as $field => $value) {
 			if ($field != 'process_time') {
 				unset($update['$set'][$field]);
