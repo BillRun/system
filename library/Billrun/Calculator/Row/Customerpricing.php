@@ -793,6 +793,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return boolean
 	 */
 	protected function isRebalanceRequired() {
+		if (isset($this->row['rebalance_required']) && !$this->row['rebalance_required']) {
+			return false;
+		}
+
 		if ($this->isPostpayChargeRequest()) {
 			return false;
 		}
@@ -801,6 +805,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		} else {
 			$rebalanceTypes = array('final_request', 'update_request');
 		}
+
 		return ($this->row['realtime'] && in_array($this->row['record_type'], $rebalanceTypes));
 	}
 
@@ -852,7 +857,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$findQuery = array(
 			"sid" => $this->row['sid'],
 			"session_id" => $this->row['session_id'],
+			"usagev" => ['$gt' => 0],
 		);
+		
+		foreach(Billrun_Util::getCustomerAndRateUf($this->row['type']) ?? [] as $sessionField) {
+			$value = Billrun_Util::getIn($this->row['uf'], $sessionField);
+			if (!is_null($value)) {
+				$findQuery["uf.{$sessionField}"] = $value;
+			}
+		}
+		
 		$sort = array(
 			'sid' => 1,
 			'session_id' => 1,
