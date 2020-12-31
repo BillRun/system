@@ -107,7 +107,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			return 0;
 		}
 		
-		$requestedUsagev = $this->getLineUsageVolume($row['uf'], $row['usaget'], true);//TODO: test this
+		$requestedUsagev = $this->getLineUsageVolume($row['uf'], $row['usaget'], true);
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST') || $requestedUsagev !== false) {
 			return $requestedUsagev;
 		}

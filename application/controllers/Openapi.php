@@ -49,7 +49,7 @@ class OpenapiController extends RealtimeController {
 	public function ratingdataAction() {
 		if (!$this->authorize()) {
 			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_UNAUTHORIZED);
-			return $this->respond(['status' => 0, 'cause' => 'Unauthorized']);//TODO: handle error data also
+			return $this->respond(['status' => 0, 'cause' => 'Unauthorized']);
 		}
 
 		return $this->execute();
