@@ -21,7 +21,7 @@ class Billrun_Version {
 	public static $RELEASE = '5.13';
 
 	/** @var  string  Maintenance version. */
-	public static $DEV_LEVEL = '1';
+	public static $DEV_LEVEL = '3';
 
 	/** @var  string  Development STATUS. */
 	public static $DEV_STATUS = '';
@@ -30,7 +30,7 @@ class Billrun_Version {
 	public static $BUILD = '';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '30-Nov-2020';
+	public static $RELDATE = '22-Dec-2020';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';
