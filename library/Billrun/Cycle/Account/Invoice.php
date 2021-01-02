@@ -385,8 +385,12 @@ class Billrun_Cycle_Account_Invoice {
 	 * @return array an empty billrun document
 	 */
 	public function populateInvoiceWithAccountData($attributes) {
+		$config = Billrun_Factory::config();
 		$rawData = $this->data->getRawData();
 		$rawData['attributes'] = $attributes;
+		if ($config->isMultiDayCycle()) {
+			$this->setInvoicingDay($rawData, $attributes);
+		}
 		$this->data->setRawData($rawData);
 	}
 	
@@ -409,14 +413,15 @@ class Billrun_Cycle_Account_Invoice {
 	 * Init the date values of the invoice.
 	 */
 	protected function initInvoiceDates() {
-		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
+		$invoicing_day = !empty($initData['invoicing_day']) ? $initData['invoicing_day'] : null;
+		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey(), $invoicing_day);
 		$initData['creation_time'] = new MongoDate(time());
 		$isOneTimeInvoice = isset($initData['attributes']['invoice_type']) && $initData['attributes']['invoice_type'] == 'immediate' ? true : false;
 		$invoiceDate = $isOneTimeInvoice ? strtotime($initData['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
 		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
-		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
+		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
 		$initData['due_date'] = $this->generateDueDate($billrunDate);
 		$chargeNotBefore = $this->generateChargeDate($initData);
 		if (!empty($chargeNotBefore)) {
@@ -528,6 +533,11 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 		}
 		return $currentTotalGroups;
+	}
+	
+	public function setInvoicingDay(&$rawData, $attributes) {
+		$config = Billrun_Factory::config();
+		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
 }

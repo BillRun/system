@@ -505,7 +505,7 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
-	
+
 	/**
 	 * method to get monthly invoice's display config
 	 * @return invoice display options if was configured, else returns null.
@@ -514,4 +514,19 @@ class Billrun_Config {
 		return $this->getConfigValue('invoice_export.invoice_display_options', null);
 	}
 
+	/**
+	 * method to check the cycle's mode
+	 * @return boolean true if it's multi day cycle mode, false otherwise.
+	 */
+	public function isMultiDayCycle() {
+		return $this->getConfigValue('billrun.multi_day_cycle', false);
+	}
+	
+	/**
+	 * 
+	 * @return returns the default charging/invoicing day from the config.
+	 */
+	public function getConfigChargingDay() {
+		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
+	}
 }

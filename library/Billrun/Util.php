@@ -208,10 +208,15 @@ class Billrun_Util {
 	 * example: converts "201607" to : "July 2016"
 	 * 
 	 * @param type $billrunKey
+	 * @param string $format - returned date format
+	 * @param string $invoicing_day - custom invoicing day - in case multi day cycle system's mode on.
 	 * @return type
 	 */
-	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
-		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+	public static function billrunKeyToPeriodSpan($billrunKey, $format, $invoicing_day = null) {
+		if (Billrun_Factory::config()->isMultiDayCycle() && empty($invoicing_day)) {
+			$invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+		} 
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey, $invoicing_day);
 		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
@@ -980,9 +985,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
-	public static function logFailedResetLines($sids, $billrun_key) {
+	public static function logFailedResetLines($sids, $billrun_key, $invoicing_day = null) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
-		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		$output = array('sids' => $sids, 'billrun_key' => $billrun_key);
+		if (!is_null($invoicing_day)) {
+			$output['invoicing_day'] = $invoicing_day;
+		}
+		fwrite($fd, json_encode($output) . PHP_EOL);
 		fclose($fd);
 	}
 
@@ -1587,7 +1596,6 @@ class Billrun_Util {
 																										   $userData) );
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
-							continue;
 						}
 						break;
 					//Handle regex translation
@@ -1600,12 +1608,10 @@ class Billrun_Util {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-							continue;
 						}
 						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
-							continue;
 						break;
 				}
 				if (!is_null($val) || empty($trans['ignore_null'])) {

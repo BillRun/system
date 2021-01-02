@@ -25,6 +25,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $confirmDate;
 	protected $sendEmail = true;
 	protected $filtration = null;
+	protected $invoicing_days = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -33,6 +34,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		if (isset($options['send_email'])) {
 			$this->sendEmail = $options['send_email'];
+		}
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
@@ -48,6 +52,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
+		if (!empty($this->invoicing_days)) {
+			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
+		}
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
@@ -68,13 +75,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['alreadyRunning'] = true;
 				continue;
 			}
-			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
+			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation for aid " . $invoice['aid'], Zend_Log::ALERT);
 				$result['releasingProblem'] = true;
-			}
+		}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
 		$this->handleSendInvoicesByMail($invoicesIds);
@@ -115,6 +122,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
                                 'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
 			);
+		if (!empty($invoice['invoicing_day'])) {
+			$bill['invoicing_day'] = $invoice['invoicing_day'];
+		}
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];
 		}
@@ -212,7 +222,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery() {
+	protected function getConflictingQuery() {	
                 return array('filtration' => $this->filtration);
 	}
 	
@@ -282,4 +292,5 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected function getForeignFieldsEntity () {
 		return 'bills';
 	}
+	
 }

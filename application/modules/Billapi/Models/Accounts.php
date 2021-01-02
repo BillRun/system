@@ -13,10 +13,13 @@
  * @since    5.3
  */
 class Models_Accounts extends Models_Entity {
+	
+	public $invoicing_day = null;
 
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
+		$this->invoicing_day = $this->getInvoicingDay();
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 		$this->verifyAllowances();
 	}
@@ -88,5 +91,8 @@ class Models_Accounts extends Models_Entity {
 		}
 		return true;
 	}
-
+	
+	public function getInvoicingDay () {
+		return !empty($additional['invoicing_day']) ? $additional['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+	}
 }

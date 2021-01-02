@@ -35,6 +35,12 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	 * @var string prepaid or postpaid
 	 */
 	protected $billing_method = null;
+	
+	/**
+	 * Account's invoicing day (relevant for multi day cycle mode)
+	 * @var string - invoicing day (between 1 to 28)
+	 */
+	protected $invoicing_day = null;
 
 	
 	public function __construct($options) {
@@ -42,18 +48,27 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		parent::__construct($options);
 		$this->aid = Billrun_Util::getFieldVal($options['aid'], 0);
 		$this->now = time();
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$this->aid));
+			$this->invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		}
 	}
 
 	// Theres nothing  to load  in this  generator  ans it`s data  is based on the  customer aggregator logic	
 	public function load() {}
 
 	public function generate() {
+		$config = Billrun_Factory::config();
 		$options = array(
 			'type' => 'customer',
 			'force_accounts' => array($this->aid),
 			'stamp' => $this->stamp,
 			'fake_cycle' => true,
 		);
+		
+		if (!empty($this->invoicing_day)) {
+			$options['invoicing_day'] = $this->invoicing_day;
+		}
 		$generator = Billrun_Aggregator::getInstance($options);
 		$generator->load();
 		if($generator->aggregate()) {
@@ -67,6 +82,5 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	protected function setAccountId($aid) {
 		$this->aid = intval($aid);
 	}
-
 
 }

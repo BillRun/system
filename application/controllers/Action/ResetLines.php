@@ -25,19 +25,24 @@ class ResetLinesAction extends ApiAction {
 		if (empty($request['aid'])) {
 			return $this->setError('Please supply at least one aid', $request);
 		}
-
+		
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
-
-		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp() : $request['billrun_key'];
+		$invoicing_day = null;
+		if (Billrun_Factory::config()->isMultiDayCycle()) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
+			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		}
+		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
 
 		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
 		}
-		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle()) {
-			return $this->setError("Billrun {$billrun_key} already closed", $request);
+		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {
+			$message = "Billrun "  . $billrun_key . (!is_null($invoicing_day) ? " with invoicing day {$invoicing_day}, " : " ") . "already closed";
+			return $this->setError($message, $request);
 		}
 		
 		// Warning: will convert half numeric strings / floats to integers
@@ -67,11 +72,14 @@ class ResetLinesAction extends ApiAction {
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
 				);
+				if (!is_null($invoicing_day)) {
+					$query['foreign.account.invoicing_day'] = $invoicing_day;
+				}
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
 			}
 		} catch (Exception $exc) {
-			Billrun_Util::logFailedResetLines($aids, $billrun_key);
+			Billrun_Util::logFailedResetLines($aids, $billrun_key, $invoicing_day);
 			return FALSE;
 		}
 

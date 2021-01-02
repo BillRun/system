@@ -65,6 +65,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['end'] = new MongoDate($chargeData['end']);
 		}
 
+
 		$entry = $this->addExternalFoerignFields($entry);
 		$entry = $this->addTaxationToLine($entry);
 		unset($entry['tax']);

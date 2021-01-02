@@ -51,6 +51,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
 							 'service' => array('rate'=> 'description','line' => 'name'));
 		
+		if (isset($rate['invoice_description'])) {
+			return $rate['invoice_description'];
+		}
+		
 		if(in_array($line['type'],array_keys($typeMapping))) {			
 			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
 								$rate[$typeMapping[$line['type']]['rate']] :

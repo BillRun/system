@@ -34,11 +34,10 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function update($query, $values, $options = array()) {
-		if (!isset($options['w'])) {
+		if ((isset($options['session']) && $options['session']->isInTransaction())) {
+			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
+		} else if (!isset($options['w'])) {
 			$options['w'] = $this->w;
-		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
-			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -515,7 +514,7 @@ class Mongodloid_Collection {
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoException $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
+				if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 					// try again with the next seq
 					continue;
 				}

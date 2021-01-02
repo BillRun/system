@@ -14,8 +14,10 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	use Billrun_Traits_ForeignFields;
-	
+	use Billrun_Traits_ForeignFields {
+		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
+	}
+
 	/**
 	 * the type of the object
 	 *
@@ -409,8 +411,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
-			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update(array_merge($query, array('$isolated' => 1)), $update, array('multiple' => true));
+
+			if ($this->applyQueueHash($query, $update, $queue) === FALSE) {
+				continue;
+			}
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 
@@ -423,6 +427,38 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$retLines[$line['stamp']] = $line;
 		}
 		return $retLines;
+	}
+
+	/**
+	 * method to apply query update hash
+	 * 
+	 * @param array $query the query to filter
+	 * @param array $update the update to be applied
+	 * @param Collection $queue the mongodb collection
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function applyQueueHash($query, $update, $queue) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && Billrun_Factory::db()->compareClientVersion('1.5.0', '>=')) {
+			$session = Billrun_Factory::db()->startSession();
+			if ($session !== false) {
+				$session->startTransaction();
+				try {
+					$queue->update($query, $update, array('multiple' => true, 'session' => $session));
+					$session->commitTransaction();
+					return true;
+				} catch (Exception $ex) {
+					$session->abortTransaction();
+					return false;
+				}
+			}
+			Billrun_Factory::log("No support for transactions as you're running on mongodb standalone", Zend_Log::NOTICE);
+		} else {
+			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
+		}
+		
+		$queue->update($query, $update, array('multiple' => true));
+		return true;
 	}
 
 	/**

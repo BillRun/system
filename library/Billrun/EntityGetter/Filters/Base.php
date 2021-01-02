@@ -18,9 +18,13 @@ class Billrun_EntityGetter_Filters_Base {
 
 	protected $specialQueries = array(
 		'$exists' => array('$exists' => 1),
-		'$existsFalse' => array('$exists' => 1), // this should be $exists result revered (otherwise we have an issue with empty values)
+		'$existsFalse' => array('$exists' => 0),
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
+	);
+	
+	protected $andQueries = array(	
+		'$existsFalse',
 	);
 
 	protected $datePreFunctions = array(
@@ -68,6 +72,10 @@ class Billrun_EntityGetter_Filters_Base {
 		if (!is_null($ufVal)) {
 			return $this->regexValue($ufVal, $regex);
 		}
+		$cfVal = Billrun_Util::getIn($row, 'cf.' . $field, null);
+		if (!is_null($cfVal)) {
+			return $this->regexValue($cfVal, $regex);
+		}
 		
 		if (isset($row['foreign'][$field])) {
 			if (is_array($row['foreign'][$field])) {
@@ -104,7 +112,7 @@ class Billrun_EntityGetter_Filters_Base {
 	 * @param array $row
 	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
-	protected function getComputedValue($row) {
+	public function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
@@ -138,7 +146,7 @@ class Billrun_EntityGetter_Filters_Base {
 		);
 		if (!empty($this->specialQueries[$operator]) ) {
 			$data = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
-			$op = '$or';
+			$op = in_array($operator, $this->andQueries) ? '$and' : '$or';
 
 			$query = array(
 				$op => [
@@ -149,9 +157,6 @@ class Billrun_EntityGetter_Filters_Base {
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
-		if($operator === '$existsFalse') {
-			$res = !$res;
-		}
 		return $this->getComputedValueResult($row, $res);
 	}
 
