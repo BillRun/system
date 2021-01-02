@@ -69,7 +69,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$entity = $entity->getRawData();
 		foreach($entity as $field_name => $field_value) {
 			if(!in_array($field_name, $this->mandatory_fields_per_entity[$entity_type])) {
-				return false;
+				continue;
 			}
 			if(empty($field_value)) {
 				return false;
