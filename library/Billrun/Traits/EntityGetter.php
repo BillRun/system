@@ -238,7 +238,7 @@ trait Billrun_Traits_EntityGetter {
 			foreach (self::$entities[$cacheKey] as $cachedEntity) {
 				if ($cachedEntity['from'] <= $time && (!isset($cachedEntity['to']) || is_null($cachedEntity['to']) || $cachedEntity['to'] >= $time)) {
 					$returned_entities[] = $cachedEntity['entity'];
-					if(isset($params['multiple_entities']) && $params['multiple_entities']) {
+					if(!empty($params['multiple_entities'])) {
 						continue;
 					}
 					break;
@@ -300,7 +300,7 @@ trait Billrun_Traits_EntityGetter {
 		$matchQuery = [['$match' => $match]];
 		$sortQuery = !empty($sort) ? [['$sort' => $sort]] : [];
 		$groupQuery = [['$group' => $group]];
-		$limitQuery = (isset($params['multiple_entities']) && $params['multiple_entities']) ? [] : [['$limit' => 1]];
+		$limitQuery = !empty($params['multiple_entities']) ? [] : [['$limit' => 1]];
 		
 		return array_merge($matchQuery, $additional, $groupQuery, $additionalAfterGroup, $sortQuery, $limitQuery);
 	}
