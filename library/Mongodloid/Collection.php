@@ -688,9 +688,9 @@ class Mongodloid_Collection {
 			$writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
 			$options['writeConcern'] = $writeConcern;
 		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {//check if still relevant
-			$options['j'] = $this->j;
-		}
+//		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {//check if still relevant
+//			$options['j'] = $this->j;
+//		}
 		unset($options['w']);
 		unset($options['wTimeout']);
 		unset($options['wTimeoutMS']);
