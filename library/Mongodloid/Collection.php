@@ -181,7 +181,8 @@ class Mongodloid_Collection {
 
 	public function save(Mongodloid_Entity $entity, $w = null) {
 		$options['upsert'] = true;
-		$this->convertWriteConcernOptions($options, $w);
+		$options['w'] = $w;
+		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
 		$result = $this->replaceOne(array('_id' => $entity->getId()->getMongoID()), $data, $options);
 		if (!$result) {
@@ -667,14 +668,11 @@ class Mongodloid_Collection {
 	 * @param array $options
 	 * @return array
 	 */
-	private function convertWriteConcernOptions(&$options, $w = null) {
-		if (is_null($w)) {
-			$w = $this->w;
-		}
+	private function convertWriteConcernOptions(&$options) {
 		if ((isset($options['session']) && $options['session']->isInTransaction())) {
 			$options['wTimeoutMS'] = $options['wTimeoutMS'] ?? $this->getTimeout();
 		} else if (!isset($options['w'])) {
-			$options['w'] = $w;
+			$options['w'] = $this->w;
 		}
 		if (isset($options['wtimeout']) && !isset($options['wTimeoutMS'])) {
 			$options['wTimeoutMS'] = $options['wtimeout'];
