@@ -321,12 +321,12 @@ class Mongodloid_Collection {
 		if (count($args) > 1) { // Assume the array contains 'ops' for backward compatibility
 			$args = array($args);
 		}
-		return new Mongodloid_Cursor($this->_collection->aggregate($args));
+		return new Mongodloid_Cursor('aggregate', $this->_collection, $args);
 	}
 
 	public function aggregateWithOptions() {
 		$args = func_get_args();
-		return new Mongodloid_Cursor($this->_collection->aggregate($args));
+		return new Mongodloid_Cursor('aggregate', $this->_collection, $args);
 	}
 
 	public function setTimeout($timeout) {

@@ -34,7 +34,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * Create a new instance of the cursor object.
 	 * @param MongoDB\Driver\Cursor $cursor - Mongo cursor pointing to a collection.
 	 */
-	public function __construct($command, $collection, $query, $options) {
+	public function __construct($command, $collection, $query, $options = array()) {
 		$cursor = $collection->$command($query, $options);
 		// Check that the cursor is a MongoDB\Driver\Cursor
 		if (!$this->validateInputCursor($cursor)) {
