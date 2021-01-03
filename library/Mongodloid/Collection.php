@@ -184,7 +184,14 @@ class Mongodloid_Collection {
 		$options['w'] = $w;
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
-		$result = $this->replaceOne(array('_id' => $entity->getId()->getMongoID()), $data, $options);
+		if($entity->getId()){
+			$id = $entity->getId()->getMongoID();
+		}else{
+			$id = (new Mongodloid_Id())->getMongoID();
+			$data['_id'] =  $id;
+		}
+		
+		$result = $this->replaceOne(array('_id' => $id), $data, $options);
 		if (!$result) {
 			return false;
 		}
