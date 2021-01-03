@@ -7,7 +7,7 @@ class Zend_Auth_Adapter_MongoDb implements Zend_Auth_Adapter_Interface {
 	/**
 	 * Database collection
 	 *
-	 * @var MongoCollection
+	 * @var MongoDB\Collection
 	 */
 	protected $_collection = null;
 
@@ -65,12 +65,12 @@ class Zend_Auth_Adapter_MongoDb implements Zend_Auth_Adapter_Interface {
 	/**
 	 * __construct() - Sets configuration options
 	 *
-	 * @param  MongoCollection $collection If null, default database adapter assumed
+	 * @param  MongoDB\Collection $collection If null, default database adapter assumed
 	 * @param  string                   $identityKeyPath
 	 * @param  string                   $credentialKeyPath
 	 * @return void
 	 */
-	public function __construct(MongoCollection $collection = null, $identityKeyPath = null, $credentialKeyPath = null) {
+	public function __construct(MongoDB\Collection $collection = null, $identityKeyPath = null, $credentialKeyPath = null) {
 		$this->_setCollection($collection);
 
 		if (null !== $identityKeyPath) {
@@ -85,11 +85,11 @@ class Zend_Auth_Adapter_MongoDb implements Zend_Auth_Adapter_Interface {
 	/**
 	 * _setCollection() - set the database adapter to be used for quering
 	 *
-	 * @param MongoCollection
+	 * @param MongoDB\Collection
 	 * @throws Zend_Auth_Adapter_Exception
 	 * @return Ik_Auth_Adapter_MongoDb
 	 */
-	protected function _setCollection(MongoCollection $collection = null) {
+	protected function _setCollection(MongoDB\Collection $collection = null) {
 		$this->_collection = $collection;
 
 		/**

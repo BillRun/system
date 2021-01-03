@@ -15,6 +15,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
 	protected $getRaw = FALSE;
+	protected $_options;
+	protected $_query;
+	protected $_iterator;
 
 	/**
      * @var int
@@ -31,19 +34,18 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * Create a new instance of the cursor object.
 	 * @param MongoDB\Driver\Cursor $cursor - Mongo cursor pointing to a collection.
 	 */
-	public function __construct($cursor) {
-		// Check that the cursor is a mongocursor
+	public function __construct($command, $collection, $query, $options) {
+		$cursor = $collection->$command($query, $options);
+		// Check that the cursor is a MongoDB\Driver\Cursor
 		if (!$this->validateInputCursor($cursor)) {
 			// TODO: Report error?
 			return;
 		}
+		$this->_collection = $collection;
+		$this->_command = $command;
 		$this->_cursor = $cursor;
-		
-		if ($this->_cursor instanceof Traversable) {
-			$this->_iterator = new IteratorIterator($cursor);
-			$this->rewind();
-			$this->valid();
-		}
+		$this->_options = $options;
+		$this->_query = $query;
 		
 		$this->_isValid = true;
 	}
@@ -79,59 +81,92 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
-		if (method_exists($this->_cursor, 'hasNext') && !$this->_iterator->current() && $this->_cursor->hasNext()) {
-			$this->next();
-		}
+		if ($this->_iterator === null) {
+          $this->doQuery();
+        }
 		
 		return $this->getRaw ? Mongodloid_Collection::getResult($this->_iterator->current()) :  new Mongodloid_Entity(Mongodloid_Collection::getResult($this->_iterator->current()), null, false);
 	}
 
 	public function key() {
+		if ($this->_iterator === null) {
+            return;
+        }
 		return $this->_iterator->key();
 	}
 
 	public function next() {
+		if ($this->_iterator === null) {
+          $this->doQuery();
+        }
 		return $this->_iterator->next();
 	}
 
 	public function rewind() {
+		if ($this->_iterator === null) {
+          $this->doQuery();
+        }
 		$this->_iterator->rewind();
 		return $this;
 	}
 
 	public function valid() {
+		if ($this->_iterator === null) {
+            false;
+        }
 		return $this->_iterator->valid();
 	}
 
+	/**
+     * Sorts the results by given fields
+     * @param array $fields An array of fields by which to sort. Each element in the array has as key the field name, and as value either 1 for ascending sort, or -1 for descending sort
+     * @throws Exception
+     * @return MongoDB\Driver\Cursor Returns the same cursor that this method was called on
+     */
 	public function sort(array $fields) {
-		if (method_exists($this->_cursor, 'sort')) {
-			$this->_cursor->sort($fields);
-		}
+		$this->errorIfOpened();
+		$this->_options['sort'] = $fields;
 		return $this;
 	}
 
-	public function limit($limit) {//
-		if (method_exists($this->_cursor, 'limit')) {
-			$this->_cursor->limit(intval($limit));
-		}
+	/**
+     * Limits the number of results returned
+     * @param int $limit The number of results to return.
+     * @throws Exception
+     * @return MongoDB\Driver\Cursor Returns this cursor
+     */
+	public function limit($limit) {
+		$this->errorIfOpened();
+		$this->_options['limit'] = intval($limit);
 		return $this;
 	}
 
-	public function skip($limit) {//
-		if (method_exists($this->_cursor, 'skip')) {
-			$this->_cursor->skip(intval($limit));
-		}
+	/**
+     * Skips a number of results
+     * @param int $limit The number of results to skip.
+     * @throws Exception
+     * @return MongoDB\Driver\Cursor Returns this cursor
+     */
+	public function skip($limit) {
+		$this->errorIfOpened();
+		$this->_options['skip'] = intval($limit);
 		return $this;
 	}
 
+	/**
+     * Gives the database a hint about the query
+     * @param array|string $key_pattern Indexes to use for the query.
+     * @throws Exception
+     * @return MongoDB\Driver\Cursor Returns this cursor
+     */
 	public function hint(array $key_pattern) {
-		if (method_exists($this->_cursor, 'hint')) {
-			if (empty($key_pattern)) {
-				return;
-			}
-			$this->_cursor->hint($key_pattern);
+		$this->errorIfOpened();
+		if (empty($key_pattern)) {
+			return;
 		}
+		$this->_options['hint'] = $key_pattern;
 		return $this;
+		
 	}
 
 	public function explain() {
@@ -150,14 +185,16 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return Mongodloid_Cursor self object
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
-		if (method_exists($this->_cursor, 'setReadPreference')) {
-			if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
-				$this->_cursor->setReadPreference(constant('MongoDB\Driver\ReadPreference::' . $readPreference), $tags);
-			} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
-				$this->_cursor->setReadPreference($readPreference, $tags);
-			}
+		$this->errorIfOpened();
+		
+		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+			$mode = $readPreference;
+		}else{
+			throw new Exception("The value '$readPreference' is not valid as read preference type");
 		}
-
+		$this->_options['readPreference'] = new \MongoDB\Driver\ReadPreference($mode, $tags);
 		return $this;
 	}
 
@@ -195,25 +232,26 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function timeout($ms) {
-		if (method_exists($this->_cursor, 'maxTimeMS')) {
-			$this->_cursor->maxTimeMS($ms);
-		} else if (method_exists($this->_cursor, 'timeout')) {
-			$this->_cursor->timeout($ms);
-		}
+		$this->errorIfOpened();
+		$this->_options['maxTimeMS'] = $ms;
 		return $this;
 	}
 
 	public function immortal($liveForever = true) {
-		if (method_exists($this->_cursor, 'immortal')) {
-			$this->_cursor->immortal($liveForever);
-		}
+		$this->errorIfOpened();
+		$this->_options['noCursorTimeout'] = $liveForever;
 		return $this;
 	}
 	
+	/**
+     * Sets the fields for a query
+     * @param array $fields Fields to return (or not return).
+     * @throws Exception
+     * @return MongoDB\Driver\Cursor Returns this cursor
+     */
 	public function fields(array $fields) {
-		if (method_exists($this->_cursor, 'fields')) {
-			$this->_cursor->fields($fields);
-		}
+		$this->errorIfOpened();
+		$this->_options['projection'] = $fields;
 		return $this;
 	}
 	
@@ -223,4 +261,29 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this;
 	} 
 
+	/**
+     * @throws \MongoCursorException
+     */
+    protected function errorIfOpened()
+    {
+        if ($this->_iterator === null) {
+            return;
+        }
+        throw new Exception('cannot modify cursor after beginning iteration.');
+    }
+	
+	protected function doQuery(){
+		$command = $this->_command;
+        try {
+			if(method_exists($this->_collection, $command)){
+				$this->cursor = $this->_collection->$command($this->_query, $this->_options);
+				$this->_iterator = new IteratorIterator($this->cursor);
+				$this->rewind();
+			}
+            
+        } catch (\MongoDB\Driver\Exception\ExecutionTimeoutException $e) {
+            throw new MongoCursorTimeoutException($e->getMessage(), $e->getCode(), $e);
+        }
+
+	}
 }

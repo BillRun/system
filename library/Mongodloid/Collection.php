@@ -282,7 +282,7 @@ class Mongodloid_Collection {
 	 * @return MongoCursor a cursor for the search results.
 	 */
 	public function find($query, $options = array()) {
-		return new Mongodloid_Cursor($this->_collection->find($query, $options));
+		return new Mongodloid_Cursor('find', $this->_collection, $query, $options);
 	}
 
 	/**

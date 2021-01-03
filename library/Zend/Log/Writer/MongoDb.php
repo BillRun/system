@@ -114,7 +114,7 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
     /**
      *
      *
-     * @var MongoCollection
+     * @var MongoDB\Collection
      */
     protected $_collection;
     /**
@@ -147,10 +147,10 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
     /**
      *
      *
-     * @param MongoCollection $collection
+     * @param MongoDB\Collection $collection
      * @param array $documentMap
      */
-    public function __construct(MongoCollection $collection, $documentMap = null)
+    public function __construct(MongoDB\Collection $collection, $documentMap = null)
     {
         if (!extension_loaded('Mongo')) {
             Zend_Cache::throwException("Cannot use Mongo storage because the ".
@@ -204,7 +204,7 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
         if (isset($config['documentmap'])) {
             $config['documentMap'] = $config['documentmap'];
         }
-        if(!$config['collection'] instanceof MongoCollection){
+        if(!$config['collection'] instanceof MongoDB\Collection){
             $config['collection'] = self::_createMongoCollection($config);
         }
         return new self(
@@ -213,10 +213,10 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
         );
     }
     /**
-     * Create the MongoCollection Object.
+     * Create the MongoDB\Collection Object.
      *
      * @param array $config
-     * @return MongoCollection
+     * @return MongoDB\Collection
      */
     static protected function _createMongoCollection($config)
     {
@@ -233,8 +233,8 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
 		if (isset($config['database'])) {
 			$options['db'] = $config['database'];
 		}
-        $mongo = new MongoClient($server, $options);
-        return $mongo->selectDB($config['database'])
+        $mongo = new MongoDB\Client($server, $options);
+        return $mongo->selectDatabase($config['database'])
             ->selectCollection($config['collection']);
     }
     /**
