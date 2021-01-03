@@ -51,16 +51,16 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$current["cf"]["tier"] = $component_entity["params"]["tier"];
 					break;
 				case "CB":
-					//TODO: check twice for operators with *
 					$current["cf"]["tier"] = "";
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
 					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
-//					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
-//					if($tier_entity_star_operator) {
-//						if(strlen($tier_entity_star_operator["params"]["prefix"]) > strlen( $tier_entity["params"]["prefix"])) {
-//							$current["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
-//						}
-//					}
+					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
+					if($tier_entity_star_operator) {
+						if($this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]) 
+							> $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity["params"]["prefix"])) {
+							$current["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
+						}
+					}
 					break;
 				case "ABA":
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $row, $calculator);
@@ -147,5 +147,27 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		return $current;
+	}
+	
+	public function sortByLength($a, $b) {
+		return strlen($b)-strlen($a);
+	}
+	
+	public function findLongestPrefix($num, $productPrefixes) {
+		usort($productPrefixes, 'sortByLength');
+		$numPrefixes = Billrun_Util::getPrefixes($num);
+		$curr = 0;
+		for($i = 0; $i < strlen($num); $i++){
+			for($k = $curr; $k < count($productPrefixes); $k++) {
+				if(strlen($numPrefixes) > strlen($productPrefixes)){
+					$curr = $k;
+					break;
+				}
+				if ($numPrefixes[$i] == $productPrefixes[$k]) {
+					return $productPrefixes[$k];
+				}
+			}
+		}
+		return false;
 	}
 }
