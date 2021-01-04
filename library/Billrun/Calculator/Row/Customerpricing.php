@@ -683,7 +683,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if(!$this->updateServiceMaximumQuantity($serviceName, $aid)) {
 						$serviceMaximumQuantity = $this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid];
 					} else {
-						$serviceMaximumQuantity = $this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid] = $service->getServiceMaximumQuantityByAid($aid);
+						$serviceMaximumQuantity = $this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid] = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
 					}
 				}
 				

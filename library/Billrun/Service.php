@@ -704,27 +704,29 @@ class Billrun_Service {
 		return false;
 	}
 	
-	public function getServiceMaximumQuantityByAid($aid) {
-		return isset($this->serviceMaximumQuantityByAid[$aid]) ? $this->serviceMaximumQuantityByAid[$aid] : $this->calculateServiceMaximumQuantity($aid);
+	public function getServiceMaximumQuantityByAid($aid, $time = 'now') {
+		return isset($this->serviceMaximumQuantityByAid[$aid]) ? $this->serviceMaximumQuantityByAid[$aid] : $this->calculateServiceMaximumQuantity($aid, $time);
 	}
 	
-	public function calculateServiceMaximumQuantity($aid) {
+	public function calculateServiceMaximumQuantity($aid, $time = 'now') {
 		$current_service_name = $this->getName();
 		$query = array(
 			'aid' => $aid,
-			'to' => array('$gt' => new MongoDate($this->data['to']->sec)),
-			'from' => array('$lt' => new MongoDate($this->data['from']->sec)),
-		);
+			'time' => date('Ymd H:i:sP', $time),
+			'services' => array('$elemMatch' => array('name' => $current_service_name))
+		);		
 		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);
 		$maximum_quantity = 0;
-		foreach($results as $index => $sub) {
-			if(isset($sub['services']) && in_array($current_service_name, array_column($sub['services'], 'name'))) {
-				$relevant_service = current(array_filter($sub['services'], function($service) use ($current_service_name) {
-					return $service['name'] === $current_service_name;
-				}));
-				if (isset($relevant_service['quantity'])) {
-					if ($maximum_quantity < $relevant_service['quantity']) {
-						$maximum_quantity = $relevant_service['quantity'];
+		if (!empty($results)) {
+			foreach ($results as $index => $sub) {
+				if (isset($sub['services']) && in_array($current_service_name, array_column($sub['services'], 'name'))) {
+					$relevant_service = current(array_filter($sub['services'], function($service) use ($current_service_name) {
+							return $service['name'] === $current_service_name;
+						}));
+					if (isset($relevant_service['quantity'])) {
+						if ($maximum_quantity < $relevant_service['quantity']) {
+							$maximum_quantity = $relevant_service['quantity'];
+						}
 					}
 				}
 			}
