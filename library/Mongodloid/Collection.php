@@ -290,7 +290,7 @@ class Mongodloid_Collection {
 	 * @return MongoCursor a cursor for the search results.
 	 */
 	public function find($query, $options = array()) {
-		return new Mongodloid_Cursor('find', $this->_collection, $query, $options);
+		return new Mongodloid_Cursor('find', $this->_collection, self::fromMongodloid($query), $options);
 	}
 
 	/**
@@ -321,12 +321,16 @@ class Mongodloid_Collection {
 		if (count($args) > 1) { // Assume the array contains 'ops' for backward compatibility
 			$args = array($args);
 		}
-		return new Mongodloid_Cursor('aggregate', $this->_collection, $args);
+		$pipeline = $args[0] ?? array();
+		$options = $args[1] ?? array();
+		return new Mongodloid_Cursor('aggregate', $this->_collection, self::fromMongodloid($pipeline), $options);
 	}
 
 	public function aggregateWithOptions() {
 		$args = func_get_args();
-		return new Mongodloid_Cursor('aggregate', $this->_collection, $args);
+		$pipeline = $args[0] ?? array();
+		$options = $args[1] ?? array();
+		return new Mongodloid_Cursor('aggregate', $this->_collection, self::fromMongodloid($pipeline), $options);
 	}
 
 	public function setTimeout($timeout) {
@@ -712,7 +716,7 @@ class Mongodloid_Collection {
 			case 'deleteOne':
 				return self::buildRemoveResult($result);
 			default:
-				return self::toLegacy($result);
+				return self::toMongodloid($result);
 		}
 	}
 
@@ -751,17 +755,10 @@ class Mongodloid_Collection {
 	/**
 	 * Converts a BSON type to the Mongodloid types
 	 *
-	 * This method handles type conversion from ext-mongodb to ext-mongo:
-	 *  - For all instances of BSON\Type it returns an object of the
-	 *    corresponding legacy type (MongoId, MongoDate, etc.)
-	 *  - For arrays and objects it iterates over properties and converts each
-	 *    item individually
-	 *  - For other types it returns the value unconverted
-	 *
 	 * @param mixed $value
 	 * @return mixed
 	 */
-	public static function toLegacy($value) {
+	public static function toMongodloid($value) {
 		switch (true) {
 			case $value instanceof MongoDB\BSON\Type:
 				return self::convertBSONObjectToMongodloid($value);
@@ -770,7 +767,7 @@ class Mongodloid_Collection {
 				$result = [];
 
 				foreach ($value as $key => $item) {
-					$result[$key] = self::toLegacy($item);
+					$result[$key] = self::toMongodloid($item);
 				}
 
 				return $result;
@@ -809,13 +806,48 @@ class Mongodloid_Collection {
 			case $value instanceof MongoDB\Model\BSONDocument:
 			case $value instanceof MongoDB\Model\BSONArray:
 				return array_map(
-					['self', 'toLegacy'],
+					['self', 'toMongodloid'],
 					$value->getArrayCopy()
 				);
 			default:
 				return $value;
 		}
 	}
+	
+	/**
+     * Converts a Mongodloid type to the new BSON type
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    public static function fromMongodloid($value)
+    {
+        switch (true) {
+            case $value instanceof Mongodloid_Id:
+				return $value->getMongoID();
+			case $value instanceof Mongodloid_Regex:
+				return $value->getMongoRegex();
+			case $value instanceof MongoRegex:
+				return $value->toBSONType();
+			case $value instanceof Mongodloid_Date:
+				return $value->getMongoDate();
+			case $value instanceof MongoDate:
+				return $value->toBSONType();
+            case $value instanceof MongoDB\BSON\Type:
+                return $value;
+            case is_array($value):
+            case is_object($value):
+                $result = [];
+
+                foreach ($value as $key => $item) {
+                    $result[$key] = self::fromMongodloid($item);
+                }
+
+                return $result;
+            default:
+                return $value;
+        }
+    }
 
 	private static function getCallingMethodName() {
 		return debug_backtrace()[1]['function'];

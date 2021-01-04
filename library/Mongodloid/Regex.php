@@ -13,6 +13,10 @@ class Mongodloid_Regex {
 	public function __toString() {
 		return $this->_stringRegex;
 	}
+	
+	public function getMongoRegex() {
+		return $this->_mongoRegex;
+	}
 
 	public function setMongoRegex(MongoDB\BSON\Regex $regex) {
 		$this->_mongoRegex = $regex;

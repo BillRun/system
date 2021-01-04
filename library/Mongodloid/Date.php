@@ -17,6 +17,10 @@ class Mongodloid_Date {
 	public function toDateTime() {
 		return $this->_mongoDate->toDateTime();
 	}
+	
+	public function getMongoDate() {
+		return $this->_mongoDate;
+	}
 
 	public function setMongoDate(MongoDB\BSON\UTCDatetime $date) {
 		$this->_mongoDate = $date;
