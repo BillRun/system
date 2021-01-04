@@ -145,13 +145,15 @@ class ResetLinesModel {
 		foreach ($lines as $line) {
 			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
 			if($line['source'] === 'unify'){
-				$archivedLines = Billrun_Calculator_Unify::restoreUnifyLines($line['stamp']);
-				if(!empty($archivedLines)){
-					foreach ($archivedLines as $archivedLine){
-						$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties);
-					}
-					continue;
+				$archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
+				foreach ($archivedLines as $archivedLine){
+					unset($archivedLine["u_s"]);
+					Billrun_Factory::db()->linesCollection()->insert($archivedLine);	
+					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties);
 				}
+				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
+				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
+				continue;
 			}
 			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties);
 		}
