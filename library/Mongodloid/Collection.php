@@ -697,7 +697,8 @@ class Mongodloid_Collection {
 			$writeConcern = new \MongoDB\Driver\WriteConcern($wstring, max($wtimeout, 0));
 			$options['writeConcern'] = $writeConcern;
 		}
-//		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {//check if still relevant
+		//todo:: check if still relevant
+//		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 //			$options['j'] = $this->j;
 //		}
 		unset($options['w']);
@@ -789,18 +790,8 @@ class Mongodloid_Collection {
 		switch (true) {
 			case $value instanceof MongoDB\BSON\ObjectID:
 				return new Mongodloid_Id($value);
-//			case $value instanceof BSON\Binary:
-//				return new \MongoBinData($value);
-//			case $value instanceof BSON\Javascript:
-//				return new \MongoCode($value);
-//			case $value instanceof BSON\MaxKey:
-//				return new \MongoMaxKey();
-//			case $value instanceof BSON\MinKey:
-//				return new \MongoMinKey();
 			case $value instanceof MongoDB\BSON\Regex:
 				return new Mongodloid_Regex($value);
-//			case $value instanceof BSON\Timestamp:
-//				return new \MongoTimestamp($value);
 			case $value instanceof MongoDB\BSON\UTCDatetime:
 				return new Mongodloid_Date($value);
 			case $value instanceof MongoDB\Model\BSONDocument:

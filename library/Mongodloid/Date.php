@@ -9,6 +9,8 @@ class Mongodloid_Date {
 
 	private $_mongoDate;
 	private $_stringDate;
+	public $sec;
+	public $usec;
 
 	public function __toString() {
 		return $this->_stringDate;
@@ -25,6 +27,11 @@ class Mongodloid_Date {
 	public function setMongoDate(MongoDB\BSON\UTCDatetime $date) {
 		$this->_mongoDate = $date;
 		$this->_stringDate = $date->__toString();
+		$msecString = $this->_stringDate;
+		$sec = substr($msecString, 0, -3);
+		$usec = ((int) substr($msecString, -3)) * 1000;
+		$this->sec = (int) $sec;
+        $this->usec = (int) $this->truncateMicroSeconds($usec);
 	}
 
 	public function __construct($date = null) {
@@ -34,5 +41,14 @@ class Mongodloid_Date {
 			$this->setMongoDate(new MongoDB\BSON\UTCDatetime($date));
 		}
 	}
+	
+	/**
+     * @param int $usec
+     * @return int
+     */
+    private function truncateMicroSeconds($usec)
+    {
+        return (int) floor($usec / 1000) * 1000;
+    }
 
 }
