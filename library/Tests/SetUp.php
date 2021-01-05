@@ -167,7 +167,7 @@ trait Tests_SetUp {
 	public function fixDBobjID($data) {
 		if (isset($data['OBJID'])) {
 			$data['_id'] = $data['OBJID'];
-			$data['_id'] = new MongoID($data['OBJID']);
+			$data['_id'] = new MongoId($data['OBJID']);
 			unset($data['OBJID']);
 		}
 		return $data;
