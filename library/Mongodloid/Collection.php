@@ -45,12 +45,13 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options);
 		$query = self::fromMongodloid($query);
 		if ($isReplace) {
-			return $this->replaceOne($query, $values, $options);
+			$res = $this->replaceOne($query, $values, $options);
 		} else if ($multiple) {
-			return $this->updateMany($query, $values, $options);
+			$res =  $this->updateMany($query, $values, $options);
 		} else {
-			return $this->updateOne($query, $values, $options);
+			$res = $this->updateOne($query, $values, $options);
 		}
+		return self::getResult($res);
 	}
 
 	/**
@@ -58,10 +59,10 @@ class Mongodloid_Collection {
 	 * @param type $query - Query to filter records to update
 	 * @param type $values - Query for updating new values.
 	 * @param type $options - Mongo options.
-	 * @return mongo update result
+	 * @return mongodb updateMany result
 	 */
 	private function updateMany($query, $values, $options = array()) {
-		return self::getResult($this->_collection->updateMany($query, $values, $options));
+		return $this->_collection->updateMany($query, $values, $options);
 	}
 
 	/**
@@ -71,10 +72,10 @@ class Mongodloid_Collection {
 	 * @param type $query - Query to filter record to update
 	 * @param type $values - Query for updating new values.
 	 * @param type $options - Mongo options.
-	 * @return mongo update result
+	 * @return mongodb updateOne result
 	 */
 	private function updateOne($query, $values, $options = array()) {
-		return self::getResult($this->_collection->updateOne($query, $values, $options));
+		return $this->_collection->updateOne($query, $values, $options);
 	}
 
 	/**
@@ -84,10 +85,10 @@ class Mongodloid_Collection {
 	 * @param type $query- Query to filter record to replace
 	 * @param type $values - new values.
 	 * @param type $options - Mongo options.
-	 * @return mongo update result
+	 * @return mongodb replaceOne result
 	 */
 	private function replaceOne($query, $values, $options = array()) {
-		return self::getResult($this->_collection->replaceOne($query, $values, $options));
+		return $this->_collection->replaceOne($query, $values, $options);
 	}
 
 	/**
@@ -265,17 +266,19 @@ class Mongodloid_Collection {
 
 		$this->convertWriteConcernOptions($options);
 		if ($multiple) {
-			return $this->deleteMany($query, $options);
+			$ret =  $this->deleteMany($query, $options);
+		}else{
+			$ret = $this->deleteOne($query, $options);
 		}
-		return $this->deleteOne($query, $options);
+		return self::getResult($ret);
 	}
 
 	private function deleteMany($query, $options) {
-		return self::getResult($this->_collection->deleteMany($query, $options));
+		return $this->_collection->deleteMany($query, $options);
 	}
 
 	private function deleteOne($query, $options) {
-		return self::getResult($this->_collection->deleteOne($query, $options));
+		return $this->_collection->deleteOne($query, $options);
 	}
 
 	/**
@@ -460,7 +463,7 @@ class Mongodloid_Collection {
 				$ret = $this->findOneAndUpdate($query, $update, $options);
 			}
 		}
-
+		$ret = self::getResult($ret);
 		if ($retEntity) {
 			return new Mongodloid_Entity($ret, $this);
 		}
@@ -468,15 +471,15 @@ class Mongodloid_Collection {
 	}
 
 	private function findOneAndReplace(array $query, array $update = array(), array $options = array()) {
-		return self::getResult($this->_collection->findOneAndReplace($query, $update, $options));
+		return $this->_collection->findOneAndReplace($query, $update, $options);
 	}
 
 	private function findOneAndUpdate(array $query, array $update = array(), array $options = array()) {
-		return self::getResult($this->_collection->findOneAndUpdate($query, $update, $options));
+		return $this->_collection->findOneAndUpdate($query, $update, $options);
 	}
 
 	private function findOneAndDelete(array $query, array $options = array()) {
-		return self::getResult($this->_collection->findOneAndDelete($query, $options));
+		return $this->_collection->findOneAndDelete($query, $options);
 	}
 
 	/**
@@ -489,23 +492,23 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-insertMany/#phpmethod.MongoDB\Collection::insertMany
 	 */
 	public function batchInsert(array $a, array $options = array()) {
-		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
-			$documents = [];
-			foreach ($a as $doc) {
-				if ($doc instanceof Mongodloid_Entity) {
-					$doc = $doc->getRawData();
-				}
-				$documents[] = $doc;
-			}
-		} else {
-			$documents = $a;
-		}
+//		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
+//			$documents = [];
+//			foreach ($a as $doc) {
+//				if ($doc instanceof Mongodloid_Entity) {
+//					$doc = $doc->getRawData();
+//				}
+//				$documents[] = $doc;
+//			}
+//		} else {
+//			$documents = $a;
+//		}
 		$this->convertWriteConcernOptions($options);
-		return $this->insertMany($documents, $options);
+		return self::getResult($this->insertMany(self::fromMongodloid($a), $options));
 	}
 
 	private function insertMany(array $documents, array $options = array()) {
-		return self::getResult($this->_collection->insertMany($documents, $options));
+		return $this->_collection->insertMany($documents, $options);
 	}
 
 	/**
@@ -521,11 +524,11 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
-			$ret = $this->_collection->insert($a, $options);
+			$ret = $this->_collection->insertOne(self::fromMongodloid($a), $options);
 			$ins = new Mongodloid_Entity($a);
 		} else {
 			$a = $ins; // pass by reference - _id is not saved on by-ref var
-			$ret = $this->_collection->insert($a, $options);
+			$ret = $this->_collection->insertOne(self::fromMongodloid($a), $options);
 			$ins = $a;
 		}
 		return self::getResult($ret);
@@ -702,12 +705,9 @@ class Mongodloid_Collection {
 	public static function getResult($result) {
 		$callingMethod = self::getCallingMethodName();
 		switch ($callingMethod) {
-			case 'updateMany':
-			case 'updateOne':
-			case 'replaceOne':
+			case 'update':
 				return self::buildUpdateResult($result);
-			case 'deleteMany':
-			case 'deleteOne':
+			case 'remove':
 				return self::buildRemoveResult($result);
 			default:
 				return self::toMongodloid($result);

@@ -16,7 +16,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		array('function' => 'checkSuccessUpdateOperation', 
 			'params'=> array(
 				'options' => array(),
-				'values' => array('$set' => array('firstname' => 'or')),
+				'values' => array('$set' => array('firstname' => 'or', 'lastname' => 'SHAASHUA')),
 				'query' => array('_id' => '5aeee57b05e68c02d035e1f6')
 			),
 			'expected' => array('result' => array('nModified' => 1, 'updatedExisting' => true, 'ok' => 1 ))
@@ -28,7 +28,7 @@ class Tests_Mongodloid extends UnitTestCase{
          $this->plansCol = Billrun_Factory::db()->plansCollection();
          $this->linesCol = Billrun_Factory::db()->linesCollection();
          $this->servicesCol = Billrun_Factory::db()->servicesCollection();
-         $this->construct(basename(__FILE__, '.php'), ['lines']);
+         $this->construct(basename(__FILE__, '.php'), []);
          $this->setColletions();
          $this->loadDbConfig();
      }
@@ -59,15 +59,15 @@ class Tests_Mongodloid extends UnitTestCase{
 		if ($this->fails) {
 			$this->message .= $this->fails;
 		}
-		print($this->message);
+		$this->cleanCollection($this->collectionToClean);
 		$this->restoreCollection();
+		print($this->message);
 	}
 	
 	protected function checkSuccessUpdateOperation($test){
-//		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$query = $test['params']['query'];
 		if($query['_id']){
-			$query['_id'] =  new Mongodloid_Id($query['_id']);//for now check mongo
+			$query['_id'] =  new MongoId($query['_id']);//for now check mongo
 		}
 		$options = $test['params']['options'];
 		$values = $test['params']['values'];
