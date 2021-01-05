@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-class Mongodloid_Id {
+class Mongodloid_Id implements Mongodloid_TypeInterface{
 
 	private $_mongoID;
 	private $_stringID;
@@ -30,5 +30,15 @@ class Mongodloid_Id {
 			$this->setMongoID(new MongoDB\BSON\ObjectId($base));
 		}
 	}
+	
+	/**
+     * Converts this Mongodloid_Id to the new BSON Id type
+     *
+     * @return MongoDB\BSON\ObjectId
+     */
+    public function toBSONType()
+    {
+        return $this->getMongoID();
+    }
 
 }

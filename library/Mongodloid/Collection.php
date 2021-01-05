@@ -43,6 +43,7 @@ class Mongodloid_Collection {
 		}
 		unset($options['multiple']);
 		$this->convertWriteConcernOptions($options);
+		$query = self::fromMongodloid($query);
 		if ($isReplace) {
 			return $this->replaceOne($query, $values, $options);
 		} else if ($multiple) {
@@ -200,16 +201,7 @@ class Mongodloid_Collection {
 	}
 
 	public function findOne($id, $want_array = false) {
-		if ($id instanceof Mongodloid_Id) {
-			$filter_id = $id->getMongoId();
-		} else if ($id instanceof MongoId) {
-			$filter_id = $id;
-		} else {
-			// probably a string
-			$filter_id = new MongoId((string) $id);
-		}
-
-		$values = self::getResult($this->_collection->findOne(array('_id' => $filter_id)));
+		$values = self::getResult($this->_collection->findOne(array('_id' => self::fromMongodloid($id))));
 
 		if ($want_array) {
 			return $values;
@@ -242,7 +234,7 @@ class Mongodloid_Collection {
 
 	/**
 	 * Remove an entity from the collection.
-	 * @param Mongoldoid_Entity $id - ID of mongo record to be removed.
+	 * @param Mongoldoid_Id $id - ID of mongo record to be removed.
 	 * @param array $options - Options to send to the mongo
 	 * @return boolean true if succssfull.
 	 */
@@ -333,7 +325,7 @@ class Mongodloid_Collection {
 		return new Mongodloid_Cursor('aggregate', $this->_collection, self::fromMongodloid($pipeline), $options);
 	}
 
-	public function setTimeout($timeout) {
+	public function setTimeout($timeout) {//
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {
 			@Mongodloid_Cursor::$timeout = (int) $timeout;
 		} else {
@@ -452,6 +444,7 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/class/MongoDBCollection/
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
+		$query = self::fromMongodloid($query);
 		if (isset($options['remove'])) {
 			unset($options['remove']);
 			$ret = $this->findOneAndDelete($query, $options);
@@ -814,15 +807,9 @@ class Mongodloid_Collection {
     public static function fromMongodloid($value)
     {
         switch (true) {
-            case $value instanceof Mongodloid_Id:
-				return $value->getMongoID();
-			case $value instanceof Mongodloid_Regex:
-				return $value->getMongoRegex();
-			case $value instanceof MongoRegex:
+            case $value instanceof Mongodloid_TypeInterface:
 				return $value->toBSONType();
-			case $value instanceof Mongodloid_Date:
-				return $value->getMongoDate();
-			case $value instanceof MongoDate:
+			case $value instanceof TypeInterface://still support mongo - after remove all this usages in the code can remove this.
 				return $value->toBSONType();
             case $value instanceof MongoDB\BSON\Type:
                 return $value;

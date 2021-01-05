@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-class Mongodloid_Date {
+class Mongodloid_Date implements Mongodloid_TypeInterface{
 
 	private $_mongoDate;
 	private $_stringDate;
@@ -18,10 +18,6 @@ class Mongodloid_Date {
 
 	public function toDateTime() {
 		return $this->_mongoDate->toDateTime();
-	}
-	
-	public function getMongoDate() {
-		return $this->_mongoDate;
 	}
 
 	public function setMongoDate(MongoDB\BSON\UTCDatetime $date) {
@@ -49,6 +45,16 @@ class Mongodloid_Date {
     private function truncateMicroSeconds($usec)
     {
         return (int) floor($usec / 1000) * 1000;
+    }
+	
+	/**
+     * Converts this Mongodloid_Date to the new BSON date type
+     *
+     * @return MongoDB\BSON\UTCDatetime
+     */
+    public function toBSONType()
+    {
+        return $this->_mongoDate;
     }
 
 }
