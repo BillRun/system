@@ -34,8 +34,11 @@ class OpenapiController extends RealtimeController {
 	const RATING_ACTION_DEBIT = 'DEBIT';
 	const RATING_ACTION_RELEASE = 'RELEASE';
 
+	protected static $VALIDITY_TIME = 86400;
+
 	protected $requestType;
 	protected $sessionId;
+	protected $initialRequest = null;
 
 	public function indexAction() {
 		$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_FORBIDDEN);
@@ -124,9 +127,60 @@ class OpenapiController extends RealtimeController {
 	 * see parent::process
 	 */
 	protected function process() {
+		$this->addMissingData();
 		$this->splitServiceRatings();
 		$lines = parent::process();
 		return $this->mergeServiceRatings($lines);
+	}
+	
+	/**
+	 * add missing data from initial request
+	 */
+	protected function addMissingData() {
+		$fieldsToAdd = [
+			'uf.subscriptionId',
+		];
+		
+		if ($this->requestType === 'initial') {
+			return true;
+		}
+
+		foreach ($fieldsToAdd as $fieldToAdd) {
+			$data = Billrun_Util::getIn($this->event, $fieldToAdd, '');
+			if (!empty($data)) {
+				continue;
+			}
+
+			$initialRequest = $this->getInitialRequest();
+			$data = Billrun_Util::getIn($initialRequest, $fieldToAdd, '');
+			if (!empty($data)) {
+				Billrun_Util::setIn($this->event, $fieldToAdd, $data);
+			}
+		}
+	}
+	
+	/**
+	 * get session's initial request
+	 *
+	 * @return array
+	 */
+	protected function getInitialRequest() {
+		if (is_null($this->initialRequest)) {
+			$query = array(
+				'session_id' => $this->sessionId,
+				'urt' => array(
+					'$gt' => new MongoDate(strtotime('-' . self::$VALIDITY_TIME . ' seconds -1 hour')),
+				),
+				'record_type' => 'initial_request',
+				'type' => $this->event['type'],
+			);
+			$line = Billrun_Factory::db()->archiveCollection()->query($query)->cursor()
+				->sort(array('urt' => -1))
+				->limit(1);
+			$this->initialRequest = $line->count() ? $line->current() : false;
+		}
+
+		return $this->initialRequest;
 	}
 	
 	/**
