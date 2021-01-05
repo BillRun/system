@@ -809,7 +809,7 @@ class Mongodloid_Collection {
         switch (true) {
             case $value instanceof Mongodloid_TypeInterface:
 				return $value->toBSONType();
-			case $value instanceof TypeInterface://still support mongo - after remove all this usages in the code can remove this.
+			case $value instanceof Alcaeus\MongoDbAdapter\TypeInterface://still support mongo - after remove all this usages in the code can remove this.
 				return $value->toBSONType();
             case $value instanceof MongoDB\BSON\Type:
                 return $value;
@@ -828,7 +828,7 @@ class Mongodloid_Collection {
     }
 
 	private static function getCallingMethodName() {
-		return debug_backtrace()[1]['function'];
+		return debug_backtrace()[2]['function'];
 	}
 
 }
