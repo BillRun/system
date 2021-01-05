@@ -712,8 +712,7 @@ class Billrun_Service {
 		$current_service_name = $this->getName();
 		$query = array(
 			'aid' => $aid,
-			'time' => date('Ymd H:i:sP', $time),
-			'services' => array('$elemMatch' => array('name' => $current_service_name))
+			'time' => date(Billrun_Base::base_datetimeformat, $time)
 		);		
 		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);
 		$maximum_quantity = 0;
