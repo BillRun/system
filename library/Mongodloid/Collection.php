@@ -756,6 +756,8 @@ class Mongodloid_Collection {
 		switch (true) {
 			case $value instanceof MongoDB\BSON\Type:
 				return self::convertBSONObjectToMongodloid($value);
+			case $value instanceof MongoDB\Model\IndexInfo:
+				return $value->__debugInfo();
 			case is_array($value):
 			case is_object($value):
 				$result = [];

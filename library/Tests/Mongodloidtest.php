@@ -64,17 +64,33 @@ class Tests_Mongodloid extends UnitTestCase{
 				'dbValues'=> array('firstname' => 'or', 'lastname' => null)
 			)
 		),
-		//get collectionName
+		//check collectionName - lines
 		array('function' => 'checkCollectionName', 'collection' => 'lines',
 			'expected' => array('result' => 'lines')
 		),
-		//get collectionName
+		//check collectionName - rates
 		array('function' => 'checkCollectionName', 'collection' => 'rates',
 			'expected' => array('result' => 'rates')
 		),
-//		//get collectionName
-//		array('function' => 'checkIndexes', 'collection' => 'plans',
-//			'expected' => array('result' => 'rates')
+		//TODO:: need to restore also indexes after finisfh run unit test
+		//check dropIndexes
+		array('function' => 'checkDropIndexes', 'collection' => 'balances',
+			'expected' => array('result' => array('ok' => 1))),
+		//check getIndexes
+		array('function' => 'checkGetIndexes', 'collection' => 'balances',
+			'params'=> array(
+				'fields' => array('key'=>1, 'from'=> 1, 'to'=> 1),
+				'params' => array('unique'=> true, 'background'=> true),
+			),
+			'expected' => array('indexes' => array(array('name'=> '_id_')))
+		),
+//		//check EnsureIndex
+//		array('function' => 'checkEnsureIndex', 'collection' => 'lines',
+//			'params'=> array(
+//				'fields' => array('key'=>1, 'from'=> 1, 'to'=> 1),
+//				'params' => array('unique'=> true, 'background'=> true),
+//			),
+//			'expected' => array('result' => 'plans')
 //		)
 	);
 
@@ -117,6 +133,8 @@ class Tests_Mongodloid extends UnitTestCase{
 		$this->restoreCollection();
 	}
 	
+//////////////////////////Mongodloid_Collection tests/////////////////////////////////
+	
 	protected function checkUpdate($test){
 		$collection = $test['collection'];
 		$query = $test['params']['query'];
@@ -136,15 +154,41 @@ class Tests_Mongodloid extends UnitTestCase{
 		$expectedResult = $test['expected']['result'];
 		return $result === $expectedResult;
 	}
+	protected function checkDropIndexes($test){
+		$collection = $test['collection'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->dropIndexes();
+		$indexesAfter = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+		return count($indexesAfter) === 1 && $this->checkResult($result, $test['expected']['result']);
+	}
 	
-//	protected function checkEnsureIndex($test){
-//		$collection = $test['collection'];
-//		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
-//		$expectedResult = $test['expected']['result'];
-//		return $result === $expectedResult;
-//	}
+	protected function checkGetIndexes($test){
+		$collection = $test['collection'];
+		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+		foreach ($indexes as $key => $index){
+			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+				return false;
+			}
+		}
+		return true;
+	}
 	
-	//updateEntity
+	protected function checkEnsureIndex($test){
+		$collection = $test['collection'];
+		$fields = $test['params']['fields'];
+		$params = $test['params']['params'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureIndex($fields, $params);
+		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+		foreach ($indexes as $key => $index){
+			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+				return false;
+			}
+		}
+		return $this->checkResult($result, $test['expected']['result']);
+	}
+	
+	//todo:: check updateEntity
+	
+	////////////////////////////////////////////////////////////////////////////////////////
 	
 	protected function checkDb($collection, $query, $expectedDbValues) {
 		foreach ($expectedDbValues as $field => $expectedDbValue){
