@@ -30,7 +30,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
             $row->setRawData($current);
 			if($scenario_entity["params"]["anaa"] != "*") {
-				$is_Anaa_relevant = true;
+				$is_anaa_relevant = true;
 			}
 			
 			//TODO: check if there are multiple results and split
@@ -38,9 +38,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $current["cf"]["component"] = $component_entity["params"]["component"];
             $current["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
             $current["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
-			if(["cf"]["tier_derivation"] == "N") {
-				$current["cf"]["tier"] = $component_entity["params"]["tier"];
-			}
             $row->setRawData($current);
 			if($component_entity["params"]["anaa"] != "*") {
 				$is_anaa_relevant = true;
@@ -54,10 +51,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$current["cf"]["tier"] = "";
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
 					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					$row->setRawData($current);
 					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
 					if($tier_entity_star_operator) {
-						if($this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]) 
-							> $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity["params"]["prefix"])) {
+						$operatorPrefix = $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity["params"]["prefix"]);
+						$starPrefix = $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]);
+						if(strlen($starPrefix) > strlen($operatorPrefix)) {
 							$current["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
 						}
 					}
@@ -154,12 +153,14 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function findLongestPrefix($num, $productPrefixes) {
-		usort($productPrefixes, 'sortByLength');
+		usort($productPrefixes, function ($a, $b) {
+		return strlen($b)-strlen($a);
+	});
 		$numPrefixes = Billrun_Util::getPrefixes($num);
 		$curr = 0;
 		for($i = 0; $i < strlen($num); $i++){
 			for($k = $curr; $k < count($productPrefixes); $k++) {
-				if(strlen($numPrefixes) > strlen($productPrefixes)){
+				if(strlen($numPrefixes[$i]) > strlen($productPrefixes[$k])){
 					$curr = $k;
 					break;
 				}
