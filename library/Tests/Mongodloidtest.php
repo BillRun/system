@@ -84,14 +84,14 @@ class Tests_Mongodloid extends UnitTestCase{
 			),
 			'expected' => array('indexes' => array(array('name'=> '_id_')))
 		),
-//		//check EnsureIndex
-//		array('function' => 'checkEnsureIndex', 'collection' => 'lines',
-//			'params'=> array(
-//				'fields' => array('key'=>1, 'from'=> 1, 'to'=> 1),
-//				'params' => array('unique'=> true, 'background'=> true),
-//			),
-//			'expected' => array('result' => 'plans')
-//		)
+		//check EnsureIndex
+		array('function' => 'checkEnsureIndex', 'collection' => 'balances',
+			'params'=> array(
+				'fields' => array('aid'=> 1, 'sid'=> 1, 'from'=> 1, 'to'=> 1, 'priority'=> 1),
+				'params' => array('unique'=> true, 'background'=> true),
+			),
+			'expected' => array('result' => 'plans')
+		)
 	);
 
 

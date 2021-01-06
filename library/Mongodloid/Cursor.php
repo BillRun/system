@@ -87,7 +87,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
           $this->doQuery();
         }
 		
-		return $this->getRaw ? Mongodloid_Collection::getResult($this->_iterator->current()) :  new Mongodloid_Entity(Mongodloid_Collection::getResult($this->_iterator->current()), null, false);
+		return $this->getRaw ? Mongodloid_Result::getResult($this->_iterator->current()) :  new Mongodloid_Entity(Mongodloid_Result::getResult($this->_iterator->current()), null, false);
 	}
 
 	public function key() {

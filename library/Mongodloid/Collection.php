@@ -10,9 +10,6 @@ class Mongodloid_Collection {
 	private $_collection;
 	private $_db;
 
-	const UNIQUE = 1;
-	const DROP_DUPLICATES = 2;
-
 	protected $w = 1;
 	protected $j = false;
 
@@ -28,10 +25,10 @@ class Mongodloid_Collection {
 
 	/**
 	 * Update a collection.
-	 * @param type $query - Query to filter records to update.
-	 * @param type $values - Query for updating new values.
-	 * @param type $options - Mongo options.
-	 * @return mongo update result.
+	 * @param array $query - Query to filter records to update.
+	 * @param array $values - Query for updating new values.
+	 * @param array $options - Mongo options.
+	 * @return mongodloid update result.
 	 */
 	public function update($query, $values, $options = array()) {
 
@@ -43,7 +40,7 @@ class Mongodloid_Collection {
 		}
 		unset($options['multiple']);
 		$this->convertWriteConcernOptions($options);
-		$query = self::fromMongodloid($query);
+		$query = Mongodloid_TypeConverter::fromMongodloid($query);
 		if ($isReplace) {
 			$res = $this->replaceOne($query, $values, $options);
 		} else if ($multiple) {
@@ -51,15 +48,16 @@ class Mongodloid_Collection {
 		} else {
 			$res = $this->updateOne($query, $values, $options);
 		}
-		return self::getResult($res);
+		return Mongodloid_Result::getResult($res);
 	}
 
 	/**
 	 * Update all documents that match the query.
-	 * @param type $query - Query to filter records to update
-	 * @param type $values - Query for updating new values.
-	 * @param type $options - Mongo options.
+	 * @param array $query - Query to filter records to update
+	 * @param array $values - Query for updating new values.
+	 * @param array $options - Mongo options.
 	 * @return mongodb updateMany result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-updateMany/#phpmethod.MongoDB\Collection::updateMany
 	 */
 	private function updateMany($query, $values, $options = array()) {
 		return $this->_collection->updateMany($query, $values, $options);
@@ -69,10 +67,11 @@ class Mongodloid_Collection {
 	 * Update at most one document that matches the query. 
 	 * If multiple documents match the query,
 	 * only the first matching document will be updated.
-	 * @param type $query - Query to filter record to update
-	 * @param type $values - Query for updating new values.
-	 * @param type $options - Mongo options.
+	 * @param array $query - Query to filter record to update
+	 * @param array $values - Query for updating new values.
+	 * @param array $options - Mongo options.
 	 * @return mongodb updateOne result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-updateOne/#phpmethod.MongoDB\Collection::updateOne
 	 */
 	private function updateOne($query, $values, $options = array()) {
 		return $this->_collection->updateOne($query, $values, $options);
@@ -82,10 +81,11 @@ class Mongodloid_Collection {
 	 * Replace at most one document that matches the query. 
 	 * If multiple documents match the query, 
 	 * only the first matching document will be replaced.
-	 * @param type $query- Query to filter record to replace
-	 * @param type $values - new values.
-	 * @param type $options - Mongo options.
+	 * @param array $query - Query to filter record to replace
+	 * @param array $values - new values.
+	 * @param array $options - Mongo options.
 	 * @return mongodb replaceOne result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-replaceOne/#phpmethod.MongoDB\Collection::replaceOne
 	 */
 	private function replaceOne($query, $values, $options = array()) {
 		return $this->_collection->replaceOne($query, $values, $options);
@@ -94,7 +94,7 @@ class Mongodloid_Collection {
 	/**
 	 * Set the fields into the entity.
 	 * @param Mongodloid_Entity - Entity to set values into.
-	 * @param type $fields - Fields to set.
+	 * @param array $fields - Fields to set.
 	 */
 	protected function setEntityFields($entity, $fields) {
 		foreach ($fields as $key => $value) {
@@ -107,7 +107,7 @@ class Mongodloid_Collection {
 	 * Update a collection by entity.
 	 * @param Mongodloid_Entity $entity - Entity to update in the collection.
 	 * @param array $fields - Array of keys and values to be updated in the entity.
-	 * @return mongo update result.
+	 * @return mongodloid updateEntity result.
 	 */
 	public function updateEntity($entity, $fields = array()) {
 		if (empty($fields)) {
@@ -122,36 +122,64 @@ class Mongodloid_Collection {
 		// This function changes fields, should I clone fields before sending?
 		$this->setEntityFields($entity, $fields);
 
-		return $this->buildUpdateResult($this->updateOne($data, array('$set' => $fields)));
+		return Mongodloid_Result::getResult($this->updateOne($data, array('$set' => $fields)));
 	}
 
+	/**
+	 * Returns the name of this collection.
+	 * @return mongodloid getName result
+	 */
 	public function getName() {
-		return self::getResult($this->_collection->getCollectionName());
+		return Mongodloid_Result::getResult($this->_collection->getCollectionName());
 	}
 
+	/**
+	 * Drop all indexes in the collection,
+	 * except for the required index on the _id field.
+	 * @return mongodloid dropIndexes result
+	 */
 	public function dropIndexes() {
-		return self::getResult($this->_collection->dropIndexes());
+		return Mongodloid_Result::getResult($this->_collection->dropIndexes());
 	}
 
+	/**
+	 * Drop an index from the collection.
+	 * @param mixed $field - The name or model object of the index to drop.
+	 * @return mongodloid dropIndexe result
+	 */
 	public function dropIndex($field) {
-		return self::getResult($this->_collection->dropIndex($field));
+		return Mongodloid_Result::getResult($this->_collection->dropIndex($field));
 	}
 
-	public function ensureUniqueIndex($fields, $dropDups = false) {
-		return $this->ensureIndex($fields, $dropDups ? self::DROP_DUPLICATES : self::UNIQUE);
+	/**
+	 * Create an unique index for the collection
+	 * @param array $fields
+	 * @return mongodloid createIndex result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-createIndex/#phpmethod.MongoDB\Collection::createIndex
+	 */
+	public function ensureUniqueIndex($fields) {
+		$params['unique'] = true;
+		return $this->ensureIndex($fields, $params);
 	}
 
+	/**
+	 * Create an index for the collection
+	 * @param array $fields - Specifies the field or fields to index and the index order.
+	 * @param array $params
+	 * @return mongodloid createIndex result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-createIndex/#phpmethod.MongoDB\Collection::createIndex
+	 */
 	public function ensureIndex($fields, $params = array()) {
 		if (!is_array($fields)) {
 			$fields = array($fields => 1);
 		}
-		$ps = array();
-		if ($params == self::UNIQUE || $params == self::DROP_DUPLICATES) {
-			$ps['unique'] = true;
-		}
-		return self::getResult($this->_collection->createIndex($fields, $ps));
+		return Mongodloid_Result::getResult($this->_collection->createIndex($fields, $params));
 	}
-
+	
+	/**
+	 * get all indexes fields
+	 * @return array - Indexed Fields
+	 */
 	public function getIndexedFields() {
 		$indexes = $this->getIndexes();
 
@@ -165,8 +193,13 @@ class Mongodloid_Collection {
 		return $fields;
 	}
 
+	/**
+	 * Returns information for all indexes for this collection.
+	 * @return mongodloid getIndexes result.
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-listIndexes/#phpmethod.MongoDB\Collection::listIndexes
+	 */
 	public function getIndexes() {
-		return self::getResult($this->_collection->listIndexes());
+		return Mongodloid_Result::getResult($this->_collection->listIndexes());
 	}
 
 	/**
@@ -181,6 +214,12 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
+	/**
+	 * Saves a document to this collection
+	 * @param Mongodloid_Entity $entity
+	 * @param type $w
+	 * @return mongodloid save result.
+	 */
 	public function save(Mongodloid_Entity $entity, $w = null) {
 		$options['upsert'] = true;
 		$options['w'] = $w;
@@ -193,16 +232,19 @@ class Mongodloid_Collection {
 			$data['_id'] =  $id;
 		}
 		
-		$result = $this->replaceOne(array('_id' => $id), $data, $options);
-		if (!$result) {
-			return false;
-		}
+		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => $id), $data, $options));
 		$entity->setRawData($data);
-		return true;
+		return $result;
 	}
 
+	/**
+	 * Finds a single document that '_id' matching to the given id.
+	 * @param Monogodloid_Id $id  - ID of mongo record to be find.
+	 * @param boolean $want_array
+	 * @return array\Mongodloid_Entity - dependence on $want_array
+	 */
 	public function findOne($id, $want_array = false) {
-		$values = self::getResult($this->_collection->findOne(array('_id' => self::fromMongodloid($id))));
+		$values = Mongodloid_Result::getResult($this->_collection->findOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id))));
 
 		if ($want_array) {
 			return $values;
@@ -210,12 +252,21 @@ class Mongodloid_Collection {
 		return new Mongodloid_Entity($values, $this);
 	}
 
+	/**
+	 * Drop the collection.
+	 * @return mongodloid drop result.
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-drop/#phpmethod.MongoDB\Collection::drop
+	 */
 	public function drop() {
-		return self::getResult($this->_collection->drop());
+		return Mongodloid_Result::getResult($this->_collection->drop());
 	}
 
+	/**
+	 * Count the number of documents in this collection
+	 * @return mongodloid count result.
+	 */
 	public function count() {
-		return self::getResult($this->_collection->count());
+		return Mongodloid_Result::getResult($this->_collection->count());
 	}
 
 	public function clear() {//TODO:: check this - I dont think this works also before changes
@@ -225,8 +276,8 @@ class Mongodloid_Collection {
 	/**
 	 * Remove an entity from the collection.
 	 * @param Mongoldoid_Entity $entity - Entity to remove from the collection.
-	 * @param array $options - Options to send to the mongo
-	 * @return boolean true if succssfull.
+	 * @param array $options - Options to send to the mongodb
+	 * @return mongodloid remove result
 	 */
 	public function removeEntity($entity, $options = array('w' => 1)) {
 		$query = $entity->getId();
@@ -236,8 +287,8 @@ class Mongodloid_Collection {
 	/**
 	 * Remove an entity from the collection.
 	 * @param Mongoldoid_Id $id - ID of mongo record to be removed.
-	 * @param array $options - Options to send to the mongo
-	 * @return boolean true if succssfull.
+	 * @param array $options - Options to send to the mongodb
+	 * @return mongodloid remove result
 	 */
 	public function removeId($id, $options = array('w' => 1)) {
 		$query = array('_id' => $id->getMongoId());
@@ -248,7 +299,7 @@ class Mongodloid_Collection {
 	 * Remove data from the collection.
 	 * @param Query $query - Query object or Mongoldoid_Entity to use to remove data.
 	 * @param array $options - Options to send to the mongo
-	 * @return boolean true if succssfull.
+	 * @return mongodloid remove result.
 	 */
 	public function remove($query, $options = array('w' => 1)) {
 		// avoid empty database
@@ -270,22 +321,42 @@ class Mongodloid_Collection {
 		}else{
 			$ret = $this->deleteOne($query, $options);
 		}
-		return self::getResult($ret);
+		return Mongodloid_Result::getResult($ret);
 	}
 
+	/**
+	 * Deletes all documents that match the filter criteria.
+	 * @param array|object $query - The filter criteria that specifies the documents to delete
+	 * @param array $options - An array specifying the desired options.
+	 * @return MongoDB\DeleteResult
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-deleteMany/#phpmethod.MongoDB\Collection::deleteMany
+	 */
 	private function deleteMany($query, $options) {
 		return $this->_collection->deleteMany($query, $options);
 	}
 
+	/**
+	 * Deletes at most one document that matches the filter criteria.
+	 * If multiple documents match the filter criteria,
+	 * only the first matching document will be deleted.
+	 * @param array|object $query - The filter criteria that specifies the documents to delete
+	 * @param type $options - An array specifying the desired options
+	 * @return MongoDB\DeleteResult
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-deleteOne/#phpmethod.MongoDB\Collection::deleteOne
+	 */
 	private function deleteOne($query, $options) {
 		return $this->_collection->deleteOne($query, $options);
 	}
 
 	/**
-	 * @return MongoCursor a cursor for the search results.
+	 * Finds documents matching the query.
+	 * @param array|object $query - The filter criteria that specifies the documents to query
+	 * @param type $options - An array specifying the desired options
+	 * @return Mongodloid_Cursor - a cursor for the search results.
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-find/#phpmethod.MongoDB\Collection::find
 	 */
 	public function find($query, $options = array()) {
-		return new Mongodloid_Cursor('find', $this->_collection, self::fromMongodloid($query), $options);
+		return new Mongodloid_Cursor('find', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($query), $options);
 	}
 
 	/**
@@ -318,14 +389,14 @@ class Mongodloid_Collection {
 		}
 		$pipeline = $args[0] ?? array();
 		$options = $args[1] ?? array();
-		return new Mongodloid_Cursor('aggregate', $this->_collection, self::fromMongodloid($pipeline), $options);
+		return new Mongodloid_Cursor('aggregate', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($pipeline), $options);
 	}
 
 	public function aggregateWithOptions() {
 		$args = func_get_args();
 		$pipeline = $args[0] ?? array();
 		$options = $args[1] ?? array();
-		return new Mongodloid_Cursor('aggregate', $this->_collection, self::fromMongodloid($pipeline), $options);
+		return new Mongodloid_Cursor('aggregate', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($pipeline), $options);
 	}
 
 	public function setTimeout($timeout) {//
@@ -447,7 +518,7 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/class/MongoDBCollection/
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
-		$query = self::fromMongodloid($query);
+		$query = Mongodloid_TypeConverter::fromMongodloid($query);
 		if (isset($options['remove'])) {
 			unset($options['remove']);
 			$ret = $this->findOneAndDelete($query, $options);
@@ -463,7 +534,7 @@ class Mongodloid_Collection {
 				$ret = $this->findOneAndUpdate($query, $update, $options);
 			}
 		}
-		$ret = self::getResult($ret);
+		$ret = Mongodloid_Result::getResult($ret);
 		if ($retEntity) {
 			return new Mongodloid_Entity($ret, $this);
 		}
@@ -504,7 +575,7 @@ class Mongodloid_Collection {
 //			$documents = $a;
 //		}
 		$this->convertWriteConcernOptions($options);
-		return self::getResult($this->insertMany(self::fromMongodloid($a), $options));
+		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($a), $options));
 	}
 
 	private function insertMany(array $documents, array $options = array()) {
@@ -524,14 +595,14 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options);
 		if ($ins instanceof Mongodloid_Entity) {
 			$a = $ins->getRawData();
-			$ret = $this->_collection->insertOne(self::fromMongodloid($a), $options);
+			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
 			$ins = new Mongodloid_Entity($a);
 		} else {
 			$a = $ins; // pass by reference - _id is not saved on by-ref var
-			$ret = $this->_collection->insertOne(self::fromMongodloid($a), $options);
+			$ret = $this->_collection->insertOne(Mongodloid_TypeConverter::fromMongodloid($a), $options);
 			$ins = $a;
 		}
-		return self::getResult($ret);
+		return Mongodloid_Result::getResult($ret);
 	}
 
 	/**
@@ -639,7 +710,7 @@ class Mongodloid_Collection {
 	}
 
 	public function distinct($key, array $query = array()) {
-		return self::getResult($this->_collection->distinct($key, $query));
+		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query));
 	}
 
 	public function getWriteConcern($var = null) {
@@ -700,137 +771,6 @@ class Mongodloid_Collection {
 		unset($options['w']);
 		unset($options['wTimeout']);
 		unset($options['wTimeoutMS']);
-	}
-
-	public static function getResult($result) {
-		$callingMethod = self::getCallingMethodName();
-		switch ($callingMethod) {
-			case 'update':
-				return self::buildUpdateResult($result);
-			case 'remove':
-				return self::buildRemoveResult($result);
-			default:
-				return self::toMongodloid($result);
-		}
-	}
-
-	private static function buildRemoveResult($result) {
-
-
-		if (!$result->isAcknowledged()) {
-			return true;
-		}
-
-		return [
-			'ok' => 1.0,
-			'n' => $result->getDeletedCount(),
-			'err' => null,
-			'errmsg' => null
-		];
-	}
-
-	private static function buildUpdateResult($result) {
-		
-
-		if (!$result->isAcknowledged()) {
-			return true;
-		}
-
-		return [
-			'ok' => 1.0,
-			'nModified' => $result->getModifiedCount(),
-			'n' => $result->getMatchedCount(),
-			'err' => null,
-			'errmsg' => null,
-			'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
-		];
-	}
-
-	/**
-	 * Converts a BSON type to the Mongodloid types
-	 *
-	 * @param mixed $value
-	 * @return mixed
-	 */
-	public static function toMongodloid($value) {
-		switch (true) {
-			case $value instanceof MongoDB\BSON\Type:
-				return self::convertBSONObjectToMongodloid($value);
-			case $value instanceof MongoDB\Model\IndexInfo:
-				return $value->__debugInfo();
-			case is_array($value):
-			case is_object($value):
-				$result = [];
-
-				foreach ($value as $key => $item) {
-					$result[$key] = self::toMongodloid($item);
-				}
-
-				return $result;
-			default:
-				return $value;
-		}
-	}
-
-	/**
-	 * Converter method to convert a BSON object to its Mongodloid type
-	 *
-	 * @param BSON\Type $value
-	 * @return mixed
-	 */
-	private static function convertBSONObjectToMongodloid(MongoDB\BSON\Type $value) {
-		if (!$value) {
-			return false;
-		}
-		switch (true) {
-			case $value instanceof MongoDB\BSON\ObjectID:
-				return new Mongodloid_Id($value);
-			case $value instanceof MongoDB\BSON\Regex:
-				return new Mongodloid_Regex($value);
-			case $value instanceof MongoDB\BSON\UTCDatetime:
-				return new Mongodloid_Date($value);
-			case $value instanceof MongoDB\Model\BSONDocument:
-			case $value instanceof MongoDB\Model\BSONArray:
-				return array_map(
-					['self', 'toMongodloid'],
-					$value->getArrayCopy()
-				);
-			default:
-				return $value;
-		}
-	}
-	
-	/**
-     * Converts a Mongodloid type to the new BSON type
-     *
-     * @param mixed $value
-     * @return mixed
-     */
-    public static function fromMongodloid($value)
-    {
-        switch (true) {
-            case $value instanceof Mongodloid_TypeInterface:
-				return $value->toBSONType();
-			case $value instanceof Alcaeus\MongoDbAdapter\TypeInterface://still support mongo - after remove all this usages in the code can remove this.
-				return $value->toBSONType();
-            case $value instanceof MongoDB\BSON\Type:
-                return $value;
-            case is_array($value):
-            case is_object($value):
-                $result = [];
-
-                foreach ($value as $key => $item) {
-                    $result[$key] = self::fromMongodloid($item);
-                }
-
-                return $result;
-            default:
-                return $value;
-        }
-    }
-
-	private static function getCallingMethodName() {
-		return debug_backtrace()[2]['function'];
 	}
 
 }
