@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-class Mongodloid_Id implements Mongodloid_TypeInterface{
+class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
 
 	private $_mongoID;
 	private $_stringID;
@@ -39,6 +39,17 @@ class Mongodloid_Id implements Mongodloid_TypeInterface{
     public function toBSONType()
     {
         return $this->getMongoID();
+    }
+
+
+    /**
+     * @return stdClass
+     */
+    public function jsonSerialize()
+    {
+        $object = new stdClass();
+        $object->{'$id'} =  $this->_stringID;
+        return $object;
     }
 
 }
