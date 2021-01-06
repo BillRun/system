@@ -7,7 +7,7 @@ class Mongodloid_Result {
 	 * @return mixed -The mongodloid result
 	 */
 	public static function getResult($result) {
-		$callingMethod = self::getCallingMethodName();
+		$callingMethod = debug_backtrace()[1]['function'];
 		switch ($callingMethod) {
 			case 'update':
 			case 'updateEntity':
@@ -63,7 +63,4 @@ class Mongodloid_Result {
 		];
 	}
 
-	private static function getCallingMethodName() {
-		return debug_backtrace()[2]['function'];
-	}
 }

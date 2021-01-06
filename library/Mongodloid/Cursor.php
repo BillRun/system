@@ -105,6 +105,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function rewind() {
+		$callingMethod = debug_backtrace()[1]['function'];
+		switch($callingMethod){
+			case 'iterator_to_array':
+				$this->setRawReturn(true);
+		}
 		if ($this->_iterator === null) {
           $this->doQuery();
         }else{
