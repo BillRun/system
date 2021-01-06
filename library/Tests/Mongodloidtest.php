@@ -90,8 +90,25 @@ class Tests_Mongodloid extends UnitTestCase{
 				'fields' => array('aid'=> 1, 'sid'=> 1, 'from'=> 1, 'to'=> 1, 'priority'=> 1),
 				'params' => array('unique'=> true, 'background'=> true),
 			),
-			'expected' => array('result' => 'plans')
+			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true)),
+				'result'=> 'aid_1_sid_1_from_1_to_1_priority_1'
+			)
+		),
+		//check ensureUniqueIndex
+		array('function' => 'checkEnsureUniqueIndex', 'collection' => 'balances',
+			'params'=> array(
+				'fields' => array('aid'=> 1, 'sid'=> 1),
+				'params' => array('background'=> true),
+			),
+			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true), array('unique'=> true)),
+				'result'=> 'aid_1_sid_1'
+			)
+		),
+		//check getIndexedFields
+		array('function' => 'checkGetIndexedFields', 'collection' => 'balances',
+			'expected' => array('fields' => array('_id', 'aid', 'sid', 'from', 'to', 'priority', 'aid', 'sid'))
 		)
+		
 	);
 
 
@@ -183,9 +200,30 @@ class Tests_Mongodloid extends UnitTestCase{
 				return false;
 			}
 		}
-		return $this->checkResult($result, $test['expected']['result']);
+		return $result === $test['expected']['result'];
 	}
 	
+	protected function checkEnsureUniqueIndex($test){
+		$collection = $test['collection'];
+		$fields = $test['params']['fields'];
+		$params = $test['params']['params'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureUniqueIndex($fields, $params);
+		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+		foreach ($indexes as $key => $index){
+			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+				return false;
+			}
+		}
+		return $result === $test['expected']['result'];
+	}
+	
+	protected function checkGetIndexedFields($test) {
+		$collection = $test['collection'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexedFields();
+		return $result == $test['expected']['fields'];
+	}
+
+
 	//todo:: check updateEntity
 	
 	////////////////////////////////////////////////////////////////////////////////////////

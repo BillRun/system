@@ -185,7 +185,7 @@ class Mongodloid_Collection {
 
 		$fields = array();
 		foreach ($indexes as $index) {
-			$keys = array_keys($index->get('key'));
+			$keys = array_keys($index['key']);
 			foreach ($keys as $key)
 				$fields[] = $key;
 		}
