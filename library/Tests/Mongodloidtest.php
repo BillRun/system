@@ -13,7 +13,7 @@ class Tests_Mongodloid extends UnitTestCase{
 	public $message = '';
 	protected $fails;
 	protected $tests = array(
-		//check success update 
+		// check success update 
 		array('function' => 'checkUpdate', 'collection' => 'lines',
 			'params'=> array(
 				'options' => array(),
@@ -72,42 +72,56 @@ class Tests_Mongodloid extends UnitTestCase{
 		array('function' => 'checkCollectionName', 'collection' => 'rates',
 			'expected' => array('result' => 'rates')
 		),
-		//TODO:: need to restore also indexes after finisfh run unit test
-		//check dropIndexes
-		array('function' => 'checkDropIndexes', 'collection' => 'balances',
-			'expected' => array('result' => array('ok' => 1))),
-		//check getIndexes
-		array('function' => 'checkGetIndexes', 'collection' => 'balances',
+		//check findOne array result
+		array('function' => 'checkFindOne', 'collection' => 'subscribers',
 			'params'=> array(
-				'fields' => array('key'=>1, 'from'=> 1, 'to'=> 1),
-				'params' => array('unique'=> true, 'background'=> true),
+				'want_array' =>true,
+				'id' => '5b34a76f05e68c6ae62d4a33'
 			),
-			'expected' => array('indexes' => array(array('name'=> '_id_')))
 		),
-		//check EnsureIndex
-		array('function' => 'checkEnsureIndex', 'collection' => 'balances',
+		//check findOne entity result
+		array('function' => 'checkFindOne', 'collection' => 'subscribers',
 			'params'=> array(
-				'fields' => array('aid'=> 1, 'sid'=> 1, 'from'=> 1, 'to'=> 1, 'priority'=> 1),
-				'params' => array('unique'=> true, 'background'=> true),
+				'want_array' =>false,
+				'id' => '5b34a76f05e68c6ae62d4a33'
 			),
-			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true)),
-				'result'=> 'aid_1_sid_1_from_1_to_1_priority_1'
-			)
 		),
-		//check ensureUniqueIndex
-		array('function' => 'checkEnsureUniqueIndex', 'collection' => 'balances',
-			'params'=> array(
-				'fields' => array('aid'=> 1, 'sid'=> 1),
-				'params' => array('background'=> true),
-			),
-			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true), array('unique'=> true)),
-				'result'=> 'aid_1_sid_1'
-			)
-		),
-		//check getIndexedFields
-		array('function' => 'checkGetIndexedFields', 'collection' => 'balances',
-			'expected' => array('fields' => array('_id', 'aid', 'sid', 'from', 'to', 'priority', 'aid', 'sid'))
-		)
+//		//TODO:: need to restore also indexes after finisfh run unit test
+//		//check dropIndexes
+//		array('function' => 'checkDropIndexes', 'collection' => 'balances',
+//			'expected' => array('result' => array('ok' => 1))),
+//		//check getIndexes
+//		array('function' => 'checkGetIndexes', 'collection' => 'balances',
+//			'params'=> array(
+//				'fields' => array('key'=>1, 'from'=> 1, 'to'=> 1),
+//				'params' => array('unique'=> true, 'background'=> true),
+//			),
+//			'expected' => array('indexes' => array(array('name'=> '_id_')))
+//		),
+//		//check EnsureIndex
+//		array('function' => 'checkEnsureIndex', 'collection' => 'balances',
+//			'params'=> array(
+//				'fields' => array('aid'=> 1, 'sid'=> 1, 'from'=> 1, 'to'=> 1, 'priority'=> 1),
+//				'params' => array('unique'=> true, 'background'=> true),
+//			),
+//			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true)),
+//				'result'=> 'aid_1_sid_1_from_1_to_1_priority_1'
+//			)
+//		),
+//		//check ensureUniqueIndex
+//		array('function' => 'checkEnsureUniqueIndex', 'collection' => 'balances',
+//			'params'=> array(
+//				'fields' => array('aid'=> 1, 'sid'=> 1),
+//				'params' => array('background'=> true),
+//			),
+//			'expected' => array('indexes' => array(array('name'=> '_id_'), array('name'=> 'aid_1_sid_1_from_1_to_1_priority_1', 'unique'=> true, 'background'=> true), array('unique'=> true)),
+//				'result'=> 'aid_1_sid_1'
+//			)
+//		),
+//		//check getIndexedFields
+//		array('function' => 'checkGetIndexedFields', 'collection' => 'balances',
+//			'expected' => array('fields' => array('_id', 'aid', 'sid', 'from', 'to', 'priority', 'aid', 'sid'))
+//		)
 		
 	);
 
@@ -171,57 +185,71 @@ class Tests_Mongodloid extends UnitTestCase{
 		$expectedResult = $test['expected']['result'];
 		return $result === $expectedResult;
 	}
-	protected function checkDropIndexes($test){
-		$collection = $test['collection'];
-		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->dropIndexes();
-		$indexesAfter = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
-		return count($indexesAfter) === 1 && $this->checkResult($result, $test['expected']['result']);
-	}
 	
-	protected function checkGetIndexes($test){
+	protected function checkFindOne($test){
 		$collection = $test['collection'];
-		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
-		foreach ($indexes as $key => $index){
-			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
-				return false;
-			}
+		$id = new MongoId($test['params']['id']);//todo:: for now check mongo 
+		$want_array = $test['params']['want_array'];
+		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->findOne($id, $want_array);
+		if($want_array && !(is_array($result))){
+			return false;
+		}else if (!$want_array && !($result instanceof Mongodloid_Entity)){
+			return false;
 		}
 		return true;
 	}
-	
-	protected function checkEnsureIndex($test){
-		$collection = $test['collection'];
-		$fields = $test['params']['fields'];
-		$params = $test['params']['params'];
-		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureIndex($fields, $params);
-		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
-		foreach ($indexes as $key => $index){
-			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
-				return false;
-			}
-		}
-		return $result === $test['expected']['result'];
-	}
-	
-	protected function checkEnsureUniqueIndex($test){
-		$collection = $test['collection'];
-		$fields = $test['params']['fields'];
-		$params = $test['params']['params'];
-		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureUniqueIndex($fields, $params);
-		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
-		foreach ($indexes as $key => $index){
-			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
-				return false;
-			}
-		}
-		return $result === $test['expected']['result'];
-	}
-	
-	protected function checkGetIndexedFields($test) {
-		$collection = $test['collection'];
-		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexedFields();
-		return $result == $test['expected']['fields'];
-	}
+
+//	protected function checkDropIndexes($test){
+//		$collection = $test['collection'];
+//		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->dropIndexes();
+//		$indexesAfter = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+//		return count($indexesAfter) === 1 && $this->checkResult($result, $test['expected']['result']);
+//	}
+//	
+//	protected function checkGetIndexes($test){
+//		$collection = $test['collection'];
+//		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+//		foreach ($indexes as $key => $index){
+//			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
+//	
+//	protected function checkEnsureIndex($test){
+//		$collection = $test['collection'];
+//		$fields = $test['params']['fields'];
+//		$params = $test['params']['params'];
+//		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureIndex($fields, $params);
+//		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+//		foreach ($indexes as $key => $index){
+//			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+//				return false;
+//			}
+//		}
+//		return $result === $test['expected']['result'];
+//	}
+//	
+//	protected function checkEnsureUniqueIndex($test){
+//		$collection = $test['collection'];
+//		$fields = $test['params']['fields'];
+//		$params = $test['params']['params'];
+//		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->ensureUniqueIndex($fields, $params);
+//		$indexes = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexes();
+//		foreach ($indexes as $key => $index){
+//			if(!$this->checkResult($index, $test['expected']['indexes'][$key])){
+//				return false;
+//			}
+//		}
+//		return $result === $test['expected']['result'];
+//	}
+//	
+//	protected function checkGetIndexedFields($test) {
+//		$collection = $test['collection'];
+//		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->getIndexedFields();
+//		return $result == $test['expected']['fields'];
+//	}
 
 
 	//todo:: check updateEntity
