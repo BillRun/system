@@ -351,11 +351,12 @@ class Mongodloid_Collection {
 	/**
 	 * Finds documents matching the query.
 	 * @param array|object $query - The filter criteria that specifies the documents to query
-	 * @param type $options - An array specifying the desired options
+	 * @param array $fields - Fields of the results to return.
 	 * @return Mongodloid_Cursor - a cursor for the search results.
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-find/#phpmethod.MongoDB\Collection::find
 	 */
-	public function find($query, $options = array()) {
+	public function find($query, $fields = array()) {
+		$options['projection'] = $fields;
 		return new Mongodloid_Cursor('find', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($query), $options);
 	}
 
