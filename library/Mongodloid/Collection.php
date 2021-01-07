@@ -357,7 +357,9 @@ class Mongodloid_Collection {
 	 */
 	public function find($query, $fields = array()) {
 		$options['projection'] = $fields;
-		return new Mongodloid_Cursor('find', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($query), $options);
+		$cursor = new Mongodloid_Cursor('find', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($query), $options);
+		$cursor->setRawReturn(true);
+		return $cursor;
 	}
 
 	/**

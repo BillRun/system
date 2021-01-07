@@ -122,7 +122,10 @@ class Mongodloid_Query implements IteratorAggregate {
 	 */
 	public function cursor() {
 		// 2nd argument due to new mongodb driver (PHP7+)
-		return $this->_collection->find($this->_params, $this->_project)/*, $this->_collection->getWriteConcern('wtimeout')*/;
+		$cursor = $this->_collection->find($this->_params, $this->_project)/*, $this->_collection->getWriteConcern('wtimeout')*/;
+		$cursor->setRawReturn(false);
+		return $cursor;
+		
 	}
 
 	public function query($key, $value = null) {
