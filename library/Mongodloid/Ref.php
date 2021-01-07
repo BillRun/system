@@ -64,6 +64,6 @@ class Mongodloid_Ref
         if (! static::isRef($ref)) {
             return null;
         }
-        return $db->selectCollection($ref[static::$refKey])->findOne(['_id' => $ref[static::$idKey]]);
+        return $db->getCollection($ref[static::$refKey])->findOne(['_id' => $ref[static::$idKey]]);
     }
 }
