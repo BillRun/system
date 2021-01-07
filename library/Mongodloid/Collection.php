@@ -454,10 +454,10 @@ class Mongodloid_Collection {
 	 * @return array
 	 */
 	public function getRef($ref) {//
-		if (!MongoDBRef::isRef($ref)) {
+		if (!Mongodloid_Ref::isRef($ref)) {
 			return;
 		}
-		return new Mongodloid_Entity(MongoDBRef::get($this->_db, $ref));
+		return new Mongodloid_Entity(Mongodloid_Ref::get($this->_db, $ref));
 	}
 
 	/**
@@ -505,7 +505,7 @@ class Mongodloid_Collection {
 			$id = $document_or_id;
 		}
 
-		return MongoDBRef::create($this->getName(), $id);
+		return Mongodloid_Ref::create($this->getName(), $id);
 	}
 
 	/**
