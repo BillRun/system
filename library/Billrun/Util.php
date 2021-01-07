@@ -1478,8 +1478,8 @@ class Billrun_Util {
 		if (!$logo) {
 			return '';
 		}
-		if (!($logo instanceof MongoGridFSFile)) {
-			$logo = new MongoGridFSFile($gridFsColl, $logo);
+		if (!($logo instanceof Mongodloid_GridFSFile)) {
+			$logo = new Mongodloid_GridFSFile($gridFsColl, $logo);
 		}
 		$bytes = $logo->getBytes();
 		if ($base64) {

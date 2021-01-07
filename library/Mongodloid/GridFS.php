@@ -268,4 +268,15 @@ class Mongodloid_GridFS extends Mongodloid_Collection{
 
         return $result;
     }
+	
+	public function getChunks($file)
+    {
+		$file = Mongodloid_TypeConverter::fromMongodloid($file);
+        return Mongodloid_Result::getResult($this->chunks->find(
+            ['files_id' => $file['_id']],
+            ['data' => 1],
+            ['n' => 1])
+        );
+    }
+
 }

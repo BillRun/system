@@ -19,7 +19,7 @@ class FilesAction extends ApiAction {
 	
 	/**
 	 * The instance of the Grid FS collection.
-	 * @var MongoGridFS
+	 * @var Mongodloid_GridFS
 	 */
 	protected $collection;
 	
@@ -165,9 +165,9 @@ class FilesAction extends ApiAction {
 	/**
 	 * Validate the file integrity
 	 * Currently the signature is MD5 (Calculated internaly by the mongo).
-	 * @param MongoGridFSFile $gfsFile
+	 * @param Mongodloid_GridFSFile $gfsFile
 	 */
-	protected function validateFileSignature(MongoGridFSFile $gfsFile) {
+	protected function validateFileSignature(Mongodloid_GridFSFile $gfsFile) {
 		// Check signature.
 		$fileData = $gfsFile->{'file'};
 		
@@ -189,9 +189,9 @@ class FilesAction extends ApiAction {
 	/**
 	 * Validate the file permissions
 	 * TODO: What do we do if a file has no permissions?
-	 * @param MongoGridFSFile $gfsFile
+	 * @param Mongodloid_GridFSFile $gfsFile
 	 */
-	protected function validateFilePermissions(MongoGridFSFile $gfsFile) {
+	protected function validateFilePermissions(Mongodloid_GridFSFile $gfsFile) {
 		// Check permissions.
 		$fileData = $gfsFile->{'file'};
 		
