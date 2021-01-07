@@ -159,5 +159,15 @@ class Mongodloid_Db {
 		$servers = $this->getServers();
 		return $servers[0]->getType() === MongoDB\Driver\Server::TYPE_STANDALONE;
 	}
-
+	
+	/**
+     * Fetches toolkit for dealing with files stored in this database
+     *
+     * @param string $prefix The prefix for the files and chunks collections.
+     * @return Mongodloid_GridFS Returns a new gridfs object for this database.
+     */
+    public function getGridFS($prefix = "fs")
+    {
+        return new Mongodloid_GridFS($this, $prefix);
+    }
 }
