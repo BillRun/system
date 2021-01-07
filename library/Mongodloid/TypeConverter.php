@@ -45,6 +45,8 @@ class Mongodloid_TypeConverter
 				return new Mongodloid_Regex($value);
 			case $value instanceof MongoDB\BSON\UTCDatetime:
 				return new Mongodloid_Date($value);
+			case $value instanceof MongoDB\BSON\Binary:
+				return new Mongodloid_Binary($value);
 			case $value instanceof MongoDB\Model\BSONDocument:
 			case $value instanceof MongoDB\Model\BSONArray:
 				return array_map(

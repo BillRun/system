@@ -1473,7 +1473,7 @@ class Billrun_Util {
 	}
 	
 	public static function getCompanyLogo($base64 = true) {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if (!$logo) {
 			return '';

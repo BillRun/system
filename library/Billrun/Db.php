@@ -49,8 +49,8 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 	
 	/**
-	 * Get the current MongoDB
-	 * @return MongoDB
+	 * Get the current MongoDB\Database
+	 * @return MongoDB\Database
 	 */
 	public function getDb() {
 		return $this->_db;

@@ -102,7 +102,7 @@ class FilesAction extends ApiAction {
 	 * @param string $collName - Collection name
 	 */
 	function constructCollection() {
-		$_db = Billrun_Factory::db()->getDb();
+		$_db = Billrun_Factory::db();
 		$this->collection = $_db->getGridFS();
 
 		// If the collection was not found

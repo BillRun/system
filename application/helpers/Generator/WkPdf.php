@@ -546,7 +546,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * generate graphic that is required for generating the invoice.
 	 */
 	protected function prepareGraphicsResources() {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		// generate the tenant logo.
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if ($logo) {
