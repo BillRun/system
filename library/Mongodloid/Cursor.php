@@ -100,7 +100,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function next() {
 		if ($this->_iterator === null) {
           $this->doQuery();
-		  return $this;
+		  return;
         }
 		return $this->_iterator->next();
 	}
