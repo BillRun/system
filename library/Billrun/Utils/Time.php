@@ -279,6 +279,10 @@ class Billrun_Utils_Time {
 			return $value->sec;
 		}
 		
+		if ($value instanceof Mongodloid_Date) {
+			return $value->sec;
+		}
+		
 		if (is_string($value)) {
 			return strtotime($value);
 		}
