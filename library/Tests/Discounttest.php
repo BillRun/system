@@ -58,8 +58,8 @@ class Tests_Discounttest extends UnitTestCase {
 
 			$this->message .= $expectedEligibility;
 
-			//convert dates of revisions  To MongoDates
-			$this->convertToMongoDates($row);
+			//convert dates of revisions  To MongodloidDates
+			$this->convertToMongodloidDates($row);
 			$discounts = $this->discountBuilder($row['test']['discounts']);
 			if (isset($row['SubscribersDiscount'])) {
 				$this->subscribersDiscount($row);
@@ -82,8 +82,8 @@ class Tests_Discounttest extends UnitTestCase {
 					Billrun_DiscountManager::setDiscounts($discounts, $row['test']['options']['stamp']);
 				}
 				$cycle = new Billrun_DataTypes_CycleTime($row['test']['options']['stamp']);
-				$from = new MongoDate($cycle->start());
-				$to = new MongoDate($cycle->end());
+				$from = new Mongodloid_Date($cycle->start());
+				$to = new Mongodloid_Date($cycle->end());
 				$row['test']['subsAccount'][0]['from'] = $from;
 				$row['test']['subsAccount'][0]['to'] = $to;
 				$dm = new Billrun_DiscountManager($row['test']['subsAccount'], $row['test']['subsRevisions'], $cycle);
@@ -280,16 +280,16 @@ class Tests_Discounttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function convertToMongoDates(&$row) {
+	public function convertToMongodloidDates(&$row) {
 		foreach ($row as $key => &$valus) {
 
 			if (is_array($valus) ) {
-				$this->convertToMongoDates($valus);
+				$this->convertToMongodloidDates($valus);
 			}
 			$valusList = ['from' ,'to','deactivation_date','plan_activation','service_activation','start' ,'end'];
 			foreach ($valusList as $field){
 				if(isset($valus[$field])){
-					$valus[$field] = new MongoDate(strtotime($valus[$field]));
+					$valus[$field] = new Mongodloid_Date(strtotime($valus[$field]));
 				}
 			}
 		}
@@ -354,7 +354,7 @@ class Tests_Discounttest extends UnitTestCase {
 
 	public function getParam($type, $values = null, $field = null, $op = '$eq') {
 		if ($field == 'plan_activation') {
-			$values = new MongoDate(strtotime($values));
+			$values = new Mongodloid_Date(strtotime($values));
 		}
 		switch ($type) {
 			case 'subscriber':
