@@ -20,22 +20,23 @@ class Mongodloid_Date implements Mongodloid_TypeInterface{
 		return $this->_mongoDate->toDateTime();
 	}
 
-	public function setMongoDate(MongoDB\BSON\UTCDatetime $date) {
-		$this->_mongoDate = $date;
-		$this->_stringDate = $date->__toString();
-		$msecString = $this->_stringDate;
-		$sec = substr($msecString, 0, -3);
-		$usec = ((int) substr($msecString, -3)) * 1000;
-		$this->sec = (int) $sec;
-        $this->usec = (int) $this->truncateMicroSeconds($usec);
-	}
+	public function __construct($sec = 0, $usec = 0) {
+		if (func_num_args() == 0) {
+            $time = microtime(true);
+            $sec = floor($time);
+            $usec = ($time - $sec) * 1000000.0;
+        } elseif ($sec instanceof MongoDB\BSON\UTCDatetime) {
+            $msecString = (string) $sec;
 
-	public function __construct($date = null) {
-		if ($date instanceOf MongoDB\BSON\UTCDatetime) {
-			$this->setMongoDate($date);
-		} else {
-			$this->setMongoDate(new MongoDB\BSON\UTCDatetime($date));
-		}
+            $sec = substr($msecString, 0, -3);
+            $usec = ((int) substr($msecString, -3)) * 1000;
+        }
+		
+        $this->sec = (int) $sec;
+        $this->usec = (int) $this->truncateMicroSeconds($usec);
+		$milliSeconds = ($this->sec * 1000) + ($this->truncateMicroSeconds($this->usec) / 1000);
+		$this->_mongoDate = new MongoDB\BSON\UTCDatetime($milliSeconds);
+		$this->_stringDate = $this->_mongoDate->__toString();
 	}
 	
 	/**
