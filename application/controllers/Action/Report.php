@@ -271,6 +271,10 @@ class ReportAction extends ApiAction {
 				$linesQuery['urt'] = ['$gte' => new MongoDate($mapping['urt']->sec - $this->ipMapppingTimeDelay) , '$lt'=>new MongoDate($mapping['urt']->sec + $this->ipMapppingTimeDelay) ];
 			}
 			$queries['$or'][] = $linesQuery;
+			$extLinesQuery = array_merge($linesQuery,['served_pdp_address_ext' => $mapping['internal_ip']]);
+			unset($extLinesQuery['served_pdp_address']);
+			$queries['$or'][] = $extLinesQuery;
+
 			$ipmappings[] = $map;
 		}
 		Billrun_Factory::log('quering lines...',Zend_log::DEBUG);
