@@ -48,7 +48,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 
 			ksort($returnData);
 			foreach ($returnData as &$row) {
-				$row = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($row);
+				$row = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($row);
 			}
 		} catch (\Exception $e) {
 			$errorCode =  30;
@@ -90,7 +90,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$balance = $wallet->getPartialBalance();
 		$balance['aid'] = $subscriber['aid'];
 		$balance['sid'] = $subscriber['sid'];
-		$balance['from'] = new MongoDate();
+		$balance['from'] = new Mongodloid_Date();
 		$balance['to'] = $balance['from'];
 
 		if (isset($this->connection_type)) {
@@ -141,7 +141,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$dateParameters = array('to' => array('$lte' => $to), 'from' => array('$gte' => $from));
 			$this->setDateParameters($dateParameters, $this->balancesQuery);
 		} else {
-			$timeNow = new MongoDate();
+			$timeNow = new Mongodloid_Date();
 			$dateParameters = array('to' => array('$gte' => $timeNow), 'from' => array('$lte' => $timeNow));
 			// Get all active balances.
 			$this->setDateParameters($dateParameters, $this->balancesQuery);

@@ -294,7 +294,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			if (isset($entity['source_ref'])) {
 				$source_ref = $entity->get('source_ref', false)->getRawData();
 				unset($source_ref['_id']);
-				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
+				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($source_ref);
 			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
@@ -572,7 +572,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'params.interconnect' => TRUE,
 			'params.prefix' => array('$exists' => FALSE),
-			'to' => array('$gte' => new MongoDate()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$availableInterconnect = array();
@@ -622,8 +622,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$data = json_decode($this->getRequest()->get('data'), JSON_OBJECT_AS_ARRAY);
 		$data['external_id'] = intval($data['external_id']);
-		$data['to'] = new MongoDate(strtotime('+100 years'));
-		$data['from'] = new MongoDate(strtotime($data['from']));
+		$data['to'] = new Mongodloid_Date(strtotime('+100 years'));
+		$data['from'] = new Mongodloid_Date(strtotime($data['from']));
 		$data['priority'] = (int) $data['priority'];
 		$data['shared'] = boolval($data['shared']);
 		$data['unlimited'] = boolval($data['unlimited']);
@@ -695,7 +695,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($entity['source_ref'])) {
 			$source_ref = $entity->get('source_ref', false)->getRawData();
 			unset($source_ref['_id']);
-			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
+			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($source_ref);
 		}
 
 		// passing values into the view
@@ -1697,7 +1697,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
-					$returnValue = new MongoDate((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$returnValue = new Mongodloid_Date((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
 					} else {
 					return false;
 					}
@@ -1988,8 +1988,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.prefix' => array('$in' => array($prefix)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSamePrefix = array();
@@ -2010,8 +2010,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.mcc' => array('$in' => array($mcc)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSameMcc = array();
@@ -2032,8 +2032,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array(
 			'key' => array('$ne' => $key),
 			'params.msc' => array('$in' => array($msc)),
-			'from' => array('$lte' => new MongoDate()),
-			'to' => array('$gte' => new MongoDate()),
+			'from' => array('$lte' => new Mongodloid_Date()),
+			'to' => array('$gte' => new Mongodloid_Date()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$ratesWithSameMsc = array();

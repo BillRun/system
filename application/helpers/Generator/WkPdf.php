@@ -260,7 +260,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
                     $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
-                    if($date instanceof MongoDate){
+                    if($date instanceof Mongodloid_Date){
                         $date = $date->sec;
                         if (isset($paramObj['offset'])){
                             $date = $this->getDateWithOffset($paramObj['offset'], $date);

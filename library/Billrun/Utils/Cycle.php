@@ -9,7 +9,7 @@
 class Billrun_Utils_Cycle {
 	public static function isTimeWithinCycle($time,$cycleKey) {
 		$cycle = new Billrun_DataTypes_CycleTime($cycleKey);
-		$timestamp = $time instanceof MongoDate ? $time->sec : $time;
+		$timestamp = $time instanceof Mongodloid_Date ? $time->sec : $time;
 		return $cycle->start() <= $timestamp && $timestamp <= $cycle->end();
 	}
 }

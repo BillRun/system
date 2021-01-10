@@ -389,7 +389,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$hashed = array();
 		foreach ($array as $value) {
 			$key = strval($value[$indxKey]);
-			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($value);
 			$hashed[$key] = $translatedDates;
 		}
 		return $hashed;
@@ -680,7 +680,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key)),
+				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -726,7 +726,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$update = [
 			'$set' => [
 				'billrun' => $billrun_key,
-				'preponed' => new MongoDate(),
+				'preponed' => new Mongodloid_Date(),
 			],
 		];
 		
@@ -798,7 +798,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
-			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
+			$cycleUpdate = array('$set' => array('end_time' => new Mongodloid_Date()));
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);
 		}
 		if(Billrun_Billingcycle::hasCycleEnded($this->getCycle()->key(), $this->size)) {
@@ -896,7 +896,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	
 
 	protected function getPlanNextTeirDate($planDates) {
-		$currentTime = new MongoDate($this->getCycle()->end());
+		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
 			if($planData['to'] < $currentTime) {
 				continue;
@@ -904,13 +904,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 			$plan = new Billrun_Plan(array('name'=>$planData['plan'],'time' => $currentTime->sec));
 			$nextTeirDate = $plan->getNextTierDate($planData['plan_activation']->sec, $currentTime->sec);
-			return  $nextTeirDate ? new MongoDate($nextTeirDate) : NULL;
+			return  $nextTeirDate ? new Mongodloid_Date($nextTeirDate) : NULL;
 		}
 		return NULL;
 	}
 	
 	protected function getActivePlan($planDates) {
-		$currentTime = new MongoDate($this->getCycle()->end());
+		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
 			if($planData['to'] < $currentTime) {
 				continue;

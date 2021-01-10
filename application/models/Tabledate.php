@@ -57,7 +57,7 @@ class TabledateModel extends TableModel {
 	 * @param type $param
 	 */
 	public function isLast($entity) {
-		$to_date = new MongoDate(strtotime($entity['to']));
+		$to_date = new Mongodloid_Date(strtotime($entity['to']));
 		if (!$to_date) {
 			return $this->setError("date error");
 		}
@@ -79,11 +79,11 @@ class TabledateModel extends TableModel {
 	}
 	
 	public function getOverlappingDatesQuery($entity, $new = true) {
-		$from_date = new MongoDate(strtotime($entity['from']));
+		$from_date = new Mongodloid_Date(strtotime($entity['from']));
 		if (!$from_date) {
 			return $this->setError("date error");
 		}
-		$to_date = new MongoDate(strtotime($entity['to']));
+		$to_date = new Mongodloid_Date(strtotime($entity['to']));
 		if (!$to_date) {
 			return $this->setError("date error");
 		}
@@ -136,7 +136,7 @@ class TabledateModel extends TableModel {
 		}
 
 		// close the old line
-		$mongoCloseTime = new MongoDate($new_from->getTimestamp());
+		$mongoCloseTime = new Mongodloid_Date($new_from->getTimestamp());
 		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
@@ -144,26 +144,26 @@ class TabledateModel extends TableModel {
 		// open new line
 		$params[$this->search_key] = $closed_data[$this->search_key];
 		unset($params['_id']);
-		$params['from'] = new MongoDate($new_from->getTimestamp());
-		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
+		$params['from'] = new Mongodloid_Date($new_from->getTimestamp());
+		$params['to'] = new Mongodloid_Date($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
 		return $this->update($params);
 	}
 
 	public function duplicate($params) {
 		$from = new Zend_Date($params['from'], null, 'he-IL');
 		$to = new Zend_Date($params['to'], null, 'he-IL');
-		$params['from'] = new MongoDate($from->getTimestamp());
-		$params['to'] = new MongoDate($to->getTimestamp());
+		$params['from'] = new Mongodloid_Date($from->getTimestamp());
+		$params['to'] = new Mongodloid_Date($to->getTimestamp());
 		return parent::duplicate($params);
 	}
 
 	public function update($params) {
-		if (isset($params['from']) && !$params['from'] instanceof MongoDate) {
-			$params['from'] = new MongoDate(strtotime($params['from']));
+		if (isset($params['from']) && !$params['from'] instanceof Mongodloid_Date) {
+			$params['from'] = new Mongodloid_Date(strtotime($params['from']));
 		}
-		if (isset($params['to']) && !$params['to'] instanceof MongoDate) {
+		if (isset($params['to']) && !$params['to'] instanceof Mongodloid_Date) {
 			$to = new Zend_Date($params['to'], null, 'he-IL');
-			$params['to'] = new MongoDate($to->getTimestamp());
+			$params['to'] = new Mongodloid_Date($to->getTimestamp());
 		}
 		return parent::update($params);
 	}

@@ -59,10 +59,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			}
 		}
 		if (!empty($chargeData['start']) && $this->cycle->start() < $chargeData['start']) {
-			$entry['start'] = new MongoDate($chargeData['start']);
+			$entry['start'] = new Mongodloid_Date($chargeData['start']);
 		}
 		if (!empty($chargeData['end']) && $this->cycle->end() - 1 > $chargeData['end']) {
-			$entry['end'] = new MongoDate($chargeData['end']);
+			$entry['end'] = new Mongodloid_Date($chargeData['end']);
 		}
 
 		$entry = $this->addExternalFoerignFields($entry);
@@ -85,7 +85,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$flatEntry = array(
 			'plan' => $this->plan,
 			'name' => $this->name,
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'usagev' => 1
 		);
 

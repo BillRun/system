@@ -59,7 +59,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		// Check if the prepaid record is unlimited.
 		if (!empty($prepaidRecord['unlimited'])) { 
-			$recordToSet['to'] = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+			$recordToSet['to'] = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
 		// Get the subscriber.
 		$subscriber = $this->getSubscriber($subscriberId);
@@ -137,7 +137,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $query
 	 * @param array $defaultBalance
-	 * @param MongoDate $toTime
+	 * @param Mongodloid_Date $toTime
 	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
@@ -160,7 +160,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 */
 	protected function getDefaultBalance($subscriber, $prepaidRecord, $recordToSet) {
 		$defaultBalance = array();
-		$defaultBalance['from'] = new MongoDate();
+		$defaultBalance['from'] = new Mongodloid_Date();
 
 		$defaultBalance['to'] = $recordToSet['to'];
 		

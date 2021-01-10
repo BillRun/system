@@ -119,16 +119,16 @@ class V3_queryAction extends ApiAction {
 		}
 		if (isset($request['from'])) {
 			$query['urt'] = array(
-				'$gte' => new MongoDate(strtotime($request['from'])),
+				'$gte' => new Mongodloid_Date(strtotime($request['from'])),
 			);
 		}
 		if (isset($request['to'])) {
 			if (!isset($query['urt'])) {
 				$query['urt'] = array(
-					'$lt' => new MongoDate(strtotime($request['to'])),
+					'$lt' => new Mongodloid_Date(strtotime($request['to'])),
 				);
 			} else {
-				$query['urt']['$lte'] = new MongoDate(strtotime($request['to']));
+				$query['urt']['$lte'] = new Mongodloid_Date(strtotime($request['to']));
 			}
 		}
 	}
@@ -172,7 +172,7 @@ class V3_queryAction extends ApiAction {
 					unset($row['tx'], $row['_id'], $row['notifications_sent']);
 					$line['source_ref_value'] = $row;
 				}
-				$line = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));
+				$line = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($line->getRawData(), array('urt'));
 			}
 		}
 

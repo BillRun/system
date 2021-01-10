@@ -32,8 +32,8 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 		$query = $case['query'];
 		
 		// Remove unnecessary fields
-		$query['to'] = new MongoDate(strtotime($query['to']));
-		$query['from'] = new MongoDate(strtotime($query['from']));
+		$query['to'] = new Mongodloid_Date(strtotime($query['to']));
+		$query['from'] = new Mongodloid_Date(strtotime($query['from']));
 		unset($query['description']);
 		
 		return $query;
@@ -44,7 +44,7 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 		
 		foreach ($data as $key => &$value) {
 			if(in_array($key, array('to', 'from'))) {
-				$value = new MongoDate(strtotime($value));
+				$value = new Mongodloid_Date(strtotime($value));
 			}
 		}
 		
@@ -74,7 +74,7 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 
 	protected function translateSingleCase($key, $value) {
 		if(in_array($key, array("from", "to"))) {
-//			return new MongoDate(strtotime($value));
+//			return new Mongodloid_Date(strtotime($value));
 		}
 		return $value;
 	}

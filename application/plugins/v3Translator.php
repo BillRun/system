@@ -129,7 +129,7 @@ class v3TranslatorPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function afterTranslateCustomerAggregatorData($aggregator, &$translatedData) {
 		$ret = [];
 		$data = $aggregator->getData();
-		Billrun_Utils_Mongo::convertQueryMongoDates($data);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($data);
 		$aid = $aggregator->getAid() ?: -1;
 		$passthrough = $data['services'];
 		$passthrough['aid'] = $aid;

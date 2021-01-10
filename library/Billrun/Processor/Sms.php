@@ -94,7 +94,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 			if (isset($row[$this->structConfig['config']['called_number_field']])) {
 				$row[$this->structConfig['config']['called_number_field']] = Billrun_Util::msisdn($row[$this->structConfig['config']['called_number_field']]);
 			}
-			$row['urt'] = new MongoDate($datetime->format('U'));
+			$row['urt'] = new Mongodloid_Date($datetime->format('U'));
 			$row['usaget'] = $this->getLineUsageType($row);
 			$row['usagev'] = $this->getLineVolume($row);
 		}

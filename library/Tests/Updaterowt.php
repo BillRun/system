@@ -643,9 +643,9 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	protected function fixRow($row, $key) {
 		if (!array_key_exists('urt', $row)) {
-			$row['urt'] = new MongoDate(time() + $key);
+			$row['urt'] = new Mongodloid_Date(time() + $key);
 		} else {
-			$row['urt'] = new MongoDate(strtotime($row['urt']));
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
 		}
 		if (!isset($row['aid'])) {
 			$row['aid'] = 1234;
@@ -668,10 +668,10 @@ class Tests_Updaterowt extends UnitTestCase {
 					);
 				}
 				if (isset($service['from'])) {
-					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (isset($service['to'])) {
-					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 			}
 		}

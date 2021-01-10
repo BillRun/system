@@ -433,7 +433,7 @@ class RatesModel extends TabledateModel {
 		$base_match = array(
 			'$match' => array(
 				'from' => array(
-					'$gt' => new MongoDate(),
+					'$gt' => new Mongodloid_Date(),
 				),
 			),
 		);
@@ -464,10 +464,10 @@ class RatesModel extends TabledateModel {
 		$base_match = array(
 			'$match' => array(
 				'from' => array(
-					'$lt' => new MongoDate(),
+					'$lt' => new Mongodloid_Date(),
 				),
 				'to' => array(
-					'$gt' => new MongoDate(),
+					'$gt' => new Mongodloid_Date(),
 				),
 			),
 		);
@@ -640,13 +640,13 @@ class RatesModel extends TabledateModel {
 	 * method to fetch plan reference by plan name
 	 * 
 	 * @param string $plan
-	 * @param MongoDate $currentDate the affective date
+	 * @param Mongodloid_Date $currentDate the affective date
 	 * 
 	 * @return MongoDBRef
 	 */
 	public function getPlan($plan, $currentDate = null) {
 		if (is_null($currentDate)) {
-			$currentDate = new MongoDate();
+			$currentDate = new Mongodloid_Date();
 		}
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$planEntity = $plansColl->query('name', $plan)

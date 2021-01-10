@@ -33,7 +33,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
 		$this->informationArray['type'] = 'custom_payment_gateway';
-		$this->informationArray['creation_type'] = new MongoDate();
+		$this->informationArray['creation_type'] = new Mongodloid_Date();
 		$this->informationArray['fileType'] = 'received';
 		$this->informationArray['total_denied_amount'] = 0;
 		$this->informationArray['total_confirmed_amount'] = 0;
@@ -143,7 +143,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 }
 				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
-		$this->informationArray['process_time'] = new MongoDate(time());
+		$this->informationArray['process_time'] = new Mongodloid_Date(time());
                 $this->updateLogFile();
 	}
 
@@ -223,7 +223,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->save();
 				$billToReject->markRejected();
                 $this->informationArray['transactions']['rejected']++;
-				$this->informationArray['process_time'] = new MongoDate(time());
+				$this->informationArray['process_time'] = new Mongodloid_Date(time());
 			}
 		}
 	}

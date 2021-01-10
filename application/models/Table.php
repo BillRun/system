@@ -322,14 +322,14 @@ class TableModel {
 		}
 		foreach ($params as $key => $value) {
 			if (in_array($key, array("to", "from")) && is_array($value)) {
-				if (get_class($value) !== 'MongoDate') {
-					//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
-					$value = new MongoDate($value['sec']);
+				if (get_class($value) !== 'Mongodloid_Date') {
+					//$value = new Mongodloid_Date((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new Mongodloid_Date($value['sec']);
 				}
 			} else if (in_array($key, array("to", "from"))) {
-				if (get_class($value) !== 'MongoDate') {
-					//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
-					$value = new MongoDate(strtotime($value));
+				if (get_class($value) !== 'Mongodloid_Date') {
+					//$value = new Mongodloid_Date((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new Mongodloid_Date(strtotime($value));
 				}
 			}
 			$new_data[$key] = $value;
@@ -399,7 +399,7 @@ class TableModel {
 			}
 		} else if ($filter_field['input_type'] == 'date') {
 			if (is_array($filter_field['db_key']) && is_string($value)) {
-				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				$value = new Mongodloid_Date((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				return array(
 					'$and' => array(
 						array(
@@ -418,7 +418,7 @@ class TableModel {
 					$value = $split[0] . ' 00:00:00';
 				}
 				if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
-					$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new Mongodloid_Date((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 					return array(
 						$filter_field['db_key'] => array(
 							$filter_field['comparison'] => $value

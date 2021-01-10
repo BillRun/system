@@ -203,7 +203,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getPlanDescription($subscriberiptionData) {
 		if(!empty($subscriberiptionData['plan'])) {
 			$plan = Billrun_Factory::plan(array('name'=>$subscriberiptionData['plan'],'time'=>$this->data['end_date']->sec));
-			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new MongoDate())->sec), $plan->get('invoice_description'));
+			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new Mongodloid_Date())->sec), $plan->get('invoice_description'));
 		}
 		return "";
 	}

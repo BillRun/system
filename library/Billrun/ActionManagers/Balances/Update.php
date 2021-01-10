@@ -161,7 +161,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$archiveLine['rand'] = rand(1, 1000000);
 			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
 			$processedLines[] = $archiveLine;
-			$balancesRecords[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($balance->getRawData());
+			$balancesRecords[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($balance->getRawData());
 		}
 
 		return array("records" => $balancesRecords, "lines" => $processedLines);
@@ -176,8 +176,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function reportInLines($outputDocuments, $beforeUpdate) {
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
-		$balanceLine['urt'] = new MongoDate();
-		$balanceLine['process_time'] = new MongoDate();;
+		$balanceLine['urt'] = new Mongodloid_Date();
+		$balanceLine['process_time'] = new Mongodloid_Date();;
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
 		$balanceLine['usaget'] = 'balance';
@@ -340,7 +340,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		if ($to) {
-			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime('tomorrow', strtotime($to)) - 1) : $to;
+			$this->recordToSet['to'] = (is_string($to)) ? new Mongodloid_Date(strtotime('tomorrow', strtotime($to)) - 1) : $to;
 		}
 
 		// Upsert is not needed so no need to go over the fields

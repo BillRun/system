@@ -859,7 +859,7 @@ class Billrun_Util {
 		}
 
 		$credit_time = new Zend_Date($filtered_request['credit_time']);
-		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		$filtered_request['urt'] = new Mongodloid_Date($credit_time->getTimestamp());
 		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -888,7 +888,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
+		$service_row['urt'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;

@@ -75,7 +75,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @todo use load method
 	 */
 	protected function constructWithActivePlan($params) {
-		$date = new MongoDate($params['time']);
+		$date = new Mongodloid_Date($params['time']);
 		$plan = static::getByNameAndTime($params['name'], $date);
 		if ($plan) {
 			$this->data = $plan;

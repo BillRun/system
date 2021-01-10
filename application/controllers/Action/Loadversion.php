@@ -87,10 +87,10 @@ class LoadversionAction extends ApiAction {
 
 	protected function prepareDataBeforeSave(&$data) {
 		unset($data['_id']);
-		foreach ($data as $key => &$val) { // handle dates (convert to MongoDate)
+		foreach ($data as $key => &$val) { // handle dates (convert to Mongodloid_Date)
 			if (is_array($val) && isset($val['sec'])) {
 				$sec = $val['sec'];
-				$val = new MongoDate($sec);
+				$val = new Mongodloid_Date($sec);
 			}
 		}
 	}

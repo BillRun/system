@@ -226,8 +226,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	 protected function cleanRevisionStructure($saveRevision,$subRevisionsFields, $endedField = null) {
 		$endedField = empty($endedField) ? $saveRevision : $endedField;
-		$saveRevision['to'] = new MongoDate($endedField['to']);
-		$saveRevision['from'] = new MongoDate($saveRevision['from']);
+		$saveRevision['to'] = new Mongodloid_Date($endedField['to']);
+		$saveRevision['from'] = new Mongodloid_Date($saveRevision['from']);
 		foreach(Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan']) as $subRevField) {
 			if( isset($saveRevision[$subRevField]) && !empty($endedField[$subRevField]) ) {
 				$saveRevision[$subRevField] = $endedField[$subRevField];
@@ -316,7 +316,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'billrun' => $cycle->key(),
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'urt' => new MongoDate($cycle->end()),
+			'urt' => new Mongodloid_Date($cycle->end()),
 		);
 		
 		return $flatEntry;

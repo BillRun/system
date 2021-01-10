@@ -103,8 +103,8 @@ class Billrun_FraudManager {
 			$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 			$extraValues = [
 				'max_urt' => $res['max_urt'],
-				'from' => new MongoDate($timeRange['from']),
-				'to' => new MongoDate($timeRange['to']),
+				'from' => new Mongodloid_Date($timeRange['from']),
+				'to' => new Mongodloid_Date($timeRange['to']),
 			];
 			$eventSettingsToSave = $this->getEventSettingsToSave($eventSettings);
 			Billrun_Factory::eventsManager()->saveEvent(self::$eventType, $eventSettingsToSave, [], [], [], $extraParams, $extraValues);
@@ -136,7 +136,7 @@ class Billrun_FraudManager {
 			$match['$match']['aid'] = $eventInTimeRange['aid'];
 			$match['$match']['urt'] = [
 				'$gt' => $eventInTimeRange['max_urt'],
-				'$lt' => new MongoDate($timeRange['to']),
+				'$lt' => new Mongodloid_Date($timeRange['to']),
 			];
 			$excludedSubRes = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
 			$ret = array_merge($ret, $excludedSubRes);
@@ -151,8 +151,8 @@ class Billrun_FraudManager {
 		$dateRangeEnd = $timeRange['to'];
 		$basicMatch = [
 			'urt' => [
-				'$gte' => new MongoDate($dateRangeStart),
-				'$lt' => new MongoDate($dateRangeEnd),
+				'$gte' => new Mongodloid_Date($dateRangeStart),
+				'$lt' => new Mongodloid_Date($dateRangeEnd),
 			],
 		];
 		$conditionsMatch = $this->buildConditionsMatchQuery($eventSettings['conditions']);
@@ -190,8 +190,8 @@ class Billrun_FraudManager {
 		$match = [
 			'$match' => [
 				'max_urt' => [
-					'$gte' => new MongoDate($timeRange['from']),
-					'$lt' => new MongoDate($timeRange['to']),
+					'$gte' => new Mongodloid_Date($timeRange['from']),
+					'$lt' => new Mongodloid_Date($timeRange['to']),
 				],
 			],
 		];

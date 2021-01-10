@@ -59,7 +59,7 @@ class Billrun_Utils_Usage {
 			case 'account_subscribers':
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
-					'from' => array('$lt' => new MongoDate()), 'to' => array('$gt' => new MongoDate()));
+					'from' => array('$lt' => new Mongodloid_Date()), 'to' => array('$gt' => new Mongodloid_Date()));
 				$entity = array();
 				$documents = $subscriber->loadSubscriberForQueries([$query]);
 				foreach ($documents as $subs) {

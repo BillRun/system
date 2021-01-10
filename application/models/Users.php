@@ -87,7 +87,7 @@ class UsersModel extends TableModel {
 	
 	public function updateUserLastLogin($userId){
 		$mongoId =  new MongoId($userId);
-		$setArray = array('last_login' => new MongoDate());
+		$setArray = array('last_login' => new Mongodloid_Date());
 		
 		try{
 			Billrun_Factory::log("Start Update user last login : " . print_r($setArray, 1), Zend_Log::INFO);

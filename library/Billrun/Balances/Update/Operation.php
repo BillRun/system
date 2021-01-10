@@ -149,7 +149,7 @@ abstract class Billrun_Balances_Update_Operation {
 		}
 		// If the wallet is unlimited, set the 'to' field to unlimited.
 		if($wallet->getUnlimited()) {
-			$balanceRecord['to'] = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+			$balanceRecord['to'] = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
 		
 		return array(

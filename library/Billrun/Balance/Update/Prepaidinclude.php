@@ -64,7 +64,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	
 	/**
 	 * expiration date
-	 * @var MongoDate
+	 * @var Mongodloid_Date
 	 */
 	protected $to = null;
 
@@ -108,15 +108,15 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 
 	protected function setTo($expirationDate = null) {
 		if (isset($this->data['unlimited']) && $this->data['unlimited']) {
-			$this->to = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
-		} else if ($expirationDate instanceof MongoDate) {
+			$this->to = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+		} else if ($expirationDate instanceof Mongodloid_Date) {
 			$this->to = $expirationDate;
 		} else if (is_numeric($expirationDate)) {
-			$this->to = new MongoDate($expirationDate);
+			$this->to = new Mongodloid_Date($expirationDate);
 		} else if (is_string($expirationDate)) {
-			$this->to = new MongoDate(strtotime($expirationDate));
+			$this->to = new Mongodloid_Date(strtotime($expirationDate));
 		} else { // fallback to 30 days charge (@TODO move to config)
-			$this->to = new MongoDate(strtotime('tomorrow +1 month') - 1);
+			$this->to = new Mongodloid_Date(strtotime('tomorrow +1 month') - 1);
 		}
 	}
 	
@@ -202,7 +202,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	public function update() {
 		$update = array(
 			'$setOnInsert' => array(
-				'from' => new MongoDate(),
+				'from' => new Mongodloid_Date(),
 				'aid' => $this->subscriber['aid'],
 //				'charging_type' => 'prepaid',
 				'connection_type' => 'prepaid',
@@ -349,7 +349,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			'type' => 'balance',
 			'usaget' => 'balance',
 			'charging_type' => $this->updateType,
-			'urt' => new MongoDate(),
+			'urt' => new Mongodloid_Date(),
 			'source_ref' => Billrun_Factory::db()->prepaidincludesCollection()->createRefByEntity($this->data),
 			'aid' => $this->subscriber['aid'],
 			'sid' => isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0,

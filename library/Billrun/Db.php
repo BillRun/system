@@ -131,20 +131,20 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 
 	/**
-	 * Change numeric references to MongoDate object in a given filed in an array.
-	 * @param MongoDate $arr 
+	 * Change numeric references to MongodloidDate object in a given filed in an array.
+	 * @param Mongodloid_Date $arr 
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	public static function intToMongoDate($arr) {
+	public static function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

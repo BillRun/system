@@ -135,7 +135,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function closeAndNew($set_values, $remove_values = array()) {
 
 		// Updare old item
-		$update = array('to' => new MongoDate());
+		$update = array('to' => new Mongodloid_Date());
 		try {
 			$this->collection->update(array('_id' => $this->data['_id']), array('$set' => $update));
 		} catch (Exception $exc) {
@@ -145,10 +145,10 @@ class Billrun_Account_Db extends Billrun_Account {
 
 		// Save new item
 		if (!isset($set_values['from'])) {
-			$set_values['from'] = new MongoDate();
+			$set_values['from'] = new Mongodloid_Date();
 		}
 		if (!isset($set_values['to'])) {
-			$set_values['to'] = new MongoDate(strtotime('+100 years'));
+			$set_values['to'] = new Mongodloid_Date(strtotime('+100 years'));
 		}
 		$newEntityData = array_merge($this->data, $set_values);
 		foreach ($remove_values as $remove_filed_name) {

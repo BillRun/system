@@ -53,7 +53,7 @@ class Billrun_Account_External extends Billrun_Account {
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
-				Billrun_Utils_Mongo::convertQueryMongoDates($rev, static::API_DATETIME_REGEX);
+				Billrun_Utils_Mongo::convertQueryMongodloidDates($rev, static::API_DATETIME_REGEX);
 				foreach($fieldMapping as $srcField => $dstField) {
 					if(isset($rev[$srcField])) {
 						$rev[$dstField] = $rev[$srcField];
@@ -86,7 +86,7 @@ class Billrun_Account_External extends Billrun_Account {
 			return false;
 		}
 		foreach ($res as $account) {
-			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
 		}
 		return $accounts;
@@ -119,7 +119,7 @@ class Billrun_Account_External extends Billrun_Account {
 			return false;
 		}
 		return array_reduce($results, function($acc, $currentAcc) {
-			Billrun_Utils_Mongo::convertQueryMongoDates($currentAcc, static::API_DATETIME_REGEX);
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($currentAcc, static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentAcc);
 			return $acc;
 		}, []);

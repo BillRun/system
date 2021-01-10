@@ -35,7 +35,7 @@ class AggregateAction extends ApiAction {
 				return TRUE;
 			}
 			$pipelines = $this->convertToMongoIds($pipelines);
-			Billrun_Utils_Mongo::convertQueryMongoDates($pipelines);
+			Billrun_Utils_Mongo::convertQueryMongodloidDates($pipelines);
 			if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
 					return key($pipeline);
 				}, $pipelines), $config['permitted_pipelines'])) {

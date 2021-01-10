@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * take from the general charging plan.
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $recordToSet
-	 * @return MongoDate
+	 * @return Mongodloid_Date
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
 		if($wallet->getPPID() != 1 && isset($recordToSet['to'])) {
@@ -367,7 +367,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getDefaultBalance($subscriber, $chargingByValue, $recordToSet) {
 		$defaultBalance = array();
-		$nowTime = new MongoDate();
+		$nowTime = new Mongodloid_Date();
 		$defaultBalance['from'] = $nowTime;
 
 //		$to = $recordToSet['to'];

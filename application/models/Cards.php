@@ -207,7 +207,7 @@ class CardsModel extends TableModel {
 		}
 		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
 			if (is_string($value)) {
-				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				$value = new Mongodloid_Date((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				$ret = array(
 					'$and' => array(
 						array(
