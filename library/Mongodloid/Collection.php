@@ -224,7 +224,7 @@ class Mongodloid_Collection {
 		$options['upsert'] = true;
 		$options['w'] = $w;
 		$this->convertWriteConcernOptions($options);
-		$data = $entity->getRawData();
+		$data = Mongodloid_TypeConverter::fromMongodloid($entity->getRawData());
 		if($entity->getId()){
 			$id = $entity->getId()->getMongoID();
 		}else{
