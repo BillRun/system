@@ -567,18 +567,18 @@ class Mongodloid_Collection {
 	 */
 	public function batchInsert(array $a, array $options = array()) {
 //		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
-//			$documents = [];
-//			foreach ($a as $doc) {
-//				if ($doc instanceof Mongodloid_Entity) {
-//					$doc = $doc->getRawData();
-//				}
-//				$documents[] = $doc;
-//			}
+			$documents = [];
+			foreach ($a as $doc) {
+				if ($doc instanceof Mongodloid_Entity) {
+					$doc = $doc->getRawData();
+				}
+				$documents[] = $doc;
+			}
 //		} else {
 //			$documents = $a;
 //		}
 		$this->convertWriteConcernOptions($options);
-		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($a), $options));
+		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options));
 	}
 
 	private function insertMany(array $documents, array $options = array()) {
