@@ -27,7 +27,7 @@ class Mongodloid_Ref
     {
         $ref = [
             static::$refKey => $collection,
-            static::$idKey => $id
+            static::$idKey => new Mongodloid_Id($id)
         ];
 
         if ($database !== null) {
@@ -64,6 +64,6 @@ class Mongodloid_Ref
         if (! static::isRef($ref)) {
             return null;
         }
-        return $db->getCollection($ref[static::$refKey])->findOne(['_id' => $ref[static::$idKey]]);
+        return $db->getCollection($ref[static::$refKey])->findOne($ref[static::$idKey]);
     }
 }

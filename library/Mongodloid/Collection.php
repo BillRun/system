@@ -457,7 +457,7 @@ class Mongodloid_Collection {
 		if (!Mongodloid_Ref::isRef($ref)) {
 			return;
 		}
-		return new Mongodloid_Entity(Mongodloid_Ref::get($this->_db, $ref));
+		return Mongodloid_Ref::get($this->_db, $ref);
 	}
 
 	/**
