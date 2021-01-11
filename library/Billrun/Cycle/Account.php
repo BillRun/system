@@ -92,7 +92,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		//Billrun_Factory::log(json_encode($subscribersRevisions,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 		//Billrun_Factory::log(json_encode($accountRevs, JSON_UNESCAPED_UNICODE));
 		//Billrun_Factory::log(json_encode($flatLines,JSON_PRETTY_PRINT |  JSON_UNESCAPED_UNICODE));
-		Billrun_Factory::log(print_r($subscribersRevisions,1));
 		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
 		$this->discounts = $dm->generateCdrs($flatLines);
 		foreach ($this->discounts as &$cdr) {
@@ -140,7 +139,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$activeRev = $revision;
 
 			foreach($cutDates as $from => $fromCuts) {
-
 				// Sort the from dates changes by their erliest "to" date
 				uksort($fromCuts,function($a,$b){ return $a - $b; });
 				//Get all the ended services plan under the current "from" date
