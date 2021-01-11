@@ -122,11 +122,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected $servicesUsed = array();
 	
-	/**
-	 * This holds each service's maximum quantity for each customer, for grouped product calculations.
-	 */
-	protected $servicesMaximumQuantityByNameAndAid = array();
-	
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
@@ -680,11 +675,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				$serviceMaximumQuantity = 1;
 				if($isGroupShared && !$service->isGroupAccountPool($serviceGroup) && $isGroupQuantityAffected) {
-					if(!$this->updateServiceMaximumQuantity($serviceName, $aid)) {
-						$serviceMaximumQuantity = $this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid];
-					} else {
-						$serviceMaximumQuantity = $this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid] = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
-					}
+					$serviceMaximumQuantity = $service->getServiceMaximumQuantityByAid($aid, $this->row['urt']->sec);
 				}
 				
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, $this->row['urt']->sec, $serviceQuantity, $serviceMaximumQuantity);
@@ -1091,19 +1082,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		return $quantity;
-	}
-	
-	public function updateServiceMaximumQuantity($serviceName, $aid) {
-		if(!isset($this->servicesMaximumQuantityByNameAndAid[$serviceName])) {
-			$this->servicesMaximumQuantityByNameAndAid[$serviceName] = [$aid => 0];
-			return true;
-		} else {
-			if(!isset($this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid])) {
-				$this->servicesMaximumQuantityByNameAndAid[$serviceName][$aid] = 0;
-				return true;
-			}
-		}
-		return false;
 	}
 
 }

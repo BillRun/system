@@ -45,7 +45,7 @@ class Billrun_Service {
 	/**
 	 * This holds the used services quantity for the included product groups calculations.
 	 */
-	protected $serviceMaximumQuantityByAid = array();
+	protected static $serviceMaximumQuantityByAid = [];
 
 	/**
 	 * constructor
@@ -704,18 +704,42 @@ class Billrun_Service {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param type $aid
+	 * @param timestamp $time
+	 * @return Service maximum quantity
+	 */
 	public function getServiceMaximumQuantityByAid($aid, $time = 'now') {
-		return isset($this->serviceMaximumQuantityByAid[$aid]) ? $this->serviceMaximumQuantityByAid[$aid] : $this->calculateServiceMaximumQuantity($aid, $time);
+		$entity_time = ($time === 'now') ? time() : $time;
+		if(isset(self::$serviceMaximumQuantityByAid[$aid])) {
+			foreach (self::$serviceMaximumQuantityByAid[$aid] as $service_quantity_data) {
+				if ($service_quantity_data['from'] <= $time && (!isset($service_quantity_data['to']) || is_null($service_quantity_data['to']) || $service_quantity_data['to'] >= $time)) {
+					return $service_quantity_data['quantity'];
+				}
+			}
+		} else {
+			$service_data = $this->calculateServiceMaximumQuantity($aid, $entity_time);
+			self::$serviceMaximumQuantityByAid[$aid][] = $service_data;
+			return $service_data['quantity'];
+		}
 	}
 	
-	public function calculateServiceMaximumQuantity($aid, $time = 'now') {
+	/**
+	 * 
+	 * @param type $aid
+	 * @param timestamp $time
+	 * @return Service data after calculating it's maximum quantity for this aid
+	 */
+	public function calculateServiceMaximumQuantity($aid, $time) {
 		$current_service_name = $this->getName();
 		$query = array(
 			'aid' => $aid,
 			'time' => date(Billrun_Base::base_datetimeformat, $time)
 		);		
-		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);
+		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);		
 		$maximum_quantity = 0;
+		$from = $to = $time;
 		if (!empty($results)) {
 			foreach ($results as $index => $sub) {
 				if (isset($sub['services']) && in_array($current_service_name, array_column($sub['services'], 'name'))) {
@@ -725,12 +749,19 @@ class Billrun_Service {
 					if (isset($relevant_service['quantity'])) {
 						if ($maximum_quantity < $relevant_service['quantity']) {
 							$maximum_quantity = $relevant_service['quantity'];
+							$from = $sub['from']->sec;
+							$to = 	$sub['to']->sec;
 						}
 					}
 				}
 			}
 		}
-		return $maximum_quantity;
+		$response = [
+			'from' => $from,
+			'to' => $to,
+			'quantity' => $maximum_quantity
+		];
+		return $response;
 	}
 
 }
