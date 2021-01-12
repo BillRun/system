@@ -338,7 +338,367 @@
 					}
 				}
 			}
+		},
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_1",
+			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"publication_end_date": "time*2038-06-01T00:00:00Z",
+				"publication_start_date": "time*2020-05-01T00:00:00Z",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								},
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_2"
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_1"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_4"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_3"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+					"BROADBAND_HOME_BOX_4": {
+						"value": 12.60504202
+					},
+					"BROADBAND_HOME_BOX_3": {
+						"value": 16.73109244
+					},
+					"BROADBAND_HOME_BOX_1": {
+						"value": 16.73109244
+					},
+					"BROADBAND_HOME_BOX_2": {
+						"value": 12.60504202
+					}
+				}
+			},
+			"proration": "inherited",
+			"erp_fis_msisdn_label": "",
+			"object_id": "",
+			"fis_descr": "",
+			"management_reporting": "",
+			"gl_account": "10500211",
+			"epic_description": "",
+			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
+			"to": "time*2169-06-04T14:31:32Z",
+			"creation_time": "time*2020-04-30T22:00:00Z"
+		},
+		{
+
+			"from": "time*2020-11-23T22:00:00Z",
+			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_2",
+			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"publication_end_date": "time*2038-06-01T00:00:00Z",
+				"publication_start_date": "time*2020-05-01T00:00:00Z",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								},
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_2"
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_1"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_4"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					},
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BROADBAND_HOME_BOX_3"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+					"BROADBAND_HOME_BOX_4": {
+						"value": 8.394957983
+					},
+					"BROADBAND_HOME_BOX_3": {
+						"value": 8.394957983
+					},
+					"BROADBAND_HOME_BOX_1": {
+						"value": 8.394957983
+					},
+					"BROADBAND_HOME_BOX_2": {
+						"value": 8.394957983
+					}
+				}
+			},
+			"proration": "inherited",
+			"erp_fis_msisdn_label": "",
+			"object_id": "",
+			"fis_descr": "",
+			"management_reporting": "",
+			"gl_account": "10500211",
+			"epic_description": "",
+			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
+			"to": "time*2020-12-01T22:00:00Z",
+			"creation_time": "time*2020-11-23T22:00:00Z"
+		}, {
+
+			"from": "time*2018-01-13T00:00:00Z",
+			"key": "AAAABBB",
+			"description": "aa",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"PRICELEVELS"
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"PRICELEVELS": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T14:17:55Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
 		}
+
 
 
 

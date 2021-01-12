@@ -552,7 +552,7 @@
 					"to": "time*2168-07-30T12:35:34Z",
 					"creation_time": "time*2018-07-31T00:00:00Z"
 				},
-						{
+				{
 
 					"from": "time*2018-12-31T22:00:00Z",
 					"name": "TTT2",
@@ -611,7 +611,128 @@
 					"prorated_termination": true,
 					"to": "time*2169-04-23T14:14:44Z",
 					"creation_time": "time*2018-04-24T00:00:00Z"
+				},
+				{
+
+					"from": "time*2019-11-30T22:00:00Z",
+					"name": "BROADBAND_HOME_BOX_1",
+					"price": [
+						{
+							"price": 25.12606,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "BROADBAND HOMEBOX 60",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"technical_name": "BROADBAND_HOME_BOX_1",
+					"key": "BROADBAND_HOME_BOX_1",
+					"provisioning": [],
+					"display_order": "1",
+					"vat_type": "DEFAULT_VAT",
+					"vti_name": "BROADBAND HOMEBOX 60",
+					"package_range": "BROADBAND HOMEBOX",
+					"forceCommitment": true,
+					"invoice_label": "BROADBAND HOMEBOX 60",
+					"invoice_type": "mobile",
+					"to": "time*2169-06-04T13:50:59Z",
+					"creation_time": "time*2019-10-17T22:00:00Z",
+					"optional": {
+						"services": [
+							"LEGACY_CUSTOMER",
+							"TOP_UP_1",
+							"PAPER_INVOICE"
+						]
+					},
+					"include": {
+						"services": [
+							"COMMITMENT_24_MONTHS",
+							"BHB_PROFILE_1"
+						]
+					},
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": false,
+					"bill_every": "",
+					"prorate_purchase": "",
+					"prorate_cease": "",
+					"epic_description": "",
+					"erp_fis_mapping_label": "BROADBAND HOMEBOX 60",
+					"erp_fis_msisdn_label": "",
+					"fis_descr": "",
+					"gl_account": "10500211",
+					"management_reporting": "",
+					"object_id": ""
+				},
+				{
+					"from": "time*2018-01-12T22:00:00Z",
+					"name": "PRICELEVELS",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": 12
+						},
+						{
+							"price": 200,
+							"from": 12,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "priceLevels",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"technical_name": "",
+					"key": "",
+					"provisioning": [],
+					"display_order": "",
+					"vat_type": "",
+					"vti_name": "",
+					"package_range": "",
+					"forceCommitment": false,
+					"invoice_label": "",
+					"invoice_type": "",
+					"optional": {
+						"services": []
+					},
+					"bill_every": "",
+					"prorate_purchase": "",
+					"prorate_cease": "",
+					"erp_fis_msisdn_label": "",
+					"object_id": "",
+					"fis_descr": "",
+					"management_reporting": "",
+					"gl_account": "",
+					"epic_description": "",
+					"erp_fis_mapping_label": "",
+					"to": "time*2170-01-12T13:57:39Z",
+					"creation_time": "time*2018-01-12T22:00:00Z"
 				}
+
 
 
 			]
