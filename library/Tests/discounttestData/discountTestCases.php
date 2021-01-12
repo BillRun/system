@@ -2161,7 +2161,7 @@ class discountTestCases {
 			]
 		),
 		//https://billrun.atlassian.net/browse/BRCD-2994
-		array('test_num' => 66, 'test' => array('options' => ['stamp' => '202101'], 'subsAccount' => [['aid' => 21]],
+		array('test_num' => 67, 'test' => array('options' => ['stamp' => '202101'], 'subsAccount' => [['aid' => 21]],
 				'subsRevisions' => [
 					[
 						['firstname' => 'p', 'sid' => 22, 'plan' => 'PLAN2', 'from' => '2020-12-10', 'to' => '2021-01-01', 'plan_activation' => "2020-12-10"],
