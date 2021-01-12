@@ -1312,5 +1312,6 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
+
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
