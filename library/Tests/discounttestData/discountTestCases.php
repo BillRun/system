@@ -2160,6 +2160,42 @@ class discountTestCases {
 				['sid' => '22', 'key' => 'DIS1', 'full_price' => -28.387096774, 'billrun' => '202101', 'plan' => 'PLAN2', 'affected_sections' => ['plan']],
 			]
 		),
+		//https://billrun.atlassian.net/browse/BRCD-2994
+		array('test_num' => 66, 'test' => array('options' => ['stamp' => '202101'], 'subsAccount' => [['aid' => 21]],
+				'subsRevisions' => [
+					[
+						['firstname' => 'p', 'sid' => 22, 'plan' => 'PLAN2', 'from' => '2020-12-10', 'to' => '2021-01-01', 'plan_activation' => "2020-12-10"],
+					]
+				],
+				'discounts' => [
+					['name' => 'DIS1', 'root' => ['priority' => 1, 'from' => '2019-04-01', 'to' => '2020-12-03', 'type' => 'percentage', 'subject' =>
+							[
+								'plan' => ['PLAN2' => ['value' => 0.20, /* 'sequential' => false */]]
+							]
+						],
+						'params_override' => [
+							'condition' => [
+								[
+									['type' => 'subscriber', 'field' => 'plan', 'values' => 'PLAN2'],]],
+						]
+					]
+				],
+				'cdrs' => [
+					
+					[
+						'prorated_end' => true, 'prorated_start' => true, 'usaget' => 'flat', 'type' => 'flat', 'start' => '2020-12-10', 'end' => '2021-01-01', 'aid' => 21, 'sid' => 22,
+						'final_charge' => 166.064516129, 'full_price' => 200, 'billrun' => '202101',
+						'tax_data' => [], 'plan' => 'PLAN2'
+					],
+				],
+				'function' => array('checkEligibility')),
+			'expected' => array(
+				
+			),
+			'subjectExpected' => [
+				
+						]
+		),
 	];
 
 }
