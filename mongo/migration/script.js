@@ -1312,36 +1312,5 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
-// BRCD-2976: add Realtime RF (Rating Function) input processor + required custom fields
-runOnce(lastConfig, 'BRCD-2976', function () {
-	lastConfig['file_types'].push({"file_type":"Realtime_RF","type":"realtime","parser":{"type":"json","line_types":{"H":"/^none$/","D":"//","T":"/^none$/"},"separator":"","structure":[{"name":"nfConsumerIdentification","checked":true},{"name":"nfConsumerIdentification.nodeFunctionality","checked":true},{"name":"invocationTimeStamp","checked":true},{"name":"invocationSequenceNumber","checked":true},{"name":"actualTime","checked":true},{"name":"subscriptionId","checked":true},{"name":"subscriptionId.0","checked":true},{"name":"subscriptionId.1","checked":true},{"name":"oneTimeEvent","checked":true},{"name":"oneTimeEventType","checked":true},{"name":"serviceRating","checked":true},{"name":"serviceRating.serviceContextId","checked":true},{"name":"serviceRating.serviceId","checked":true},{"name":"serviceRating.ratingGroup","checked":true},{"name":"serviceRating.requestSubType","checked":true},{"name":"serviceRating.requestedUnit","checked":true},{"name":"serviceRating.requestedUnit.totalVolume","checked":true},{"name":"serviceRating.consumedUnit","checked":true},{"name":"serviceRating.consumedUnit.totalVolume","checked":true},{"name":"serviceRating.destinationId","checked":true},{"name":"serviceRating.destinationId.destinationIdType","checked":true},{"name":"serviceRating.destinationId.destinationIdData","checked":true},{"name":"requestType","checked":true},{"name":"sessionId","checked":true}],"csv_has_header":false,"csv_has_footer":false,"custom_keys":["nfConsumerIdentification","nfConsumerIdentification.nodeFunctionality","invocationTimeStamp","invocationSequenceNumber","actualTime","subscriptionId","subscriptionId.0","subscriptionId.1","oneTimeEvent","oneTimeEventType","serviceRating","serviceRating.serviceContextId","serviceRating.serviceId","serviceRating.ratingGroup","serviceRating.requestSubType","serviceRating.requestedUnit","serviceRating.requestedUnit.totalVolume","serviceRating.consumedUnit","serviceRating.consumedUnit.totalVolume","serviceRating.destinationId","serviceRating.destinationId.destinationIdType","serviceRating.destinationId.destinationIdData","requestType","sessionId"]},"processor":{"type":"Realtime","date_field":"invocationTimeStamp","usaget_mapping":[{"src_field":"serviceRating.serviceContextId","conditions":[{"src_field":"serviceRating.serviceContextId","pattern":"/32251@/","op":"$regex","op_label":"Regex"}],"pattern":"/32251@/","usaget":"data","unit":"byte","volume_type":"field","volume_src":["serviceRating.requestedUnit.totalVolume"]},{"src_field":"serviceRating.serviceContextId","conditions":[{"src_field":"serviceRating.serviceContextId","pattern":"/32275@/","op":"$regex","op_label":"Regex"}],"pattern":"/32275@/","usaget":"call","unit":"seconds","volume_type":"field","volume_src":["serviceRating.requestedUnit.totalVolume"]},{"src_field":"serviceRating.serviceContextId","conditions":[{"src_field":"serviceRating.serviceContextId","pattern":"/32274@/","op":"$regex","op_label":"Regex"}],"pattern":"/32274@/","usaget":"sms","unit":"counter","volume_type":"field","volume_src":["serviceRating.requestedUnit.totalVolume"]}],"orphan_files_time":"6 hours"},"customer_identification_fields":{"data":[{"target_key":"imsi","src_key":"subscriptionId.1","conditions":[{"field":"usaget","regex":"/.*/"}],"clear_regex":"/imsi-*/"}],"call":[{"target_key":"imsi","src_key":"subscriptionId.1","conditions":[{"field":"usaget","regex":"/.*/"}],"clear_regex":"/imsi-*/"}],"sms":[{"target_key":"imsi","src_key":"subscriptionId.1","conditions":[{"field":"usaget","regex":"/.*/"}],"clear_regex":"/imsi-*/"}]},"rate_calculators":{"retail":{"data":[[{"type":"match","rate_key":"params.rating_group","line_key":"serviceRating.ratingGroup"}]],"call":[[{"type":"longestPrefix","rate_key":"params.prefix","line_key":"serviceRating.destinationId.destinationIdData"}]],"sms":[[{"type":"longestPrefix","rate_key":"params.prefix","line_key":"serviceRating.destinationId.destinationIdData"}]]}},"pricing":{"data":[]},"realtime":{"request_type_field":"requestType","used_usagev_field":["serviceRating.consumedUnit.totalVolume"],"session_id_fields":["sessionId"],"default_values":{"data":{"initial_request":"104857600","update_request":"104857600","final_request":"0","default":"104857600"},"call":{"initial_request":"60","update_request":"60","final_request":"0","default":"60"},"sms":{"initial_request":"1","update_request":"0","final_request":"0","default":"1"},"initial_request":"0","update_request":"00","final_request":"0","default":"0"}},"response":{"encode":"array","fields":[{"response_field_name":"invocationTimeStamp","row_field_name":"uf.invocationTimeStamp"},{"response_field_name":"invocationSequenceNumber","row_field_name":"uf.invocationSequenceNumber"},{"response_field_name":"serviceRating","row_field_name":{"classMethod":"getServiceRating","mapping":[{"response_field_name":"serviceContextId","row_field_name":"uf.serviceRating.serviceContextId"},{"response_field_name":"serviceId","row_field_name":"uf.serviceRating.serviceId"},{"response_field_name":"ratingGroup","row_field_name":"uf.serviceRating.ratingGroup"},{"response_field_name":"grantedUnit.totalVolume","row_field_name":"usagev"},{"response_field_name":"resultCode","row_field_name":{"classMethod":"getResultCode"}}]}}]},"unify":{"calculator":{"limit":"50000"},"date_seperation":"Ymd","accept_archived_lines":"1","unification_fields":{"required":{"fields":["session_id","urt","request_type"],"match":{"request_type":"/1|2|3/"}},"date_seperation":"Ymd","stamp":{"value":["session_id","usaget","imsi"],"field":[]},"fields":[{"match":{"request_type":"/.*/"},"update":[{"operation":"$setOnInsert","data":["arate","arate_key","usaget","imsi","session_id","urt","plan","connection_type","aid","sid","msisdn"]},{"operation":"$set","data":["process_time","granted_return_code","eurt"]},{"operation":"$inc","data":["usagev","duration","apr","out_balance_usage","in_balance_usage","aprice"]}]}]}},"filters":[],"enabled":false});
-	
-	var rating_group_field = {
-		"field_name": "params.rating_group",
-        "title": "Rating Groups",
-        "editable": true,
-        "display": true,
-        "multiple": true
-	};
-	var prefix_field = {
-		"field_name": "params.prefix",
-        "title": "Prefixes",
-        "multiple": true,
-        "display": true,
-        "editable": true
-	};
-	var imsi_field = {
-		"editable": true,
-		"display": true,
-		"title": "IMSI",
-		"field_name": "imsi",
-		"multiple": true,
-		"searchable": true
-	};
-	lastConfig = addFieldToConfig(lastConfig, rating_group_field, 'rates');
-	lastConfig = addFieldToConfig(lastConfig, prefix_field, 'rates');
-	lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], imsi_field, 'subscriber');
-});
-
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
