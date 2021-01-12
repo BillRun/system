@@ -401,6 +401,11 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 17975, 'after_vat' => array("17976" => 160.0258064516129), 'total' => 160.0258064516129, 'vatable' =>136.7741935483871 , 'vat' => 0)),
 			'line' => array('types' => array('flat','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2988"
 		),
+		//case for BRCD-2996 (It seems that the 'expandSubRevisions'  will not fully support  multiple termination of services  under the same  revision.)
+			array('test' => array('test_number' => 72, "aid" => 725, 'sid' =>825 , 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202102", "force_accounts" => array(725))),
+			'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' =>182.5806451612904 , 'vat' => 0)),
+			'line' => array('types' => array('flat','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
+		),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),

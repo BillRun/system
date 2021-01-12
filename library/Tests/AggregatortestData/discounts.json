@@ -697,6 +697,94 @@
 			"proration": "inherited",
 			"to": "time*2170-01-12T14:17:55Z",
 			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+
+			"from": "time*2020-01-13T00:00:00Z",
+			"key": "ABCDEFG",
+			"description": "abcdefg",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"ABCD"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"AZ": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T15:54:26Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+
+			"from": "time*2018-01-13T00:00:00Z",
+			"key": "EFG",
+			"description": "efg",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"EFG"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "percentage",
+			"subject": {
+				"plan": {
+					"AZ": {
+						"value": 0.2
+					}
+				}
+			},
+			"proration": "inherited",
+			"to": "time*2170-01-12T16:58:43Z",
+			"creation_time": "time*2018-01-13T00:00:00Z"
 		}
 
 

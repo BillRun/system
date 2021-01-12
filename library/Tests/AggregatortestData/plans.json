@@ -731,6 +731,36 @@
 					"erp_fis_mapping_label": "",
 					"to": "time*2170-01-12T13:57:39Z",
 					"creation_time": "time*2018-01-12T22:00:00Z"
+				},
+				{
+
+					"from": "time*2018-01-13T00:00:00Z",
+					"name": "AZ",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-01-12T14:04:21Z",
+					"creation_time": "time*2018-01-13T00:00:00Z"
 				}
 
 
