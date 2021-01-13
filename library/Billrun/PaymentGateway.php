@@ -756,6 +756,8 @@ abstract class Billrun_PaymentGateway {
 	public function getReceiverParameters() {
 		return array();
 	}
+	
+	abstract public function getSecretFields();
 
 	public function getExportParameters() {
 		return array();

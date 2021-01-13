@@ -256,4 +256,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected function isTransactionDetailsNeeded() {
 		return false;
 	}
+	
+	public function getSecretFields() {
+		return array('Password');
+	}
 }
