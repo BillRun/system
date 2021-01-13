@@ -214,17 +214,13 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$group2 = array();
 		$project = array();
 		$sub_push = array();
-		foreach ($this->passthroughFields as $accountField) {
-			$group[$accountField] = array('$addToSet' => ['$cond' => [['$eq' => ['$type','account']], '$' . $accountField, '$$REMOVE']]);
-			$group2[$accountField] = array('$first' => '$' . $accountField);
-			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
-		}
+		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
-		foreach ($this->subsPassthroughFields as $subscriberField) {
+		foreach ($passthroughFields as $subscriberField) {
 			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
 			$sub_push[$srcField] =  '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;;
+			$project[$srcField] ='$' . $srcField;
 		}
 		if (!$project) {
 			$project = 1;

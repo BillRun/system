@@ -570,5 +570,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		return $old_card_expiration;
 	}
-
+	
+	public function getSecretFields() {
+		return array('password');
+	}
 }
