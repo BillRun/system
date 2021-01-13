@@ -589,12 +589,32 @@ class Tests_Rebalanctest extends UnitTestCase {
 
 				foreach ($balance['balance']['groups'][$expectedKey] as $filde => $value) {
 					if ($value != $expected[$balance['service_name']][$expectedKey][$filde]) {
-						$this->message .= "$filde expected to be: {$expected[$balance['service_name']][$expectedKey]}, result : $value " . $this->fail;
+						$this->message .= "$filde expected to be: {$expected[$balance['service_name']][$expectedKey][$filde]}, result : $value " . $this->fail;
 						$this->assertTrue(0);
 					} else {
 						$this->message .= "$filde  : $value " . $this->pass;
 						$this->assertTrue(1);
 					}
+				}
+			}
+		}
+	}
+
+	public function RecorsiveTest($balances) {
+		$resetFildes = ['cost', 'count', 'usagev'];
+		foreach ($balances as $key => $value) {
+			if (is_array($value)  && !empty($value)) {
+				$this->message .= " $key . ";
+				$this->RecorsiveTest($value);
+			}
+			if (in_array($key, $resetFildes)) {
+				if ($value != 0) {
+					$this->message .= $key . " : " . $value . $this->fail;
+					$this->assertTrue(0);
+					$pass = false;
+				} else {
+					$this->message .= $key . " : " . $value . $this->pass;
+					$this->assertTrue(1);
 				}
 			}
 		}
@@ -609,112 +629,10 @@ class Tests_Rebalanctest extends UnitTestCase {
 		});
 		foreach ($balancesToTest as $balance) {
 			$pass = true;
-			$this->message .= "AID {$balance['aid']}, SID : {$balance['sid']}<br>";
+			$this->message .= "</br>AID {$balance['aid']}, SID : {$balance['sid']}<br>";
 			$service_name = isset($balance['service_name']) ? $balance['service_name'] : 'defualt';
 			$this->message .= "<b>balance name :	$service_name </b><br>";
-
-
-			if ($balance['balance']['cost'] != 0) {
-				$this->message .= "<br>main cost : {$balance['balance']['cost']} " . $this->fail;
-				$this->assertTrue(0);
-				$pass = false;
-			}
-			//check groups
-			if (!empty($balance['balance']['groups'])) {
-				foreach ($balance['balance']['groups'] as $groupName => $group) {
-					$this->message .= "<b>group : $groupName</b>";
-					if ($group['count'] != 0) {
-						$this->message .= "</br>balance filed  isn't reset : </br>";
-						$this->message .= "count : {$group['count'] } " . $this->fail;
-						$this->assertTrue(0);
-						$pass = false;
-					} else {
-						$this->message .= "</br>balance filed is reset : </br>";
-						$this->message .= "count : {$group['count'] } " . $this->pass;
-						$this->assertTrue(1);
-					}
-					if (isset($group['usagev'])) {
-						if ($group['usagev'] != 0) {
-							$this->message .= "</br>balance filed  isn't reset : </br>";
-							$this->message .= "usagev : {$group['usagev'] } " . $this->fail;
-							$this->assertTrue(0);
-							$pass = false;
-						} else {
-							$this->message .= "</br>balance filed  is reset  : </br>";
-							$this->message .= "usagev : {$group['usagev'] } " . $this->pass;
-							$this->assertTrue(1);
-						}
-					}
-				}
-			}
-			if (!empty($balance['balance']['totals'])) {
-				foreach ($balance['balance']['totals'] as $groupName => $group) {
-					$this->message .= "<b>totals group : $groupName</b>";
-					if ($group['count'] != 0) {
-						$this->message .= "</br>balance filed  isn't reset : </br>";
-						$this->message .= "count : {$group['count'] } " . $this->fail;
-						$this->assertTrue(0);
-						$pass = false;
-					} else {
-						$this->message .= "</br>balance filed is reset  : </br>";
-						$this->message .= "count : {$group['count'] } " . $this->pass;
-						$this->assertTrue(1);
-					}
-					if ($group['cost'] != 0) {
-						$this->message .= "</br>balance filed  isn't reset : </br>";
-						$this->message .= "cost : {$group['cost'] } " . $this->fail;
-						$this->assertTrue(0);
-						$pass = false;
-					} else {
-						$this->message .= "</br>balance filed is reset  : </br>";
-						$this->message .= "cost : {$group['cost'] } " . $this->pass;
-						$this->assertTrue(1);
-					}
-					if ($group['usagev'] != 0) {
-						$this->message .= "</br>balance filed  isn't reset : </br>";
-						$this->message .= "usagev : {$group['usagev'] } " . $this->fail;
-						$this->assertTrue(0);
-						$pass = false;
-					} else {
-						$this->message .= "</br>balance filed  is reset  : </br>";
-						$this->message .= "usagev : {$group['usagev'] } " . $this->pass;
-						$this->assertTrue(1);
-					}
-					if (!empty($group['over_group'])) {
-						if ($group['over_group']['usagev'] != 0) {
-							$this->message .= "</br>balance filed  isn't reset  : </br>";
-							$this->message .= " over_group usagev : {$group['over_group']['usagev'] } " . $this->fail;
-							$this->assertTrue(0);
-							$pass = false;
-						} else {
-							$this->message .= "</br>balance filed  is reset  : </br>";
-							$this->message .= "over_group usagev : {$group['over_group']['usagev'] } " . $this->pass;
-							$this->assertTrue(1);
-						}
-					}
-				}
-			}
-			if (!$pass) {
-				$this->message .= "balance  ins't rest seccessfuly: </br><pre>";
-				$this->RecursiveWrite($balance);
-				$this->message .= "</pre>";
-				$this->assertTrue(0);
-			}
-		}
-	}
-
-	public function RecursiveWrite($array) {
-		// Loops through each element. If element again is array, function is recalled. If not, result is echoed.
-		foreach ($array as $key => $value) {
-			if (is_array($value)) {
-				$this->message .= "$key.";
-				$this->RecursiveWrite($value);
-			} else {
-				if ($key == 'from' || $key == 'to') {
-					$value = date("Y-m-d H:i:s", $value->sec);
-				}
-				$this->message .= $key . " : " . $value . "<br />";
-			}
+			$this->RecorsiveTest($balance);
 		}
 	}
 
