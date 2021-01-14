@@ -224,7 +224,7 @@ class Mongodloid_Collection {
 		$options['upsert'] = true;
 		$options['w'] = $w;
 		$this->convertWriteConcernOptions($options);
-		$data = Mongodloid_TypeConverter::fromMongodloid($entity->getRawData());
+		$data = $entity->getRawData();
 		if($entity->getId()){
 			$id = $entity->getId()->getMongoID();
 		}else{
@@ -232,7 +232,7 @@ class Mongodloid_Collection {
 			$data['_id'] =  $id;
 		}
 		
-		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => $id), $data, $options));
+		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => $id), Mongodloid_TypeConverter::fromMongodloid($data), $options));
 		$entity->setRawData($data);
 		return $result;
 	}
@@ -523,6 +523,7 @@ class Mongodloid_Collection {
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
 		$query = Mongodloid_TypeConverter::fromMongodloid($query);
+		
 		if (isset($options['remove'])) {
 			unset($options['remove']);
 			$ret = $this->findOneAndDelete($query, $options);
@@ -532,6 +533,7 @@ class Mongodloid_Collection {
 				unset($options['new']);
 			}
 			$options['projection'] = $fields;
+			$update = Mongodloid_TypeConverter::fromMongodloid($update);
 			if (!\MongoDB\is_first_key_operator($update)) {
 				$ret = $this->findOneAndReplace($query, $update, $options);
 			} else {
