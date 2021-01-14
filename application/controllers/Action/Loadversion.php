@@ -54,7 +54,7 @@ class LoadversionAction extends ApiAction {
 				Billrun_Factory::log('Loadversion - cannot decode entity. Data: ' . print_R($entity, 1), Zend_Log::ERR);
 				return false;
 			}
-			$_mongoId = new MongoId($entityArr['_id']['$id']);
+			$_mongoId = new Mongodloid_Id($entityArr['_id']['$id']);
 			$this->prepareDataBeforeSave($entityArr);
 			if (!$mongoEntity = new Mongodloid_Entity($entityArr)) {
 				Billrun_Factory::log('Loadversion - cannot create mongo entity. Data: ' . print_R($entity, 1), Zend_Log::ERR);

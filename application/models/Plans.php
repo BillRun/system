@@ -62,7 +62,7 @@ class PlansModel extends TabledateModel {
 	 */
 	public function duplicate_rates($source_id, $new_id) {
 		$rates_col = Billrun_Factory::db()->ratesCollection();
-		$source_ref = MongoDBRef::create("plans", new mongoId($source_id));
+		$source_ref = MongoDBRef::create("plans", new Mongodloid_Id($source_id));
 		$dest_ref = MongoDBRef::create("plans", $new_id);
 		$usage_types = Billrun_Factory::config()->getConfigValue('admin_panel.line_usages');
 		foreach ($usage_types as $type => $string) {

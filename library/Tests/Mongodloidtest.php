@@ -170,7 +170,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$collection = $test['collection'];
 		$query = $test['params']['query'];
 		if(isset($query['_id'])){
-			$query['_id'] =  new MongoId($query['_id']);//for now check mongo
+			$query['_id'] =  new Mongodloid_Id($query['_id']);//for now check mongo
 		}
 		$options = $test['params']['options'];
 		$values = $test['params']['values'];
@@ -188,7 +188,7 @@ class Tests_Mongodloid extends UnitTestCase{
 	
 	protected function checkFindOne($test){
 		$collection = $test['collection'];
-		$id = new MongoId($test['params']['id']);//todo:: for now check mongo 
+		$id = new Mongodloid_Id($test['params']['id']);//todo:: for now check mongo 
 		$want_array = $test['params']['want_array'];
 		$result = Billrun_Factory::db()->{$collection . 'Collection'}()->findOne($id, $want_array);
 		if($want_array && !(is_array($result))){

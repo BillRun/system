@@ -62,7 +62,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	protected function getIDQuery($query) {
 		// Convert the string ID to mongo ID.
 		$id = $query['_id'];
-		$mongoId = new MongoId($id);
+		$mongoId = new Mongodloid_Id($id);
 		return array("_id" => $mongoId);
 	}
 

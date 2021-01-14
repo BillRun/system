@@ -118,7 +118,7 @@ class AggregateAction extends ApiAction {
 
 	protected function convertToMongoIds($query, $idSeen = FALSE) {
 		if ($idSeen && is_string($query) && ctype_alnum($query)) {
-			return new MongoId($query);
+			return new Mongodloid_Id($query);
 		}
 		if (is_array($query)) {
 			foreach ($query as $key => $value) {

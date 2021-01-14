@@ -283,7 +283,7 @@ class QueryAction extends ApiAction {
 		// convert short ref to real PHP MongoId (query convention)
 		foreach ($ret as $k => &$v) {
 			if (is_array($v) && isset($v['$id'])) {
-				$v = new MongoId($v['$id']);
+				$v = new Mongodloid_Id($v['$id']);
 			}
 		}
 		return $ret;

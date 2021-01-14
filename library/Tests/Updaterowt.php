@@ -683,13 +683,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		foreach ($row['rates'] as $rate_key => $tariff_category) {
 			$rate = $this->ratesCol->query(array('key' => $rate_key))->cursor()->current();
 			$keys[] = array(
-				'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
+				'rate' => MongoDBRef::create('rates', (new Mongodloid_Id((string) $rate['_id']))),
 				'tariff_category' => $tariff_category,
 			);
 		}
 		$row['rates'] = $keys;
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = MongoDBRef::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 

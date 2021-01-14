@@ -431,7 +431,7 @@ class Models_Subscribers extends Models_Entity {
 
 		foreach ($needUpdate as $revisionId => $updateValue) {
 			$update = array();
-			$query = array('_id' => new MongoId($revisionId));
+			$query = array('_id' => new Mongodloid_Id($revisionId));
 			foreach ($updateValue as $field => $value) {
 				if ($field == 'former_plan' && $value == 'unset') {
 					$update['$unset'][$field] = true;

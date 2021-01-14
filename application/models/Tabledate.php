@@ -87,7 +87,7 @@ class TabledateModel extends TableModel {
 		if (!$to_date) {
 			return $this->setError("date error");
 		}
-		$id = new MongoId(isset($entity['_id'])? $entity['_id'] : NULL);
+		$id = new Mongodloid_Id(isset($entity['_id'])? $entity['_id'] : NULL);
 		if (!$id) {
 			return $this->setError("id error");
 		}

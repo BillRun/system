@@ -420,7 +420,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($data['_id']);
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
-			'_id' => new MongoId($serviceProvider_mongoId),
+			'_id' => new Mongodloid_Id($serviceProvider_mongoId),
 		);
 		Billrun_Factory::db()->serviceprovidersCollection()->update($query, $data);
 		$this->responseSuccess(array("status" => true));
@@ -440,7 +440,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), $query);
 		if (!empty($id = $data['_id'])) {
-			$query['_id'] =  array('$ne' => new MongoId($id));
+			$query['_id'] =  array('$ne' => new Mongodloid_Id($id));
 		}
 		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
 		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
@@ -470,7 +470,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
-			'_id' => new MongoId($serviceProvider_mongoId),
+			'_id' => new Mongodloid_Id($serviceProvider_mongoId),
 		);
 		Billrun_Factory::db()->serviceprovidersCollection()->remove($query);
 		$this->responseSuccess(array("status" => true));
@@ -633,7 +633,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {
-			$id = new MongoId($data['_id']['$id']);
+			$id = new Mongodloid_Id($data['_id']['$id']);
 			unset($data['_id']);
 			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
 		}
@@ -767,7 +767,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$params = array();
 		foreach ($ids as $id) {
-			$params['_id']['$in'][] = new MongoId((string) $id);
+			$params['_id']['$in'][] = new Mongodloid_Id((string) $id);
 		}
 
 		// this is just insurance that the loop worked fine
@@ -834,7 +834,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		if ($id) {
-			$params = array_merge($data, array('_id' => new MongoId($id)));
+			$params = array_merge($data, array('_id' => new Mongodloid_Id($id)));
 		} else {
 			$params = $data;
 		}

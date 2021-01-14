@@ -57,7 +57,7 @@ class Billrun_Service {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new MongoId($params['id']));
+			$this->load(new Mongodloid_Id($params['id']));
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
 		}

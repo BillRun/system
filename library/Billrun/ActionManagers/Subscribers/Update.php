@@ -258,7 +258,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		$id = isset($input['_id']['$id'])? $input['_id']['$id'] : $input['_id'];
 		try {
-			$mongoID = new MongoId($id);
+			$mongoID = new Mongodloid_Id($id);
 			
 			// Set the mongo ID in the input array
 			$result['_id'] = $mongoID;

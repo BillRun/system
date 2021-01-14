@@ -476,7 +476,7 @@ class ResetLinesModel {
 					}
 					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
 					$query = array(
-						'_id' => new MongoId($balanceId),
+						'_id' => new Mongodloid_Id($balanceId),
 					);
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 					$balancesColl->update($query, $updateData);

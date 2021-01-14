@@ -154,9 +154,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		} else if (isset($params['pp_includes_name'])) {
 			return array('name' => $params['pp_includes_name']);
 		} else if (isset($params['id'])) {
-			return array('_id' => new MongoId($params['id']));
+			return array('_id' => new Mongodloid_Id($params['id']));
 		} else if (isset($params['_id'])) {
-			return array('_id' => new MongoId($params['_id']));
+			return array('_id' => new Mongodloid_Id($params['_id']));
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include not defined in input');
 		}

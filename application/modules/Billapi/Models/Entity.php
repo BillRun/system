@@ -1077,7 +1077,7 @@ class Models_Entity {
 	 * @return array the entity loaded
 	 */
 	protected function loadById($id) {
-		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
+		$fetchQuery = array('_id' => ($id instanceof Mongodloid_Id) ? $id : new Mongodloid_Id($id));
 		return $this->collection->query($fetchQuery)->cursor()->current();
 	}
 

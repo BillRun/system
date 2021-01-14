@@ -183,7 +183,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if ($txid) {
 			$this->data['txid'] = $txid;
 		} else {
-			$this->data['_id'] = new MongoId();
+			$this->data['_id'] = new Mongodloid_Id();
 			$this->data['txid'] = isset($this->data['gateway_details']['txid']) ? $this->data['gateway_details']['txid'] : self::createTxid();
 		}
 	}

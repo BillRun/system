@@ -236,7 +236,7 @@ class Tests_Ratetest extends UnitTestCase {
 		}
 
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = MongoDBRef::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 

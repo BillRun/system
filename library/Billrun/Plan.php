@@ -53,7 +53,7 @@ class Billrun_Plan extends Billrun_Service {
 	protected function constructWithID($id) {
 		if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id->getMongoId());
-		} else if ($id instanceof MongoId) {
+		} else if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id);
 		} else {
 			// probably a string

@@ -99,7 +99,7 @@ class V3_ratesAction extends ApiAction {
 				unset($retQuery['_id']);
 				foreach ($hexIds as $hexId) {
 					if (MongoId::isValid($hexId)) {
-						$retQuery['_id']['$in'][] = new MongoId($hexId);
+						$retQuery['_id']['$in'][] = new Mongodloid_Id($hexId);
 					}
 				}
 			} else {
