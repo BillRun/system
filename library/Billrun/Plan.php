@@ -310,7 +310,7 @@ class Billrun_Plan extends Billrun_Service {
 			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
 				$startPricing += ((($startFratcion * date('t',$activation)) /  $currentDays) - $startFratcion);
 			}
 		}
@@ -319,7 +319,7 @@ class Billrun_Plan extends Billrun_Service {
 			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$endFratcion = 1 -($startOffset - floor($startOffset));
-				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation));
 				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
 			}
 		}

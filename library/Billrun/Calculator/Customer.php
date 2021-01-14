@@ -426,24 +426,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$key = $translationRules['src_key'];
 			if (isset($row['uf.' .$key])) {
-				if (isset($translationRules['clear_regex'])) {
-					$val = preg_replace($translationRules['clear_regex'], '', $row['uf.' .$key]);
-				} else {
-					if ($translationRules['target_key'] === 'msisdn') {
-						$val = Billrun_Util::msisdn($row['uf.' .$key]);
-					} else {
-						$val = $row['uf.' .$key];
-					}
-				}
-				$fieldName = $translationRules['target_key'];
-				$fieldType = Billrun_Factory::config()->getCustomFieldType('subscribers.subscriber', $fieldName);
-				if ($fieldType == 'ranges') {
-					$params[] = Api_Translator_RangesModel::getRangesFieldQuery($fieldName, $val);
-				} else {
-					$params[] = array($fieldName => $val);
-				}
-				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . print_R(end($params)[$translationRules['target_key']], 1), Zend_Log::DEBUG);
-			} else {
+				$this->getParamsByPrefixAndTranslationRules($translationRules, $params, 'uf', $row, $key);
+			} elseif (isset($row['cf.' .$key])) {
+				$this->getParamsByPrefixAndTranslationRules($translationRules, $params, 'cf', $row, $key);
+			} 
+			else {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
 			}
 		}
@@ -454,6 +441,26 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			));
 		}
 		return $params;
+	}
+	
+	protected function getParamsByPrefixAndTranslationRules($translationRules, &$params, $prefix, $row, $key){
+		if (isset($translationRules['clear_regex'])) {
+			$val = preg_replace($translationRules['clear_regex'], '', $row[$prefix.'.' .$key]);
+		} else {
+			if ($translationRules['target_key'] === 'msisdn') {
+				$val = Billrun_Util::msisdn($row[$prefix.'.' .$key]);
+			} else {
+				$val = $row[$prefix. '.' .$key];
+			}
+		}
+		$fieldName = $translationRules['target_key'];
+		$fieldType = Billrun_Factory::config()->getCustomFieldType('subscribers.subscriber', $fieldName);
+		if ($fieldType == 'ranges') {
+			$params[] = Api_Translator_RangesModel::getRangesFieldQuery($fieldName, $val);
+		} else {
+			$params[] = array($fieldName => $val);
+		}
+		Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . print_R(end($params)[$translationRules['target_key']], 1), Zend_Log::DEBUG);
 	}
 
 	/**

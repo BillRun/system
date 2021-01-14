@@ -241,4 +241,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		return false;
 	}
 
+	public function getSecretFields() {
+		return array('secret_key');
+	}
 }

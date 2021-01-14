@@ -112,20 +112,20 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                         }
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-                                $payment->setPending(false);
+				$payment->setPending(false);
 				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
-                                $this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
+				$this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
-                                $this->informationArray['transactions']['rejected']++;
-                                $this->informationArray['total_rejected_amount']+=$payment->getAmount();
+				$this->informationArray['transactions']['rejected']++;
+				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
-                                $message = 'Transaction ' . $payment->getId() . ' already rejected';
+				$message = 'Transaction ' . $payment->getId() . ' already rejected';
 				Billrun_Factory::log($message, Zend_Log::NOTICE);
-                                $this->informationArray['info'][] = $message;
+				$this->informationArray['info'][] = $message;
 			}
 		}
 	}

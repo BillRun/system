@@ -677,7 +677,7 @@ class Billrun_DiscountManager {
 			}
 			if ($eligibilityInterval['to'] > $discountTo) {
 				if ($eligibilityInterval['from'] >= $discountTo) {
-					unset($eligibility[$i]);
+					unset($finalEligibility[$i]);
 				} else {
 					$eligibilityInterval['to'] = $discountTo;
 				}

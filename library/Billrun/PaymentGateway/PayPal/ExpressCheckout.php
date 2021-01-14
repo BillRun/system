@@ -254,5 +254,8 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		return false;
 	}
-
+	
+	public function getSecretFields() {
+		return array('password');
+	}
 }

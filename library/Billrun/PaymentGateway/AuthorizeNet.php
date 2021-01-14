@@ -883,5 +883,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			'setting' => $settings,
 		];
 	}
+	
+	public function getSecretFields() {
+		return array('transaction_key');
+	}
 
 }
