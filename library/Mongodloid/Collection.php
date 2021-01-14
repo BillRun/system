@@ -545,15 +545,38 @@ class Mongodloid_Collection {
 		return $ret;
 	}
 
-	private function findOneAndReplace(array $query, array $update = array(), array $options = array()) {
+	/**
+	 * Finds a single document matching the query and replaces it.
+	 * @param array|object $query - The filter criteria that specifies the documents to replace.
+	 * @param array|object $update - The replacement document.
+	 * @param array $options - An array specifying the desired options.
+	 * @return object|null
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-findOneAndReplace/#phpmethod.MongoDB\Collection::findOneAndReplace
+	 */
+	private function findOneAndReplace($query, $update = array(), array $options = array()) {
 		return $this->_collection->findOneAndReplace($query, $update, $options);
 	}
 
-	private function findOneAndUpdate(array $query, array $update = array(), array $options = array()) {
+	/**
+	 * Finds a single document matching the query and updates it.
+	 * @param array|object $query - The filter criteria that specifies the documents to update.
+	 * @param array|object $update
+	 * @param array $options - An array specifying the desired options.
+	 * @return object|null
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-findOneAndUpdate/#phpmethod.MongoDB\Collection::findOneAndUpdate
+	 */
+	private function findOneAndUpdate($query, $update = array(), array $options = array()) {
 		return $this->_collection->findOneAndUpdate($query, $update, $options);
 	}
 
-	private function findOneAndDelete(array $query, array $options = array()) {
+	/**
+	 * Finds a single document matching the query and deletes it.
+	 * @param array|object $query - The filter criteria that specifies the documents to delete.
+	 * @param array $options - An array specifying the desired options.
+	 * @return object|null
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-findOneAndDelete/#phpmethod.MongoDB\Collection::findOneAndDelete
+	 */
+	private function findOneAndDelete($query, array $options = array()) {
 		return $this->_collection->findOneAndDelete($query, $options);
 	}
 
