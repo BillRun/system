@@ -122,7 +122,7 @@ class FilesAction extends ApiAction {
 	public function create($fileName, array $metadata) {
 		try {
 			$mongoID = $this->collection->storeUpload($fileName, $metadata);
-		} catch (MongoGridFSException $e) {
+		} catch (Mongodloid_Exception $e) {
 			// TODO: Replace error codes with constants
 			Billrun_Factory::log("GRIDFS ERR: " . $e->getMessage());
 			throw new Exception("GridFS error!", 409, $e);

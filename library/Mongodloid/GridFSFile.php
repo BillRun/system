@@ -13,7 +13,7 @@ class Mongodloid_GridFSFile {
 
     /**
      *
-     * @param MongoGridFS $gridfs The parent MongoGridFS instance
+     * @param Mongodloid_GridFS $gridfs The parent Mongodloid_GridFS instance
      * @param array $file A file from the database
      */
     public function __construct(Mongodloid_GridFS $gridfs, array $file)
