@@ -152,10 +152,15 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
      */
     public function __construct(MongoDB\Collection $collection, $documentMap = null)
     {
-        if (!extension_loaded('Mongo')) {
-            Zend_Cache::throwException("Cannot use Mongo storage because the ".
-            "'Mongo' extension is not loaded in the current PHP environment");
+//        if (!extension_loaded('Mongo')) {
+//            Zend_Cache::throwException("Cannot use Mongo storage because the ".
+//            "'Mongo' extension is not loaded in the current PHP environment");
+//        }
+ 		if (!class_exists('MongoDB')) {
+            Zend_Cache::throwException("Cannot use MongoDB storage because the ".
+            "'MongoDB' class is not exist in the current PHP environment");
         }
+		
         if(!is_array($documentMap)){
             $documentMap = array();
         }
@@ -173,7 +178,7 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
         if ($this->_collection === null) {
             throw new Zend_Log_Exception('MongoDb object is null');
         }
-        $event['timestamp'] = new Mongodloid_Date(strtotime($event['timestamp']));
+        $event['timestamp'] = new MongoDB\BSON\UTCDateTime(strtotime($event['timestamp']));
         if ($this->_documentMap === null) {
             $dataToInsert = $event;
         } else {
