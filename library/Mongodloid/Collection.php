@@ -449,7 +449,7 @@ class Mongodloid_Collection {
 	/**
 	 * method to load Mongo DB reference object
 	 * 
-	 * @param MongoDBRef $ref the reference object
+	 * @param Mongodloid_Ref $ref the reference object
 	 * 
 	 * @return array
 	 */
@@ -465,7 +465,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @param Mongodloid_Entity $entity Entity to create ref by.
 	 * 
-	 * @return MongoDBRef
+	 * @return Mongodloid_Ref
 	 */
 	public function createRefByEntity($entity) {//
 		// TODO: Validate the entity?
@@ -484,7 +484,7 @@ class Mongodloid_Collection {
 	 * 
 	 * @param array $a raw data of object to create reference to itself; later on you can use the return value to store in other collection
 	 * 
-	 * @return MongoDBRef
+	 * @return Mongodloid_Ref
 	 */
 	public function createRef($document_or_id) {//
 		if ($document_or_id instanceof Mongodloid_Id) {

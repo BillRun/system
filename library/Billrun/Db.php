@@ -150,7 +150,7 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 	
 	public function getByDBRef($dbRef) {
-		if(MongoDBRef::isRef($dbRef)) {
+		if(Mongodloid_Ref::isRef($dbRef)) {
 			$coll = $this->getCollection($dbRef['$ref']);
 			if($coll) {
 				return $coll->getRef($dbRef);

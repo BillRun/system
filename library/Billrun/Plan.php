@@ -362,7 +362,7 @@ class Billrun_Plan extends Billrun_Service {
 	/**
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.
-	 * @return MongoDBRef the refernce to current plan.
+	 * @return Mongodloid_Ref the refernce to current plan.
 	 * @todo Should the collection here really be false by default? I think it's safer
 	 * if the user of this function will have to specify a collection.
 	 */

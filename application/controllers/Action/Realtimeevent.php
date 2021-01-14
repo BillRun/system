@@ -59,7 +59,7 @@ class RealtimeeventAction extends ApiAction {
 	}
 
 	protected function rate() {
-		$this->event['arate'] = MongoDBRef::create($collection, $id);
+		$this->event['arate'] = Mongodloid_Ref::create($collection, $id);
 	}
 
 	protected function charge() {

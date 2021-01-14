@@ -121,7 +121,7 @@ class v3TranslatorPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$ratesIds = Billrun_Factory::db()->ratesCollection()->query(array('zone_grouping' => array('$in' => $zone_grouping)))->cursor()->fields(array('_id' => 1))->setRawReturn(true);
 		$retRates = array();
 		foreach ($ratesIds as $id) {
-			$retRates[] = MongoDBRef::create('rates', $id['_id']);
+			$retRates[] = Mongodloid_Ref::create('rates', $id['_id']);
 		}
 		return $retRates;
 	}

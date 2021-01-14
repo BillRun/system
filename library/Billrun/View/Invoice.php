@@ -130,7 +130,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = MongoDBRef::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
+			$rate = Mongodloid_Ref::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
 			$rate = $rate->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ? 

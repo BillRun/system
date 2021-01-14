@@ -134,7 +134,7 @@ class RatesModel extends TabledateModel {
 		// be great help if someone from the core team can replace this TODO
 		// with a proper comment describing this logic.
 		foreach ($sourcePlans as &$plan) {
-			if (MongoDBRef::isRef($plan)) {
+			if (Mongodloid_Ref::isRef($plan)) {
 				$newRefPlans[] = $plan;
 			} else {
 				$planQuery['name'] = $plan;
@@ -642,7 +642,7 @@ class RatesModel extends TabledateModel {
 	 * @param string $plan
 	 * @param Mongodloid_Date $currentDate the affective date
 	 * 
-	 * @return MongoDBRef
+	 * @return Mongodloid_Ref
 	 */
 	public function getPlan($plan, $currentDate = null) {
 		if (is_null($currentDate)) {

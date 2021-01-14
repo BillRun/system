@@ -460,7 +460,7 @@ class TableModel {
 	}
 
 	protected function getDBRefField($item, $field_name) {
-		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
+		if (($value = $item->get($field_name, true)) && Mongodloid_Ref::isRef($value)) {
 			$value = Billrun_DBRef::getEntity($value);
 		}
 		return $value;
