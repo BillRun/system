@@ -680,7 +680,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'type' => 'credit',
 			'billrun' => [
 				'$gt' => $billrun_key,
-				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
+				'$regex' => new Mongodloid_Regex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
 				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),

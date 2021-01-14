@@ -393,7 +393,7 @@ class TableModel {
 						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
 					}
 					return array(
-						$filter_field['db_key'] => array('$regex' => new MongoRegex('/' . $value . '/i')),
+						$filter_field['db_key'] => array('$regex' => new Mongodloid_Regex('/' . $value . '/i')),
 					);
 				}
 			}
