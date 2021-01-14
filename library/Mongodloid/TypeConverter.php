@@ -80,10 +80,50 @@ class Mongodloid_TypeConverter
                 foreach ($value as $key => $item) {
                     $result[$key] = self::fromMongodloid($item);
                 }
-
-                return $result;
+				
+                return self::ensureCorrectType($result, is_object($value));
             default:
                 return $value;
         }
+    }
+	
+	
+	/**
+     * Converts all arrays with non-numeric keys to stdClass
+     *
+     * @param array $array
+     * @param bool $wasObject
+     * @return array|Model\BSONArray|Model\BSONDocument
+     */
+    private static function ensureCorrectType(array $array, $wasObject = false)
+    {
+        if ($wasObject || ! static::isNumericArray($array)) {
+            return new MongoDB\Model\BSONDocument($array);
+        }
+
+        return $array;
+    }
+	
+	/**
+     * Helper method to find out if an array has numerical indexes
+     *
+     * For performance reason, this method checks the first array index only.
+     * More thorough inspection of the array might be needed.
+     * Note: Returns true for empty arrays to preserve compatibility with empty
+     * lists.
+     *
+     * @param array $array
+     * @return bool
+     */
+    public static function isNumericArray(array $array)
+    {
+        if ($array === []) {
+            return true;
+        }
+
+        $keys = array_keys($array);
+        // array_keys gives us a clean numeric array with keys, so we expect an
+        // array like [0 => 0, 1 => 1, 2 => 2, ..., n => n]
+        return array_values($keys) === array_keys($keys);
     }
 }

@@ -280,8 +280,8 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$command = $this->_command;
         try {
 			if(method_exists($this->_collection, $command)){
-				$this->cursor = $this->_collection->$command($this->_query, $this->_options);
-				$this->_iterator = new IteratorIterator($this->cursor);
+				$this->_cursor = $this->_collection->$command($this->_query, $this->_options);
+				$this->_iterator = new IteratorIterator($this->_cursor);
 				$this->rewind();
 			}
             

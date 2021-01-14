@@ -434,9 +434,10 @@ class Mongodloid_Collection {
 		}
 		$options = [
 			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
-			'writeConcern' => $this->getWriteConcern(),
+			'writeConcern' => $this->_collection->getWriteConcern(),
 		];
-		return $this->withOptions($options);
+		$this->withOptions($options);
+		return $this;
 	}
 
 	/**
@@ -718,12 +719,12 @@ class Mongodloid_Collection {
 
 	public function getWriteConcern($var = null) {
 		// backward compatibility with 1.4
-		if ($this->_db->compareClientVersion('1.5', '<')) {
-			$ret = array(
-				'w' => $this->w,
-				'wtimeout' => $this->getTimeout(),
-			);
-		} else {
+//		if ($this->_db->compareClientVersion('1.5', '<')) {
+//			$ret = array(
+//				'w' => $this->w,
+//				'wtimeout' => $this->getTimeout(),
+//			);
+//		} else {
 			$writeConcern = $this->_collection->getWriteConcern();
 			if ($writeConcern === null) {
 				$writeConcern = new \MongoDB\Driver\WriteConcern($this->w);
@@ -732,7 +733,7 @@ class Mongodloid_Collection {
 				'w' => $writeConcern->getW(),
 				'wtimeout' => $writeConcern->getWtimeout(),
 			);
-		}
+//		}
 
 		if (is_null($var)) {
 			return $ret;
