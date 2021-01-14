@@ -229,6 +229,30 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 		return $this->get('balance')['totals'][$balance_totals_key]['usagev'];
 	}
+	
+	/**
+	 * Get main balance usagev used.
+	 * Should only contain services included in the plan, and usages outside of all services
+	 *
+	 * @param  array $pricingData
+	 * @param  float $usagev
+	 * @return float
+	 */
+	protected function getTotalUsagevToUpdate($pricingData, $usagev) {
+		$arateGroups = $pricingData['arategroups'] ?? [];
+		if (empty($arateGroups)) {
+			return $usagev;
+		}
+		
+		$usagev = 0;
+		foreach ($arateGroups as $arateGroup) {
+			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
+				$usagev += $arateGroup['usagev'] ?? 0;
+			}
+		}
+
+		return $usagev;
+	}
 
 	/**
 	 * method to get balance totals key
