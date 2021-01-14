@@ -504,7 +504,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 		array('rebalance' => true, 'conditions' => [741 => [[[['field_name' => 'usaget', 'op' => '$eq', 'value' => 'gr']]]]], 'groupExpected' =>
 			[
 				"NEW-SERVICE1" => ["AAA" => ["count" => 1, "left" => 0, "total" => 40, "usagev" => 40]],
-				"NEW-SERVICE4" => ["SR4" => ["count" => 1, "left" => 160, "total" => 200, "usagev" => 40]],
+				"NEW-SERVICE4" => ["SR4" => ["count" => 0, "left" => 200, "total" => 200, "usagev" => 0]],
 			],
 			'row' => array('stamp' => 'xa2', 'aid' => 741, 'sid' => 147, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'PLAN_A', 'usaget' => 'gr', 'usagev' => 40, 'services_data' => ['NEW-SERVICE4']),
 			'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
