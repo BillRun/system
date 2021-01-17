@@ -85,7 +85,7 @@ class Mongodloid_Result {
 
 		return [
 			'ok' => 1.0,
-			'n' => 0,
+			'n' => $result->getInsertedCount(),
 			'err' => null,
 			'errmsg' => null,
 		];
