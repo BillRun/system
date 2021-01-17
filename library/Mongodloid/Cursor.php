@@ -93,6 +93,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		if ($this->_iterator === null) {
             return;
         }
+		$current = $this->current();
+
+        if ($current instanceof Mongodloid_Entity && $current->getId()){
+            return $current->getId()->__toString();
+        }
 		return $this->_iterator->key();
 	}
 

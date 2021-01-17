@@ -7,7 +7,7 @@
  */
 class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
 
-	private $_mongoID;
+	private $_objectId;
 	private $_stringID;
 
 	public function __toString() {
@@ -15,12 +15,12 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
 	}
 
 	public function getMongoID() {
-		return $this->_mongoID;
+		return $this;
 	}
 
 	public function setMongoID(MongoDB\BSON\ObjectId $id) {
-		$this->_mongoID = $id;
-		$this->_stringID = $this->_mongoID->__toString();
+		$this->_objectId = $id;
+		$this->_stringID = $this->_objectId->__toString();
 	}
 
 	public function __construct($base = null) {
@@ -38,7 +38,7 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
      */
     public function toBSONType()
     {
-        return $this->getMongoID();
+        return $this->_objectId;
     }
 
 
@@ -50,6 +50,20 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
         $object = new stdClass();
         $object->{'$id'} =  $this->_stringID;
         return $object;
+    }
+	
+	 /**
+     * @param string $name
+     *
+     * @return null|string
+     */
+    public function __get($name)
+    {
+        if ($name === '$id') {
+            return $this->_stringID;
+        }
+
+        return null;
     }
 
 }
