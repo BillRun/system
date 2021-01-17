@@ -64,7 +64,6 @@ class ResetLinesModel {
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
-		$this->process_time_offset = '0 minutes';
 		$this->conditions = $conditions;
 	}
 
