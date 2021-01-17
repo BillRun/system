@@ -64,6 +64,7 @@ class ResetLinesModel {
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
+		$this->process_time_offset = '0 minutes';
 		$this->conditions = $conditions;
 	}
 
@@ -356,35 +357,48 @@ class ResetLinesModel {
 			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
 		}
 
-		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups) || (isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0)) {
-			$balanceUsaget = $line['usaget'];
-			$balanceUsagev = $line['usagev'];
-			if (isset($line['out_plan']) && $line['out_plan'] > 0 && $line['usagev'] > 0) {
-				$balanceUsaget = $line['usaget'];
-				$balanceUsagev = $line['out_plan'];
-				if (isset($line['in_plan'])) {
-					$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
-					$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] = $aggregatedUsage + $line['in_plan'];
-					@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['count'] += 1;
-				}
-			}
+		if ($this->affectsMainBalance($line)) {
 			if (!empty(($line['over_group']))) {
-				$overGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] = $overGroupUsage + $line['over_group'];
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
 			}
-			if (!empty($line['out_group'])) {
-				$outGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] = $outGroupUsage + $line['out_group'];
+			
+			if (!empty(($line['out_group']))) {
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
 			}
-			if ($balanceUsagev > 0 || isset($line['over_group'])) {
-			$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
-			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
-			$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
-			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
-			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
-			}
-			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['cost'] += $line['aprice'];
+
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
 		}
+	}
+
+	protected function affectsMainBalance($line) {
+		$arategroups = $line['arategroups'] ?? [];
+		return empty($arategroups)||
+			$this->isInMainBalance($arategroups) ||
+			(isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0);
+	}
+
+	protected function getMainBalanceUsage($line) {
+		$arategroups = $line['arategroups'] ?? [];
+		if (empty($arategroups)) {
+			return $line['usagev'];
+		}
+
+		if (!empty($line['out_group'])) {
+			return $line['out_group'];
+		}
+
+		$ret = 0;
+		foreach ($arategroups as $arategroup) {
+			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
+			if ($this->isMainBalance($balanceId)) {
+				$ret += $arategroup['usagev'];
+			}
+		}
+
+		return $ret;
 	}
 
 	protected function getRelevantBalances($balances, $balanceId, $params = array()) {
@@ -408,9 +422,10 @@ class ResetLinesModel {
 	}
 
 	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
+		$isMainBlalance = isset($balance['balance']['totals']);
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
-			foreach ($usaget as $usagev) {
+			foreach ($usaget as $usageType => $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
 					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
 					$usage = min($usagev['usage'] - ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
@@ -428,16 +443,16 @@ class ResetLinesModel {
 			}
 		}
 
-		foreach ($totalsUsage as $usageType => $usage) {
-			if (isset($balance['balance']['totals'])) {
+		if ($isMainBlalance) {
+			foreach ($totalsUsage as $usageType => $usage) {
 				if (isset($usage['usage'])) {
-				$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
+					$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
 				}
 				if (isset($usage['cost'])) {
-				$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
+					$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
 				}
 				if (isset($usage['count'])) {
-				$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
+					$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
 				}
 				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;
 				if (isset($usage['out_group'])) {
@@ -548,6 +563,24 @@ class ResetLinesModel {
 		}
 
 		return false;
+	}
+
+	protected function isInMainBalance($arategroups) {
+		$arategroupBalances = array_column($arategroups, 'balance_ref');
+		foreach ($arategroupBalances as $balanceRef) {
+			$balanceId = $balanceRef['$id']->{'$id'};
+			if ($this->isMainBalance($balanceId)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected function isMainBalance($balanceId) {
+		return isset($this->balances[$balanceId]) &&
+			$this->balances[$balanceId]['period'] == 'default' &&
+			!empty($this->balances[$balanceId]['balance']['totals']);
 	}
 	
 	protected function buildConditionsQuery($updateAids) {

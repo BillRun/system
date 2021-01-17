@@ -231,8 +231,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	}
 	
 	/**
-	 * Get main balance usagev used.
-	 * Should only contain services included in the plan, and usages outside of all services
+	 * get main balance usagev used.
+	 * should only contain services included in the plan, and usages outside of all services
 	 *
 	 * @param  array $pricingData
 	 * @param  float $usagev
