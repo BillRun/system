@@ -279,21 +279,14 @@ class Mongodloid_GridFS extends Mongodloid_Collection{
         );
     }
 	
-	/**
-     * Returns a single file matching the criteria
-     *
-     * @param mixed $query The fields for which to search or a filename to search for.
-     * @param array $fields Fields of the results to return.
-     * @param array $options Options for the find command
-     * @return Mongodloid_GridFSFile|null
-     */
-    public function findOne($query = [], array $fields = [], array $options = [])
+
+    public function findOne($query, $want_array = false)
     {
         if (! is_array($query)) {
             $query = ['filename' => (string) $query];
         }
 
-        $items = iterator_to_array($this->find($query, $fields)->limit(1));
+        $items = iterator_to_array($this->find($query)->limit(1));
         return count($items) ? new Mongodloid_GridFSFile($this, current($items)) : null;
     }
 
