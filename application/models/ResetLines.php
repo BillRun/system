@@ -389,6 +389,10 @@ class ResetLinesModel {
 			return $line['out_group'];
 		}
 
+		if (!empty($line['over_group'])) {
+			return $line['over_group'];
+		}
+
 		$ret = 0;
 		foreach ($arategroups as $arategroup) {
 			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
