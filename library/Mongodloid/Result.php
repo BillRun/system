@@ -16,6 +16,10 @@ class Mongodloid_Result {
 				return self::buildRemoveResult($result);
 			case 'save': 
 				return (!$result)? false : true;
+			case 'batchInsert':
+				return self::buildBatchInsertResult($result);
+			case 'insert':
+				return self::buildInsertResult($result);
 			default:
 				return Mongodloid_TypeConverter::toMongodloid($result);
 		}
@@ -63,4 +67,27 @@ class Mongodloid_Result {
 		];
 	}
 
+	private static function buildBatchInsertResult($result) {
+		if (!$result->isAcknowledged()) {
+			return true;
+		}
+
+		return [
+			'ok' => 1.0,
+			'nInserted' => $result->getInsertedCount(),
+		];
+	}
+	
+	private static function buildInsertResult($result){
+		if (! $result->isAcknowledged()) {
+			return true;
+		}
+
+		return [
+			'ok' => 1.0,
+			'n' => 0,
+			'err' => null,
+			'errmsg' => null,
+		];
+	}
 }
