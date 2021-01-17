@@ -116,7 +116,7 @@ class Mongodloid_Collection {
 		}
 
 		$data = array(
-			'_id' => $entity->getId()->getMongoID()
+			'_id' => $entity->getId()
 		);
 
 		// This function changes fields, should I clone fields before sending?
@@ -226,13 +226,13 @@ class Mongodloid_Collection {
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
 		if($entity->getId()){
-			$id = $entity->getId()->getMongoID();
+			$id = $entity->getId();
 		}else{
-			$id = (new Mongodloid_Id())->getMongoID();
+			$id = (new Mongodloid_Id());
 			$data['_id'] =  $id;
 		}
 		
-		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => $id), Mongodloid_TypeConverter::fromMongodloid($data), $options));
+		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), Mongodloid_TypeConverter::fromMongodloid($data), $options));
 		$entity->setRawData($data);
 		return $result;
 	}
@@ -291,7 +291,7 @@ class Mongodloid_Collection {
 	 * @return mongodloid remove result
 	 */
 	public function removeId($id, $options = array('w' => 1)) {
-		$query = array('_id' => $id->getMongoId());
+		$query = array('_id' => $id);
 		return $this->remove($query, $options);
 	}
 
@@ -313,9 +313,10 @@ class Mongodloid_Collection {
 			$query = $query->getId();
 
 		if ($query instanceOf Mongodloid_Id)
-			$query = array('_id' => $query->getMongoId());
+			$query = array('_id' => $query);
 
 		$this->convertWriteConcernOptions($options);
+		$query = Mongodloid_TypeConverter::fromMongodloid($query);
 		if ($multiple) {
 			$ret =  $this->deleteMany($query, $options);
 		}else{
@@ -489,7 +490,7 @@ class Mongodloid_Collection {
 	 */
 	public function createRef($document_or_id) {//
 		if ($document_or_id instanceof Mongodloid_Id) {
-			$id = $document_or_id->getMongoID();
+			$id = $document_or_id;
 		} elseif (is_object($document_or_id)) {
 			if (!isset($document_or_id->_id)) {
 				return null;
@@ -506,7 +507,7 @@ class Mongodloid_Collection {
 			$id = $document_or_id;
 		}
 
-		return Mongodloid_Ref::create($this->getName(), $id);
+		return Mongodloid_Ref::create($this->getName(), Mongodloid_TypeConverter::fromMongodloid($id));
 	}
 
 	/**
@@ -659,7 +660,7 @@ class Mongodloid_Collection {
 			return;
 		}
 
-		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
+		$inc = $this->createAutoInc(Mongodloid_TypeConverter::fromMongodloid($id), $min_id);
 
 		// Set the values to the entity.
 		$entity->set($field, $inc);
