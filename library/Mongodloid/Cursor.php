@@ -75,6 +75,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			unset($options['limit']);
 		}
 		return $this->_collection->count($this->_query, $options);
+	}
 
 	/**
 	 * 
