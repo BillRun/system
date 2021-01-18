@@ -19,6 +19,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 
 	use Tests_SetUp;
 
+	protected $fails = [];
 	protected $row = [];
 	protected $balances = [];
 	protected $message = '';
@@ -79,29 +80,29 @@ class Tests_Rebalanctest extends UnitTestCase {
 			'expected' => array('in_group' => 0, 'over_group' => 12, 'aprice' => 6, 'charge' => array('retail' => 6,))),
 		//case I NEW-PLAN-A1 (with two groups) no services
 //Test num 15 i1
-		array('row' => array('stamp' => 'i1', 'sid' => 65, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
+		array('row' => array('stamp' => 'i1', 'aid' => 23451, 'sid' => 65, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
 			'expected' => array('in_group' => 24, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 16 i2
-		array('row' => array('stamp' => 'i2', 'sid' => 65, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
+		array('row' => array('stamp' => 'i2', 'aid' => 23451, 'sid' => 65, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
 			'expected' => array('in_group' => 12, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 17 i3
-		array('row' => array('stamp' => 'i3', 'sid' => 65, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50),
+		array('row' => array('stamp' => 'i3', 'aid' => 23451, 'sid' => 65, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50),
 			'expected' => array('in_group' => 26, 'over_group' => 24, 'aprice' => 12, 'charge' => array('retail' => 12,))),
 //Test num 18 i4
-		array('row' => array('stamp' => 'i4', 'sid' => 65, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
+		array('row' => array('stamp' => 'i4', 'aid' => 23451, 'sid' => 65, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
 			'expected' => array('in_group' => 38, 'over_group' => 42, 'aprice' => 6.4, 'charge' => array('retail' => 6.4,))),
 //Test num 19 i5
-		array('rebalance' => true, 'row' => array('stamp' => 'i5', 'sid' => 65, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
+		array('rebalance' => true, 'row' => array('stamp' => 'i5', 'aid' => 23451, 'sid' => 65, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
 			'expected' => array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.1, 'charge' => array('retail' => 5.1,))),
-		//case J NEW-PLAN-A2 multiple groups with same name
+//		//case J NEW-PLAN-A2 multiple groups with same name
 //Test num 20 j1
 		array('row' => array('stamp' => 'j1', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 30, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 21 j2
-		array('rebalance' => true, 'row' => array('stamp' => 'j2', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services_data' => ['NEW-SERVICE1',],),
+		array('row' => array('stamp' => 'j2', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 70, 'over_group' => 5, 'aprice' => 2.5, 'charge' => array('retail' => 2.5,))),
 //Test num 22 j3
-		array('rebalance' => true, 'row' => array('stamp' => 'j3', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
+		array('row' => array('stamp' => 'j3', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 0, 'over_group' => 30, 'aprice' => 15, 'charge' => array('retail' => 15,))),
 //Test num 23 j4
 		array('rebalance' => true, 'row' => array('stamp' => 'j4', 'aid' => 3345, 'sid' => 66, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
@@ -533,6 +534,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 		//running test
 		foreach ($this->rows as $key => $row) {
 			$this->row = $row;
+			$this->message .= "<span id={$row['row']['stamp']}>test stamp : " . $row['row']['stamp'] . '</span><br>';
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
@@ -544,11 +546,27 @@ class Tests_Rebalanctest extends UnitTestCase {
 					$this->rebalance($updatedRow, $conditions);
 				}
 			}
-			$this->assertTrue($result[0]);
+			$fail = $this->assertTrue($result[0]);
+			if (!$fail) {
+				 $this->reportFail();
+			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
+		if ($this->fails) {
+			foreach ($this->fails as $fail){
+				$this->message .= $fail;
+			}
+			
+		}
 		print_r($this->message);
+
 		$this->restoreColletions();
+	}
+
+	public function reportFail() {
+		if (!array_key_exists($this->row['row']['stamp'], $this->fails)) {
+			$this->fails[$this->row['row']['stamp']] = "|---|<a href='#{$this->row['row']['stamp']}'>{$this->row['row']['stamp']}</a>";
+		}
 	}
 
 	protected function getBalance($row) {
@@ -591,6 +609,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 					if ($value != $expected[$balance['service_name']][$expectedKey][$filde]) {
 						$this->message .= "$filde expected to be: {$expected[$balance['service_name']][$expectedKey][$filde]}, result : $value " . $this->fail;
 						$this->assertTrue(0);
+						$this->reportFail();
 					} else {
 						$this->message .= "$filde  : $value " . $this->pass;
 						$this->assertTrue(1);
@@ -603,7 +622,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 	public function RecorsiveTest($balances) {
 		$resetFildes = ['cost', 'count', 'usagev'];
 		foreach ($balances as $key => $value) {
-			if (is_array($value)  && !empty($value)) {
+			if (is_array($value) && !empty($value)) {
 				$this->message .= " $key . ";
 				$this->RecorsiveTest($value);
 			}
@@ -612,6 +631,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 					$this->message .= $key . " : " . $value . $this->fail;
 					$this->assertTrue(0);
 					$pass = false;
+					$this->reportFail();
 				} else {
 					$this->message .= $key . " : " . $value . $this->pass;
 					$this->assertTrue(1);
