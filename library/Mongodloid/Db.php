@@ -40,7 +40,7 @@ class Mongodloid_Db {
 	 * @return mixed the whole stats or just one item of it
 	 */
 	public function stats(array $stats = array('dbStats' => 1), $item = null) {
-		$ret = $this->_db->command($stats);
+		$ret = Mongodloid_Result::getResult(iterator_to_array($this->_db->command($stats))[0]);
 
 		if (is_null($item)) {
 			return $ret;
@@ -112,8 +112,8 @@ class Mongodloid_Db {
 	 * 
 	 * @return string version
 	 */
-	public function getServerVersion() {//
-		$mongodb_info = $this->_db->command(array('buildinfo' => true));
+	public function getServerVersion() {
+		$mongodb_info = Mongodloid_Result::getResult(iterator_to_array($this->_db->command(array('buildinfo' => true)))[0]);
 		return $mongodb_info['version'];
 	}
 	
