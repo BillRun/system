@@ -203,7 +203,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 			$mode = $readPreference;
 		}else{
-			throw new Exception("The value '$readPreference' is not valid as read preference type");
+			return $this;
 		}
 		$this->_options['readPreference'] = new \MongoDB\Driver\ReadPreference($mode, $tags);
 		return $this;
