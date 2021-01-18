@@ -268,7 +268,9 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!isset($this->_values['_id']) || !$this->_values['_id']) {
 			return false;
 		}
-		
+		if(!Mongodloid_Id::isValid($this->_values['_id'])){
+			return false;
+		}
 		return new Mongodloid_Id($this->_values['_id']);
 	}
 

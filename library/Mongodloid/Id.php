@@ -66,4 +66,21 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
         return null;
     }
 
+	/**
+     * Check if a value is a valid ObjectId
+     *
+     * @link http://php.net/manual/en/mongoid.isvalid.php
+     * @param mixed $value The value to check for validity.
+     * @return bool
+     */
+    public static function isValid($value)
+    {
+        if ($value instanceof MongoDB\BSON\ObjectId || $value instanceof Mongodloid_Id) {
+            return true;
+        } elseif (! is_string($value)) {
+            return false;
+        }
+
+        return (bool) preg_match('#^[a-f0-9]{24}$#i', $value);
+    }
 }
