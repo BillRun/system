@@ -68,12 +68,13 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->_isValid;
 	}
 	
-	public function count($foundOnly = true) {//
-		if ($this->_iterator === null) {
-          $this->doQuery();
-        }
-		return $this->_collection->count($this->_query, $this->_options);//todo:: need to support $foundOnly
-	}
+	public function count($foundOnly = true) {
+		$options =  $this->_options;
+		if(!$foundOnly){
+			unset($options['skip']);
+			unset($options['limit']);
+		}
+		return $this->_collection->count($this->_query, $options);
 
 	/**
 	 * 
