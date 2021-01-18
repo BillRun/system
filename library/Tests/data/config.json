@@ -59,6 +59,13 @@
 							"invoice_uom": "seconds",
 							"input_uom": "seconds"
 						},
+							{
+							"usage_type": "gr",
+							"label": "gr",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
 						{
 							"usage_type": "call_to_gaza",
 							"label": "call_to_gaza",
