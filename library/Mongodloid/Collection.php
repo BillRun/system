@@ -392,8 +392,7 @@ class Mongodloid_Collection {
 			$args = array($args);
 		}
 		$pipeline = $args[0] ?? array();
-		$options = $args[1] ?? array();
-		return new Mongodloid_Cursor('aggregate', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($pipeline), $options);
+		return new Mongodloid_Cursor('aggregate', $this->_collection, Mongodloid_TypeConverter::fromMongodloid($pipeline));
 	}
 
 	public function aggregateWithOptions() {
