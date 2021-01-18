@@ -506,7 +506,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -552,7 +552,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,

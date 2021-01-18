@@ -592,17 +592,13 @@ class Mongodloid_Collection {
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-insertMany/#phpmethod.MongoDB\Collection::insertMany
 	 */
 	public function batchInsert(array $a, array $options = array()) {
-//		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
-			$documents = [];
-			foreach ($a as $doc) {
-				if ($doc instanceof Mongodloid_Entity) {
-					$doc = $doc->getRawData();
-				}
-				$documents[] = $doc;
+		$documents = [];
+		foreach ($a as $doc) {
+			if ($doc instanceof Mongodloid_Entity) {
+				$doc = $doc->getRawData();
 			}
-//		} else {
-//			$documents = $a;
-//		}
+			$documents[] = $doc;
+		}
 		$this->convertWriteConcernOptions($options);
 		return Mongodloid_Result::getResult($this->insertMany(Mongodloid_TypeConverter::fromMongodloid($documents), $options));
 	}
@@ -744,21 +740,14 @@ class Mongodloid_Collection {
 
 	public function getWriteConcern($var = null) {
 		// backward compatibility with 1.4
-//		if ($this->_db->compareClientVersion('1.5', '<')) {
-//			$ret = array(
-//				'w' => $this->w,
-//				'wtimeout' => $this->getTimeout(),
-//			);
-//		} else {
-			$writeConcern = $this->_collection->getWriteConcern();
-			if ($writeConcern === null) {
-				$writeConcern = new \MongoDB\Driver\WriteConcern($this->w);
-			}
-			$ret = array(
-				'w' => $writeConcern->getW(),
-				'wtimeout' => $writeConcern->getWtimeout(),
-			);
-//		}
+		$writeConcern = $this->_collection->getWriteConcern();
+		if ($writeConcern === null) {
+			$writeConcern = new \MongoDB\Driver\WriteConcern($this->w);
+		}
+		$ret = array(
+			'w' => $writeConcern->getW(),
+			'wtimeout' => $writeConcern->getWtimeout(),
+		);
 
 		if (is_null($var)) {
 			return $ret;

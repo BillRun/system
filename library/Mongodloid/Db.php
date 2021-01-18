@@ -10,6 +10,7 @@ class Mongodloid_Db {
 	protected $_db;
 	protected $_connection;
 	protected $_collections = array();
+	const VERSION = '1.6.12';
 
 	public function __construct(MongoDB\Database $db, Mongodloid_Connection $connection) {
 		$this->_db = $db;
@@ -103,8 +104,8 @@ class Mongodloid_Db {
 	 * 
 	 * @return string version
 	 */
-	public function getClientVersion() {//
-		return MongoClient::VERSION;
+	public function getClientVersion() {
+		return Mongodloid_Db::VERSION;
 	}
 
 	/**

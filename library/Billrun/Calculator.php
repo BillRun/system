@@ -437,7 +437,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return boolean true on success else false
 	 */
 	protected function applyQueueHash($query, $update, $queue) {
-		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && Billrun_Factory::db()->compareClientVersion('1.5.0', '>=')) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
 			$session = Billrun_Factory::db()->startSession();
 			if ($session !== false) {
 				$session->startTransaction();
