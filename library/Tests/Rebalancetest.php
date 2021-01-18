@@ -548,7 +548,7 @@ class Tests_Rebalanctest extends UnitTestCase {
 			}
 			$fail = $this->assertTrue($result[0]);
 			if (!$fail) {
-				 $this->reportFail();
+				$this->reportFail();
 			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
@@ -556,19 +556,18 @@ class Tests_Rebalanctest extends UnitTestCase {
 			foreach ($this->fails as $fail){
 				$this->message .= $fail;
 			}
-			
 		}
 		print_r($this->message);
 
 		$this->restoreColletions();
 	}
-
+       
 	public function reportFail() {
 		if (!array_key_exists($this->row['row']['stamp'], $this->fails)) {
 			$this->fails[$this->row['row']['stamp']] = "|---|<a href='#{$this->row['row']['stamp']}'>{$this->row['row']['stamp']}</a>";
 		}
 	}
-
+    
 	protected function getBalance($row) {
 		$balances = array();
 		$searchQuery = ["aid" => $row['aid']];
@@ -579,6 +578,11 @@ class Tests_Rebalanctest extends UnitTestCase {
 		return $balances;
 	}
 
+	/**
+	 * sent  account to rebalance and calls the appropriate test function
+	 * @param type $row the row of tested account
+	 * @param type $conditions if it  pass so the  rebalance is conditional  
+	 */
 	protected function rebalance($row, $conditions = null) {
 		$aids = [$row['aid']];
 		$billrun_key = $row['billrun'];
@@ -593,6 +597,9 @@ class Tests_Rebalanctest extends UnitTestCase {
 		}
 	}
 
+	/**
+	 * in case of conditional rebalance this function is test by defined expected values in the test case VS actual result 
+	 */
 	public function conditionRebalance() {
 		$expected = $this->row['groupExpected'];
 		$result = $this->balances;
@@ -619,6 +626,10 @@ class Tests_Rebalanctest extends UnitTestCase {
 		}
 	}
 
+	/**
+	 * get balance and check if $resetFildes all values from $resetFildes are rest
+	 * @param type $balances
+	 */
 	public function RecorsiveTest($balances) {
 		$resetFildes = ['cost', 'count', 'usagev'];
 		foreach ($balances as $key => $value) {
@@ -640,6 +651,12 @@ class Tests_Rebalanctest extends UnitTestCase {
 		}
 	}
 
+	/**
+	 *  call $this->RecorsiveTest for each relevant balance and add info to message about the  test 
+	 * @param type $aids to check 
+	 * @param type $billrun_key
+	 * @param type $balances to check 
+	 */
 	public function checkRebalance($aids, $billrun_key, $balances) {
 		$this->message .= "<b>rebalance test : </b><br>";
 		$balancesToTest = array_filter($balances, function ($balance_) {
