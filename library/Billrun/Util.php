@@ -192,6 +192,38 @@ class Billrun_Util {
 	}
 	
 	/**
+	 * method to remove prefix from string
+	 * 
+	 * @param string $str the string to remove prefix
+	 * @param string $prefix the prefix
+	 * @return string the $str without prefix
+	 */
+	public static function removePrefix($str, $prefix) {
+		if(0 === strpos($str, $prefix)) {
+			$str = substr($str, strlen($prefix));
+		}
+		return $str;
+	}
+	
+	public static function groupArrayBy($array_of_objects, $keys) {
+		$out = array();
+		$key = array_shift($keys);
+		foreach ($array_of_objects as $array_object){
+			$group_key = $array_object[$key];
+			if (!array_key_exists($array_object[$key], $out)) {
+				$out[$group_key] = [];
+			}
+			$out[$group_key][] = $array_object;
+		}
+		if (!empty($keys)) {
+			foreach ($out as $key => $group) {
+				$out[$key] = self::groupArrayBy($group, $keys);
+			}
+		}
+		return $out;
+	}
+	
+	/**
 	 * Returns a readable date from billrun key.
 	 * example: converts "201607" to : "July 2016"
 	 * 
