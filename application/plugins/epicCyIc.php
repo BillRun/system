@@ -15,18 +15,33 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			//$row->setRawData(setParameter($current, ["operator", "poin"], $operator_entity));
 
 			$product_entity = $this->getParameterProduct($type, "parameter_product", $row, $calculator);
+			if(!$product_entity) {
+				return;
+			}
 			$current["cf"]["product"] = $product_entity["params"]["product"];
 			$row->setRawData($current);
 
 			$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
+			if(!$anaa_entity) {
+				return;
+			}
 			$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
 			$row->setRawData($current);
-
-			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
-			$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
-			$row->setRawData($current);
+			
+			$sms_activity_types = ["incoming_sms","outgoing_sms"];
+			if(!in_array($sms_activity_types, $current["usaget"])) {
+				$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
+				if(!$bnaa_entity) {
+					return;
+				}
+				$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
+				$row->setRawData($current);
+			}
 
 			$scenario_entity = $this->getParameterProduct($type, "parameter_scenario", $row, $calculator);
+			if(!$scenario_entity) {
+				return;
+			}
 			$current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
 			$row->setRawData($current);
 			if ($scenario_entity["params"]["anaa"] != "*") {
@@ -35,6 +50,9 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			//TODO: check if there are multiple results and split
 			$component_entity = $this->getParameterProduct($type, "parameter_component", $row, $calculator);
+			if(!$component_entity) {
+				return;
+			}
 			$current["cf"]["component"] = $component_entity["params"]["component"];
 			$current["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
 			$current["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
@@ -50,6 +68,9 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				case "CB":
 					$current["cf"]["tier"] = "";
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
+					if(!$tier_entity) {
+						return;
+					}
 					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
 					$row->setRawData($current);
 					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
@@ -63,14 +84,23 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					break;
 				case "ABA":
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $row, $calculator);
+					if(!$tier_entity) {
+						return;
+					}
 					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
 					break;
 				case "PB":
 					if ($is_anaa_relevant) {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $row, $calculator);
+						if(!$tier_entity) {
+							return;
+						}
 						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
 					} else {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $row, $calculator);
+						if(!$tier_entity) {
+							return;
+						}
 						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
 					}
 					break;
@@ -84,11 +114,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'type' => $type,
 			'usaget' => $parameter_name,
 		];
+		Billrun_Factory::log('Finding ' . $parameter_name);
 		$entity = $calculator->getMatchingEntitiesByCategories($row, $params);
 		if ($entity) {
 			return $entity["retail"]->getRawData();
-			;
 		}
+		Billrun_Factory::log('Failed finding' . $parameter_name);
 		return false;
 	}
 
@@ -120,6 +151,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function setOperator($row, $current, $type, $calculator) {
+		$current["cf"]["incoming_operator"] = "";
+		$current["cf"]["outgoing_operator"] = "";
 		if ($current["cf"]["call_direction"] != "O") {
 			//TODO - change to parameter_incoming operator
 			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
