@@ -119,9 +119,20 @@
 					"to": "time*2116-10-05T08:08:36Z",
 					"include": {
 						"groups": {
+							
 							"SR4": {
-								"gr": 200,
-								"rates": ["NEW-VEG"]
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"NEW-VEG"
+								],
+								"value": 200,
+								"usage_types": {
+									"gr": {
+										"unit": "seconds"
+									}
+								}
 							}
 						}
 					}
