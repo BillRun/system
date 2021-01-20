@@ -111,6 +111,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 	}
 
+	public function alterLocalFileDestPath(&$basePath, $fileData, $receiver) {
+		if ($receiver->getType() != $this->getName()) {
+			return;
+		}
+
+		if(!empty($fileData['orginal_dir_path'])) {
+			$basePath = dirname($basePath) . DIRECTORY_SEPARATOR .substr(md5($fileData['orginal_dir_path']), 0, 7). DIRECTORY_SEPARATOR . basename($basePath);
+		}
+	}
+
+
 //	/**
 //	 *  (dispatcher hook)
 //	 *  @param $query the query to prform on the DB to detect is the file was received.
