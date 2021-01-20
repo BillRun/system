@@ -8,91 +8,126 @@ if(!lastConfig['plugins'].includes("epicCyIcPlugin")) {
 
 //Activity types
 lastConfig["usage_types"] = [
-	{
-		"usage_type": "incoming_call",
-		"label": "incoming_call",
-		"property_type": "time",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"usage_type": "outgoing_call",
-		"label": "outgoing_call",
-		"property_type": "time",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": "",
-		"usage_type": "parameter_product",
-		"label": "parameter_product"
-	},
-	{
-		"usage_type": "parameter_operator",
-		"label": "parameter_operator",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"usage_type": "parameter_scenario",
-		"label": "parameter_scenario",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"usage_type": "parameter_anaa",
-		"label": "parameter_anaa",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"usage_type": "parameter_bnaa",
-		"label": "parameter_bnaa",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": "",
-		"usage_type": "parameter_component",
-		"label": "parameter_component"
-	},
-	{
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": "",
-		"usage_type": "parameter_tier_cb",
-		"label": "parameter_tier_cb"
-	},
-	{
-		"usage_type": "parameter_tier_aba",
-		"label": "parameter_tier_aba",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	},
-	{
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": "",
-		"usage_type": "parameter_tier_pb",
-		"label": "parameter_tier_pb"
-	},
-	{
-		"usage_type": "parameter_tier_pb_anaa",
-		"label": "parameter_tier_pb_anaa",
-		"property_type": "counter",
-		"invoice_uom": "",
-		"input_uom": ""
-	}
-],
+		{
+			"usage_type" : "incoming_call",
+			"label" : "incoming_call",
+			"property_type" : "time",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "outgoing_call",
+			"label" : "outgoing_call",
+			"property_type" : "time",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "parameter_poin",
+			"label" : "parameter_poin"
+		},
+		{
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "parameter_product",
+			"label" : "parameter_product"
+		},
+		{
+			"usage_type" : "parameter_operator",
+			"label" : "parameter_operator",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "parameter_scenario",
+			"label" : "parameter_scenario",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "parameter_anaa",
+			"label" : "parameter_anaa",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "parameter_bnaa",
+			"label" : "parameter_bnaa",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "parameter_component",
+			"label" : "parameter_component"
+		},
+		{
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "parameter_tier_cb",
+			"label" : "parameter_tier_cb"
+		},
+		{
+			"usage_type" : "parameter_tier_aba",
+			"label" : "parameter_tier_aba",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "parameter_tier_pb",
+			"label" : "parameter_tier_pb"
+		},
+		{
+			"usage_type" : "parameter_tier_pb_anaa",
+			"label" : "parameter_tier_pb_anaa",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"property_type" : "time",
+			"invoice_uom" : "",
+			"input_uom" : "",
+			"usage_type" : "transit_incoming_call",
+			"label" : "transit_incoming_call"
+		},
+		{
+			"usage_type" : "transit_outgoing_call",
+			"label" : "transit_outgoing_call",
+			"property_type" : "time",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "incoming_sms",
+			"label" : "incoming_sms",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+		{
+			"usage_type" : "outgoing_sms",
+			"label" : "outgoing_sms",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		}
+	],
 
 
 //Input processor
@@ -274,30 +309,6 @@ lastConfig["file_types"][0] =
 						],
 						"pattern" : "^$",
 						"usaget" : "incoming_call",
-						"unit" : "seconds",
-						"volume_type" : "field",
-						"volume_src" : [
-							"EVENT_DURATION"
-						]
-					},
-					{
-						"src_field" : "OUTGOING_PATH",
-						"conditions" : [
-							{
-								"src_field" : "INCOMING_PATH",
-								"pattern" : "^$",
-								"op" : "$eq",
-								"op_label" : "Equals"
-							},
-							{
-								"src_field" : "OUTGOING_PATH",
-								"pattern" : "^(?!\\s*$).+",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							}
-						],
-						"pattern" : "^(?!\\s*$).+",
-						"usaget" : "outgoing_call",
 						"unit" : "seconds",
 						"volume_type" : "field",
 						"volume_src" : [
@@ -523,6 +534,133 @@ lastConfig["file_types"][0] =
 						"unit" : "counter",
 						"volume_type" : "value",
 						"volume_src" : 1
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^(?!\\s*$).+",
+						"usaget" : "outgoing_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^(?!\\s*$).+",
+						"usaget" : "transit_incoming_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field" : "DATA_UNIT",
+						"conditions" : [
+							{
+								"src_field" : "DATA_UNIT",
+								"pattern" : "a",
+								"op" : "$eq",
+								"op_label" : "Equals"
+							},
+							{
+								"src_field" : "DATA_UNIT",
+								"pattern" : "a",
+								"op" : "$ne",
+								"op_label" : "Not Equals"
+							}
+						],
+						"pattern" : "a",
+						"usaget" : "transit_outgoing_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^S",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^$",
+								"op" : ""
+							}
+						],
+						"pattern" : "^$",
+						"usaget" : "incoming_sms",
+						"unit" : "counter",
+						"volume_type" : "value",
+						"volume_src" : 1
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^S",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^(?!\\s*$).+",
+						"usaget" : "outgoing_sms",
+						"unit" : "counter",
+						"volume_type" : "value",
+						"volume_src" : 1
 					}
 				],
 				"time_field" : "EVENT_START_TIME",
@@ -569,6 +707,19 @@ lastConfig["file_types"][0] =
 				"orphan_files_time" : "6 hours"
 			},
 			"customer_identification_fields" : {
+				"incoming_sms" : [
+					{
+						"target_key" : "operator_path",
+						"src_key" : "INCOMING_PATH",
+						"conditions" : [
+							{
+								"field" : "usaget",
+								"regex" : "/.*/"
+							}
+						],
+						"clear_regex" : "//"
+					}
+				],
 				"parameter_bnaa" : [
 					{
 						"target_key" : "sid",
@@ -595,10 +746,36 @@ lastConfig["file_types"][0] =
 						"clear_regex" : "//"
 					}
 				],
+				"transit_outgoing_call" : [
+					{
+						"target_key" : "operator_path",
+						"src_key" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"field" : "usaget",
+								"regex" : "/.*/"
+							}
+						],
+						"clear_regex" : "//"
+					}
+				],
 				"parameter_tier_cb" : [
 					{
 						"target_key" : "sid",
 						"src_key" : "REASON_FOR_CLEARDOWN",
+						"conditions" : [
+							{
+								"field" : "usaget",
+								"regex" : "/.*/"
+							}
+						],
+						"clear_regex" : "//"
+					}
+				],
+				"outgoing_sms" : [
+					{
+						"target_key" : "operator_path",
+						"src_key" : "OUTGOING_PATH",
 						"conditions" : [
 							{
 								"field" : "usaget",
@@ -625,6 +802,19 @@ lastConfig["file_types"][0] =
 					{
 						"target_key" : "sid",
 						"src_key" : "REASON_FOR_CLEARDOWN",
+						"conditions" : [
+							{
+								"field" : "usaget",
+								"regex" : "/.*/"
+							}
+						],
+						"clear_regex" : "//"
+					}
+				],
+				"transit_incoming_call" : [
+					{
+						"target_key" : "operator_path",
+						"src_key" : "INCOMING_PATH",
 						"conditions" : [
 							{
 								"field" : "usaget",
@@ -728,6 +918,80 @@ lastConfig["file_types"][0] =
 			},
 			"rate_calculators" : {
 				"retail" : {
+					"incoming_sms" : [
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "operator"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						],
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "computed",
+								"computed" : {
+									"line_keys" : [
+										{
+											"key" : "ANUM"
+										}
+									],
+									"operator" : "$exists",
+									"type" : "condition",
+									"must_met" : true,
+									"projection" : {
+										"on_true" : {
+											"key" : "hard_coded",
+											"regex" : "",
+											"value" : "*"
+										},
+										"on_false" : [ ]
+									}
+								}
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						]
+					],
 					"parameter_bnaa" : [
 						[
 							{
@@ -743,6 +1007,80 @@ lastConfig["file_types"][0] =
 								"type" : "longestPrefix",
 								"rate_key" : "params.prefix",
 								"line_key" : "ANUM"
+							}
+						]
+					],
+					"transit_outgoing_call" : [
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "operator"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						],
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "computed",
+								"computed" : {
+									"line_keys" : [
+										{
+											"key" : "ANUM"
+										}
+									],
+									"operator" : "$exists",
+									"type" : "condition",
+									"must_met" : true,
+									"projection" : {
+										"on_true" : {
+											"key" : "hard_coded",
+											"regex" : "",
+											"value" : "*"
+										},
+										"on_false" : [ ]
+									}
+								}
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
 							}
 						]
 					],
@@ -787,6 +1125,80 @@ lastConfig["file_types"][0] =
 								"type" : "longestPrefix",
 								"rate_key" : "params.prefix",
 								"line_key" : "BNUM"
+							}
+						]
+					],
+					"outgoing_sms" : [
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "operator"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						],
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "computed",
+								"computed" : {
+									"line_keys" : [
+										{
+											"key" : "ANUM"
+										}
+									],
+									"operator" : "$exists",
+									"type" : "condition",
+									"must_met" : true,
+									"projection" : {
+										"on_true" : {
+											"key" : "hard_coded",
+											"regex" : "",
+											"value" : "*"
+										},
+										"on_false" : [ ]
+									}
+								}
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
 							}
 						]
 					],
@@ -1998,12 +2410,151 @@ lastConfig["file_types"][0] =
 							}
 						]
 					],
+					"transit_incoming_call" : [
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "operator"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						],
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "computed",
+								"computed" : {
+									"line_keys" : [
+										{
+											"key" : "ANUM"
+										}
+									],
+									"operator" : "$exists",
+									"type" : "condition",
+									"must_met" : true,
+									"projection" : {
+										"on_true" : {
+											"key" : "hard_coded",
+											"regex" : "",
+											"value" : "*"
+										},
+										"on_false" : [ ]
+									}
+								}
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						]
+					],
 					"outgoing_call" : [
 						[
 							{
 								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "operator"
+							},
+							{
+								"type" : "match",
 								"rate_key" : "params.product",
-								"line_key" : "BNUM"
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
+							}
+						],
+						[
+							{
+								"type" : "match",
+								"rate_key" : "params.operator",
+								"line_key" : "computed",
+								"computed" : {
+									"line_keys" : [
+										{
+											"key" : "ANUM"
+										}
+									],
+									"operator" : "$exists",
+									"type" : "condition",
+									"must_met" : true,
+									"projection" : {
+										"on_true" : {
+											"key" : "hard_coded",
+											"regex" : "",
+											"value" : "*"
+										},
+										"on_false" : [ ]
+									}
+								}
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.product",
+								"line_key" : "product"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.component",
+								"line_key" : "component"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.direction",
+								"line_key" : "call_direction"
+							},
+							{
+								"type" : "match",
+								"rate_key" : "params.tier",
+								"line_key" : "tier"
 							}
 						]
 					],
@@ -2253,11 +2804,15 @@ lastConfig["file_types"][0] =
 				}
 			},
 			"pricing" : {
+				"incoming_sms" : [ ],
 				"parameter_bnaa" : [ ],
 				"parameter_anaa" : [ ],
+				"transit_outgoing_call" : [ ],
 				"parameter_tier_cb" : [ ],
+				"outgoing_sms" : [ ],
 				"parameter_scenario" : [ ],
 				"parameter_component" : [ ],
+				"transit_incoming_call" : [ ],
 				"outgoing_call" : [ ],
 				"parameter_tier_pb_anaa" : [ ],
 				"incoming_call" : [ ],
