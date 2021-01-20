@@ -410,15 +410,22 @@ class Tests_Aggregator extends UnitTestCase {
 //				'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' => 182.5806451612904, 'vat' => 0)),
 //				'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
 //			),
-			array('preRun' => ['allowPremature', 'removeBillruns'],
-				'test' => array('test_number' => 73, 'aid'=>1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'force_accounts' => [10000, 10027,10026], 'invoicing_days' => ["1", "28"])),
-				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()),"accounts"=>[10000,10027]), 'postRun' => ''),
-			
-//			array('preRun' => ('notallowPremature'),
-//				'test' => array('test_number' => 73, 'function' => array('basicCompare', 'testMultiDay', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'invoicing_days' => ["1", "28"])),
-//				'expected' => array('billrun' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time())),
-//					'line' => array('types' => array('flat', 'credit')),
-//				)),
+//			array('preRun' => ['allowPremature', 'removeBillruns'],
+//				'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026,10025], 'invoicing_days' => ["1", "28"])),
+//				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000=>"1", 10027=>"28"]), 'postRun' => ''),
+			array('preRun' => ['notallowPremature', 'removeBillruns'],
+				'test' => array('test_number' => 74, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
+						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
+						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
+					)),
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'accounts' => [
+						10000 => "1", 10001 => "2", 10002 => "3", 10003 => "4", 10004 => "5", 10005 => "6",
+						10006 => "7", 10007 => "8", 10008 => "9", 10009 => "10", 10010 => "11", 10011 => "12",
+						10012 => "13", 10013 => "14", 10014 => "15", 10015 => "16", 10016 => "17", 10017 => "18",
+						10018 => "19", 10019 => "20", 10020 => "21", 10021 => "22", 10022 => "23", 10023 => "24",
+						10024 => "25", 10025 => "26", 10026 => "27", 10027 => "28"]),
+				'line' => array('types' => array('flat', 'credit')),
+			),
 //			array(
 //				'preRun' => ('expected_invoice'),
 //				'test' => array('test_number' => 67,),
@@ -546,7 +553,7 @@ class Tests_Aggregator extends UnitTestCase {
 	protected function runT($row) {
 		$id = isset($row['test']['aid']) ? $row['test']['aid'] : 0;
 		$billrun = (isset($row['test']['options']['stamp'])) ? $row['test']['options']['stamp'] : $this->defaultOptions['stamp'];
-		
+
 		$this->aggregator($row);
 		$query = array('aid' => $id, "billrun_key" => $billrun);
 		$entityAfter = $this->getBillruns($query)->current();
@@ -1198,28 +1205,100 @@ class Tests_Aggregator extends UnitTestCase {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 	}
 
-	
-
 	public function testMultiDay($key, $returnBillrun, $row) {
 		$passed = true;
-		$now = date('d');
-		$now > 28 ? 28 : $now;
-		$aids=[];
-		foreach ($row['expected']['accounts'] as $aid){
-			$aids[]=$aid;
+		
+		$aids = [];
+		foreach ($row['expected']['accounts'] as $aid => $day) {
+			$aids[] = $aid;
+			$aid_and_days[$aid] = $day;
 		}
-		//$query = array('aid' => ['$nin' => [$row['test']['aid']]], "billrun_key" => $row['test']['options']['stamp']);
+
 		$billruns = $this->getBillruns();
 		$billruns_ = [];
 		foreach ($billruns as $bill) {
 			$billruns_[] = $bill->getRawData();
 		}
-		//if($billruns_)/
+
+		//Checks that all the  billruns  that should have been created were created
+		$find = false;
+		foreach ($aids as $aid) {
+			$find = false;
+			foreach ($billruns_ as $bills) {
+				if ($bills['aid'] == $aid) {
+					$this->message .= "billrun crate for aid $aid  " . $this->pass;
+					$find = true;
+					continue 2;
+				}
+			}
+			if (!$find) {
+				$this->message .= "billrun not crate for aid $aid " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checks that no  billruns have been created that should not be created
+		if (count($billruns_) > count($aids)) {
+
+			$wrongBillrun = array_filter($billruns_, function(array $bill) use ($aids) {
+				return !in_array($bill['aid'], $aids);
+			});
+
+			foreach ($wrongBillrun as $wrong => $bill) {
+				$this->message .= "billrun  crate for aid {$bill['aid']} and was not meant to be formed " . $this->fail;
+				$this->assertTrue(0);
+			}
+		}
+
+		//Checking that invoicing day is correct
+		foreach ($billruns_ as $bill) {
+			foreach ($aid_and_days as $aid => $day) {
+				if ($bill['aid'] == $aid) {
+					if ($bill['invoicing_day'] == $day) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : $day" . $this->pass;
+						continue 2;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  : $day , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						$this->assertTrue(0);
+					}
+				}
+			}
+		}
 	}
 
 	public function removeBillruns() {
-		$this->billingCyclr->remove(['billrun_key'=>['$ne'=>'abc']]);
-		$this->billrunCol->remove(['billrun_key'=>['$ne'=>'abc']]);
+		$this->billingCyclr->remove(['billrun_key' => ['$ne' => 'abc']]);
+		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
+	}
+
+	public function testMultiDayNotallowPremature($key, $returnBillrun, $row) {
+		$now = date('d');
+		$billruns = $this->getBillruns();
+		$billruns_ = [];
+		$aid_and_days = $row['expected']['accounts'];
+		foreach ($billruns as $bill) {
+			$billruns_[] = $bill->getRawData();
+		}
+
+		foreach ($billruns_ as $bill) {
+			
+					if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
+						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
+					} else {
+						$this->message .= "billrun  invoicing_day for aid $aid is not correct ,expected day is  :  {$aid_and_days[$bill['aid']]} , actual result is{$bill['invoicing_day'] } " . $this->fail;
+						 $this->assertTrue(0);
+					}
+					if ($bill['invoicing_day'] <= $now) {
+						$this->message .= "notallowPrematurun  is corrcet now its  $now  and  invoicing day  is{$aid_and_days[$bill['aid']]} aid $aid " . $this->pass;
+					} else {
+						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
+						$this->assertTrue(0);
+					}
+					$this->message .= '<p style="border-top: 1px dashed black;"></p>';
+
+			
+			
+		}
 	}
 
 	public function cleanAfterAggregate($key, $row) {
