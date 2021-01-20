@@ -315,7 +315,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$collection = $test['collection'];
 		$query = $test['params']['query'];
 		if(isset($query['_id'])){
-			if(class_exists(MongoId)){
+			if(class_exists('MongoId')){
 				$query['_id'] =  new MongoId($query['_id']);//for now check mongo
 			}else{
 				$query['_id'] =  new Mongodloid_Id($query['_id']);
@@ -430,7 +430,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$query = $test['params']['query'];
 		$fields = $test['params']['fields'];
 		if(isset($query['_id'])){
-			if(class_exists(MongoId)){
+			if(class_exists('MongoId')){
 				$query['_id'] =  new MongoId($query['_id']);//for now check mongo
 			}else{
 				$query['_id'] =  new Mongodloid_Id($query['_id']);
@@ -454,7 +454,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$collection = $test['collection'];
 		$query = $test['params']['query'];
 		if(isset($query['_id'])){
-			if(class_exists(MongoId)){
+			if(class_exists('MongoId')){
 				$query['_id'] =  new MongoId($query['_id']);//for now check mongo
 			}else{
 				$query['_id'] =  new Mongodloid_Id($query['_id']);
@@ -480,7 +480,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		}
 		return $this->checkResult($result, $test['expected']['result']);
 	}
-	
+
 	//todo:: check updateEntity
 	
 	////////////////////////////////////////////////////////////////////////////////////////
