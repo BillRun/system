@@ -30,7 +30,6 @@ use function is_array;
 use function is_bool;
 use function is_integer;
 use function is_object;
-use function is_string;
 use function MongoDB\create_field_path_type_map;
 use function MongoDB\is_pipeline;
 use function MongoDB\server_supports_feature;
@@ -54,12 +53,6 @@ class FindAndModify implements Executable, Explainable
 
     /** @var integer */
     private static $wireVersionForDocumentLevelValidation = 4;
-
-    /** @var integer */
-    private static $wireVersionForHint = 9;
-
-    /** @var integer */
-    private static $wireVersionForHintServerSideError = 8;
 
     /** @var integer */
     private static $wireVersionForWriteConcern = 4;
@@ -97,13 +90,6 @@ class FindAndModify implements Executable, Explainable
      *
      *  * fields (document): Limits the fields to return for the matching
      *    document.
-     *
-     *  * hint (string|document): The index to use. Specify either the index
-     *    name as a string or the index key pattern as a document. If specified,
-     *    then the query system will only consider plans using the hinted index.
-     *
-     *    This is only supported on server versions >= 4.4. Using this option in
-     *    other contexts will result in an exception at execution time.
      *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
@@ -165,10 +151,6 @@ class FindAndModify implements Executable, Explainable
 
         if (isset($options['fields']) && ! is_array($options['fields']) && ! is_object($options['fields'])) {
             throw InvalidArgumentException::invalidType('"fields" option', $options['fields'], 'array or object');
-        }
-
-        if (isset($options['hint']) && ! is_string($options['hint']) && ! is_array($options['hint']) && ! is_object($options['hint'])) {
-            throw InvalidArgumentException::invalidType('"hint" option', $options['hint'], ['string', 'array', 'object']);
         }
 
         if (isset($options['maxTimeMS']) && ! is_integer($options['maxTimeMS'])) {
@@ -244,14 +226,6 @@ class FindAndModify implements Executable, Explainable
             throw UnsupportedException::collationNotSupported();
         }
 
-        /* Server versions >= 4.1.10 raise errors for unknown findAndModify
-         * options (SERVER-40005), but the CRUD spec requires client-side errors
-         * for server versions < 4.2. For later versions, we'll rely on the
-         * server to either utilize the option or report its own error. */
-        if (isset($this->options['hint']) && ! $this->isHintSupported($server)) {
-            throw UnsupportedException::hintNotSupported();
-        }
-
         if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
             throw UnsupportedException::writeConcernNotSupported();
         }
@@ -269,7 +243,7 @@ class FindAndModify implements Executable, Explainable
 
         $result = current($cursor->toArray());
 
-        return $result->value ?? null;
+        return isset($result->value) ? $result->value : null;
     }
 
     public function getCommandDocument(Server $server)
@@ -306,10 +280,12 @@ class FindAndModify implements Executable, Explainable
                 : (object) $this->options['update'];
         }
 
-        foreach (['arrayFilters', 'hint', 'maxTimeMS'] as $option) {
-            if (isset($this->options[$option])) {
-                $cmd[$option] = $this->options[$option];
-            }
+        if (isset($this->options['arrayFilters'])) {
+            $cmd['arrayFilters'] = $this->options['arrayFilters'];
+        }
+
+        if (isset($this->options['maxTimeMS'])) {
+            $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
         }
 
         if (! empty($this->options['bypassDocumentValidation']) &&
@@ -340,21 +316,5 @@ class FindAndModify implements Executable, Explainable
         }
 
         return $options;
-    }
-
-    private function isAcknowledgedWriteConcern() : bool
-    {
-        if (! isset($this->options['writeConcern'])) {
-            return true;
-        }
-
-        return $this->options['writeConcern']->getW() > 1 || $this->options['writeConcern']->getJournal();
-    }
-
-    private function isHintSupported(Server $server) : bool
-    {
-        $requiredWireVersion = $this->isAcknowledgedWriteConcern() ? self::$wireVersionForHintServerSideError : self::$wireVersionForHint;
-
-        return server_supports_feature($server, $requiredWireVersion);
     }
 }

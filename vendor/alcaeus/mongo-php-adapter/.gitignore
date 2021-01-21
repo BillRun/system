@@ -1,5 +1,0 @@
-composer.lock
-.phpcs-cache
-.phpunit.result.cache
-vendor/
-tests/scripts/

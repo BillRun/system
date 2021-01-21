@@ -3,6 +3,7 @@
 namespace MongoDB\Tests\GridFS;
 
 use DateTime;
+use Exception;
 use IteratorIterator;
 use LogicException;
 use MongoDB\BSON\Binary;
@@ -14,7 +15,6 @@ use MongoDB\Operation\BulkWrite;
 use MultipleIterator;
 use PHPUnit\Framework\Error\Warning;
 use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
-use Throwable;
 use function array_walk;
 use function array_walk_recursive;
 use function file_get_contents;
@@ -70,7 +70,7 @@ class SpecFunctionalTest extends FunctionalTestCase
 
         try {
             $result = $this->executeAct($test['act']);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             $result = $e;
         }
 
@@ -211,13 +211,13 @@ class SpecFunctionalTest extends FunctionalTestCase
             case 'download_by_name':
                 return stream_get_contents($this->bucket->openDownloadStreamByName(
                     $act['arguments']['filename'],
-                    $act['arguments']['options'] ?? []
+                    isset($act['arguments']['options']) ? $act['arguments']['options'] : []
                 ));
             case 'upload':
                 return $this->bucket->uploadFromStream(
                     $act['arguments']['filename'],
                     $this->createStream($act['arguments']['source']),
-                    $act['arguments']['options'] ?? []
+                    isset($act['arguments']['options']) ? $act['arguments']['options'] : []
                 );
             default:
                 throw new LogicException('Unsupported act: ' . $act['operation']);

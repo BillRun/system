@@ -154,7 +154,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
                 $this->collection->createIndex(
                     ['x' => 1],
                     [
-                        'maxTimeMS' => 10000,
+                        'maxTimeMS' => 1000,
                         'session' => $this->manager->startSession(),
                         'sparse' => true,
                         'unique' => true,
@@ -396,10 +396,8 @@ class CollectionFunctionalTest extends FunctionalTestCase
 
         $this->assertSameDocuments($expected, $result);
 
-        if (version_compare($this->getServerVersion(), '4.3.0', '<')) {
-            $this->assertGreaterThanOrEqual(0, $result->getExecutionTimeMS());
-            $this->assertNotEmpty($result->getCounts());
-        }
+        $this->assertGreaterThanOrEqual(0, $result->getExecutionTimeMS());
+        $this->assertNotEmpty($result->getCounts());
     }
 
     public function collectionMethodClosures()

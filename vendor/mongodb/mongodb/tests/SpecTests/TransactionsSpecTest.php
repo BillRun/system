@@ -130,6 +130,10 @@ class TransactionsSpecTest extends FunctionalTestCase
             $this->markTestIncomplete(self::$incompleteTests[$this->dataDescription()]);
         }
 
+        if (isset($test->skipReason)) {
+            $this->markTestSkipped($test->skipReason);
+        }
+
         $useMultipleMongoses = isset($test->useMultipleMongoses) && $test->useMultipleMongoses && $this->isShardedCluster();
 
         if (isset($runOn)) {
@@ -140,8 +144,8 @@ class TransactionsSpecTest extends FunctionalTestCase
             $this->markTestSkipped($test->skipReason);
         }
 
-        $databaseName = $databaseName ?? $this->getDatabaseName();
-        $collectionName = $collectionName ?? $this->getCollectionName();
+        $databaseName = isset($databaseName) ? $databaseName : $this->getDatabaseName();
+        $collectionName = isset($collectionName) ? $collectionName : $this->getCollectionName();
 
         $context = Context::fromTransactions($test, $databaseName, $collectionName, $useMultipleMongoses);
         $this->setContext($context);
@@ -184,10 +188,10 @@ class TransactionsSpecTest extends FunctionalTestCase
         foreach (glob(__DIR__ . '/transactions*/*.json') as $filename) {
             $json = $this->decodeJson(file_get_contents($filename));
             $group = basename(dirname($filename)) . '/' . basename($filename, '.json');
-            $runOn = $json->runOn ?? null;
-            $data = $json->data ?? [];
-            $databaseName = $json->database_name ?? null;
-            $collectionName = $json->collection_name ?? null;
+            $runOn = isset($json->runOn) ? $json->runOn : null;
+            $data = isset($json->data) ? $json->data : [];
+            $databaseName = isset($json->database_name) ? $json->database_name : null;
+            $collectionName = isset($json->collection_name) ? $json->collection_name : null;
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;
