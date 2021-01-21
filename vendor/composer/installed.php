@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '143446cd6ce91db39d252016739a3fa43b3494ac',
+    'reference' => '19e819295aa068c96a91074e325a532e10310839',
     'name' => '__root__',
   ),
   'versions' => 
@@ -18,7 +18,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '143446cd6ce91db39d252016739a3fa43b3494ac',
+      'reference' => '19e819295aa068c96a91074e325a532e10310839',
     ),
     'bshaffer/oauth2-server-php' => 
     array (
