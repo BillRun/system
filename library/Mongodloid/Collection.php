@@ -735,6 +735,7 @@ class Mongodloid_Collection {
 	}
 
 	public function distinct($key, array $query = array()) {
+		$query = Mongodloid_TypeConverter::fromMongodloid($query);
 		return Mongodloid_Result::getResult($this->_collection->distinct($key, $query));
 	}
 
