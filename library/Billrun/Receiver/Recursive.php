@@ -117,7 +117,7 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 
 		$fileData = $this->getFileLogData($file, $type, $extraData);
 
-		$fileData['path'] = $this->handleFile($path, $file);
+		$fileData['path'] = $this->handleFile($path, $file, $fileData);
 		$fileData['retrived_path'] = $path;
 
 		if (!$fileData['path']) {
@@ -137,5 +137,13 @@ class Billrun_Receiver_Recursive extends Billrun_Receiver_Relocate {
 		}
 		return FALSE;
 	}
+
+
+	protected function getDestBasePath($fileData = null) {
+	    $basePath = parent::getDestBasePath();
+	    Billrun_Factory::dispatcher()->trigger('alterLocalFileDestPath',[&$basePath, $fileData, $this]);
+	    return $basePath;
+	}
+
 
 }

@@ -72,7 +72,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		$ret = array();
 		Billrun_Factory::log()->log("Billrun_Receiver_Inline::receive - handle file {$this->filename}", Zend_Log::DEBUG);
 		$this->lockFileForReceive($this->filename, $type);
-		$path = $this->handleFile();		
+		$path = $this->handleFile();
 		if (!$path) {
 			Billrun_Factory::log()->log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
 			return FALSE;
@@ -98,7 +98,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 	 * Get the directory that the files should be stored in.
 	 * @return the Base dirctory that the received files should be transfered to.
 	 */
-	protected function getDestBasePath() {
+	protected function getDestBasePath($fileData = null) {
 		return $this->workspace . DIRECTORY_SEPARATOR . static::$type;
 	}
 

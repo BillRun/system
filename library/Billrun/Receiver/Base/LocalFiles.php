@@ -200,7 +200,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 * 
 	 * @return string the new path
 	 */
-	protected function handleFile($srcPath, $filename) {
+	protected function handleFile($srcPath, $filename, $fileData = null) {
 		Billrun_Factory::dispatcher()->trigger('handlingLocalFilesReceive', array($this, &$srcPath, $filename));
 		return $srcPath;
 	}
@@ -209,7 +209,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 * Get the directory that the files should be stored in.
 	 * @return the Base dirctory that the received files should be transfered to.
 	 */
-	protected function getDestBasePath() {
+	protected function getDestBasePath($fileData = null) {
 		return $this->workspace . DIRECTORY_SEPARATOR . static::$type;
 	}
 
