@@ -536,7 +536,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			$this->row = $row;
 			$this->message .= "<span id={$row['row']['stamp']}>test stamp : " . $row['row']['stamp'] . '</span><br>';
 			$fixrow = $this->fixRow($row['row'], $key);
-			$this->linesCol->insert($fixrow);
+			$this->linesCol->insert($fixrow, ['w' => 'majority']);
 			$updatedRow = $this->runT($fixrow['stamp']);
 			$result = $this->compareExpected($key, $updatedRow, $row);
 			if ($this->runRebalnce) {
@@ -674,7 +674,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	protected function runT($stamp) {
-		$entity = $this->linesCol->query(array('stamp' => $stamp))->cursor()->current();
+		$entity = $this->linesCol->setReadPreference('RP_PRIMARY')->query(array('stamp' => $stamp))->cursor()->current();
 		$ret = $this->calculator->updateRow($entity);
 		$this->calculator->writeLine($entity, '123');
 		$this->calculator->removeBalanceTx($entity);
@@ -843,7 +843,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		}
 		$keys = [];
 		foreach ($row['rates'] as $rate_key => $tariff_category) {
-			$rate = $this->ratesCol->query(array('key' => $rate_key))->cursor()->current();
+			$rate = $this->ratesCol->setReadPreference('RP_PRIMARY')->query(array('key' => $rate_key))->cursor()->current();
 			$keys[] = array(
 				'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
 				'tariff_category' => $tariff_category,
