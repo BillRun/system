@@ -23,7 +23,12 @@ class Mongodloid_Regex implements Mongodloid_TypeInterface{
 		if ($regex instanceOf MongoDB\BSON\Regex) {
 			$this->setMongoRegex($regex);
 		} else {
-			$this->setMongoRegex(new MongoDB\BSON\Regex($regex));
+			if (! preg_match('#^/(.*)/([imxslu]*)$#', $regex, $matches)) {
+				throw new Mongodloid_Exception('invalid regex', 9);
+			}
+			$pattern = $matches[1];
+			$flags = $matches[2];
+			$this->setMongoRegex(new MongoDB\BSON\Regex($pattern, $flags));
 		}
 	}
 	
