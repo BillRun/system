@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '19e819295aa068c96a91074e325a532e10310839',
+    'reference' => '28a799f9600d10c42221d2677c40e8915d0ccdbf',
     'name' => '__root__',
   ),
   'versions' => 
@@ -41,7 +41,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '19e819295aa068c96a91074e325a532e10310839',
+      'reference' => '28a799f9600d10c42221d2677c40e8915d0ccdbf',
     ),
     'bshaffer/oauth2-server-php' => 
     array (
@@ -81,12 +81,12 @@ private static $installed = array (
     ),
     'markbaker/matrix' => 
     array (
-      'pretty_version' => '2.1.0',
-      'version' => '2.1.0.0',
+      'pretty_version' => '2.1.1',
+      'version' => '2.1.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '9b16a8544a00ac9f9354535ef64d0109f65e300e',
+      'reference' => '35a2d1a919a1de732402f694925168c53c17c838',
     ),
     'mongodb/mongodb' => 
     array (

@@ -9,7 +9,7 @@
     },
     "config": {
         "platform": {
-            "ext-mongodb": "1.7"
+			"ext-mongodb": "1.7"
         }
     }
 }
