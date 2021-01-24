@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
+class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Serializable{
 
 	private $_objectId;
 	private $_stringID;
@@ -82,5 +82,21 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable{
         }
 
         return (bool) preg_match('#^[a-f0-9]{24}$#i', $value);
+    }
+	
+	/**
+     * @return string
+     */
+    public function serialize()
+    {
+        return $this->_stringID;
+    }
+
+    /**
+     * @param string $serialized
+     */
+    public function unserialize($serialized)
+    {
+        $this->setMongoID(new MongoDB\BSON\ObjectId($serialized));
     }
 }
