@@ -1184,11 +1184,11 @@ class Tests_Aggregator extends UnitTestCase {
 		} else {
 			Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/not_allow_premature_run.ini');
 		}
-		$aid = 1000;
-		$sid = 2000;
+		$aid = 10000;
+		$sid = 20000;
 		$stamp = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 		for ($invoicing_day = 1; $invoicing_day <= 28; $invoicing_day++, $aid++, $sid++) {
-			$subTests[] = array('test' => array('test_number' => $aid, "aid" => $aid, 'sid' => $sid, 'function' => array('basicCompare', 'testMultiDay'), 'options' => array("stamp" => $stamp, 'invoicing_days' => (string) $invoicing_day, "force_accounts" => array($aid))),
+			$subTests[] = array('test' => array('test_number' => $aid, "aid" => $aid, 'sid' => $sid, 'function' => array('basicCompare', 'testMultiDay'), 'options' => array("stamp" => $stamp, 'invoicing_days' =>(string) $invoicing_day, "force_accounts" => array($aid))),
 				'expected' => array('billrun' => array('billrun_key' => $stamp, 'aid' => $aid, 'after_vat' => array($sid => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17)),
 				'line' => array('types' => array('flat')),
 				'postRun' => ('cleanAfterAggregate'));
