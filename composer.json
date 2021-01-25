@@ -1,6 +1,6 @@
 {
     "require": {
-        "phpoffice/phpspreadsheet": "^1.15",
+        "phpoffice/phpspreadsheet": "^1.16",
         "mongodb/mongodb": "^1.6",
         "bshaffer/oauth2-server-php": "^1.10"
     },

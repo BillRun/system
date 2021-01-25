@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '28a799f9600d10c42221d2677c40e8915d0ccdbf',
+    'reference' => 'c0aa69b8a76802ef73a63a1ae30807048b82769c',
     'name' => '__root__',
   ),
   'versions' => 
@@ -41,7 +41,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '28a799f9600d10c42221d2677c40e8915d0ccdbf',
+      'reference' => 'c0aa69b8a76802ef73a63a1ae30807048b82769c',
     ),
     'bshaffer/oauth2-server-php' => 
     array (
