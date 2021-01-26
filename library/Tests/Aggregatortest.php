@@ -411,9 +411,13 @@ class Tests_Aggregator extends UnitTestCase {
 				'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
 			),
 			array('preRun' => ('allowPremature'),
-				'test' => array('test_number' => 73, "aid" => 10000, 'sid' => 20000, 'function' => array('basicCompare','testMultiDay', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'invoicing_days' => "1")),
-				'expected' => array('billrun' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'aid' => 10000, 'after_vat' => array("20000" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' => 182.5806451612904, 'vat' => 0)),
-				'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
+				'test' => array('test_number' => 73,  'function' => array('basicCompare','testMultiDay', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'invoicing_days' =>["1","28"])),
+				'expected' => array('billrun' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), )
+			),
+			array('preRun' => ('notallowPremature'),
+				'test' => array('test_number' => 73,  'function' => array('basicCompare','testMultiDay', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()), 'invoicing_days' =>["1","28"])),
+				'expected' => array('billrun' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time())),
+				'line' => array('types' => array('flat', 'credit')),
 			),
 			array(
 				'preRun' => ('expected_invoice'),
