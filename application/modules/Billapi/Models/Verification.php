@@ -208,7 +208,7 @@ trait Models_Verification {
 		if ($entity->count() != 1) {
 			throw new Exception('No unique record was found');
 		}
-		if($entity->current() === null){
+		if(is_null($entity->current())){
 			throw new Exception('No record was found. stack:' . print_r(debug_backtrace(), 1));
 		}
 		$data = $entity->current()->getRawData();
