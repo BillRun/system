@@ -160,7 +160,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
