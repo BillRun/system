@@ -41,14 +41,23 @@ class Mongodloid_Collection {
 		unset($options['multiple']);
 		$this->convertWriteConcernOptions($options);
 		$query = Mongodloid_TypeConverter::fromMongodloid($query);
+		$values = Mongodloid_TypeConverter::fromMongodloid($values);
 		if ($isReplace) {
-			$res = $this->replaceOne($query, $values, $options);
+			$upsert = false;
+			if(isset($options['upsert'])){
+				unset($options['upsert']);
+				$upsert = true;
+			}
+			$res = Mongodloid_Result::getResult($this->replaceOne($query, $values, $options));
+			if($upsert && $res['n'] === 0){
+				$res = $this->insert($values, $options);
+			}
 		} else if ($multiple) {
-			$res =  $this->updateMany($query, $values, $options);
+			$res =  Mongodloid_Result::getResult($this->updateMany($query, $values, $options));
 		} else {
-			$res = $this->updateOne($query, $values, $options);
+			$res = Mongodloid_Result::getResult($this->updateOne($query, $values, $options));
 		}
-		return Mongodloid_Result::getResult($res);
+		return $res;
 	}
 
 	/**
@@ -232,7 +241,7 @@ class Mongodloid_Collection {
 			$data['_id'] =  $id;
 		}
 		
-		$result = Mongodloid_Result::getResult($this->replaceOne(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), Mongodloid_TypeConverter::fromMongodloid($data), $options));
+		$result = Mongodloid_Result::getResult($this->update(array('_id' => Mongodloid_TypeConverter::fromMongodloid($id)), $data, $options));
 		$entity->setRawData($data);
 		return $result;
 	}
