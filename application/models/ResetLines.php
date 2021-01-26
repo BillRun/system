@@ -43,7 +43,7 @@ class ResetLinesModel {
 	 * Usage to substract from default balance in rebalance.
 	 * @var array
 	 */
-	protected $balanceSubstract;
+	protected $balanceSubstract = [];
 	
 	/**
 	 * used for rebalance multiple balances affected by the same line
@@ -374,7 +374,7 @@ class ResetLinesModel {
 
 	protected function affectsMainBalance($line) {
 		$arategroups = $line['arategroups'] ?? [];
-		return empty($arategroups)||
+		return empty($arategroups) ||
 			$this->isInMainBalance($arategroups) ||
 			(isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0);
 	}
@@ -385,19 +385,17 @@ class ResetLinesModel {
 			return $line['usagev'];
 		}
 
-		if (!empty($line['out_group'])) {
-			return $line['out_group'];
-		}
-
-		if (!empty($line['over_group'])) {
-			return $line['over_group'];
-		}
-
 		$ret = 0;
+		if (!empty($line['over_group'])) {
+			$ret += $line['over_group'];
+		} else if (!empty($line['out_group'])) {
+			$ret += $line['out_group'];
+		}
+
 		foreach ($arategroups as $arategroup) {
 			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
 			if ($this->isMainBalance($balanceId)) {
-				$ret += $arategroup['usagev'];
+				$ret += $arategroup['usagev'] ?? 0;
 			}
 		}
 
@@ -416,7 +414,7 @@ class ResetLinesModel {
 			if (empty($balanceId) && !empty($params)) {
 				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
 				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
-				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
+				if ($params['aid'] == $rawData['aid'] && in_array($rawData['sid'], [$params['sid'], 0]) && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
 					$ret[] = $rawData;
 				}
 			}
@@ -431,17 +429,18 @@ class ResetLinesModel {
 			foreach ($usaget as $usageType => $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
 					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
-					$usage = min($usagev['usage'] - ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
-					$count = min($usagev['count'] - ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
+					$usage = min($usagev['usage'] + ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
+					$count = min($usagev['count'] + ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
 					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usage;
+					$usageToSet = $usedUsage - $usage;
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
-						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usage;
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $usageToSet;
 					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
-						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usage;
+						$update['$set']['balance.groups.' . $group . '.cost'] = $usageToSet;
 					}
 					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $count;
-					$this->alreadyUpdated[$group]['usage'] = ($this->alreadyUpdated[$group]['usage'] ?? 0) + $usage;
-					$this->alreadyUpdated[$group]['count'] = ($this->alreadyUpdated[$group]['count'] ?? 0) + $count;
+					$this->alreadyUpdated[$group]['usage'] = $usage;
+					$this->alreadyUpdated[$group]['count'] = $count;
 				}
 			}
 		}

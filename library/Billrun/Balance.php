@@ -245,6 +245,13 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 		
 		$usagev = 0;
+
+		if (!empty($pricingData['over_group'])) {
+			$usagev += $pricingData['over_group'];
+		} else if (!empty($pricingData['out_group'])) {
+			$usagev += $pricingData['out_group'];
+		}
+
 		foreach ($arateGroups as $arateGroup) {
 			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
 				$usagev += $arateGroup['usagev'] ?? 0;
