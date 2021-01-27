@@ -67,7 +67,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 		$pluginStatus = true;
 		Billrun_Factory::dispatcher()->trigger('beforeBillApi', array($this->collection, $this->action, &$request, &$pluginStatus));
 		if ($pluginStatus !== true) {

@@ -36,7 +36,7 @@ class webhooksPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param void
 	 */
 	public function __construct($options = array()) {
-		$flatConfig = $options['config'];
+		$flatConfig = $options['config'] ?? [];
 		
 		foreach ($flatConfig as $webhook) {
 			if (!isset($this->config[$webhook['webhook_module']])) {

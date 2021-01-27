@@ -15,6 +15,11 @@
 class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
 	static protected $type = 'rebalance';
+	
+	/**
+	 * see parent: isQueueCalc
+	 */
+	protected $isQueueCalc = false;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);

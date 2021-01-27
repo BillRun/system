@@ -72,6 +72,10 @@ class Billrun_EntityGetter_Filters_Base {
 		if (!is_null($ufVal)) {
 			return $this->regexValue($ufVal, $regex);
 		}
+		$cfVal = Billrun_Util::getIn($row, 'cf.' . $field, null);
+		if (!is_null($cfVal)) {
+			return $this->regexValue($cfVal, $regex);
+		}
 		
 		if (isset($row['foreign'][$field])) {
 			if (is_array($row['foreign'][$field])) {
@@ -108,7 +112,7 @@ class Billrun_EntityGetter_Filters_Base {
 	 * @param array $row
 	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
-	protected function getComputedValue($row) {
+	public function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
