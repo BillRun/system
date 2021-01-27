@@ -623,8 +623,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$path = $segment . "_path";
 			$content = $segment . "_content";
 			$tpl = $segment . "_tpl";
-			$this->custom[$segment] = false;
-			$this->{$path} = $this->view_path . Billrun_Util::getFieldVal($options[$tpl], Billrun_Factory::config()->getConfigValue(self::$type . '.' . $segment, '/' . $segment . '/' . $tpl . '.html'));
+			$this->custom[$segment] = false;			
+			$this->{$path} = $this->view_path . '/' . $segment . '/' . $tpl . '.html';
 			if (isset($options[$path]) && isset($options[$content])) {
 				$enableCustomSegment = Billrun_Factory::config()->getConfigValue(self::$type . '.status.' . $segment, false);
 				if($enableCustomSegment) {
@@ -636,7 +636,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			} else {
 				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
 				if (isset($options[$segment])) {
-					if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.(html))$/', $options[$segment])) {
+					$options[$segment] = str_replace('<p>', "", $options[$segment]);
+					if (preg_match('/^\/([A-z0-9-_+]+\/)*([A-z0-9]+\.((html)|(phtml)))$/', $options[$segment])) {
 						$this->{$path} = $this->view_path . $options[$segment];
 					} else {
 						$this->custom[$segment] = $options[$segment];
