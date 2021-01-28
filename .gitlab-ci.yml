@@ -5,7 +5,8 @@ stages:
 
 echo_run:
     stage: test
-    tags: CI_DEV
+    tags:
+      - CI_DEV
     script:
       - echo "Just ran"
         
