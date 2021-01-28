@@ -4,9 +4,10 @@ stages:
 
 
 echo_run:
+    stage: test
     tags: CI_DEV
     script:
-        - echo "Just ran"
+      - echo "Just ran"
         
 
 
