@@ -1,0 +1,12 @@
+stages:
+  - init
+  - test
+
+
+echo_run:
+    tags: CI_DEV
+    script:
+        - echo "Just ran"
+        
+
+
