@@ -13,9 +13,7 @@ function RESET_MONGO_DB() {
 }
 
 function GET_ACCESS_TOKEN() {
-    local APP_DOMAIN=$1
-    local BILL_RUN_CLIENT_ID=gitlab_ci
-    local BILL_RUN_CLIENT_SECRET=87711abf64e2344ed4fbcd26b312035b
+    local APP_DOMAIN=$1   
     local AUTH_RESPONSE = curl -X POST -d "grant_type=client_credentials&client_id=$BILL_RUN_CLIENT_ID&client_secret=$BILL_RUN_CLIENT_SECRET" "$APP_DOMAIN/oauth2/token"
     echo "$AUTH_RESPONSE"
     BILL_RUN_ACCESS_TOKEN=`jq '.access_token' $AUTH_RESPONSE`
