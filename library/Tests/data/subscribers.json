@@ -71,7 +71,7 @@
 					"sid": 54
 				},
 				{
-					"aid": 1234,
+					"aid": 52,
 					"firstname": "r7",
 					"lastname": "r7",
 					"plan": "PLAN-A2",
@@ -81,20 +81,22 @@
 					"from": "time*2016-10-11T09:17:58.865Z",
 					"plan_activation": "time*2016-10-11T09:17:58.865Z",
 					"to": "time*2116-10-11T09:17:58Z",
-					"sid": 55,
+					"sid": 5555,
 					"services": ["SERVICE1"]
 				},
 				{
-					"firstname": "nr1",
-					"lastname": "nr1",
-					"email": "nr1",
-					"country": "nr1",
-					"address": "nr1",
+					"aid": 2345,
+					"firstname": "wservice",
+					"lastname": "wservice",
+					"email": "wservice",
+					"country": "wservice",
+					"address": "wservice",
+					"zip_code": "wservice",
+					"salutation": "wservice",
+					"invoice_shipping_method": "email",
 					"type": "account",
-					"from": "time*2016-11-11T09:16:27.567Z",
-					"plan_activation": "time*2016-11-11T09:16:27.569Z",
-					"to": "time*2116-11-11T09:16:10Z",
-					"aid": 2345
+					"to": "time*2167-12-03T12:54:39Z",
+					"creation_time": "time*2018-12-03T00:00:00Z"
 				},
 				{
 					"aid": 2345,
@@ -108,7 +110,24 @@
 					"plan_activation": "time*2016-11-11T09:17:58.865Z",
 					"to": "time*2116-11-11T09:17:58Z",
 					"sid": 62,
-					"services": ["NEW-SERVICE1", "NEW-SERVICE2"]
+					"deactivation_date": "time*2167-12-03T12:56:42Z",
+					"creation_time": "time*2017-12-03T00:00:00Z",
+					"activation_date": "time*2017-12-03T00:00:00Z",
+					"plan_deactivation": "time*2167-12-03T12:56:42Z",
+
+					"services": [{
+							"name": "NEW-SERVICE1",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}, {
+							"name": "NEW-SERVICE2",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}]
 				},
 				{
 					"aid": 2345,
@@ -122,7 +141,17 @@
 					"plan_activation": "time*2016-11-11T09:17:58.865Z",
 					"to": "time*2116-11-11T09:17:58Z",
 					"sid": 63,
-					"services": ["NEW-SERVICE3"]
+					"services": [{
+							"name": "NEW-SERVICE3",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}],
+					"deactivation_date": "time*2167-12-03T12:56:42Z",
+					"creation_time": "time*2017-12-03T00:00:00Z",
+					"activation_date": "time*2017-12-03T00:00:00Z",
+					"plan_deactivation": "time*2167-12-03T12:56:42Z"
 				},
 				{
 					"aid": 2345,
@@ -136,10 +165,26 @@
 					"plan_activation": "time*2016-11-11T09:17:58.865Z",
 					"to": "time*2116-11-11T09:17:58Z",
 					"sid": 64,
-					"services": ["NEW-SERVICE1", "NEW-SERVICE4"]
+					"services": [{
+							"name": "NEW-SERVICE1",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}, {
+							"name": "NEW-SERVICE4",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "1234",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}],
+					"deactivation_date": "time*2167-12-03T12:56:42Z",
+					"creation_time": "time*2017-12-03T00:00:00Z",
+					"activation_date": "time*2017-12-03T00:00:00Z",
+					"plan_deactivation": "time*2167-12-03T12:56:42Z"
 				},
 				{
-					"aid": 2345,
+					"aid": 23451,
 					"firstname": "nr6",
 					"lastname": "nr6",
 					"plan": "NEW-PLAN-A1",
@@ -152,7 +197,7 @@
 					"sid": 65
 				},
 				{
-					"aid": 2345,
+					"aid": 3345,
 					"firstname": "nr7",
 					"lastname": "nr7",
 					"plan": "NEW-PLAN-A2",
@@ -163,7 +208,17 @@
 					"plan_activation": "time*2016-11-11T09:17:58.865Z",
 					"to": "time*2116-11-11T09:17:58Z",
 					"sid": 66,
-					"services": ["NEW-SERVICE1"]
+					"services": [{
+							"name": "NEW-SERVICE1",
+							"from": "time*2020-05-10T00:00:00Z",
+							"to": "time*2167-01-10T08:38:09Z",
+							"service_id": "123",
+							"creation_time": "time*2020-05-17T11:26:09.286Z"
+						}],
+					"deactivation_date": "time*2167-12-03T12:56:42Z",
+					"creation_time": "time*2017-12-03T00:00:00Z",
+					"activation_date": "time*2017-12-03T00:00:00Z",
+					"plan_deactivation": "time*2167-12-03T12:56:42Z"
 				},
 				{
 					"aid": 7777,
@@ -1091,7 +1146,7 @@
 					"creation_time": "time*2018-12-03T00:00:00Z"
 				},
 				{
-				    "aid": 50,
+					"aid": 50,
 					"firstname": "wservice",
 					"lastname": "wservice",
 					"email": "wservice",
@@ -1111,7 +1166,7 @@
 					"sid": 101,
 					"plan": "WITH_NOTHING",
 					"services": [
-				
+
 					],
 					"firstname": "a",
 					"lastname": "a",
@@ -1125,8 +1180,9 @@
 					"activation_date": "time*2017-12-03T00:00:00Z",
 					"plan_deactivation": "time*2167-12-03T12:56:42Z"
 				},
-				{   "aid": 50,
-					"sid": 51,
+				{
+					"aid": 50,
+					"sid": 551,
 					"plan": "WITH_NOTHING",
 					"services": [
 						{
@@ -1173,19 +1229,28 @@
 					"creation_time": "time*2018-12-03T00:00:00Z"
 				},
 				{
+					"from": "time*2017-12-03T00:00:00Z",
+					"aid": 552,
+					"firstname": "wservice",
+					"lastname": "wservice",
+					"email": "wservice",
+					"country": "wservice",
+					"address": "wservice",
+					"zip_code": "wservice",
+					"salutation": "wservice",
+					"invoice_shipping_method": "email",
+					"type": "account",
+					"to": "time*2167-12-03T12:54:39Z",
+					"creation_time": "time*2018-12-03T00:00:00Z"
+				},
+				{
 
 					"from": "time*2017-12-03T00:00:00Z",
 					"aid": 52,
 					"sid": 53,
-					"plan": "WITH_NOTHING",
+					"plan": "PLAN-A0",
 					"services": [
-						{
-							"name": "ONE_CYCLE_ADDON",
-							"from": "time*2020-05-10T00:00:00Z",
-							"to": "time*2167-01-10T08:38:09Z",
-							"service_id": "123",
-							"creation_time": "time*2020-05-17T11:26:09.286Z"
-						}
+					
 					],
 					"firstname": "a",
 					"lastname": "a",
@@ -1220,7 +1285,7 @@
 				{
 
 					"from": "time*2017-12-03T00:00:00Z",
-					"aid": 52,
+					"aid": 552,
 					"sid": 55,
 					"plan": "OVERRIDE",
 					"firstname": "a",

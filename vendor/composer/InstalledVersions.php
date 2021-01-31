@@ -19,7 +19,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'c1b22d8d4c086f3badee338380b4d90fa9cf9b12',
+    'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
     'name' => '__root__',
   ),
   'versions' => 
@@ -31,7 +31,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'c1b22d8d4c086f3badee338380b4d90fa9cf9b12',
+      'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
     ),
     'alcaeus/mongo-php-adapter' => 
     array (
@@ -165,6 +165,15 @@ private static $installed = array (
       array (
       ),
       'reference' => '408d5eafb83c57f6365a3ca330ff23aa4a5fa39b',
+    ),
+    'simpletest/simpletest' => 
+    array (
+      'pretty_version' => 'v1.2.0',
+      'version' => '1.2.0.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '4fb6006517a1428785a0ea704fbedcc675421ec4',
     ),
     'symfony/polyfill-mbstring' => 
     array (

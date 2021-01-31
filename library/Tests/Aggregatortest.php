@@ -1,16 +1,16 @@
 <?php
 
- /**
-  * @package         Billing
-  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
-  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
-  */
- /**
-  * 
-  * @package  calculator
-  * @since    0.5
-  */
- require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+/**
+ * 
+ * @package  calculator
+ * @since    0.5
+ */
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
  define('UNIT_TESTING', 'true');
 
