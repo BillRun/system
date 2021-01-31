@@ -18,6 +18,6 @@ function GET_ACCESS_TOKEN() {
     local APP_DOMAIN=$1   
     local AUTH_RESPONSE=`curl -X POST -d "grant_type=client_credentials&client_id=$BILL_RUN_CLIENT_ID&client_secret=$BILL_RUN_CLIENT_SECRET" "$APP_DOMAIN/oauth2/token"`
     echo "$AUTH_RESPONSE"
-    BILL_RUN_ACCESS_TOKEN=`jq '.access_token' <<<"$AUTH_RESPONSE"
+    BILL_RUN_ACCESS_TOKEN=`jq '.access_token' <<<"$AUTH_RESPONSE"`
     
 }
