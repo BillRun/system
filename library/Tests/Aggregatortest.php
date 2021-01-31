@@ -410,15 +410,15 @@ class Tests_Aggregator extends UnitTestCase {
 //				'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' => 182.5806451612904, 'vat' => 0)),
 //				'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
 //			),
-//			array('preRun' => ['allowPremature', 'removeBillruns'],
-//				'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026,10025], 'invoicing_days' => ["1", "28"])),
-//				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000=>"1", 10027=>"28"]), 'postRun' => ''),
+			array('preRun' => ['allowPremature', 'removeBillruns'],
+				'test' => array('test_number' => 73, 'aid' => 1, 'function' => array('testMultiDay'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'force_accounts' => [10000, 10027, 10026,10025], 'invoicing_days' => ["1", "28"])),
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), "accounts" => [10000=>"1", 10027=>"28"]), 'postRun' => ''),
 			array('preRun' => ['notallowPremature', 'removeBillruns'],
 				'test' => array('test_number' => 74, 'aid' => 'abcd', 'function' => array('testMultiDayNotallowPremature'), 'options' => array("stamp" => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')),
 						'invoicing_days' => ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"],
 						'force_accounts' => [10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027]
 					)),
-				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('-1 month')), 'accounts' => [
+				'expected' => array('billrun_key' => Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime('1 month')), 'accounts' => [
 						10000 => "1", 10001 => "2", 10002 => "3", 10003 => "4", 10004 => "5", 10005 => "6",
 						10006 => "7", 10007 => "8", 10008 => "9", 10009 => "10", 10010 => "11", 10011 => "12",
 						10012 => "13", 10013 => "14", 10014 => "15", 10015 => "16", 10016 => "17", 10017 => "18",
@@ -1294,7 +1294,7 @@ class Tests_Aggregator extends UnitTestCase {
 						$this->message .= "notallowPrematurun  is not  corrcet now its  $now  and  invoicing day  is {$aid_and_days[$bill['aid']]}  aid $aid " . $this->fail;
 						$this->assertTrue(0);
 					}
-					$this->message .= '<p style="border-top: 1px dashed black;"></p>';
+					$this->message .= '<br>****************************************************************<br>';
 
 			
 			
