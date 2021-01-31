@@ -1,25 +1,23 @@
-stages:
-  - init
-  - test
+#!/bin/bash
 
-variables:
-  BILLING_DB: 'billing'
-  BILLING_DB_PORT: 27617  
-  BRANCH_NAME: $CI_COMMIT_REF_NAME
+function RESET_MONGO_DB() {
+    echo "Init mongo db"
+    local billing_db=$1
+    local billing_db_port=$2
+    mongo $billing_db --port $billing_db_port --eval "db.dropDatabase()"
+    mongo $billing_db --port $billing_db_port mongo/create.ini
+    mongo $billing_db --port $billing_db_port mongo/sharding.ini
+    mongoimport -d $billing_db --port $billing_db_port -c config mongo/base/config.export --batchSize 1
+    mongoimport -d $billing_db --port $billing_db_port -c users mongo/first_users.ini
+    mongoimport -d $billing_db --port $billing_db_port -c users mongo/first_users.json
+    mongoimport -d $billing_db --port $billing_db_port -c taxes mongo/base/taxes.export
+}
 
-default:
-  before_script:
-    - export prefix=`pwd`
-    - source $prefix/ci/scripts/gitlab.sh
-
-echo_run:
-    stage: test
-    tags:
-      - CI_DEV
-    script:
-      - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT
-      - GET_ACCESS_TOKEN "http://46.101.14.10"
-      - echo "$BILL_RUN_ACCESS_TOKEN"
-        
-
-
+function GET_ACCESS_TOKEN() {
+    echo "getting the access token for the testing environment $1"
+    local APP_DOMAIN=$1   
+    local AUTH_RESPONSE = curl -X POST -d "grant_type=client_credentials&client_id=$BILL_RUN_CLIENT_ID&client_secret=$BILL_RUN_CLIENT_SECRET" "$APP_DOMAIN/oauth2/token"
+    echo "$AUTH_RESPONSE"
+    BILL_RUN_ACCESS_TOKEN=`jq '.access_token' $AUTH_RESPONSE`
+    
+}
