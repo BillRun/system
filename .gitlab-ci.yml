@@ -10,7 +10,7 @@ variables:
 default:
   before_script:
     - export prefix=`pwd`
-    - source $prefix/ci/scripts/gitlab.sh
+    - source $prefix/ci/scripts/gitlab-ci.sh
 
 echo_run:
     stage: test
