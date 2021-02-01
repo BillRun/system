@@ -17,13 +17,9 @@ db_setup:
     tags:
       - CI_DEV
     script:
-      - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT     
-
-Access_token:
-    stage: test
-    tags:
-      - CI_DEV
-    script:     
+      - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT    
       - GET_ACCESS_TOKEN "http://46.101.14.10"
-      - echo "$BILL_RUN_ACCESS_TOKEN"
+      - echo "$BILL_RUN_ACCESS_TOKEN" 
+
+     
 
