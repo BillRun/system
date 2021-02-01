@@ -12,7 +12,7 @@ function RESET_MONGO_DB() {
     mongo $billing_db --port $billing_db_port mongo/sharding.ini
     echo "Import 3"
     mongoimport -d $billing_db --port $billing_db_port -c config mongo/base/config.export --batchSize 1
-    loca INSERT_STATMENT = `ECHO 'db.users.insert({ "username" : $BILLING_DB_USER_NAME, "password" :  $BILLING_DB_PASSWORD, "roles" : [ "read", "write", "admin" ], "from" : ISODate("2012-09-01T00:00:00Z"), "to" : ISODate("2168-03-25T09:43:10Z"), "creation_time" : ISODate("2012-09-01T00:00:00Z") })'`
+    loca INSERT_STATMENT = `echo 'db.users.insert({ "username" : $BILLING_DB_USER_NAME, "password" :  $BILLING_DB_PASSWORD, "roles" : [ "read", "write", "admin" ], "from" : ISODate("2012-09-01T00:00:00Z"), "to" : ISODate("2168-03-25T09:43:10Z"), "creation_time" : ISODate("2012-09-01T00:00:00Z") })'`
     echo "Import 5 $INSERT_STATMENT"
     mongo $billing_db --port $billing_db_port --eval "$INSERT_STATMENT"
     echo "Import 6"
