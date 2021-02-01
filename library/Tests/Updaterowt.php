@@ -329,19 +329,19 @@ class Tests_Updaterowt extends UnitTestCase {
 //		//Included services
 //		//is1 should be included
 ////Test num 91 is1
-		array('row' => array('stamp' => 'is1', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
+		array('row' => array('stamp' => 'is1', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 75, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 		//is2 after the service time  (by the service price cycles not the plan de-activation)
 //Test num 92 is2
-		array('row' => array('stamp' => 'is2', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-11-14 11:00:00+03:00',),
+		array('row' => array('stamp' => 'is2', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-11-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 //should be half included
 //Test num 93 is4
-		array('row' => array('stamp' => 'is4', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
+		array('row' => array('stamp' => 'is4', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5, 'charge' => array('retail' => 0.5,))),
 ////should not be included
 ////Test num 94 is5
-		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
+		array('rebalance' => true, 'row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'service_id' => 10002, 'from' => '2017-09-10', 'to' => '2017-12-21',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
 //		// s custom period with pooled/shard
 //		// s1 & s2 are one test case for check service period pooled
@@ -368,30 +368,30 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 0, 'over_group' => 15, 'aprice' => 100, 'charge' => array('retail' => 100,))),
 ////Test num 101 v1
 //// Service price overriding
-		array('row' => array('stamp' => 'v1', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+		array('row' => array('stamp' => 'v1', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'service_id' => 20003,'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 21, 'aprice' => 3.22222, 'charge' => array('retail' => 3.22222,))),
 //Test num 102 v2
 // Service price overriding
-		array('row' => array('stamp' => 'v2', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_INCLUDE_PLUS_OVERRIDE_PRICE', 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+		array('row' => array('stamp' => 'v2', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 21, 'services_data' => [['name' => 'SERVICE_INCLUDE_PLUS_OVERRIDE_PRICE', 'service_id' => 20004, 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 10, 'over_group' => 11, 'aprice' => 3.555555, 'charge' => array('retail' => 3.555555,))),
 //Test num 103 v3
 // Service price overriding
-		array('row' => array('stamp' => 'v3', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 80, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+		array('row' => array('stamp' => 'v3', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 80, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'service_id' => 20003,'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 50, 'over_group' => 30, 'aprice' => 12.22222, 'charge' => array('retail' => 12.22222,))),
 ////Test num 104 v4
 // Service price overriding - service wins if both service and plan override the same product
-		array('rebalance' => true, 'row' => array('stamp' => 'v4', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW_PLAN_OVERRIDE_USA', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 10, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
+		array('rebalance' => true, 'row' => array('stamp' => 'v4', 'aid' => 33, 'sid' => 34, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW_PLAN_OVERRIDE_USA', 'type' => 'service_override_price', 'usaget' => 'call', 'usagev' => 10, 'services_data' => [['name' => 'SERVICE_OVERRIDE_PRICE', 'service_id' => 20003, 'from' => '2017-08-01', 'to' => '2030-09-01'],], 'urt' => '2018-07-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 0, 'out_group' => 10, 'aprice' => 1.11111, 'charge' => array('retail' => 1.11111,))),
 //		//Test num 105 w1
 ////Service quantity based quota
 //		//half use
-		array('row' => array('stamp' => 'w1', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 150, 'services_data' => [['name' => 'MUL', 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-14 23:11:45+03:00',),
+		array('row' => array('stamp' => 'w1', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 150, 'services_data' => [['name' => 'MUL', 'service_id' => 10001, 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-14 23:11:45+03:00',),
 			'expected' => array('in_group' => 150, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 		//full use
-		array('row' => array('stamp' => 'w2', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'MUL', 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-15 23:11:45+03:00',),
+		array('row' => array('stamp' => 'w2', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'MUL', 'service_id' => 10001, 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-15 23:11:45+03:00',),
 			'expected' => array('in_group' => 50, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //		//over use
-		array('rebalance' => true, 'row' => array('stamp' => 'w3', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'MUL', 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
+		array('rebalance' => true, 'row' => array('stamp' => 'w3', 'aid' => 35, 'sid' => 36, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'type' => 'realTime', 'usaget' => 'call', 'usagev' => 50, 'services_data' => [['name' => 'MUL', 'service_id' => 10001, 'from' => '2017-08-01', 'to' => '2030-09-01', "quantity_affected" => true, "quantity" => 2]], 'urt' => '2018-11-16 23:11:45+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 50, 'aprice' => 50, 'charge' => array('retail' => 50,))),
 		//1st sub multiple quantity by 1 ,2nd multiple quantity by 2, check : half use ,full use, over use
 //		//half use
@@ -511,6 +511,8 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 	];
 
+	protected $stampsToRun = []; // empty means "run all"
+
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
 		$request = new Yaf_Request_Http;
@@ -533,6 +535,10 @@ class Tests_Updaterowt extends UnitTestCase {
 	public function testUpdateRow() {
 		//running test
 		foreach ($this->rows as $key => $row) {
+			if (!empty($this->stampsToRun) && !in_array($row['row']['stamp'], $this->stampsToRun)) {
+				continue;
+			}
+
 			$this->row = $row;
 			$this->message .= "<span id={$row['row']['stamp']}>test stamp : " . $row['row']['stamp'] . '</span><br>';
 			$fixrow = $this->fixRow($row['row'], $key);
@@ -605,7 +611,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$result = $this->balances;
 		$this->message .= "<b>check that only groups who met the conditions are reset</b><br>";
 		foreach ($result as $balances => $balance) {
-			$this->message .= "<b>group  name :	{$balance['service_name']} </b><br>";
+			$this->message .= "<b>group  name :	" . ($balance['service_name'] ?? '') .  "</b><br>";
 			if (isset($balance['service_name']) && array_key_exists($balance['service_name'], $expected)) {
 				foreach ($expected[$balance['service_name']] as $key => $unused) {
 					$expectedKey = $key;
@@ -638,7 +644,7 @@ class Tests_Updaterowt extends UnitTestCase {
 				$this->RecorsiveTest($value);
 			}
 			if (in_array($key, $resetFildes)) {
-				if ($value != 0) {
+				if (!Billrun_Util::isEqual($value, 0, Billrun_Bill::precision)) {
 					$this->message .= $key . " : " . $value . $this->fail;
 					$this->assertTrue(0);
 					$pass = false;
