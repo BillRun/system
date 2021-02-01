@@ -4,15 +4,13 @@ function RESET_MONGO_DB() {
     echo "Init mongo db"
     local billing_db=$1
     local billing_db_port=$2
-    echo "BILL_RUN_CLIENT_ID: "\$BILLING_DB_PASSWORD""
+    echo "BILL_RUN_CLIENT_ID: "${(qq)BILLING_DB_PASSWORD}""
     mongo $billing_db --port $billing_db_port --eval "db.dropDatabase()"
     echo "Import 1"
     mongo $billing_db --port $billing_db_port mongo/create.ini
     echo "Import 2"
     mongo $billing_db --port $billing_db_port mongo/sharding.ini
-    echo "Import 3"
-    local DBPASSWORD=`echo "\"$BILLING_DB_PASSWORD\""`
-    echo $DBPASSWORD
+    echo "Import 3"    
     mongoimport -d $billing_db --port $billing_db_port -c config mongo/base/config.export --batchSize 1
     local DB_STATMENT=`echo "db.users.insert({ \"username\" : \"$BILLING_DB_USER_NAME\", \"password\" :  \"$BILLING_DB_PASSWORD\", \"roles\" : [ \"read\", \"write\", \"admin\" ], \"from\" : ISODate(\"2012-09-01T00:00:00Z\"), \"to\" : ISODate(\"2168-03-25T09:43:10Z\"), \"creation_time\" : ISODate(\"2012-09-01T00:00:00Z\") })"`
     echo "Import 5 $DB_STATMENT"
