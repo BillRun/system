@@ -13,13 +13,17 @@ default:
     - source $prefix/ci/scripts/gitlab-ci.sh
 
 db_setup:
-    stage: test
+    stage: init
     tags:
       - CI_DEV
     script:
       - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT    
+testing:
+    stage: test
+    tags:
+      - CI_DEV
+    script:      
       - GET_ACCESS_TOKEN "http://46.101.14.10"
       - echo "$BILL_RUN_ACCESS_TOKEN" 
-
      
 
