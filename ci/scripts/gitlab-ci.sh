@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function RESET_MONGO_DB() {
-    echo "Init mongo db "$BILLING_DB_USER_NAME""
+    echo "Init mongo db \"$BILLING_DB_USER_NAME\""
     local billing_db=$1
     local billing_db_port=$2
     echo "BILL_RUN_CLIENT_ID: $BILLING_DB_USER_NAME"
