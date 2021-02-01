@@ -1,10 +1,10 @@
 #!/bin/bash
 
 function RESET_MONGO_DB() {
-    echo "Init mongo db"
+    echo 'Init mongo db " $BILLING_DB_USER_NAME"'
     local billing_db=$1
     local billing_db_port=$2
-    echo "BILL_RUN_CLIENT_ID: $BILL_RUN_CLIENT_ID"
+    echo "BILL_RUN_CLIENT_ID: $BILLING_DB_USER_NAME"
     mongo $billing_db --port $billing_db_port --eval "db.dropDatabase()"
     echo "Import 1"
     mongo $billing_db --port $billing_db_port mongo/create.ini
