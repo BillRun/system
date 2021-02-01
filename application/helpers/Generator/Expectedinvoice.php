@@ -58,7 +58,6 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	public function load() {}
 
 	public function generate() {
-		$config = Billrun_Factory::config();
 		$options = array(
 			'type' => 'customer',
 			'force_accounts' => array($this->aid),
