@@ -26,4 +26,4 @@ testing:
       - GET_ACCESS_TOKEN "http://46.101.14.10"
       - echo "$BILL_RUN_ACCESS_TOKEN"
       - curl -H 'Accept:application/json' -H "Authorization:Bearer "$BILL_RUN_ACCESS_TOKEN "http://46.101.14.10/test/updaterowt" >> testresult.html
-      - awk '/<strong>[0]?[1-9]+[0]?/' testresult.html 
+      - awk '/fails and <strong>[0]?[1-9]+[0]?/' testresult.html 
