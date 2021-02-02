@@ -25,4 +25,4 @@ testing:
     script:      
       - GET_ACCESS_TOKEN "http://46.101.14.10"
       - echo "$BILL_RUN_ACCESS_TOKEN"
-      - curl -H 'Accept:application/json' -H "Authorization:Bearer $BILL_RUN_ACCESS_TOKEN" "http://46.101.14.10/test/updaterowt"
+      - echo `curl -H 'Accept:application/json' -H "Authorization:Bearer $BILL_RUN_ACCESS_TOKEN" "http://46.101.14.10/test/updaterowt"`
