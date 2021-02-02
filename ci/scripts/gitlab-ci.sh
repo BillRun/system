@@ -20,7 +20,7 @@ function RESET_MONGO_DB() {
     echo "$DB_STATMENT"
     mongo $billing_db --port $billing_db_port --eval "$DB_STATMENT"
     mongo $billing_db --port $billing_db_port --eval 'db.config.find({},{shared_secret:1}).sort({_id: -1}).limit(1).pretty()[0];'
-    mongo $billing_db --port $billing_db_port --eval "db.oauth_clients.insert({ \"client_id\" : \"$BILL_RUN_CLIENT_ID\", \"client_secret\" : \"$BILL_RUN_CLIENT_SECRET\", \"grant_types\" : null, \"scope\" : null, \"user_id\" : null })'
+    mongo $billing_db --port $billing_db_port --eval "db.oauth_clients.insert({ \"client_id\" : \"$BILL_RUN_CLIENT_ID\", \"client_secret\" : \"$BILL_RUN_CLIENT_SECRET\", \"grant_types\" : null, \"scope\" : null, \"user_id\" : null })"
     echo "Import 7"
     mongoimport -d $billing_db --port $billing_db_port -c taxes mongo/base/taxes.export
     echo "Done import"
