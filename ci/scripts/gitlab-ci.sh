@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 function RESET_MONGO_DB() {
     echo "Init mongo db"
