@@ -456,15 +456,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          $this->discountsCol = Billrun_Factory::db()->discountsCollection();
          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
-		$this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
+	 $this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
          $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
-		$request = new Yaf_Request_Http;
-		$this->IsMultiDay = $request->get('multi_day');
-		$this->allow_premature_run = $request->get('allow_premature_run');
-		if ($this->IsMultiDay) {
-			$this->multiDay();
-		}
          $this->setColletions();
          $this->loadDbConfig();
      }
