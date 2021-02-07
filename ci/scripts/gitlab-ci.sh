@@ -32,8 +32,9 @@ function GET_ACCESS_TOKEN() {
 function RUN_TEST() {
     local APP_DOMAIN=$1
      GET_ACCESS_TOKEN "$APP_DOMAIN"     
-     echo $BILL_RUN_ACCESS_TOKEN
+     
      curl -H 'Accept:application/json' -H 'Authorization:Bearer '$BILL_RUN_ACCESS_TOKEN "$APP_DOMAIN/test/updaterowt" >> testresult.html
      FOUND_ERROR=`awk '/[0]?[1-9]+[0-9]?<strong> fails/' testresult.html`
+     echo $FOUND_ERROR
      [ -z "$FOUND_ERROR" ] && exit 1
 }
