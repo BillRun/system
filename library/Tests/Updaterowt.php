@@ -512,10 +512,17 @@ class Tests_Updaterowt extends UnitTestCase {
 				],
 				'row' => array('stamp' => 'xa2', 'aid' => 741, 'sid' => 147, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'PLAN_A', 'usaget' => 'gr', 'usagev' => 40, 'services_data' => ['NEW-SERVICE4']),
 				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
-			array('row' => array('stamp' => 'xa1', "aid" => 10000, 'sid' => 20000, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date()),
-				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0)),),
+			/* MDC 
+			 * Make sure there’s no regression -
+			  multi_day_cycle flag is “false“
+			  there’s no billrun object from the last 3 months  -remove all billruns
+			   process line and make sure it gets the runtime billrun key */
+			array('preTest' => ['removeBillruns'], 'row' => array('stamp' => 'z', "aid" => 10000, 'sid' => 20000, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'PLAN_A', 'usagev' => 40, 'services_data' => ['NEW-SERVICE1'], 'urt' => date('Y-m-d')),
+				'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0), 'billrun' => Billrun_Billingcycle::getBillrunKeyByTimestamp(time()))),
 		];
 	}
+
+	protected $stampsToRun = ['z'];
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
@@ -526,8 +533,10 @@ class Tests_Updaterowt extends UnitTestCase {
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->balancesCol = Billrun_Factory::db()->balancesCollection();
+		$this->billingCyclr = Billrun_Factory::db()->billing_cycleCollection();
+		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		$this->construct(null, ['lines', 'balances', 'rebalance_queue']);
+		$this->construct(null, ['lines', 'balances', 'rebalance_queue', 'billrun', 'billing_cycle']);
 		$this->setColletions();
 		$this->loadDbConfig();
 	}
@@ -540,6 +549,14 @@ class Tests_Updaterowt extends UnitTestCase {
 		//running test
 		$this->rows = $this->tests();
 		foreach ($this->rows as $key => $row) {
+			if (!empty($this->stampsToRun) && !in_array($row['row']['stamp'], $this->stampsToRun)) {
+				continue;
+			}
+			if ($row['preTest']) {
+				foreach ($row['preTest'] as $function) {
+					$this->$function($row);
+				}
+			}
 			$this->row = $row;
 			$this->message .= "<span id={$row['row']['stamp']}>test stamp : " . $row['row']['stamp'] . '</span><br>';
 			$fixrow = $this->fixRow($row['row'], $key);
@@ -706,8 +723,15 @@ class Tests_Updaterowt extends UnitTestCase {
 			}
 		}
 		$this->message .= '<b> Result: </b> <br>';
-		$this->message .= '— aprice: ' . $returnRow['aprice'];
-
+		if ($row["expected"]['billrun']) {
+			if ($row["expected"]['billrun'] == $returnRow['billrun']) {
+				$this->message .= "--- billrun key is {$row["expected"]['billrun']}" . $this->pass;
+			} else {
+				$this->message .= "--- expected billrun key is  {$row['expected']['billrun']} result is {$returnRow['billrun']}" . $this->fail;
+				$passed = False;
+			}
+		}
+		$this->message .= '— aprice: ' . $returnRow['aprice'] . '<br>';
 		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
 
 			$this->message .= $this->pass;
@@ -860,6 +884,11 @@ class Tests_Updaterowt extends UnitTestCase {
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
 		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
 		return $row;
+	}
+
+	public function removeBillruns($row) {
+		$this->billingCyclr->remove(['billrun_key' => ['$ne' => 'abc']]);
+		$this->billrunCol->remove(['billrun_key' => ['$ne' => 'abc']]);
 	}
 
 }
