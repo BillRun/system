@@ -36,5 +36,5 @@ function RUN_TEST() {
      curl -H 'Accept:application/json' -H 'Authorization:Bearer '$BILL_RUN_ACCESS_TOKEN "$APP_DOMAIN/test/updaterowt" >> testresult.html
      FOUND_ERROR=`awk '/[0]?[1-9]+[0-9]?<strong> fails/' testresult.html`
      
-     [ ! -z "$FOUND_ERROR" ] && echo $FOUND_ERROR && exit 1
+     [ ! -z "$FOUND_ERROR" ] ; then echo "Found errors: $FOUND_ERROR" && exit 1 ; else echo "tests passed" ;
 }
