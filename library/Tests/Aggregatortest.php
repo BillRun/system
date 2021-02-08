@@ -406,6 +406,10 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' =>182.5806451612904 , 'vat' => 0)),
 			'line' => array('types' => array('flat','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
          ),
+		array('test' => array('test_number' => 76, "aid" => 145, 'sid' => 245, 'function' => array('checkForeignFileds', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'checkForeignFileds' => ['plan' => ["foreign.plan.name" => 'PLAN_C'], 'service' => ['foreign.service.name' => 'NOT_TAXABLE'], 'discount' => ['foreign.service.name' => 'NOT_TAXABLE', "foreign.plan.name" => 'PLAN_C']], 'options' => array("stamp" => "202103", "force_accounts" => array(145))),
+			'expected' => array('billrun' => array('invoice_id' => 108, 'billrun_key' => '202103', 'aid' => 145, 'after_vat' => array("245" => 207), 'total' => 207, 'vatable' => 190, 'vat' => 17),
+				'line' => array('types' => array('flat', 'credit'))),
+		),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -684,43 +688,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          }
          return $allLines;
      }
-        	/**
-	 *  check if  Foreign Fileds create correctly
-	 * 
-	 * @param int $key number of the test case
-	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
-	 * @param array $row current test case current test case
-	 * @return boolean true if the test is pass and false if the tast is fail
-	 */
-	public function checkForeignFileds($key, $returnBillrun, $row) {
-		$passed = TRUE;
-		$this->message .= "<b> Foreign Fileds :</b> <br>";
-		$entitys = $row['test']['checkForeignFileds'];
-		$lines = $this->getLines($row);
-		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
-			$entitys[] = $key;
-			if ($key == 'discount') {//TODO  Add compatibility to all usage types
-				$line = array_filter($lines, function ($line) {
-					if ($line['usaget'] == 'discount') {
-						return $line;
-					}
-				});
-				foreach ($val as $path => $value) {
-					foreach ($line as $l) {
-						if ($lineValue = Billrun_Util::getIn($l, $path)) {
-							if ($lineValue == $value) {
-								$this->message .= "Foreign Fileds exists  ,</br> path : ". $path. "</br>value : " .$value .$this->pass;
-							}
-						} else {
-							$this->message .= "Foreign Fileds not created ,</br> path : ". $path. "</br>value : " .$value .$this->fail;
-							$passed = FALSE; 
-						}
-					}
-				}
-			}
-		}
-		return $passed;
-	}
+        
 
      /**
       * check if all the lines was created 
@@ -1167,5 +1135,48 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
          return $passed;
      }
 
+	/**
+	 *  check if  Foreign Fileds create correctly
+	 * 
+	 * @param int $key number of the test case
+	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param array $row current test case current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
+	public function checkForeignFileds($key, $returnBillrun, $row) {
+		$passed = TRUE;
+		$this->message .= "<b> Foreign Fileds :</b> <br>";
+		$entitys = $row['test']['checkForeignFileds'];
+		$lines = $this->getLines($row);
+		foreach ($lines as $line) {
+			if ($line['usaget'] == 'discount') {
+				$lines_['discount'][] = $line;
+			}
+			if ($line['type'] == 'service') {
+				$lines_['service'][] = $line;
+			}
+			if ($line['type'] == 'flat') {
+				$lines_['plan'][] = $line;
+			}
  }
  
+		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
+			foreach ($val as $path => $value) {
+				for ($i = 0; $i <= count($lines_[$key]); $i++) {
+					if ($lineValue = Billrun_Util::getIn($lines_[$key][$i], $path)) {
+						if ($lineValue == $value) {
+							$this->message .= "Foreign Fileds exists  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->pass;
+							continue 2;
+						}
+					} else {
+						$this->message .= "Foreign Fileds not created  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->fail;
+						$passed = FALSE;
+						continue 2;
+					}
+				}
+			}
+		}
+		return $passed;
+	}
+
+}
