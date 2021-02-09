@@ -618,7 +618,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			if (!empty($this->stampsToRun) && !in_array($row['row']['stamp'], $this->stampsToRun)) {
 				continue;
 			}
-			if ($row['preTest']) {
+			if (isset($row['preTest'])) {
 				foreach ($row['preTest'] as $function) {
 					$this->$function($row);
 				}
@@ -789,7 +789,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			}
 		}
 		$this->message .= '<b> Result: </b> <br>';
-		if ($row["expected"]['billrun']) {
+		if (isset($row["expected"]['billrun'])) {
 			if ($row["expected"]['billrun'] == $returnRow['billrun']) {
 				$this->message .= "--- billrun key is {$row["expected"]['billrun']}" . $this->pass;
 			} else {
