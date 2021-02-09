@@ -226,7 +226,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $query
 	 * @param array $params
-	 * @return Mongodloid entity or entities (if 'multiple_entities' is true) if found
+	 * @return array with Mongodloid entity/entities ('multiple_entities')
 	 */
 	protected function getEntity($row, $query, $params = []) {
 		$useCache = $this->shouldCacheEntity($params);
@@ -248,7 +248,7 @@ trait Billrun_Traits_EntityGetter {
 		
 		if (empty($returned_entities)) {
 			$coll = $this->getCollection($params);
-			if (!isset($params['multiple_entities'])) {
+			if (empty($params['multiple_entities'])) {
 				$returned_entities[] = $coll->aggregate($query)->current();
 			} else {
 				$returned_entities = iterator_to_array($coll->aggregate($query));
