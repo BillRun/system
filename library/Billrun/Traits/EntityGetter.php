@@ -136,7 +136,7 @@ trait Billrun_Traits_EntityGetter {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$this, $params]);
-			$result = $this->getEntity($row, $query, $params);
+			$result = $this->getEntities($row, $query, $params);
 			$matchedEntity = is_array($result) ? current($result) : false;
 			if ($matchedEntity && !$matchedEntity->isEmpty()) {
 				break;
@@ -205,6 +205,9 @@ trait Billrun_Traits_EntityGetter {
 				unset($query[$i]);
 			}
 		}
+		if(!empty($params['multiple_entities'])) {
+			$query['multiple_entities'] = true;
+		}
 		return md5(serialize($query));
 	}
 	
@@ -228,7 +231,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array with Mongodloid entity/entities ('multiple_entities')
 	 */
-	protected function getEntity($row, $query, $params = []) {
+	protected function getEntities($row, $query, $params = []) {
 		$useCache = $this->shouldCacheEntity($params);
 		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
 		$returned_entities = [];
