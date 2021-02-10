@@ -205,6 +205,12 @@ class CreatetenantAction extends ApiAction {
 		
 		if ($configPathKey == 'create_tenant.db_base_config') {
 			$this->addDbConfigData($dbConfig);
+		} else {
+			foreach ($dbConfig as $key => $val) {
+				if (isset($val['$date'])) {
+					$dbConfig[$key] = new MongoDate($val['$date']);
+				}
+			}
 		}
 		
 		if (!$collection->insert($dbConfig)) {
