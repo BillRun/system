@@ -2990,16 +2990,25 @@
 					"creation_time": "time*2019-12-10T00:00:00Z",
 					"activation_date": "time*2019-12-10T00:00:00Z",
 					"plan_deactivation": "time*2170-01-12T14:16:38Z"
-				}, {
-					"OBJID": "6006cbb677e51759498a3ed3",
+				},
+				{
+					
 					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 10000,
-					"sid": 20000,
+					"aid": 145,
+					"sid": 245,
 					"plan": "PLAN_C",
 					"firstname": "t",
 					"lastname": "t",
 					"address": "t",
-					"services": [],
+					"services": [
+						{
+							"name": "NOT_TAXABLE",
+							"from": "time*2018-03-30T21:00:00Z",
+							"to": "time*2118-03-10T14:24:43Z",
+							"service_id": "1600087131219294",
+							"creation_time": "time*2018-03-10T14:24:47.165Z"
+						}
+					],
 					"country": "t",
 					"type": "subscriber",
 					"plan_activation": "time*2018-01-27T22:00:00Z",
@@ -3008,11 +3017,11 @@
 					"creation_time": "time*2018-01-27T22:00:00Z",
 					"activation_date": "time*2018-01-27T22:00:00Z",
 					"plan_deactivation": "time*2167-06-28T10:17:01Z"
-				}
-				, {
-					"OBJID": "6006cbb677e51759498a3ed4",
+				},
+				{
+					
 					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 10000,
+					"aid": 145,
 					"firstname": "a",
 					"lastname": "s",
 					"email": "s",
@@ -3022,43 +3031,7 @@
 					"salutation": "s",
 					"type": "account",
 					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z",
-					"invoicing_day": "1"
-				}
-				, {
-					"OBJID": "6006cbb677e51759498a3ed5",
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 10001,
-					"sid": 20001,
-					"plan": "PLAN_C",
-					"firstname": "t",
-					"lastname": "t",
-					"address": "t",
-					"services": [],
-					"country": "t",
-					"type": "subscriber",
-					"plan_activation": "time*2018-01-27T22:00:00Z",
-					"to": "time*2167-06-28T10:17:01Z",
-					"deactivation_date": "time*2167-06-28T10:17:01Z",
-					"creation_time": "time*2018-01-27T22:00:00Z",
-					"activation_date": "time*2018-01-27T22:00:00Z",
-					"plan_deactivation": "time*2167-06-28T10:17:01Z"
-				}
-				, {
-					"OBJID": "6006cbb677e51759498a3ed6",
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 10001,
-					"firstname": "a",
-					"lastname": "s",
-					"email": "s",
-					"country": "s",
-					"address": "s",
-					"zip_code": "s",
-					"salutation": "s",
-					"type": "account",
-					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z",
-					"invoicing_day": "2"
+					"creation_time": "time*2018-06-27T21:00:00Z"
 				}
 				, {
 					"OBJID": "6006cbb677e51759498a3ed7",
