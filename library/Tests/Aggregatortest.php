@@ -1189,12 +1189,12 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			if ($line['type'] == 'flat') {
 				$lines_['plan'][] = $line;
 			}
-
+		}
 		$billruns = $this->getBillruns();
 		$billruns_ = [];
 		foreach ($billruns as $bill) {
 			$billruns_[] = $bill->getRawData();
- }
+		}
  
 		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
 			foreach ($val as $path => $value) {
@@ -1209,7 +1209,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 				$this->message .= "billrun not crate for aid $aid " . $this->fail;
 				$this->assertTrue(0);
 			}
-		}
+		}}}
 
 		//Checks that no  billruns have been created that should not be created
 		if (count($billruns_) > count($aids)) {
@@ -1240,9 +1240,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 			}
 		}
 		return $passed;
-	}
+		}
 
-public function allowPremature($param) {
+ public function allowPremature($param) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/allow_premature_run.ini');
  }
  
@@ -1352,10 +1352,8 @@ public function allowPremature($param) {
 		Billrun_Aggregator_Customer::removeBeforeAggregate($stamp, $account);
 	}
 
-	}
+	
 
- }
-}
-
+ 
  }
  

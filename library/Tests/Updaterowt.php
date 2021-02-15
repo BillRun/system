@@ -588,7 +588,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		];
 	}
 
-	protected $stampsToRun = [];
 
 	protected $stampsToRun = []; // empty means "run all"
 
