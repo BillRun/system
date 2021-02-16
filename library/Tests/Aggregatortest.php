@@ -380,6 +380,14 @@
              'expected' => array('billrun' => array( 'billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
                  'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
          ),
+		   array('test' => array('label'=>'test the prorated discounts days is rounded down','test_number' => 68, "aid" => 230, 'sid' => 80018, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202012", "force_accounts" => array(230))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202012', 'aid' => 230, 'after_vat' => array("80018" =>35.778665181058486), 'total' => 35.778665181058486, 'vatable' => 30.58005571030641, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3014",
+         ),
+	 array('test' => array('label'=>'test the service line created','test_number' => 69, "aid" => 399, 'sid' => 499, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202103", "force_accounts" => array(399))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202103', 'aid' => 399, 'after_vat' => array("499" => 117), 'total' => 117, 'vatable' =>   100, 'vat' => 17),
+                 'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3013",
+         ),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -443,7 +451,10 @@
 
              $aid = $row['test']['aid'];
              $this->message .= 'test number : ' . $row['test']['test_number'];
-             // run fenctions before the test begin 
+	    if (isset($row['test']['label'])) {
+	         $this->message .= '<br>test label :  ' . $row['test']['label'];
+	      }
+			// run fenctions before the test begin 
              if (isset($row['preRun']) && !empty($row['preRun'])) {
                  $preRun = $row['preRun'];
                  if (!is_array($preRun)) {
@@ -482,7 +493,7 @@
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
          }
          print_r($this->message);
-         $this->restoreColletions();
+        $this->restoreColletions();
      }
 
      /**
