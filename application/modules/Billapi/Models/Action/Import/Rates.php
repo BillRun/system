@@ -21,6 +21,27 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 */
 	protected $rates_by_plan = array();
 	
+	protected $specical_field = [
+		'__MULTI_FIELD_ACTION__',
+		'__UPDATER__',
+		'__CSVROW__',
+		'__ERRORS__',
+		'price_plan',
+		'price_from',
+		'price_to',
+		'price_interval',
+		'price_value',
+		'usage_type_value',
+		'usage_type_unit',
+	];
+
+	protected $tax_fields = [
+		'tax__type',
+		'tax__taxation',
+		'tax__custom_logic',
+		'tax__custom_tax'
+	];
+	
 	/**
 	 * On Create action check for:
 	 * 1. Create Rate  - OK
@@ -78,27 +99,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		$is_price = Billrun_Util::getIn($rate_line, 'price_value', '') !== '';
 		$is_base = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE') === 'BASE';
 
-		$specical_field = [
-			'__MULTI_FIELD_ACTION__',
-			'__UPDATER__',
-			'__CSVROW__',
-			'__ERRORS__',
-			'price_plan',
-			'price_from',
-			'price_to',
-			'price_interval',
-			'price_value',
-			'usage_type_value',
-			'usage_type_unit',
-		];
-
-		$tax_fields = [
-			'tax__type',
-			'tax__taxation',
-			'tax__custom_logic',
-			'tax__custom_tax'
-		];
-
 		$csv_row = Billrun_Util::getIn($rate_line, '__CSVROW__', 'unknown');
 		$erros_path = ['__ERRORS__', $csv_row];
 		$errors = Billrun_Util::getIn($combine_rate, $erros_path, []);
@@ -122,22 +122,25 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 				$plan_name = Billrun_Util::getIn($rate_line, 'price_plan', 'BASE');
 				$rate_path = ['rates', $usage_type, $plan_name, 'rate'];
 				$rates = Billrun_Util::getIn($combine_rate, $rate_path, []);
-				$price_from = Billrun_Util::getIn($rate_line, 'price_from', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_from', '')) : 0;
-				$price_to = Billrun_Util::getIn($rate_line, 'price_to', '') !== '' ? Billrun_Util::getIn($rate_line, 'price_to', '') : 'UNLIMITED';
-				$price_to = is_numeric($price_to) ? floatval($price_to) : $price_to;
-				$price_interval = Billrun_Util::getIn($rate_line, 'price_interval', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_interval', '')) : 0;
-				$price_value = Billrun_Util::getIn($rate_line, 'price_value', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_value', '')) : 0;
-				$rates[] = [
-					'from' => $price_from,
-					'to' => $price_to,
-					'interval' => $price_interval,
-					'price' => $price_value,
-					'uom_display' => [
-						'range' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
-						'interval' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
-					],
-				];
-				Billrun_Util::setIn($combine_rate, $rate_path, $rates);
+				$last_rate = end($rates);
+				if ($index == 0 || $rate_line['price_from'] != $last_rate['from']) {
+					$price_from = Billrun_Util::getIn($rate_line, 'price_from', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_from', '')) : 0;
+					$price_to = Billrun_Util::getIn($rate_line, 'price_to', '') !== '' ? Billrun_Util::getIn($rate_line, 'price_to', '') : 'UNLIMITED';
+					$price_to = is_numeric($price_to) ? floatval($price_to) : $price_to;
+					$price_interval = Billrun_Util::getIn($rate_line, 'price_interval', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_interval', '')) : 0;
+					$price_value = Billrun_Util::getIn($rate_line, 'price_value', '') !== '' ? floatval(Billrun_Util::getIn($rate_line, 'price_value', '')) : 0;
+					$rates[] = [
+						'from' => $price_from,
+						'to' => $price_to,
+						'interval' => $price_interval,
+						'price' => $price_value,
+						'uom_display' => [
+							'range' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+							'interval' => Billrun_Util::getIn($rate_line, 'usage_type_unit', '_KEEP_SOURCE_USAGE_TYPE_UNIT_'),
+						],
+					];
+					Billrun_Util::setIn($combine_rate, $rate_path, $rates);
+				}
 			} else {
 				$mandatory_price_fields = ['price_from', 'price_to', 'price_interval', 'price_value'];
 				if ($operation === 'create') {
@@ -153,44 +156,20 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			}
 		}
 
-		// Check all other fields field with same value
 		foreach ($rate_line as $field_name => $value) {
-			if ($index !== 0
-				&& !in_array($field_name, $specical_field)
-				&& !in_array($field_name, $tax_fields)
-				&& !in_array($field_name, $multi_value_fields)
-				&& $value !== Billrun_Util::getIn($combine_rate, $field_name, '')
-			) {
-				$errors[] = "different values for {$field_name} field";
-				Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+			// do not combine specical_field
+			if (in_array($field_name, $this->specical_field)) {
+				continue;
 			}
-
-			// build multivalues field value
-			if (in_array($field_name, $multi_value_fields)) {
-				$prev = Billrun_Util::getIn($combine_rate, $field_name, []);
-				if (!is_array($prev)) {
-					$prev = array_map('trim', explode(",", $prev));
+			if (is_array($value)) {
+				foreach ($value as $field_key => $field_val) {
+					$combine_rate = $this->combileFieldsValues("{$field_name}.{$field_key}", $field_val, $index, $combine_rate, $multi_value_fields, $csv_row);
 				}
-				$new = array_map('trim', explode(",", $value));
-				$prev_with_new = array_unique(array_merge($prev, $new));
-				Billrun_Util::setIn($combine_rate, $field_name, $prev_with_new);
-			}
-
-			// build tax object
-			if (in_array($field_name, $tax_fields)) {
-				$tax_field_name_array = explode("__", $field_name);
-				$tax_field_path = [$tax_field_name_array[0], 0, $tax_field_name_array[1]];
-				$tax_value = Billrun_Util::getIn($combine_rate, $tax_field_path, '');
-				if ($index !== 0 && $value !== $tax_value) {
-					$errors[] = "different values for {$tax_field_name_array[0]} {$tax_field_name_array[1]} field";
-					Billrun_Util::setIn($combine_rate, $erros_path, $errors);
-				} else {
-					$tax_value = Billrun_Util::getIn($rate_line, $field_name, '');
-					Billrun_Util::setIn($combine_rate, [$tax_field_name_array[0], 0, $tax_field_name_array[1]], $tax_value);
-				}
+			} else {
+				$combine_rate = $this->combileFieldsValues($field_name, $value, $index, $combine_rate, $multi_value_fields, $csv_row);
 			}
 		}
-
+			
 		// convert Price and Interval by unit
 		$converted_rates = $this->getItemConvertedRates($combine_rate);
 		if (!empty($converted_rates)) {
@@ -220,6 +199,46 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		unset($combine_rate['usage_type_value']);
 		unset($combine_rate['usage_type_unit']);
 
+		return $combine_rate;
+	}
+	
+	protected function combileFieldsValues($field_name, $value, $index, $combine_rate, $multi_value_fields, $csv_row) {
+		$erros_path = ['__ERRORS__', $csv_row];
+		$errors = Billrun_Util::getIn($combine_rate, $erros_path, []);
+		// Check all other fields field with same value
+		if ($index !== 0
+			&& !in_array($field_name, $this->tax_fields)
+			&& !in_array($field_name, $multi_value_fields)
+			&& $value !== Billrun_Util::getIn($combine_rate, $field_name, '')
+		) {
+			$errors[] = "different values for {$field_name} field";
+			Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+		}
+
+		// build multivalues field value
+		if (in_array($field_name, $multi_value_fields)) {
+			$prev = Billrun_Util::getIn($combine_rate, $field_name, []);
+			if (!is_array($prev)) {
+				$prev = array_map('trim', explode(",", $prev));
+			}
+			$new = array_map('trim', explode(",", $value));
+			$prev_with_new = array_unique(array_merge($prev, $new));
+			Billrun_Util::setIn($combine_rate, $field_name, $prev_with_new);
+		}
+
+		// build tax object
+		if (in_array($field_name, $this->tax_fields)) {
+			$tax_field_name_array = explode("__", $field_name);
+			$tax_field_path = [$tax_field_name_array[0], 0, $tax_field_name_array[1]];
+			$tax_value = Billrun_Util::getIn($combine_rate, $tax_field_path, '');
+			if ($index !== 0 && $value !== $tax_value) {
+				$errors[] = "different values for {$tax_field_name_array[0]} {$tax_field_name_array[1]} field";
+				Billrun_Util::setIn($combine_rate, $erros_path, $errors);
+			} else {
+				$tax_value = Billrun_Util::getIn($rate_line, $field_name, '');
+				Billrun_Util::setIn($combine_rate, [$tax_field_name_array[0], 0, $tax_field_name_array[1]], $tax_value);
+			}
+		}
 		return $combine_rate;
 	}
 

@@ -143,7 +143,7 @@ class Models_Action_Import extends Models_Action {
 						return $acc;
 					}, []);
 				}
-				$data[$idx][$field_name] = $column_value;
+				Billrun_Util::setIn($data[$idx], $field_name, $column_value);
 			}
 			
 			// Set Data -> predefined values
