@@ -76,9 +76,18 @@ class Subscriber_UsageAction extends ApiAction {
 		$actualUsage = array();
 		$actualNationalUsage = array();
 		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
+
+		//query subscriber balances active at the given billrun
+		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
+		if(empty($mainBalances) ) {
+			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
+		}
+
 		//$endTime = Billrun_Util::getEndTime($params['billrun_key']);
-		
-		foreach ($params['offers'] as $offer){
+		$sortedOffers = $params['offers'];
+		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
+		$lastOffer = reset($sortedOffers);
+		foreach ($sortedOffers as $offer){
 			$plan = Billrun_Factory::plan(['name'=> $offer['plan'],'time'=> $startTime])->getData();
 			if(empty($plan)) {
 				return $this->setError('Couldn`t find the plan from request.', $offer);
@@ -88,15 +97,20 @@ class Subscriber_UsageAction extends ApiAction {
 			
 			//go though the  subscribers addons national packages
 			$this->getMaxUsagesOfPackages($params['addons_national'], $nationalPackages, $maxNationalUsage, $plan);
+
+			//Save the defualt plan group for as if it`s a  national packages
 			if(!isset($nationalPackages[$plan['name']])){
-				//Save the defualt plan group for addons national packages
-				$this->getMaxUsagesOfPackages([["service_name" => $plan['name']]], $nationalPackages, $maxNationalUsage, $plan);
+				//For the plan either....
+				if($lastOffer == $offer) {
+					//If it`s the last offer get its limits
+					$this->getMaxUsagesOfPackages([["service_name" => $plan['name']]], $nationalPackages, $maxNationalUsage, $plan);
+				} else {
+					//if it`s not the last offer get the amount that was actaully used and add it to the max usage
+					$currBalances = array_filter($mainBalances,function($bl) use ($plan){ return isset($bl['balance']['groups'][$plan['name']]);} );
+					$this->getActualUsagesOfPackages(["{$plan['name']}" => 1], $currBalances, $maxNationalUsage);
+					$nationalPackages[$plan['name']] += 1;
+				}
 			}
-		}
-		//query subscriber balances active at the given billrun
-		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
-		if(empty($mainBalances) ) {
-			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 		}
 		//go though the  subscribers addons packages
 		$this->getActualUsagesOfPackages($packages, $mainBalances, $actualUsage);
