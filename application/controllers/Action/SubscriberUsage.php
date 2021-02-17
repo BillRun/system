@@ -144,7 +144,7 @@ class Subscriber_UsageAction extends ApiAction {
 			foreach ($mainBalances as $mainBalance){
 				if(!empty($mainBalance['balance']['groups'][$pkg])) {
 					foreach($mainBalance['balance']['groups'][$pkg] as  $type => $usageCounters ) {
-						$actualUsage[$type] += $usageCounters['usagev'];
+						@$actualUsage[$type] += $usageCounters['usagev'];
 					}
 				}
 			}
@@ -158,12 +158,12 @@ class Subscriber_UsageAction extends ApiAction {
 			if(!empty($plan['include']['groups'][$addon['service_name']])) {
 					foreach($plan['include']['groups'][$addon['service_name']] as $type => $value) {
 						if(is_array($value)) { continue; }
-						if ($maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
-							$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
+						if (@$maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
+							@$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
 						}else {
-							$maxUsage[$type] = -1;
+							@$maxUsage[$type] = -1;
 						}
-						$packages[$addon['service_name']] += 1 ;
+						@$packages[$addon['service_name']] += 1 ;
 					}
 			}
 		}
