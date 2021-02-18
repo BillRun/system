@@ -291,17 +291,25 @@ class Billrun_Utils_Time {
 	 * 
 	 * @param unixtimestamp $date1
 	 * @param unixtimestamp $date2
+	 * @param string $roundingType
 	 * @return int
 	 */
-	public static function getDaysDiff($date1, $date2) {
+	public static function getDaysDiff($date1, $date2, $roundingType = 'round') {
 		if ($date1 > $date2) {
 			$datediff = $date1 - $date2;
 		} else {
 			$datediff = $date2 - $date1;
 		}
-		
-		
-		return round($datediff / (60 * 60 * 24));
+		$days = $datediff / (60 * 60 * 24);
+		switch ($roundingType){
+			case 'ceil': 
+				return ceil($days);
+			case 'floor':
+				return floor($days);
+			case 'round':
+			default:
+				return round($days);
+		}
 	}
 
 }

@@ -749,9 +749,10 @@ class Billrun_DiscountManager {
 				$eligibleSubsInDay = [];
 				$dayFrom = strtotime('midnight', $day);
 				$dayTo = strtotime('+1 day', $dayFrom);
+				$dayInterval = [['from' => $dayFrom, 'to' => $dayTo]];
 				foreach ($subsEligibility as $sid => $subEligibility) {
 					foreach ($subEligibility as $subEligibilityIntervals) {
-						if ($subEligibilityIntervals['from'] <= $day && $subEligibilityIntervals['to'] > $day) {
+						if (!empty(Billrun_Utils_Time::getIntervalsIntersections([$subEligibilityIntervals], $dayInterval))) {
 							$eligibleSubsInDay[] = $sid;
 
 							if (!is_null($maxSubscribers) && count($eligibleSubsInDay) > $maxSubscribers) { // passed max subscribers in current day
@@ -1280,7 +1281,7 @@ class Billrun_DiscountManager {
 			if (isset($line['end'])) {
 				$to = min($to, Billrun_Utils_Time::getTime($line['end']));
 			}
-			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to);
+			$discountDays = Billrun_Utils_Time::getDaysDiff($from, $to, 'ceil');
 			$cycleDays = $this->cycle->days();
 			if ($discountDays < $cycleDays) {
 				$amount *= ($discountDays / $cycleDays);
