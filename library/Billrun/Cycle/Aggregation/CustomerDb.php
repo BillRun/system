@@ -22,7 +22,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
+	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null, $invoicing_days = null) {
 		if (is_null($page)) {
 			$page = 0;
 		}
@@ -33,7 +33,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
-		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size);
+		$mainAggregationLogic = $this->getCycleAggregationPipeline($addedPassthroughFields,$page,$size, $invoicing_days);
 		if(!empty($this->generalOptions['is_onetime_invoice'])) {
 			$mainAggregationLogic = $this->alterMainLogicForOnetime($mainAggregationLogic);
 		}
@@ -93,7 +93,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 	/**
 	 * get the main  aggreation and paging logic query that is to be sent to the DB
 	 */
-	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size) {
+	protected function getCycleAggregationPipeline($addedPassthroughFields, $page, $size, $invoicing_days = null) {
 		$pipelines[] = array(
 			'$group' => array_merge($addedPassthroughFields['group'],array(
 				'_id' => array(
@@ -121,6 +121,25 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				),
 			)),
 		);
+		if (!empty($invoicing_days)) {
+			$config = Billrun_Factory::config();
+			/*if one of the searched "invoicing_day" is the default one, then we'll search for all the accounts with "invoicing_day"
+			field that is different from all the undeclared invoicing_days. */
+			if (in_array(strval($config->getConfigChargingDay()), $invoicing_days)) {
+				$nin = array_diff(array_map('strval', range(1, 28)), $invoicing_days);
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$nin' => array_values($nin)]
+					]
+				);
+			} else {
+				$pipelines[] = array(
+					'$match' => [
+						'invoicing_day' => ['$in' => $invoicing_days]
+					]
+				);
+			}
+		}
 		$pipelines[] = array(
 			'$skip' => $page * $size,
 		);
@@ -195,17 +214,13 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$group2 = array();
 		$project = array();
 		$sub_push = array();
-		foreach ($this->passthroughFields as $accountField) {
-			$group[$accountField] = array('$addToSet' => ['$cond' => [['$eq' => ['$type','account']], '$' . $accountField, '$$REMOVE']]);
-			$group2[$accountField] = array('$first' => '$' . $accountField);
-			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
-		}
+		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
-		foreach ($this->subsPassthroughFields as $subscriberField) {
+		foreach ($passthroughFields as $subscriberField) {
 			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
 			$sub_push[$srcField] =  '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;;
+			$project[$srcField] ='$' . $srcField;
 		}
 		if (!$project) {
 			$project = 1;

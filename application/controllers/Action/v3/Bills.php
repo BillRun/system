@@ -44,7 +44,7 @@ class V3_paymentHistoryAction extends ApiAction {
 		//$months_back = $request->get('months_back');
 		$to = $request->get('to');
 		$from = $request->get('from');
-		return Billrun_Bill_Payment::getPayments($aid, array(), array(), date('Y/m/d',  strtotime($to)), date('Y/m/d',  strtotime($from)), null, true, true);
+		return Billrun_Bill_Payment::getPayments($aid, array(), array(), date('Y/m/d',  strtotime($to)), date('Y/m/d',  strtotime($from)), null, true, true, true);
 	}
 	
 	protected function getPermissionLevel() {

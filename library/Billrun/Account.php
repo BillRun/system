@@ -57,6 +57,9 @@ abstract class Billrun_Account extends Billrun_Base {
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
 		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
 	}
 
 	/**
@@ -258,8 +261,9 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 			$query[$key] = $value;
 		}
-
-		$query['limit'] = $limit;
+		if($limit){
+			$query['limit'] = $limit;
+		}
 		return $query;
 	}
 	

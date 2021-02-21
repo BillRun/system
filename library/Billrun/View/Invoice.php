@@ -51,6 +51,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
 							 'service' => array('rate'=> 'description','line' => 'name'));
 		
+		if (isset($rate['invoice_description'])) {
+			return $rate['invoice_description'];
+		}
+		
 		if(in_array($line['type'],array_keys($typeMapping))) {			
 			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
 								$rate[$typeMapping[$line['type']]['rate']] :
@@ -241,9 +245,15 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getSubscriberServices($sid) {
 		if(!isset($this->subServices[$sid])) {
 			$this->subServices[$sid] = [];
+			//Get  only relevent subscriber revisions
 			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $this->data['start_date']->sec,$this->data['end_date']->sec);
 			$query['sid'] = $sid;
-			$aggrgatePipeline = [['$match'=>$query],['$unwind'=>'$services'],['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
+			//Get only services relevent to the  current billrun
+			$filterServices = Billrun_Utils_Mongo::getOverlappingWithRange('services.from', 'services.to', $this->data['start_date']->sec,$this->data['end_date']->sec);
+			$aggrgatePipeline = [['$match'=>$query],
+								['$unwind'=>'$services'],
+								['$match'=>$filterServices],
+								['$group'=>['_id'=>null,'services'=>['$addToSet'=>'$services']]]];
 			$subservs = Billrun_Factory::db()->subscribersCollection()->aggregate($aggrgatePipeline)->current();
 			foreach($subservs['services'] as $service) {
 				$this->subServices[$sid][] = $service;

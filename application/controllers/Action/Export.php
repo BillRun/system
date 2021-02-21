@@ -30,21 +30,38 @@ class ExportAction extends Action_Base {
 			'type' => false,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
-		$this->getController()->addOutput("Loading exporter");
-		$exporter = Billrun_Exporter::getInstance($options);
-		$this->getController()->addOutput("Exporter loaded");
-
-		if ($exporter) {
-			$this->getController()->addOutput("Starting to export. This action can take a while...");
-			$exported = $exporter->export();
-			$this->getController()->addOutput("Exported " . count($exported) . " lines");
+		$export_generators_options = [];
+		if (strtolower($options['type']) === 'all') {
+			$export_generators = Billrun_Factory::config()->getConfigValue('export_generators');
+			foreach ($export_generators as $export_generator) {
+				$options['type'] = $export_generator['name'];
+				$export_generators_options[] = $options;
+			}
 		} else {
-			$this->getController()->addOutput("Exporter cannot be loaded");
+			$export_generators_options[] = $options;
+		}
+		
+		foreach ($export_generators_options as $export_generator_options) {
+			$this->getController()->addOutput("Loading exporter");
+			$exporter = Billrun_Exporter::getInstance($export_generator_options);
+			$exporter_name = $exporter->getType();
+			$this->getController()->addOutput("Exporter {$exporter_name} loaded");
+
+			if ($exporter) {
+				$this->getController()->addOutput("Starting to export. This action can take a while...");
+				try {
+					$exported = $exporter->export();
+					$this->getController()->addOutput("Exported " . count($exported) . " lines");
+				} catch (Exception $exc) {
+					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
+				}
+			} else {
+				$this->getController()->addOutput("Exporter cannot be loaded");
+			}
 		}
 	}
-
+	
 }

@@ -385,8 +385,12 @@ class Billrun_Cycle_Account_Invoice {
 	 * @return array an empty billrun document
 	 */
 	public function populateInvoiceWithAccountData($attributes) {
+		$config = Billrun_Factory::config();
 		$rawData = $this->data->getRawData();
 		$rawData['attributes'] = $attributes;
+		if ($config->isMultiDayCycle()) {
+			$this->setInvoicingDay($rawData, $attributes);
+		}
 		$this->data->setRawData($rawData);
 	}
 	
@@ -399,7 +403,7 @@ class Billrun_Cycle_Account_Invoice {
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
-			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
 		}
 	}
 	
@@ -409,14 +413,15 @@ class Billrun_Cycle_Account_Invoice {
 	 * Init the date values of the invoice.
 	 */
 	protected function initInvoiceDates() {
-		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$initData = $this->data->getRawData();
+		$invoicing_day = !empty($initData['invoicing_day']) ? $initData['invoicing_day'] : null;
+		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey(), $invoicing_day);
 		$initData['creation_time'] = new MongoDate(time());
 		$isOneTimeInvoice = isset($initData['attributes']['invoice_type']) && $initData['attributes']['invoice_type'] == 'immediate' ? true : false;
 		$invoiceDate = $isOneTimeInvoice ? strtotime($initData['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
 		$initData['invoice_date'] = new MongoDate($invoiceDate);
 		$initData['end_date'] = new MongoDate($billrunDate);
-		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
+		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
 		$initData['due_date'] = $this->generateDueDate($billrunDate);
 		$chargeNotBefore = $this->generateChargeDate($initData);
 		if (!empty($chargeNotBefore)) {
@@ -432,8 +437,20 @@ class Billrun_Cycle_Account_Invoice {
 		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
 			return true;
 		}
-		$hasUsageLines = !$this->lines->query(['aid'=>$this->aid,'billrun'=>$this->key,'usaget'=>['$nin'=>['flat']]])->cursor()->limit(1)->current()->isEmpty();
-		return !empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);})) || $hasUsageLines;
+		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
+		if (is_numeric($accountActivenessLinesHistory)) {
+			$accountActivenessDate = strtotime($accountActivenessLinesHistory . ' months ago');
+		} else {
+			$accountActivenessDate = strtotime((string) $accountActivenessLinesHistory);
+		}
+		$query = [
+			'aid'=>$this->aid,
+			'urt' => ['$gte' => new MongoDate($accountActivenessDate)],
+			'billrun'=>$this->key,
+			'usaget'=>['$nin'=>['flat']],
+		];
+		$hasUsageLines = !$this->lines->query($query)->cursor()->limit(1)->current()->isEmpty();
+		return $hasUsageLines;
 	}
 
 	public function getAid() {
@@ -516,6 +533,11 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 		}
 		return $currentTotalGroups;
+	}
+	
+	public function setInvoicingDay(&$rawData, $attributes) {
+		$config = Billrun_Factory::config();
+		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
 }

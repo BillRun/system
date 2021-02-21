@@ -33,14 +33,28 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 	public function update($pricingOnly = false) {
 		$pricingData = parent::update($pricingOnly);
+		$customerInvoicingDay = isset($this->row['foreign']['account']) ? isset($this->row['foreign']['account']['invoicing_day'])? $this->row['foreign']['account']['invoicing_day'] : null : null;
+		$config = Billrun_Factory::config();
+		if($config->isMultiDayCycle() && !empty($customerInvoicingDay)) {
+			$activeBillrun = Billrun_Billrun::getActiveBillrun($customerInvoicingDay); 
+			$activeBillrunEndTime = Billrun_Billingcycle::getEndTime($activeBillrun, $customerInvoicingDay);
+			$nextActiveBillrun = Billrun_Billingcycle::getFollowingBillrunKey($activeBillrun);
+			$nextActiveBillrunEndTime = Billrun_Billingcycle::getEndTime($nextActiveBillrun, $customerInvoicingDay);
+		}else {
+			$activeBillrun = $this->activeBillrun;
+			$activeBillrunEndTime = $this->activeBillrunEndTime;
+			$nextActiveBillrun = $this->activeBillrun;
+			$nextActiveBillrunEndTime = $this->nextActiveBillrunEndTime;
+		}		
+
 		if ($pricingData && (!isset($this->row['retail_rate']) || $this->row['retail_rate'])) {
 			$urt = $this->row['urt']->sec;
-			if ($urt <= $this->activeBillrunEndTime) { // lines in current billing cycle
-				$billrunKey = $this->activeBillrun;
-			} else if ($urt <= $this->nextActiveBillrunEndTime) { // late lines
-				$billrunKey = $this->nextActiveBillrun;
+			if ($urt <= $activeBillrunEndTime) { // lines in current billing cycle
+				$billrunKey = $activeBillrun;
+			} else if ($urt <= $nextActiveBillrunEndTime) { // late lines
+				$billrunKey = $nextActiveBillrun;
 			} else { // future lines
-				$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
+				$billrunKey = ($config->isMultiDayCycle() && !empty($customerInvoicingDay)) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($urt, $customerInvoicingDay) : Billrun_Billingcycle::getBillrunKeyByTimestamp($urt);
 			}
 			$pricingData['billrun'] = $billrunKey;
 		}

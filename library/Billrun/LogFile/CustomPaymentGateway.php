@@ -28,10 +28,10 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		$this->source = $options['source'];
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->logCollection();
-		$key = $this->generateKeyFromOptions($options);
+		$stamp = $this->generateStampFromOptions($options);
 		$query = array(
 			'source' => $this->source,
-			'key' => $key,
+			'stamp' => $stamp,
 			'process_time' => array('$gt' => new MongoDate(strtotime($this->orphanTime))),
 		);
 
@@ -48,13 +48,12 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data = new Mongodloid_Entity();
 			$this->data->collection($this->collection);
 			$this->data['creation_time'] = new MongoDate();
-			$this->data['key'] = $key;
+			$this->data['stamp'] = $stamp;
 			$this->data['source'] = $this->source;
-			$this->data['errors'] = [];
-			$this->data['warnings'] = [];
-			$this->data['info'] = [];
+                        $this->data['errors'] = [];
+                        $this->data['warnings'] = [];
+                        $this->data['info'] = [];
 			$this->data['rand'] = Billrun_Util::generateRandomNum();
-			$this->setStartProcessTime();
 			$this->setStamp();
 			$this->save();
 		}
@@ -72,7 +71,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		return NULL;
 	}
 
-	protected function generateKeyFromOptions($options) {
+	protected function generateStampFromOptions($options) {
 		return md5(serialize($options));
 	}
 
@@ -106,8 +105,8 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
         
 	public function getLogFileFieldValue($field_name, $defaultValue = null) {
 		return isset($this->data[$field_name]) ? $this->data[$field_name] : $defaultValue;
-	}
-
+        }
+        
         public function saveLogFileFields(){
             $this->data->save();
         }

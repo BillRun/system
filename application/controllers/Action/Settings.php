@@ -105,5 +105,5 @@ class SettingsAction extends ApiAction {
 		}
 		$this->allowed();
 	}
-
+	
 }
