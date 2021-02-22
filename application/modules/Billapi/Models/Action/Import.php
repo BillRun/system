@@ -153,7 +153,7 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function getEntityModel($params) {
-		return new Models_Entity($params);
+		return Models_Entity::getInstance($params);
 	}
 	
 	protected function getFiles() {
