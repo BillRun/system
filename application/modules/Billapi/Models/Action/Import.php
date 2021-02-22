@@ -225,6 +225,7 @@ class Models_Action_Import extends Models_Action {
 					'action' => $action,
 					'query' => json_encode($this->getPredefinedMappingEntityQuery($entityData)),
 					'update' => json_encode($entityData),
+					'is_import' => true,
 				),
 			];
 		
