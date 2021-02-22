@@ -1064,9 +1064,129 @@
 					],
 					"to": "time*2169-08-02T16:33:39Z",
 					"creation_time": "time*2010-08-03T00:00:00Z"
+				},
+
+				{
+					"from": "time*2020-01-01T00:00:00Z",
+					"to": "time*2121-01-10T00:00:00Z",
+					"key": "OPERATOR_OTE_OTE01",
+					"rates": {
+						"parameter_operator": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 0,
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "OTE",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"params": {
+						"prefix": [],
+						"operator": "OTE",
+						"product": [],
+						"path": [
+							"ISBC_OTEG_TG2",
+							"ISBC_OTEG_TG1",
+							"OUTSIDEOTEGLOBE",
+							"704",
+							"703"
+						],
+						"poin": "OTE01",
+						"type": "operator"
+					},
+					"creation_time": "time*2020-01-01T00:00:00Z"
+				},
+
+				{
+					"from": "time*2020-01-01T00:00:00Z",
+					"to": "time*2121-01-10T00:00:00Z",
+					"key": "PRODUCT_EMERG",
+					"rates": {
+						"parameter_product": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": 0,
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "EMERG",
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"params": {
+						"prefix": [
+							"3571705",
+							"3571706",
+							"3571633001702",
+							"3571633001703",
+							"3571633001704",
+							"3571633001705",
+							"1706199",
+							"3571633001706",
+							"1705199",
+							"1706112",
+							"1704199",
+							"1705112",
+							"1704112",
+							"1703199",
+							"1703112",
+							"1702199",
+							"1702112",
+							"3571633001706199",
+							"3571633001706112",
+							"3571633001705199",
+							"3571633001704199",
+							"3571633001705112",
+							"3571633001703199",
+							"3571633001704112",
+							"3571633001703112",
+							"3571633001702199",
+							"3571706199",
+							"3571633001702112",
+							"3571706112",
+							"3571705199",
+							"199",
+							"3571704199",
+							"112",
+							"3571705112",
+							"3571703199",
+							"3571704112",
+							"3571703112",
+							"3571702199",
+							"3571702112",
+							"357163300199",
+							"357199",
+							"3571702",
+							"357112",
+							"3571703",
+							"3571704"
+						],
+						"operator": [],
+						"product": "EMERG",
+						"type": "product"
+					},
+					"creation_time": "time*2020-01-01T00:00:00Z"
 				}
-
-
 
 
 
