@@ -57,7 +57,6 @@ trait Tests_SetUp {
 	protected $dataPath = '/data/';
 
 	public function construct($unitTestName = null, $dataToLoad = null) {
-
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
@@ -72,13 +71,23 @@ trait Tests_SetUp {
 	 * executes set up for the unit runing unit test 
 	 */
 	public function setColletions($useExistingConfig = null) {
+		if ($this->unitTestName == 'Ict_test') {
+
+			unset($this->collectionToClean[2]);
+			unset($this->collectionToClean[3]);
+	
+			unset($this->importData[3]);
+			unset($this->importData[2]);
+	
+		}
+		if ($useExistingConfig && $this->unitTestName == 'Ict_test') {
+			array_unshift($collectionsToSet, 'config');
+		}
 		$this->originalConfig = $this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
-		if ($useExistingConfig && $this->unitTestName == 'Ict_test') {
-			array_unshift($collectionsToSet, 'config');
-		}
+
 		foreach ($collectionsToSet as $file) {
 			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
 			$parsedData = json_decode($dataAsText, true);
