@@ -275,4 +275,69 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		return parent::importEntity($entity);
 	}
 	
+	/**
+	 * Override the parrent methode because price can be related to Plan \ Service 
+	 * in this case we need to update Plan \ Service entity and not the Rate itself
+	 * @param type $row
+	 * @param type $mapping
+	 * @return boolean
+	 */
+	protected function importPredefinedMappingEntity($row, $mapping) {
+		$entityData = $this->getPredefinedMappingEntityData($row, $mapping);
+		$usaget = reset(array_keys(Billrun_Util::getIn($entityData, 'rates', [])));
+		$usaget = empty($usaget) ? '' : $usaget;
+		$planName = reset(array_keys(Billrun_Util::getIn($entityData, ['rates', $usaget], [])));
+		if ($planName !== 'BASE') {
+			$rateKey = Billrun_Util::getIn($entityData, 'key', '');
+			$from = Billrun_Util::getIn($entityData, 'from', '');
+			// Check if update Plan or Service by serching for plan if not exist update service
+			$planQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+			$planQuery['name'] = $planName;
+			$existingPlan = Billrun_Factory::db()->plansCollection()->query($planQuery)->cursor()->current();
+			$collection = 'plans';
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				$collection = 'services';
+				$existingPlan = Billrun_Factory::db()->servicesCollection()->query($planQuery)->cursor()->current();
+			}
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				return "Not found Plan \ Service {$planName} to override price";
+			}
+			$existingRateRates = $existingPlan['rates'];
+			$query = [
+				'effective_date' => $from,
+				'name' => $planName
+			];
+			$update = [
+				'from' => $from,
+				'rates' => $existingRateRates,
+			];
+			$rates = Billrun_Util::getIn($entityData, ['rates', $usaget]);
+			if (!empty($rates[$planName]['rate'])) {
+				$update['rates'][$rateKey][$usaget]['rate'] = $rates[$planName]['rate'];
+			} else if (!empty($rates[$planName]['percentage'])) {
+				$update['rates'][$rateKey][$usaget]['percentage'] = (float)$rates[$planName]['percentage'];
+			}
+			$params = array(
+				'collection' => $collection,
+				'request' => array(
+					'action' => 'permanentchange',
+					'update' => json_encode($update),
+					'query' => json_encode($query)
+				)
+			);
+			$entityModel = $this->getEntityModel($params);
+			try {
+				$result = $entityModel->permanentchange();
+				if($result !== true) {
+					return $result;
+				}
+				return true;
+			} catch (Exception $exc) {
+				return $exc->getMessage();
+			}
+		} else {
+			return parent::importPredefinedMappingEntity($row, $mapping);
+		}
+	}
+	
 }
