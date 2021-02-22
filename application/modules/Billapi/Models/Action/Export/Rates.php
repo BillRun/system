@@ -20,8 +20,56 @@ class Models_Action_Export_Rates extends Models_Action_Export {
 	protected function setCsvOrder($mapper) {
 		return $mapper;
 	}
-
 	
+	/**
+	 * @overide parent function to add rate price from plans
+	 * @param type $query
+	 * @return type
+	 */
+	protected function getDataToExport($query) {
+		$alreadyAddedPlanServiceRates = []; // to avoid multiple add the same plan \ service because of different rate revisions
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$serviceCollection = Billrun_Factory::db()->servicesCollection();
+		$records = [];
+		$results = $this->collectionHandler->query($query)->cursor();
+		foreach ($results as $result) {
+			$record = $result->getRawData();
+			$records[] = $record;
+			$usaget = $this->getValueUsaget($record, [], []);
+			$rateKey = $record['key'];
+			$query = [
+				"rates.{$rateKey}" => [
+					'$exists' => true
+				],
+			];
+			if (!in_array($rateKey, $alreadyAddedPlanServiceRates)) {
+				$plansResults = $plansCollection->query($query)->cursor();
+				foreach ($plansResults as $plansResult) {
+					$plan = $plansResult->getRawData();
+					$planKey = $plan['name'];
+					$record['rates'][$usaget] = [];
+					$record['rates'][$usaget][$planKey]['rate'] = $plan['rates'][$rateKey][$usaget]['rate'];
+					$record['from'] = $plan['from'];
+					$record['to'] = $plan['to'];
+					$records[] = $record;
+				}
+				$servicesResults = $serviceCollection->query($query)->cursor();
+				foreach ($servicesResults as $serviceResult) {
+					$service = $serviceResult->getRawData();
+					$serviceKey = $service['name'];
+					$record['rates'][$usaget] = [];
+					$record['rates'][$usaget][$serviceKey]['rate'] = $service['rates'][$rateKey][$usaget]['rate'];
+					$record['from'] = $service['from'];
+					$record['to'] = $service['to'];
+					$records[] = $record;
+				}
+				
+			}
+			$alreadyAddedPlanServiceRates[] = $rateKey;
+		}
+		return $records;
+	}
+
 	protected function getValueUsaget($data, $path, $params) {
 		$usaget = reset(array_keys(Billrun_Util::getIn($data, 'rates', [])));
 		return empty($usaget) ? '' : $usaget;
