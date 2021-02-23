@@ -69,6 +69,8 @@ class Subscriber_UsageAction extends ApiAction {
 	
 
 	protected function fetchData($params) {
+		$nonPackagedRoamingAddons= Billrun_Factory::config()->getConfigValue('subscriber_usage.non_packaged_roaming_addons',[]);
+		$nonPackagedAddons= Billrun_Factory::config()->getConfigValue('subscriber_usage.non_packaged_addons',[]);
 		$nationalPackages= array();
 		$packages = array();
 		$maxNationalUsage = array();
@@ -76,6 +78,9 @@ class Subscriber_UsageAction extends ApiAction {
 		$actualUsage = array();
 		$actualNationalUsage = array();
 		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
+
+		$roamingAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']),$params['addons']);
+		$nationalAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']),$params['addons_national']);
 
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
@@ -87,16 +92,17 @@ class Subscriber_UsageAction extends ApiAction {
 		$sortedOffers = $params['offers'];
 		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
 		$lastOffer = reset($sortedOffers);
+
 		foreach ($sortedOffers as $offer){
 			$plan = Billrun_Factory::plan(['name'=> $offer['plan'],'time'=> $startTime])->getData();
 			if(empty($plan)) {
 				return $this->setError('Couldn`t find the plan from request.', $offer);
 			}
 			//go though the  subscribers addons packages
-			$this->getMaxUsagesOfPackages($params['addons'], $packages, $maxUsage, $plan);
-			
+			$this->getMaxUsagesOfPackages($roamingAddons, $packages, $maxUsage, $plan);
+
 			//go though the  subscribers addons national packages
-			$this->getMaxUsagesOfPackages($params['addons_national'], $nationalPackages, $maxNationalUsage, $plan);
+			$this->getMaxUsagesOfPackages($nationalAddons, $nationalPackages, $maxNationalUsage, $plan);
 
 			//Save the defualt plan group for as if it`s a  national packages
 			if(!isset($nationalPackages[$plan['name']])){
@@ -182,5 +188,20 @@ class Subscriber_UsageAction extends ApiAction {
 			$output['usage_abroad'][$type.'_max'] = 0;
 		}
 		
+	}
+
+	protected function generateFakeAddons($fakeAddonsList, $billrunKey) {
+		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
+		$endTime = Billrun_Util::getEndTime($params['billrun_key']);
+		$generatedAddons = [];
+		foreach($fakeAddonsList as  $fAddon) {
+			$generatedAddons[] = [
+				'service_name' => $fAddon,
+				'start_date' => date('Y-m-d H:i:s',$startTime),
+				'end_date'  => date('Y-m-d H:i:s',$endTime),
+			];
+		}
+		return $generatedAddons;
+
 	}
 }
