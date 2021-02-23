@@ -293,20 +293,22 @@ class Billrun_Utils_Time {
 	 * @param unixtimestamp $date2
 	 * @return int
 	 */
-	public static function getDaysDiff($date1, $date2) {
-		$datetime1 = new DateTime(date('Y-m-d H:i:s', $date1));
-		$datetime2 = new DateTime(date('Y-m-d H:i:s', $date2));
-		
+	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil') {
 		if ($date1 > $date2) {
-			$diff = $datetime2->diff($datetime1);
+			$datediff = $date1 - $date2;
 		} else {
-			$diff = $datetime1->diff($datetime2);
+			$datediff = $date2 - $date1;
 		}
-		$daysDiff = $diff->format("%a");
-		if ($diff->format("%h") > 0 || $diff->format("%i") > 0 || $diff->format("%s") > 0) {
-			$daysDiff++;
+		$days = $datediff / (60 * 60 * 24);
+		switch ($roundingType){
+			case 'floor':
+				return floor($days);
+			case 'round':
+				return round($days);
+			case 'ceil': 
+			default:
+				return ceil($days);
 		}
-		return $daysDiff;
 	}
 
 }
