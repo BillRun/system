@@ -79,8 +79,9 @@ class Subscriber_UsageAction extends ApiAction {
 		$actualNationalUsage = array();
 		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
 
+		//Prepare addons with open (allways on) pacakge included
 		$roamingAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']),$params['addons']);
-		$nationalAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']),$params['addons_national']);
+		$nationalAddons=array_merge($this->generateFakeAddons($nonPackagedAddons,$params['billrun_key']),$params['addons_national']);
 
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
