@@ -2,6 +2,22 @@
 
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
+	public function afterProcessorParsing($processor) {
+		if ($processor->getType() === 'ICT') {
+			$dataRows = $processor->getData()['data'];
+			foreach ($dataRows as $row){
+				if($row["usaget"] == "transit_incoming_call") {
+					$newRow = $row;
+					$newRow['usaget'] = "transit_outgoing_call";
+					$stampParams = Billrun_Util::generateFilteredArrayStamp($newRow, array('urt', 'eurt', 'uf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'));
+					$newRow['stamp'] = md5(serialize($stampParams));
+					$processor->addDataRow($newRow);
+				}
+			}
+		}
+	}
+
+
 	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
 		$is_anaa_relevant = false;
 
