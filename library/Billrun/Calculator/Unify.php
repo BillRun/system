@@ -322,6 +322,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
+		foreach ($typeData['stamp']['value']['calculated_fields'] as $fieldName) {
+			$field = 'cf.' . $fieldName;
+			$newVal = Billrun_Util::getIn($newRow, $field, null);
+			if (!is_null($newVal)) {
+				Billrun_Util::setIn($serialize_array, $field, $newVal);
+			}
+		}
 
 		foreach ($typeData['stamp']['field'] as $field) {
 			$serialize_array['exists'][$field] = isset($newRow[$field]) ? '1' : '0';
@@ -498,8 +505,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 
 		foreach ($configByType['file_types'] as $type => &$unifyDef) {
-			$uf = Billrun_Util::getCustomerAndRateUf($type);
+			$uf = Billrun_Config::getCustomerAndRateUf($type);
+			$cf = Billrun_Config::getCustomerAndRateCf($type);
 			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.custom_value', $uf);
+			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.calculated_fields', $cf);
 			foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
 				foreach ($fields['update'] as &$setOnInsertDef) {
 					if ($setOnInsertDef['operation'] != '$setOnInsert') {
@@ -507,6 +516,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					}
 					foreach ($uf as $field) {
 						$fieldPath = 'uf.' . $field;
+						$setOnInsertDef['data'][] = $fieldPath;
+					}
+					foreach ($cf as $field) {
+						$fieldPath = 'cf.' . $field;
 						$setOnInsertDef['data'][] = $fieldPath;
 					}
 				}
