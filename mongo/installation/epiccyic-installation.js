@@ -2837,7 +2837,85 @@ lastConfig["file_types"][0] =
 				],
 				"limit" : 3
 			},
-			"unify" : [ ],
+			"unify" : {
+				"unification_fields" : {
+					"required" : {
+						"fields" : [
+							"urt",
+							"type",
+							"aid"
+						],
+						"match" : [ ]
+					},
+					"date_seperation" : "Ymd",
+					"stamp" : {
+						"value" : [
+							"usaget",
+							"aid",
+							"sid",
+							"plan",
+							"arate_key",
+							"services",
+							"services_data",
+							"billrun",
+							"tax_data.taxes.0.key",
+							"tax_data.taxes.0.description",
+							"tax_data.taxes.0.tax",
+							"tax_data.taxes.0.type",
+							"tax_data.taxes.0.pass_to_customer"
+						],
+						"field" : [ ]
+					},
+					"fields" : [
+						{
+							"match" : {
+								"type" : "/^ICT/"
+							},
+							"update" : [
+								{
+									"operation" : "$setOnInsert",
+									"data" : [
+										"arate",
+										"arate_key",
+										"usaget",
+										"urt",
+										"plan",
+										"connection_type",
+										"aid",
+										"sid",
+										"subscriber",
+										"services",
+										"services_data",
+										"foreign",
+										"billrun",
+										"tax_data",
+										"usagev",
+										"usagev_unit",
+										"aprice",
+										"final_charge"
+									]
+								},
+								{
+									"operation" : "$set",
+									"data" : [
+										"process_time"
+									]
+								},
+								{
+									"operation" : "$inc",
+									"data" : [
+										"usagev",
+										"aprice",
+										"final_charge",
+										"tax_data.total_amount",
+										"tax_data.taxes.0.amount"
+									]
+								}
+							]
+						}
+					]
+				}
+			},
 			"filters" : [ ],
 			"enabled" : true
 		},
