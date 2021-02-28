@@ -205,6 +205,13 @@ class Billrun_Util {
 		return $str;
 	}
 	
+	/**
+	 * Recursive group array of object by key(s)
+	 * 
+	 * @param type $array_of_objects
+	 * @param array $keys to group by
+	 * @return array of objects grouped by key(s) 
+	 */
 	public static function groupArrayBy($array_of_objects, $keys) {
 		$out = array();
 		$key = array_shift($keys);
