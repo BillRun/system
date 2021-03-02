@@ -180,10 +180,10 @@ class Subscriber_UsageAction extends ApiAction {
 	protected function initializeUsagesTypes(&$output) {
 		$usage_israel_types = ['data', 'call', 'sms', 'mms'];
 		$usage_abroad_types = ['data', 'call', 'sms', 'mms', 'days'];
-		foreach ($usage_israel_types as $type){
-			$output['usage_israel'][$type.'_usage'] = 0;
-			$output['usage_israel'][$type.'_max'] = 0;
-		}
+// 		foreach ($usage_israel_types as $type){
+// 			$output['usage_israel'][$type.'_usage'] = 0;
+// 			$output['usage_israel'][$type.'_max'] = 0;
+// 		}
 		foreach ($usage_abroad_types as $type){
 			$output['usage_abroad'][$type.'_usage'] = 0;
 			$output['usage_abroad'][$type.'_max'] = 0;
