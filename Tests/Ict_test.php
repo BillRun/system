@@ -167,7 +167,7 @@ class Tests_Icttest extends UnitTestCase {
 	public function addCaseToLog() {
 		$log = [
 			"file_name" => $this->test_num,
-			"stamp" => (string) random_int(1000000, 9999999999),
+			"stamp" => (string) md5(microtime()),
 			"fetching_host" => gethostname(),
 			"fetching_time" => new MongoDate(strtotime('2021-03-01')),
 			"retrieved_from" => "ICT",
