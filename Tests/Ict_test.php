@@ -47,7 +47,7 @@ class Tests_Icttest extends UnitTestCase {
 		$this->Tests = $this->TestsC->tests();
 		$this->configCol = Billrun_Factory::db()->configCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
-		$this->construct(basename(__FILE__, '.php'), ['log', 'queue','lines']);
+		$this->construct(basename(__FILE__, '.php'), ['queue', 'lines']);
 		$this->setColletions($this->useExistingConfig);
 		$this->loadDbConfig();
 	}
@@ -61,8 +61,8 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	public function testUpdateRow() {
 		foreach ($this->Tests as $key => $row) {
-			
 			$this->test_num = $row['test_num'];
+			$this->addCaseToLog();
 			$data = $this->process($row);
 			$this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'] . '</span><br>';
 			$lines = Billrun_Factory::db()->linesCollection()->query()->cursor();
@@ -73,6 +73,7 @@ class Tests_Icttest extends UnitTestCase {
 				}
 			}
 			Billrun_Factory::db()->linesCollection()->remove(["type" => "ICT"]);
+			Billrun_Factory::db()->logCollection()->remove(["stamp" => $this->stamp]);
 			$testFail = $this->assertTrue($this->compareExpected($key, $row['expected'], $data));
 			if (!$testFail) {
 				$this->fails .= "| <a href='#{$row['test_num']}'>{$row['test_num']}</a> | ";
@@ -163,30 +164,25 @@ class Tests_Icttest extends UnitTestCase {
 		return $result;
 	}
 
+	public function addCaseToLog() {
+		$log = [
+			"file_name" => $this->test_num,
+			"stamp" => (string) random_int(1000000, 9999999999),
+			"fetching_host" => gethostname(),
+			"fetching_time" => new MongoDate(strtotime('2021-03-01')),
+			"retrieved_from" => "ICT",
+			"source" => "ICT",
+			"backed_to" => [
+				$this->application_path . "/billrun/library/Tests/Ict_testData/files"
+			],
+			"path" => $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num",
+			"received_hostname" => gethostname(),
+			"received_time" => new MongoDate(strtotime('2021-03-01')),
+			"type" => "input_processor"
+		];
+		$this->stamp = $log["stamp"];
+		Billrun_Factory::db()->logCollection()->insert($log);
+	}
+
 }
 
-/*DONT DELETE *****  its a way for proccess with insert to the DB(Maybe it will be consumed in the future)*/
-
-//		        $options = Billrun_Factory::config()->getFileTypeSettings('Preprice_Dynamic', true);
-//			$options = Billrun_Factory::config()->getFileTypeSettings('Preprice_Dynamic', true);
-//			$parserFields = $options['parser']['structure'];
-//			foreach ($parserFields as $field) {
-//				if (isset($field['checked']) && $field['checked'] === false) {
-//					if (strpos($field['name'], '.') !== false) {
-//						$splittedArray = explode('.', $field['name']);
-//						$lastValue = array_pop($splittedArray);
-//						Billrun_Util::unsetIn($data['data'][$id]['uf'], $splittedArray, $lastValue);
-//					} else {
-//						unset($data['data'][$id]['uf'][$field['name']]);
-//					}
-//				}
-//			}
-//			//$options['parser'] = 'none';
-//			$options['type'] = 'Preprice_Dynamic';
-//			$processor = Billrun_Processor::getInstance($options);
-//			if ($processor) {
-//				$processor->addDataRow($data['data'][$id]);
-//				$processor->process($options);
-//				$data = $processor->getData()['data'];
-//				$data = current($processor->getAllLines());
-//			}
