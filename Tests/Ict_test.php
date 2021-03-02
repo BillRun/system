@@ -102,7 +102,7 @@ class Tests_Icttest extends UnitTestCase {
 		if ($processor) {
 			$processor->process_files($options);
 		}
-		exec("cp $this->application_path/library/Tests/Ict_testData/backup/$this->test_num  $this->application_path/library/Tests/Ict_testData/files/$this->test_num");
+		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
 	}
 
 	/**
@@ -185,4 +185,3 @@ class Tests_Icttest extends UnitTestCase {
 	}
 
 }
-
