@@ -93,6 +93,7 @@ class Tests_Icttest extends UnitTestCase {
 	 * @return row data 
 	 */
 	protected function process($row) {
+		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
 		$options = array(
 			'type' => $row['file_type']
 		);
@@ -102,7 +103,6 @@ class Tests_Icttest extends UnitTestCase {
 		if ($processor) {
 			$processor->process_files($options);
 		}
-		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
 	}
 
 	/**
