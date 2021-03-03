@@ -13,7 +13,7 @@
 trait Billrun_Traits_EntityGetter {
 	
 	protected static $entities = [];
-	protected static $entitiesData = [];
+	public static $entitiesData = [];
 	
 	/**
 	 * get filters for fetching the required entity/entities
@@ -21,14 +21,14 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $params
 	 */
-	protected abstract function getFilters($row = [], $params = []);
+	public abstract function getFilters($row = [], $params = []);
 	
 	/**
 	 * get the collection to fetch the entity/entities from
 	 * 
 	 * @param array $params
 	 */
-	protected abstract function getCollection($params = []);
+	public abstract function getCollection($params = []);
 	
 	/**
 	 * get matching entities for all categories by the specific conditions of every category
@@ -231,7 +231,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array with Mongodloid entity/entities ('multiple_entities')
 	 */
-	protected function getEntities($row, $query, $params = []) {
+	public function getEntities($row, $query, $params = []) {
 		$useCache = $this->shouldCacheEntity($params);
 		$cacheKey = $useCache ? $this->getEntityCacheKey($row, $query, $params) : '';
 		$returned_entities = [];
@@ -278,7 +278,7 @@ trait Billrun_Traits_EntityGetter {
 	 * 
 	 * @return array Mongo query
 	 */
-	protected function getEntityQuery($row, $filters, $category = '', $params = []) {
+	public function getEntityQuery($row, $filters, $category = '', $params = []) {
 		$match = $this->getBasicMatchQuery($row, $category, $params);
 		$additional = [];
 		$group = $this->getBasicGroupQuery($row, $category, $params);
@@ -364,7 +364,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array
 	 */
-	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+	public function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		if (isset($categoryFilters['priorities'])) {
 			return $categoryFilters['priorities'];
 		}
@@ -392,7 +392,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return boolean
 	 */
-	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
+	public function shouldSkipCategory($category = '', $row = [], $params = []) {
 		return false;
 	}
 
@@ -464,7 +464,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $params
 	 */
-	protected function afterEntityNotFound($row = [], $params = []) {
+	public function afterEntityNotFound($row = [], $params = []) {
 		$ret = false;
 		Billrun_Factory::dispatcher()->trigger('afterEntityNotFound', [&$row, $params, $this, &$ret]);
 		return $ret;
@@ -511,7 +511,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $rawEntity
 	 * @return array
 	 */
-	protected function getFullEntityDataQuery($rawEntity) {		
+	public function getFullEntityDataQuery($rawEntity) {		
 		if (!isset($rawEntity['_id']['_id']) || !($rawEntity['_id']['_id'] instanceof MongoId)) {
  			return false;	
  		}

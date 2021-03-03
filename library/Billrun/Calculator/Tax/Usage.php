@@ -363,11 +363,11 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 	//------------------- Entity Getter functions ----------------------------------------------------
 	
-	protected function getCollection($params = []) {
+	public function getCollection($params = []) {
 		return self::getTaxCollection();
 	}
 
-	protected function getFilters($row = [], $params = []) {
+	public function getFilters($row = [], $params = []) {
 		return Billrun_Factory::config()->getConfigValue('taxation.mapping', []);
 	}
 	
@@ -429,7 +429,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return false;
 	}
 	
-	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
+	public function shouldSkipCategory($category = '', $row = [], $params = []) {
 		$taxHintData = $this->getLineTaxHint($row, $category);
 		
 		if (empty($taxHintData)) {
