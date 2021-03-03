@@ -2,6 +2,12 @@
 
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
+	public function beforeCalculatorWriteLine($line, Billrun_Calculator $calculator, &$saveProperties = []){
+		if ($calculator->getType() == 'rate') {
+			$saveProperties = array_merge($saveProperties, ['cf']);
+		}
+	}
+
 	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
 		$is_anaa_relevant = false;
 
