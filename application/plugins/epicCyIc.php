@@ -25,6 +25,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$type = $row['type'];
 			$current = $row->getRawData();
 			$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
+			$row->setRawData($current);
 			$current = $this->setOperator($row, $current, $type, $calculator);
 			$row->setRawData($current);
 
@@ -45,7 +46,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row->setRawData($current);
 			
 			$sms_activity_types = ["incoming_sms","outgoing_sms"];
-			if(!in_array($sms_activity_types, $current["usaget"])) {
+			if(!in_array($current["usaget"], $sms_activity_types)) {
 				$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
 				if(!$bnaa_entity) {
 					return;
@@ -192,9 +193,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$call_direction = "";
 		switch ($usaget) {
 			case "incoming_call":
+			case "incoming_sms":
 				$call_direction = "I";
 				break;
 			case "outgoing_call":
+			case "outgoing_sms":
 				$call_direction = "O";
 				break;
 			case "transit_incoming_call":
