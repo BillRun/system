@@ -66,7 +66,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 
 			//TODO: check if there are multiple results and split
-			$component_entities = $this->getParameterProducts($type, "parameter_component", $row, $calculator, true);
+			$component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
 			if(!$component_entities) {
 				return;
 			}
@@ -127,14 +127,14 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-		public function getParameterProducts($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities =  false) {
+		public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
 		$params = [
 			'type' => $type,
 			'usaget' => $parameter_name,
 			'multiple_entities' => $multiple_entities
 		];
 		Billrun_Factory::log('Finding ' . $parameter_name);
-		$entities = $multiple_entities ? $this->getMatchingEntitiesByCategories($row, $params, $calculator):
+		$entities = $multiple_entities ? $this->getMatchingEntitiesByCategories($row, $params, $calculator) :
 			$calculator->getMatchingEntitiesByCategories($row, $params);
 		if ($entities) {
 			return $multiple_entities ? $entities["retail"] : $entities["retail"]->getRawData();
@@ -142,8 +142,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Failed finding' . $parameter_name);
 		return false;
 	}
-	
-	protected function getMatchingEntitiesByCategories($row, $params, $calculator){
+
+	protected function getMatchingEntitiesByCategories($row, $params, $calculator) {
 		$ret = [];
 		$matchFilters = $calculator->getFilters($row, $params);
 		if (empty($matchFilters)) {
@@ -154,7 +154,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($matchFilters as $category => $categoryFilters) {
 			if ($calculator->shouldSkipCategory($category, $row, $params)) {
 				continue;
-			}	
+			}
 			$params['category'] = $category;
 			$params['filters'] = $calculator->getCategoryFilters($categoryFilters, $row, $params);
 			$filters = Billrun_Util::getIn($params, 'filters', $matchFilters);
@@ -175,11 +175,30 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					break;
 				}
 			}
-			
+
 			$ret[$category] = $this->getFullEntitiesData($entities, $calculator, $row, $params);
 		}
-		
+
 		return $ret;
+	}
+
+	protected function getFullEntitiesData($entities, $calculator, $row = [], $params = []) {
+		$entitiesData = [];
+		foreach ($entities as $entity) {
+			$cacheKey = strval($entity->getRawData()['_id']['_id']);
+			if (empty($calculator::$entitiesData[$cacheKey])) {
+				$rawEntity = $entity->getRawData();
+				$query = $calculator->getFullEntityDataQuery($rawEntity);
+				if (!$query) {
+					return false;
+				}
+
+				$coll = $calculator->getCollection($params);
+				$calculator::$entitiesData[$cacheKey] = $coll->query($query)->cursor()->current();
+			}
+			$entitiesData[] = $calculator::$entitiesData[$cacheKey];
+		}
+		return $entitiesData;
 	}
 
 	public function setParameter($current, $params, $entity) {
