@@ -145,18 +145,17 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getMatchingEntitiesByCategories($row, $params, $calculator) {
 		$ret = [];
-		$matchFilters = $calculator->getFilters($row, $params);
+		$type = $params['type'] ?: '';
+		$matchFilters = Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 		if (empty($matchFilters)) {
 			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
-			return $calculator->afterEntityNotFound($row, $params);
+			return false;
 		}
 
 		foreach ($matchFilters as $category => $categoryFilters) {
-			if ($calculator->shouldSkipCategory($category, $row, $params)) {
-				continue;
-			}
+			$usaget = $params['usaget'] ?: '';
 			$params['category'] = $category;
-			$params['filters'] = $calculator->getCategoryFilters($categoryFilters, $row, $params);
+			$params['filters'] = Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
 			$filters = Billrun_Util::getIn($params, 'filters', $matchFilters);
 			foreach ($filters as $priority) {
 				$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
@@ -176,7 +175,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 
-			$ret[$category] = $this->getFullEntitiesData($entities, $calculator, $row, $params);
+			$entities = $this->getFullEntitiesData($entities, $calculator, $row, $params);
+			if ($entities) {
+				$ret[$category] = $entities;
+			}
 		}
 
 		return $ret;
@@ -193,7 +195,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					return false;
 				}
 
-				$coll = $calculator->getCollection($params);
+				$coll = Billrun_Factory::db()->ratesCollection();;
 				$calculator::$entitiesData[$cacheKey] = $coll->query($query)->cursor()->current();
 			}
 			$entitiesData[] = $calculator::$entitiesData[$cacheKey];
