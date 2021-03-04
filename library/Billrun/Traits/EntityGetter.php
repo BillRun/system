@@ -21,14 +21,14 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $params
 	 */
-	public abstract function getFilters($row = [], $params = []);
+	protected abstract function getFilters($row = [], $params = []);
 	
 	/**
 	 * get the collection to fetch the entity/entities from
 	 * 
 	 * @param array $params
 	 */
-	public abstract function getCollection($params = []);
+	protected abstract function getCollection($params = []);
 	
 	/**
 	 * get matching entities for all categories by the specific conditions of every category
@@ -364,7 +364,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return array
 	 */
-	public function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		if (isset($categoryFilters['priorities'])) {
 			return $categoryFilters['priorities'];
 		}
@@ -464,7 +464,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $row
 	 * @param array $params
 	 */
-	public function afterEntityNotFound($row = [], $params = []) {
+	protected function afterEntityNotFound($row = [], $params = []) {
 		$ret = false;
 		Billrun_Factory::dispatcher()->trigger('afterEntityNotFound', [&$row, $params, $this, &$ret]);
 		return $ret;

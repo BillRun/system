@@ -184,11 +184,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			}
 	//------------------- Entity Getter functions ----------------------------------------------------
 
-	public function getCollection($params = []) {
+	protected function getCollection($params = []) {
 		return Billrun_Factory::db()->ratesCollection();
 		}
 
-	public function getFilters($row = [], $params = []) {
+	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 		}
@@ -220,7 +220,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return $query;
 		}
 	
-	public function getCategoryFilters($categoryFilters, $row = [], $params = []) {
+	protected function getCategoryFilters($categoryFilters, $row = [], $params = []) {
 		$usaget = $params['usaget'] ?: '';
 		return Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
 	}

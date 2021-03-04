@@ -363,11 +363,11 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 	//------------------- Entity Getter functions ----------------------------------------------------
 	
-	public function getCollection($params = []) {
+	protected function getCollection($params = []) {
 		return self::getTaxCollection();
 	}
 
-	public function getFilters($row = [], $params = []) {
+	protected function getFilters($row = [], $params = []) {
 		return Billrun_Factory::config()->getConfigValue('taxation.mapping', []);
 	}
 	
