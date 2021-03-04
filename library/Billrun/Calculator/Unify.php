@@ -537,8 +537,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					foreach ($ufByUsaget as $usaget => $ufFields) {
 						$setOnInsertDef['custom_value'][$usaget]['data'] = $ufFields;
 					}
-					foreach ($cfByUsaget as $usaget => $CfFields) {
-						$setOnInsertDef['calculated_fields'][$usaget]['data'] = $CfFields;
+					foreach ($cfByUsaget as $usaget => $cfFields) {
+						$setOnInsertDef['calculated_fields'][$usaget]['data'] = $cfFields;
 					}
 				}
 			}
