@@ -152,7 +152,8 @@ class Models_Action_Get extends Models_Action {
 			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
 				$ret [] = array(
 					'name' => $field['field_name'],
-					'type' => $this->getCustomFieldType($field),
+					//changed to array to allow search from UI by regex
+					'type' => 'array', //$this->getCustomFieldType($field),
 				);
 			}
 		}
