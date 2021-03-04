@@ -17,41 +17,11 @@ class Itc_test_cases {
 		$request = new Yaf_Request_Http;
 		$this->test_cases = $request->get('tests');
 		$cases = [
-			["test_num" => 1,
-				"data" =>
-				[
-					"123456" => [
-						"uf" =>
-						[
-							"sid" => 53,
-							"date" => "2020-03-27 10:39:00",
-							"usage" => "sms",
-							"volume" => 100,
-							"rate" => "SMS"
-						],
-						"stamp" => "123456",
-						"type" => "abc",
-					]
-				],
-				"expected" => [['arate_key' => 'SMS', 'aprice' => 100, 'final_charge' => 117, 'aid' => 1234, 'sid' => 53, 'tax_data.total_amount' => 17, 'billrun' => '202102', "usaget" => "sms", "usagev_unit" => "counter", "usagev" => 100]]
-			],
-			["test_num" => 2,
-				"data" =>
-				[
-					"1234567" => [
-						"uf" =>
-						[
-							"sid" => 53,
-							"date" => "2020-03-27 10:38:00",
-							"usage" => "sms",
-							"volume" => 200,
-							"rate" => "SMS"
-						],
-						"stamp" => "123456",
-						"type" => "abc",
-					]
-				],
-				"expected" => [['rate' => 'SMS', 'aprice' => 10, 'final_charge' => 100, 'aid' => 1234, 'sid' => 53, 'tax_data.total_amount' => 17, 'billrun' => '202101']]
+			["test_num" => 1,'file_type'=>'ICT',
+				"expected" => [
+					['arate_key' => 'RATE_MTT_ICTDC_FIX_TI_MTTNI04', 'aprice' =>0.041333333333416, 'final_charge' => 0.041333333333416, 'aid' => 1530, 'sid' => 1947, 'billrun' => '202104', "usaget" => "transit_incoming_call", "usagev_unit" => "seconds", "usagev" => 248,"cf.call_direction" => "TI"],
+					['arate_key' => 'RATE_CYTA_ICTDC_FIX_TO_CTA_SING', 'aprice' => 0.10912000000000001, 'final_charge' => 0.10912000000000001,'aid' => 1530, 'sid' => 1947, 'billrun' => '202104', "usaget" => "transit_outgoing_call", "usagev_unit" => "seconds", "usagev" => 248,"cf.call_direction" => "TO"]
+				]
 			]
 		];
 		if ($this->test_cases) {

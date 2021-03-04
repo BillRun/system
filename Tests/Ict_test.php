@@ -20,8 +20,9 @@ class Tests_Icttest extends UnitTestCase {
 
 	use Tests_SetUp;
 
-	protected  $fails;
-	protected $message ='';
+	protected $fails;
+	protected $message = '';
+	public $application_path = APPLICATION_PATH;
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [];
@@ -45,7 +46,8 @@ class Tests_Icttest extends UnitTestCase {
 		$this->TestsC = new Itc_test_cases();
 		$this->Tests = $this->TestsC->tests();
 		$this->configCol = Billrun_Factory::db()->configCollection();
-		$this->construct(basename(__FILE__, '.php'), ['queue']);
+		$this->linesCol = Billrun_Factory::db()->linesCollection();
+		$this->construct(basename(__FILE__, '.php'), ['queue', 'lines']);
 		$this->setColletions($this->useExistingConfig);
 		$this->loadDbConfig();
 	}
@@ -59,10 +61,20 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	public function testUpdateRow() {
 		foreach ($this->Tests as $key => $row) {
+			$this->test_num = $row['test_num'];
+			$this->addCaseToLog();
 			$data = $this->process($row);
-			$id = array_key_first($row['data']);
 			$this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'] . '</span><br>';
-			$testFail = $this->assertTrue($this->compareExpected($key, $row['expected'], $data[$id]));
+			$lines = Billrun_Factory::db()->linesCollection()->query()->cursor();
+			$data = [];
+			foreach ($lines as $line) {
+				if ($line->getRawData()) {
+					$data[] = $line->getRawData();
+				}
+			}
+			Billrun_Factory::db()->linesCollection()->remove(["type" => "ICT"]);
+			Billrun_Factory::db()->logCollection()->remove(["stamp" => $this->stamp]);
+			$testFail = $this->assertTrue($this->compareExpected($key, $row['expected'], $data));
 			if (!$testFail) {
 				$this->fails .= "| <a href='#{$row['test_num']}'>{$row['test_num']}</a> | ";
 			}
@@ -81,24 +93,16 @@ class Tests_Icttest extends UnitTestCase {
 	 * @return row data 
 	 */
 	protected function process($row) {
-		$id = array_key_first($row['data']);
+		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
 		$options = array(
-			'type' => $row['data'][$id]["type"]
+			'type' => $row['file_type']
 		);
-		$data['data'] = $row['data'];
+
 		$fileType = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);
-		$fileType['type'] = $row['data'][$id]["type"];
-		$usage = new Billrun_Processor_Usage($fileType);
-		$newRow = $usage->getBillRunLine($data['data'][$id]['uf']);
-		$data['data'][$id] = $newRow;
-		$queueLine = $newRow;
-		$queueLine['calc_name'] = false;
-		$queueLine['calc_time'] = false;
-		$queueLine['in_queue_since'] = new MongoDate(1608660082);
-		$usage->setQueueRow($queueLine);
-		$queueCalculators = new Billrun_Helpers_QueueCalculators($options);
-		$queueCalculators->run($usage, $data);
-		return $data['data'];
+		$processor = Billrun_Processor::getInstance($options);
+		if ($processor) {
+			$processor->process_files($options);
+		}
 	}
 
 	/**
@@ -110,20 +114,34 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	protected function compareExpected($key, $expected, $data) {
 		$result = true;
-		foreach ($expected as $expectedKey => $expectedLine) {
-			foreach ($expectedLine as $k => $v) {
+		$sort = function ($a, $b) {
+			if ($a['usaget'] != $b['usaget']) {
+				return $a['usaget'] < $b['usaget'];
+			}
+			return 0;
+		};
+		usort($expected, $sort);
+		usort($data, $sort);
+		if (count($expected) > count($data)) {
+			$this->message .= "Not all lines were created Expected to" . count($expected) . "lines , create only " . count($data) . $this->fail;
+			return false;
+		}
+		$i = 0;
+		foreach ($data as $data_) {
+			$this->message .= "*************************** line usaget {$expected[$i] ['usaget']}  ***************************" . '</br>';
+			foreach ($expected[$i] as $k => $v) {
 				$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
 				$this->message .= '	Result : </br>';
 				$nested = false;
 				if (strpos($k, '.')) {
-					$DataField = Billrun_Util::getIn($data, $k);
+					$DataField = Billrun_Util::getIn($data_, $k);
 					$nestedKey = explode('.', $k);
 					$k = end($nestedKey);
 					$nested = true;
 				}
-				$DataField = $nested ? $DataField : $data[$k];
+				$DataField = $nested ? $DataField : $data_[$k];
 				if (!$nested) {
-					if (empty(array_key_exists($k, $data))) {
+					if (empty(array_key_exists($k, $data_))) {
 						$this->message .= ' 	-- the result key isnt exists' . $this->fail;
 						$result = false;
 					}
@@ -141,34 +159,29 @@ class Tests_Icttest extends UnitTestCase {
 					$this->message .= '	-- the result is equel to expected : ' . $DataField . $this->pass;
 				}
 			}
+			$i++;
 		}
 		return $result;
 	}
 
+	public function addCaseToLog() {
+		$log = [
+			"file_name" => $this->test_num,
+			"stamp" => (string) md5(microtime()),
+			"fetching_host" => gethostname(),
+			"fetching_time" => new MongoDate(strtotime('2021-03-01')),
+			"retrieved_from" => "ICT",
+			"source" => "ICT",
+			"backed_to" => [
+				$this->application_path . "/billrun/library/Tests/Ict_testData/files"
+			],
+			"path" => $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num",
+			"received_hostname" => gethostname(),
+			"received_time" => new MongoDate(strtotime('2021-03-01')),
+			"type" => "input_processor"
+		];
+		$this->stamp = $log["stamp"];
+		Billrun_Factory::db()->logCollection()->insert($log);
+	}
+
 }
-
-/*DONT DELETE *****  its a way for proccess with insert to the DB(Maybe it will be consumed in the future)*/
-
-//		        $options = Billrun_Factory::config()->getFileTypeSettings('Preprice_Dynamic', true);
-//			$options = Billrun_Factory::config()->getFileTypeSettings('Preprice_Dynamic', true);
-//			$parserFields = $options['parser']['structure'];
-//			foreach ($parserFields as $field) {
-//				if (isset($field['checked']) && $field['checked'] === false) {
-//					if (strpos($field['name'], '.') !== false) {
-//						$splittedArray = explode('.', $field['name']);
-//						$lastValue = array_pop($splittedArray);
-//						Billrun_Util::unsetIn($data['data'][$id]['uf'], $splittedArray, $lastValue);
-//					} else {
-//						unset($data['data'][$id]['uf'][$field['name']]);
-//					}
-//				}
-//			}
-//			//$options['parser'] = 'none';
-//			$options['type'] = 'Preprice_Dynamic';
-//			$processor = Billrun_Processor::getInstance($options);
-//			if ($processor) {
-//				$processor->addDataRow($data['data'][$id]);
-//				$processor->process($options);
-//				$data = $processor->getData()['data'];
-//				$data = current($processor->getAllLines());
-//			}
