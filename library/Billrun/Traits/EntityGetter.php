@@ -392,7 +392,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @param array $params
 	 * @return boolean
 	 */
-	public function shouldSkipCategory($category = '', $row = [], $params = []) {
+	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
 		return false;
 	}
 
