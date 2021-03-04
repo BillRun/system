@@ -550,12 +550,17 @@ class Billrun_Config {
 	 * @param string $type - input processor name
 	 * @return array - user field names
 	 */
-	public static function getCustomerAndRateUf($type) {
-		$fields = self::getCustomerAndRateUfAndCf($type);
+	public static function getCustomerAndRateUfByUsaget($type) {
+		$customerAndRateUf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
 		$uf = self::getUserFields($type);
-		$customerAndRateUf = array_filter($fields, function($field) use($uf){
-			return in_array($field, $uf);
-		});
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $uf)){
+					$customerAndRateUf[$usaget][] = 'uf.' . $field;
+				}
+			}
+		}
 		return $customerAndRateUf;
 	}
 	
@@ -565,12 +570,17 @@ class Billrun_Config {
 	 * @param string $type - input processor name
 	 * @return array - calculated field names
 	 */
-	public static function getCustomerAndRateCf($type) {
-		$fields = self::getCustomerAndRateUfAndCf($type);
+	public static function getCustomerAndRateCfByUsaget($type) {
+		$customerAndRateCf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
 		$cf = self::getCalculatedFields($type);
-		$customerAndRateCf = array_filter($fields, function($field) use($cf){
-			return in_array($field, $cf);
-		});
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $cf)){
+					$customerAndRateCf[$usaget][] = 'cf.' . $field;
+				}
+			}
+		}
 		return $customerAndRateCf;
 	}
 
@@ -580,24 +590,21 @@ class Billrun_Config {
 	 * @param string $type - input processor name
 	 * @return array - user and calculated field names
 	 */
-	public static function getCustomerAndRateUfAndCf($type) {
+	public static function getCustomerAndRateUfAndCfByUsaget($type) {
 		$fieldNames = array();
 		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
 		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
-		foreach ($customerIdentificationFields as $fields) {
-			$customerFieldNames = array_column($fields, 'src_key');
-			$fieldNames = array_merge($fieldNames, $customerFieldNames);
+		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
+			$customerFieldNames[$customerUsaget] = array_column($fields, 'src_key');
 		}
 		$rateCalculators = $fileTypeConfig['rate_calculators'];
 		foreach ($rateCalculators as $rateByUsaget) {
-			foreach ($rateByUsaget as $priorityByUsaget) {
+			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
 				foreach ($priorityByUsaget as $priority) {
-					$rateFieldNames = array_column($priority, 'line_key');
-					$fieldNames = array_merge($fieldNames, $rateFieldNames);
+					$rateFieldNames[$rateUsaget] = array_column($priority, 'line_key');
 				}
 			}
 		}
-
-		return array_unique($fieldNames);
+		return array_merge_recursive($customerFieldNames, $rateFieldNames);
 	}
 }
