@@ -429,7 +429,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return false;
 	}
 	
-	public function shouldSkipCategory($category = '', $row = [], $params = []) {
+	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
 		$taxHintData = $this->getLineTaxHint($row, $category);
 		
 		if (empty($taxHintData)) {
