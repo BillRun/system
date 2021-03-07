@@ -159,9 +159,31 @@ class Models_Action_Import extends Models_Action {
 
 	protected function runManualMappingQuery($entities) {
 		$output = array();
+		
+		$import_fields = $this->update['import_fields'];
+		$multi_value_fields = array_column(array_filter($import_fields, function($field) {
+			return $field['multiple'] === true;
+		}), 'value');
+		
 		foreach ($entities as $key => $entity) {
 			$errors = isset($entity['__ERRORS__']) ? $entity['__ERRORS__'] : [];
 			$csv_rows = isset($entity['__CSVROW__']) ? $entity['__CSVROW__'] : [];
+			
+			foreach ($entity as $field_name => $value) {
+				// build multivalues field value
+				if (in_array($field_name, $multi_value_fields)) {
+					$values = array_map('trim', explode(",", $value));
+					Billrun_Util::setIn($entity, [$field_name], $values);
+				} else if (is_array($value)) {
+					foreach ($value as $field_key => $field_val) {
+						$full_field_name = "{$field_name}.{$field_key}";
+						if (in_array($full_field_name, $multi_value_fields)) {
+							$values = array_map('trim', explode(",", $field_val));
+							Billrun_Util::setIn($entity, [$field_name, $field_key], $values);
+						}
+					}
+				}
+			}
 			
 			if($this->request['operation'] !== $this->getImportOperation()) {
 				$this->setImportOperation($this->request['operation']);
