@@ -85,9 +85,9 @@ class Subscriber_UsageAction extends ApiAction {
 
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
-		if(empty($mainBalances) ) {
-			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
-		}
+// 		if(empty($mainBalances) ) {
+// 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
+// 		}
 
 		//$endTime = Billrun_Util::getEndTime($params['billrun_key']);
 		$sortedOffers = $params['offers'];
@@ -133,13 +133,13 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($actualNationalUsage as  $type => $usageVal) {
 			$output['usage_israel'][$type.'_usage'] = $usageVal;
 		}
-		foreach($maxUsage as  $type => $usageVal) {
-			$output['usage_abroad'][$type.'_usage'] = 0;
-			$output['usage_abroad'][$type.'_max'] = $usageVal;
-		}
-		foreach($actualUsage as  $type => $usageVal) {
-			$output['usage_abroad'][$type.'_usage'] = $usageVal;
-		}
+// 		foreach($maxUsage as  $type => $usageVal) {
+// 			$output['usage_abroad'][$type.'_usage'] = 0;
+// 			$output['usage_abroad'][$type.'_max'] = $usageVal;
+// 		}
+// 		foreach($actualUsage as  $type => $usageVal) {
+// 			$output['usage_abroad'][$type.'_usage'] = $usageVal;
+// 		}
 
 		//do some beutyfing of the data
 		return $output;
@@ -184,10 +184,10 @@ class Subscriber_UsageAction extends ApiAction {
 			$output['usage_israel'][$type.'_usage'] = 0;
 			$output['usage_israel'][$type.'_max'] = 0;
 		}
-		foreach ($usage_abroad_types as $type){
-			$output['usage_abroad'][$type.'_usage'] = 0;
-			$output['usage_abroad'][$type.'_max'] = 0;
-		}
+// 		foreach ($usage_abroad_types as $type){
+// 			$output['usage_abroad'][$type.'_usage'] = 0;
+// 			$output['usage_abroad'][$type.'_max'] = 0;
+// 		}
 		
 	}
 
