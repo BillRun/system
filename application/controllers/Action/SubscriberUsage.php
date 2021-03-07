@@ -85,9 +85,9 @@ class Subscriber_UsageAction extends ApiAction {
 
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
-		if(empty($mainBalances) ) {
-			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
-		}
+// 		if(empty($mainBalances) ) {
+// 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
+// 		}
 
 		//$endTime = Billrun_Util::getEndTime($params['billrun_key']);
 		$sortedOffers = $params['offers'];
