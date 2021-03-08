@@ -12,7 +12,7 @@
  * @since    0.5
  */
 require_once(APPLICATION_PATH . '/library/Tests/Itc_test_cases.php');
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
