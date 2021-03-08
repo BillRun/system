@@ -2,11 +2,6 @@
 
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
-	public function beforeCalculatorWriteLine($line, Billrun_Calculator $calculator, &$saveProperties = []){
-		if ($calculator->getType() == 'rate') {
-			$saveProperties = array_merge($saveProperties, ['cf']);
-		}
-	}
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
 			$dataRows = $processor->getData()['data'];
