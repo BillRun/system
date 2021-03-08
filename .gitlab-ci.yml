@@ -31,16 +31,17 @@ variables:
   BILLING_DB_PORT: 27617  
   BRANCH_NAME: $CI_COMMIT_REF_NAME
 
-default:
-  before_script:
-    - export prefix=`pwd`
-    - source $prefix/ci/scripts/gitlab-ci.sh
+# default:
       
 .common_settings: 
     only:
       - gitlab-ci-setup
     tags:
-      - CI_DEV      
+      - CI_DEV    
+    before_script:
+      - export prefix=`pwd`
+      - source $prefix/ci/scripts/gitlab-ci.sh
+
 
 db_setup:
     extends: .common_settings 
