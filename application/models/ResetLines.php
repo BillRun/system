@@ -342,8 +342,7 @@ class ResetLinesModel {
 		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
-		$this->getLineInvoicingDay($line);
-		$lineInvoicingDay = isset($line['foreign']) && isset($line['foreign']) ? $line['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		$lineInvoicingDay = $this->getLineInvoicingDay($line);
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		foreach ($arategroups as $arategroup) {
@@ -470,7 +469,7 @@ class ResetLinesModel {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$relevantBalances = $this->getRelevantBalances($balances, $balanceId);
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
 				if (empty($relevantBalances)) {
 					continue;
 				}
@@ -501,9 +500,12 @@ class ResetLinesModel {
 		);
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
-			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
-			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+			$current_account = array_filter($accounts, function($account) use($aid) {
+				return $account['aid'] == $aid;
+			});
+			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
@@ -599,10 +601,7 @@ class ResetLinesModel {
 	}
 	
 	protected function getLineInvoicingDay($line) {
-		if(isset($line['foregin']) && isset($line['foregin']['account']) && isset($line['foregin']['account']['invoicing_day'])) {
-			return $line['foregin']['account']['invoicing_day'];
-		}
-		return Billrun_Factory::config()->getConfigChargingDay();
+		return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 	}
 
 }
