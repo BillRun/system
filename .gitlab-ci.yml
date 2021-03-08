@@ -71,4 +71,4 @@ gitleaks:
   image: 
     name: "zricethezav/gitleaks"
     entrypoint: [""]
-  script: gitleaks -v --pretty --repo-path . --commit-from=$CI_COMMIT_SHA --commit-to=$CI_COMMIT_BEFORE_SHA --branch=$CI_COMMIT_BRANCH
+  script: gitleaks -v --repo-path . --commit-from=$CI_COMMIT_SHA --commit-to=$CI_COMMIT_BEFORE_SHA --branch=$CI_COMMIT_BRANCH
