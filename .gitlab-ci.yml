@@ -24,7 +24,13 @@ spotbugs-sast:
 # 3
 stages:
   - init
+  - E2E_Testing
   - test
+sast:
+  variables:
+    SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, flawfinder, gosec, kubesec,
+      nodejs-scan, pmd-apex, security-code-scan, sobelow, spotbugs
+  stage: test
 
 variables:
   BILLING_DB: 'billing'
@@ -51,6 +57,6 @@ db_setup:
 
 testing:
     extends: .common_settings 
-    stage: test
+    stage: E2E_Testing
     script:      
       - RUN_TEST "http://46.101.14.10"    
