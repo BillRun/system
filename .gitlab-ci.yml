@@ -1,5 +1,26 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
+brakeman-sast:
+   tags:
+      - CI_SAST
+eslint-sast:
+    tags:
+    - CI_SAST
+flawfinder-sast:
+   tags:
+      - CI_SAST  
+phpcs-security-audit-sast:
+     tags:
+      - CI_SAST
+security-code-scan-sast:
+     tags:
+      - CI_SAST
+spotbugs-sast:
+   tags:
+      - CI_SAST
+
+
+
 # 3
 stages:
   - init
@@ -18,19 +39,17 @@ default:
 .common_settings: 
     only:
       - gitlab-ci-setup
+    tags:
+      - CI_DEV      
 
 db_setup:
     extends: .common_settings 
-    stage: init
-    tags:
-      - CI_DEV
+    stage: init    
     script:
       - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT 
 
 testing:
     extends: .common_settings 
     stage: test
-    tags:
-      - CI_DEV
     script:      
       - RUN_TEST "http://46.101.14.10"    
