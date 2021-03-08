@@ -1,5 +1,7 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml  
+
 brakeman-sast:
    tags:
       - CI_SAST
@@ -18,8 +20,9 @@ security-code-scan-sast:
 spotbugs-sast:
    tags:
       - CI_SAST
-
-
+secret_detection:
+   tags:
+      - CI_SAST
 
 # 3
 stages:
@@ -62,13 +65,3 @@ testing:
     stage: E2E_Testing
     script:      
       - RUN_TEST "http://46.101.14.10"    
-
-
-gitleaks:
-  stage: secrets-detection
-  tags:
-      - CI_SAST
-  image: 
-    name: "zricethezav/gitleaks"
-    entrypoint: [""]
-  script: gitleaks -v --repo-path . --commit-from=$CI_COMMIT_SHA --commit-to=$CI_COMMIT_BEFORE_SHA --branch=$CI_COMMIT_BRANCH
