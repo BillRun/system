@@ -57,7 +57,52 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		$this->rates_by_plan = $this->getRatePlans($entities);
 		return parent::runManualMappingQuery($entities);
 	}
+
+	protected function setTaxValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$type = $data[$export_config['tax.0.type']['title']];
+		$taxation = $data[$export_config['tax.0.taxation']['title']];
+		$custom_logic = $data[$export_config['tax.0.custom_logic']['title']];
+		$custom_tax = $data[$export_config['tax.0.custom_tax']['title']];
+		return [[
+			"type" => $type,
+			"taxation" => $taxation,
+			"custom_logic" => $custom_logic,
+			"custom_tax" => $custom_tax,
+		]];
+	}
 	
+	protected function setPriceValue($data, $params) {
+		$export_config = $this->getExportMapper();
+		$from = $this->fromArray($data[$export_config['price.from']['title']]);
+		$to = $this->fromArray($data[$export_config['price.to']['title']]);
+		$interval = $this->fromArray($data[$export_config['price.interval']['title']]);
+		$price = $this->fromArray($data[$export_config['price.price']['title']]);
+		$uom_range = $this->fromArray($data[$export_config['price.uom_display.range']['title']]);
+		$uom_interval = $this->fromArray($data[$export_config['price.uom_display.interval']['title']]);
+
+		$rate = [];
+		foreach ($from as $idx => $value) {
+			$rate[] = [
+				'from' => floatval($value),
+				'to' => is_numeric($to[$idx]) ? floatval($to[$idx]) : $to[$idx],
+				'interval' => floatval($interval[$idx]),
+				'price' => floatval($price[$idx]),
+				'uom_display' => [
+					'range' => $uom_range[$idx],
+					'interval' => $uom_interval[$idx],
+				]
+			];
+		}
+		return [
+			$data[$export_config['usaget']['title']] => [
+				$data[$export_config['plan']['title']] => [
+					'rate' => $rate,
+				]
+			],
+		];
+	}
+
 	protected function getRatePlans($entities) {
 		$rates = array();
 		foreach ($entities as $rate) {
@@ -308,7 +353,6 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		return [];
 	}
 	
-	
 	protected function importEntity($entity) {
 		$keyField = !empty($entity['__UPDATER__']['value']) ? $entity['__UPDATER__']['value'] : 'key';
 		$plans_names = isset($this->rates_by_plan[$entity[$keyField]]) ? $this->rates_by_plan[$entity[$keyField]] : [];
@@ -480,6 +524,71 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 			return $plan_updates;
 		}
 		return parent::importEntity($entity);
+	}
+
+	/**
+	 * Override the parrent methode because price can be related to Plan \ Service 
+	 * in this case we need to update Plan \ Service entity and not the Rate itself
+	 * @param type $row
+	 * @param type $mapping
+	 * @return boolean
+	 */
+	protected function importPredefinedMappingEntity($row, $mapping) {
+		$entityData = $this->getPredefinedMappingEntityData($row, $mapping);
+		$usaget = reset(array_keys(Billrun_Util::getIn($entityData, 'rates', [])));
+		$usaget = empty($usaget) ? '' : $usaget;
+		$planName = reset(array_keys(Billrun_Util::getIn($entityData, ['rates', $usaget], [])));
+		if ($planName !== 'BASE') {
+			$rateKey = Billrun_Util::getIn($entityData, 'key', '');
+			$from = Billrun_Util::getIn($entityData, 'from', '');
+			// Check if update Plan or Service by serching for plan if not exist update service
+			$planQuery = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($from));
+			$planQuery['name'] = $planName;
+			$existingPlan = Billrun_Factory::db()->plansCollection()->query($planQuery)->cursor()->current();
+			$collection = 'plans';
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				$collection = 'services';
+				$existingPlan = Billrun_Factory::db()->servicesCollection()->query($planQuery)->cursor()->current();
+			}
+			if (!$existingPlan || $existingPlan->isEmpty()) {
+				return "Not found Plan \ Service {$planName} to override price";
+			}
+			$existingRateRates = $existingPlan['rates'];
+			$query = [
+				'effective_date' => $from,
+				'name' => $planName
+			];
+			$update = [
+				'from' => $from,
+				'rates' => $existingRateRates,
+			];
+			$rates = Billrun_Util::getIn($entityData, ['rates', $usaget]);
+			if (!empty($rates[$planName]['rate'])) {
+				$update['rates'][$rateKey][$usaget]['rate'] = $rates[$planName]['rate'];
+			} else if (!empty($rates[$planName]['percentage'])) {
+				$update['rates'][$rateKey][$usaget]['percentage'] = (float)$rates[$planName]['percentage'];
+			}
+			$params = array(
+				'collection' => $collection,
+				'request' => array(
+					'action' => 'permanentchange',
+					'update' => json_encode($update),
+					'query' => json_encode($query)
+				)
+			);
+			$entityModel = $this->getEntityModel($params);
+			try {
+				$result = $entityModel->permanentchange();
+				if($result !== true) {
+					return $result;
+				}
+				return true;
+			} catch (Exception $exc) {
+				return $exc->getMessage();
+			}
+		} else {
+			return parent::importPredefinedMappingEntity($row, $mapping);
+		}
 	}
 	
 }
