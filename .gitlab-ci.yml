@@ -16,8 +16,8 @@ default:
     - source $prefix/ci/scripts/gitlab-ci.sh
       
 .common_settings: 
-    # only:
-    #   - merge_requests
+    only:
+      - gitlab-ci-setup
 
 db_setup:
     extends: .common_settings 
