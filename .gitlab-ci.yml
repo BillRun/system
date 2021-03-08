@@ -13,13 +13,12 @@ default:
     - export prefix=`pwd`
     - source $prefix/ci/scripts/gitlab-ci.sh
       
-common_settings: 
+.common_settings: 
     only:
       - merge_requests
 
 db_setup:
-    extends: 
-      - .common_settings 
+    extends: .common_settings 
     stage: init
     tags:
       - CI_DEV
@@ -27,11 +26,9 @@ db_setup:
       - RESET_MONGO_DB $BILLING_DB $BILLING_DB_PORT 
 
 testing:
-    extends: 
-      - .common_settings 
+    extends: .common_settings 
     stage: test
     tags:
       - CI_DEV
     script:      
       - RUN_TEST "http://46.101.14.10"    
-
