@@ -32,11 +32,31 @@ class Models_Action_Import extends Models_Action {
 		return $this->run();
 	}
 	
+	/**
+	 * Read file content to array
+	 * @return type
+	 */
+	protected function getFileRows() {
+		$delimiter = Billrun_Util::getIn($this->update, 'delimiter', ',');
+		$files = $this->getFiles();
+		$file = reset($files);
+		$rows = array_map(function($row) use ($delimiter) {
+			return str_getcsv($row, $delimiter);
+		}, file($file));
+		return $rows;
+	}
+	
 	protected function run() {
 		$importType = $this->getImportType();
 		switch ($importType) {
 			case 'manual_mapping':
-				return $this->runQuery();
+				$max_imported_rows = Billrun_Factory::config()->getConfigValue("import.max_rows_to_import", 1000000);
+				$rows = $this->getFileRows();
+				if (count($rows) > $max_imported_rows) {
+					throw new Exception("File can not contain more than {$max_imported_rows} rows");
+				}
+				$entities = $this->getFormatedRows($rows);
+				return $this->runManualMappingQuery($entities);
 			case 'predefined_mapping':
 				return $this->runPredefinedMappingQuery();
 			default:
@@ -48,12 +68,122 @@ class Models_Action_Import extends Models_Action {
 	protected function getImportType() {
 		return Billrun_Util::getIn($this->update, 'importType', 'manual_mapping');
 	}
+	
+	protected function getFormatedRows($file_rows) {
+		$data = [];
+		$mapper_prefix = '__csvindex__';
+		$map = $this->update['map'];
+		$linker = $this->update['linker'];
+		$updater = $this->update['updater'];
+		$import_fields = $this->update['import_fields'];
+		$import_fields = array_column($import_fields, null, 'value');
+		$default_values = $this->update['default_values'];
+		$predefined_values = $this->update['predefined_values'];
+		$multi_field_action = $this->update['multi_field_action'];
+		
+		// create importable rows with data
+		foreach ($file_rows as $idx => $file_row) {
+			 // Ignore first (headers) line
+			if ($idx === 0) {
+				continue;
+			}
+			
+			// Set the row number from file - will need in case of error to point to the row with problem
+			$data[$idx]['__CSVROW__'] = $idx + 1;
+			
+			
+			// Set linker for entities with parent<->child relationship
+			if (!empty($linker['field']) && !empty($linker['value'])) {
+				$csv_index = intval(Billrun_Util::removePrefix($linker['value'], $mapper_prefix));
+				$data[$idx]['__LINKER__'] = [
+					'field' => $linker['field'],
+					'value' => $file_row[$csv_index]
+				];
+			}
+			
+			// Set updater for entities with parent<->child relationship
+			if (!empty($updater['field']) && !empty($updater['value'])) {
+				$csv_index = intval(Billrun_Util::removePrefix($updater['value'], $mapper_prefix));
+				$data[$idx]['__UPDATER__'] = [
+					'field' => $updater['field'],
+					'value' => $file_row[$csv_index]
+				];
+			}
+			
+			// Set updater action for multifields
+			if (!empty($multi_field_action)) {
+				$data[$idx]['__MULTI_FIELD_ACTION__'] = $multi_field_action;
+			}
+			
+			// Set Data -> default values
+			if (in_array($this->operation, ['create']) && !empty($default_values)) {
+				foreach ($default_values as $field_name => $default_value) {
+					$data[$idx][$field_name] = $default_value;
+				}
+			}
+			
+			// Set Data -> from Mapper
+			foreach ($map as $field_name => $mapper_value) {
+				// fixed value
+				$column_value = $mapper_value;
+				// value from csv
+				if (Billrun_Util::startsWith($mapper_value, $mapper_prefix)) {
+					$csv_index = intval(Billrun_Util::removePrefix($mapper_value, $mapper_prefix));
+					$column_value = $file_row[$csv_index];
+				} 
+				$field_type = Billrun_Util::getIn($import_fields, [$field_name, 'type'], 'string');
+				// convert string to array for field of type Range
+				if ($field_type === 'ranges') {
+					$ranges = explode(',', $column_value);
+					$column_value = array_reduce($ranges, function($acc, $range) {
+						$acc[] = [
+							'from' => $range[0],
+							'to' => $range[1],
+						];
+						return $acc;
+					}, []);
+				}
+				Billrun_Util::setIn($data[$idx], $field_name, $column_value);
+			}
+			
+			// Set Data -> predefined values
+			if (in_array($this->operation, ['create']) && !empty($predefined_values)) {
+				foreach ($predefined_values as $field_name => $predefined_value) {
+					$data[$idx][$field_name] = $predefined_value;
+				}
+			}
+		}
 
-	protected function runQuery() {
+		return $data;
+	}
+
+	protected function runManualMappingQuery($entities) {
 		$output = array();
-		foreach ($this->update as $key => $entity) {
+		
+		$import_fields = $this->update['import_fields'];
+		$multi_value_fields = array_column(array_filter($import_fields, function($field) {
+			return $field['multiple'] === true;
+		}), 'value');
+		
+		foreach ($entities as $key => $entity) {
 			$errors = isset($entity['__ERRORS__']) ? $entity['__ERRORS__'] : [];
 			$csv_rows = isset($entity['__CSVROW__']) ? $entity['__CSVROW__'] : [];
+			
+			foreach ($entity as $field_name => $value) {
+				// build multivalues field value
+				if (in_array($field_name, $multi_value_fields)) {
+					$values = array_map('trim', explode(",", $value));
+					Billrun_Util::setIn($entity, [$field_name], $values);
+				} else if (is_array($value)) {
+					foreach ($value as $field_key => $field_val) {
+						$full_field_name = "{$field_name}.{$field_key}";
+						if (in_array($full_field_name, $multi_value_fields)) {
+							$values = array_map('trim', explode(",", $field_val));
+							Billrun_Util::setIn($entity, [$field_name, $field_key], $values);
+						}
+					}
+				}
+			}
 			
 			if($this->request['operation'] !== $this->getImportOperation()) {
 				$this->setImportOperation($this->request['operation']);
@@ -153,7 +283,7 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function getEntityModel($params) {
-		return new Models_Entity($params);
+		return Models_Entity::getInstance($params);
 	}
 	
 	protected function getFiles() {
@@ -198,7 +328,21 @@ class Models_Action_Import extends Models_Action {
 
 	protected function getMapping() {
 		$collection = $this->getCollectionName();
-		return Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
+		$config = Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
+		$fields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
+		$importable_fields = array_replace_recursive(
+			array_column($config, null, 'field_name'),
+			array_column($fields, null, 'field_name'),
+		);
+		$importable_fields = array_filter($importable_fields, function($field) {
+			return Billrun_Util::getIn($field, 'importable', true);
+		});
+		$mapper = array_reduce($importable_fields, function ($acc, $field) {
+			$acc = array_merge($acc, $this->createRecursionMapperKey($field));
+			return $acc;
+		}, []);
+		
+		return $mapper;
 	}
 	
 	protected function importPredefinedMappingEntity($row, $mapping) {
@@ -211,6 +355,7 @@ class Models_Action_Import extends Models_Action {
 					'action' => $action,
 					'query' => json_encode($this->getPredefinedMappingEntityQuery($entityData)),
 					'update' => json_encode($entityData),
+					'is_import' => true,
 				),
 			];
 		
@@ -250,11 +395,41 @@ class Models_Action_Import extends Models_Action {
 		
 		return $ret;
 	}
+	
+	protected function getExportMapper() {
+		$collection = $this->getCollectionName();
+		$fields = Billrun_Factory::config()->getConfigValue("{$collection}.fields", []);
+		$config = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.export.mapper", []);;
+		$exportable_fields = array_replace_recursive(
+			array_column($config, null, 'field_name'),
+			array_column($fields, null, 'field_name'),
+		);
+		$exportable_fields = array_filter($exportable_fields, function($field) {
+			return Billrun_Util::getIn($field, 'exportable', true);
+		});
+		$mapper = array_reduce($exportable_fields, function ($acc, $field) {
+			$acc = array_merge($acc, $this->createRecursionMapperKey($field));
+			return $acc;
+		}, []);
+		return $mapper;
+	}
 
 	protected function translateValue($row, $params) {
-		$rowFieldName = Billrun_Util::getIn($params, 'title', $params['field_name']);
+		$export_config = $this->getExportMapper();
+		$export_field = $export_config[$params['field_name']];
+		$defaultColumnName = Billrun_Util::getIn($export_field, 'title', $export_field['field_name']);
+		$rowFieldName = Billrun_Util::getIn($params, 'title', $defaultColumnName);
 		$type = Billrun_Util::getIn($params, 'type', 'string');
-		$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
+		$isMultiple = Billrun_Util::getIn($params, 'multiple', false);
+		$callback = Billrun_Util::getIn($params, 'callback', false);
+		if (!empty($callback) && method_exists($this, $callback)) {
+			$value = $this->{$callback}($row, $params);
+		} else {
+			$value = Billrun_Util::getIn($row, $rowFieldName, Billrun_Util::getIn($params, 'default', ''));
+		}
+		if ($isMultiple) {
+			$type = 'array';
+		}
 		
 		switch ($type) {
 			case 'int':
@@ -291,7 +466,7 @@ class Models_Action_Import extends Models_Action {
 	}
 	
 	protected function fromRanges($ranges) {
-		return array_map(function() {
+		return array_map(function($range) {
 			return $this->fromRange($range);
 		}, $this->fromArray($ranges));
 	}
@@ -360,6 +535,26 @@ class Models_Action_Import extends Models_Action {
 			$details['updated'] = $updated;
 		}
 		return $details;
+	}
+	
+	protected function createRecursionMapperKey($config, $configs = []) {
+		$max_array_count = 1; // TODO:: TEMP need to find a way how to calculate it from DB
+		$path = $config['field_name'];
+		$title = isset($config['title']) ? $config['title'] : false;
+		$matches = [];
+		preg_match('/{[0-9]+}/', $path, $matches);
+		if (empty($matches)) {
+			$configs[$path] = $config;
+			return $configs;
+		}
+		for ($idx = 0; $idx < $max_array_count; $idx++) {
+			$config['field_name'] = str_replace($matches[0], $idx, $path);
+			if ($title !== false) {
+				$config['title'] = str_replace($matches[0], $idx, $title);
+			}
+			$configs = $this->createRecursionMapperKey($config, $configs);
+		}
+		return $configs;
 	}
 
 }

@@ -143,6 +143,12 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
+	
+	/**
+	 * Flag to indicate that action triggered by import
+	 * @var Boolean
+	 */
+	protected $is_import = false;
 
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
@@ -203,6 +209,7 @@ class Models_Entity {
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
 		}
+		$this->is_import = isset($params['request']['is_import']) ? boolval($params['request']['is_import']) : false;
 
 		//transalte all date fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
