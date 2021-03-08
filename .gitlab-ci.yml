@@ -26,12 +26,14 @@ stages:
   - init
   - E2E_Testing
   - test
+  - secrets-detection
+
 sast:
   variables:
     SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, flawfinder, gosec, kubesec,
       nodejs-scan, pmd-apex, security-code-scan, sobelow, spotbugs
   stage: test
-
+  
 variables:
   BILLING_DB: 'billing'
   BILLING_DB_PORT: 27617  
@@ -60,3 +62,11 @@ testing:
     stage: E2E_Testing
     script:      
       - RUN_TEST "http://46.101.14.10"    
+
+
+gitleaks:
+  stage: secrets-detection
+  image: 
+    name: "zricethezav/gitleaks"
+    entrypoint: [""]
+  script: gitleaks -v --pretty --repo-path . --commit-from=$CI_COMMIT_SHA --commit-to=$CI_COMMIT_BEFORE_SHA --branch=$CI_COMMIT_BRANCH
