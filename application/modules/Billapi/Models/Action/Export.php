@@ -162,12 +162,23 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function getDataToExport($query) {
-		$records = [];
-		$results = $this->collectionHandler->query($query)->cursor();
-		foreach ($results as $result) {
-			$records[] = $result->getRawData();
-		}
-		return $records;
+		$collection = $this->getCollectionName();
+		$action = 'uniqueget';
+		$params = [
+			'request' => [
+				'collection' => $collection,
+				'action' => $action,
+				'query' => json_decode($this->request['query']),
+				'sort' => json_decode($this->request['sort']),
+				'options' => json_decode($this->request['options']),
+				'states' => json_decode($this->request['states']),
+			],
+			'settings' => Billrun_Factory::config()->getConfigValue("billapi.{$collection}.{$action}", []),
+		];
+
+		$action = new Models_Action_Uniqueget($params);
+		$res = $action->execute();
+		return $res;
 	}
 
 	protected function formatJson($data) {

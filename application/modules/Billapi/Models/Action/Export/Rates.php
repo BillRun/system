@@ -27,13 +27,12 @@ class Models_Action_Export_Rates extends Models_Action_Export {
 	 * @return type
 	 */
 	protected function getDataToExport($query) {
+		$results = parent::getDataToExport($query);
 		$alreadyAddedPlanServiceRates = []; // to avoid multiple add the same plan \ service because of different rate revisions
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		$serviceCollection = Billrun_Factory::db()->servicesCollection();
 		$records = [];
-		$results = $this->collectionHandler->query($query)->cursor();
-		foreach ($results as $result) {
-			$record = $result->getRawData();
+		foreach ($results as $record) {
 			$records[] = $record;
 			$usaget = $this->getValueUsaget($record, [], []);
 			$rateKey = $record['key'];
