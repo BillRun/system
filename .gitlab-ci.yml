@@ -1,3 +1,5 @@
+include:
+  - template: Security/SAST.gitlab-ci.yml
 # 3
 stages:
   - init
@@ -14,8 +16,8 @@ default:
     - source $prefix/ci/scripts/gitlab-ci.sh
       
 .common_settings: 
-    only:
-      - merge_requests
+    # only:
+    #   - merge_requests
 
 db_setup:
     extends: .common_settings 
