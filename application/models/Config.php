@@ -1785,14 +1785,16 @@ class ConfigModel {
 		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 
 		$name  = Billrun_Util::getIn($paymentGatewaySetting, 'name');
-		$paymentGateway = Billrun_Factory::paymentGateway($name);
-		if(is_null($paymentGateway)){
-			throw new Exception('Unsupported payment gateway ' . $name);
-		}
-		$secretFields = $paymentGateway->getSecretFields(); 
-		foreach ($secretFields as $secretField){
-			if(isset($securePaymentGateway['params'][$secretField])){
-				$securePaymentGateway['params'][$secretField] = $fakePassword;
+		if(!Billrun_Util::getIn($paymentGatewaySetting, 'custom', false)){
+			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			if(is_null($paymentGateway)){
+				throw new Exception('Unsupported payment gateway ' . $name);
+			}
+			$secretFields = $paymentGateway->getSecretFields(); 
+			foreach ($secretFields as $secretField){
+				if(isset($securePaymentGateway['params'][$secretField])){
+					$securePaymentGateway['params'][$secretField] = $fakePassword;
+				}
 			}
 		}
 		return $securePaymentGateway;
