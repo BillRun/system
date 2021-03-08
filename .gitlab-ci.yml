@@ -66,6 +66,8 @@ testing:
 
 gitleaks:
   stage: secrets-detection
+  tags:
+      - CI_SAST
   image: 
     name: "zricethezav/gitleaks"
     entrypoint: [""]
