@@ -319,9 +319,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * Override parent calculator to save changes with update (not save)
 	 */
 	public function writeLine($line, $dataKey) {
-		$saveProperties = $this->getPossiblyUpdatedFields();
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this, 'saveProperties' => &$saveProperties));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
+		$saveProperties = $this->getPossiblyUpdatedFields();
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;

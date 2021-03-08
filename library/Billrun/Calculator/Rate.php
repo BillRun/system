@@ -124,9 +124,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Override parent calculator to save changes with update (not save)
 	 */
 	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		$save = array();
 		$saveProperties = $this->getPossiblyUpdatedFields();
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this, 'saveProperties' => &$saveProperties));
-		$save = array();		
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
