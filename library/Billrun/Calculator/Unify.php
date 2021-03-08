@@ -525,8 +525,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 
 		foreach ($configByType['file_types'] as $type => &$unifyDef) {
-			$ufByUsaget = Billrun_Config::getCustomerAndRateUfByUsaget($type);
-			$cfByUsaget = Billrun_Config::getCustomerAndRateCfByUsaget($type);
+			$ufByUsaget = Billrun_Processor_Util::getCustomerAndRateUfByUsaget($type);
+			$cfByUsaget = Billrun_Processor_Util::getCustomerAndRateCfByUsaget($type);
 			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.custom_value', $ufByUsaget);
 			Billrun_Util::setIn($configByType, 'file_types.' . $type . '.unification_fields.stamp.value.calculated_fields', $cfByUsaget);
 			foreach ($unifyDef['unification_fields']['fields'] as &$fields) {
