@@ -66,10 +66,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 
 			//TODO: check if there are multiple results and split
-			$component_entity = $this->getParameterProduct($type, "parameter_component", $row, $calculator);
-			if(!$component_entity) {
+			$component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
+			if(!$component_entities) {
 				return;
 			}
+			$component_entity = $component_entities[0]->getRawData();
 			$current["cf"]["component"] = $component_entity["params"]["component"];
 			$current["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
 			$current["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
@@ -126,18 +127,80 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator) {
+		public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
 		$params = [
 			'type' => $type,
 			'usaget' => $parameter_name,
+			'multiple_entities' => $multiple_entities
 		];
 		Billrun_Factory::log('Finding ' . $parameter_name);
-		$entity = $calculator->getMatchingEntitiesByCategories($row, $params);
-		if ($entity) {
-			return $entity["retail"]->getRawData();
+		$entities = $multiple_entities ? $this->getMatchingEntitiesByCategories($row, $params, $calculator) :
+			$calculator->getMatchingEntitiesByCategories($row, $params);
+		if ($entities) {
+			return $multiple_entities ? $entities["retail"] : $entities["retail"]->getRawData();
 		}
 		Billrun_Factory::log('Failed finding' . $parameter_name);
 		return false;
+	}
+
+	protected function getMatchingEntitiesByCategories($row, $params, $calculator) {
+		$ret = [];
+		$type = $params['type'] ?: '';
+		$matchFilters = Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
+		if (empty($matchFilters)) {
+			Billrun_Factory::log('No filters found for row ' . $row['stamp'] . ', params: ' . print_R($params, 1), Billrun_Log::WARN);
+			return false;
+		}
+
+		foreach ($matchFilters as $category => $categoryFilters) {
+			$usaget = $params['usaget'] ?: '';
+			$params['category'] = $category;
+			$params['filters'] = Billrun_Util::getIn($categoryFilters, [$usaget, 'priorities'], Billrun_Util::getIn($categoryFilters, $usaget, []));
+			$filters = Billrun_Util::getIn($params, 'filters', $matchFilters);
+			foreach ($filters as $priority) {
+				$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
+				$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
+				$query = $calculator->getEntityQuery($row, $currentPriorityFilters, $category, $params);
+
+				if (!$query) {
+					Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. filters: ' . print_R($currentPriorityFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::DEBUG);
+					continue;
+				}
+
+				Billrun_Factory::dispatcher()->trigger('extendEntityParamsQuery', [&$query, &$row, &$calculator, $params]);
+				$entities = $calculator->getEntities($row, $query, $params);
+				$firstEntity = is_array($entities) ? current($entities) : false;
+				if ($firstEntity && !$firstEntity->isEmpty()) {
+					break;
+				}
+			}
+
+			$entities = $this->getFullEntitiesData($entities, $calculator, $row, $params);
+			if ($entities) {
+				$ret[$category] = $entities;
+			}
+		}
+
+		return $ret;
+	}
+
+	protected function getFullEntitiesData($entities, $calculator, $row = [], $params = []) {
+		$entitiesData = [];
+		foreach ($entities as $entity) {
+			$cacheKey = strval($entity->getRawData()['_id']['_id']);
+			if (empty($calculator::$entitiesData[$cacheKey])) {
+				$rawEntity = $entity->getRawData();
+				$query = $calculator->getFullEntityDataQuery($rawEntity);
+				if (!$query) {
+					return false;
+				}
+
+				$coll = Billrun_Factory::db()->ratesCollection();;
+				$calculator::$entitiesData[$cacheKey] = $coll->query($query)->cursor()->current();
+			}
+			$entitiesData[] = $calculator::$entitiesData[$cacheKey];
+		}
+		return $entitiesData;
 	}
 
 	public function setParameter($current, $params, $entity) {

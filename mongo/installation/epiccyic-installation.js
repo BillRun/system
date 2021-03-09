@@ -292,30 +292,6 @@ lastConfig["file_types"][0] =
 				"date_field" : "EVENT_START_DATE",
 				"usaget_mapping" : [
 					{
-						"src_field" : "OUTGOING_PATH",
-						"conditions" : [
-							{
-								"src_field" : "INCOMING_PATH",
-								"pattern" : "^(?!\\s*$).+",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							},
-							{
-								"src_field" : "OUTGOING_PATH",
-								"pattern" : "^$",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							}
-						],
-						"pattern" : "^$",
-						"usaget" : "incoming_call",
-						"unit" : "seconds",
-						"volume_type" : "field",
-						"volume_src" : [
-							"EVENT_DURATION"
-						]
-					},
-					{
 						"src_field" : "DATA_UNIT",
 						"conditions" : [
 							{
@@ -540,30 +516,6 @@ lastConfig["file_types"][0] =
 						"conditions" : [
 							{
 								"src_field" : "INCOMING_PATH",
-								"pattern" : "^$",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							},
-							{
-								"src_field" : "OUTGOING_PATH",
-								"pattern" : "^(?!\\s*$).+",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							}
-						],
-						"pattern" : "^(?!\\s*$).+",
-						"usaget" : "outgoing_call",
-						"unit" : "seconds",
-						"volume_type" : "field",
-						"volume_src" : [
-							"EVENT_DURATION"
-						]
-					},
-					{
-						"src_field" : "OUTGOING_PATH",
-						"conditions" : [
-							{
-								"src_field" : "INCOMING_PATH",
 								"pattern" : "^(?!\\s*$).+",
 								"op" : "$regex",
 								"op_label" : "Regex"
@@ -618,6 +570,34 @@ lastConfig["file_types"][0] =
 							},
 							{
 								"src_field" : "INCOMING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^(?!\\s*$).+",
+						"usaget" : "outgoing_sms",
+						"unit" : "counter",
+						"volume_type" : "value",
+						"volume_src" : 1
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^S",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
 								"pattern" : "^(?!\\s*$).+",
 								"op" : "$regex",
 								"op_label" : "Regex"
@@ -625,7 +605,8 @@ lastConfig["file_types"][0] =
 							{
 								"src_field" : "OUTGOING_PATH",
 								"pattern" : "^$",
-								"op" : ""
+								"op" : "$regex",
+								"op_label" : "Regex"
 							}
 						],
 						"pattern" : "^$",
@@ -639,7 +620,37 @@ lastConfig["file_types"][0] =
 						"conditions" : [
 							{
 								"src_field" : "BNUM",
-								"pattern" : "^S",
+								"pattern" : "^[0-9]",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^$",
+						"usaget" : "incoming_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^[0-9]",
 								"op" : "$regex",
 								"op_label" : "Regex"
 							},
@@ -657,10 +668,12 @@ lastConfig["file_types"][0] =
 							}
 						],
 						"pattern" : "^(?!\\s*$).+",
-						"usaget" : "outgoing_sms",
-						"unit" : "counter",
-						"volume_type" : "value",
-						"volume_src" : 1
+						"usaget" : "outgoing_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
 					}
 				],
 				"time_field" : "EVENT_START_TIME",

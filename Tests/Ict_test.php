@@ -103,6 +103,7 @@ class Tests_Icttest extends UnitTestCase {
 		if ($processor) {
 			$processor->process_files($options);
 		}
+	
 	}
 
 	/**
@@ -114,6 +115,9 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	protected function compareExpected($key, $expected, $data) {
 		$result = true;
+		$epsilon = 0.00001;
+		Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon);
+
 		$sort = function ($a, $b) {
 			if ($a['usaget'] != $b['usaget']) {
 				return $a['usaget'] < $b['usaget'];
@@ -151,12 +155,22 @@ class Tests_Icttest extends UnitTestCase {
 					$this->message .= '-- the result is empty' . $this->fail;
 					$result = false;
 				}
-				if ($DataField != $v) {
-					$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
-					$result = false;
-				}
-				if ($DataField == $v) {
-					$this->message .= '	-- the result is equel to expected : ' . $DataField . $this->pass;
+				if (!is_numeric($DataField)) {
+					if ($DataField != $v) {
+						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
+						$result = false;
+					}
+					if ($DataField == $v) {
+						$this->message .= '	-- the result is equel to expected : ' . $DataField . $this->pass;
+					}
+				} else {
+					if (!Billrun_Util::isEqual($DataField, $v, $epsilon)) {
+						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
+						$result = false;
+					}
+					if (Billrun_Util::isEqual($DataField, $v, $epsilon)) {
+						$this->message .= '	-- the result is equel to expected : ' . $DataField . $this->pass;
+					}
 				}
 			}
 			$i++;
