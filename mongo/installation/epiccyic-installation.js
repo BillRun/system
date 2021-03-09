@@ -3195,3 +3195,10 @@ db.taxes.insertMany([
 			"creation_time": ISODate("2010-01-01T00:00:00Z")
 		}]
 );
+
+db.rates.dropIndex("params.prefix_1");
+db.rates.ensureIndex({'params.prefix': 1 }, { unique: false , sparse:false, background: true, name: "params.prefix_new" });
+db.rates.ensureIndex({'params.anaa': 1, 'params.bnaa': 1, 'params.incoming_operator': 1, 'params.outgoing_operator': 1}, { unique: false , sparse:true, background: true });
+db.rates.ensureIndex({'params.path': 1 }, { unique: false , sparse:true, background: true });
+db.rates.ensureIndex({'params.operator': 1, 'params.anaa': 1, 'params.bnaa': 1}, { unique: false , sparse:false, background: true });
+db.rates.ensureIndex({'params.component': 1, 'params.operator': 1, 'params.tier': 1}, { unique: false , sparse:true, background: true });
