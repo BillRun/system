@@ -9,125 +9,144 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if($row["usaget"] == "transit_incoming_call") {
 					$newRow = $row;
 					$newRow['usaget'] = "transit_outgoing_call";
-					$stampParams = Billrun_Util::generateFilteredArrayStamp($newRow, array('urt', 'eurt', 'uf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'));
-					$newRow['stamp'] = md5(serialize($stampParams));
-					$processor->addDataRow($newRow);
+					$this->calcCfFields($newRow, $processor);
 				}
+				$this->calcCfFields($row, $processor);
 			}
 		}
 	}
 
 
-	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
-		$is_anaa_relevant = false;
+	protected function calcCfFields($current, $processor) {
+		$processor->removeDataRow($current['stamp']);
+		$type = $current['type'];
+		$row = new Mongodloid_Entity($current);
+		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
+		$row->setRawData($current);
+		$this->setOperator($row, $current, $type);
+		$row->setRawData($current);
 
-		if ($calculator->getType() == 'rate') {
-			$type = $row['type'];
-			$current = $row->getRawData();
-			$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
-			$row->setRawData($current);
-			$current = $this->setOperator($row, $current, $type, $calculator);
-			$row->setRawData($current);
+		//$row->setRawData(setParameter($current, ["operator", "poin"], $operator_entity));
 
-			//$row->setRawData(setParameter($current, ["operator", "poin"], $operator_entity));
+		$product_entity = $this->getParameterProduct($type, "parameter_product", $row);
+		if(!$product_entity) {
+			$this->addSplitRow($current, $processor);
+			return;
+		}
+		$current["cf"]["product"] = $product_entity["params"]["product"];
+		$row->setRawData($current);
 
-			$product_entity = $this->getParameterProduct($type, "parameter_product", $row, $calculator);
-			if(!$product_entity) {
+		$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row);
+		if(!$anaa_entity) {
+			$this->addSplitRow($current, $processor);
+			return;
+		}
+		$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
+		$row->setRawData($current);
+
+		$sms_activity_types = ["incoming_sms","outgoing_sms"];
+		if(!in_array($current["usaget"], $sms_activity_types)) {
+			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row);
+			if(!$bnaa_entity) {
+				$this->addSplitRow($current, $processor);
 				return;
 			}
-			$current["cf"]["product"] = $product_entity["params"]["product"];
+			$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
 			$row->setRawData($current);
+		}
 
-			$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
-			if(!$anaa_entity) {
-				return;
-			}
-			$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
-			$row->setRawData($current);
-			
-			$sms_activity_types = ["incoming_sms","outgoing_sms"];
-			if(!in_array($current["usaget"], $sms_activity_types)) {
-				$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
-				if(!$bnaa_entity) {
-					return;
-				}
-				$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
-				$row->setRawData($current);
-			}
+		$scenario_entity = $this->getParameterProduct($type, "parameter_scenario", $row);
+		if(!$scenario_entity) {
+			$this->addSplitRow($current, $processor);
+			return;
+		}
+		$current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
+		$row->setRawData($current);
+		if ($scenario_entity["params"]["anaa"] != "*") {
+			$is_anaa_relevant = true;
+		}
 
-			$scenario_entity = $this->getParameterProduct($type, "parameter_scenario", $row, $calculator);
-			if(!$scenario_entity) {
-				return;
-			}
-			$current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
-			$row->setRawData($current);
-			if ($scenario_entity["params"]["anaa"] != "*") {
-				$is_anaa_relevant = true;
-			}
-
-			//TODO: check if there are multiple results and split
-			$component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
-			if(!$component_entities) {
-				return;
-			}
-			$component_entity = $component_entities[0]->getRawData();
-			$current["cf"]["component"] = $component_entity["params"]["component"];
-			$current["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
-			$current["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
-			$row->setRawData($current);
+		//TODO: check if there are multiple results and split
+		$component_entities = $this->getParameterProduct($type, "parameter_component", $row, true);
+		if(!$component_entities) {
+			$this->addSplitRow($current, $processor);
+			return;
+		}
+		foreach ($component_entities as $key => $component_entity){
+			$newRow = new Mongodloid_Entity($row->getRawData());
+			$newCurrent = $current;
+			$component_entity = $component_entity->getRawData();
+			$newCurrent["cf"]["component"] = $component_entity["params"]["component"];
+			$newCurrent["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
+			$newCurrent["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
+			$newRow->setRawData($newCurrent);
 			if ($component_entity["params"]["anaa"] != "*") {
 				$is_anaa_relevant = true;
 			}
 
-			switch ($current["cf"]["tier_derivation"]) {
+			switch ($newCurrent["cf"]["tier_derivation"]) {
 				case "N":
-					$current["cf"]["tier"] = $component_entity["params"]["tier"];
+					$newCurrent["cf"]["tier"] = $component_entity["params"]["tier"];
 					break;
 				case "CB":
-					$current["cf"]["tier"] = "";
-					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
+					$newCurrent["cf"]["tier"] = "";
+					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $newRow);
 					if(!$tier_entity) {
-						return;
+						$this->addSplitRow($newCurrent, $processor);
+						continue;
 					}
-					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
-					$row->setRawData($current);
-					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $row, $calculator);
+					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
+					$newRow->setRawData($newCurrent);
+					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $newRow);
 					if ($tier_entity_star_operator) {
-						$operatorPrefix = $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity["params"]["prefix"]);
-						$starPrefix = $this->findLongestPrefix($current["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]);
+						$operatorPrefix = $this->findLongestPrefix($newCurrent["uf"]["BNUM"], $tier_entity["params"]["prefix"]);
+						$starPrefix = $this->findLongestPrefix($newCurrent["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]);
 						if (strlen($starPrefix) > strlen($operatorPrefix)) {
-							$current["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
+							$newCurrent["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
 						}
 					}
 					break;
 				case "ABA":
-					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $row, $calculator);
+					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $newRow);
 					if(!$tier_entity) {
-						return;
+						$this->addSplitRow($newCurrent, $processor);
+						continue;
 					}
-					$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					break;
 				case "PB":
 					if ($is_anaa_relevant) {
-						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $row, $calculator);
+						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $newRow);
 						if(!$tier_entity) {
-							return;
+							$this->addSplitRow($newCurrent, $processor);
+							continue;
 						}
-						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					} else {
-						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $row, $calculator);
+						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $newRow, $calculator);
 						if(!$tier_entity) {
-							return;
+							$this->addSplitRow($newCurrent, $processor);
+							continue;
 						}
-						$current["cf"]["tier"] = $tier_entity["params"]["tier"];
+						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					}
 					break;
 			}
-			$row->setRawData($current);
+			$newRow->setRawData($newCurrent);
+			$this->addSplitRow($newCurrent, $processor);
+
 		}
 	}
 
-		public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
+	
+	protected function addSplitRow($row, $processor) {
+		$stampParams = Billrun_Util::generateFilteredArrayStamp($row, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'));
+		$row['stamp'] = md5(serialize($stampParams));
+		$processor->addDataRow($row);
+	}
+
+	public function getParameterProduct($type, $parameter_name, $row,  $multiple_entities = false) {
+		$calculator =  new Billrun_Calculator_Rate_Usage();
 		$params = [
 			'type' => $type,
 			'usaget' => $parameter_name,
@@ -232,12 +251,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $call_direction;
 	}
 
-	public function setOperator($row, $current, $type, $calculator) {
+	public function setOperator($row, &$current, $type) {
 		$current["cf"]["incoming_operator"] = "";
 		$current["cf"]["outgoing_operator"] = "";
 		if ($current["cf"]["call_direction"] != "O") {
 			//TODO - change to parameter_incoming operator
-			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row);
 			$current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TO") {
@@ -248,7 +267,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if ($current["cf"]["call_direction"] != "I") {
 			//TODO - change to parameter_outgoing_operator
-			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row);
 			$current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TI") {
@@ -256,8 +275,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 		}
-
-		return $current;
 	}
 
 	public function findLongestPrefix($num, $productPrefixes) {
