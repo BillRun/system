@@ -3099,5 +3099,99 @@ lastConfig["rates"]["fields"] =
 				"display" : true
 			}
 		];
+		
+		//foreign fields
+		lastConfig["lines"]["fields"] =
+[
+			{
+				"field_name" : "foreign.activation_date",
+				"foreign" : {
+					"entity" : "service",
+					"field" : "start",
+					"translate" : {
+						"type" : "unixTimeToString",
+						"format" : "Y-m-d H:i:s"
+					}
+				}
+			},
+			{
+				"field_name" : "foreign.service.description",
+				"foreign" : {
+					"entity" : "service",
+					"field" : "invoice_description"
+				}
+			},
+			{
+				"field_name" : "foreign.account.vat_code",
+				"title" : "Vat Code",
+				"foreign" : {
+					"entity" : "account",
+					"field" : "vat_code"
+				},
+				"conditions" : [ ]
+			}
+		];
+		
+		//taxes
+		lastConfig["taxation"] = 
+		{
+		"tax_type" : "usage",
+		"default" : {
+			"key" : ""
+		},
+		"mapping" : {
+			"vat" : {
+				"priorities" : [
+					{
+						"filters" : [
+							{
+								"line_key" : "foreign.account.vat_code",
+								"type" : "match",
+								"entity_key" : "key"
+							}
+						],
+						"cache_db_queries" : true
+					}
+				],
+				"default_fallback" : true
+			}
+		},
+		"vat" : 0,
+		"vat_label" : "Vat"
+	},
 
 db.config.insert(lastConfig);
+
+
+db.taxes.insertMany([
+		{
+			"_id": ObjectId("601bb05b1c72c61d74219232"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VATL19",
+			"description": "VATL19",
+			"rate": 0.19,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:29:15Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		},
+		{
+			"_id": ObjectId("601bb06eeac6fc628f122f12"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VIESS",
+			"description": "VIESS",
+			"rate": 0,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:29:34Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		},
+		{
+			"_id": ObjectId("601bb08c7918b949df330202"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VATLOS",
+			"description": "VATLOS",
+			"rate": 0,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:30:04Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		}]
+);
