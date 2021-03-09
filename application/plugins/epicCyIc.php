@@ -36,6 +36,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				return;
 			}
 			$current["cf"]["product"] = $product_entity["params"]["product"];
+			$current["cf"]["product_group"] = $product_entity["params"]["product_group"];
 			$row->setRawData($current);
 
 			$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
