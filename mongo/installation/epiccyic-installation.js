@@ -3097,6 +3097,12 @@ lastConfig["rates"]["fields"] =
 				"title" : "Bnum NAA",
 				"editable" : true,
 				"display" : true
+			},
+			{
+				"field_name" : "params.product_group",
+				"title" : "Product Group",
+				"editable" : true,
+				"display" : true
 			}
 		];
 		
