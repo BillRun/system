@@ -73,9 +73,11 @@ trait Tests_SetUp {
 	public function setColletions($useExistingConfig = null) {
 		if ($this->unitTestName == 'Ict_test') {
 
+			unset($this->collectionToClean[0]);
 			unset($this->collectionToClean[2]);
 			unset($this->collectionToClean[3]);
 	
+			unset($this->importData[0]);
 			unset($this->importData[3]);
 			unset($this->importData[2]);
 	
