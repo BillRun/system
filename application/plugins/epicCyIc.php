@@ -127,8 +127,21 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row->setRawData($current);
 		}
 	}
+	
+	public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if ($calculator->getType() == 'pricing') {
+			$current = $row->getRawData();
+			if($current["cf"]["cash_flow"] == "E") {
+				unset($current["billrun"]);
+				for ($i = 0; $i < count($current["rates"]); $i++) {
+					unset($current["rates"][$i]["pricing"]["billrun"]);
+				}
+				$row->setRawData($current);
+			}
+		}
+	}
 
-		public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
+	public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
 		$params = [
 			'type' => $type,
 			'usaget' => $parameter_name,
