@@ -2,8 +2,7 @@
 
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
-	protected $splitLines;
-	protected $splitQueueLines;
+	protected $extraLines;
 	
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
@@ -21,72 +20,64 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	
-	public function beforeCalculateData(&$lines, Billrun_Calculator $calculator) {
+
+	
+	public function beforeAddExtraData(&$data, &$extraData,  Billrun_Calculator $calculator,  $type = 'calcCpuOn') {
 		if($calculator->getType() == 'rate'){
-			$this->splitQueueLines = [];
-			$this->splitLines = [];
-			foreach ($lines as $stamp => &$row){
+			$this->extraLines = [];
+			foreach ($data as &$row){
 				$newRows = $this->calcCfFields($row, $calculator);
 				if(count($newRows) === 1){
-					$row->setRawData($newRows[0]);
+					$this->updateCfFields($newRows[0], $row, $type);//only update
+
 				}else{
 					$current = $row->getRawData();
+					$alreadySplit = $current["cf"]["is_split_row"] ?? false;
+					$first = true;
 					foreach ($newRows as $newRow){
-						$alreadySplit = $current["cf"]["is_split_row"] ?? false;
 						if($alreadySplit){
 							if($this->isTheSameSplitRow($newRow, $current)){
-								$row->setRawData($newRow);
+								$this->updateCfFields($newRow, $row, $type);//only update the matching line.
 							}
 						}else{
-							$this->splitRow($newRow, $calculator);
+							if($first){
+								$this->updateCfFields($newRow, $row, $type);
+								$first = false;
+							}else{
+								$this->addExtraRow($newRow);
+							}
 						}
 					}
-					$calculator->removeLineFromQueue($current);
-					$calculator->removeLineFromQueueData($stamp);
-					$calculator->removeLineFromLines($current);
-					$calculator->removeLineFromLinesData($stamp);
+
 				}	
 			}
-			foreach ($this->splitQueueLines as $queueLine){
-				$calculator->addLineToQueueData($queueLine);
-				$calculator->addLineToQueue($queueLine);
-			}
-			foreach ($this->splitLines as $line){
-				$calculator->addLineToLines($line);
-			}
+			$extraData = $this->extraLines;
+		}
+	}
+
+
+	protected function updateCfFields($newRow, &$row, $type) {
+		$row->setRawData($newRow);
+		if($type === 'calcCpuOff'){
+			Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
 		}
 	}
 	
+
 	protected function isTheSameSplitRow($newRow, $row) {
 		return $row["cf"]["component"] ===$newRow["cf"]["component"]
 			&& $row["cf"]["cash_flow"] === $newRow["cf"]["cash_flow"] 
 			&&$row["cf"]["tier_derivation"]===$newRow["cf"]["tier_derivation"];
 	}
 	
-	protected function splitRow($queueLine, $calculator) {
-		
-		$line = $calculator->pullLine($queueLine);
-		$line['cf'] = $queueLine['cf'];
-		$stamp = md5(serialize(Billrun_Util::generateFilteredArrayStamp($queueLine, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'))));
-		unset($line['_id'], $queueLine['_id']);
-		
-		$queueLine['stamp'] = $line['stamp'] = $stamp;
-		$this->splitQueueLines[$stamp] = new Mongodloid_Entity($queueLine);
-		$this->splitLines[$stamp] = $line;
-	}
+	protected function addExtraRow($row) {
 
-	
-	public function afterWriteLineToLinesNotFound($line, $calculator) {//insert split line
-		if($calculator->getType() == 'rate' && $line['is_split_row']){
-			Billrun_Factory::db()->linesCollection()->save($line, 1);
-		}
+		$oldStamp = $row['stamp'];
+		$newStamp = md5(serialize(Billrun_Util::generateFilteredArrayStamp($row, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'))));
+		unset($row['_id']);
 		
-	}
-	
-	public function afterWriteLineToQueueNotFound($line, $calculator) {//insert split queue line
-		if($calculator->getType() == 'rate' && $line['is_split_row']){
-			Billrun_Factory::db()->queueCollection()->save($line, 1);
-		}
+		$row['stamp'] = $newStamp;
+		$this->extraLines[$oldStamp][$newStamp] = new Mongodloid_Entity($row);
 	}
 	
 	
