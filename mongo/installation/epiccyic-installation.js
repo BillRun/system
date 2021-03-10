@@ -3246,60 +3246,17 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var var_conf_exists = null;
-var exist_report_Armadilo = false;
-var exist_report_Armadilo_SMS = false;
-var exist_report_Armadilo_VCE = false;
-for (var i = 0; i < lastConfig.plugins.length; i++) {
-	if ((typeof lastConfig.plugins[i]['name'] !== 'undefined') && (lastConfig.plugins[i]['name'] === "epicCyIcPlugin")) {
-		var_conf_exists = lastConfig.plugins[i]['configuration'];
-		if (typeof var_conf_exists === 'undefined') {
-			lastConfig.plugins[i]['configuration'] = {'values': {'ic': {'reports': []}}};
-		}
-		for (var j = 0; j < lastConfig.plugins[i]['configuration']['values']['ic']['reports'].length; j++) {
-			if (lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['name'] === 'Armadilo') {
-				exist_report_Armadilo = true;
-				lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['enable'] = true;
-			}
-			if (lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['name'] === 'Armadilo_SMS') {
-				exist_report_Armadilo_SMS = true;
-				lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['enable'] = true;
-			}
-			if (lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['name'] === 'Armadilo_VCE') {
-				exist_report_Armadilo_VCE = true;
-				lastConfig.plugins[i]['configuration']['values']['ic']['reports'][j]['enable'] = true;
-			}
-		}
-		if (!exist_report_Armadilo) {
-			lastConfig.plugins[i]['configuration']['values']['ic']['reports'].push(report_Armadilo);
-		}
-		if (!exist_report_Armadilo_SMS) {
-			lastConfig.plugins[i]['configuration']['values']['ic']['reports'].push(report_Armadilo_SMS);
-		}
-		if (!exist_report_Armadilo_VCE) {
-			lastConfig.plugins[i]['configuration']['values']['ic']['reports'].push(report_Armadilo_VCE);
-		}
-	} else {
-		if ((typeof (lastConfig.plugins[i]) === "string") && (lastConfig.plugins[i] === 'epicCyIcPlugin')) {
-			lastConfig.plugins[i] = {
-				'name': 'epicCyIcPlugin',
-				'enabled': true,
-				'system': false,
-				'hide_from_ui': false,
-				'configuration': {
-					'values': {
-						'ic': {
-							'reports': []
-						}
-					}
-				}
-			};
-			lastConfig.plugins[i]['configuration']['values']['erp']['reports'].push(exist_report_Armadilo);
-			lastConfig.plugins[i]['configuration']['values']['erp']['reports'].push(exist_report_Armadilo_SMS);
-			lastConfig.plugins[i]['configuration']['values']['erp']['reports'].push(exist_report_Armadilo_VCE);
-		}
-	}
-}
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo];
+var cy_ic_plugin = 
+		{
+				"name" : "epicCyIcPlugin",
+				"enabled" : true,
+				"system" : false,
+				"hide_from_ui" : false,
+				"configuration" : {'values': { 'ic': { 'reports': reports } } }
+		};
+lastConfig.plugins = [cy_ic_plugin];
+
 db.config.insert(lastConfig);
 
 
