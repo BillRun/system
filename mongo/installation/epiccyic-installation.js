@@ -3176,7 +3176,7 @@ lastConfig["rates"]["fields"] =
 	},
 var report_Armadilo = {
 	"name": 'Armadilo',
-	"id": "",
+	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
 	"enable": true,
 	"day": "1",
 	"hour": "16",
@@ -3200,7 +3200,7 @@ var report_Armadilo = {
 
 var report_Armadilo_SMS = {
 	"name": 'Armadilo_SMS',
-	"id": "",
+	"id": "d4bc8f9a-3dd9-403c-b159-c2afeb83335e",
 	"enable": true,
 	"day": "1",
 	"hour": "16",
@@ -3224,7 +3224,7 @@ var report_Armadilo_SMS = {
 
 var report_Armadilo_VCE = {
 	"name": 'Armadilo_VCE',
-	"id": "",
+	"id": "4b639bfe-e967-43c6-8c8a-e6d8a8cd0e6c",
 	"enable": true,
 	"day": "1",
 	"hour": "16",
