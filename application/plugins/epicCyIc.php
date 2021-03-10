@@ -1,7 +1,10 @@
 <?php
 
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
-
+	
+	protected $splitLines;
+	protected $splitQueueLines;
+	
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
 			$dataRows = $processor->getData()['data'];
@@ -18,16 +21,78 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	
-	public function beforeCalculateData($dataRows, &$lines, Billrun_Calculator $calculator) {
+	public function beforeCalculateData(&$lines, Billrun_Calculator $calculator) {
 		if($calculator->getType() == 'rate'){
-			foreach ($lines as $stamp => $row){
-				unset($lines[$stamp]);
-				$this->calcCfFields($row, $calculator);
+			$this->splitQueueLines = [];
+			$this->splitLines = [];
+			foreach ($lines as $stamp => &$row){
+				$newRows = $this->calcCfFields($row, $calculator);
+				if(count($newRows) === 1){
+					$row->setRawData($newRows[0]);
+				}else{
+					$current = $row->getRawData();
+					foreach ($newRows as $newRow){
+						$alreadySplit = $current["cf"]["is_split_row"] ?? false;
+						if($alreadySplit){
+							if($this->isTheSameSplitRow($newRow, $current)){
+								$row->setRawData($newRow);
+							}
+						}else{
+							$this->splitRow($newRow, $calculator);
+						}
+					}
+					$calculator->removeLineFromQueue($current);
+					$calculator->removeLineFromQueueData($stamp);
+					$calculator->removeLineFromLines($current);
+					$calculator->removeLineFromLinesData($stamp);
+				}	
+			}
+			foreach ($this->splitQueueLines as $queueLine){
+				$calculator->addLineToQueueData($queueLine);
+				$calculator->addLineToQueue($queueLine);
+			}
+			foreach ($this->splitLines as $line){
+				$calculator->addLineToLines($line);
 			}
 		}
 	}
+	
+	protected function isTheSameSplitRow($newRow, $row) {
+		return $row["cf"]["component"] ===$newRow["cf"]["component"]
+			&& $row["cf"]["cash_flow"] === $newRow["cf"]["cash_flow"] 
+			&&$row["cf"]["tier_derivation"]===$newRow["cf"]["tier_derivation"];
+	}
+	
+	protected function splitRow($queueLine, $calculator) {
+		
+		$line = $calculator->pullLine($queueLine);
+		$line['cf'] = $queueLine['cf'];
+		$stamp = md5(serialize(Billrun_Util::generateFilteredArrayStamp($queueLine, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'))));
+		unset($line['_id'], $queueLine['_id']);
+		
+		$queueLine['stamp'] = $line['stamp'] = $stamp;
+		$this->splitQueueLines[$stamp] = new Mongodloid_Entity($queueLine);
+		$this->splitLines[$stamp] = $line;
+	}
+
+	
+	public function afterWriteLineToLinesNotFound($line, $calculator) {//insert split line
+		if($calculator->getType() == 'rate' && $line['is_split_row']){
+			Billrun_Factory::db()->linesCollection()->save($line, 1);
+		}
+		
+	}
+	
+	public function afterWriteLineToQueueNotFound($line, $calculator) {//insert split queue line
+		if($calculator->getType() == 'rate' && $line['is_split_row']){
+			Billrun_Factory::db()->queueCollection()->save($line, 1);
+		}
+	}
+	
+	
 
 	protected function calcCfFields($row, Billrun_Calculator $calculator) {
+		
 		$current = $row->getRawData();
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
@@ -39,16 +104,14 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$product_entity = $this->getParameterProduct($type, "parameter_product", $row, $calculator);
 		if(!$product_entity) {
-			$this->addSplitRow($current, $calculator);
-			return;
+			return [$current];
 		}
 		$current["cf"]["product"] = $product_entity["params"]["product"];
 		$row->setRawData($current);
 
 		$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
 		if(!$anaa_entity) {
-			$this->addSplitRow($current, $calculator);
-			return;
+			return [$current];
 		}
 		$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
 		$row->setRawData($current);
@@ -57,8 +120,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if(!in_array($current["usaget"], $sms_activity_types)) {
 			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
 			if(!$bnaa_entity) {
-				$this->addSplitRow($current, $calculator);
-				return;
+				return [$current];
 			}
 			$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
 			$row->setRawData($current);
@@ -66,8 +128,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$scenario_entity = $this->getParameterProduct($type, "parameter_scenario", $row, $calculator);
 		if(!$scenario_entity) {
-			$this->addSplitRow($current, $calculator);
-			return;
+			return [$current];
 		}
 		$current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
 		$row->setRawData($current);
@@ -78,16 +139,14 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//TODO: check if there are multiple results and split
 		$component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
 		if(!$component_entities) {
-			$this->addSplitRow($current, $calculator);
-			return;
+			return [$current];
 		}
+		$newRows = [];
 		foreach ($component_entities as $key => $component_entity){
-			if(count($component_entities) > 1){
-				$isSplitLine = true;
-			}
 			$newRow = new Mongodloid_Entity($row->getRawData());
 			$newCurrent = $current;
 			$component_entity = $component_entity->getRawData();
+			$newCurrent["cf"]["is_split_row"] = true;
 			$newCurrent["cf"]["component"] = $component_entity["params"]["component"];
 			$newCurrent["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
 			$newCurrent["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
@@ -104,7 +163,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$newCurrent["cf"]["tier"] = "";
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $newRow, $calculator);
 					if(!$tier_entity) {
-						$this->addSplitRow($newCurrent, $calculator, $isSplitLine);
+						$newRows[] = $newCurrent;
 						continue;
 					}
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
@@ -121,7 +180,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				case "ABA":
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $newRow, $calculator);
 					if(!$tier_entity) {
-						$this->addSplitRow($newCurrent, $calculator, $isSplitLine);;
+						$newRows[] = $newCurrent;
 						continue;
 					}
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
@@ -130,45 +189,27 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if ($is_anaa_relevant) {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $newRow, $calculator);
 						if(!$tier_entity) {
-							$this->addSplitRow($newCurrent, $calculator, $isSplitLine);;
+							$newRows[] = $newCurrent;
 							continue;
 						}
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					} else {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $newRow, $calculator);
 						if(!$tier_entity) {
-							$this->addSplitRow($newCurrent, $calculator, $isSplitLine);;
+							$newRows[] = $newCurrent;
 							continue;
 						}
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					}
 					break;
 			}
-			$newRow->setRawData($newCurrent);
-			$this->addSplitRow($newCurrent, $calculator, $isSplitLine);;
+			$newRows[] = $newCurrent;
 		}
-		$calculator->removeLineFromQueue($row);
-		$calculator->removeLineFromLines($row);
+		return $newRows;
 	}
 
 	
-	protected function addSplitRow($row, $calculator, $isSplitLine) {
-		$originalStamp = $row['stamp'];
-		$line = Billrun_Factory::db()->linesCollection()->query(array('stamp' => $originalStamp))->cursor()->limit(1)->current()->getRawData();
-		
-		$stampParams = Billrun_Util::generateFilteredArrayStamp($row, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'));
-		unset($row['_id'], $line['_id']);
-		$row['is_split_row'] = $line['is_split_row'] = $isSplitLine;
-		$row['stamp'] = $line['stamp'] = md5(serialize($stampParams));
-		$line['cf'] = $row['cf'];
-		
-		//add line to queue
-		$calculator->addLineToQueue(new Mongodloid_Entity($row));
-		
-		//add line to lines
-		$calculator->addLineToLines(new Mongodloid_Entity($line));
-				
-	}
+	
 
 	public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
 		$params = [
