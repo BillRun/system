@@ -292,30 +292,6 @@ lastConfig["file_types"][0] =
 				"date_field" : "EVENT_START_DATE",
 				"usaget_mapping" : [
 					{
-						"src_field" : "OUTGOING_PATH",
-						"conditions" : [
-							{
-								"src_field" : "INCOMING_PATH",
-								"pattern" : "^(?!\\s*$).+",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							},
-							{
-								"src_field" : "OUTGOING_PATH",
-								"pattern" : "^$",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							}
-						],
-						"pattern" : "^$",
-						"usaget" : "incoming_call",
-						"unit" : "seconds",
-						"volume_type" : "field",
-						"volume_src" : [
-							"EVENT_DURATION"
-						]
-					},
-					{
 						"src_field" : "DATA_UNIT",
 						"conditions" : [
 							{
@@ -540,30 +516,6 @@ lastConfig["file_types"][0] =
 						"conditions" : [
 							{
 								"src_field" : "INCOMING_PATH",
-								"pattern" : "^$",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							},
-							{
-								"src_field" : "OUTGOING_PATH",
-								"pattern" : "^(?!\\s*$).+",
-								"op" : "$regex",
-								"op_label" : "Regex"
-							}
-						],
-						"pattern" : "^(?!\\s*$).+",
-						"usaget" : "outgoing_call",
-						"unit" : "seconds",
-						"volume_type" : "field",
-						"volume_src" : [
-							"EVENT_DURATION"
-						]
-					},
-					{
-						"src_field" : "OUTGOING_PATH",
-						"conditions" : [
-							{
-								"src_field" : "INCOMING_PATH",
 								"pattern" : "^(?!\\s*$).+",
 								"op" : "$regex",
 								"op_label" : "Regex"
@@ -618,6 +570,34 @@ lastConfig["file_types"][0] =
 							},
 							{
 								"src_field" : "INCOMING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^(?!\\s*$).+",
+						"usaget" : "outgoing_sms",
+						"unit" : "counter",
+						"volume_type" : "value",
+						"volume_src" : 1
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^S",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
 								"pattern" : "^(?!\\s*$).+",
 								"op" : "$regex",
 								"op_label" : "Regex"
@@ -625,7 +605,8 @@ lastConfig["file_types"][0] =
 							{
 								"src_field" : "OUTGOING_PATH",
 								"pattern" : "^$",
-								"op" : ""
+								"op" : "$regex",
+								"op_label" : "Regex"
 							}
 						],
 						"pattern" : "^$",
@@ -639,7 +620,37 @@ lastConfig["file_types"][0] =
 						"conditions" : [
 							{
 								"src_field" : "BNUM",
-								"pattern" : "^S",
+								"pattern" : "^[0-9]",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "INCOMING_PATH",
+								"pattern" : "^(?!\\s*$).+",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							},
+							{
+								"src_field" : "OUTGOING_PATH",
+								"pattern" : "^$",
+								"op" : "$regex",
+								"op_label" : "Regex"
+							}
+						],
+						"pattern" : "^$",
+						"usaget" : "incoming_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field" : "OUTGOING_PATH",
+						"conditions" : [
+							{
+								"src_field" : "BNUM",
+								"pattern" : "^[0-9]",
 								"op" : "$regex",
 								"op_label" : "Regex"
 							},
@@ -657,10 +668,12 @@ lastConfig["file_types"][0] =
 							}
 						],
 						"pattern" : "^(?!\\s*$).+",
-						"usaget" : "outgoing_sms",
-						"unit" : "counter",
-						"volume_type" : "value",
-						"volume_src" : 1
+						"usaget" : "outgoing_call",
+						"unit" : "seconds",
+						"volume_type" : "field",
+						"volume_src" : [
+							"EVENT_DURATION"
+						]
 					}
 				],
 				"time_field" : "EVENT_START_TIME",
@@ -3084,7 +3097,114 @@ lastConfig["rates"]["fields"] =
 				"title" : "Bnum NAA",
 				"editable" : true,
 				"display" : true
+			},
+			{
+				"field_name" : "params.product_group",
+				"title" : "Product Group",
+				"editable" : true,
+				"display" : true
 			}
 		];
+		
+		//foreign fields
+		lastConfig["lines"]["fields"] =
+[
+			{
+				"field_name" : "foreign.activation_date",
+				"foreign" : {
+					"entity" : "service",
+					"field" : "start",
+					"translate" : {
+						"type" : "unixTimeToString",
+						"format" : "Y-m-d H:i:s"
+					}
+				}
+			},
+			{
+				"field_name" : "foreign.service.description",
+				"foreign" : {
+					"entity" : "service",
+					"field" : "invoice_description"
+				}
+			},
+			{
+				"field_name" : "foreign.account.vat_code",
+				"title" : "Vat Code",
+				"foreign" : {
+					"entity" : "account",
+					"field" : "vat_code"
+				},
+				"conditions" : [ ]
+			}
+		];
+		
+		//taxes
+		lastConfig["taxation"] = 
+		{
+		"tax_type" : "usage",
+		"default" : {
+			"key" : ""
+		},
+		"mapping" : {
+			"vat" : {
+				"priorities" : [
+					{
+						"filters" : [
+							{
+								"line_key" : "foreign.account.vat_code",
+								"type" : "match",
+								"entity_key" : "key"
+							}
+						],
+						"cache_db_queries" : true
+					}
+				],
+				"default_fallback" : true
+			}
+		},
+		"vat" : 0,
+		"vat_label" : "Vat"
+	},
 
 db.config.insert(lastConfig);
+
+
+db.taxes.insertMany([
+		{
+			"_id": ObjectId("601bb05b1c72c61d74219232"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VATL19",
+			"description": "VATL19",
+			"rate": 0.19,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:29:15Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		},
+		{
+			"_id": ObjectId("601bb06eeac6fc628f122f12"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VIESS",
+			"description": "VIESS",
+			"rate": 0,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:29:34Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		},
+		{
+			"_id": ObjectId("601bb08c7918b949df330202"),
+			"from": ISODate("2010-01-01T00:00:00Z"),
+			"key": "VATLOS",
+			"description": "VATLOS",
+			"rate": 0,
+			"embed_tax": false,
+			"to": ISODate("2170-02-04T08:30:04Z"),
+			"creation_time": ISODate("2010-01-01T00:00:00Z")
+		}]
+);
+
+db.rates.dropIndex("params.prefix_1");
+db.rates.ensureIndex({'params.prefix': 1 }, { unique: false , sparse:false, background: true, name: "params.prefix_new" });
+db.rates.ensureIndex({'params.anaa': 1, 'params.bnaa': 1, 'params.incoming_operator': 1, 'params.outgoing_operator': 1}, { unique: false , sparse:true, background: true });
+db.rates.ensureIndex({'params.path': 1 }, { unique: false , sparse:true, background: true });
+db.rates.ensureIndex({'params.operator': 1, 'params.anaa': 1, 'params.bnaa': 1}, { unique: false , sparse:false, background: true });
+db.rates.ensureIndex({'params.component': 1, 'params.operator': 1, 'params.tier': 1}, { unique: false , sparse:true, background: true });
