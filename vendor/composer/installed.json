@@ -933,6 +933,85 @@
             "install-path": "../psr/simple-cache"
         },
         {
+            "name": "simpletest/simpletest",
+            "version": "v1.2.0",
+            "version_normalized": "1.2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/simpletest/simpletest.git",
+                "reference": "4fb6006517a1428785a0ea704fbedcc675421ec4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/simpletest/simpletest/zipball/4fb6006517a1428785a0ea704fbedcc675421ec4",
+                "reference": "4fb6006517a1428785a0ea704fbedcc675421ec4",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1"
+            },
+            "time": "2019-09-17T15:08:22+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "."
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Marcus Baker",
+                    "email": "marcus@lastcraft.com",
+                    "role": "Original project lead"
+                },
+                {
+                    "name": "Jason Sweat",
+                    "role": "Original developer"
+                },
+                {
+                    "name": "Travis Swicegood",
+                    "role": "Original developer"
+                },
+                {
+                    "name": "Perrick Penet",
+                    "role": "Original developer"
+                },
+                {
+                    "name": "Edward Z. Yang",
+                    "role": "Original developer"
+                },
+                {
+                    "name": "Lachlan Donald",
+                    "email": "lachlan@ljd.cc"
+                },
+                {
+                    "name": "Lars Vierbergen",
+                    "email": "vierbergenlars@gmail.com"
+                },
+                {
+                    "name": "Jens A. Koch"
+                }
+            ],
+            "description": "Unit testing, mock objects and web testing framework for PHP built around test cases.",
+            "homepage": "http://simpletest.org/",
+            "keywords": [
+                "SimpleTest",
+                "code-coverage",
+                "selenium",
+                "testing",
+                "unit-test"
+            ],
+            "support": {
+                "issues": "https://github.com/simpletest/simpletest/issues",
+                "source": "https://github.com/simpletest/simpletest/tree/master"
+            },
+            "install-path": "../simpletest/simpletest"
+        },
+        {
             "name": "symfony/polyfill-mbstring",
             "version": "v1.20.0",
             "version_normalized": "1.20.0.0",
@@ -1014,5 +1093,7 @@
         }
     ],
     "dev": true,
-    "dev-package-names": []
+    "dev-package-names": [
+        "simpletest/simpletest"
+    ]
 }

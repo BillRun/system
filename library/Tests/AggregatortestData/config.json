@@ -1143,6 +1143,32 @@
 									"field": "description"
 								},
 								"conditions": []
+							},
+							{
+								"field_name": "foreign.activation_date",
+								"foreign": {
+									"entity": "service",
+									"field": "start",
+									"translate": {
+										"type": "unixTimeToString",
+										"format": "Y-m-d H:i:s"
+									}
+								}
+							},
+							{
+								"field_name": "foreign.plan.name",
+								"title": "plan_name",
+								"foreign": {
+									"entity": "plan",
+									"field": "name"
+								}
+							}, {
+								"field_name": "foreign.service.name",
+								"title": "Service name",
+								"foreign": {
+									"entity": "service",
+									"field": "name"
+								}
 							}
 
 						]

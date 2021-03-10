@@ -5,6 +5,9 @@
         "alcaeus/mongo-php-adapter": "^1.1",
         "bshaffer/oauth2-server-php": "^1.10"
     },
+    "require-dev": {
+        "simpletest/simpletest": "^1.1"
+    },
     "config": {
         "platform": {
             "ext-mongo": "1.6.16"
