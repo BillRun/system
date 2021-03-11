@@ -40,6 +40,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 								$this->updateCfFields($newRow, $row, $type);//only update the matching line.
 							}
 						}else{
+							$newRow["cf"]["is_split_row"] = true;
 							if($first){
 								$this->updateCfFields($newRow, $row, $type);
 								$first = false;
@@ -64,6 +65,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if($type === 'calcCpuOff'){
 			Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
+			Billrun_Factory::db()->queueCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
 		}
 	}
 	
@@ -144,7 +146,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newRow = new Mongodloid_Entity($row->getRawData());
 			$newCurrent = $current;
 			$component_entity = $component_entity->getRawData();
-			$newCurrent["cf"]["is_split_row"] = true;
 			$newCurrent["cf"]["component"] = $component_entity["params"]["component"];
 			$newCurrent["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
 			$newCurrent["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
