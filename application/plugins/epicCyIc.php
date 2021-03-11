@@ -89,7 +89,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 
 	protected function calcCfFields($row, Billrun_Calculator $calculator) {
-		
+		$is_anaa_relevant = false;
 		if(is_array($row)){
 			$row = new Mongodloid_Entity($row);
 		}
@@ -107,6 +107,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return [$current];
 		}
 		$current["cf"]["product"] = $product_entity["params"]["product"];
+		$current["cf"]["product_group"] = $product_entity["params"]["product_group"];		
 		$row->setRawData($current);
 
 		$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
@@ -208,7 +209,18 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	
-	
+	public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if ($calculator->getType() == 'pricing') {
+			$current = $row->getRawData();
+			if($current["cf"]["cash_flow"] == "E") {
+				unset($current["billrun"]);
+				for ($i = 0; $i < count($current["rates"]); $i++) {
+					unset($current["rates"][$i]["pricing"]["billrun"]);
+				}
+				$row->setRawData($current);
+			}
+		}
+	}
 
 	public function getParameterProduct($type, $parameter_name, $row, Billrun_Calculator $calculator, $multiple_entities = false) {
 		$params = [
