@@ -17,45 +17,7 @@ class Itc_test_cases {
 		$request = new Yaf_Request_Http;
 		$this->test_cases = $request->get('tests');
 		$cases = [
-			["test_num" => 1,
-				"data" =>
-				[
-					"123456" => [
-						"uf" =>
-						[
-							"RECORD_SEQUENCE_NUMBER" => "55369610_59675589",
-							"RECORD_TYPE" => "",
-							"INCOMING_NODE" => "LATHUASBC",
-							"OUTGOING_NODE" => "",
-							"INCOMING_PATH" => "ISBC_OTEG_TG1",
-							"OUTGOING_PATH" => "",
-							"ANUM" => "302377023880",
-							"BNUM" => "357199403638",
-							"EVENT_START_DATE" => "20200921",
-							"EVENT_START_TIME" => "114815",
-							"EVENT_DURATION" => "0000000008",
-							"DATA_VOLUME" => "0000000000000000000000000",
-							"DATA_UNIT" => "",
-							"DATA_VOLUME_2" => "0000000000000000000000000",
-							"DATA_UNIT_2" => "",
-							"DATA_VOLUME_3" => "0000000000000000000000000",
-							"DATA_UNIT_3" => "",
-							"USER_SUMMARISATION" => "TRANSIT",
-							"USER_DATA" => "",
-							"USER_DATA2" => "",
-							"USER_DATA3" => "LS1CC_IBCF-CDR_20200921120656_48097.dat-",
-							"REPAIR_INDICATOR" => "",
-							"REASON_FOR_CLEARDOWN" => "0"
-						],
-						"stamp" => "123456",
-						"type" => "ICT",
-					]
-				],
-				"file_type" => "ICT", "expected" => [
-					['arate_key' => 'RATE_MTT_ICTDC_FIX_TI_MTTNI04', 'aprice' => 0.041333333, "usaget" => "transit_incoming_call", "usagev_unit" => "seconds", "usagev" => 248, "cf.call_direction" => "TI"],
-					['arate_key' => 'RATE_CYTA_ICTDC_FIX_TO_CTA_SING', 'aprice' => 0.001818667, "usaget" => "transit_outgoing_call", "usagev_unit" => "seconds", "usagev" => 248, "cf.call_direction" => "TO"]
-				]
-			],
+	
 			["test_num" => 2,
 				"data" =>
 				[
