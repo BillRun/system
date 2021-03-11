@@ -31,7 +31,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$this->updateCfFields($newRows[0], $row, $type);//only update
 
 				}else{
-					$current = $row->getRawData();
+					$current = is_array($row) ? $row : $row->getRawData();
 					$alreadySplit = $current["cf"]["is_split_row"] ?? false;
 					$first = true;
 					foreach ($newRows as $newRow){
@@ -44,7 +44,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 								$this->updateCfFields($newRow, $row, $type);
 								$first = false;
 							}else{
-								$this->addExtraRow($newRow);
+								$this->addExtraRow($newRow, $type);
 							}
 						}
 					}
@@ -57,7 +57,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	protected function updateCfFields($newRow, &$row, $type) {
-		$row->setRawData($newRow);
+		if(is_array($row)){
+			$row = $newRow;
+		}else{
+			$row->setRawData($newRow);
+		}
 		if($type === 'calcCpuOff'){
 			Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
 		}
@@ -70,20 +74,23 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			&&$row["cf"]["tier_derivation"]===$newRow["cf"]["tier_derivation"];
 	}
 	
-	protected function addExtraRow($row) {
+	protected function addExtraRow($row, $type) {
 
 		$oldStamp = $row['stamp'];
 		$newStamp = md5(serialize(Billrun_Util::generateFilteredArrayStamp($row, array('urt', 'eurt', 'uf', 'cf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'))));
 		unset($row['_id']);
 		
 		$row['stamp'] = $newStamp;
-		$this->extraLines[$oldStamp][$newStamp] = new Mongodloid_Entity($row);
+		$this->extraLines[$oldStamp][$newStamp] = $type === 'calcCpuOff' ? new Mongodloid_Entity($row) : $row;
 	}
 	
 	
 
 	protected function calcCfFields($row, Billrun_Calculator $calculator) {
 		
+		if(is_array($row)){
+			$row = new Mongodloid_Entity($row);
+		}
 		$current = $row->getRawData();
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
