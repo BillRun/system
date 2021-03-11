@@ -12,7 +12,7 @@
  * @since    0.5
  */
 require_once(APPLICATION_PATH . '/library/Tests/Itc_test_cases.php');
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -26,6 +26,46 @@ class Tests_Icttest extends UnitTestCase {
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [];
+	protected $sumProcessTime =0;
+
+	/**
+	 * 
+	 * @ovveride method setColletions  of  trait Tests_SetUp 
+	 * In order to fit the ICT test
+	 */
+	public function setColletions($useExistingConfig = null) {
+		if ($this->unitTestName == 'Ict_test') {
+
+			unset($this->collectionToClean[2]);
+			unset($this->collectionToClean[3]);
+			unset($this->collectionToClean[0]);
+
+			unset($this->importData[3]);
+			unset($this->importData[2]);
+			unset($this->importData[0]);
+		}
+		if ($useExistingConfig && $this->unitTestName == 'Ict_test') {
+			array_unshift($collectionsToSet, 'config');
+		}
+		$this->originalConfig = $this->loadConfig();
+		$this->backUpCollection($this->importData);
+		$this->cleanCollection($this->collectionToClean);
+		$collectionsToSet = $this->importData;
+
+		foreach ($collectionsToSet as $file) {
+			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
+			$parsedData = json_decode($dataAsText, true);
+			if ($parsedData === null) {
+				echo(' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
+				continue;
+			}
+			if (!empty($parsedData['data'])) {
+				$data = $this->fixData($parsedData['data']);
+				$coll = Billrun_Factory::db()->{$parsedData['collection']}();
+				$coll->batchInsert($data);
+			}
+		}
+	}
 
 	public function __construct($label = false) {
 		//for PHP<7.3
@@ -63,7 +103,7 @@ class Tests_Icttest extends UnitTestCase {
 		foreach ($this->Tests as $key => $row) {
 			$this->test_num = $row['test_num'];
 			$this->addCaseToLog();
-			$data = $this->process($row);
+			$this->process($row);
 			$this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'] . '</span><br>';
 			$lines = Billrun_Factory::db()->linesCollection()->query()->cursor();
 			$data = [];
@@ -83,6 +123,7 @@ class Tests_Icttest extends UnitTestCase {
 		if ($this->fails) {
 			$this->message .= 'links to fail tests : <br>' . $this->fails;
 		}
+		$this->message.="<br><b>All Line processing took ".$this->sumProcessTime." seconds </b>";
 		print_r($this->message);
 		$this->restoreColletions();
 	}
@@ -101,9 +142,12 @@ class Tests_Icttest extends UnitTestCase {
 		$fileType = Billrun_Factory::config()->getFileTypeSettings($options['type'], true);
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
+			$befor = microtime(true);
 			$processor->process_files($options);
+			$after = microtime(true);
+			$this->sumProcessTime+=($after-$befor);
+			$this->message .="<br><b>Line processing took ".($after-$befor)." seconds</b><br>";
 		}
-	
 	}
 
 	/**
