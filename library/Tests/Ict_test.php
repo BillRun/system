@@ -138,7 +138,7 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	protected function process($row) {
 		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
-		chown($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num", 0777);
+		chmod($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num",755);
 		$options = array(
 			'type' => $row['file_type']
 		);
