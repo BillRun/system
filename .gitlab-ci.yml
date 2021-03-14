@@ -35,6 +35,8 @@ sast:
     SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, flawfinder, gosec, kubesec,
       nodejs-scan, pmd-apex, security-code-scan, sobelow, spotbugs
   stage: test
+  only:
+    - merge_requests
   
 variables:
   BILLING_DB: 'billing'
@@ -45,7 +47,7 @@ variables:
       
 .common_settings: 
     only:
-      - gitlab-ci-setup
+      - merge_requests
     tags:
       - CI_DEV    
     before_script:
