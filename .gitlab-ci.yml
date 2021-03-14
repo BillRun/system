@@ -17,9 +17,11 @@ sast:
   stage: test
   tags:
       - CI_SAST
+  rules:
+    # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
+    - if: $CI_MERGE_REQUEST_ID
  
-  
-  
+
 variables:
   BILLING_DB: 'billing'
   BILLING_DB_PORT: 27617  
@@ -28,8 +30,9 @@ variables:
 # default:
       
 .common_settings: 
-    only:
-      - merge_requests
+    rules:
+    # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
+      - if: $CI_MERGE_REQUEST_ID
     tags:
       - CI_DEV    
     before_script:
