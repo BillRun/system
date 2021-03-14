@@ -3,7 +3,7 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 
-# 3
+# 4
 stages:
   - init
   - E2E_Testing
@@ -17,9 +17,6 @@ sast:
   stage: test
   tags:
       - CI_SAST
-  rules:
-    # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
-    - if: $CI_MERGE_REQUEST_ID
 
 brakeman-sast:
    tags:
