@@ -17,9 +17,6 @@ sast:
   stage: test
   tags:
       - CI_SAST
-  rules:
-    # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
-    - if: $CI_MERGE_REQUEST_ID
 
 brakeman-sast:
    tags:
