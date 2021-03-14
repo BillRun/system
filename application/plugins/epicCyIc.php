@@ -22,13 +22,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 
 	
-	public function beforeAddExtraData(&$data, &$queueData, &$extraData,  Billrun_Calculator $calculator,  $type = 'calcCpuOn', $processor =  null) {
+	public function beforeCalculatorAddExtraLines(&$data, &$queueData, &$extraData,  Billrun_Calculator $calculator, $processor =  null) {
 		if($calculator->getType() == 'rate'){
 			$this->extraLines = [];
 			foreach ($data as &$row){
 				$newRows = $this->calcCfFields($row, $calculator);
 				if(count($newRows) === 1){
-					$this->updateCfFields($newRows[0], $row, $queueData, $type, $processor);//only update
+					$this->updateCfFields($newRows[0], $row, $queueData, $processor);//only update
 
 				}else{
 					$current = is_array($row) ? $row : $row->getRawData();
@@ -37,12 +37,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					foreach ($newRows as $newRow){
 						if($alreadySplit){
 							if($this->isTheSameSplitRow($newRow, $current)){
-								$this->updateCfFields($newRow, $row, $queueData, $type, $processor);//only update the matching line.
+								$this->updateCfFields($newRow, $row, $queueData, $processor);//only update the matching line.
 							}
 						}else{
 							$newRow["cf"]["is_split_row"] = true;
 							if($first){
-								$this->updateCfFields($newRow, $row, $queueData, $type, $processor);
+								$this->updateCfFields($newRow, $row, $queueData, $processor);
 								$first = false;
 							}else{
 								$this->addExtraRow($newRow, $type);
@@ -57,18 +57,18 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 
-	protected function updateCfFields($newRow, &$row, &$queueData, $type, $processor) {
+	protected function updateCfFields($newRow, &$row, &$queueData, $processor) {
 		if(is_array($row)){
 			$row = $newRow;
 		}else{
 			$row->setRawData($newRow);
 		}
-		if($type === 'calcCpuOff'){
-			Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
-			Billrun_Factory::db()->queueCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
-		}else{
+		if(isset($processor)){
 			$queueData[$row['stamp']]['cf'] = $newRow['cf'];
 			$processor->setQueueRow($queueData[$row['stamp']]);
+		}else{
+			Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
+			Billrun_Factory::db()->queueCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
 		}
 	}
 	
