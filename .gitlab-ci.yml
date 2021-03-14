@@ -20,7 +20,36 @@ sast:
   rules:
     # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
     - if: $CI_MERGE_REQUEST_ID
- 
+
+brakeman-sast:
+   tags:
+      - CI_SAST
+eslint-sast:
+    tags:
+    - CI_SAST
+flawfinder-sast:
+   tags:
+      - CI_SAST  
+phpcs-security-audit-sast:
+  tags:
+      - CI_SAST
+  rules:
+    # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
+    - if: $CI_MERGE_REQUEST_ID
+
+security-code-scan-sast:
+     tags:
+      - CI_SAST
+spotbugs-sast:
+   tags:
+      - CI_SAST
+secret_detection:
+   tags:
+      - CI_SAST
+   rules:
+     # - if: $CI_COMMIT_BRANCH == "gitlab-ci-setup"
+      - if: $CI_MERGE_REQUEST_ID
+
 
 variables:
   BILLING_DB: 'billing'
