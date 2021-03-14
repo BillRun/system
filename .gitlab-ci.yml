@@ -1,42 +1,24 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
-brakeman-sast:
-   tags:
-      - CI_SAST
-eslint-sast:
-    tags:
-    - CI_SAST
-flawfinder-sast:
-   tags:
-      - CI_SAST  
-phpcs-security-audit-sast:
-     tags:
-      - CI_SAST
-security-code-scan-sast:
-     tags:
-      - CI_SAST
-spotbugs-sast:
-   tags:
-      - CI_SAST
-secret_detection:
-   tags:
-      - CI_SAST
+
 
 # 3
 stages:
   - init
   - E2E_Testing
   - test
-  - secrets-detection
+ 
 
 sast:
   variables:
     SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, flawfinder, gosec, kubesec,
       nodejs-scan, pmd-apex, security-code-scan, sobelow, spotbugs
   stage: test
-  only:
-    - merge_requests
+  tags:
+      - CI_SAST
+ 
+  
   
 variables:
   BILLING_DB: 'billing'
