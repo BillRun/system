@@ -22,13 +22,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 
 	
-	public function beforeAddExtraData(&$data, &$queueData, &$extraData,  Billrun_Calculator $calculator,  $type = 'calcCpuOn') {
+	public function beforeAddExtraData(&$data, &$queueData, &$extraData,  Billrun_Calculator $calculator,  $type = 'calcCpuOn', $processor =  null) {
 		if($calculator->getType() == 'rate'){
 			$this->extraLines = [];
 			foreach ($data as &$row){
 				$newRows = $this->calcCfFields($row, $calculator);
 				if(count($newRows) === 1){
-					$this->updateCfFields($newRows[0], $row, $queueData, $type);//only update
+					$this->updateCfFields($newRows[0], $row, $queueData, $type, $processor);//only update
 
 				}else{
 					$current = is_array($row) ? $row : $row->getRawData();
@@ -37,12 +37,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					foreach ($newRows as $newRow){
 						if($alreadySplit){
 							if($this->isTheSameSplitRow($newRow, $current)){
-								$this->updateCfFields($newRow, $row, $queueData, $type);//only update the matching line.
+								$this->updateCfFields($newRow, $row, $queueData, $type, $processor);//only update the matching line.
 							}
 						}else{
 							$newRow["cf"]["is_split_row"] = true;
 							if($first){
-								$this->updateCfFields($newRow, $row, $queueData, $type);
+								$this->updateCfFields($newRow, $row, $queueData, $type, $processor);
 								$first = false;
 							}else{
 								$this->addExtraRow($newRow, $type);
@@ -57,7 +57,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 
-	protected function updateCfFields($newRow, &$row, &$queueData, $type) {
+	protected function updateCfFields($newRow, &$row, &$queueData, $type, $processor) {
 		if(is_array($row)){
 			$row = $newRow;
 		}else{
@@ -68,6 +68,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::db()->queueCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
 		}else{
 			$queueData[$row['stamp']]['cf'] = $newRow['cf'];
+			$processor->setQueueRow($queueData[$row['stamp']]);
 		}
 	}
 	
@@ -165,8 +166,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$newCurrent["cf"]["tier"] = "";
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $newRow, $calculator);
 					if(!$tier_entity) {
-						$newRows[] = $newCurrent;
-						continue;
+						break;
 					}
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					$newRow->setRawData($newCurrent);
@@ -182,8 +182,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				case "ABA":
 					$tier_entity = $this->getParameterProduct($type, "parameter_tier_aba", $newRow, $calculator);
 					if(!$tier_entity) {
-						$newRows[] = $newCurrent;
-						continue;
+						break;
 					}
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					break;
@@ -191,15 +190,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if ($is_anaa_relevant) {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb_anaa", $newRow, $calculator);
 						if(!$tier_entity) {
-							$newRows[] = $newCurrent;
-							continue;
+							break;
 						}
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					} else {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $newRow, $calculator);
 						if(!$tier_entity) {
-							$newRows[] = $newCurrent;
-							continue;
+							break;
 						}
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					}
