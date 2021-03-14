@@ -191,6 +191,16 @@ class Tests_Icttest extends UnitTestCase {
 					$k = end($nestedKey);
 					$nested = true;
 				}
+				//sne = Should not exist
+				if ($k== 'sne') {
+					foreach ($v as $sne) {
+						if (array_key_exists($sne, $data_)) {
+							$this->message .= " -- the key $sne exists although it should not exist ". $this->fail;
+							$result = false;
+						}
+					}
+					continue;
+				}
 				$DataField = $nested ? $DataField : $data_[$k];
 				if (!$nested) {
 					if (empty(array_key_exists($k, $data_))) {
