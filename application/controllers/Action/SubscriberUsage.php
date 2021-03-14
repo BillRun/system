@@ -78,10 +78,12 @@ class Subscriber_UsageAction extends ApiAction {
 		$actualUsage = array();
 		$actualNationalUsage = array();
 		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
+		$endTime = Billrun_Util::getEndTime($params['billrun_key']);
+		$horizion = $endTime > time() ? time() : FALSE;
 
 		//Prepare addons with open (allways on) pacakge included
-		$roamingAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']),$params['addons']);
-		$nationalAddons=array_merge($this->generateFakeAddons($nonPackagedAddons,$params['billrun_key']),$params['addons_national']);
+		$roamingAddons=array_merge($this->generateFakeAddons($nonPackagedRoamingAddons,$params['billrun_key']), $params['addons']);
+		$nationalAddons=array_merge($this->generateFakeAddons($nonPackagedAddons,$params['billrun_key']), $params['addons_national']);
 
 		//query subscriber balances active at the given billrun
 		$mainBalances = iterator_to_array(Billrun_Balance::getCollection()->query(['sid' => $params['sid'], 'billrun_month' => $params['billrun_key']])->cursor());
@@ -89,17 +91,35 @@ class Subscriber_UsageAction extends ApiAction {
 // 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 // 		}
 
-		//$endTime = Billrun_Util::getEndTime($params['billrun_key']);
+
 		$sortedOffers = $params['offers'];
 		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
 		$lastOffer = reset($sortedOffers);
 
+		//If this is a current balance check don't use max usage for expired
+		foreach($roamingAddons as $idx => $roamingAddon) {
+			if($horizion && strtotime($roamingAddon['to_date']) < $horizion ) {
+				$this->getActualUsagesOfPackages([$roamingAddon['service_name']=> 1], $mainBalances, $maxUsage);
+				$packages[$roamingAddon['service_name']] += 1;
+				array_splice($roamingAddons,$idx,1);
+			}
+		}
+		//If this is a current balance check don't use max usage for expired
+		foreach($nationalAddons as $idx => $nationalAddon) {
+			if($horizion && strtotime($nationalAddon['to_date']) < $horizion ) {
+				$this->getActualUsagesOfPackages([$nationalAddon['service_name']=> 1], $mainBalances, $maxNationalUsage);
+				$nationalPackages[$nationalAddon['service_name']] += 1;
+				array_splice($roamingAddons,$idx,1);
+
+			}
+		}
 		foreach ($sortedOffers as $offer){
 			$plan = Billrun_Factory::plan(['name'=> $offer['plan'],'time'=> $startTime])->getData();
 			if(empty($plan)) {
 				return $this->setError('Couldn`t find the plan from request.', $offer);
 			}
 			//go though the  subscribers addons packages
+
 			$this->getMaxUsagesOfPackages($roamingAddons, $packages, $maxUsage, $plan);
 
 			//go though the  subscribers addons national packages
@@ -141,6 +161,8 @@ class Subscriber_UsageAction extends ApiAction {
 			$output['usage_abroad'][$type.'_usage'] = $usageVal;
 		}
 
+
+
 		//do some beutyfing of the data
 		return $output;
 	}
@@ -159,7 +181,7 @@ class Subscriber_UsageAction extends ApiAction {
 	}
 	
 	protected function getMaxUsagesOfPackages($addons, &$packages, &$maxUsage, $plan) {
-
+		$vfMapping = ['data' => 6442451000];
 		foreach($addons as  $addon) {
 			// for each national group / package
 			if(!empty($plan['include']['groups'][$addon['service_name']])) {
@@ -167,15 +189,18 @@ class Subscriber_UsageAction extends ApiAction {
 						if(is_array($value)) { continue; }
 						if (@$maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
 							@$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
-						}else {
-							@$maxUsage[$type] = -1;
+						} else {
+							if($addon['service_name']=== 'VF' && $vfMapping[$type]) {
+									@$maxUsage[$type] += $vfMapping[$type];
+							} else {
+									@$maxUsage[$type] = -1;
+							}
 						}
 						@$packages[$addon['service_name']] += 1 ;
 					}
 			}
 		}
 	}
-	
 	
 	protected function initializeUsagesTypes(&$output) {
 		$usage_israel_types = ['data', 'call', 'sms', 'mms'];
@@ -192,14 +217,16 @@ class Subscriber_UsageAction extends ApiAction {
 	}
 
 	protected function generateFakeAddons($fakeAddonsList, $billrunKey) {
-		$startTime = Billrun_Util::getStartTime($params['billrun_key']);
-		$endTime = Billrun_Util::getEndTime($params['billrun_key']);
+		$startTime = Billrun_Util::getStartTime($billrunKey);
+		$endTime = Billrun_Util::getEndTime($billrunKey);
 		$generatedAddons = [];
 		foreach($fakeAddonsList as  $fAddon) {
 			$generatedAddons[] = [
 				'service_name' => $fAddon,
 				'start_date' => date('Y-m-d H:i:s',$startTime),
 				'end_date'  => date('Y-m-d H:i:s',$endTime),
+				'from_date' => date('Y-m-d H:i:s',$startTime),
+				'to_date'  => date('Y-m-d H:i:s',$endTime),
 			];
 		}
 		return $generatedAddons;
