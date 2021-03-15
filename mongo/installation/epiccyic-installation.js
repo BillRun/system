@@ -3135,6 +3135,15 @@ lastConfig["rates"]["fields"] =
 					"field" : "vat_code"
 				},
 				"conditions" : [ ]
+			},
+			{
+				"field_name" : "foreign.rate.rates",
+				"title" : "Rate",
+				"foreign" : {
+					"entity" : "rate",
+					"field" : "rates"
+				},
+				"conditions" : [ ]
 			}
 		];
 		
