@@ -3153,7 +3153,7 @@ lastConfig["rates"]["fields"] =
 							{
 								"line_key" : "foreign.account.vat_code",
 								"type" : "match",
-								"entity_key" : "key"
+								"entity_key" : "params.vat_code"
 							}
 						],
 						"cache_db_queries" : true
@@ -3169,38 +3169,46 @@ lastConfig["rates"]["fields"] =
 db.config.insert(lastConfig);
 
 
-db.taxes.insertMany([
-		{
-			"_id": ObjectId("601bb05b1c72c61d74219232"),
-			"from": ISODate("2010-01-01T00:00:00Z"),
-			"key": "VATL19",
-			"description": "VATL19",
-			"rate": 0.19,
-			"embed_tax": false,
-			"to": ISODate("2170-02-04T08:29:15Z"),
-			"creation_time": ISODate("2010-01-01T00:00:00Z")
-		},
-		{
-			"_id": ObjectId("601bb06eeac6fc628f122f12"),
-			"from": ISODate("2010-01-01T00:00:00Z"),
-			"key": "VIESS",
-			"description": "VIESS",
-			"rate": 0,
-			"embed_tax": false,
-			"to": ISODate("2170-02-04T08:29:34Z"),
-			"creation_time": ISODate("2010-01-01T00:00:00Z")
-		},
-		{
-			"_id": ObjectId("601bb08c7918b949df330202"),
-			"from": ISODate("2010-01-01T00:00:00Z"),
-			"key": "VATLOS",
-			"description": "VATLOS",
-			"rate": 0,
-			"embed_tax": false,
-			"to": ISODate("2170-02-04T08:30:04Z"),
-			"creation_time": ISODate("2010-01-01T00:00:00Z")
-		}]
-);
+//add taxes and modify default tax
+db.taxes.save({
+	"_id" : ObjectId("5ff83b60306dbaffe2c3a88c"),
+	"from" : ISODate("2018-12-31T21:00:00Z"),
+	"key" : "DEFAULT_VAT",
+	"description" : "VATL19",
+	"rate" : 0.17,
+	"params" : {
+		"vat_code" : "VATL19"
+	},
+	"to" : ISODate("2168-12-31T21:00:00Z"),
+	"creation_time" : ISODate("2018-12-31T21:00:00Z"),
+	"embed_tax" : false
+});
+db.taxes.save({
+	"_id" : ObjectId("601bb06eeac6fc628f122f12"),
+	"from" : ISODate("2010-01-01T00:00:00Z"),
+	"key" : "VIESS",
+	"description" : "VIESS",
+	"rate" : 0,
+	"embed_tax" : false,
+	"to" : ISODate("2170-02-04T08:29:34Z"),
+	"creation_time" : ISODate("2010-01-01T00:00:00Z"),
+	"params" : {
+		"vat_code" : "VIESS"
+	}
+});
+db.taxes.save({
+	"_id" : ObjectId("601bb08c7918b949df330202"),
+	"from" : ISODate("2010-01-01T00:00:00Z"),
+	"key" : "VATLOS",
+	"description" : "VATLOS",
+	"rate" : 0,
+	"embed_tax" : false,
+	"to" : ISODate("2170-02-04T08:30:04Z"),
+	"creation_time" : ISODate("2010-01-01T00:00:00Z"),
+	"params" : {
+		"vat_code" : "VATLOS"
+	}
+});
 
 db.rates.dropIndex("params.prefix_1");
 db.rates.ensureIndex({'params.prefix': 1 }, { unique: false , sparse:false, background: true, name: "params.prefix_new" });
