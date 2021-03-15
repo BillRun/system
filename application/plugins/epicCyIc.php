@@ -129,6 +129,17 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if ($calculator->getType() == 'rate') {
+			$current = $row->getRawData();
+			$current["cf"]["rate_type"] = $current["cf"]["component"] == "ICTEC" ? "flat_rate" : "unit_cost";
+			$current["cf"]["rate_price"] = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"][0]["price"];
+			if($current["cf"]["rate_type"] == "unit_cost") {
+				$current["cf"]["rate_price"] *= 60;
+			}
+			unset($current["foreign"]["rate"]);
+			$row->setRawData($current);
+		}
+		
 		if ($calculator->getType() == 'pricing') {
 			$current = $row->getRawData();
 			if($current["cf"]["cash_flow"] == "E") {
