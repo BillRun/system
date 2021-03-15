@@ -15,6 +15,8 @@
  */
 class OpenapiController extends RealtimeController {
 
+	const LOCATION = '/ratingdata';
+
 	const RECORD_TYPES = [
 		'initial' => [
 			'record_type' => 'initial_request',
@@ -115,7 +117,7 @@ class OpenapiController extends RealtimeController {
 			$this->setHttpStatusCode(Billrun_Utils_HttpStatusCodes::HTTP_CREATED);
 			$this->requestType = 'initial';
 			$this->sessionId = uniqid();
-			$location = $this->getRequest()->getRequestUri() . "/{$this->sessionId}";
+			$location = self::LOCATION . "/{$this->sessionId}";
 			$this->getResponse()->setHeader('Location', $location);
 		} else {
 			$this->sessionId = array_keys($params)[0];
@@ -222,6 +224,8 @@ class OpenapiController extends RealtimeController {
 			$serviceRating = $line['uf']['serviceRating'];
 			$serviceRating['usagev'] = $line['usagev'];
 			$serviceRating['return_code'] = $line['granted_return_code'];
+			$serviceRating['rebalance_required'] = $line['rebalance_required'];
+			$serviceRating['reservation_required'] = $line['reservation_required'];
 			$ret['service_rating'][] = $serviceRating;
 		}
 
