@@ -19,30 +19,28 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
     }
 
-    public function beforeCalculatorAddExtraLines(&$data, &$extraData, Billrun_Calculator $calculator) {
+    public function beforeCalculatorAddExtraLines(&$row, &$extraData, Billrun_Calculator $calculator) {
         if ($calculator->getType() == 'rate') {
-            $this->extraLines = [];
-            foreach ($data as &$row) {
-                $newRows = $this->calcCfFields($row, $calculator);
-                if (count($newRows) === 1) {
-                    $this->updateCfFields($newRows[0], $row); //only update
-                } else {
-                    $current = is_array($row) ? $row : $row->getRawData();
-                    $alreadySplit = $current["cf"]["is_split_row"] ?? false;
-                    $first = true;
-                    foreach ($newRows as $newRow) {
-                        if ($alreadySplit) {
-                            if ($this->isTheSameSplitRow($newRow, $current)) {
-                                $this->updateCfFields($newRow, $row); //only update the matching line.
-                            }
+            $this->extraLines = [];  
+            $newRows = $this->calcCfFields($row, $calculator);
+            if (count($newRows) === 1) {
+                $this->updateCfFields($newRows[0], $row); //only update
+            } else {
+                $current = is_array($row) ? $row : $row->getRawData();
+                $alreadySplit = $current["cf"]["is_split_row"] ?? false;
+                $first = true;
+                foreach ($newRows as $newRow) {
+                    if ($alreadySplit) {
+                        if ($this->isTheSameSplitRow($newRow, $current)) {
+                            $this->updateCfFields($newRow, $row); //only update the matching line.
+                        }
+                    } else {
+                        $newRow["cf"]["is_split_row"] = true;
+                        if ($first) {
+                            $this->updateCfFields($newRow, $row);
+                            $first = false;
                         } else {
-                            $newRow["cf"]["is_split_row"] = true;
-                            if ($first) {
-                                $this->updateCfFields($newRow, $row);
-                                $first = false;
-                            } else {
-                                $this->addExtraRow($newRow);
-                            }
+                            $this->addExtraRow($newRow);
                         }
                     }
                 }
@@ -57,8 +55,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         } else {
             $row->setRawData($newRow);
         }
-        Billrun_Factory::db()->linesCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
-        Billrun_Factory::db()->queueCollection()->update(array('stamp' => $row['stamp']), array('$set' => array('cf' => $newRow['cf'])));
     }
 
     protected function isTheSameSplitRow($newRow, $row) {
@@ -148,6 +144,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
                     break;
                 case "CB":
                     $newCurrent["cf"]["tier"] = "";
+                    $newRow->setRawData($newCurrent);
                     $tier_entity = $this->getParameterProduct($type, "parameter_tier_cb", $newRow, $calculator);
                     if (!$tier_entity) {
                         break;

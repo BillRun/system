@@ -449,7 +449,10 @@ class Itc_test_cases {
 						"type" => "ICT",
 					]
 				],
-				"file_type" => "ICT", "expected" => [['aprice' => 0.022724, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTTC"]]
+				"file_type" => "ICT", "expected" => [
+                                    ['aprice' => 0.003783, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTDC"],
+                                    ['aprice' => 0.022724, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTTC"],
+                                ]
 			],
 			["test_num" => 14,
 				"data" =>
@@ -1410,8 +1413,8 @@ class Itc_test_cases {
 			//EPICIC-16 - two_component_cdr_example
 			["test_num" => 47,'file_type'=>'ICT',
 				"expected" => [
+                                    	['arate_key' => 'RATE_CYTA_ICTDC_FIX_O_DSTCTAOG', 'aprice' => 0.003783, 'final_charge' => 0.0045017699999999996, 'aid' => 2108, 'sid' => 2123, "usaget" => "outgoing_call", "usagev_unit" => "seconds", "usagev" => 78,"cf.call_direction" => "O" ,"cf.component" => "ICTDC"],
 					['arate_key' => 'RATE_CYTA_ICTTC_FIX_O_DSTCTAOG', 'aprice' => 0.022723999999974, 'final_charge' => 0.027041559999969062,'aid' => 2108, 'sid' => 2123, "usaget" => "outgoing_call", "usagev_unit" => "seconds", "usagev" => 78, "cf.call_direction" => "O", "cf.component" => "ICTTC"],
-					['arate_key' => 'RATE_CYTA_ICTDC_FIX_O_DSTCTAOG', 'aprice' => 0.003783, 'final_charge' => 0.0045017699999999996, 'aid' => 2108, 'sid' => 2123, "usaget" => "outgoing_call", "usagev_unit" => "seconds", "usagev" => 78,"cf.call_direction" => "O" ,"cf.component" => "ICTDC"]
 				]
 			],
 			//EPICIC-16 - transit+2components_cdr_example 
