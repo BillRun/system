@@ -3105,7 +3105,7 @@ lastConfig["rates"]["fields"] =
 				"display" : true
 			}
 		];
-		
+
 		//foreign fields
 		lastConfig["lines"]["fields"] =
 [
@@ -3173,7 +3173,89 @@ lastConfig["rates"]["fields"] =
 		},
 		"vat" : 0,
 		"vat_label" : "Vat"
-	},
+	};
+var report_Armadilo = {
+	"name": 'Armadilo',
+	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
+	"enable": true,
+	"day": "1",
+	"hour": "16",
+	"csv_name": "Armadilo",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
+var report_Armadilo_SMS = {
+	"name": 'Armadilo_SMS',
+	"id": "d4bc8f9a-3dd9-403c-b159-c2afeb83335e",
+	"enable": true,
+	"day": "1",
+	"hour": "16",
+	"csv_name": "Armadilo_SMS",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
+var report_Armadilo_VCE = {
+	"name": 'Armadilo_VCE',
+	"id": "4b639bfe-e967-43c6-8c8a-e6d8a8cd0e6c",
+	"enable": true,
+	"day": "1",
+	"hour": "16",
+	"csv_name": "Armadilo_VCE",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo];
+var cy_ic_plugin = 
+		{
+				"name" : "epicCyIcPlugin",
+				"enabled" : true,
+				"system" : false,
+				"hide_from_ui" : false,
+				"configuration" : {'values': { 'ic': { 'reports': reports } } }
+		};
+lastConfig.plugins = [cy_ic_plugin];
 
 db.config.insert(lastConfig);
 
