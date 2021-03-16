@@ -3173,7 +3173,7 @@ lastConfig["rates"]["fields"] =
 		},
 		"vat" : 0,
 		"vat_label" : "Vat"
-	},
+	};
 var report_Armadilo = {
 	"name": 'Armadilo',
 	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
