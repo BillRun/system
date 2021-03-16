@@ -226,6 +226,7 @@ class OpenapiController extends RealtimeController {
 			$serviceRating['return_code'] = $line['granted_return_code'];
 			$serviceRating['rebalance_required'] = $line['rebalance_required'];
 			$serviceRating['reservation_required'] = $line['reservation_required'];
+			$serviceRating['blocked_rate'] = $line['blocked_rate'] ?? false;
 			$ret['service_rating'][] = $serviceRating;
 		}
 

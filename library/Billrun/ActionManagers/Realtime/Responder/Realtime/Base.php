@@ -87,6 +87,9 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			case $returnCodes['no_available_balances']:
 				return 'QUOTA_LIMIT_REACHED';
 			case $returnCodes['failed_calculator']['rate']:
+				if (!empty($serviceRating['blocked_rate'])) {
+					return 'END_USER_SERVICE_REJECTED';
+				}
 				return 'END_USER_SERVICE_DENIED';
 			case $returnCodes['failed_calculator']['customer']:
 				return 'USER_UNKNOWN';
@@ -95,7 +98,7 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			case $returnCodes['ok']:
 				return 'SUCCESS';
 			default:
-				return 'END_USER_SERVICE_REJECTED';
+				return 'QUOTA_MANAGEMENT_NOT_APPLICABLE';
 		}
 	}
 
