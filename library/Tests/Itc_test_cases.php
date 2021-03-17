@@ -449,7 +449,10 @@ class Itc_test_cases {
 						"type" => "ICT",
 					]
 				],
-				"file_type" => "ICT", "expected" => [['aprice' => 0.022724, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTTC"]]
+				"file_type" => "ICT", "expected" => [
+                                    ['aprice' => 0.003783, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTDC"],
+                                    ['aprice' => 0.022724, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OGCOAL", "cf.cash_flow" => "E", "cf.component" => "ICTTC"],
+                                ]
 			],
 			["test_num" => 14,
 				"data" =>
@@ -1406,7 +1409,22 @@ class Itc_test_cases {
 					['cf.call_direction' => 'TO', 'cf.product' => 'FIX', "cf.scenario" => "TCT"],
 					['aprice' => 0.25449, 'cf.call_direction' => 'TI', 'cf.product' => 'FIX', "cf.scenario" => "TCT", "cf.cash_flow" => "R", "cf.component" => "ICTDC"],
 				]
-			]
+			],
+			//EPICIC-16 - two_component_cdr_example
+			["test_num" => 47,'file_type'=>'ICT',
+				"expected" => [
+                                    	['arate_key' => 'RATE_CYTA_ICTDC_FIX_O_DSTCTAOG', 'aprice' => 0.003783, 'final_charge' => 0.0045017699999999996, 'aid' => 2108, 'sid' => 2123, "usaget" => "outgoing_call", "usagev_unit" => "seconds", "usagev" => 78,"cf.call_direction" => "O" ,"cf.component" => "ICTDC"],
+					['arate_key' => 'RATE_CYTA_ICTTC_FIX_O_DSTCTAOG', 'aprice' => 0.022723999999974, 'final_charge' => 0.027041559999969062,'aid' => 2108, 'sid' => 2123, "usaget" => "outgoing_call", "usagev_unit" => "seconds", "usagev" => 78, "cf.call_direction" => "O", "cf.component" => "ICTTC"],
+				]
+			],
+			//EPICIC-16 - transit+2components_cdr_example 
+			["test_num" => 48,'file_type'=>'ICT',
+				"expected" => [
+					['arate_key' => 'RATE_OTE_ICTDC_MOB_TI_OTENI02', 'aprice' => 0.00475, 'final_charge' =>0.00475, 'aid' => 2107, 'sid' => 2122, "usaget" => "transit_incoming_call", "usagev_unit" => "seconds", "usagev" => 95,"cf.call_direction" => "TI" ,"cf.component" => "ICTDC"],
+					['arate_key' => 'RATE_CYTA_ICTTC_MOB_TO_CTA_MTCN', 'aprice' =>0.0026885, 'final_charge' => 0.003199315,'aid' => 2108, 'sid' => 2123, "usaget" => "transit_outgoing_call", "usagev_unit" => "seconds", "usagev" => 95, "cf.call_direction" => "TO", "cf.component" => "ICTTC"],
+					['arate_key' => 'RATE_CYTA_ICTDC_MOB_TO_CTA_MTCN', 'aprice' => 0.0046075, 'final_charge' => 0.005482925,'aid' => 2108, 'sid' => 2123, "usaget" => "transit_outgoing_call", "usagev_unit" => "seconds", "usagev" => 95, "cf.call_direction" => "TO", "cf.component" => "ICTDC"]
+				]
+			],
 		];
 		if ($this->test_cases) {
 			$this->test_cases = explode(',', $this->test_cases);
