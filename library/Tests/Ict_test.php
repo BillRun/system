@@ -80,8 +80,8 @@ class Tests_Icttest extends UnitTestCase {
 
 		}
 		parent::__construct("test Itc");
-		if (!file_exists($this->application_path."/library/Tests/Ict_testData/files")) {
-			mkdir($this->application_path."/library/Tests/Ict_testData/files", 0777, true);
+		if (!file_exists($this->application_path . "/library/Tests/Ict_testData/files")) {
+			mkdir($this->application_path . "/library/Tests/Ict_testData/files", 0777, true);
 		}
 		$request = new Yaf_Request_Http;
 		$this->useExistingConfig = $request->get('useExistingConfig');
@@ -138,7 +138,7 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	protected function process($row) {
 		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
-		chmod($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num",755);
+		chmod($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num", 755);
 		$options = array(
 			'type' => $row['file_type']
 		);
@@ -180,8 +180,9 @@ class Tests_Icttest extends UnitTestCase {
 		}
 		$i = 0;
 		foreach ($data as $data_) {
-			$this->message .= "*************************** line usaget {$expected[$i] ['usaget']}  ***************************" . '</br>';
+			$this->message .= "*************************** line usaget {$data_['usaget']}  ***************************" . '</br>';
 			foreach ($expected[$i] as $k => $v) {
+			
 				$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
 				$this->message .= '	Result : </br>';
 				$nested = false;
@@ -191,13 +192,13 @@ class Tests_Icttest extends UnitTestCase {
 					$k = end($nestedKey);
 					$nested = true;
 				}
-				//sne = Should not exist
-				if ($k== 'sne') {
-					foreach ($v as $sne) {
-						if (array_key_exists($sne, $data_)) {
-							$this->message .= " -- the key $sne exists although it should not exist ". $this->fail;
-							$result = false;
-						}
+				//// check if  are their field that should not exist
+				if (is_null($v)) {
+					if (array_key_exists($k, $data_)) {
+						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
+						$result = false;
+					} else {
+						$this->message .= "-- the key $k isn't exists  " .  $this->pass;
 					}
 					continue;
 				}
