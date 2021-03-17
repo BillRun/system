@@ -46,6 +46,7 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	public function minutelyAction() {
 		Billrun_Factory::dispatcher()->trigger('cronMinute');
+                $this->runMinutesCoreCommands();
 	}
 
 	/**
@@ -355,5 +356,9 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
+        
+        protected function runMinutesCoreCommands() {
+            Billrun_Compute_Suggestions_RateRecalculation::runCommand();
+    
+        }
 }

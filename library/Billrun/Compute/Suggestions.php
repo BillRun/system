@@ -17,13 +17,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected $suggestions;
 
     public function __construct() {
-        $this->suggestRecalculationsMode = Billrun_Factory::config()->getConfigValue('billrun.suggest_recalculations', false);
+        $this->suggestRecalculationsMode = $this->isRecalculateEnabled();
     }
 
-    //run this in background
     public function compute() {
         if (!$this->suggestRecalculationsMode) {
-            Billrun_Factory::log()->log('suggest recalculations mode is off', Zend_Log::INFO);
+            Billrun_Factory::log()->log('suggest recalculations ' . $this->getRecalculateType() . ' mode is off', Zend_Log::INFO);
             return;
         }
         Billrun_Factory::log()->log('Starting to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
@@ -305,7 +304,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return array();
     }
 
-    protected function checkIfValidLine() {
+    protected function checkIfValidLine($line) {
         return true;
     }
 
@@ -318,4 +317,36 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     abstract protected function recalculationPrice($line);
 
     abstract protected function getRecalculateType();
+    
+    abstract protected function isRecalculateEnabled();
+    
+    abstract static protected function getCoreIntervals();
+    
+    abstract static protected function getCmd();
+    
+    static public function runCommand() {
+        $minutesIntervals = static::getCoreIntervals();
+        $currentMinute = date('i');
+        if ($currentMinute == 0) {
+            $currentMinute = 60;
+        }
+        $minutesToRun = [];
+        foreach ($minutesIntervals as $minuteInterval) {
+            if ($minuteInterval == 0) {
+                $minuteInterval = 60;
+            }
+            if ($currentMinute % $minuteInterval == 0) {
+                $minutesToRun[] = $minuteInterval;
+            }
+        }
+        if (!empty($minutesToRun)) {
+            $command = static::getCmd();
+            try {
+                Billrun_Factory::log('Running compute suggestions on background', Billrun_Log::INFO);
+                Billrun_Util::forkProcessCli($command);
+            } catch (Exception $ex) {
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
+            }
+        }
+    }
 }
