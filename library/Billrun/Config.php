@@ -50,6 +50,12 @@ class Billrun_Config {
 	protected $productionValues = array('prod', 'product', 'production');
 
 	/**
+	 * Keeps track of already loaded configuration files
+	 * @var array 
+	 */
+	protected $loadedFiles = [];
+
+	/**
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
@@ -77,21 +83,22 @@ class Billrun_Config {
 	}
 	
 	public function addConfig($path) {
-		if (file_exists($path)) {
-			if(preg_match('/\.json$/',$path)) {
-					$addedConf = json_decode(file_get_contents($path),TRUE);
-					
-			} else {
+		if (!array_key_exists($path, $this->loadedFiles)) {
+			if (file_exists($path)) {
+				if (preg_match('/\.json$/', $path)) {
+					$addedConf = json_decode(file_get_contents($path), TRUE);
+				} else {
 					$addedConf = (new Yaf_Config_Ini($path))->toArray();
-			}
-			if(is_array($addedConf)) {
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+				}
+				if (is_array($addedConf)) {
+					$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+					$this->loadedFiles[$path] = true;
+				} else {
+					error_log("Couldn't load Configuration File {$path} !!");
+				}
 			} else {
-				error_log("Couldn't load Configuration File {$path} !!");
+				error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 			}
-			
-		} else {
-			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
 	}
 
@@ -136,7 +143,7 @@ class Billrun_Config {
 	}
 
 	/**
-	 * magic method for backward compatability (Yaf_Config style)
+	 * magic method for backward compatibility (Yaf_Config style)
 	 * 
 	 * @param string $key the key in the config container (Yaf_Config)
 	 * 

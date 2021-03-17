@@ -507,6 +507,9 @@ abstract class Billrun_Bill {
 
 	public function attachPaidBill($billType, $billId, $amount) {
 		$paymentRawData = $this->data->getRawData();
+		if(!isset($paymentRawData['pays'])){
+			$paymentRawData['pays'] = [];
+		}
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
