@@ -96,13 +96,20 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         }
         return true;
     }
+    
+    protected function getRetroactiveChangeOldPrice($retroactiveChangeOld, $tier = 1){
+        return Billrun_Rates_Util::getRateTierPrice($retroactiveChangeOld, $tier);
+    }
 
+    protected function getRetroactiveChangeNewPrice($retroactiveChangeNew, $tier = 1){
+        return Billrun_Rates_Util::getRateTierPrice($retroactiveChangeNew, $tier);
+        
+    }
     private function isFirstTierPriceChange($retroactiveChange) {
-        $tier = 1;
         $oldRate = $retroactiveChange['old'];
         $newRate = $retroactiveChange['new'];
-        $oldPrice = Billrun_Rates_Util::getRateTierPrice($oldRate, $tier);
-        $newPrice = Billrun_Rates_Util::getRateTierPrice($newRate, $tier);
+        $oldPrice = $this->getRetroactiveChangeOldPrice($oldRate);
+        $newPrice = $this->getRetroactiveChangeNewPrice($newRate);
         return $oldPrice !== $newPrice;
     }
 
