@@ -11,7 +11,7 @@
  *
  * @package  Billing
  */
-class Billrun_Suggestions_RateRecalculation extends Billrun_Suggestions {
+class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Suggestions {
 
 	public function __construct() {
 		parent::__construct();
