@@ -418,9 +418,12 @@ class Billrun_Rates_Util {
 	 * @return boolean return true if rate include in the given entity false otherwise
 	 */
 	public static function checkIfRateInclude($rate_key, $entity){
-		$groupKey = key($entity['include']['groups']);
-		$includeRates = $entity['include']['groups'][$groupKey]['rates'];
-		return in_array($rate_key, $includeRates);
+            if(!isset($entity['include']['groups'])){
+                return false;
+            }
+            $groupKey = key($entity['include']['groups']);
+            $includeRates = $entity['include']['groups'][$groupKey]['rates'];
+            return in_array($rate_key, $includeRates);
 	}
 	
 	/**
