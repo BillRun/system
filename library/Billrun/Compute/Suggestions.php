@@ -13,15 +13,10 @@
  */
 abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
-    protected $suggestRecalculationsMode;
     protected $suggestions;
 
-    public function __construct() {
-        $this->suggestRecalculationsMode = $this->isRecalculateEnabled();
-    }
-
     public function compute() {
-        if (!$this->suggestRecalculationsMode) {
+        if (!$this->isRecalculateEnabled()) {
             Billrun_Factory::log()->log('suggest recalculations ' . $this->getRecalculateType() . ' mode is off', Zend_Log::INFO);
             return;
         }
