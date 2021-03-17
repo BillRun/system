@@ -162,9 +162,18 @@ class Tests_Icttest extends UnitTestCase {
 		$epsilon = 0.00001;
 		Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon);
 
+	
 		$sort = function ($a, $b) {
-			if ($a['usaget'] != $b['usaget']) {
-				return $a['usaget'] < $b['usaget'];
+			$fields = [
+				'aprice',
+				'usaget',
+				'final_charge'
+			];
+
+			foreach ($fields as $field) {
+				if ($a[$field] != $b[$field]) {
+					return $a[$field] < $b[$field];
+				}
 			}
 			return 0;
 		};
