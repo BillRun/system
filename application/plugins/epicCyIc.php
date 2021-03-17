@@ -3,6 +3,11 @@
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
     protected $extraLines;
+    protected $ic_configuration = [];
+
+    public function __construct($options = array()) {
+        $this->ic_configuration = !empty($options['ic']) ? $options['ic'] : [];
+    }
 
     public function afterProcessorParsing($processor) {
         if ($processor->getType() === 'ICT') {
@@ -20,32 +25,32 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
-		if ($calculator->getType() == 'rate') {
-			$current = $row->getRawData();
-			$current["cf"]["rate_type"] = $current["cf"]["component"] == "ICTEC" ? "flat_rate" : "unit_cost";
-			$current["cf"]["rate_price"] = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"][0]["price"];
-			if($current["cf"]["rate_type"] == "unit_cost") {
-				$current["cf"]["rate_price"] *= 60;
-			}
-			unset($current["foreign"]["rate"]);
-			$row->setRawData($current);
-		}
-		
-		if ($calculator->getType() == 'pricing') {
-			$current = $row->getRawData();
-			if($current["cf"]["cash_flow"] == "E") {
-				unset($current["billrun"]);
-				for ($i = 0; $i < count($current["rates"]); $i++) {
-					unset($current["rates"][$i]["pricing"]["billrun"]);
-				}
-				$row->setRawData($current);
-			}
-		}
-	}
+        if ($calculator->getType() == 'rate') {
+            $current = $row->getRawData();
+            $current["cf"]["rate_type"] = $current["cf"]["component"] == "ICTEC" ? "flat_rate" : "unit_cost";
+            $current["cf"]["rate_price"] = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"][0]["price"];
+            if ($current["cf"]["rate_type"] == "unit_cost") {
+                $current["cf"]["rate_price"] *= 60;
+            }
+            unset($current["foreign"]["rate"]);
+            $row->setRawData($current);
+        }
+
+        if ($calculator->getType() == 'pricing') {
+            $current = $row->getRawData();
+            if ($current["cf"]["cash_flow"] == "E") {
+                unset($current["billrun"]);
+                for ($i = 0; $i < count($current["rates"]); $i++) {
+                    unset($current["rates"][$i]["pricing"]["billrun"]);
+                }
+                $row->setRawData($current);
+            }
+        }
+    }
 
     public function beforeCalculatorAddExtraLines(&$row, &$extraData, Billrun_Calculator $calculator) {
         if ($calculator->getType() == 'rate') {
-            $this->extraLines = [];  
+            $this->extraLines = [];
             $newRows = $this->calcCfFields($row, $calculator);
             if (count($newRows) === 1) {
                 $this->updateCfFields($newRows[0], $row); //only update
@@ -362,6 +367,387 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             }
         }
         return false;
+    }
+
+    public function cronHour() {
+        $ic_reports_manager = IC_Reports_Manager::getInstance($this->ic_configuration);
+        $ic_reports_manager->runReports();
+    }
+
+}
+
+class IC_Reports_Manager {
+
+    /**
+     * Singleton handler
+     * 
+     * @var IC_Reports_Manager
+     */
+    protected static $instance = null;
+
+    /**
+     * Holds the report file's export details
+     * @var array 
+     */
+    protected $export_details;
+
+    /**
+     * Holds MB details
+     * @var array 
+     */
+    protected $metabase_details;
+
+    /**
+     * Holds the reports details
+     * @var array 
+     */
+    protected $reports_details;
+
+    /**
+     * Holds MB domain
+     * @var string
+     */
+    protected $domain;
+    protected static $type = 'ssh';
+    protected $port = '22';
+
+    public function __construct($options) {
+        $this->reports_details = $options['reports'];
+        if (!empty($options['metbase_details'])) {
+            $this->metabase_details = $options['metbase_details'];
+        } else {
+            throw new Exception("Missing metabase configuration - no report was downloaded.");
+        }
+        if (!empty($options['export'])) {
+            $this->export_details = $options['export'];
+        } else {
+            throw new Exception("Missing export configuration - no report was downloaded.");
+        }
+    }
+
+    /**
+     * Function to fetch the reports that should run in the current day and hour.
+     */
+    public function runReports() {
+        $reports = $this->getReportsToRun();
+        Billrun_Factory::log("Found " . count($reports) . " interconnect reports to run.", Zend_Log::INFO);
+        foreach ($reports as $index => $report_settings) {
+            if (class_exists($report_class = 'IC_report_' . $report_settings['name'])) {
+                $report = new $report_class($report_settings);
+            } else {
+                $report = new IC_report($report_settings);
+            }
+            $metabase_url = rtrim($this->metabase_details['url'], "/");
+            try {
+                $report_params = $report->getReportParams();
+                $params_query = $this->createParamsQuery($report_params);
+                Billrun_Factory::log($report->name . " report's params json query: " . $params_query, Zend_Log::DEBUG);
+                $this->fetchReport($report, $metabase_url, $params_query);
+                Billrun_Factory::log($report->name . " report was downloaded successfully", Zend_Log::INFO);
+                if ($report->need_post_process) {
+                    Billrun_Factory::log("Starting " . $report->name . " report's post process", Zend_Log::DEBUG);
+                    $report->reportPostProcess();
+                }
+            } catch (Throwable $e) {
+                Billrun_Factory::log("Report: " . $report_settings['name'] . " download ERR: " . $e->getMessage(), Zend_Log::ALERT);
+                continue;
+            }
+            try {
+                Billrun_Factory::log("Saving " . $report->name . " report.", Zend_Log::DEBUG);
+                $this->save($report);
+                Billrun_Factory::log("Uploading " . $report->name . " report.", Zend_Log::INFO);
+                $this->upload($report);
+            } catch (Exception $e) {
+                Billrun_Factory::log("Report: " . $report_settings['name'] . " saving ERR: " . $e->getMessage(), Zend_Log::ALERT);
+                continue;
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param array $metabase - MB details
+     * @return string - user id to use for MB's Apis.
+     * @throws Exception - if one of the MB's details is missing.
+     */
+    protected function connectToMetabase($metabase) {
+        $header = ['Content-Type' => 'application/json'];
+        $user_name = $metabase['user'] ?: null;
+        $password = $metabase['password'] ?: null;
+        $mb_url = $metabase['url'] ?: null;
+        if (is_null($user_name) || is_null($password) || is_null($host)) {
+            throw new Exception("Missing 'password' / 'user'/ 'url' field in metabase configuration");
+        }
+        $data = ["username" => $user_name, "password" => $password];
+        $url = $mb_url . '/api/session';
+        $res = $this->sendRequest($url, json_encode(['header' => $header, 'data' => $data]));
+        print_r(json_decode($res));
+        return $res;
+    }
+
+    /**
+     * Function that returns the reports that should run in the current day and hour.
+     * @return array of the relevant reports settings.
+     */
+    protected function getReportsToRun() {
+        $reportsToRun = [];
+        foreach ($this->reports_details as $reportSettings) {
+            if ((isset($reportSettings['enable']) ? $reportSettings['enable'] : true) && $this->shouldReportRun($reportSettings)) {
+                Billrun_Factory::log("Report: " . $reportSettings['name'] . " should run.", Zend_Log::INFO);
+                $reportsToRun[] = $reportSettings;
+            }
+        }
+        return $reportsToRun;
+    }
+
+    /**
+     * 
+     * @param array $reportSettings
+     * @param array $params
+     * @return true if the report should run now, else - returns false.
+     */
+    protected function shouldReportRun($reportSettings, $params = []) {
+        $currentDay = intval(date('d'));
+        $currentHour = intval(date('H'));
+        $isRightHour = $reportSettings['hour'] == $currentHour;
+        $isRightDay = true;
+        if (!empty($reportSettings['day']) && (intval($reportSettings['day']) != $currentDay)) {
+            $isRightDay = false;
+        }
+
+        return $isRightDay && $isRightHour;
+    }
+
+    /**
+     * Function to download the wanted report from MB.
+     * @param IC _report object $report
+     * @param string $metabase_url
+     * @param string $report_params
+     * @throws Exception - if the report couldn't be downloaded
+     */
+    protected function fetchReport($report, $metabase_url, $report_params) {
+        $url = $metabase_url . '/api/public/card/' . $report->getId() . '/query/' . $report->format;
+        Billrun_Factory::log('IC report request: ' . $url, Zend_Log::DEBUG);
+        $params = !empty($report_params) ? ['parameters' => $report_params] : [];
+        $response = Billrun_Util::sendRequest($url, $params, Zend_Http_Client::GET, array('Accept-encoding' => 'deflate'), null, null, true);
+        $response_body = $response->getBody();
+        if (empty($response_body)) {
+            throw new Exception("Couldn't download " . $report->name . " report. Metabase response is empty.");
+        }
+        if (!$response->isSuccessful()) {
+            Billrun_Factory::log('Report response: ' . $response_body, Zend_Log::DEBUG);
+            throw new Exception("Couldn't download " . $report->name . " report. Error code: " . $response->getStatus());
+        }
+        $report->setData($response_body);
+    }
+
+    /**
+     * Function that converts report's params array to json string.
+     * @param array $report_params
+     * @return string
+     */
+    protected function createParamsQuery($report_params) {
+        $query = [];
+        foreach ($report_params as $name => $data) {
+            $parameters[] = [
+                'type' => $data['type'],
+                'target' => ["variable", ["template-tag", $data['template-tag']]],
+                'value' => $data['value']
+            ];
+        }
+        $query = json_encode($parameters);
+        return $query;
+    }
+
+    /**
+     * Function that saves the report's files locally
+     * @param IC_report $report
+     */
+    public function save($report) {
+        $file_path = $this->export_details['export_directory'] . DIRECTORY_SEPARATOR . $report->getFileName();
+        Billrun_Factory::log("Saving " . $report->name . " under: " . $file_path, Zend_Log::INFO);
+        file_put_contents($file_path, $report->getData());
+    }
+
+    /**
+     * Function that saves the report's files remotely 
+     * @param IC_report $report
+     */
+    public function upload($report) {
+        $hostAndPort = $this->export_details['host'] . ':' . $this->port;
+        $auth = array(
+            'password' => $this->export_details['password'],
+        );
+        $connection = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
+        Billrun_Factory::log()->log("Connecting to SFTP server: " . $connection->getHost(), Zend_Log::INFO);
+        $connected = $connection->connect($this->export_details['user']);
+        if (!$connected) {
+            Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
+            return;
+        }
+        Billrun_Factory::log()->log("Success: Connected to: " . $connection->getHost(), Zend_Log::INFO);
+        Billrun_Factory::log("Uploading " . $report->getFileName(), Zend_Log::INFO);
+        $fileName = $report->getFileName();
+        if (!empty($connection)) {
+            try {
+                $local = $this->export_details['export_directory'] . '/' . $fileName;
+                $remote = $this->export_details['remote_directory'] . '/' . $fileName;
+                $connection->put($local, $remote);
+            } catch (Exception $e) {
+                Billrun_Factory::log("Report: " . $report_settings['name'] . " uploading ERR: " . $e->getMessage(), Zend_Log::ALERT);
+                return;
+            }
+            Billrun_Factory::log("Uploaded " . $report->getFileName() . " file successfully", Zend_Log::INFO);
+        }
+    }
+
+    /**
+     * get IC reports manager instance
+     * 
+     * @param array $params the parameters of the manager
+     * 
+     * @return IC_Reports_Manager object
+     */
+    public static function getInstance($options) {
+        if (is_null(self::$instance)) {
+            $class = 'IC_Reports_Manager';
+            if (@class_exists($class, true)) {
+                self::$instance = new $class($options);
+            }
+        }
+        return self::$instance;
+    }
+
+}
+
+class IC_report {
+
+    /**
+     * Report name
+     * @var string 
+     */
+    public $name;
+
+    /**
+     * Report id in MB
+     * @var string 
+     */
+    protected $id;
+
+    /**
+     * Day to run the report, null if the report runs daily.
+     * @var number 
+     */
+    public $day = null;
+
+    /**
+     * Hour to run the report.
+     * @var number 
+     */
+    public $hour;
+
+    /**
+     * Csv file name.
+     * @var string
+     */
+    public $file_name;
+
+    /**
+     * Report params
+     * @var array
+     */
+    public $params;
+
+    /**
+     * Report actual data
+     * @var array
+     */
+    protected $data;
+
+    /**
+     * True if the report needs post process
+     * @var boolean
+     */
+    public $need_post_process;
+
+    /**
+     * Report format - csv/json
+     * @var string
+     */
+    public $format;
+
+    /**
+     * Is report enabled
+     * @var boolean 
+     */
+    protected $enabled;
+
+    public function __construct($options) {
+        if (is_null($options['id'])) {
+            throw new Exception("Report ID is missing");
+        }
+        $this->id = $options['id'];
+        $this->name = $options['name'];
+        $this->day = !empty($options['day']) ? $options['day'] : $this->day;
+        $this->hour = $options['hour'];
+        $this->file_name = $options['csv_name'];
+        $this->params = $options['params'];
+        $this->need_post_process = !empty($options['need_post_process']) ? $options['need_post_process'] : false;
+        $this->format = $this->need_post_process ? "json" : "csv";
+        $this->enabled = !empty($options['enable']) ? $options['enable'] : true;
+    }
+
+    public function reportPostProcess($values = []) {
+        $data = array_map('str_getcsv', explode("\n", $report->getData()));
+        return;
+    }
+
+    /**
+     * Function that process the configured report params, and return it as array.
+     * @return type
+     * @throws Exception - if one of the configured params is in wrong configuration.
+     */
+    public function getReportParams() {
+        $params = [];
+        if (!empty($this->params)) {
+            foreach ($this->params as $index => $param) {
+                switch ($param['type']) :
+                    case "date" :
+                        $dateFormat = isset($param['format']) ? $param['format'] : 'Y-m-d';
+                        if (isset($param['value']) && is_array($param['value'])) {
+                            $date = Billrun_Util::calcRelativeTime($param['value'], time());
+                            $params[$param['template_tag']]['value'] = date($dateFormat, $date);
+                        } else {
+                            throw new Exception("Invalid params for 'date' type, in parameter" . $param['template_tag']);
+                        }
+                        break;
+                    case "string" || "number" :
+                        $params[$param['template_tag']]['value'] = $param['value'];
+                        break;
+                    default :
+                        throw new Exception("Invalid param type, in parameter" . $param['template_tag']);
+                endswitch;
+                $params[$param['template_tag']]['template-tag'] = $param['template_tag'];
+                $params[$param['template_tag']]['type'] = $param['type'];
+            }
+        }
+        return $params;
+    }
+
+    public function getData() {
+        return $this->data;
+    }
+
+    public function setData($data) {
+        $this->data = $data;
+    }
+
+    public function getId() {
+        return $this->id;
+    }
+
+    public function getFileName() {
+        return $this->file_name . '_' . date('Ymd', time()) . '.csv';
     }
 
 }
