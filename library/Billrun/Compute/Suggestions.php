@@ -96,6 +96,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             'key' => '$' . $this->getFieldNameOfLine()
                                         ), $this->addGroupsIdsForMatchingLines()
                                 ),
+                                'firstname' =>array(
+                                    '$first' => '$firstname'
+                                ),
+                                'lastname' =>array(
+                                    '$first' => '$lastname'
+                                ),
                                 'from' => array(
                                     '$min' => '$urt'
                                 ),
@@ -115,11 +121,34 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     )
                 ),
                 array(
+                    '$addFields' => array_merge(
+                            array(
+                      
+                                'retroactive_change_info' =>array(
+                                    array(
+                                        'urt' => $retroactiveChange['urt']
+                                    ),
+                                    array(
+                                        'from' => $retroactiveChange['new']['from']
+                                    ),
+                                    array(
+                                        'old_price' => $retroactiveChange['urt']
+                                    ),
+                                    array(
+                                        'new_price' => $retroactiveChange['urt']
+                                    ),
+                                ),
+                            ), $this->addFieldsForMatchingLines()
+                    )
+                ),
+                array(
                     '$project' => array_merge(
                             array(
                                 '_id' => 0,
                                 'aid' => '$_id.aid',
                                 'sid' => '$_id.sid',
+                                'firstname' => '$_id.firstname',
+                                'lastname' => '$_id.lastname',
                                 'billrun' => '$_id.billrun',
                                 'key' => '$_id.key',
                                 'from' => 1,
@@ -143,6 +172,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'recalculationType' => $this->getRecalculateType(),
             'aid' => $line['aid'],
             'sid' => $line['sid'],
+            'firstname' => $line['firstname'],
+            'lastname' => $line['lastname'],
             'billrun_key' => $line['billrun'],
             'from' => $line['from'],
             'to' => new MongoDate(strtotime('+1 sec', $line['to']->sec)),
@@ -296,6 +327,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function addProjectsForMatchingLines() {
+        return array();
+    }
+    
+    protected function addFieldsForMatchingLines() {
         return array();
     }
 
