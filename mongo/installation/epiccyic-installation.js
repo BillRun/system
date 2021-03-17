@@ -3175,7 +3175,7 @@ db.taxes.save({
 	"from" : ISODate("2018-12-31T21:00:00Z"),
 	"key" : "DEFAULT_VAT",
 	"description" : "VATL19",
-	"rate" : 0.17,
+	"rate" : 0.19,
 	"params" : {
 		"vat_code" : "VATL19"
 	},
