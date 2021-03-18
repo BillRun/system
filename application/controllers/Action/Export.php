@@ -46,15 +46,25 @@ class ExportAction extends Action_Base {
 		
 		foreach ($export_generators_options as $export_generator_options) {
 			$this->getController()->addOutput("Loading exporter");
-			$exporter = Billrun_Exporter::getInstance($export_generator_options);
+			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type']);
+			if (!$exportGeneratorSettings) {
+				Billrun_Factory::log("Can't get configurarion: " . print_R($export_generator_options, 1), Zend_Log::EMERG);
+				return false;
+			}
+			$params = array_merge($exportGeneratorSettings, $export_generator_options);
+			$exporter = new Billrun_Exporter($params);
 			$exporter_name = $exporter->getType();
 			$this->getController()->addOutput("Exporter {$exporter_name} loaded");
 
 			if ($exporter) {
 				$this->getController()->addOutput("Starting to export. This action can take a while...");
 				try {
-					$exported = $exporter->export();
-					$this->getController()->addOutput("Exported " . count($exported) . " lines");
+					$exporter->generate();
+					if ($exporter->shouldFileBeMoved()) {
+						$this->getController()->addOutput("Exporting the file");
+						$exporter->move();
+						$this->getController()->addOutput("Finished exporting");
+					}
 				} catch (Exception $exc) {
 					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
 				}
