@@ -228,6 +228,7 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function importEntity($entity) {
+		Billrun_Factory::dispatcher()->trigger('beforeImportEntity', array(&$entity, $this));
 		try {
 			$params = $this->getImportParams($entity);
 			$entityModel = $this->getEntityModel($params);
@@ -332,7 +333,7 @@ class Models_Action_Import extends Models_Action {
 		$fields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.import.mapper", []);
 		$importable_fields = array_replace_recursive(
 			array_column($config, null, 'field_name'),
-			array_column($fields, null, 'field_name'),
+			array_column($fields, null, 'field_name')
 		);
 		$importable_fields = array_filter($importable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'importable', true);
@@ -402,7 +403,7 @@ class Models_Action_Import extends Models_Action {
 		$config = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.export.mapper", []);;
 		$exportable_fields = array_replace_recursive(
 			array_column($config, null, 'field_name'),
-			array_column($fields, null, 'field_name'),
+			array_column($fields, null, 'field_name')
 		);
 		$exportable_fields = array_filter($exportable_fields, function($field) {
 			return Billrun_Util::getIn($field, 'exportable', true);
