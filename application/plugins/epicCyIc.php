@@ -8,6 +8,16 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function __construct($options = array()) {
         $this->ic_configuration = !empty($options['ic']) ? $options['ic'] : [];
     }
+	
+	public function beforeImportEntities(&$entity, Models_Action_Import $importer) {
+		$usagetype = reset(array_keys($entity['rates']));
+		$rates_array = $entity["rates"][$usagetype]["BASE"]["rate"];
+		$rates_array = array_merge($rates_array,$rates_array);
+		$rates_array[0]["to"] = 1;
+		$rates_array[1]["from"] = 1;
+		$rates_array[1]["price"] = 0;
+		$entity["rates"][$usagetype]["BASE"]["rate"] = $rates_array;
+	}
 
     public function afterProcessorParsing($processor) {
         if ($processor->getType() === 'ICT') {
