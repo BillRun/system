@@ -1,0 +1,73 @@
+			<div class="form-section form-section-how">
+				<div class="shell">
+					<h5 class="form-subtitle">How would you like to pay?</h5><!-- /.form-subtitle -->
+
+					<div class="form-section-content form-section-content-small">
+						<ul class="list-radios">
+						<?php 
+						foreach ($payment_gateways as $pg) : 
+							$gpName = htmlspecialchars($pg['name']);
+						?>
+							<li>
+								<div class="radio radio-cards">
+									<label for="pg-field-<?php echo $gpName; ?>" class="form-label-radio">
+										<input type="radio" name="payment_gateway" value="<?php echo $gpName; ?>" id="pg-field-<?php echo $gpName; ?>"/>
+										
+										<span class="overlay"></span>
+
+										<span class="radio-icon">
+											<i class="material-icons">panorama_fish_eye</i>
+
+											<i class="material-icons">check_circle</i>
+										</span>
+										<?php if (!empty($pg['image_url'])) : ?>
+										<img src='<?php echo urlencode($pg['image_url']); ?>' />
+										<?php else : ?>
+										<span><?php echo $gpName; ?></span>
+										<?php endif; ?>
+										<!--<img src="css/images/card-1.png" alt="" />-->
+									</label>
+								</div><!-- /.radio -->
+							</li>
+						<?php endforeach; ?>	
+<!--							<li>
+								<div class="radio radio-cards">
+									<label for="field-creditguard" class="form-label-radio">
+										<input type="radio" name="radio-card" id="field-creditguard" />
+										
+										<span class="overlay"></span>
+
+										<span class="radio-icon">
+											<i class="material-icons">panorama_fish_eye</i>
+
+											<i class="material-icons">check_circle</i>
+										</span>
+
+										<img src="css/images/card-2.gif" alt="" />
+									</label>
+								</div> /.radio 
+							</li>
+							
+							<li>
+								<div class="radio radio-cards">
+									<label for="field-stripe" class="form-label-radio">
+										<input type="radio" name="radio-card" id="field-stripe" />
+										
+										<span class="overlay"></span>
+
+										<span class="radio-icon">
+											<i class="material-icons">panorama_fish_eye</i>
+
+											<i class="material-icons">check_circle</i>
+										</span>
+
+										<img src="css/images/card-3.png" alt="" />
+									</label>
+								</div> /.radio 
+							</li>-->
+						</ul><!-- /.list-radios -->
+
+						<h6>Note: payment method is set for first subscriber and will be used for any future subscriber you will add. You can later on change payment method at any time.</h6>
+					</div><!-- /.form-section-content -->
+				</div><!-- /.shell -->
+			</div><!-- /.form-section -->

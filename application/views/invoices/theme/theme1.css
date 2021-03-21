@@ -1,0 +1,428 @@
+/* 
+	Table of Contents
+
+	I.   Generic --------------------------------------
+	     01. Reset ------------------------------------
+	     02. Base -------------------------------------
+	     03. Fonts ------------------------------------
+	     04. Helpers ----------------------------------
+	         Clear ------------------------------------
+	         Notext -----------------------------------
+	         Hidden -----------------------------------
+	         Alignleft --------------------------------
+	         Alignright -------------------------------
+	         Disabled ---------------------------------
+	         Grid -------------------------------------
+	         Responsive Helpers -----------------------
+	II.  Regions --------------------------------------
+	     01. Container --------------------------------
+	     02. Content ----------------------------------
+	     03. Footer -----------------------------------
+	     04. Main -------------------------------------
+	     05. Shell ------------------------------------
+	     06. Sidebar ----------------------------------
+	     07. Wrapper ----------------------------------
+	III. Modules --------------------------------------
+	     01. Button -----------------------------------
+	         Button Block -----------------------------
+	     02. Form Elements ----------------------------
+	     03. Form -------------------------------------
+	     04. List -------------------------------------
+	     05. Logo -------------------------------------
+	     06. Nav --------------------------------------
+	     07. Section ----------------------------------
+	     08. Section-info  ----------------------------
+	     09. Slider -----------------------------------
+	     10. Table ------------------------------------
+	     11. Table Info -------------------------------
+	     12. Table Header -----------------------------
+	     13. Table Inline -----------------------------
+	     14. Widget -----------------------------------
+ */
+
+.cols:after { content: ''; line-height: 0; display: table; clear: both; }
+/* ------------------------------------------------------------ *\
+	I.   Generic
+\* ------------------------------------------------------------ */
+/* ------------------------------------------------------------ *\
+	Reset
+\* ------------------------------------------------------------ */
+*,
+*:before,
+*:after { padding: 0; margin: 0; outline: 0; box-sizing: border-box; }
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section,
+summary,
+main { display: block; }
+html { tap-highlight-color: rgba(0,0,0,0); }
+body { -moz-osx-font-smoothing: grayscale; -webkit-font-smoothing: antialiased; font-smoothing: antialiased; -webkit-text-size-adjust: none; -ms-text-size-adjust: none; text-size-adjust: none; }
+img,
+iframe,
+video,
+audio,
+object { max-width: 100%; }
+img,
+iframe { border: 0 none; }
+img { height: auto; display: inline-block; vertical-align: middle; }
+b,
+strong { font-weight: bold; }
+address { font-style: normal; }
+svg:not(:root) { overflow: hidden; }
+a,
+button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="file"],
+input[type="image"],
+label[for] { cursor: pointer; }
+a[href^="tel"],
+button[disabled],
+input[disabled],
+textarea[disabled],
+select[disabled] { cursor: default; }
+button::-moz-focus-inner,
+input::-moz-focus-inner { padding: 0; border: 0; }
+input[type="text"],
+input[type="password"],
+input[type="date"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="time"],
+input[type="url"],
+input[type="color"],
+textarea,
+a[href^="tel"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; }
+textarea { overflow: auto; -webkit-overflow-scrolling: touch; overflow-scrolling: touch; }
+button,
+input,
+optgroup,
+select,
+textarea { font-family: inherit; font-size: inherit; color: inherit; -moz-osx-font-smoothing: grayscale; -webkit-font-smoothing: antialiased; font-smoothing: antialiased; }
+button,
+select { text-transform: none; }
+table { width: 100%; border-collapse: collapse; border-spacing: 0; }
+nav ul,
+nav ol { list-style: none outside none; }
+/* ------------------------------------------------------------ *\
+	Base
+\* ------------------------------------------------------------ */
+body { min-width: 320px; background: #fff; font-family: 'Roboto Condensed', sans-serif; font-size: 25px; letter-spacing: 0.9; line-height: 1; color: #404041; }
+a { color: inherit; text-decoration: underline; }
+a:hover { text-decoration: none; }
+a[href^="tel"] { text-decoration: none; }
+h1 { font-size: ; }
+h2 { font-size: ; }
+h3 { font-size: 39px; font-weight: 300; }
+h4 { font-size: ; }
+h5 { font-size: ; }
+h6 { font-size: ; }
+p,
+ul,
+ol,
+dl,
+table,
+blockquote { margin-bottom: 1em; }
+table td { vertical-align: bottom; }
+h1[class],
+h2[class],
+h3[class],
+h4[class],
+h5[class],
+h6[class],
+h1:last-child,
+h2:last-child,
+h3:last-child,
+h4:last-child,
+h5:last-child,
+h6:last-child,
+p:last-child,
+ul:last-child,
+ol:last-child,
+dl:last-child,
+table:last-child,
+blockquote:last-child { margin-bottom: 0; }
+.label { color: #9a9b9d; font-weight: 300; }
+/* ------------------------------------------------------------ *\
+	Fonts
+\* ------------------------------------------------------------ */
+/* ------------------------------------------------------------ *\
+	Helpers
+\* ------------------------------------------------------------ */
+/*  Clear  */
+.clear:after { content: ''; line-height: 0; display: table; clear: both; }
+/*  Notext  */
+.notext { white-space: nowrap; text-indent: 100%; text-shadow: none; overflow: hidden; }
+.notext-old { font-size: 0; line-height: 0; text-indent: -4000px; }
+/*  Hidden  */
+[hidden],
+.hidden { display: none; }
+/*  Alignleft  */
+.alignleft { float: left; }
+/*  Alignright  */
+.alignright { float: right; }
+/*  Disabled  */
+[disabled],
+.disabled { cursor: default; }
+/*  Grid  */
+.cols { margin: 0 -15px; }
+.cols:after { }
+.col { float: left; width: 100%; padding: 0 15px; }
+.col-1of2 { width: 50%; }
+/*  Responsive Helpers  */
+.visible-xs-block,
+.visible-xs-inline,
+.visible-xs-inline-block,
+.visible-sm-block,
+.visible-sm-inline,
+.visible-sm-inline-block,
+.visible-md-block,
+.visible-md-inline,
+.visible-md-inline-block,
+.visible-lg-block,
+.visible-lg-inline,
+.visible-lg-inline-block { display: none !important; }
+@media (max-width: 767px) {
+	.hidden-xs { display: none !important; }
+	.visible-xs-block { display: block !important; }
+	.visible-xs-inline { display: inline !important; }
+	.visible-xs-inline-block { display: inline-block !important; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+	.hidden-sm { display: none !important; }
+	.visible-sm-block { display: block !important; }
+	.visible-sm-inline { display: inline !important; }
+	.visible-sm-inline-block { display: inline-block !important; }
+}
+@media (min-width: 1024px) and (max-width: 1200px) {
+	.hidden-md { display: none !important; }
+	.visible-md-block { display: block !important; }
+	.visible-md-inline { display: inline !important; }
+	.visible-md-inline-block { display: inline-block !important; }
+}
+@media (min-width: 1201px) {
+	.hidden-lg { display: none !important; }
+	.visible-lg-block { display: block !important; }
+	.visible-lg-inline { display: inline !important; }
+	.visible-lg-inline-block { display: inline-block !important; }
+}
+.inline { display: inline; }
+/* ------------------------------------------------------------ *\
+	II.  Regions
+\* ------------------------------------------------------------ */
+/* ------------------------------------------------------------ *\
+	Container
+\* ------------------------------------------------------------ */
+.container {}
+/* ------------------------------------------------------------ *\
+	Content
+\* ------------------------------------------------------------ */
+.content {}
+/* ------------------------------------------------------------ *\
+	Footer
+\* ------------------------------------------------------------ */
+.footer { font-size: 20px; font-weight: 300; height: 80px; }
+.footer .section { border-top: 2px solid #404041; border-bottom: none; }
+.footer li { display: inline-block; margin-right: 10px; }
+.footer .fa { font-size: 25px; }
+.footer .credentials .text { display: inline-block; vertical-align: middle; margin-right:5px; }
+.footer .credentials img { display: inline-block; vertical-align: middle; }
+/* ------------------------------------------------------------ *\
+	Main
+\* ------------------------------------------------------------ */
+.main {}
+/* ------------------------------------------------------------ *\
+	Shell
+\* ------------------------------------------------------------ */
+.shell { max-width: 1420px; min-width: 1150px; padding-left: 10px; padding-right: 10px; margin: auto; }
+.shell-fluid { max-width: none; }
+/* ------------------------------------------------------------ *\
+	Sidebar
+\* ------------------------------------------------------------ */
+.sidebar {}
+/* ------------------------------------------------------------ *\
+	Wrapper
+\* ------------------------------------------------------------ */
+.wrapper { min-height: 100vh; /*margin-bottom: -80px;*/ }
+/*.wrapper:after { content: ""; display: block; height: 80px; }*/
+/* ------------------------------------------------------------ *\
+	III. Modules
+\* ------------------------------------------------------------ */
+/* ------------------------------------------------------------ *\
+	Button
+\* ------------------------------------------------------------ */
+.btn { display: inline-block; vertical-align: middle; text-align: center; cursor: pointer;
+	-webkit-appearance: none;
+	   -moz-appearance: none;
+	 		appearance: none;
+}
+/*  Button Block  */
+.btn-block { display: block; padding-left: 0; padding-right: 0; }
+/* ------------------------------------------------------------ *\
+	Form Elements
+\* ------------------------------------------------------------ */
+input::-webkit-input-placeholder { color: inherit; opacity: 1; }
+input::-moz-placeholder { color: inherit; opacity: 1; }
+input:-ms-input-placeholder { color: inherit; opacity: 1; }
+input::placeholder { color: inherit; opacity: 1; }
+textarea::-webkit-input-placeholder { color: inherit; opacity: 1; }
+textarea::-moz-placeholder { color: inherit; opacity: 1; }
+textarea:-ms-input-placeholder { color: inherit; opacity: 1; }
+textarea::placeholder { color: inherit; opacity: 1; }
+input:-webkit-autofill { -webkit-text-fill-color: inherit; -webkit-box-shadow: 0 0 0 1000px #fff inset; }
+.field {}
+.textarea {}
+.select {}
+.radio {}
+.checkbox {}
+/* ------------------------------------------------------------ *\
+	Form
+\* ------------------------------------------------------------ */
+.form {}
+/* ------------------------------------------------------------ *\
+	List
+\* ------------------------------------------------------------ */
+[class^="list-"] { list-style: none outside none; }
+/* ------------------------------------------------------------ *\
+	Logo
+\* ------------------------------------------------------------ */
+.logo { font-size: 49px; font-weight: 300; }
+.logo img { margin-right: 30px; }
+/* ------------------------------------------------------------ *\
+	Nav
+\* ------------------------------------------------------------ */
+.nav {}
+/* ------------------------------------------------------------ *\
+	Section
+\* ------------------------------------------------------------ */
+.section { padding: 20px 30px; border-bottom: 2px solid #404041; }
+.section-header td { vertical-align: middle; }
+.section-header .paging { font-size: 20px; font-weight: 300; text-align: right; }
+.section-invoice-head { padding: 10px 30px; line-height: 40px; text-align: right; }
+.section-invoice-head .page-title { width: 30%; text-align: left; }
+.section-invoice-head .label { margin-right: 10px; }
+.section-invoice-base h2 { font-family: 'Roboto', sans-serif; font-weight: 300; font-size: 25px; text-transform: uppercase; margin-bottom: 20px;  }
+.section-invoice-base h1 { font-family: 'Roboto', sans-serif; font-weight: 300; font-size: 52px; text-transform: uppercase; margin-bottom: 10px;  }
+.section-invoice-details { padding:0; }
+.section-invoice-details .section-title { text-transform: uppercase; font-weight:300; border-bottom:2px solid; padding:40px 30px; }
+.section-invoice-details .section-body { padding: 40px 70px; }
+.section-invoice-details .section-title-alt { border-bottom:0; }
+/* ------------------------------------------------------------ *\
+	Section-info 
+\* ------------------------------------------------------------ */
+.section-info { border-bottom:2px solid; padding: 30px; }
+/* ------------------------------------------------------------ *\
+	Slider
+\* ------------------------------------------------------------ */
+.slider {}
+.slider .slides { list-style: none outside none; }
+/* ------------------------------------------------------------ *\
+	Table
+\* ------------------------------------------------------------ */
+tr { page-break-inside: avoid; }
+.table-default { border-bottom:2px solid;  page-break-inside: avoid; margin-bottom: 100px;}
+.table-default th { text-align: left; border-bottom: 2px solid #404041; font-weight:300; color: #818285; padding-bottom:4px; padding-top: 4px; }
+.table-default th:nth-child(4),
+.table-default td:nth-child(4),
+.table-default th:last-child,
+.table-default th {table-layout: fixed }
+.table-default th:last-child { text-align: right; }
+.table-default th:last-child,
+.table-default td:last-child { width: 200px; text-align: right; }
+.table-default td { background: url("dot.png") repeat-x center bottom; padding: 14px 0 17px 0; }
+.table-default tfoot td { background:transparent; font-size:44px; font-weight:300; border-top:7px double; border-bottom:7px double; }
+.table-default tbody tr:last-child td { background:transparent; }
+.table-default tbody .last td { background:transparent; border-bottom:2px solid; }
+.table-default tbody tr.grand-total { background:transparent; font-size:44px; font-weight:300; border-top:7px double; border-bottom:7px double; }
+.table-default tbody .total td { background:transparent; border-bottom:2px solid; }
+.table-default-primary { border-bottom:0; max-width: 692px; }
+/* ------------------------------------------------------------ *\
+	Table Info
+\* ------------------------------------------------------------ */
+.table-info td { vertical-align: bottom; padding-bottom:10px; }
+.table-info td:first-child { width:30px; text-transform: capitalize; }
+.table-info small { color: #818285; font-size:inherit; font-weight:300; }
+.table-info h2 { margin: 0; display: inline-block; vertical-align: bottom; font-weight:300; margin-right:20px; }
+/* ------------------------------------------------------------ *\
+	Table Header
+\* ------------------------------------------------------------ */
+.table-header { text-align:left; }
+.table-header h1 { font-size:100px; font-weight:300; }
+.table-header > tbody > tr > td { vertical-align: middle; text-align:right; }
+.table-header > tbody > tr > td:first-child { text-align:left; }
+/* ------------------------------------------------------------ *\
+	Table Inline
+\* ------------------------------------------------------------ */
+.table-inline { width:300px; text-align:left; margin-left:auto; }
+.table-inline td:first-child { color: #818285; }
+.table-inline strong { font-weight:300; font-size:40px; }
+/* ------------------------------------------------------------ *\
+	Widget
+\* ------------------------------------------------------------ */
+.widgets { list-style: none outside none; }
+
+
+/* Billrun Overrides */
+* {
+	/*font-size: 100%!important;*/
+}
+
+.footer .shell { padding-left: 0; padding-right: 0;}
+.table-default { margin-bottom: 0;}
+.section-custom-header { border-bottom: 1px solid #404041; padding:10px; }
+.section-custom-footer { border-top: 2px solid #404041; padding:10px; }
+.section-invoice-base { border-bottom:0;  }
+.section-head .section-title { border-top: 2px solid #404041; }
+.section-invoice-details { border-bottom: none; }
+.section-invoice-details .section-title-alt { border-top:0;}
+
+.section-invoice-details tbody{
+	font-size: 16px;
+}
+.section-invoice-head .table-inline { 
+	width:325px; 
+}
+
+img.billrun-logo {
+	width:125px;
+	object-fit:contain;
+}
+
+.sumup .table-default .complex-sumup th:last-child,.sumup .table-default .complex-sumup td:last-child {
+	width:155px;
+}
+
+.sumup .table-default .complex-sumup th:first-child,.sumup .table-default .complex-sumup td:first-child {
+	width: 400px;
+}
+
+/* Emphsize the  sub-total */
+.subtotal {
+	font-weight: bold;
+}
+.small-text {
+	font-size:12px;
+}
+
+.table-default-primary.complex-sumup-wrapper {
+	max-width:800px;
+	page-break-inside: auto;
+	
+}

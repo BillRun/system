@@ -1,0 +1,66 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "Three subscribers",
+	"subs" : 3,
+	"data": [
+		{
+		  "firstname": "A",
+		  "lastname": "B",
+		  "country": "B",
+		  "address": "af",
+		  "type": "account",
+		  "from": 1374980947,
+		  "plan_activation": 1474980947,
+		  "to" : 1477872000,
+		  "aid": 19
+		},
+		{
+		  "aid": 19,
+		  "firstname": "Smulik",
+		  "lastname": "Aharon",
+		  "plan": "PLAN-X3",
+		  "address": "af",
+		  "country": "B",
+		  "type": "subscriber",
+		  "from": 1475280000,
+		  "plan_activation": 1475280000,
+		  "to": 1477872000,
+		  "services" : [
+				"SERVICE4"
+		  ],
+		  "sid": 20
+		},
+		{
+		  "aid": 19,
+		  "firstname": "Dudu",
+		  "lastname": "Siman-Tov",
+		  "plan": "PLAN-X2",
+		  "address": "af",
+		  "country": "B",
+		  "type": "subscriber",
+		  "from": 1475280000,
+		  "plan_activation": 1475280000,
+		  "to": 1477872000,
+		  "services" : [
+				"Floopy"
+		  ],
+		  "sid": 21
+		},
+		{
+		  "aid": 19,
+		  "firstname": "Barba",
+		  "lastname": "Aba",
+		  "plan": "PLAN-X1",
+		  "address": "af",
+		  "country": "B",
+		  "type": "subscriber",
+		  "from": 1475280000,
+		  "plan_activation": 1475280000,
+		  "to": 1477872000,
+		  "sid": 22
+		}
+
+	]
+}

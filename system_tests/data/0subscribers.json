@@ -1,0 +1,20 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "No subscribers",
+	"subs" : 0,
+	"data": [
+		{
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "country": "UK",
+		  "address": "10 Downing st.",
+		  "type": "account",
+		  "from": 1471588424,
+		  "plan_activation": 1471588424,
+		  "to" : 4627262024,
+		  "aid": 6
+		}
+	]
+}

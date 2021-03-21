@@ -1,0 +1,57 @@
+<table class="complex-sumup">
+	<thead>
+		<tr>
+			<th>Description</th>
+			<th>Qty</th>
+			<th>Rate</th>
+			<th></th>
+			<th>Amount</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		<?php
+			$subscriptionList = $this->buildSubscriptionListFromLines($this->lines);
+			$endKey = @end(array_keys($subscriptionList));
+			foreach ($subscriptionList as $key =>$aggregated) { ?>
+			<?php  if($aggregated['type'] == 'refunds' && !$this->show_refunds_details) { continue; } ?>
+			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
+				<td class='desc'><?php echo $aggregated['desc']; ?></td>
+				<td class='qty'><?php echo $aggregated['count']; ?></td>
+				<td class='rate'><?php echo  number_format( (!empty($aggregated['rate']) ? $aggregated['rate'] : $aggregated['amount']),2) ; ?></td>
+				<td class='span small-text'><?php echo  $aggregated['span']; ?></td>
+				<td class='amount'><?php echo $this->currencySymbol() . number_format($aggregated['amount'], 2); ?></td>
+			</tr>
+		<?php } ?>
+			
+		<?php 
+			$endKey = end($details_keys);
+			foreach ($details_keys as $title => $key) { ?>
+			<?php if (empty($data->get('totals')[$key]) || in_array($key,$this->flat_line_types)) { continue; } ?>
+			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
+				<td colspan="4"><?php echo ucfirst($title); ?></td>
+				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
+			</tr>
+		<?php } ?>			
+		
+		<?php echo $this->render($this->discount_template,array('data' => array('totals'=> $data['totals'],'discounts'=> $this->getAllDiscount($this->lines)), 'col_count' => 5)); ?>
+		
+		<tr class="total subtotal">
+			<td colspan="4">SUBTOTAL</td>
+			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['before_vat'], 2); ?></td>
+		</tr>		
+		
+		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'), 'col_count' => 5)); ?>
+
+		<?php if (!empty($invoice_display_options['past_balance']) && $data->get('totals')['past_balance']['after_vat'] < -0.005) { ?>
+			<tr class="total">
+				<td colspan="4">PAST BALANCE / REIMBURSEMENTS</td>
+				<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['past_balance']['after_vat'], 2); ?></td>
+			</tr>
+		<?php } ?>
+		<tr class="grand-total">
+			<td colspan="4">GRAND TOTAL</td>
+			<td><?php echo $this->currencySymbol() . number_format($data->get('totals')['after_vat'] + (!empty($invoice_display_options['past_balance']) ? $data->get('totals')['past_balance']['after_vat'] : 0 ), 2); ?></td>
+		</tr>
+	</tbody>
+</table>

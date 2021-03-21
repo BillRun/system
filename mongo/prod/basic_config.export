@@ -1,0 +1,271 @@
+{
+    "company_name": "[COMPANY_NAME]",
+    "shared_folder": "shared",
+    "cg_return_url": "",
+    "shared_secret": "[SHARED_SECRET]",
+    "usage_types": {
+        "array": [],
+        "t": "Array"
+       },
+    "resetlines": {
+        "limit": {
+            "v": 10,
+            "t": "Number"
+        },
+        "offset": {
+            "v": "1 hour",
+            "t": "DateString"
+        },
+        "process_time_offset": {
+            "v": "15 minutes",
+            "t": "DateString"
+        },
+        "failed_sids_file": {
+            "v": "/files/failed_resetlines.json",
+            "t": "SharedPath"
+        }
+    },
+    "pricing": {
+        "vat": {
+            "v": 0.17,
+            "t": "Float",
+            "range": {
+                "max": 1,
+                "min" : 0
+            }
+        },
+        "currency": "USD"
+    },
+    "log": {
+        "debug": {
+            "writerParams": {
+                "stream": {
+                    "v": "/logs/debug.log",
+                    "t": "SharedPath"
+                }
+            },
+            "filterParams": {
+                "priority": {
+                    "v": 7,
+                    "t": "Number",
+                    "range": {
+                        "min": 0,
+                        "max": 7
+                    }
+                }
+            }
+        }
+    },
+    "billrun": {
+        "charging_day": {
+            "v": 1,
+            "t": "Number",
+             "range": {
+                   "min": 1,
+                   "max": 28
+             }
+        },
+        "timezone": {
+          "v": "UTC",
+           "t": "Timezone"
+        },
+        "start_hours_lag": {
+            "v": 3,
+            "t": "Number",
+             "range": {
+                   "min": 0,
+                   "max": 23
+             }
+        }
+    },
+    "export_generators" : {
+	"v" : "",
+	"t" : "Exportgenerator",
+	"list": [] 
+    },
+    "subscribers": {
+        "types": [
+            "subscriber",
+            "account"
+        ],
+        "fields": [{
+            "field_name": "type",
+            "editable": false
+        }],
+        "subscriber": {
+            "fields": [{
+                "field_name": "sid",
+                "generated": true,
+                "unique": true,
+                "editable": false,
+    "display": false
+            }, {
+                "field_name": "aid",
+                "mandatory": true,
+                "editable": false,
+    "display": false
+            }, {
+                "field_name": "firstname",
+                "mandatory": true
+            }, {
+                "field_name": "lastname",
+                "mandatory": true
+            }, {
+                "field_name": "plan",
+                "mandatory": true
+            }, {
+                "field_name": "plan_activation",
+                "mandatory": false
+            }, {
+                "field_name": "address",
+                "mandatory": true
+            }, {
+                "field_name": "country"
+            }, {
+    "field_name":"services",
+    "mandatory": false
+           }]
+        },
+        "account": {
+            "fields": [{
+                "field_name": "aid",
+                "generated": true,
+                "unique": true,
+                "editable": false
+            }, {
+                "field_name": "firstname",
+                "mandatory": true,
+                "title": "First name"
+            }, {
+                "field_name": "lastname",
+                "mandatory": true,
+                "title": "Last name"
+            }, {
+                "field_name": "email",
+                "mandatory": true
+            }, {
+                "field_name": "country",
+                "mandatory": true
+            }, {
+                "field_name": "address",
+                "mandatory": true
+            }, {
+                "field_name": "card_token",
+                "editable": false,
+                "display": false
+            }, {
+                "field_name": "card_expiration",
+                "editable": false,
+                "display": false
+            }, {
+                 "field_name": "payment_gateway",
+                 "editable": false,
+ 				 "display": true
+             }, {
+                "field_name": "personal_id",
+                "editable": false,
+                "display": false
+            }]
+        }
+    },
+    "rates": {
+        "fields": [{
+            "field_name": "key",
+            "mandatory": true
+        }, {
+            "field_name": "from",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "description",
+            "mandatory": true
+        }, {
+            "field_name": "rates",
+            "mandatory": true
+        }]
+    },
+    "plans": {
+        "fields": [{
+            "field_name": "from",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "name",
+            "mandatory": true
+        }, {
+            "field_name": "price",
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "mandatory": true
+        }, {
+            "field_name": "upfront",
+            "mandatory": true,
+            "type": "boolean"
+        }]
+    },
+   "services": {
+        "fields": [{
+            "field_name": "from",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "name",
+            "mandatory": true
+        }, {
+            "field_name": "price",
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "mandatory": true
+        }, {
+            "field_name": "include"
+        } ]
+    },
+    "file_types": [],
+    "receive": "1",
+    "process": "1",
+    "calculate": "1",
+    "wkpdf": {
+        "export": "files/invoices/",
+        "currency": "NIS",
+        "generator": {
+            "type": "WkPdf"
+        },
+        "disable_stamp_export_directory": 1,
+        "theme": "/application/views/invoices/theme/theme1.css",
+        "header": "/application/views/invoices/header/header1.html",
+        "footer": "/application/views/invoices/footer/footer1.html",
+        "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
+        "details_template": "/application/views/invoices/details/details1.phtml",
+        "logo": "/application/helpers/sources/logo.png",
+        "decimal_mark": ".",
+        "thousands_separator": ",",
+        "date_separator": "/",
+        "move_exported": 0,
+        "html_translation": {
+            "logo_path": {
+                "class_method": "getLogoPath"
+            },
+            "company_name": {
+                "class_method": "getCompanyName"
+            },
+            "date": {
+                "class_method": "getHeaderDate"
+            }
+        }
+    },
+	"payment_gateways" : [ ]
+}

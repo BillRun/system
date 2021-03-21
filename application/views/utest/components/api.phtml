@@ -1,0 +1,45 @@
+<?php if (!empty($apiCalls)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading">Api Calls</div>
+		<div class="panel-body">
+			<?php foreach ($apiCalls as $key => $api_call) : ?>
+				<div class="row">
+					<div class="col-sm-1 text-center pt15">
+						<p><strong><?php echo ($key + 1) ?></strong></p>
+					</div>
+					<div class="col-sm-11">
+						<div class="row well well-sm code text-center nested-row word-break-all">
+							<div class="col-sm-1 pt10"><?php echo htmlspecialchars($api_call['method']) ?></div>
+							<div class="col-sm-4 pt10"><?php echo htmlspecialchars($api_call['uri']) ?></div>
+							<div class="col-sm-3 pt10"><strong>(<?php echo htmlspecialchars($api_call['duration']) ?> ms)</strong></div>
+							<div class="col-sm-4">
+								<?php if (strtolower($api_call['method']) == 'get') : ?>
+									<button class="copy-to-clipboard-btn btn btn-info copy-request-data-btn" data-clipboard-text="<?php echo $api_call['uri'] ?>?<?php echo $api_call['request'] ?>">Copy request to clipboard</button>
+								<?php endif ?>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-1 text-center">
+						<p><span class="glyphicon glyphicon-export" aria-hidden="true"></span>Request Data</p>
+					</div>
+					<div class="col-sm-11">
+						<pre><?php echo htmlspecialchars(urldecode($api_call['request'])) ?></pre>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-1 text-center">
+						<p><span class="glyphicon glyphicon-import" aria-hidden="true"></span>Response Data</p>
+					</div>
+					<div class="col-sm-11">
+						<pre><?php echo htmlspecialchars($api_call['response']) ?></pre>
+					</div>
+				</div>
+				<?php if (count($apiCalls) !== ($key + 1)) : ?>
+					<hr>
+				<?php endif; ?>
+			<?php endforeach; ?>
+		</div>
+	</div>
+<?php endif; ?>

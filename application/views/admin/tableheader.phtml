@@ -1,0 +1,18 @@
+<?php
+
+if ($active == 'lines') {
+	print '<section id="no-more-tables"><table id="data_table" 
+				   data-toggle="table" 
+				   data-detail-formatter="detailFormatter" 
+				   class="table table-striped table-bordered table-no-more-tables">';
+} else {
+	print '<section id="no-more-tables"><table id="data_table" class="table table-striped table-bordered table-no-more-tables">';
+}
+print '<thead><tr><th ' . ($active == 'lines' ? " class='min-width-96' " : "") . '>'
+	. '<label class="checkbox">#'
+	. '<input type="checkbox" id="check_all" />'
+	. '</label></th>';
+foreach ($this->columns as $value) {
+	print '<th>' . $value . '</th>';
+}
+print '</tr></thead><tbody>';

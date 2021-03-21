@@ -1,0 +1,873 @@
+{
+	"collection": "servicesCollection",
+	"data":
+			[
+				{
+					"name": "SERVICE1",
+					"description": "SERVICE1",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"AAA": {
+								"call": 40
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE2",
+					"description": "SERVICE2",
+					"price": 45,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"BBB": {
+								"call": 75
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE3",
+					"description": "SERVICE3",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"AAA": {
+								"call": 40
+							},
+							"BBB": {
+								"call": 75
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE4",
+					"description": "SERVICE4",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"SR4": {
+								"gr": 200
+							}
+						}
+					}
+				},
+
+				{
+					"name": "NEW-SERVICE1",
+					"description": "SERVICE1",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"AAA": {
+								"call": 40,
+								"rates": ["NEW-CALL-USA", "NEW-VEG"]
+							}
+						}
+					}
+				},
+				{
+					"name": "NEW-SERVICE2",
+					"description": "SERVICE2",
+					"price": 45,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"BBB": {
+								"call": 75,
+								"rates": ["NEW-CALL-USA"]
+							}
+						}
+					}
+				},
+				{
+					"name": "NEW-SERVICE3",
+					"description": "SERVICE3",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"AAA": {
+								"call": 40,
+								"rates": ["NEW-CALL-USA", "NEW-VEG"]
+							},
+							"BBB": {
+								"call": 75,
+								"rates": ["NEW-CALL-USA"]
+							}
+						}
+					}
+				},
+				{
+					"name": "NEW-SERVICE4",
+					"description": "SERVICE4",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							
+							"SR4": {
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"NEW-VEG"
+								],
+								"value": 200,
+								"usage_types": {
+									"gr": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "NEW-SERVICE5",
+					"description": "SERVICE5",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"SR5": {
+								"cost": 10,
+								"rates": ["NEW-VEG"]
+							}
+						}
+					}
+				},
+				{
+					"name": "SHARED-SERVICE1",
+					"description": "SHARED-SERVICE-1",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GR3": {
+								"call": 10,
+								"account_shared": true,
+								"rates": ["SHARED-RATE"]
+							}
+						}
+					}
+				},
+				{
+					"name": "NO-SHARED-SERVICE2",
+					"description": "NO-SHARED-SERVICE-2",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GR2": {
+								"call": 5,
+								"rates": ["SHARED-RATE"]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-L2",
+					"description": "SERVICE-L2",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GRS2": {
+								"call": 20,
+								"rates": ["RATE-L3"]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-L3",
+					"description": "SERVICE-L3",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GRS3": {
+								"cost": 2,
+								"rates": ["RATE-L3"]
+							}
+						}
+					}
+				},
+
+				{
+					"name": "SERVICE-L4-SHARED",
+					"description": "SERVICE-L4-SHARED",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GRS4": {
+								"call": 20,
+								"account_shared": true,
+								"rates": ["RATE-L3"]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-L5-SHARED",
+					"description": "SERVICE-L5-SHARED",
+					"price": 33,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"GRS5": {
+								"cost": 4,
+								"account_shared": true,
+								"rates": ["RATE-L3"]
+							}
+						}
+					}
+				},
+				{
+					"name": "POOLED-SERVICE1",
+					"description": "POOLED-SERVICE-1",
+					"price": 5,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"POOL1": {
+								"call": 10,
+								"account_shared": true,
+								"account_pool": true,
+								"rates": ["SHARED-RATE"]
+							}
+						}
+					}
+				},
+				{
+					"name": "POOLED-SERVICE3",
+					"description": "POOLED-SERVICE-3",
+					"price": 5,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"POOL3": {
+								"cost": 3,
+								"account_shared": true,
+								"account_pool": true,
+								"rates": ["SHARED-RATE"]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-N1",
+					"description": "SERVICE-N1",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"G2": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 300,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-N1",
+									"RATE-N1b",
+									"INCOMING_1"
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-N3",
+					"description": "SERVICE-N3",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"include": {
+						"groups": {
+							"G3": {
+								"usage_types": {
+									"call": {
+										"unit": "minutes"
+									},
+									"incoming_call": {
+										"unit": "minutes"
+									},
+									"outgoing_call": {
+										"unit": "minutes"
+									}
+								},
+								"value": 300,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-N3",
+									"INCOMING_1"
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-O1",
+					"description": "SERVICE-O1",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"balance_period": "tomorrow +2 weeks",
+					"include": {
+						"groups": {
+							"O10": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 60,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-O1",
+									"RATE-O2",
+									"INCOMING_1"
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-O4",
+					"description": "SERVICE-O4",
+					"price": 15,
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"balance_period": "tomorrow +2 weeks",
+					"include": {
+						"groups": {
+							"XYZ": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 100,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-O4",
+									"RATE-O5",
+									"RATE-O6"
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-Q1",
+					"description": "SERVICE-Q1",
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "8.95"
+						}
+					],
+					"balance_period": "tomorrow +11 days",
+					"include": {
+						"groups": {
+							"Q1": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 250,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-Q1",
+									"RATE-Q2"
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE-Q2",
+					"description": "SERVICE-Q2",
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "4.95"
+						}
+					],
+					"balance_period": "tomorrow +5 days",
+					"include": {
+						"groups": {
+							"Q2": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 120,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-Q1",
+									"RATE-Q2"
+								]
+							}
+						}
+					}
+				},
+				{
+
+					"from": "time*2016-10-04T04:00:00Z",
+					"name": "2GB_INTERNET_FOR_1_CYCLE",
+					"price": [
+						{
+							"from": 0,
+							"to": "1",
+							"price": "10"
+						}
+					],
+					"description": "2gb_internet_for_1_cycle",
+					"include": {
+						"groups": {
+							"INTERNET": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"INTERNET"
+								],
+								"value": 2000000000,
+								"usage_types": {
+									"data": {
+										"unit": "mb1000"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2166-10-03T09:29:58Z",
+					"creation_time": "time*2016-10-04T04:00:00Z"
+				},
+				{
+					"name": "SERVICE-IS1",
+					"description": "SERVICE-IS1", 
+					"from": "time*2016-09-05T08:08:36Z",
+					"to": "time*2116-10-05T08:08:36Z",
+					"price": [{
+							"from": 0,
+							"to": 1,
+							"price": 10
+						}],
+					"include": {
+						"groups": {
+							"IS": {
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									},
+									"incoming_call": {
+										"unit": "seconds"
+									},
+									"outgoing_call": {
+										"unit": "seconds"
+									}
+								},
+								"value": 100,
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"RATE-Q1"
+								]
+							}
+						}
+					}
+				},
+				{
+
+					"from": "time*2017-08-01T00:00:00Z",
+					"name": "PERIOD_SHARED",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "1"
+						}
+					],
+					"description": "period_shared",
+					"include": {
+						"groups": {
+							"CALL_ONLY": {
+								"account_shared": true,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 30,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 months",
+					"to": "time*2166-10-29T15:23:26Z",
+					"creation_time": "time*2017-08-01T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-08-01T00:00:00Z",
+					"name": "PERIOD_POOLED",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": "1"
+						}
+					],
+					"description": "period_pooled",
+					"include": {
+						"groups": {
+							"PERIOD": {
+								"account_shared": true,
+								"account_pool": true,
+								"rates": [
+									"CALL"
+								],
+								"value": 10,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": false,
+					"quantitative": false,
+					"balance_period": "+1 months",
+					"to": "time*2166-10-29T15:27:45Z",
+					"creation_time": "time*2017-08-01T00:00:00Z"
+				},
+				{
+					"name": "SERVICE_OVERRIDE_PRICE",
+					"description": "Override price in service",
+					"price": 33,
+					"from": "time*2016-10-29T15:27:45Z",
+					"to": "time*2166-10-29T15:27:45Z",
+					"rates": {
+						"NEW-CALL-USA": {
+							"call": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 20,
+										"interval": 1,
+										"price": 0.111111
+									},
+									{
+										"from": 21,
+										"to": 999999999,
+										"interval": 1,
+										"price": 1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"name": "SERVICE_INCLUDE_PLUS_OVERRIDE_PRICE",
+					"description": "Override price in service + includes",
+					"price": 33,
+					"from": "time*2016-10-29T15:27:45Z",
+					"to": "time*2166-10-29T15:27:45Z",
+					"include": {
+						"groups": {
+							"AAA": {
+								"call": 10,
+								"rates": [
+									"NEW-CALL-USA"
+								]
+							}
+						}
+					},
+					"rates": {
+						"NEW-CALL-USA": {
+							"call": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 5,
+										"interval": 1,
+										"price": 0.111111
+									},
+									{
+										"from": 6,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.5
+									}
+								]
+							}
+						}
+					}
+				}, {
+
+					"from": "time*2018-01-29T00:00:00Z",
+					"name": "MUL",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "mul",
+					"include": {
+						"groups": {
+							"MUL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								},
+								"quantity_affected": true
+							}
+						}
+					},
+					"prorated": true,
+					"quantitative": true,
+					"vatable": true,
+					"to": "time*2167-11-28T15:18:56Z",
+					"creation_time": "time*2018-01-29T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-12-04T00:00:00Z",
+					"name": "POOLD",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "poold",
+					"include": {
+						"groups": {
+							"POOLD": {
+								"account_shared": true,
+								"account_pool": true,
+								"quantity_affected": true,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"quantitative": true,
+					"vatable": true,
+					"to": "time*2167-12-03T12:56:09Z",
+					"creation_time": "time*2017-12-04T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "CALL",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "call",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				}, {
+					"from": "time*2018-06-18T00:00:00Z",
+					"name": "ONE_CYCLE_ADDON",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": 100
+						}
+					],
+					"description": "one_cycle_addon",
+					"prorated": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-06-17T11:25:11Z",
+					"creation_time": "time*2018-06-18T00:00:00Z",
+					"include": {
+						"groups": {
+							"CALLL": {
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"from": "time*2010-10-29T22:00:00Z",
+					"name": "OVERRIDE_BY_PERCENTAGE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 10
+						}
+					],
+					"description": " Override by percentage of the original price",
+					"prorated": true,
+					"rates": {
+						"CALL_OVERRIDE_SERVICE_A": {
+							"call": {
+								"percentage": 0.5
+							}
+						},
+						"CALL_OVERRIDE_SERVICE_B": {
+							"call": {
+								"percentage": 0
+							}
+						}
+					},
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2169-10-29T10:17:29Z",
+					"creation_time": "time*2010-10-29T22:00:00Z"
+				}
+
+
+			]
+}

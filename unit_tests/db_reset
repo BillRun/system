@@ -1,0 +1,4 @@
+mongo billing --eval 'db.rates.remove({})'
+mongoimport -d billing -c rates mongo/pl/rates.export
+mongo billing --eval 'db.prepaidincludes.remove({})'
+mongoimport -d billing -c prepaidincludes mongo/pl/prepaidincludes.export

@@ -1,0 +1,70 @@
+<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>" >
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd></dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
+			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="amount" class="col-sm-4 control-label text-right">Amount</label>
+		<div class="col-sm-6">
+			<input type="text" name="amount" value='100'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="operation" class="col-sm-4 control-label text-right">Operation</label>
+		<div class="col-sm-6">
+			<!--<input type="text" name="operation" value=''  class="form-control">-->
+			<select name="operation" value=''  class="form-control">
+				<option value="inc" selected="selected">inc</option>
+				<option value="set">set</option>
+				<option value="new">new</option>
+				<option value="">none</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="balanceType" class="col-sm-4 control-label text-right">PP Includes</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='balanceType'>
+				<?php foreach ($prepaidincludes as $prepaidinclude) : ?>
+					<option value="<?php echo $prepaidinclude ?>" <?php if ('CORE BALANCE' == $prepaidinclude) echo 'selected' ?>><?php echo $prepaidinclude ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="expiration" class="col-sm-4 control-label text-right">Expiration Date</label>
+		<div class="col-sm-6">
+			<div class='input-group datetimepicker'>
+				<input type='text' class="form-control" value='<?php echo date('d/m/Y H:i', strtotime('+1 month')); ?>' name='expiration'/>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

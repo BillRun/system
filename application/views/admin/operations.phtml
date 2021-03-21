@@ -1,0 +1,20 @@
+<?php ?>
+<div class="container component">	
+	<section id="operations-section" >
+		<div id='admin-operations' class='admin-operations'>
+			<h2>Operations</h2>
+			<?php if (AdminController::authorized('write')) : ?>
+				<span><a id='upload' data-type="upload" href="#resetSubsModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-remove"> </i>Reset subscribers</a></span></br></br>
+				<span><a id='upload_invoice_ids' data-type="upload" href="#recreateInvoicesModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-remove"> </i>Recreate invoices</a></span>
+			<?php endif; ?>
+		</div>
+	</section>
+	<hr>
+
+	<footer>
+		<?php $this->display('billrun.phtml', array()); ?>
+	</footer>
+	<?php
+	$this->display('popups.phtml', array());
+	?>
+</div> <!-- /container -->

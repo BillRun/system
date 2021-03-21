@@ -1,0 +1,81 @@
+<form action="/utest/result?collection=<?php echo $test_collection ?>" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd>Notify Billrun on prepaid SMS/MMS before SMS/MMS is sent to see whether or not the subscriber is eligible for sending the SMS/MMS. If the subscriber is eligible a SMS/MMS is added to Billrun lines, otherwise returns 0 in sms_reservation field.</dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="calling_number" class="col-sm-4 control-label text-right">Calling Number</label>
+		<div class="col-sm-6">
+			<input type="text" name="msisdn" value='' class="form-control">
+			<small class="text-muted">MSISDN</small>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="called_number" class="col-sm-4 control-label text-right">Called Number</label>
+		<div class="col-sm-6">
+			<input type="text" name="called_number" value='' class="form-control">
+		</div>
+	</div>
+	
+	<div class="form-group row">
+		<label for="msc" class="col-sm-4 control-label text-right">MSC</label>
+		<div class="col-sm-6">
+			<input type="text" name="msc" value='<?php echo $msc ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="discount" class="col-sm-4 control-label text-right">Discount</label>
+		<div class="col-sm-6">
+			<input type="text" name="discount" value='0' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="usaget" class="col-sm-4 control-label text-right">SMS/MMS</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='usaget'>
+				<option value="sms">SMS</option>
+				<option value="mms">MMS</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="send_failed_request" class="col-sm-4 control-label text-right">Failed SMS</label>
+		<div class="col-sm-6">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="send_failed_request" value="send_failed_request">Check to simulate failed SMS
+				</label>
+			</div>
+		</div>
+	</div>
+
+	<!--	<div class="form-group row">
+			<label class="col-sm-4"></label>
+			<div class="col-sm-6">
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" name="removeLines" value="remove">Remove all existing lines for this Calling Number before running test
+					</label>
+				</div>
+			</div>
+		</div>-->
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

@@ -1,0 +1,150 @@
+<div class="toolbar toolbar-<?php echo $active; ?>">
+	<form id="search-criteria" action="" method="POST" class="form-vertical">
+		<?php
+//		print_R($this->filter_fields_order);
+//		print_R($this->filter_fields);die;
+		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
+			foreach ($this->filter_fields_order as $key => $row_fields) {
+				echo "<div class=\"control-group control-group" . $key . "\">
+							<div class=\"controls form-inline inline-toolbar\">";
+				foreach ($row_fields as $filter_field_key => $field_view) {
+					$filter_field = $this->filter_fields[$filter_field_key];
+					if ($filter_field['input_type'] == 'boolean') {
+						echo "<input class=\"form-control span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">"
+						. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
+					} else if ($filter_field['input_type'] == 'number') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
+					} else if ($filter_field['input_type'] == 'text') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key']
+						. "\" type=\"text\" value=\""
+						. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default'])
+						. "\">";
+					} else if ($filter_field['input_type'] == 'date') {
+						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
+								<div class=\"input-group date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"YYYY-MM-DD HH:mm:ss\">
+								<input name=\"" . $filter_field['key'] . "\" class=\"form-control\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">
+								<span class=\"input-group-addon\"><span class=\"glyphicon glyphicon-calendar\"></span></span>
+								</div>";
+					} else if ($filter_field['input_type'] == 'multiselect') {
+						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
+						<select id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "[]\" class=\"form-control multiselect\"" . (isset($filter_field['singleselect']) ? "" : " multiple=\"multiple\"") . ">";
+						foreach ($filter_field['values'] as $value => $name) {
+							if (is_array($this->session->$filter_field['key'])) {
+								if (in_array($value, $this->session->$filter_field['key'])) {
+									$selected = " selected";
+								} else {
+									$selected = "";
+								}
+							} else if (is_array($filter_field['default']) && in_array($value, $filter_field['default'])) {
+								$selected = " selected";
+							} else {
+								$selected = "";
+							}
+							echo "<option value=\"" . $value . "\"" . $selected . ">" . $name . "</option>";
+						}
+						echo "</select>";
+					}
+				}
+				echo "</div></div>";
+			}
+
+			if ($active == 'lines') :
+				echo "<div><label class='inline'><input type='checkbox' id='show-zero-usage' name='show_zero_usage' " . ($this->session->show_zero_usage == 'on' ? " checked='true' " : "") . " />Show zero-usage lines</label></div>";
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+                            <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
+				if (Admin_Lines::isManualFilter($this->session)) {
+					for ($i = 0; $i < count($this->session->manual_key); $i++) {
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+					}
+				} else {
+					echo Admin_Lines::getFilterRow(); // add first manual filter on load
+				}
+				echo "</div>";
+			elseif ($active == 'rates') :
+			endif;
+			if ($active == 'lines' || $active == 'rates' || $active == 'balances' || $active == 'events'):
+				echo "<div class=\"control-group control-group4\"><div id=\"extra_columns\" class=\"controls form-inline\">"
+				. "&nbsp;<label class=\"control-label\">Display fields</label>
+						<select name=\"extra_columns[]\" class=\"form-control multiselect\" multiple=\"multiple\">";
+				foreach ($this->extra_columns as $value => $name) {
+					$selected = "";
+					if (is_array($this->session->extra_columns) && in_array($value, $this->session->extra_columns)) {
+						$selected = " selected";
+					}
+					echo "<option value=\"" . $value . "\"" . $selected . ">" . $name . "</option>";
+				}
+				echo "</select>";
+				echo "</div></div>";
+			endif;
+			if (is_array($this->sort_fields) && $this->sort_fields) {
+				echo "Sort by: <div class=\"control-group control-group5\">
+		<div class=\"controls form-inline\">
+			 <select id=\"sort_by\" name=\"sort_by\" class=\"form-control multiselect\">";
+				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
+					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ||
+					(!$this->session->sort_by && $sort_field_key == 'from' && $active == 'subscribers') ||
+					(!$this->session->sort_by && $sort_field_key == 'urt' && $active == 'lines') ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
+				}
+				echo "</select>
+			<label class=\"radio inline\">
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") || (!isset($this->session->order) && $active == 'subscribers' || $active == 'lines') ? " checked=\"checked\"" : "") . "> Descending order
+			</label>
+			<label class=\"radio inline\">
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "asc") ? "checked=\"checked\"" : "") . "> Ascending order
+			</label>
+		</div></div>";
+			}
+		}
+		?>
+
+		<div class="toolbar-buttons">
+			<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
+			<script type="text/javascript">
+								var active_collection = '<?php echo $active; ?>';
+			</script>
+				<?php if (!in_array($active, array('events', 'log'))) : ?>
+				<span class="pull-right">
+				<?php endif; ?>
+				<?php if ($active == 'cards') : ?>
+					<span><a id='edit-batch' data-type='edit-batch' onclick='editBatchCards()' class='btn btn-primary' role='button'>Edit Batch</a></span>
+				<?php endif ?>
+				<?php if (in_array($active, array('rates', 'plans', 'users', 'subscribers', 'subscribers_auto_renew_services')) && AdminController::authorized('write')) : ?>
+					<?php if (in_array($active, array('subscribers', 'rates', 'subscribers_auto_renew_services', 'plans'))) : ?>
+						<span><a id='new' data-type='new' href='/admin#/<?php echo $active; ?>/new' class='btn btn-primary' role='button'>New</a></span>
+					<?php endif ?>
+					<?php if ($active != 'users') : ?>
+						<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button">Close & new</a></span>
+					<?php endif; ?>
+					<?php if ($active == 'users') : ?>
+						<span><a id='new' data-type="new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button">New</a></span>
+					<?php endif; ?>
+					<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button">Duplicate</a></span>
+				<?php endif; ?>
+				<?php if (!in_array($active, array('events', 'log', 'balances')) && AdminController::authorized('write')) : ?>
+					<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button"><i class="icon-remove"> </i>Remove</a></span>
+				<?php endif; ?>
+				<?php if ($active == 'lines' || $active == 'balances') : ?>
+					<?php if ($active === 'balances' && AdminController::authorized('write')) : ?>
+						<span><a id='new' data-type='new' href='/admin#/<?php echo $active; ?>/new' class='btn btn-primary' role='button'>New</a></span>
+					<?php endif ?>
+					<span><a id='download' data-type="download" href="/admin/csvExport?collection=<?php echo $active; ?>" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+					<?php if ($active == 'lines' && AdminController::authorized('write')) : ?>
+						<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
+					<?php endif; ?>
+				<?php endif; ?>
+				<?php if ($active == 'rates') : ?>
+					<?php if (AdminController::authorized('write')) : ?>
+						<span><a id='import_prices' data-type="upload" href="#importPricesModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
+						<span><a id='save_version' data-type="download" href="#saveVersionModal" class="btn btn-warning" data-toggle="modal" role="button"><i class="icon-download-alt"> </i>Save Version</a></span>
+						<?php if (AdminController::authorized('admin')) : ?>
+						<span><a id='load_version' data-type="upload" href="#loadVersionModal" class="btn btn-warning" data-toggle="modal" role="button"><i class="icon-upload"> </i>Load Version</a></span>
+						<?php endif; ?>
+					<?php endif; ?>
+					<span><a id='export_prices' data-type="download" href="javascript:exportRates();" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
+<?php endif; ?>
+			</span>
+		</div>
+	</form>
+</div>

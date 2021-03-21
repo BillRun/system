@@ -1,0 +1,40 @@
+<div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
+	<form id="search-criteria" action="<?php echo $baseUrl; ?>/admin/wholesale" method="POST" class="form-vertical">
+		<?php
+		if (isset($this->group_fields) && is_array($this->group_fields)) {
+			echo '<div class="control-group control-group0">';
+			foreach ($this->group_fields as $group_field) {
+				$default_key = isset($this->session->$group_field['key']) ? $this->session->$group_field['key'] : $group_field['default'];
+				$this->group_field_display = $group_field['values'][$default_key]['display'];
+				$this->popup_group_field = $group_field['values'][$default_key]['popup'];
+				echo '<div class="controls form-inline">&nbsp;<label class="control-label">' . $group_field['display'] . '</label>';
+				echo '<input name="popup_group_field" type="hidden" value="' . $this->popup_group_field . '">';
+				echo '<input name="init_' . $group_field['key'] . '" type="hidden" value="' . (isset($this->session->$group_field['key']) ? $this->session->$group_field['key'] : $group_field['default']) . '">';
+				echo '<select id="' . $group_field['key'] . '" name="' . $group_field['key'] . '" class="form-control multiselect">';
+				foreach ($group_field['values'] as $key => $value) {
+					echo '<option value="' . $key . '"' . ($default_key == $key ? ' selected' : '') . '>' . $value['display'] . '</option>';
+				}
+				echo '</select></div>';
+			}
+			echo '</div>';
+		}
+		echo "<div class=\"control-group control-group1\">
+					<div class=\"controls form-inline\">";
+		foreach ($this->filter_fields as $filter_field) {
+			if ($filter_field['input_type'] == 'date') {
+				echo '<input name="init_' . $filter_field['key'] . '" type="hidden" value="' . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . '">';
+				echo '&nbsp;<label class="control-label">' . $filter_field['display'] . '</label>
+								<div class="input-group date wholesale-date" id="datetimepicker_' . $filter_field['key'] . '" data-date="' . $filter_field['default'] . '" data-date-format="YYYY-MM-DD">
+								<input name="' . $filter_field['key'] . '" class="form-control" size="16" type="text" value="' . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . '">
+								<span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+								</div>';
+			}
+		}
+		echo '</div></div>';
+		?>
+
+		<div class="toolbar-buttons">
+			<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
+		</div>
+	</form>
+</div>

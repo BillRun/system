@@ -1,0 +1,51 @@
+						<div class="form-group">
+							<div class="form-row">
+								<label for="field-select-plan" class="form-label">Select plan</label>
+								
+								<div class="form-controls">
+									<div class="plan plan-current">
+										<a href="#" class="popup-trigger popup-trigger-absolute">
+											<i class="material-icons">keyboard_arrow_down</i>
+										</a>
+
+										<h5 class="plan-title"><?php echo htmlspecialchars($plans[0]['name']);?></h5><!-- /.plan-title -->
+
+										<p><?php echo htmlspecialchars($plans[0]['description']);?></p>
+										<input type="hidden" name="plan" id="plan" class="form-control" value="<?php echo htmlspecialchars($plans[0]['name']); ?>"/>
+										<div class="plan-body">
+											<div class="plan-aside">
+												Monthly charging
+											</div><!-- /.plan-aside -->
+										
+											<div class="plan-content">
+												<ul class="list-price">
+												<?php 
+												$price_count = count($plans[0]['price']);
+												for ($i = 0; $i < $price_count; $i++) :
+													$tier = $plans[0]['price'][$i]; 
+													?>
+													<li>
+														<h2><?php echo $currency_symbol . $tier['price']; ?></h2>
+
+														<h6>
+															<?php 
+															if ($i == 0 && $i == $price_count-1) { // first and last (only 1)
+																echo $tier['to'] == 'UNLIMITED' ? '': $tier['to'] . ' months';
+															} elseif ($i == 0 && $price_count > 0) { // first and multiple
+																echo 'first ' . $tier['to'] . ' months';
+															} elseif ($i == $price_count-1 && $price_count > 0) { // last and multiple
+																echo $tier['to'] == 'UNLIMITED' ? ' and on ' : 'rest ' . $tier['to']-$tier['from'] . ' months';
+															} else { // middle => multiple, not first, not last
+																echo $tier['to'] - $tier['from'] . ' next months';
+															}
+															?>
+														</h6>
+													</li>
+												<?php endfor; ?> <!-- TODO: take care of trial? -->
+												</ul><!-- /.list-price -->
+											</div><!-- /.plan-content -->
+										</div><!-- /.plan-body -->
+									</div><!-- /.plan -->
+								</div><!-- /.form-controls -->
+							</div><!-- /.form-row -->
+						</div><!-- /.form-group -->

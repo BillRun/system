@@ -1,0 +1,42 @@
+<html>
+	<head>
+		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | ' . $test->getTestLabel())); ?>
+	</head>
+	<body>
+		<?php print $this->render('utest/components/navigation.phtml'); ?>
+
+		<div class="container">
+			<div class="page-header">
+				<!--<h1>Results for <?php echo $test->getTestLabel(); ?></h1>-->
+			</div>
+			<ol class="breadcrumb">
+				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
+				<li><a href="/utest">uTest</a></li>
+				<li><a href="/utest?testcollection=<?php echo $test_collection ?>"><?php echo $test_collection_label; ?></a></li>
+				<li><?php echo $test->getTestLabel(); ?></li>
+			</ol>
+
+			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['before'], 'label' => 'Balances Before Test SID : ' . $sid, 'id' => 'balance-before')); ?>
+
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['before'], 'label' => 'Subscriber Before Test SID : ' . $sid, 'id' => 'subscriber-before')); ?>
+
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['after'], 'label' => 'Subscriber After Test SID : ' . $sid_after_test, 'id' => 'subscriber-after')); ?>
+
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $autorenew['before'], 'label' => 'Autorenew Before Test SID : ' . $sid_after_test, 'id' => 'autorenew-before')); ?>
+
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $autorenew['after'], 'label' => 'Autorenew After Test SID : ' . $sid_after_test, 'id' => 'autorenew-after')); ?>
+
+			<?php print $this->render('utest/components/cards.phtml', array('cards' => $cards['rows'], 'label' => $cards['label'])); ?>
+
+			<?php print $this->render('utest/components/lines.phtml', array('lines' => $lines, 'sid' => $sid_after_test, 'id' => 'lines')); ?>
+
+			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['after'], 'label' => 'Balances After Test SID : ' . $sid_after_test, 'id' => 'balance-after')); ?>
+
+			<?php print $this->render('utest/components/balanceDiff.phtml', array('balances_after' => $balances['after'], 'balances_before' => $balances['before'])); ?>
+
+			<?php print $this->render('utest/components/api.phtml', array('apiCalls' => $apiCalls)); ?>
+
+			<a href="/utest?testcollection=<?php echo $test_collection ?>#<?php echo $test->getTestName() ?>" class="btn btn-success">Return</a>
+		</div>
+	</body>
+</html>

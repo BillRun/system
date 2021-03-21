@@ -1,0 +1,61 @@
+			<div class="form-section form-section-details">
+				<div class="shell">
+					<h5 class="form-subtitle">Set subscriber details</h5><!-- /.form-subtitle -->
+
+					<div class="form-section-content">
+						<div class="form-group">
+<!--							<div class="cols">
+								<div class="col col-1of2">
+									<div class="form-row">
+										<label for="field-first-name" class="form-label">First name</label>
+										
+										<div class="form-controls">
+											<input type="text" class="field" name="field-first-name" id="field-first-name" placeholder="" />
+										</div> /.form-controls 
+									</div> /.form-row 
+								</div> /.col col-1of2 
+								
+								<div class="col col-1of2">
+									<div class="form-row">
+										<label for="field-last-name" class="form-label">Last name</label>
+										
+										<div class="form-controls">
+											<input type="text" class="field" name="field-last-name" id="field-last-name" placeholder="" />
+										</div> /.form-controls 
+									</div> /.form-row 
+								</div> /.col col-1of2 
+							</div> /.cols -->
+							
+							<?php
+							foreach ($subscriber_config as $c) {
+								if ((empty($c['display']) && empty($c['mandatory'])) 
+									|| $c['field_name'] === 'plan' 
+									|| (isset($c['editable']) && !$c['editable'])) {
+									continue;
+								}
+							?>
+							<div class="form-row">
+								<label for="sub-field-address" class="form-label"><?php echo isset($c['title']) ? $c['title'] : $c['field_name']; ?></label>
+								
+								<div class="form-controls">
+									<input type="text" class="field" name="<?php echo $c['field_name']; ?>" id="sub-field-<?php echo $c['field_name']; ?>" placeholder="" 
+										<?php echo ((isset($c['mandatory']) && $c['mandatory']) ? 'required="required"' : '');?>/>
+								</div><!-- /.form-controls -->
+							</div><!-- /.form-row -->
+							<?php
+							}
+//								echo "<div class='form-row'>";
+//								echo "<div class='col-md-3'>"
+//								. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
+//								. "<input class='form-control' type='text' name='" . $c['field_name'] . "' "
+//								. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
+//								. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
+//								. "</div>";
+//								echo "</div>";
+//								}
+								?>
+								<input type="hidden" name="aid" id="aid" value="<?php echo $account['aid']; ?>" />
+						</div><!-- /.form-group -->
+					</div><!-- /.form-section-content -->
+				</div><!-- /.shell -->
+			</div><!-- /.form-section -->

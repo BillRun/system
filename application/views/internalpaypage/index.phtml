@@ -1,0 +1,101 @@
+<?php
+//print "<pre>";print_R($this);
+?><!DOCTYPE html>
+<html lang="en">
+<?php $this->display('internalpaypage/html_head.phtml', $this->_tpl_vars); ?>
+<body>
+<div class="wrapper">
+	<header class="header">
+		<div class="shell">
+			<a href="#" class="logo">
+				<span class="logo-icon">
+					<img src="<?php echo $company_image; ?>" alt="<?php echo htmlspecialchars($tenant['name']); ?>" />
+				</span>
+
+				<span class="text"><?php echo htmlspecialchars($tenant['name']);?></span>
+			</a>
+
+			<div class="header-aside">
+				<span class="text">powered by</span>
+
+				<a href="#" class="logo-billrun"></a>
+			</div><!-- /.header-aside -->
+		</div><!-- /.shell -->
+	</header><!-- /.header -->
+
+
+<div class="form">
+	<form action="/internalpaypage/create" method="post">
+		<input type="hidden" name="aid" value="<?php echo htmlspecialchars($account['aid']);?>" />
+		<input type="hidden" name="return_url" value="<?php echo $return_url; ?>" />
+		<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
+		<div class="form-head">
+			<div class="shell">
+				<h2 class="form-title">ADD SUBSCRIBER</h2><!-- /.form-title -->
+			</div><!-- /.shell -->
+		</div><!-- /.form-head -->
+		<div class="form-body">
+			<?php
+			$this->display('internalpaypage/account_details.phtml', $this->_tpl_vars);
+			if ($action !== 'updatePaymentGateway') :
+				$this->display('internalpaypage/subscriber_details.phtml', $this->_tpl_vars);?>
+			<div class="form-section form-section-services">
+				<div class="shell">
+					<h5 class="form-subtitle">Select subscriber plan and services</h5><!-- /.form-subtitle -->
+
+					<div class="form-section-content">
+				<?php 
+				$this->display('internalpaypage/plan_default.phtml', $this->_tpl_vars); 
+				$this->display('internalpaypage/services_selection.phtml', $this->_tpl_vars); 
+				?>
+					</div>
+				</div><!-- /.shell -->
+			</div><!-- /.form-section -->
+			<?php 
+			endif;
+				//print $this->render('internalpaypage/total_charge.phtml', $this->_tpl_vars); 
+				if (empty($account['payment_gateway']['active']) || $action === 'updatePaymentGateway') :
+					print $this->render('internalpaypage/payment_details.phtml', $this->_tpl_vars); 
+				endif;
+			?>
+		</div><!-- /.form-body -->
+		<div class="form-actions">
+			<div class="shell">
+				<button type="submit" class="form-btn form-btn-submit" id="payment_gateway_submit" onclick="onSubmit()">Subscribe</button>
+				<button type="reset" class="form-btn form-btn-reset" onclick="window.history.back();">Cancel</button>
+			</div><!-- /.shell -->
+		</div><!-- /.form-actions -->
+	</form>
+</div><!-- /.form -->
+
+	<footer class="footer">
+		<div class="shell">
+			<div class="copyright">
+				Powered by <a href="http://billrun.com">BillRun</a>
+			</div><!-- /.copyright -->
+
+			<nav class="nav-footer">
+				<ul>
+<!--					<li>
+						<a href="#">Terms</a>
+					</li>
+
+					<li>
+						<a href="#">Privacy</a>
+					</li>
+
+					<li>
+						<a href="http://billrun.com">Contact Us</a>
+					</li> -->
+				</ul>
+			</nav><!-- /.nav-footer -->
+		</div><!-- /.shell -->
+	</footer><!-- /.footer -->
+</div><!-- /.wrapper -->
+<?php 
+if ($action !== 'updatePaymentGateway') :
+	$this->display('internalpaypage/plans_popup.phtml', $this->_tpl_vars); 
+endif;
+?>
+</body>
+</html>

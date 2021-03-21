@@ -1,0 +1,77 @@
+<?php
+
+$report_params = current($tbl_params);
+echo '<div class="wholesale-popup">
+<h2>' . $report_params['title'] . ' (' . ($this->carrier ? $this->carrier : $this->from_day) . ')' . '</h2>';
+
+$graph = Admin_Graphs::prepareGraph($this->data['table_data'], $this->group_by_display, $this->group_by, $report_params['fields'], array('graph_id' => (strtolower($report_params['direction']) . '_graph'), 'graph_class' => 'wholesale-graph'));
+echo Admin_Graphs::printGraph($graph, false, 1, null, 'w-popup');
+
+foreach (array_keys($tbl_params) as $index => $report_type) {
+	$report_params = $tbl_params[$report_type];
+	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+		foreach ($usage_fields as $field) {
+			$table_totals[$usage_type][$field['value']] = 0;
+		}
+	}
+	echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+		<table border="1" data-type="' . $report_params['direction'] . '" class="wholesale-table"><thead>';
+
+	echo "<tr>";
+	echo '<th rowspan="2">' . $this->group_by_display . '</th>';
+	foreach ($report_params['fields'] as $usage_type => $fields) {
+		echo '<th colspan="' . count($fields) . '">' . $usage_type . '</th>';
+	}
+	echo "</tr>";
+	echo "<tr>";
+	foreach ($report_params['fields'] as $fields) {
+		foreach ($fields as $field) {
+			echo '<th>' . $field['label'] . "</th>";
+		}
+	}
+	echo "</tr></thead><tbody>";
+
+	foreach ($this->data['available_group_values'] as $group_value) {
+		echo '<tr><td>' . $group_value . ($this->group_by == 'dayofmonth' ? ' (' . date("D", strtotime($group_value)) . ')' : '') . '</td>';
+		foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+			foreach ($usage_fields as $field) {
+				echo '<td' . ($field['decimal'] === false ? '' : ' class="num-cell"') . '>';
+				if (isset($this->data['table_data'][$usage_type][$group_value][$field['display']])) {
+					if ($field['decimal'] === false) {
+						echo $this->data['table_data'][$usage_type][$group_value][$field['display']];
+					} else if ($field['decimal'] == 0) {
+						echo ceil($this->data['table_data'][$usage_type][$group_value][$field['display']]);
+					} else {
+						echo number_format($this->data['table_data'][$usage_type][$group_value][$field['display']], $field['decimal']);
+					}
+					$table_totals[$usage_type][$field['value']]+=$this->data['table_data'][$usage_type][$group_value][$field['value']];
+				} else {
+					echo '&nbsp;';
+				}
+				echo '</td>';
+			}
+		}
+		echo '</tr>';
+	}
+	echo '<tr class="totals">';
+	echo '<td>Total</td>';
+	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+		foreach ($usage_fields as $field) {
+			echo '<td' . ($field['decimal'] === false ? '' : ' class="num-cell"') . '>';
+			if ($field['decimal'] === false) {
+				echo $table_totals[$usage_type][$field['value']];
+			} else if ($field['decimal'] == 0) {
+				echo ceil($table_totals[$usage_type][$field['value']]);
+			} else {
+				echo number_format($table_totals[$usage_type][$field['value']], $field['decimal']);
+			}
+			echo '</td>';
+		}
+	}
+	echo '</tr></tbody>';
+	echo '</table>';
+	echo '</div>';
+//	echo '<script type="text/javascript">';
+//	echo '$(".wholesale-table", $("#w-popup")).stickyTableHeaders({fixedOffset: $(".wholesale-graph")});'; // doesn't work
+//	echo '</script>';
+}

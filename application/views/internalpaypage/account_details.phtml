@@ -1,0 +1,28 @@
+			<div class="form-section form-section-info">
+				<div class="shell">
+					<h5 class="form-subtitle">Customer details</h5><!-- /.form-subtitle -->
+
+					<div class="form-section-content">
+						<div class="details">
+							<div class="details-head">
+								<h2 class="details-title"><?php echo htmlspecialchars($account['firstname'] . ' ' . $account['lastname']);?>; </h2>
+
+								<p><span>Customer#</span> <?php echo htmlspecialchars($account['aid']);?></p>
+							</div><!-- /.details-head -->
+
+							<div class="details-content">
+								<ul class="list-details">
+									<li>
+										<?php echo htmlspecialchars($account['address']) . ' ' . htmlspecialchars($account['country']);?>
+									</li>
+									
+									<li>
+										<?php $_email = $account['email']; ?>
+										<a href="mailto:<?php echo $_email; ?>"><?php echo htmlspecialchars($_email); ?></a>
+									</li>
+								</ul><!-- /.list-details -->
+							</div><!-- /.details-content -->
+						</div><!-- /.details -->
+					</div><!-- /.form-section-content -->
+				</div><!-- /.shell -->
+			</div><!-- /.form-section -->

@@ -1,0 +1,45 @@
+<html>
+	<head>
+		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | uTest')); ?>
+	</head>
+	<body>
+
+		<?php print $this->render('utest/components/navigation.phtml'); ?>
+
+		<div class="container">
+			<div class="page-header">
+				<!--<h1><img class='text-center span' src="http://www.billrun.net/images/billrun/billrun-logo-tm.png" alt="BillRun"/> <small class="text-bottom">Unit Testing</small></h1>-->
+			</div>
+			<ol class="breadcrumb">
+				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
+				<li><a href="/utest">uTest</a></li>
+				<li><?php echo $test_collection_label; ?></li>
+			</ol>
+
+
+			<?php if (!empty($tests)): ?>
+				<div class="col-xs-3">
+					<ul class="nav nav-tabs tabs-left">
+						<?php foreach ($tests as $key => $test) : ?>
+							<li><a data-toggle="tab" href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+
+				<div class="tab-content col-xs-9">
+					<?php foreach ($tests as $key => $test) : ?>
+						<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade">
+							<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName(), 'label' => $test->getTestLabel())); ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="list-group">
+					<?php foreach ($enabled_test_collections as $key => $enabled_test_collection) : ?>
+						<a href="utest?testcollection=<?php print $enabled_test_collection['param']; ?>" class="list-group-item">Test <?php print $enabled_test_collection['label']; ?>  </a>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,112 @@
+<div class="popup">
+	<div class="popup-body">
+		<div class="popup-content">
+			<a href="#" class="popup-trigger popup-trigger-close">
+				<i class="material-icons">clear</i>
+			</a>
+
+			<div class="form form-plans">
+				<form action="?" method="post">
+					<div class="form-head">
+						<h2 class="form-title">Select Plan</h2>
+					</div><!-- /.form-head -->
+					
+					<div class="form-body">
+						<div class="scrollable">
+							<ul class="list-radios list-radios-alt list-radios-block">
+								<?php 
+								foreach ($plans as $plan) : 
+									$planName = htmlspecialchars($plan['name']);
+								?>
+								<li>
+									<div class="radio radio-plan">
+										<label for="field-plan-<?php echo $planName; ?>" class="form-label-radio">
+											<input type="radio" name="radio-card" id="field-plan-<?php echo $planName; ?>"/>
+											
+											<span class="overlay"></span>
+
+											<span class="radio-icon">
+												<i class="material-icons">panorama_fish_eye</i>
+
+												<i class="material-icons">check_circle</i>
+											</span>
+
+											<div class="plan">
+												<h5 class="plan-title"><?php echo $planName; ?></h5><!-- /.plan-title -->
+
+												<p><?php echo htmlspecialchars($plan['description']); ?></p>
+												<input type="hidden" name="plan" id="plan" class="form-control" value="<?php echo $planName; ?>"/>
+												
+												<div class="plan-body">
+													<div class="plan-aside">
+														Monthly charging
+													</div><!-- /.plan-aside -->
+												
+													<div class="plan-content">
+														<ul class="list-price">
+														<?php 
+														$price_count = count($plan['price']);
+														for ($i = 0; $i < $price_count; $i++) :
+															$tier = $plan['price'][$i]; 
+															?>
+															<li>
+																<h2><?php echo $currency_symbol . $tier['price']; ?></h2>
+
+																<h6>
+																	<?php 
+																	if ($i == 0 && $i == $price_count-1) { // first and last (only 1)
+																		echo $tier['to'] == 'UNLIMITED' ? '': $tier['to'] . ' months';
+																	} elseif ($i == 0 && $price_count > 0) { // first and multiple
+																		echo 'first ' . $tier['to'] . ' months';
+																	} elseif ($i == $price_count-1 && $price_count > 0) { // last and multiple
+																		echo $tier['to'] == 'UNLIMITED' ? ' and on ' : ('rest ' . ($tier['to']-$tier['from']) . ' months');
+																	} else { // middle => multiple, not first, not last
+																		echo $tier['to'] - $tier['from'] . ' next months';
+																	}
+																	?>
+																</h6>
+															</li>
+														<?php endfor; ?> <!-- TODO: take care of trial? -->
+														</ul><!-- /.list-price -->
+													</div><!-- /.plan-content -->
+<!--													<div class="plan-content">
+														<ul class="list-price">
+															<li>
+																<h2>$5.00</h2>
+
+																<h6>1 first months</h6>
+															</li>
+															
+															<li>
+																<h2>$7.00</h2>
+
+																<h6>2 next months</h6>
+															</li>
+															
+															<li>
+																<h2>$10.00</h2>
+
+																<h6>3 months and on</h6>
+															</li>
+														</ul> /.list-price 
+													</div> /.plan-content -->
+												</div><!-- /.plan-body -->
+											</div><!-- /.plan -->										
+										</label>
+									</div><!-- /.radio -->
+								</li>
+								<?php endforeach; ?>
+							</ul><!-- /.list-radios -->
+						</div><!-- /.scrollable -->
+					</div><!-- /.form-body -->
+					
+					<div class="form-actions">
+						<button type="reset" class="form-btn form-btn-submit">OK</button>
+											
+						<button type="reset" class="form-btn form-btn-reset">Cancel</button>
+					</div><!-- /.form-actions -->
+				</form>
+			</div><!-- /.form -->
+		</div><!-- /.popup-content -->
+	</div><!-- /.popup-body -->
+</div><!-- /.popup -->

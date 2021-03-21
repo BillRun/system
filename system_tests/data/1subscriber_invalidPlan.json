@@ -1,0 +1,34 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "One subscriber",
+	"subs" : 1,
+	"data": [
+		{
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "country": "UK",
+		  "address": "10 Downing st.",
+		  "type": "account",
+		  "from": 1471588424,
+		  "plan_activation": 1471588424,
+		  "to" : 4627262024,
+		  "aid": 6
+		},
+		{
+		  "aid": "6",
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "plan": "The master plan",
+		  "address": "10 downing st.",
+		  "country": "UK",
+		  "type": "subscriber",
+		  "from": 1471589424,
+		  "plan_activation": 1471589424,
+		  "to": 1477872000,
+		  "sid": "7"
+		}
+
+	]
+}

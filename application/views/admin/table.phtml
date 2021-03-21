@@ -1,0 +1,18 @@
+<script type="text/javascript">
+		var coll = <?php echo json_encode(strtolower($this->title)); ?>;
+</script>
+<div class="container component">
+	<?php
+	echo "<h1>" . $this->title . "</h1>";
+	$this->display('toolbar.phtml', array());
+	print '<div style="clear:both;"></div>';
+	if (isset($this->data) && ($this->data instanceof Mongodloid_Cursor || is_array($this->data))) :
+		$this->display('tableheader.phtml', array());
+		$this->display('tablebody.phtml', array());
+		$this->display('tablefooter.phtml', array());
+		$this->display('popups.phtml', array());
+	else :
+		print "No data";
+	endif;
+	?>
+</div>

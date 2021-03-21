@@ -1,0 +1,55 @@
+<?php if (!empty($lines['rows'])) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading down" data-toggle="collapse" data-target="#<?php echo $id ?>"><?php echo $lines['ref'] ?>,  SID : <?php echo $sid ?></div>
+		<div class="panel-body collapse in" id='<?php echo $id ?>'>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>URT</th>
+						<th>Usage T</th>
+						<th>Type</th>
+						<th>aPrice</th>
+						<th>Usage V</th>
+						<th>Balance Name</th>
+						<th>Balance Before</th>
+						<th>Balance After</th>
+						<th>aRate</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($lines['rows'] as $key => $line) : ?>
+						<tr>
+							<td><?php echo ($key + 1) ?> </td>
+							<td><?php echo isset($line['time_date']) ? $line['time_date'] : '' ?></td>
+							<td><?php echo $line['usaget'] ?></td>
+							<td><?php echo $line['record_type'] ?> </td>
+							<td><?php echo $line['aprice'] ?></td>
+							<td><?php echo $line['usagev'] ?></td>
+							<td><?php echo $line['pp_includes_name'] ?></td>
+							<td><?php echo $line['balance_before'] ?></td>
+							<td><?php echo $line['balance_after'] ?></td>
+							<td>
+								<?php if (!empty($line['arate'])) : ?>
+									<a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate']['id'] ?>" target="_blank"><?php echo $line['arate']['key'] ?></a>
+								<?php else : ?>
+									<!--Rate Not Found-->
+								<?php endif; ?>
+							</td>
+						</tr>
+						<?php if (!empty($line['archive_lines']['rows'])) : ?>
+							<tr>
+								<td colspan="10">
+									<?php print $this->render('utest/components/lines.phtml', array('lines' => $line['archive_lines'], 'sid' => $sid_after_test, 'id' => 'archive_lines')); ?>
+								</td>
+							</tr>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php if (!empty($lines['total_aprice']) || !empty($lines['total_usagev'])) : ?>
+			<div class="panel-footer">Totals : <strong>aprice</strong> = <?php echo $lines['total_aprice'] ?> / <strong>usagev</strong> = <?php echo $lines['total_usagev'] ?></div>
+		<?php endif; ?>
+	</div>
+<?php endif; ?>

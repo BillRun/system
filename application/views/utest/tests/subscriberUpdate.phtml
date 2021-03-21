@@ -1,0 +1,237 @@
+<form action="/utest/result?collection=<?php echo $test_collection ?>" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd>Retrieve values for updating a subscriber</dd>
+		</dl>
+	</div>
+	<h3><small>Query</small></h3>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
+			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="imsi" class="col-sm-4 control-label text-right">IMSI</label>
+		<div class="col-sm-6">
+			<input type="text" name="imsi" value='<?php echo $imsi ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="msisdn" class="col-sm-4 control-label text-right">MSISDN</label>
+		<div class="col-sm-6">
+			<input type="text" name="msisdn" value=''  class="form-control">
+		</div>
+	</div>
+
+	<h3><small>Update</small></h3>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="new_sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-new_sid">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<input type="text" name="new_sid" value=''  class="form-control">
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="new_imsi" class="col-sm-4 text-right">IMSI</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-new_imsi">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<textarea rows="4" name="new_imsi" class="form-control" ></textarea>
+				<small class="text-muted">New line per IMSI.</small>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="new_msisdn" class="col-sm-4 control-label text-right">MSISDN</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-new_msisdn">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<input type="text" name="new_msisdn" value='' class="form-control">
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="aid" class="col-sm-4 control-label text-right">AID (BAN)</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-aid">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<input type="text" name="aid" value='' class="form-control">
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="plan" class="col-sm-4 control-label text-right">Plan</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-plan">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='plan'>
+					<option value=""></option>
+					<?php foreach ($customer_plans as $customer_plan) : ?>
+						<option value="<?php echo $customer_plan ?>"><?php echo $customer_plan ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="service_provider" class="col-sm-4 control-label text-right">Service Provider</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-service_provider">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='service_provider'>
+					<option value=""></option>
+					<?php foreach ($service_providers as $service_provider) : ?>
+						<option value="<?php echo $service_provider ?>" <?php if ('Pelephone' == $service_provider) echo 'selected' ?>><?php echo $service_provider ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="connection_type" class="col-sm-4 control-label text-right">Connection Type</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-connection_type">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='connection_type'>
+					<option value=""></option>
+					<?php foreach ($connection_types as $connection_type) : ?>
+						<option value="<?php echo $connection_type ?>" <?php if ('prepaid' == $connection_type) echo 'selected' ?>><?php echo $connection_type ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="language" class="col-sm-4 control-label text-right">Language</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-language">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='language'>
+					<?php foreach ($languages as $language) : ?>
+						<option value="<?php echo $language ?>" <?php if ('Hebrew' == $language) echo 'selected' ?>><?php echo $language ?></option>
+					<?php endforeach; ?>
+					<option value=""></option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="service_code" class="col-sm-4 control-label text-right">Service Code</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-service_code">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='service_code'>
+					<?php foreach ($service_codes as $service_code) : ?>
+						<option value="<?php echo $service_code ?>"><?php echo $service_code ?></option>
+					<?php endforeach; ?>
+					<option value=""></option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label class="col-sm-4 control-label text-right" >Track History</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-track_history">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='track_history'>
+					<option value="1" selected>True</option>
+					<option value="">False</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label class="col-sm-4 control-label text-right" >Keep Balances</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-keep_balances">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='keep_balances'>
+					<option value="1" selected>True</option>
+					<option value="">False</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label class="col-sm-4 control-label text-right" >Keep Lines</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' class='enable-input' name="enable-keep_lines">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='keep_lines'>
+					<option value="1" checked>True</option>
+					<option value="">False</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

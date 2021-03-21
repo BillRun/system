@@ -1,0 +1,31 @@
+<?php if (!empty($balances)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading down" data-toggle="collapse" data-target="#<?php echo $id ?>"> <?php echo $label ?></div>
+		<div class="panel-body collapse in" id='<?php echo $id ?>'>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Name (ID)</th>
+						<th>Amount</th>
+						<th>Charging by Usaget</th>
+						<th>Charging By</th>
+						<th>From</th>
+						<th>To</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($balances as $balance_id => $balance) : ?>
+						<tr>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="<?php echo $balance_id ?>"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
+							<td><?php echo number_format($balance['amount'], 3) ?></td>
+							<td><?php echo $balance['charging_by_usaget'] ?> / <?php echo $balance['charging_by_usaget_unit'] ?></td>
+							<td><?php echo $balance['charging_by'] ?></td>
+							<td><?php echo $balance['from'] ?></td>
+							<td><?php echo $balance['to'] ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+<?php endif; ?>

@@ -1,0 +1,28 @@
+<?php // print_R($this->data); die;   ?>
+<div class="container component">
+	<section id="config-section">
+		<h2>Configuration</h2>
+		<form id="config-form" action="/admin/configsave">
+			<div class="clearfix config">
+				<?php foreach ($this->options as $action) : ?>
+					<div class="option">
+						<span><?php echo ucfirst($action) ?></span>
+						<input type="checkbox" name="<?php echo $action; ?>" value="1"<?php echo (isset($this->data[$action]) && $this->data[$action]) ? ' checked' : ''; ?>>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<div class="submit">
+				<button type="submit" class="btn btn-success">Submit</button>
+			</div>
+
+		</form>
+	</section>
+	<hr />
+
+	<footer>
+		<?php $this->display('billrun.phtml', array()); ?>
+	</footer>
+	<?php
+	$this->display('popups.phtml', array());
+	?>
+</div> <!-- /container -->

@@ -1,0 +1,25 @@
+<?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
+
+<?php 
+$displayTotal = FALSE;
+if(!empty($data['discounts']['lines'])) {
+	$endKey = @end(array_keys($data['discounts']['lines']));
+	foreach($data['discounts']['lines'] as  $amount) { 
+		if($amount != 0 ) { $displayTotal = TRUE; break; }
+	}	
+	?>
+
+	<?php if($displayTotal) { ?>
+		<tr class="total">
+			<td colspan='<?php echo $colspan; ?>'>DISCOUNTS</td>
+			<td><?php echo '$' . number_format($data['discounts']['total'] , 2); ?></td>
+		</tr>
+	<?php } ?>
+	<?php foreach($data['discounts']['lines'] as $title => $amount) { ?>
+	<?php if($amount == 0 ) { continue; } ?>
+		<tr class="<?php echo ( $endKey === $title ? 'last' : '') ?>">
+			<td colspan="<?php echo $colspan; ?>"><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $title ?> </td>
+			<td><?php echo '$' . number_format($amount,2) ?></td>
+		</tr>
+	<?php }//foreach ?>
+<?php } ?>

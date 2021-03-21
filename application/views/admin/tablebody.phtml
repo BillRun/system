@@ -1,0 +1,95 @@
+<?php
+
+$c = $this->offset;
+foreach ($this->data as $item) {
+	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
+		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
+	else:
+		print '<tr' . ($active == "lines" ? ' data-stamp="' . $item['stamp'] . '" ' : '') . '>';
+	endif;
+	$href = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
+	$onclick = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '' : 'update_current(this);';
+	print '<td data-title=\'#\'>'
+		. '<label ' . ($active == 'lines' ? "" : " class='checkbox' ") . '>'
+		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
+		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
+		. '</label>'
+		. (($active == 'lines' && $item['lcount'] && $item['lcount'] > 0) ? '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>' : '')
+		. '</td>';
+	$c++;
+	foreach ($this->columns as $h => $columnName) {
+		$data = $item->get($h);
+		print '<td data-title="' . $columnName . '">';
+		if (isset($edit_key) && $h == $edit_key) {
+			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
+			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
+		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date' || $h == "next_renew_date" || $h == "activation_datetime") && $data) {
+			//$dateFormat = "Y-d-m H:i:s";
+			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
+			if (!empty($item["tzoffset"])) {
+				// TODO change this to regex and move to method in model
+				$tzoffset = $item['tzoffset'];
+				$sign = substr($tzoffset, 0, 1);
+				$hours = substr($tzoffset, 1, 2);
+				$minutes = substr($tzoffset, 3, 2);
+				$time = $hours . ' hours ' . $minutes . ' minutes';
+				if ($sign == "-") {
+					$time .= ' ago';
+				}
+				$zend_date = new Zend_Date(strtotime($time, $item['urt']->sec));
+				$zend_date->setTimezone('UTC');
+				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
+			} else {
+				if (isset($data->sec)) {
+					$zend_date = new Zend_Date($data->sec);
+					echo $zend_date->toString($dateFormat, 'php');
+				} else {
+					if ($data == -1) {
+						echo "Migrated service";
+					} else if (is_numeric($data)) {
+						$zend_date = new Zend_Date($data);
+						echo $zend_date->toString($dateFormat, 'php');
+					} else {
+						echo "";
+					}
+				}
+			}
+		} else if ($h == 'charging_plan_name' && isset($item['charging_plan_name'])) {
+			print '<a href="#chargingPlanPopup" data-charging-plan-name="' . $item['charging_plan_name'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+		} else if ($h == 'arate' && isset($item['arate_id'])) {
+			/* $url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
+			  print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>'; */
+			print '<a href="#ratePlanPopup" data-interconnect-key="' . $item['interconnect_arate_key'] . '" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+		} else if ($h == 'balance_type') {
+			print '<a href="#SourceRefPopup" data-line="' . $item['_id'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+		} else if (is_numeric($data) && (($active == 'balances' && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb' || $h == 'call_offset')))) {
+			if (is_float($data) && strpos($h, 'usage') === FALSE && strpos($h, 'offset') === FALSE) { // hack: is_float sometimes take long numbers as float
+				print number_format($data, $this->decimal_places);
+			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($columnName, 'usage') !== FALSE && strpos($columnName, 'data') !== FALSE)) {
+				print Billrun_Util::byteFormat($data, null, 3, true);
+			} else if (!in_array($h, array('pp_includes_external_id', 'usagev', 'call_offset'))) {
+				print number_format($data, $this->decimal_places);
+			} else {
+				print number_format($data, 0);
+			}
+		} else if ($h == 'calc_time' && $data) {
+			print date("Y-m-d H:i:s", $data);
+		} else if ($h == 'calc_name') {
+			$names = Billrun_Factory::config()->getConfigValue('queue.calculators');
+			if ($data) {
+				$key = array_search($data, $names);
+				print($names[$key + 1]);
+			} else {
+				print ($names[0]);
+			}
+		} else {
+			if (in_array($h, array("balance_before", "balance_after"))) {
+				print number_format($data, $this->decimal_places);
+			} else {
+				print $data;
+			}
+		}
+		print '</td>';
+	}
+	print '</tr>';
+}

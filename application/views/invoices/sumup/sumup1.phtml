@@ -1,0 +1,81 @@
+<div class="section section-invoice-head">
+	<table class="table-header">
+		<tbody>
+			<tr>
+				<td>
+					<h1>INVOICE</h1>
+				</td>
+
+				<td>
+					<table class="table-inline">
+						<tbody><tr>
+								<td>Period</td>
+
+								<td><strong><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format, !empty($data->get('invoicing_day')) ? $data->get('invoicing_day') : null); ?></strong></td>
+							</tr>
+
+							<tr>
+								<td>Invoice#</td>
+
+								<td><?php echo $data->get('invoice_id'); ?></td>
+							</tr>
+
+							<tr>
+								<td>Print Date</td>
+
+								<td><?php echo date($date_format); ?></td>
+							</tr>
+							<?php if ((!array_key_exists('due_date', $invoice_display_options) || !empty($invoice_display_options['due_date'])) && $data->get('due_date') ) { ?>
+								<tr>
+									<td>Due Date</td>
+									<td><?php echo date($date_format, $data->get('due_date')->sec); ?></td>
+								</tr>
+							<?php } ?>
+						</tbody></table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<section class="section-info">
+	<table class="table-info">
+		<tbody><tr>
+				<td>
+					<small>to</small>
+				</td>
+
+				<td>
+					<h2><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h2>
+
+					<span class="text">
+						<small>Customer</small>
+
+						<span class="text"><?php echo $data->get('aid'); ?></span>
+					</span>
+				</td>
+			</tr>
+
+			<tr>
+				<td></td>
+
+				<td><?php echo $data->get('attributes')['address']; ?></td>
+			</tr>
+
+			<tr>
+				<td></td>
+
+				<td><?php echo !empty($data->get('attributes')['email']) ? $data->get('attributes')['email'] : ''; ?></td>
+			</tr>
+		</tbody></table>
+</section>
+<div class="section section-invoice-details sumup">
+	<div class="section-head">
+		<h2 class="section-title section-title-alt">Invoice summary</h2><!-- /.section-title -->
+	</div><!-- /.section-head -->
+
+	<div class="section-body">
+		<div class="table table-default table-default-primary <?php echo $this->use_complex_sumup ? 'complex-sumup-wrapper' : 'simple-sumup-wrapper'; ?>">
+			<?php echo $this->render($this->use_complex_sumup ? $this->complex_sumup_template : $this->simple_sumup_template ); ?>			
+		</div><!-- /.table table-default table-default-primary -->
+	</div><!-- /.section-body -->
+</div>

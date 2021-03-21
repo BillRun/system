@@ -1,0 +1,25 @@
+<?php if (!empty($tabels)) { ?>
+<div class="table table-default">
+	<?php foreach ($tabels as $index => $tabel) { ?>
+			<table>
+			<?php foreach ($tabel as $line_index => $line_data) {
+				if ($line_index == 0) { ?>
+					<thead><tr>
+					<?php foreach (array_keys($line_data) as $index => $key) { ?>
+						<th> <?php echo $key ?> </th>
+					<?php } ?>
+					</tr></thead>
+				<?php } 
+				if ($line_index == 0) { ?>
+					<tbody>
+				<?php } ?>
+					<tr>
+				<?php foreach ($line_data as $index => $value) { ?>
+					<td> <?php echo $value; ?> </td>
+				<?php } ?>
+				</tr>
+			<?php } ?>
+			</tbody></table>
+		<?php } ?>
+</div><!-- /.table table-default -->
+<?php } ?>

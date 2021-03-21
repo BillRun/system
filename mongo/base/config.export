@@ -1,0 +1,552 @@
+{
+    "shared_folder": "shared",
+    "cg_return_url": "",
+    "shared_secret": [],
+    "usage_types": [],
+    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"],
+    "resetlines": {
+        "limit": {
+            "v": 10,
+            "t": "Number"
+        },
+        "offset": {
+            "v": "1 hour",
+            "t": "DateString"
+        },
+        "process_time_offset": {
+            "v": "15 minutes",
+            "t": "DateString"
+        },
+        "failed_sids_file": {
+            "v": "/files/failed_resetlines.json",
+            "t": "SharedPath"
+        }
+    },
+    "pricing": {
+        "currency": "USD"
+    },
+    "log": {
+        "debug": {
+            "writerParams": {
+                "stream": {
+                    "v": "/logs/debug.log",
+                    "t": "SharedPath"
+                }
+            },
+            "filterParams": {
+                "priority": {
+                    "v": 7,
+                    "t": "Number",
+                    "range": {
+                        "min": 0,
+                        "max": 7
+                    }
+                }
+            }
+        }
+    },
+    "billrun": {
+        "charging_day": {
+            "v": 1,
+            "t": "Number",
+             "range": {
+                   "min": 1,
+                   "max": 28
+             }
+        },
+        "timezone": {
+          "v": "UTC",
+           "t": "Timezone"
+        },
+        "start_hours_lag": {
+            "v": 3,
+            "t": "Number",
+             "range": {
+                   "min": 0,
+                   "max": 23
+             }
+        },
+		"detailed_invoices":{
+			"v": false,
+			"t": "Boolean"
+		},
+		"email_after_confirmation":{
+			"v": false,
+			"t": "Boolean"
+		},
+		"generate_pdf":{
+			"v": true,
+			"t": "Boolean"
+		}
+    },
+    "subscribers": {
+        "types": [
+            "subscriber",
+            "account"
+        ],
+        "fields": [{
+            "field_name": "type",
+            "editable": false
+        }],
+        "subscriber": {
+            "fields": [{
+                "field_name": "sid",
+                "generated": true,
+                "system": true,
+                "unique": true,
+                "editable": false,
+                "display": false,
+                "mandatory": true
+            }, {
+                "field_name": "aid",
+                "mandatory": true,
+                "system": true,
+                "editable": false,
+                "display": false
+            }, {
+                "field_name": "firstname",
+                "system": true,
+                "mandatory": true,
+		"title": "First name",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "lastname",
+                "system": true,
+                "mandatory": true,
+		"title": "Last name",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "plan",
+                "system": true,
+                "mandatory": true
+            }, {
+                "field_name": "plan_activation",
+                "system": true,
+                "mandatory": false
+            }, {
+                "field_name": "address",
+                "system": true,
+                "mandatory": true,
+		"title": "Address",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "country",
+                "system": true,
+		"title": "Country",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name":"services",
+                "system": true,
+                "mandatory": false
+            }]
+        },
+        "account": {
+            "fields": [{
+                "field_name": "aid",
+                "generated": true,
+                "system": true,
+                "unique": true,
+                "editable": false
+            }, {
+                "field_name": "firstname",
+                "mandatory": true,
+				"system": true,
+                "title": "First name",
+                "show_in_list" : true,
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "lastname",
+                "mandatory": true,
+				"system": true,
+                "title": "Last name",
+                "show_in_list" : true,
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "email",
+                "mandatory": true,
+				"system": true,
+		"title": "E-mail",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "country",
+                "system": true,
+                "mandatory": true,
+		"title": "Country",
+		"editable": true,
+		"display": true
+            }, {
+                "field_name": "address",
+                "system": true,
+                "mandatory": true,
+                "title": "Address",
+		"editable": true,
+		"display": true
+            },
+            {
+                "field_name": "zip_code",
+                "title": "Zip code",
+                "generated": false,
+                "unique": false,
+                "editable": true,
+                "mandatory": true,
+                "system": true,
+                "show_in_list": false,
+                "display": true
+            },
+            {
+                "field_name": "payment_gateway",
+                "system": true,
+                "editable": false,
+         "display": true
+            }, {
+                "field_name": "personal_id",
+                "system": true,
+                "editable": false,
+                "display": false
+            }, {
+                "field_name": "salutation",
+                "system": true,
+                "editable": true,
+                "display": true,
+                "title": "Salutation"
+            }]
+        }
+    },
+    "rates": {
+        "fields": [{
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "rates",
+            "system": true,
+            "mandatory": true
+        },
+		{
+			"system":false,
+			"select_list":true,
+			"display":true,
+			"editable":true,
+			"field_name":"tariff_category",
+			"default_value":"retail",
+			"show_in_list":true,
+			"title":"Tariff category",
+			"mandatory":true,
+			"select_options":"retail",
+			"changeable_props": ["select_options"]
+		},
+		{
+			"system":true,
+			"display":true,
+			"editable":true,
+			"field_name":"invoice_label",
+			"default_value":"retail",
+			"show_in_list":true,
+			"title":"Invoice label"
+		}]
+    },
+    "plans": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "name",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "price",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "upfront",
+            "system": true,
+            "mandatory": true,
+            "type": "boolean"
+        }]
+    },
+    "discounts": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }]
+    },
+    "charges": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }]
+    },
+   "services": {
+        "fields": [{
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "name",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "price",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "include",
+            "system": true
+        } ]
+    },
+    "file_types": [],
+    "receive": "1",
+    "process": "1",
+    "calculate": "1",
+        "tenant": {
+          "name": {
+            "t": "String",
+            "v": "Example Company"
+          },
+          "address": {
+            "t": "String",
+            "v": "Example address"
+          },
+          "phone": "199-522-001",
+          "email": "example@example.com",
+          "website": "example.com"
+        },
+    "invoice_export": {
+      "export": "files/invoices/",
+      "generator": {
+        "type": "WkPdf"
+      },
+      "disable_stamp_export_directory": 1,
+      "theme": "/application/views/invoices/theme/theme1.css",
+      "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
+      "details_template": "/application/views/invoices/details/details1.phtml",
+      "decimal_mark": ".",
+      "thousands_separator": ",",
+      "date_separator": "/",
+      "move_exported": 0,
+      "html_translation": [
+        "company_name",
+        "date"
+      ]
+    },
+  "export_generators": [],
+  "payment_gateways" : [],
+  "email_templates": {
+    "invoice_ready": {
+      "subject": "Your invoice is ready",
+      "content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+      "html_translation": ["date", "invoice_id", "invoice_total", "invoice_due_date", "cycle_range", "company_email", "company_name"]
+    }
+  },
+	
+	"taxation" : {
+		"tax_type" : "usage",
+		"default" : {
+			"key" : "DEFAULT_VAT"
+		},
+		"mapping" : {
+			"vat" : {
+				"priorities" : [ ],
+				"default_fallback" : true
+			}
+		},
+		"vat" : 0
+	},
+
+  "property_types": [
+		{
+			"system": true,
+			"type": "time",
+			"uom":[{"unit":1,"name":"seconds","label":"Seconds"},{"unit":60,"name":"minutes","label":"Minutes"},{"unit":3600,"name":"hours","label":"Hours"},{"name":"hhmmss","label":"hh:mm:ss","function_name":"parseTime"}],
+			"invoice_uom": "hhmmss"
+		},
+		{
+			"system": true,
+			"type": "data",
+			"uom":[{"unit":1,"name":"byte","label":"Byte"}, {"unit":1000,"name":"kb1000","label":"KB"}, {"unit":1000000,"name":"mb1000","label":"MB"}, {"unit":1000000000,"name":"gb1000","label":"GB"}, {"unit":1000000000000,"name":"tb1000","label":"TB"}, {"unit":1024,"name":"kb1024","label":"KiB"}, {"unit":1048576,"name":"mb1024","label":"MiB"}, {"unit":1073741824,"name":"gb1024","label":"GiB"}, {"unit":1099511627776,"name":"tb1024","label":"TiB"}, {"name":"automatic","label":"Automatic", "function_name":"parseDataUsage"}],
+			"invoice_uom": "automatic"
+		},
+		{
+			"system": true,
+			"type": "length",
+			"uom":[{"unit":1,"name":"mm","label":"mm"},{"unit":10,"name":"cm","label":"cm"},{"unit":1000,"name":"m","label":"m"},{"unit":1000000,"name":"km","label":"km"}],
+			"invoice_uom": "cm"
+		},
+		{
+			"system": true,
+			"type": "counter",
+			"uom":[{"unit":1,"name":"counter","label":"Counter"}],
+			"invoice_uom": "counter"
+		},
+		{
+			"system": true,
+			"type": "weight",
+			"uom": [{"unit":1,"name":"mg","label":"mg"},{"unit":1000,"name":"g","label":"g"},{"unit":1000000,"name":"kg","label":"kg"},{"unit":1000000000,"name":"ton","label":"ton"}],
+			"invoice_uom": "kg"
+		}
+	],
+	"unify": {
+		"unification_fields": {
+			"required": {
+				"fields": [
+					"session_id",
+					"urt",
+					"request_type"
+				],
+				"match": {
+					"request_type": "\/1|2|3\/"
+				}
+			},
+			"date_seperation": "Ymd",
+			"stamp": {
+				"value": [
+					"session_id",
+					"usaget",
+					"imsi"
+				],
+				"field": []
+			},
+			"fields": [
+				{
+					"match": {
+						"request_type": "\/.*\/"
+					},
+					"update": [
+						{
+							"operation": "$setOnInsert",
+							"data": [
+								"arate",
+								"arate_key",
+								"usaget",
+								"imsi",
+								"session_id",
+								"urt",
+								"plan",
+								"connection_type",
+								"aid",
+								"sid",
+								"tax_data"
+							]
+						},
+						{
+							"operation": "$set",
+							"data": [
+								"process_time",
+								"granted_return_code"
+							]
+						},
+						{
+							"operation": "$inc",
+							"data": [
+								"usagev",
+								"duration",
+								"apr",
+								"out_balance_usage",
+								"in_balance_usage",
+								"aprice",
+								"final_charge"
+							]
+						}
+					]
+				}
+			]
+		}
+	},
+  "lines": {
+    "fields": [
+      {
+        "field_name": "foreign.activation_date",
+        "foreign": {
+          "entity": "service",
+          "field": "start",
+          "translate": {
+            "type": "unixTimeToString",
+            "format": "Y-m-d H:i:s"
+          }
+        }
+      },
+      {
+        "field_name" : "foreign.service.description",
+        "foreign" : {
+            "entity" : "service",
+            "field"  :"invoice_description"
+        }
+      }
+    ]
+  },
+  "plays": [
+	{ "name": "Default", "enabled": true, "default": true }
+  ]
+}

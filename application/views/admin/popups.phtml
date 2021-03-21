@@ -1,0 +1,278 @@
+<div class="modal fade" id="confirmModal" tabindex="-2" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="confirmModalLabel"></h3>
+			</div>
+			<!--			<div class="modal-body">
+						</div>-->
+			<div class="modal-footer">
+				<button id="cancelConfirm" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+				<button id="confirm" class="btn btn-primary">Remove</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="popupModalLabel"></h3>
+			</div>
+			<div class="modal-body">
+			</div>
+			<div class="modal-footer">
+				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<?php if (AdminController::authorized('write')) : ?>
+					<button id="save" class="btn btn-primary">Save changes</button>
+				<?php endif; ?>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+
+<div class="modal fade" id="ratePlanPopup" tabindex="-1" role='dialog' aria-labelledby='ratePlanPopupLabel' aria-hidden='true'>
+	<div class='modal-dialog'>
+		<div class='modal-content'>
+			<div class='modal-header'>
+				<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
+				<h3 id='ratePlanPopupLabel'></h3>
+			</div>
+			<div class='modal-body'>
+				<div class='access-price-container'>
+					<label>Access Price: </label>
+					<span id='access-price'></span>
+				</div>
+				<table class='table table-striped table-bordered data-rates-table'>
+					<thead>
+						<tr>
+							<th>Interval</th>
+							<th>Price</th>
+							<th>To</th>
+						</tr>
+					</thead>
+					<tbody id='data-rates-tbody'>
+					</tbody>
+				</table>
+			</div>
+			<div class='modal-footer'>
+				<button id='cancelPopup' class='btn' data-dismiss='modal' aria-hidden='true'>Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="chargingPlanPopup" tabindex="-1" role='dialog' aria-labelledby='chargingPlanPopupLabel' aria-hidden='true'>
+	<div class='modal-dialog'>
+		<div class='modal-content'>
+			<div class='modal-header'>
+				<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
+				<h3 id='chargingPlanPopupLabel'></h3>
+			</div>
+			<div class='modal-body'>
+				<table class='table table-striped table-bordered data-charging-plan-table'>
+					<thead>
+						<tr>
+							<th>Type</th>
+							<th>Amount</th>
+							<th>Balance Name</th>
+						</tr>
+					</thead>
+					<tbody id='data-charging-plan-tbody'>
+					</tbody>
+				</table>
+			</div>
+			<div class='modal-footer'>
+				<button id='cancelPopup' class='btn' data-dismiss='modal' aria-hidden='true'>Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="LogPopup" tabindex="-3" role="dialog" aria-labelledby="LogPopupLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="LogPopupLabel"></h3>
+			</div>
+			<div class="modal-body">
+
+			</div>
+			<div class="modal-footer">
+				<button id="cancelLogPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+
+<div class="modal fade" id="SourceRefPopup" tabindex="-3" role="dialog" aria-labelledby="SourceRefPopupLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="SourceRefPopupLabel"></h3>
+			</div>
+			<div class="modal-body">
+
+			</div>
+			<div class="modal-footer">
+				<button id="cancelSourceRefPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+
+<div class="modal fade" id="uploadModal" tabindex="-2" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="uploadModalLabel">Import</h3>
+			</div>
+			<div class="modal-body">
+				<input id="file-upload" type="file"/>
+				<input type="hidden" id="csvJson" value=""/>
+				<div id="saveOutput"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelupload" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="upload" class="btn btn-primary">Import</button>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="modal fade" id="importPricesModal" tabindex="-2" role="dialog" aria-labelledby="importPricesModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="importPricesModalLabel">Import</h3>
+			</div>
+			<div class="modal-body">
+				Please supply a csv in the following format:<br />
+				key,usage_type,category,rule,access_price,interval,price,times,from_date<br />
+				from_date in yyyy-mm-dd HH:ii:ss format<br /><br />
+				Don't forget to stop the processing + backup your rates<br />
+				<input id="file-upload2" type="file"/>
+				<input type="hidden" id="csvJson2" value=""/>
+				<div id="saveOutput2"></div>
+				<div class="control-group control-group0">
+					<div class="controls form-inline">
+						<input class="span1" id="remove_non_existing_usage_types" name="remove_non_existing_usage_types" type="checkbox" value="off" > <label class="checkbox" for="remove_non_existing_usage_types">Remove non existing usage types</label>
+					</div>
+					<div class="controls form-inline">
+						<input class="span1" id="remove_non_existing_prefix" name="remove_non_existing_prefix" type="checkbox" value="off" > <label class="checkbox" for="remove_non_existing_prefix">Remove non existing prefixes</label>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelimport" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="import" class="btn btn-primary">Import</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<div class="modal fade" id="resetSubsModal" tabindex="-2" role="dialog" aria-labelledby="resetSubsModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="uploadModalLabel">Reset Lines for current billrun</h3>
+			</div>
+			<div class="modal-body">				
+				<div class="inputs">
+					<span class="input"><label id="single-sub-input-label" class="input-label" for="single-sub-input">Enter SID : </label><input type="text" id="single-sub-input" value=""/></span>
+					<span class="input"><label id="file-upload-label" class="input-label" for="file-upload">Or file : </label><input id="file-upload" type="file"/></label><input type="hidden" id="csvJson" value=""/></span>					
+				</div>
+				<div id="saveOutput"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelupload" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="upload" data-url="/api/resetlines" class="btn btn-primary">Reset</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="recreateInvoicesModal" tabindex="-2" role="dialog" aria-labelledby="recreateInvoicesModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="uploadAccountsModalLabel">Recreate invoices for last billrun</h3>
+			</div>
+			<div class="modal-body">				
+				<div class="inputs">
+					<span class="input"><label id="single-sub-input-label-invoices" class="input-label" for="single-sub-input">Enter account ids: </label><input type="text" id="single-sub-input-accounts" value=""/></span>
+					<span class="input"><label id="file-upload-label-invoices" class="input-label" for="file-upload">Or file : </label><input id="file-upload-accounts" type="file"/></label><input type="hidden" id="csvJson-accounts" value=""/></span>
+				</div>
+				<div id="saveOutputAccounts"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="canceluploadAccounts" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="uploadAccounts" data-url="/api/recreateinvoices" class="btn btn-primary">Reset</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="saveVersionModal" tabindex="-2" role="dialog" aria-labelledby="saveVersionModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="saveVersionModalLabel">Save Version</h3>
+			</div>
+			<div class="modal-body">
+				<label id="versionNameLabel">Select version name:</label>
+				<input id="versionName" type="text" class="form-control" value="<?php echo $active . '_' . date('Ymd-Hi') . '.export'?>" />
+			</div>
+			<div class="modal-footer">
+				<button id="cancelSaveVersion" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+				<span><a id='saveVersion' data-url="/api/saveversion" class="btn btn-primary">Save</a></span>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal fade" id="loadVersionModal" tabindex="-2" role="dialog" aria-labelledby="loadVersionModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="loadVersionModalLabel">Load Previous Version</h3>
+			</div>
+			<div class="modal-body">
+				<div class="controls form-inline">
+					<label id="versionSelectLabel">Select version:</label>
+					<br/>
+					<?php
+					require_once APPLICATION_PATH . '/application/controllers/Action/Loadversion.php';
+					$versions = LoadversionAction::getVersions($active);
+					?>
+					<select id="versions-select" name="versions-select" class="form-control multiselect">
+						  <option value=null>None Selected</option>
+					<?php foreach ($versions as $version) :?>
+						<option value="<?php echo $version; ?>"><?php echo $version; ?></option>";
+					<?php endforeach;?>
+					</select>
+				</div>
+				<br/>
+				<div class="controls form-inline">
+					<input class="span1" id="remove-new-rates" name="remove-new-rates" type="checkbox" checked="checked" > <label class="checkbox" for="remove-new-rates">Remove new rates</label>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelLoadVersion" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+				<span><a id='loadVersion' data-url="/api/loadversion" class="btn btn-primary">Load</a></span>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
