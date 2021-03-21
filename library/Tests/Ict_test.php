@@ -194,7 +194,7 @@ class Tests_Icttest extends UnitTestCase {
 				}
 				//// check if  are their field that should not exist
 				if (is_null($v)) {
-					if (array_key_exists($k, $data_)) {
+					if (array_key_exists($k, $data_) && !is_null($data_[$k])) {
 						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
 						$result = false;
 					} else {
