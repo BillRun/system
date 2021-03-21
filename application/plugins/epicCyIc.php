@@ -3,10 +3,10 @@
 class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
     protected $extraLines;
-    protected $ic_configuration = [];
+    protected $ict_configuration = [];
 
     public function __construct($options = array()) {
-        $this->ic_configuration = !empty($options['ic']) ? $options['ic'] : [];
+        $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
     }
 
     public function afterProcessorParsing($processor) {
@@ -370,22 +370,22 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
     public function cronHour() {
-        $ic_reports_manager = IC_Reports_Manager::getInstance($this->ic_configuration);
-        $ic_reports_manager->runReports();
+        $ict_reports_manager = ICT_Reports_Manager::getInstance($this->ict_configuration);
+        $ict_reports_manager->runReports();
     }
 
 	public function getConfigurationDefinitions() {
 		return [
 			[
 				"type" => "json",
-				"field_name" => "ic.reports",
+				"field_name" => "ict.reports",
 				"title" => "ICT's reports configuration",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
 			], [
 				"type" => "text",
-				"field_name" => "ic.export.connection_type",
+				"field_name" => "ict.export.connection_type",
 				"title" => "ICT remote connection type",
 				"select_list" => true,
 				"select_options" => "ssh",
@@ -395,7 +395,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "ic.export.host",
+				"field_name" => "ict.export.host",
 				"title" => "ICT export server's host",
 				"editable" => true,
 				"display" => true,
@@ -403,7 +403,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "ic.export.user",
+				"field_name" => "ict.export.user",
 				"title" => "ICT export server's user name",
 				"editable" => true,
 				"display" => true,
@@ -411,7 +411,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "password",
-				"field_name" => "ic.export.password",
+				"field_name" => "ict.export.password",
 				"title" => "ICT export server's password",
 				"editable" => true,
 				"display" => true,
@@ -419,7 +419,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "ic.export.remote_directory",
+				"field_name" => "ict.export.remote_directory",
 				"title" => "ICT report files' remote directory",
 				"editable" => true,
 				"display" => true,
@@ -427,7 +427,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "ic.export.export_directory",
+				"field_name" => "ict.export.export_directory",
 				"title" => "ICT report files' export directory",
 				"editable" => true,
 				"display" => true,
@@ -435,8 +435,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"mandatory" => true
 			], [
 				"type" => "string",
-				"field_name" => "ic.metbase_details.url",
-				"title" => "Metbase's url",
+				"field_name" => "ict.metabase_details.url",
+				"title" => "Metabase's url",
 				"editable" => true,
 				"display" => true,
 				"nullable" => false,
@@ -446,12 +446,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 }
 
-class IC_Reports_Manager {
+class ICT_Reports_Manager {
 
     /**
      * Singleton handler
      * 
-     * @var IC_Reports_Manager
+     * @var ICT_Reports_Manager
      */
     protected static $instance = null;
 
@@ -483,8 +483,8 @@ class IC_Reports_Manager {
 
     public function __construct($options) {
         $this->reports_details = $options['reports'];
-        if (!empty($options['metbase_details'])) {
-            $this->metabase_details = $options['metbase_details'];
+        if (!empty($options['metabase_details'])) {
+            $this->metabase_details = $options['metabase_details'];
         } else {
             throw new Exception("Missing metabase configuration - no report was downloaded.");
         }
@@ -502,10 +502,10 @@ class IC_Reports_Manager {
         $reports = $this->getReportsToRun();
         Billrun_Factory::log("Found " . count($reports) . " interconnect reports to run.", Zend_Log::INFO);
         foreach ($reports as $index => $report_settings) {
-            if (@class_exists($report_class = 'IC_report_' . $report_settings['name'])) {
+            if (@class_exists($report_class = 'ICT_report_' . $report_settings['name'])) {
                 $report = new $report_class($report_settings);
             } else {
-                $report = new IC_report($report_settings);
+                $report = new ICT_report($report_settings);
             }
             $metabase_url = rtrim($this->metabase_details['url'], "/");
             try {
@@ -590,14 +590,14 @@ class IC_Reports_Manager {
 
     /**
      * Function to download the wanted report from MB.
-     * @param IC _report object $report
+     * @param ICT_report object $report
      * @param string $metabase_url
      * @param string $report_params
      * @throws Exception - if the report couldn't be downloaded
      */
     protected function fetchReport($report, $metabase_url, $report_params) {
         $url = $metabase_url . '/api/public/card/' . $report->getId() . '/query/' . $report->format;
-        Billrun_Factory::log('IC report request: ' . $url, Zend_Log::DEBUG);
+        Billrun_Factory::log('ICT report request: ' . $url, Zend_Log::DEBUG);
         $params = !empty($report_params) ? ['parameters' => $report_params] : [];
         $response = Billrun_Util::sendRequest($url, $params, Zend_Http_Client::GET, array('Accept-encoding' => 'deflate'), null, null, true);
         $response_body = $response->getBody();
@@ -631,7 +631,7 @@ class IC_Reports_Manager {
 
     /**
      * Function that saves the report's files locally
-     * @param IC_report $report
+     * @param ICT_report $report
      */
     public function save($report) {
         $file_path = $this->export_details['export_directory'] . DIRECTORY_SEPARATOR . $report->getFileName();
@@ -641,7 +641,7 @@ class IC_Reports_Manager {
 
     /**
      * Function that saves the report's files remotely 
-     * @param IC_report $report
+     * @param ICT_report $report
      */
     public function upload($report) {
         $hostAndPort = $this->export_details['host'] . ':' . $this->port;
@@ -672,15 +672,15 @@ class IC_Reports_Manager {
     }
 
     /**
-     * get IC reports manager instance
+     * get ICT reports manager instance
      * 
      * @param array $params the parameters of the manager
      * 
-     * @return IC_Reports_Manager object
+     * @return ICT_Reports_Manager object
      */
     public static function getInstance($options) {
         if (is_null(self::$instance)) {
-            $class = 'IC_Reports_Manager';
+            $class = 'ICT_Reports_Manager';
             if (@class_exists($class, true)) {
                 self::$instance = new $class($options);
             }
@@ -690,7 +690,7 @@ class IC_Reports_Manager {
 
 }
 
-class IC_report {
+class ICT_report {
 
     /**
      * Report name
