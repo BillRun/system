@@ -374,6 +374,76 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $ic_reports_manager->runReports();
     }
 
+	public function getConfigurationDefinitions() {
+		return [
+			[
+				"type" => "json",
+				"field_name" => "ic.reports",
+				"title" => "ICT's reports configuration",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+			], [
+				"type" => "text",
+				"field_name" => "ic.export.connection_type",
+				"title" => "ICT remote connection type",
+				"select_list" => true,
+				"select_options" => "ssh",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "ic.export.host",
+				"title" => "ICT export server's host",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "ic.export.user",
+				"title" => "ICT export server's user name",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "password",
+				"field_name" => "ic.export.password",
+				"title" => "ICT export server's password",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "ic.export.remote_directory",
+				"title" => "ICT report files' remote directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "ic.export.export_directory",
+				"title" => "ICT report files' export directory",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true
+			], [
+				"type" => "string",
+				"field_name" => "ic.metbase_details.url",
+				"title" => "Metbase's url",
+				"editable" => true,
+				"display" => true,
+				"nullable" => false,
+				"mandatory" => true,
+			]
+		];
+	}
 }
 
 class IC_Reports_Manager {
@@ -432,7 +502,7 @@ class IC_Reports_Manager {
         $reports = $this->getReportsToRun();
         Billrun_Factory::log("Found " . count($reports) . " interconnect reports to run.", Zend_Log::INFO);
         foreach ($reports as $index => $report_settings) {
-            if (class_exists($report_class = 'IC_report_' . $report_settings['name'])) {
+            if (@class_exists($report_class = 'IC_report_' . $report_settings['name'])) {
                 $report = new $report_class($report_settings);
             } else {
                 $report = new IC_report($report_settings);
