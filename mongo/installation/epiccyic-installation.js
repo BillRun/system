@@ -3261,19 +3261,7 @@ db.config.insert(lastConfig);
 
 
 //add taxes and modify default tax
-db.taxes.save({
-	"_id" : ObjectId("5ff83b60306dbaffe2c3a88c"),
-	"from" : ISODate("2018-12-31T21:00:00Z"),
-	"key" : "DEFAULT_VAT",
-	"description" : "VATL19",
-	"rate" : 0.17,
-	"params" : {
-		"vat_code" : "VATL19"
-	},
-	"to" : ISODate("2168-12-31T21:00:00Z"),
-	"creation_time" : ISODate("2018-12-31T21:00:00Z"),
-	"embed_tax" : false
-});
+db.taxes.update({key: "DEFAULT_VAT"},{$set: {description: "VATL19", rate: 0.19, params: {vat_code: "VATL19"}}});
 db.taxes.save({
 	"_id" : ObjectId("601bb06eeac6fc628f122f12"),
 	"from" : ISODate("2010-01-01T00:00:00Z"),
