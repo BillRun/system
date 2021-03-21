@@ -264,10 +264,11 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		if (in_array($field_name, $multi_value_fields)) {
 			$prev = Billrun_Util::getIn($combine_rate, $field_name, []);
 			if (!is_array($prev)) {
-				$prev = array_map('trim', explode(",", $prev));
+				$prev = array_map('trim', array_filter(explode(",", $prev), 'strlen'));
 			}
-			$new = array_map('trim', explode(",", $value));
+			$new = array_map('trim', array_filter(explode(",", $value), 'strlen'));
 			$prev_with_new = array_unique(array_merge($prev, $new));
+			$prev_with_new = implode(",", $prev_with_new);
 			Billrun_Util::setIn($combine_rate, $field_name, $prev_with_new);
 		}
 

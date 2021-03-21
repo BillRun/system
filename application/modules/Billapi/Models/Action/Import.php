@@ -172,13 +172,17 @@ class Models_Action_Import extends Models_Action {
 			foreach ($entity as $field_name => $value) {
 				// build multivalues field value
 				if (in_array($field_name, $multi_value_fields)) {
-					$values = array_map('trim', explode(",", $value));
-					Billrun_Util::setIn($entity, [$field_name], $values);
+					if(!is_array($value)) {
+						$values = array_map('trim', array_filter(explode(",", $value), 'strlen'));
+						Billrun_Util::setIn($entity, [$field_name], $values);
+					} else {
+						Billrun_Util::setIn($entity, [$field_name], $value);
+					}
 				} else if (is_array($value)) {
 					foreach ($value as $field_key => $field_val) {
 						$full_field_name = "{$field_name}.{$field_key}";
 						if (in_array($full_field_name, $multi_value_fields)) {
-							$values = array_map('trim', explode(",", $field_val));
+							$values = array_map('trim', array_filter(explode(",", $field_val), 'strlen'));
 							Billrun_Util::setIn($entity, [$field_name, $field_key], $values);
 						}
 					}
