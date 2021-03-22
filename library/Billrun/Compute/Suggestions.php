@@ -25,7 +25,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $this->suggestions = $this->getSuggestions($retroactiveChanges);
         Billrun_Factory::log()->log('finished to search suggestions for ' . $this->getRecalculateType(), Zend_Log::INFO);
     }
-    
+
     public function getComputedType() {
         return 'suggestions';
     }
@@ -97,10 +97,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             'key' => '$' . $this->getFieldNameOfLine()
                                         ), $this->addGroupsIdsForMatchingLines()
                                 ),
-                                'firstname' =>array(
+                                'firstname' => array(
                                     '$first' => '$firstname'
                                 ),
-                                'lastname' =>array(
+                                'lastname' => array(
                                     '$first' => '$lastname'
                                 ),
                                 'from' => array(
@@ -124,10 +124,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 array(
                     '$addFields' => array_merge(
                             array(
-                                'retroactive_change_info.urt' => $retroactiveChange['urt'],
-                                'retroactive_change_info.from' => !$isFake ? $retroactiveChange['new']['from'] : $retroactiveChange['real']['new']['from'],
-                                'retroactive_change_info.old_price' => !$isFake ? $this->getRetroactiveChangeOldPrice($retroactiveChange['old']) : $retroactiveChange['real']['old_price'],
-                                'retroactive_change_info.new_price' => !$isFake ? $this->getRetroactiveChangeNewPrice($retroactiveChange['new']) : $retroactiveChange['real']['new_price']
+                                'retroactive_changes_info' => !$isFake ? array(array('audit_stamp' => $retroactiveChange['stamp'])) : $retroactiveChange['retroactive_changes_info']
                             ), $this->addFieldsForMatchingLines($retroactiveChange)
                     )
                 ),
@@ -146,10 +143,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'aprice' => 1,
                                 'usagev' => 1,
                                 'total_lines' => 1,
-                                'retroactive_change_info.urt' => 1,
-                                'retroactive_change_info.from' => 1,
-                                'retroactive_change_info.old_price' => 1,
-                                'retroactive_change_info.new_price' => 1
+                                'retroactive_changes_info' => 1
                             ), $this->addProjectsForMatchingLines()
                     )
                 ),
@@ -175,21 +169,38 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'key' => $line['key'],
             'status' => 'open',
             'total_lines' => $line['total_lines'],
-            'retroactive_change_info' => array(
-                'urt' => $line['retroactive_change_info.urt'], 
-                'from' => $line['retroactive_change_info.from'],
-                'old_price' => intval($line['retroactive_change_info.old_price']), 
-                'new_price' => intval($line['retroactive_change_info.new_price'])
-            )
-        ), $this->addForeignFieldsForSuggestion($line));
+            'retroactive_changes_info' => $this->getRetroactiveChangesInfo($line['retroactive_changes_info'])
+                ), $this->addForeignFieldsForSuggestion($line));
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
+        $suggestion['old_price'] = $oldPrice;
+        $suggestion['new_price'] = $newPrice;
         $amount = $newPrice - $oldPrice;
         $suggestion['amount'] = abs($amount);
         $suggestion['type'] = $amount > 0 ? 'debit' : 'credit';
         $suggestion['stamp'] = $this->getSuggestionStamp($suggestion);
         $suggestion['urt'] = new MongoDate();
         return $suggestion;
+    }
+
+    protected function getRetroactiveChangesInfo($retroactiveChangesInfo) {
+        $info = [];
+        foreach ($retroactiveChangesInfo as $retroactiveChange) {
+            if (isset($retroactiveChange['audit_stamp'])) {
+                $stamp = $retroactiveChange['audit_stamp'];
+                $audit = Billrun_Factory::db()->auditCollection()->query(array('stamp' => $stamp))->cursor()->limit(1)->current();
+                if (!$audit->isEmpty()) {
+                    $info[] = array(
+                        'audit_stamp' => $stamp,
+                        'urt' => $audit['urt'],
+                        'from' => $audit['new']['from'],
+                        'old_price' => $this->getRetroactiveChangePrice($audit['old']),
+                        'new_price' => $this->getRetroactiveChangePrice($audit['new']),
+                    );
+                }
+            }
+        }
+        return $info;
     }
 
     protected function getValidRetroactiveChanges($retroactiveChanges) {
@@ -216,7 +227,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     }
                 } else {
                     if ($suggestion['amount'] != 0) {
-                         Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
+                        Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
                     }
                 }
             }
@@ -253,7 +264,14 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected function buildFakeRetroactiveChanges($overlapSuggestion, $suggestion) {
         $fakeRetroactiveChanges = array();
+        $fakeRetroactiveChange['is_fake'] = true;
         $fakeRetroactiveChange['key'] = $overlapSuggestion['key']; //equal to suggestion['key']
+        $fakeRetroactiveChange['retroactive_changes_info'] = array_merge(array_map(function ($retroactive_change) {
+                    return array('audit_stamp' => $retroactive_change['audit_stamp']);
+                }, $overlapSuggestion['retroactive_changes_info']), array_map(function ($retroactive_change) {
+                    return array('audit_stamp' => $retroactive_change['audit_stamp']);
+                }, $suggestion['retroactive_changes_info']));
+
         $oldFrom = min($overlapSuggestion['from'], $suggestion['from']);
         $newFrom = max($overlapSuggestion['from'], $suggestion['from']);
         $oldTo = min($overlapSuggestion['to'], $suggestion['to']);
@@ -261,40 +279,30 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         if ($oldFrom !== $newFrom) {
             $fakeRetroactiveChange['new']['from'] = $oldFrom;
             $fakeRetroactiveChange['new']['to'] = new MongoDate(strtotime('-1 sec', $newFrom->sec));
-            $this->addFieldsForFakeRetroactiveChange($fakeRetroactiveChange, $overlapSuggestion, $suggestion, 'from');
             $fakeRetroactiveChanges[] = $fakeRetroactiveChange;
         }
         if ($oldTo !== $newTo) {
             $fakeRetroactiveChange['new']['from'] = $oldTo;
             $fakeRetroactiveChange['new']['to'] = $newTo;
-            $this->addFieldsForFakeRetroactiveChange($fakeRetroactiveChange, $overlapSuggestion, $suggestion, 'to');
             $fakeRetroactiveChanges[] = $fakeRetroactiveChange;
         }
         if ($newFrom !== $oldTo) {
             $fakeRetroactiveChange['new']['from'] = $newFrom;
             $fakeRetroactiveChange['new']['to'] = $oldTo;
-            $this->addFieldsForFakeRetroactiveChange($fakeRetroactiveChange, $overlapSuggestion, $suggestion, 'from');
             $fakeRetroactiveChanges[] = $fakeRetroactiveChange;
         }
         return $fakeRetroactiveChanges;
-    }
-    
-    private function addFieldsForFakeRetroactiveChange(&$fakeRetroactiveChange, $overlapSuggestion, $suggestion, $field) {
-        $relvantSuggestion = $fakeRetroactiveChange['new']['from'] === $suggestion[$field] ? $suggestion : $overlapSuggestion;
-        $fakeRetroactiveChange['is_fake'] = true;
-        $fakeRetroactiveChange['real']['old_price'] = Billrun_Util::getIn($relvantSuggestion, 'retroactive_change_info.old_price');
-        $fakeRetroactiveChange['real']['new_price'] = Billrun_Util::getIn($relvantSuggestion, 'retroactive_change_info.new_price');
-        $fakeRetroactiveChange['real']['new']['from'] = Billrun_Util::getIn($relvantSuggestion, 'retroactive_change_info.from');
-        $fakeRetroactiveChange['urt'] = Billrun_Util::getIn($relvantSuggestion, 'retroactive_change_info.urt');     
     }
 
     protected function unifyOverlapSuggestions($suggestions) {
         $newSuggestion = $suggestions[0];
         $newSuggestion['usagev'] = 0;
         $newSuggestion['total_lines'] = 0;
+        $newSuggestion['old_price'] = 0;
+        $newSuggestion['new_price'] = 0;
         $aprice = 0;
         foreach ($suggestions as $suggestion) {
-            if($suggestion['amount'] != 0) {
+            if ($suggestion['amount'] != 0) {
                 $aprice += $suggestion['type'] === 'credit' ? (0 - $suggestion['amount']) : $suggestion['amount'];
                 $this->unifyOverlapSuggestion($newSuggestion, $suggestion);
             }
@@ -309,6 +317,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion['to'] = max($suggestion['to'], $newSuggestion['to']);
         $newSuggestion['usagev'] += $suggestion['usagev'];
         $newSuggestion['total_lines'] += $suggestion['total_lines'];
+        $newSuggestion['retroactive_changes_info'] = array_unique(array_merge($suggestion['retroactive_changes_info'], $newSuggestion['retroactive_changes_info']), SORT_REGULAR);
+        $newSuggestion['old_price'] += $suggestion['old_price'];
+        $newSuggestion['new_price'] += $suggestion['new_price'];
     }
 
     protected function getSuggestionStamp($suggestion) {
@@ -340,11 +351,11 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function addProjectsForMatchingLines() {
         return array();
     }
-    
+
     protected function addForeignFieldsForSuggestion($line) {
         return array();
     }
-    
+
     protected function addFieldsForMatchingLines($retroactiveChange) {
         return array();
     }
@@ -352,10 +363,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function checkIfValidLine($line) {
         return true;
     }
-    
-    abstract protected function getRetroactiveChangeOldPrice($retroactiveChangeOld);
-    
-    abstract protected function getRetroactiveChangeNewPrice($retroactiveChangeNew);
+
+    abstract protected function getRetroactiveChangePrice($retroactiveChangeNew);
 
     abstract protected function checkIfValidRetroactiveChange($retroactiveChange);
 
@@ -366,13 +375,13 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     abstract protected function recalculationPrice($line);
 
     abstract protected function getRecalculateType();
-    
+
     abstract protected function isRecalculateEnabled();
-    
+
     abstract static protected function getCoreIntervals();
-    
+
     abstract static protected function getCmd();
-    
+
     static public function runCommand() {
         $minutesIntervals = static::getCoreIntervals();
         $currentMinute = date('i');
@@ -398,4 +407,5 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             }
         }
     }
+
 }
