@@ -962,6 +962,13 @@ class ConfigModel {
 					break;
 				}
 			}
+		} else if ($category === 'export_generators') {
+			foreach ($updatedData['export_generators'] as &$someFtSettings) {
+				if ($someFtSettings['name'] == $data['name']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
 		}
  
 		$ret = $this->collection->insert($updatedData);
