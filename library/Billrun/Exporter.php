@@ -27,8 +27,30 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	static protected $type = 'exporter';
 	
 	const SEQUENCE_NUM_INIT = 1;
-	
-	/**
+        
+        const DEFAULT_FILENAME = 'EXPORT_[[param1]]_[[param2]].CSV';
+        const DEFAULT_FILENAME_PARMS = [
+            [
+                "param" => "param1",
+                "type" => "autoinc",
+                "min_value" => 1,
+                "date_group" => "e",
+                "padding" => [
+                    "character" => "0",
+                    "length" => 6,
+                    "direction" => "left"
+                ],
+                "value" => "now"
+            ],
+            [
+                "param" => "param2",
+                "type" => "date",
+                "format" => "YmdHis",
+                "value" => "now"
+            ]
+        ];
+
+    /**
 	 * the name of the log collection in the DB
 	 * @var string
 	 */
@@ -123,6 +145,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	protected function getFiltrationQuery() {
 		$querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
 		$query = $this->getConditionsQuery($querySettings['query']);
+                if ($query === true){
+                    return [];
+                }
 		if (isset($querySettings['time_range'])) {
 			$timeRange = $querySettings['time_range'];
 			if (isset($querySettings['time_range_hour'])) {
@@ -412,8 +437,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	}
 	
 	protected function buildGeneratorOptions() {
-		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : '';
-		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : '';
+		$this->fileNameParams = isset($this->config['filename_params']) ? $this->config['filename_params'] : self::DEFAULT_FILENAME_PARMS;
+		$this->fileNameStructure = isset($this->config['filename']) ? $this->config['filename'] : self::DEFAULT_FILENAME;
 		$this->fileName = $this->getFilename();
 		$options['file_name'] = $this->fileName;
 		$options['file_type'] = $this->getType();
@@ -427,8 +452,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$this->footerToExport[0] = $this->getTrailerLine();
         $options['trailers'] = $this->footerToExport;
         $options['type'] = $this->config['generator']['type'];
-		$options['force_header'] = $this->config['generator']['force_header'];
-		$options['force_footer'] = $this->config['generator']['force_footer'];
+		$options['force_header'] = $this->config['generator']['force_header'] ?? false;
+		$options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
         $options['configByType'] = $this->config;
         if (isset($this->config['generator']['separator'])) {
             $options['delimiter'] = $this->config['generator']['separator'];
