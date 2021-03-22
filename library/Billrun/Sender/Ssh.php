@@ -12,25 +12,30 @@
  * @package  Billing
  * @since    5.9
  */
-class Billrun_Sender_Ftp extends Billrun_Sender {
+class Billrun_Sender_Ssh extends Billrun_Sender {
 
 	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
-	static protected $type = 'ftp';
+	static protected $type = 'ssh';
+        protected $port = '22';
+        
 
 	/**
 	 * see parent::send()
 	 */
 	public function send($filePath) {
-		Billrun_Factory::dispatcher()->trigger('beforeFTPSendFiles', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeSSHSendFiles', array($this));
 		$files = is_array($filePath) ? $filePath : array($filePath);
 		$connectionSettings = $this->options;
-		$ftp = (new Billrun_Connector_Ftp($connectionSettings))->connect();
-		if (!$ftp) {
-			Billrun_Factory::log()->log("Cannot get FTP connector. details: " . print_R($connectionSettings, 1), Zend_Log::ERR);
+                $hostAndPort = $connectionSettings['host'] . ':'. $this->port;
+                $auth = array('password' => $connectionSettings['password']);
+		$ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
+                $connected = $ssh->connect($connectionSettings['user']);
+		if (!$connected) {
+			Billrun_Factory::log()->log("Cannot get SSH connector. details: " . print_R($connectionSettings, 1), Zend_Log::ERR);
 			return false;
 		}
 
@@ -42,12 +47,12 @@ class Billrun_Sender_Ftp extends Billrun_Sender {
 			}
 			$fileName = basename($file);
 			$remoteFilePath = $remoteDirectory . $fileName;
-			if (!ftp_put($ftp->getConnection(), $remoteFilePath, $file, FTP_BINARY)) {
-				Billrun_Factory::log()->log("Cannot put file in FTP server. file: " . $file . ", directory: " . $remoteDirectory, Zend_Log::ERR);
+			if (!$ssh->put($file, $remoteFilePath)){
+				Billrun_Factory::log()->log("Cannot put file in SSH server. file: " . $file . ", directory: " . $remoteDirectory, Zend_Log::ERR);
 			}
 		}
 		
-		Billrun_Factory::dispatcher()->trigger('afterFTPSendFiles', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterSSHSendFiles', array($this));
 	}
 
 }
