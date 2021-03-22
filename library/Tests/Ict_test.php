@@ -26,7 +26,7 @@ class Tests_Icttest extends UnitTestCase {
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [];
-	protected $sumProcessTime =0;
+	protected $sumProcessTime = 0;
 
 	/**
 	 * 
@@ -80,6 +80,9 @@ class Tests_Icttest extends UnitTestCase {
 
 		}
 		parent::__construct("test Itc");
+		if (!file_exists($this->application_path . "/library/Tests/Ict_testData/files")) {
+			mkdir($this->application_path . "/library/Tests/Ict_testData/files", 0777, true);
+		}
 		$request = new Yaf_Request_Http;
 		$this->useExistingConfig = $request->get('useExistingConfig');
 		date_default_timezone_set('Asia/Jerusalem');
@@ -123,7 +126,7 @@ class Tests_Icttest extends UnitTestCase {
 		if ($this->fails) {
 			$this->message .= 'links to fail tests : <br>' . $this->fails;
 		}
-		$this->message.="<br><b>All Line processing took ".$this->sumProcessTime." seconds </b>";
+		$this->message .= "<br><b>All Line processing took " . $this->sumProcessTime . " seconds </b>";
 		print_r($this->message);
 		$this->restoreColletions();
 	}
@@ -135,6 +138,7 @@ class Tests_Icttest extends UnitTestCase {
 	 */
 	protected function process($row) {
 		copy($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num");
+		chmod($this->application_path . "/library/Tests/Ict_testData/backup/$this->test_num", $this->application_path . "/library/Tests/Ict_testData/files/$this->test_num", 0755);
 		$options = array(
 			'type' => $row['file_type']
 		);
@@ -145,8 +149,8 @@ class Tests_Icttest extends UnitTestCase {
 			$befor = microtime(true);
 			$processor->process_files($options);
 			$after = microtime(true);
-			$this->sumProcessTime+=($after-$befor);
-			$this->message .="<br><b>Line processing took ".($after-$befor)." seconds</b><br>";
+			$this->sumProcessTime += ($after - $befor);
+			$this->message .= "<br><b>Line processing took " . ($after - $befor) . " seconds</b><br>";
 		}
 	}
 
@@ -185,8 +189,9 @@ class Tests_Icttest extends UnitTestCase {
 		}
 		$i = 0;
 		foreach ($data as $data_) {
-			$this->message .= "*************************** line usaget {$expected[$i] ['usaget']}  ***************************" . '</br>';
+			$this->message .= "*************************** line usaget {$data_['usaget']}  ***************************" . '</br>';
 			foreach ($expected[$i] as $k => $v) {
+			
 				$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
 				$this->message .= '	Result : </br>';
 				$nested = false;
@@ -195,6 +200,16 @@ class Tests_Icttest extends UnitTestCase {
 					$nestedKey = explode('.', $k);
 					$k = end($nestedKey);
 					$nested = true;
+				}
+				//// check if  are their field that should not exist
+				if (is_null($v)) {
+					if (array_key_exists($k, $data_) && !is_null($data_[$k])) {
+						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
+						$result = false;
+					} else {
+						$this->message .= "-- the key $k isn't exists  " .  $this->pass;
+					}
+					continue;
 				}
 				$DataField = $nested ? $DataField : $data_[$k];
 				if (!$nested) {
