@@ -9,17 +9,27 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
     }
 	
-	public function beforeImportEntities(&$entity, Models_Action_Import $importer) {
+	public function beforeImportEntity(&$entity, Models_Action_Import $importer) {
+		switch ($importer["update"]["mapper_name"]){
+			case "One file loader - Rates update":
+				if(!empty($entity["params"]["additional_charge"])) {
+					$entity["rates"][$usagetype]["BASE"]["rate"] = addZeroPriceTier($entity);
+				}
+		}
+
+	}
+	
+	public function addZeroPriceTier($entity) {
 		$usagetype = reset(array_keys($entity['rates']));
 		$rates_array = $entity["rates"][$usagetype]["BASE"]["rate"];
 		$rates_array = array_merge($rates_array,$rates_array);
 		$rates_array[0]["to"] = 1;
 		$rates_array[1]["from"] = 1;
 		$rates_array[1]["price"] = 0;
-		$entity["rates"][$usagetype]["BASE"]["rate"] = $rates_array;
+		return $rates_array;
 	}
 
-    public function afterProcessorParsing($processor) {
+	public function afterProcessorParsing($processor) {
         if ($processor->getType() === 'ICT') {
             $dataRows = $processor->getData()['data'];
             foreach ($dataRows as $row) {

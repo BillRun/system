@@ -26,13 +26,6 @@ lastConfig["usage_types"] = [
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : "",
-			"usage_type" : "parameter_poin",
-			"label" : "parameter_poin"
-		},
-		{
-			"property_type" : "counter",
-			"invoice_uom" : "",
-			"input_uom" : "",
 			"usage_type" : "parameter_product",
 			"label" : "parameter_product"
 		},
