@@ -71,9 +71,18 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
             'services' => '$services'
         );
     }
+    
+    protected function addFieldsForMatchingLines($retroactiveChange) {
+        $rate =  Billrun_Rates_Util::getRateByName($retroactiveChange['key'], $retroactiveChange['new']['from']->sec);
+        return array('description' => $rate['description']);
+    }
+    
+    protected function addForeignFieldsForSuggestion($line) {
+        return array('description' => $line['description']);
+    }
 
     protected function addProjectsForMatchingLines() {
-        return array('plan' => '$_id.plan', 'services' => '$_id.services');
+        return array('plan' => '$_id.plan', 'services' => '$_id.services', 'description' => 1);
     }
 
     protected function checkIfValidLine($line) {
