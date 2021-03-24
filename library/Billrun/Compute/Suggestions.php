@@ -49,9 +49,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             //check all the relevant types (update/permanentchange through GUI / rates importer / API) 
             'type' => array('$in' => ['update', 'closeandnew', 'permanentchange']),
             //retroactive change
-            'new.from' => array(
-                '$lt' => new MongoDate()
-            )
+            '$where' => 'this.new.from < this.urt'
         );
         $update = array(
             '$set' => array(
