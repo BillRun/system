@@ -157,7 +157,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function buildSuggestion($line) {
         //params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
         $suggestion = array_merge(array(
-            'recalculationType' => $this->getRecalculateType(),
+            'recalculation_type' => $this->getRecalculateType(),
             'aid' => $line['aid'],
             'sid' => $line['sid'],
             'firstname' => $line['firstname'],
@@ -173,8 +173,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                 ), $this->addForeignFieldsForSuggestion($line));
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
-        $suggestion['old_price'] = $oldPrice;
-        $suggestion['new_price'] = $newPrice;
+        $suggestion['old_charge'] = $oldPrice;
+        $suggestion['new_charge'] = $newPrice;
         $amount = $newPrice - $oldPrice;
         $suggestion['amount'] = abs($amount);
         $suggestion['type'] = $amount > 0 ? 'debit' : 'credit';
@@ -241,7 +241,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'billrun_key' => $suggestion['billrun_key'],
             'key' => $suggestion['key'],
             'status' => 'open',
-            'recalculationType' => $suggestion['recalculationType']
+            'recalculation_type' => $suggestion['recalculation_type']
         );
         return Billrun_Factory::db()->suggestionsCollection()->query($query)->cursor()->limit(1)->current();
     }
@@ -298,8 +298,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion = $suggestions[0];
         $newSuggestion['usagev'] = 0;
         $newSuggestion['total_lines'] = 0;
-        $newSuggestion['old_price'] = 0;
-        $newSuggestion['new_price'] = 0;
+        $newSuggestion['old_charge'] = 0;
+        $newSuggestion['new_charge'] = 0;
         $aprice = 0;
         foreach ($suggestions as $suggestion) {
             if ($suggestion['amount'] != 0) {
@@ -318,8 +318,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion['usagev'] += $suggestion['usagev'];
         $newSuggestion['total_lines'] += $suggestion['total_lines'];
         $newSuggestion['retroactive_changes_info'] = array_unique(array_merge($suggestion['retroactive_changes_info'], $newSuggestion['retroactive_changes_info']), SORT_REGULAR);
-        $newSuggestion['old_price'] += $suggestion['old_price'];
-        $newSuggestion['new_price'] += $suggestion['new_price'];
+        $newSuggestion['old_charge'] += $suggestion['old_charge'];
+        $newSuggestion['new_charge'] += $suggestion['new_charge'];
     }
 
     protected function getSuggestionStamp($suggestion) {
