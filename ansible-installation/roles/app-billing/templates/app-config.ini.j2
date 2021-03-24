@@ -1,0 +1,13 @@
+db.host="{{mongos.host}}"
+db.port="{{mongos.port}}"
+db.user="{{mongos.user}}"
+db.password={{mongos.password}}
+db.name= {{mongos.db}}
+db.options.authSource=billing
+db.options.context.ssl.local_cert="/etc/pki/tls/private/{{inventory_hostname}}.pem"
+
+#db.options.context.ssl.passphrase=""
+#db.options.context.ssl.cafile="/etc/ssl/mongo/rootCA.pem"
+#db.options.context.ssl.allow_self_signed=1
+#db.options.context.ssl.verify_peer=0
+#db.options.context.ssl.verify_peer_name=0
