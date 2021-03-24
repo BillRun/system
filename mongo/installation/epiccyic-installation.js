@@ -2875,7 +2875,17 @@ lastConfig["file_types"][0] =
 							"tax_data.taxes.0.description",
 							"tax_data.taxes.0.tax",
 							"tax_data.taxes.0.type",
-							"tax_data.taxes.0.pass_to_customer"
+							"tax_data.taxes.0.pass_to_customer",
+                                                        "uf.EVENT_START_DATE",
+                                                        "uf.USER_SUMMARISATION",
+                                                        "cf.product",
+                                                        "cf.operator",
+                                                        "cf.call_direction",
+                                                        "cf.incoming_operator",
+                                                        "cf.outgoing_operator",
+                                                        "cf.tier",
+                                                        "cf.component",
+                                                        "cf.scenario"
 						],
 						"field" : [ ]
 					},
@@ -2905,7 +2915,23 @@ lastConfig["file_types"][0] =
 										"usagev",
 										"usagev_unit",
 										"aprice",
-										"final_charge"
+										"final_charge",
+                                                                                "uf.EVENT_START_DATE",
+                                                                                "uf.USER_SUMMARISATION",
+                                                                                "cf.rate_type",
+                                                                                "cf.rate_price",
+                                                                                "cf.cash_flow",
+                                                                                "cf.product",
+                                                                                "cf.operator",
+                                                                                "cf.call_direction",
+                                                                                "cf.incoming_operator",
+                                                                                "cf.outgoing_operator",
+                                                                                "cf.product_group",
+                                                                                "cf.tier",
+                                                                                "cf.component",
+                                                                                "cf.scenario",
+                                                                                "cf.product_title",
+                                                                                "cf.tier_title"	
 									]
 								},
 								{
