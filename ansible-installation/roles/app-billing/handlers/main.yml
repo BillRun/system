@@ -1,0 +1,19 @@
+---
+- name: reload nginx
+  systemd:
+    state: reloaded
+    name: nginx.service
+    enabled: yes
+
+- name: reload php-fpm
+  systemd:
+    state: reloaded
+    name: php-fpm.service
+    enabled: yes
+
+- name: chown app dir
+  file:
+    path: "{{ app_dir }}"
+    owner: "{{ app.user }}"
+    group: "{{ app.group }}"
+    recurse: yes
