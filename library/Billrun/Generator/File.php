@@ -76,20 +76,20 @@ abstract class Billrun_Generator_File {
     }
 	
 	protected function getHeaderLine() {
-        $headerStructure = $this->config['generator']['header_structure'];
+        $headerStructure = $this->config['generator']['header_structure'] ?? [];
         return $this->buildLineFromStructure($headerStructure);
     }
 
     protected function getTrailerLine() {
-        $trailerStructure = $this->config['generator']['trailer_structure'];
+        $trailerStructure = $this->config['generator']['trailer_structure'] ?? [];
         return $this->buildLineFromStructure($trailerStructure);
     }
 	
 	protected function getDataLine($params =  null, $recordType = null) {
 		if(isset($recordType)){
-			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure', $recordType));
+			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure', $recordType), []);
 		}else{
-			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure'));
+			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure'), []);
 		}
 		return $this->buildLineFromStructure($dataStructure, $params);
     }
