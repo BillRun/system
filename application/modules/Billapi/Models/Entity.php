@@ -412,9 +412,10 @@ class Models_Entity {
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
 			}
-                        $newRevision = $this->collection->query($this->query)->cursor()->current();
+                        $newRevision = $this->before->getRawData();
+                        $newRevision['to'] = $this->update['from'];
                         $key = $this->before[$field];
-                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision->getRawData());
+                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
