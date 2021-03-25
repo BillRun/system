@@ -8,8 +8,91 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function __construct($options = array()) {
         $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
     }
+	
+	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
+		if ($operation == "permanentchange") {
+			switch ($update['mapper_name']) {
+				case "One file loader - Tier create":
+				case "One file loader - Tier update":
+					$row[2] = "TIER_CB_" . $row[8] . "_" . $row[4] . "_" . $row[5];
+					$row[2] = $this->modifyStrigToKeyStructure($row[2]);
+					break;
+				case "One file loader - Rates create I calls":
+				case "One file loader - Rates create O calls":
+				case "One file loader - Rates create TI calls":
+				case "One file loader - Rates create TO calls":
+				case "One file loader - Rates create I SMS":
+				case "One file loader - Rates create O SMS":
+				case "One file loader - Rates update":
+					$row[2] = "RATE_" . $row[4] . "_" . $row[5] . "_" . $row[6] . "_" . $row[7] . "_" . $row[8];
+					$row[2] = $this->modifyStrigToKeyStructure($row[2]);
+					break;
+			}
+		}
+	}
 
-    public function afterProcessorParsing($processor) {
+	public function afterImportRowFormat(&$entity, $operation, $requestCollection, $update) {
+		switch ($update['mapper_name']){
+			case "One file loader - Tier create":
+			case "One file loader - Tier update":
+				$entity["key"] = $this->generateProductKey($entity, "tier");
+				break;
+			case "One file loader - Rates create I calls":
+			case "One file loader - Rates create O calls":
+			case "One file loader - Rates create TI calls":
+			case "One file loader - Rates create TO calls":
+			case "One file loader - Rates create I SMS":
+			case "One file loader - Rates create O SMS":
+			case "One file loader - Rates update":
+				$entity["key"] = $this->generateProductKey($entity, "rate");
+				if(!empty($entity["params"]["additional_charge"])) {
+					$entity["price_value"] = 0;
+				}
+				break;
+		}
+	}
+	
+	public function beforeImportEntity(&$entity, $operation, $requestCollection, $update) {
+		switch ($update['mapper_name']){
+			case "One file loader - Rates create I calls":
+			case "One file loader - Rates create O calls":
+			case "One file loader - Rates create TI calls":
+			case "One file loader - Rates create TO calls":
+			case "One file loader - Rates update":
+				if(!empty($entity["params"]["additional_charge"])) {
+					$usagetype = reset(array_keys($entity['rates']));
+					$entity["rates"][$usagetype]["BASE"]["rate"] = $this->addZeroPriceTier($entity);
+				}
+				break;
+		}
+
+	}
+	
+	public function generateProductKey($entity, $type) {
+		switch ($type) {
+			case "tier":
+				$entity["key"] = "TIER_CB_" . $entity["params"]["tier"] . "_" . $entity["params"]["operator"] . "_" . $entity["params"]["cash_flow"];
+				$entity["key"] = $this->modifyStrigToKeyStructure($entity["key"]);
+				return $entity["key"];
+			case "rate":
+				$entity["key"] = "RATE_" . $entity["params"]["operator"] . "_" . $entity["params"]["component"] . "_" . $entity["params"]["product"] . "_" . $entity["params"]["direction"] . "_" . $entity["params"]["tier"];
+				$entity["key"] = $this->modifyStrigToKeyStructure($entity["key"]);
+				return $entity["key"];
+		}
+	}
+	
+	public function addZeroPriceTier($entity) {
+		$usagetype = reset(array_keys($entity['rates']));
+		$rates_array = $entity["rates"][$usagetype]["BASE"]["rate"];
+		$rates_array[1] = $rates_array[0];
+		$rates_array[0]["to"] = 1;
+		$rates_array[1]["from"] = 1;
+		$rates_array[0]["price"] = $entity["params"]["additional_charge"];
+		$rates_array[1]["price"] = 0;
+		return $rates_array;
+	}
+
+	public function afterProcessorParsing($processor) {
         if ($processor->getType() === 'ICT') {
             $dataRows = $processor->getData()['data'];
             foreach ($dataRows as $row) {
@@ -23,6 +106,24 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             }
         }
     }
+	
+	function modifyStrigToKeyStructure($str) {
+		$unwanted_array = array('Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A', 'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A', 'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E',
+			'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ø' => 'O', 'Ù' => 'U',
+			'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'a', 'ç' => 'c',
+			'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i', 'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o',
+			'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y', '(' => "", ')' => "");
+		$str = strtr($str, $unwanted_array);
+		$str = str_replace('&', '_AND_', $str);
+		$str = str_replace('(', '_', str_replace("'", "", str_replace('-', '_', (str_replace('__', '_', str_replace(' ', '_', str_replace('.', '_', str_replace('$', '_', str_replace(',', '_', str_replace('‘', '_', $str))))))))));
+		$str = str_replace('+', '_', $str);
+		$str = str_replace('___', '_', $str);
+		$str = str_replace('/', '_', $str);
+		$str = str_replace('*', '', $str);
+		$str = str_replace('|', '_OR_', $str);
+		$str = str_replace('__', '_', $str);
+		return strtoupper($str);
+	}
 
     public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
         if ($calculator->getType() == 'rate') {
