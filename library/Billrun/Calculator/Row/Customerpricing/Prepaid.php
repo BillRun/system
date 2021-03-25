@@ -149,7 +149,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				'in_balance_usage' => $rebalanceUsagev,
 			);
 			
-			$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
+			$rebalanceCost = abs($this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev));
 			if (!is_null($balance['balance.totals.' . $balance_totals_key . '.usagev'])) {
 				if ($rebalanceCost > 0) { // in case of a free line - no reservation was made
 					$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
