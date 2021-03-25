@@ -88,6 +88,8 @@ class Models_Action_Import extends Models_Action {
 				continue;
 			}
 			
+			Billrun_Factory::dispatcher()->trigger('beforeImportRowFormat', array(&$file_row, $this->operation, $this->request['collection'], $this->update));
+			
 			// Set the row number from file - will need in case of error to point to the row with problem
 			$data[$idx]['__CSVROW__'] = $idx + 1;
 			
@@ -152,6 +154,7 @@ class Models_Action_Import extends Models_Action {
 					$data[$idx][$field_name] = $predefined_value;
 				}
 			}
+			Billrun_Factory::dispatcher()->trigger('afterImportRowFormat', array(&$data[$idx], $this->operation, $this->request['collection'], $this->update));
 		}
 
 		return $data;
@@ -232,7 +235,7 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function importEntity($entity) {
-		Billrun_Factory::dispatcher()->trigger('beforeImportEntity', array(&$entity, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeImportEntity', array(&$entity, $this->operation, $this->request['collection'], $this->update));
 		try {
 			$params = $this->getImportParams($entity);
 			$entityModel = $this->getEntityModel($params);
