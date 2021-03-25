@@ -126,10 +126,15 @@ lastConfig["usage_types"] = [
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : ""
+		},
+                {
+			"usage_type" : "erp_report",
+			"label" : "erp_report",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
 		}
-	],
-
-
+	];
 //Input processor
 lastConfig["file_types"][0] = 
 		{
@@ -3103,6 +3108,18 @@ lastConfig["rates"]["fields"] =
 				"title" : "Product Group",
 				"editable" : true,
 				"display" : true
+			},
+                        {
+				"field_name" : "gl_account",
+				"title" : "Account",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "object_id",
+				"title" : "Object Id",
+				"editable" : true,
+				"display" : true
 			}
 		];
 
@@ -3174,6 +3191,102 @@ lastConfig["rates"]["fields"] =
 		"vat" : 0,
 		"vat_label" : "Vat"
 	};
+        
+lastConfig["import"]["mapping"] = [
+    {
+        "label": "erp_report_missing_fields",
+        "map": [
+            {
+                "field": "price_from",
+                "value": "0"
+            },
+            {
+                "field": "params.product",
+                "value": "__csvindex__1"
+            },
+            {
+                "field": "usage_type_value",
+                "value": "erp_report"
+            },
+            {
+                "field": "usage_type_unit",
+                "value": ""
+            },
+            {
+                "field": "params.operator",
+                "value": "__csvindex__5"
+            },
+            {
+                "field": "price_to",
+                "value": "UNLIMITED"
+            },
+            {
+                "field": "params.cash_flow",
+                "value": "__csvindex__3"
+            },
+            {
+                "field": "gl_account",
+                "value": "__csvindex__7"
+            },
+            {
+                "field": "params.component",
+                "value": "__csvindex__2"
+            },
+            {
+                "field": "params.scenario",
+                "value": "__csvindex__0"
+            },
+            {
+                "field": "tariff_category",
+                "value": "retail"
+            },
+            {
+                "field": "object_id",
+                "value": "__csvindex__6"
+            },
+            {
+                "field": "price_interval",
+                "value": "1"
+            },
+            {
+                "field": "price_value",
+                "value": "0"
+            },
+            {
+                "field": "key",
+                "value": "__csvindex__8"
+            }
+        ],
+        "updater": [],
+        "linker": [],
+        "multiFieldAction": []
+    }
+]
+
+var report_RatesMissingFields = {//TODO:: change erp report name/csv_name 
+	"name": 'Rates Missing Fields',
+	"id": "",//TODO:: add the id.
+	"enable": true,
+	"day": "2",
+	"hour": "05",
+	"csv_name": "RatesMissingFields",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
 var report_Armadilo = {
 	"name": 'Armadilo',
 	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
@@ -3246,7 +3359,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_RatesMissingFields];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
