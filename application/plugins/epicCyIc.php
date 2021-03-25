@@ -38,7 +38,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             if ($current["cf"]["rate_type"] == "unit_cost") {
                 $current["cf"]["rate_price"] *= 60;
             }
-            unset($current["foreign"]["rate"]);
+            unset($current["foreign"]["rate"]["rates"]);
             $row->setRawData($current);
         }
 
