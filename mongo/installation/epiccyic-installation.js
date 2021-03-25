@@ -3244,6 +3244,15 @@ lastConfig["rates"]["fields"] =
 					"field" : "rates"
 				},
 				"conditions" : [ ]
+			},
+			{
+				"field_name" : "foreign.rate.description",
+				"title" : "tier_title",
+				"foreign" : {
+					"entity" : "rate",
+					"field" : "description"
+				},
+				"conditions" : [ ]
 			}
 		];
 		
