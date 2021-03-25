@@ -408,14 +408,13 @@ class Models_Entity {
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$field = $this->getKeyField();
                 if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
-			$oldRevision = $this->collection->query($this->query)->cursor()->current();
                         $res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
 			}
                         $newRevision = $this->collection->query($this->query)->cursor()->current();
-                        $key = $oldRevision[$field];
-                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
+                        $key = $this->before[$field];
+                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision->getRawData());
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
