@@ -45,6 +45,8 @@ abstract class Billrun_Compute extends Billrun_Base {
                 $computed->write();
                 Billrun_Factory::log()->log("Compute " . $computed->getComputedType(). " finished.", Zend_Log::INFO);
             }
+        } catch (Throwable $th) {
+             Billrun_Factory::log()->log($th->getMessage(), Zend_Log::ALERT);
         } catch (Exception $ex) {
             Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
         }
