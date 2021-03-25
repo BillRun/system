@@ -224,7 +224,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                         $this->handleOverlapSuggestion($overlapSuggestion, $suggestion);
                     }
                 } else {
-                    if ($suggestion['amount'] != 0) {
+                    if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
                         Billrun_Factory::db()->suggestionsCollection()->insert($suggestion);
                     }
                 }
@@ -254,7 +254,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
         $newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
         //TODO:: consider update instead of remove and insert
-        if ($newSuggestion['amount'] != 0) {
+        if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
             Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
         }
         Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
@@ -300,7 +300,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestion['new_charge'] = 0;
         $aprice = 0;
         foreach ($suggestions as $suggestion) {
-            if ($suggestion['amount'] != 0) {
+            if (!Billrun_Util::isEqual($suggestion['amount'], 0, Billrun_Bill::precision)) {
                 $aprice += $suggestion['type'] === 'credit' ? (0 - $suggestion['amount']) : $suggestion['amount'];
                 $this->unifyOverlapSuggestion($newSuggestion, $suggestion);
             }
