@@ -406,11 +406,16 @@ class Models_Entity {
 		$permanentQuery = $this->getPermanentChangeQuery();
 		$permanentUpdate = $this->getPermanentChangeUpdate();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
-		if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
-			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
+		$field = $this->getKeyField();
+                if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
+                        $res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
 			}
+                        $newRevision = $this->before->getRawData();
+                        $newRevision['to'] = $this->update['from'];
+                        $key = $this->before[$field];
+                        Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $this->before->getRawData(), $newRevision);
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$prevEntity['from'] = $this->update['from'];
@@ -420,8 +425,7 @@ class Models_Entity {
 		$oldRevisions = iterator_to_array($beforeChangeRevisions);
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
-		$this->fixEntityFields($this->before);
-		$field = $this->getKeyField();
+		$this->fixEntityFields($this->before);		
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
