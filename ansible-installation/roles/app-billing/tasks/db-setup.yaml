@@ -1,0 +1,5 @@
+---
+- name: setup db
+  shell: "{{ item }}"
+  loop: "{{ db_setup.shell_finalize_commands }}"
+  when:  ( groups['billing'][0] == inventory_hostname ) 

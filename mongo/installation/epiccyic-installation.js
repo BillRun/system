@@ -2843,7 +2843,107 @@ lastConfig["file_types"][0] =
 				],
 				"limit" : 3
 			},
-			"unify" : [ ],
+			"unify" : {
+				"unification_fields" : {
+					"required" : {
+						"fields" : [
+							"urt",
+							"type",
+							"aid"
+						],
+						"match" : [ ]
+					},
+					"date_seperation" : "Ymd",
+					"stamp" : {
+						"value" : [
+							"usaget",
+							"aid",
+							"sid",
+							"plan",
+							"arate_key",
+							"billrun",
+							"tax_data.taxes.0.key",
+							"tax_data.taxes.0.description",
+							"tax_data.taxes.0.tax",
+							"tax_data.taxes.0.type",
+							"tax_data.taxes.0.pass_to_customer",
+                                                        "uf.EVENT_START_DATE",
+                                                        "uf.USER_SUMMARISATION",
+                                                        "cf.product",
+                                                        "cf.operator",
+                                                        "cf.call_direction",
+                                                        "cf.incoming_operator",
+                                                        "cf.outgoing_operator",
+                                                        "cf.tier",
+                                                        "cf.component",
+                                                        "cf.scenario"
+						],
+						"field" : [ ]
+					},
+					"fields" : [
+						{
+							"match" : {
+								"type" : "/^ICT/"
+							},
+							"update" : [
+								{
+									"operation" : "$setOnInsert",
+									"data" : [
+										"arate",
+										"arate_key",
+										"usaget",
+										"urt",
+										"plan",
+										"connection_type",
+										"aid",
+										"sid",
+										"subscriber",
+										"foreign",
+										"billrun",
+										"tax_data",
+										"usagev",
+										"usagev_unit",
+										"aprice",
+										"final_charge",
+                                                                                "uf.EVENT_START_DATE",
+                                                                                "uf.USER_SUMMARISATION",
+                                                                                "cf.rate_type",
+                                                                                "cf.rate_price",
+                                                                                "cf.cash_flow",
+                                                                                "cf.product",
+                                                                                "cf.operator",
+                                                                                "cf.call_direction",
+                                                                                "cf.incoming_operator",
+                                                                                "cf.outgoing_operator",
+                                                                                "cf.product_group",
+                                                                                "cf.tier",
+                                                                                "cf.component",
+                                                                                "cf.scenario",
+                                                                                "cf.product_title",
+                                                                                "cf.tier_title"	
+									]
+								},
+								{
+									"operation" : "$set",
+									"data" : [
+										"process_time"
+									]
+								},
+								{
+									"operation" : "$inc",
+									"data" : [
+										"usagev",
+										"aprice",
+										"final_charge",
+										"tax_data.total_amount",
+										"tax_data.taxes.0.amount"
+									]
+								}
+							]
+						}
+					]
+				}
+			},
 			"filters" : [ ],
 			"enabled" : true
 		},
@@ -3136,7 +3236,16 @@ lastConfig["lines"]["fields"] =
 					"entity": "rate",
 					"field": "rates"
 				},
-				"conditions": []
+				"conditions" : [ ]
+			},
+			{
+				"field_name" : "foreign.rate.description",
+				"title" : "tier_title",
+				"foreign" : {
+					"entity" : "rate",
+					"field" : "description"
+				},
+				"conditions" : [ ]
 			}
 		];
 		
