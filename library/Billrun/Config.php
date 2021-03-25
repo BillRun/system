@@ -536,4 +536,5 @@ class Billrun_Config {
 	public function getConfigChargingDay() {
 		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
 	}
+
 }
