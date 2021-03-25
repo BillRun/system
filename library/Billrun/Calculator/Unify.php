@@ -586,4 +586,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return $updateFailedLines;
 	}
+	
+	public static function getUnifyLines($rowStamp){
+		return Billrun_Factory::db()->archiveCollection()->query(array('u_s' => $rowStamp));
+	}
 }
