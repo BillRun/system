@@ -361,6 +361,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function checkIfValidLine($line) {
         return true;
     }
+    
+    static protected function getOptions() {
+        return array('type' => 'suggestions');
+    }
 
     abstract protected function getRetroactiveChangePrice($retroactiveChangeNew);
 
@@ -396,13 +400,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             }
         }
         if (!empty($minutesToRun)) {
-            $command = static::getCmd();
-            try {
-                Billrun_Factory::log('Running compute suggestions on background', Billrun_Log::INFO);
-                Billrun_Util::forkProcessCli($command);
-            } catch (Exception $ex) {
-                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ALERT);
-            }
+            $options = static::getOptions();
+            Billrun_Compute::run($options);
         }
     }
 

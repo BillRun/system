@@ -153,7 +153,9 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
     static protected function getCoreIntervals() {
         return Billrun_Factory::config()->getConfigValue('billrun.compute.suggestions.rate_recalculations.intervals', [0, 15, 30, 45]);
     }
-
     
-
+    static protected function getOptions() {
+        $options = parent::getOptions();
+        return array_merge($options, array('recalculation_type' => 'rate'));
+    }
 }

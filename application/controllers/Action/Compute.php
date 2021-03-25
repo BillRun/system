@@ -29,18 +29,7 @@ class ComputeAction extends Action_Base {
         if (!empty($extraParams)) {
             $options = array_merge($extraParams, $options);
         }
-        $this->getController()->addOutput("Loading Compute ");
-        $computed = Billrun_Compute::getInstance($options);
-        if (!$computed) {
-            $this->getController()->addOutput("Compute cannot be loaded");
-        } else {
-            $this->getController()->addOutput("Compute " . $computed->getComputedType() . " loaded");
-            $this->getController()->addOutput("Starting to compute " . $computed->getComputedType() . ". This action can take a while...");
-            $computed->compute();
-            Billrun_Factory::log()->log("Writing compute " . $computed->getComputedType() ." data.", Zend_Log::INFO);
-            $computed->write();
-            $this->getController()->addOutput("Compute " . $computed->getComputedType(). " finished.");
-        }
+        Billrun_Compute::run($options);
     }
 
 }
