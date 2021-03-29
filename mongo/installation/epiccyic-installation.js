@@ -3980,7 +3980,7 @@ lastConfig["import"]["mapping"] = [
 ];
 
 var report_MissingMapping = {
-	"name": 'MissingMapping',
+	"name": 'Missing Mapping',
 	"id": "",//TODO:: add the id.
 	"enable": true,
 	"day": "2",
