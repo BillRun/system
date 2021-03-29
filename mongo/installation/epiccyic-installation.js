@@ -121,8 +121,8 @@ lastConfig["usage_types"] = [
 			"input_uom" : ""
 		},
                 {
-			"usage_type" : "erp_report",
-			"label" : "erp_report",
+			"usage_type" : "erp_mapping",
+			"label" : "erp_mapping",
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : ""
@@ -3210,19 +3210,19 @@ lastConfig["rates"]["fields"] =
 			},
                         {
 				"field_name" : "gl_account",
-				"title" : "Account",
+				"title" : "GL Account",
 				"editable" : true,
 				"display" : true
 			},
 			{
 				"field_name" : "object_id",
-				"title" : "Object Id",
+				"title" : "Accounting Object Id",
 				"editable" : true,
 				"display" : true
 			},
                         {
 				"field_name" : "gl_account_description",
-				"title" : "Account Description",
+				"title" : "GL Account Description",
 				"editable" : true,
 				"display" : true
 			},
@@ -3893,7 +3893,7 @@ lastConfig["import"]["mapping"] = [
 		]
 	},
         {
-            "label" : "Missing Mapping",
+            "label" : "Missing ERP Mappings",
             "map" : [
                     {
                             "field" : "price_from",
@@ -3909,7 +3909,7 @@ lastConfig["import"]["mapping"] = [
                     },
                     {
                             "field" : "usage_type_value",
-                            "value" : "erp_report"
+                            "value" : "erp_mapping"
                     },
                     {
                             "field" : "usage_type_unit",
@@ -3979,13 +3979,13 @@ lastConfig["import"]["mapping"] = [
 
 ];
 
-var report_MissingMapping = {
-	"name": 'Missing Mapping',
+var report_MissingERPMappings = {
+	"name": 'Missing ERP Mappings',
 	"id": "",//TODO:: add the id.
 	"enable": true,
 	"day": "2",
 	"hour": "05",
-	"csv_name": "MissingMapping",
+	"csv_name": "MissingERPMappings",
 	"need_post_process": false,
 	"params": [
 		{
@@ -4075,7 +4075,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingMapping];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingERPMappings];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
