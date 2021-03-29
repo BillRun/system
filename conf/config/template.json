@@ -105,6 +105,9 @@
         "import": {
             "mapping": []
         },
+	"report":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{
