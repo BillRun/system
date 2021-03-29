@@ -43,6 +43,16 @@ class ReportModel {
 				'target_field' => 'aid',
 			),
 		),
+		'usage_archive' => array(
+			'subscription' => array(
+				'source_field' => 'sid',
+				'target_field' => 'sid',
+			),
+			'customer' => array(
+				'source_field' => 'aid',
+				'target_field' => 'aid',
+			),
+		),
 		'subscription' => array(
 			'usage' => array(
 				'source_field' => 'sid',
@@ -736,8 +746,10 @@ class ReportModel {
 	 */
 	protected function entityMapper($entity) {
 		switch ($entity) {
-			case 'usage':
+			case 'usage_archive':
 				return 'lines';
+			case 'usage':
+				return 'archive';
 			case 'subscription':
 				return 'subscribers';
 			case 'customer':
