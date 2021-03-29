@@ -49,6 +49,15 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$entity["price_value"] = 0;
 				}
 				break;
+                        case "Missing Mapping":
+                                $entity["key"] = 
+                                    $entity["params"]["scenario"]  . "_" .
+                                    $entity["params"]["product"]  . "_" .
+                                    $entity["params"]["component"]  . "_" .
+                                    $entity["params"]["cash_flow"]  . "_" .
+                                    $entity["params"]["user_summarisation"]  . "_" .
+                                    $entity["params"]["operator"];
+                                break;
 		}
 	}
 	
