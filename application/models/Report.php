@@ -746,9 +746,9 @@ class ReportModel {
 	 */
 	protected function entityMapper($entity) {
 		switch ($entity) {
-			case 'usage_archive':
-				return 'lines';
 			case 'usage':
+				return 'lines';
+			case 'usage_archive':
 				return 'archive';
 			case 'subscription':
 				return 'subscribers';
