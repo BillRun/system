@@ -80,6 +80,9 @@
 			}
 		}
 	},
+	"suggestions" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {
