@@ -1,0 +1,17 @@
+---
+- hosts: billing
+  vars_files:
+  - app-vars.yaml
+  vars:
+    mongo_conn: ""
+    db_password_app: ""
+  become: yes
+  become_method: sudo
+  roles:
+  - app-billing
+  tags: app
+  tasks:
+#  - name: add epic custom config
+#    lineinfile:
+#      line: 'configuration.include[] = APPLICATION_PATH "/application/plugins/epic.json"'
+#      path:  "{{ app_dir }}/conf/{{ app_env }}.ini"

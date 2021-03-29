@@ -26,13 +26,6 @@ lastConfig["usage_types"] = [
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : "",
-			"usage_type" : "parameter_poin",
-			"label" : "parameter_poin"
-		},
-		{
-			"property_type" : "counter",
-			"invoice_uom" : "",
-			"input_uom" : "",
 			"usage_type" : "parameter_product",
 			"label" : "parameter_product"
 		},
@@ -2855,7 +2848,107 @@ lastConfig["file_types"][0] =
 				],
 				"limit" : 3
 			},
-			"unify" : [ ],
+			"unify" : {
+				"unification_fields" : {
+					"required" : {
+						"fields" : [
+							"urt",
+							"type",
+							"aid"
+						],
+						"match" : [ ]
+					},
+					"date_seperation" : "Ymd",
+					"stamp" : {
+						"value" : [
+							"usaget",
+							"aid",
+							"sid",
+							"plan",
+							"arate_key",
+							"billrun",
+							"tax_data.taxes.0.key",
+							"tax_data.taxes.0.description",
+							"tax_data.taxes.0.tax",
+							"tax_data.taxes.0.type",
+							"tax_data.taxes.0.pass_to_customer",
+                                                        "uf.EVENT_START_DATE",
+                                                        "uf.USER_SUMMARISATION",
+                                                        "cf.product",
+                                                        "cf.operator",
+                                                        "cf.call_direction",
+                                                        "cf.incoming_operator",
+                                                        "cf.outgoing_operator",
+                                                        "cf.tier",
+                                                        "cf.component",
+                                                        "cf.scenario"
+						],
+						"field" : [ ]
+					},
+					"fields" : [
+						{
+							"match" : {
+								"type" : "/^ICT/"
+							},
+							"update" : [
+								{
+									"operation" : "$setOnInsert",
+									"data" : [
+										"arate",
+										"arate_key",
+										"usaget",
+										"urt",
+										"plan",
+										"connection_type",
+										"aid",
+										"sid",
+										"subscriber",
+										"foreign",
+										"billrun",
+										"tax_data",
+										"usagev",
+										"usagev_unit",
+										"aprice",
+										"final_charge",
+                                                                                "uf.EVENT_START_DATE",
+                                                                                "uf.USER_SUMMARISATION",
+                                                                                "cf.rate_type",
+                                                                                "cf.rate_price",
+                                                                                "cf.cash_flow",
+                                                                                "cf.product",
+                                                                                "cf.operator",
+                                                                                "cf.call_direction",
+                                                                                "cf.incoming_operator",
+                                                                                "cf.outgoing_operator",
+                                                                                "cf.product_group",
+                                                                                "cf.tier",
+                                                                                "cf.component",
+                                                                                "cf.scenario",
+                                                                                "cf.product_title",
+                                                                                "cf.tier_title"	
+									]
+								},
+								{
+									"operation" : "$set",
+									"data" : [
+										"process_time"
+									]
+								},
+								{
+									"operation" : "$inc",
+									"data" : [
+										"usagev",
+										"aprice",
+										"final_charge",
+										"tax_data.total_amount",
+										"tax_data.taxes.0.amount"
+									]
+								}
+							]
+						}
+					]
+				}
+			},
 			"filters" : [ ],
 			"enabled" : true
 		},
@@ -3123,78 +3216,660 @@ lastConfig["rates"]["fields"] =
 			}
 		];
 
-		//foreign fields
-		lastConfig["lines"]["fields"] =
-[
+//foreign fields
+lastConfig["lines"]["fields"] =
+		[
 			{
-				"field_name" : "foreign.activation_date",
-				"foreign" : {
-					"entity" : "service",
-					"field" : "start",
-					"translate" : {
-						"type" : "unixTimeToString",
-						"format" : "Y-m-d H:i:s"
+				"field_name": "foreign.activation_date",
+				"foreign": {
+					"entity": "service",
+					"field": "start",
+					"translate": {
+						"type": "unixTimeToString",
+						"format": "Y-m-d H:i:s"
 					}
 				}
 			},
 			{
-				"field_name" : "foreign.service.description",
-				"foreign" : {
-					"entity" : "service",
-					"field" : "invoice_description"
+				"field_name": "foreign.service.description",
+				"foreign": {
+					"entity": "service",
+					"field": "invoice_description"
 				}
 			},
 			{
-				"field_name" : "foreign.account.vat_code",
-				"title" : "Vat Code",
-				"foreign" : {
-					"entity" : "account",
-					"field" : "vat_code"
+				"field_name": "foreign.account.vat_code",
+				"title": "Vat Code",
+				"foreign": {
+					"entity": "account",
+					"field": "vat_code"
+				},
+				"conditions": []
+			},
+			{
+				"field_name": "foreign.rate.rates",
+				"title": "Rate",
+				"foreign": {
+					"entity": "rate",
+					"field": "rates"
 				},
 				"conditions" : [ ]
 			},
 			{
-				"field_name" : "foreign.rate.rates",
-				"title" : "Rate",
+				"field_name" : "foreign.rate.description",
+				"title" : "tier_title",
 				"foreign" : {
 					"entity" : "rate",
-					"field" : "rates"
+					"field" : "description"
 				},
 				"conditions" : [ ]
 			}
 		];
 		
-		//taxes
-		lastConfig["taxation"] = 
+//taxes
+lastConfig["taxation"] =
 		{
-		"tax_type" : "usage",
-		"default" : {
-			"key" : ""
-		},
-		"mapping" : {
-			"vat" : {
-				"priorities" : [
-					{
-						"filters" : [
-							{
-								"line_key" : "foreign.account.vat_code",
-								"type" : "match",
-								"entity_key" : "params.vat_code"
-							}
-						],
-						"cache_db_queries" : true
-					}
-				],
-				"default_fallback" : true
-			}
-		},
-		"vat" : 0,
-		"vat_label" : "Vat"
-	};
-        
+			"tax_type": "usage",
+			"default": {
+				"key": ""
+			},
+			"mapping": {
+				"vat": {
+					"priorities": [
+						{
+							"filters": [
+								{
+									"line_key": "foreign.account.vat_code",
+									"type": "match",
+									"entity_key": "params.vat_code"
+								}
+							],
+							"cache_db_queries": true
+						}
+					],
+					"default_fallback": true
+				}
+			},
+			"vat": 0,
+			"vat_label": "Vat"
+		};
+		
+//import mappers
 lastConfig["import"]["mapping"] = [
-    {
-        "label": "erp_report_missing_fields",
+	{
+		"label": "One file loader - Rates create I calls",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "incoming_call"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "seconds"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__29"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates create O calls",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "outgoing_call"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "seconds"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__29"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates create TI calls",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "transit_incoming_call"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "seconds"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__29"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates create TO calls",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "transit_outgoing_call"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "seconds"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__29"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates create I SMS",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "incoming_sms"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "counter"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates create O SMS",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "rate"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "outgoing_sms"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "counter"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Rates update",
+		"map": [
+			{
+				"field": "price_from",
+				"value": "0"
+			},
+			{
+				"field": "params.additional_charge",
+				"value": "__csvindex__14"
+			},
+			{
+				"field": "effective_date",
+				"value": "__csvindex__10"
+			},
+			{
+				"field": "params.product",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "price_to",
+				"value": "UNLIMITED"
+			},
+			{
+				"field": "params.component",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.direction",
+				"value": "__csvindex__7"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "__csvindex__29"
+			}
+		],
+		"updater": {
+			"field": "key",
+			"value": "__csvindex__2"
+		},
+		"linker": [],
+		"multiFieldAction": []
+	},
+	{
+		"label": "One file loader - Tier create",
+		"map": [
+			{
+				"field": "params.type",
+				"value": "tier_cb"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "usage_type_value",
+				"value": "parameter_tier_cb"
+			},
+			{
+				"field": "from",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "usage_type_unit",
+				"value": "counter"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.cash_flow",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "tariff_category",
+				"value": "retail"
+			},
+			{
+				"field": "params.prefix",
+				"value": "__csvindex__9"
+			},
+			{
+				"field": "price_interval",
+				"value": "1"
+			},
+			{
+				"field": "price_value",
+				"value": "0"
+			},
+			{
+				"field": "description",
+				"value": "__csvindex__8"
+			},
+			{
+				"field": "key",
+				"value": "__csvindex__2"
+			}
+		],
+		"updater": [],
+		"linker": [],
+		"multiFieldAction": [
+			{
+				"field": "params.prefix",
+				"value": "append"
+			}
+		]
+	},
+	{
+		"label": "One file loader - Tier update",
+		"map": [
+			{
+				"field": "effective_date",
+				"value": "__csvindex__6"
+			},
+			{
+				"field": "params.prefix",
+				"value": "__csvindex__9"
+			},
+			{
+				"field": "price_from",
+				"value": "0"
+			},
+			{
+				"field": "price_to",
+				"value": "UNLIMITED"
+			},
+			{
+				"field": "params.operator",
+				"value": "__csvindex__4"
+			},
+			{
+				"field": "params.cash_flow",
+				"value": "__csvindex__5"
+			},
+			{
+				"field": "params.tier",
+				"value": "__csvindex__8"
+			}
+		],
+		"updater": {
+			"field": "key",
+			"value": "__csvindex__2"
+		},
+		"linker": [],
+		"multiFieldAction": [
+			{
+				"field": "params.prefix",
+				"value": "append"
+			}
+		]
+	},
+        {
+        "label": "Missing Mapping",
         "map": [
             {
                 "field": "price_from",
@@ -3261,7 +3936,7 @@ lastConfig["import"]["mapping"] = [
         "linker": [],
         "multiFieldAction": []
     }
-]
+];
 
 var report_MissingMapping = {
 	"name": 'MissingMapping',

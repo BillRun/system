@@ -1,0 +1,206 @@
+---
+- name: ensure app group exists
+  group:
+    name: "{{ app.group }}"
+    state: present
+
+- name: add app user
+  user:
+    name: "{{ app.user }}"
+    comment: "app user"
+    uid: "{{ app.uid }}"
+    group: "{{ app.group }}"    
+
+- name: install remi repo
+  yum:
+    name: "http://rpms.remirepo.net/enterprise/remi-release-7.rpm"
+    state: present
+
+- name: enable remi php version
+  shell: "yum-config-manager --enable remi-{{php_version}}"
+
+- name: install yum packages
+  yum:
+    name: "{{ yum_packages }}"
+    state: present
+
+- name: Install pecl package
+  pear:
+    name: "{{ pecl_packages }}"
+    state: present
+  when: "pecl_packages|length > 0"    
+
+- name: fix session permissions
+  file:
+    path: "{{ php_session_dir }}"
+    group: nginx
+
+- name: ensure php values
+  lineinfile:
+    path: /etc/php.ini
+    regexp: '^(;)?{{ item.key }}'
+    line: "{{ item.key }} = {{ item.value }}"
+  with_dict: "{{ php_ini }}"
+  notify:
+    - reload php-fpm    
+
+- name: configure nginx
+  template:
+    src: "{{ item.name }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { name: nginx-app-conf.j2, dest : "/etc/nginx/conf.d/{{app_owner}}-backend.conf" }
+    - { name: nginx.conf.j2, dest : "/etc/nginx/nginx.conf" }    
+    - { name: php-fpm-conf.j2 , dest: "/etc/php-fpm.d/www.conf" }
+  notify:
+    - reload nginx
+    - reload php-fpm  
+
+
+- name: ssh key is present on the server.
+  copy:
+    content: "{{ deploy_private_key }}"
+    dest: "{{ deploy_key_file }}"
+    mode: '0600'
+    owner:  "{{ app.user }}"
+    group: "{{ app.group }}"
+
+- name: git checkout
+  git:
+    repo: "{{ git.repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ version | default('HEAD')}}"
+    accept_hostkey: yes
+    key_file: "{{ deploy_key_file }}"
+    force: yes
+  notify:
+  - chown app dir
+
+- name: change to branch {{ git.branch }}
+  shell: 
+    cmd: "git checkout {{git.branch}}"
+    chdir:  "{{ app_dir }}"
+
+
+- name: ensure directory exists
+  file:
+    path: "/home/{{app.user}}/.ssh"
+    state: directory
+    mode: '0700'
+  when: deploy_key_remove|default(False) == True
+
+
+- name: configure git key
+  copy:
+    src: "{{ deploy_key_file }}"
+    dest: "/home/{{app.user}}/.ssh/id_rsa"
+    remote_src: yes
+    mode: '0600'
+    owner:  "{{ app.user }}"
+    group: "{{ app.group }}"    
+  when: deploy_key_remove|default(False) == True
+  register: result
+
+
+- name: remove key
+  file: 
+    path: "{{ deploy_key_file }}"
+    state: absent
+    force: no
+  when: (deploy_key_remove|default(False) == True  or result is succeeded)
+
+
+
+- name: validate directories
+  file:
+    path: "{{item}}"
+    state: directory
+    owner:  "{{ app.user }}"
+    group: "{{ app.group }}"
+    mode: "775"
+  loop:
+    - "{{ app_dir }}/logs"
+    - "{{ shared_path }}/workspace"
+    - "{{ shared_path }}/shared"
+    - "{{ shared_path }}/cron"
+
+- name: setup links directories
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  loop:
+    - { src: "{{ shared_path }}/workspace" , dest: "{{ app_dir }}/workspace" }
+    - { src: "{{ shared_path }}/shared" , dest: "{{ app_dir }}/shared"}
+
+- name: configure app
+  template:
+    src: "app-config.ini.j2"
+    dest: "{{ app_dir }}/conf/{{ansible_hostname}}.ini"
+
+
+- name: Ensure SELinux is set to disabled mode
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: SELINUX=disabled
+
+- include: db-setup.yaml
+  when: db_setup.enable == true
+
+
+- name: setup cron jobs
+  cron: 
+    name: "application_crons {{ item.name }}"
+    minute: "{{item.minute}}"
+    hour: "{{item.hour}}"
+    job: "{{item.job}}"
+    user: "{{ app.user }}"
+  loop: "{{application_cron}}" 
+
+
+- name: enable and start webserver 
+  systemd:
+    name: "{{item}}"
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  loop: 
+    - nginx
+    - php-fpm
+
+- name: link wkhtmltopdf
+  file:
+    src: /usr/local/bin/wkhtmltopdf
+    dest: /bin/wkhtmltopdf
+    state: link
+  ignore_errors: yes
+
+
+- name: create application basic logfile
+  file:
+    path: "{{ app_dir }}/logs/debug.log"
+    state: touch
+    owner:  "{{ app.user }}"
+    group: "{{ app.group }}"
+    mode: "777"
+
+- name: ensure logs directory exists
+  file:
+    path: "{{ app_dir }}/logs/{{ app_env }}"
+    state: directory
+    mode: '0777'
+
+
+- name: create application logfile
+  file:
+    path: "{{ app_dir }}/logs/{{ app_env }}/debug.log"
+    state: touch
+    owner:  "{{ app.user }}"
+    group: "{{ app.group }}"
+    mode: "777"
+
+
+- name: reboot
+  reboot:
+    reboot_timeout: 600
