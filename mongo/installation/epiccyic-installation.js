@@ -3263,13 +3263,13 @@ lastConfig["import"]["mapping"] = [
     }
 ]
 
-var report_RatesMissingFields = {//TODO:: change erp report name/csv_name 
-	"name": 'Rates Missing Fields',
+var report_MissingMapping = {
+	"name": 'MissingMapping',
 	"id": "",//TODO:: add the id.
 	"enable": true,
 	"day": "2",
 	"hour": "05",
-	"csv_name": "RatesMissingFields",
+	"csv_name": "MissingMapping",
 	"need_post_process": false,
 	"params": [
 		{
@@ -3359,7 +3359,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_RatesMissingFields];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingMapping];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
