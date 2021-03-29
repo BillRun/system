@@ -335,6 +335,7 @@ class BillrunController extends ApiController {
 		if (empty($invoicingDay) && $config->isMultiDayCycle()) {
 			throw new Exception('Need to pass invoicing day when on multi day cycle mode.');
 		}
+		$setting['billrun_key'] = $billrunKey;
 		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicingDay));
 		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicingDay));
 		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, null, $invoicingDay);
