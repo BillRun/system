@@ -3203,6 +3203,12 @@ lastConfig["rates"]["fields"] =
 				"display" : true
 			},
                         {
+				"field_name" : "params.user_summarisation",
+				"title" : "User Summarisation",
+				"editable" : true,
+				"display" : true
+			},
+                        {
 				"field_name" : "gl_account",
 				"title" : "Account",
 				"editable" : true,
@@ -3215,7 +3221,7 @@ lastConfig["rates"]["fields"] =
 				"display" : true
 			},
                         {
-				"field_name" : "gl_account_Description",
+				"field_name" : "gl_account_description",
 				"title" : "Account Description",
 				"editable" : true,
 				"display" : true
@@ -3887,88 +3893,88 @@ lastConfig["import"]["mapping"] = [
 		]
 	},
         {
-                "label" : "Missing Mapping",
-                "map" : [
-                        {
-                                "field" : "price_from",
-                                "value" : "0"
-                        },
-                        {
-                                "field" : "params.product",
-                                "value" : "__csvindex__1"
-                        },
-                        {
-                                "field" : "mtn_ind",
-                                "value" : "__csvindex__9"
-                        },
-                        {
-                                "field" : "usage_type_value",
-                                "value" : "erp_report"
-                        },
-                        {
-                                "field" : "usage_type_unit",
-                                "value" : "counter"
-                        },
-                        {
-                                "field" : "params.operator",
-                                "value" : "__csvindex__5"
-                        },
-                        {
-                                "field" : "gl_account_Description",
-                                "value" : "__csvindex__8"
-                        },
-                        {
-                                "field" : "gl_account_description",
-                                "value" : "__csvindex__8"
-                        },
-                        {
-                                "field" : "price_to",
-                                "value" : "UNLIMITED"
-                        },
-                        {
-                                "field" : "params.cash_flow",
-                                "value" : "__csvindex__3"
-                        },
-                        {
-                                "field" : "gl_account",
-                                "value" : "__csvindex__7"
-                        },
-                        {
-                                "field" : "params.component",
-                                "value" : "__csvindex__2"
-                        },
-                        {
-                                "field" : "params.scenario",
-                                "value" : "__csvindex__0"
-                        },
-                        {
-                                "field" : "tariff_category",
-                                "value" : "retail"
-                        },
-                        {
-                                "field" : "object_id",
-                                "value" : "__csvindex__6"
-                        },
-                        {
-                                "field" : "price_interval",
-                                "value" : "1"
-                        },
-                        {
-                                "field" : "price_value",
-                                "value" : "0"
-                        },
-                        {
-                                "field" : "prod_serv",
-                                "value" : "__csvindex__10"
-                        },
-                        {
-                                "field" : "key",
-                                "value" : "__csvindex__11"
-                        }
-                ],
-                "updater" : [ ],
-                "linker" : [ ],
-                "multiFieldAction" : [ ]
+            "label" : "Missing Mapping",
+            "map" : [
+                    {
+                            "field" : "price_from",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "params.product",
+                            "value" : "__csvindex__1"
+                    },
+                    {
+                            "field" : "mtn_ind",
+                            "value" : "__csvindex__9"
+                    },
+                    {
+                            "field" : "usage_type_value",
+                            "value" : "erp_report"
+                    },
+                    {
+                            "field" : "usage_type_unit",
+                            "value" : "counter"
+                    },
+                    {
+                            "field" : "params.operator",
+                            "value" : "__csvindex__5"
+                    },
+                    {
+                            "field" : "params.user_summarisation",
+                            "value" : "__csvindex__4"
+                    },
+                    {
+                            "field" : "gl_account_description",
+                            "value" : "__csvindex__8"
+                    },
+                    {
+                            "field" : "price_to",
+                            "value" : "UNLIMITED"
+                    },
+                    {
+                            "field" : "params.cash_flow",
+                            "value" : "__csvindex__3"
+                    },
+                    {
+                            "field" : "gl_account",
+                            "value" : "__csvindex__7"
+                    },
+                    {
+                            "field" : "params.component",
+                            "value" : "__csvindex__2"
+                    },
+                    {
+                            "field" : "params.scenario",
+                            "value" : "__csvindex__0"
+                    },
+                    {
+                            "field" : "tariff_category",
+                            "value" : "retail"
+                    },
+                    {
+                            "field" : "object_id",
+                            "value" : "__csvindex__6"
+                    },
+                    {
+                            "field" : "price_interval",
+                            "value" : "1"
+                    },
+                    {
+                            "field" : "price_value",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "prod_serv",
+                            "value" : "__csvindex__10"
+                    },
+                    {
+                            "field" : "key",
+                            "value" : "__csvindex__11"
+                    }
+            ],
+            "updater" : [ ],
+            "linker" : [ ],
+            "multiFieldAction" : [ ]
         }
 
 ];
