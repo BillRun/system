@@ -3985,6 +3985,7 @@ var report_MissingERPMappings = {
 	"enable": true,
 	"day": "2",
 	"hour": "05",
+        "send_by_email" : [],
 	"csv_name": "MissingERPMappings",
 	"need_post_process": false,
 	"params": [
