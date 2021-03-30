@@ -6,7 +6,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $ict_configuration = [];
 
     public function __construct($options = array()) {
-        $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
+        $this->ict_configuration = !empty($options['ic']) ? $options['ic'] : [];
     }
 	
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
@@ -638,6 +638,12 @@ class ICT_Reports_Manager {
                 Billrun_Factory::log("Report: " . $report_settings['name'] . " saving ERR: " . $e->getMessage(), Zend_Log::ALERT);
                 continue;
             }
+            try {
+                $this->sendEmails($report);
+            } catch (Exception $e) {
+                Billrun_Factory::log("Report: " . $report_settings['name'] . " sending emails ERR: " . $e->getMessage(), Zend_Log::ALERT);
+                continue;
+            }
         }
     }
 
@@ -777,6 +783,18 @@ class ICT_Reports_Manager {
             Billrun_Factory::log("Uploaded " . $report->getFileName() . " file successfully", Zend_Log::INFO);
         }
     }
+    
+    /**
+     * Function that send ICT (Metabase) reports by email
+     * @param ICT_report $report
+     */
+    public function sendEmails($report) {
+        if(empty($report->emails)){
+            return;
+        }
+        Billrun_Factory::log("Sending " . $report->name . " report to emails: " . print_r($report->emails, 1), Zend_Log::INFO);
+        Billrun_Util::sendMail($report->name . " Report", $report->getData(), $report->emails, array(), true);
+    }
 
     /**
      * get ICT reports manager instance
@@ -858,6 +876,12 @@ class ICT_report {
      * @var boolean 
      */
     protected $enabled;
+    
+    /**
+     * Emails to send report
+     * @var array 
+     */
+    protected $emails;
 
     public function __construct($options) {
         if (is_null($options['id'])) {
@@ -872,6 +896,7 @@ class ICT_report {
         $this->need_post_process = !empty($options['need_post_process']) ? $options['need_post_process'] : false;
         $this->format = $this->need_post_process ? "json" : "csv";
         $this->enabled = !empty($options['enable']) ? $options['enable'] : true;
+        $this->emails = !empty($options['send_by_email']) ? $options['send_by_email'] : [];
     }
 
     public function reportPostProcess($values = []) {
