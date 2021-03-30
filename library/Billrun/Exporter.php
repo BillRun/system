@@ -456,8 +456,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
 		$options['force_header'] = $this->config['generator']['force_header'] ?? false;
 		$options['force_footer'] = $this->config['generator']['force_footer'] ?? false;
         $options['configByType'] = $this->config;
-        if (isset($this->config['generator']['separator'])) {
-            $options['delimiter'] = $this->config['generator']['separator'];
+        if ($options['type'] == 'separator') {
+            $options['delimiter'] = $this->config['generator']['separator'] ?? ",";
         }
         return $options;
     }
