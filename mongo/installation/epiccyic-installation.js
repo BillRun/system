@@ -692,7 +692,16 @@ lastConfig["file_types"][0] =
 						"target_field" : "bnaa"
 					},
 					{
+						"target_field" : "product_title"
+					},
+					{
 						"target_field" : "product"
+					},
+					{
+						"target_field" : "product_group"
+					},
+					{
+						"target_field" : "event_direction"
 					},
 					{
 						"target_field" : "scenario"
@@ -701,13 +710,28 @@ lastConfig["file_types"][0] =
 						"target_field" : "component"
 					},
 					{
+						"target_field" : "settlement_operator"
+					},
+					{
+						"target_field" : "virtual_operator"
+					},
+					{
 						"target_field" : "cash_flow"
+					},
+					{
+						"target_field" : "incoming_poin"
+					},
+					{
+						"target_field" : "outgoing_poin"
 					},
 					{
 						"target_field" : "poin"
 					},
 					{
 						"target_field" : "tier"
+					},
+					{
+						"target_field" : "tier_derivation"
 					}
 				],
 				"orphan_files_time" : "6 hours"
@@ -3194,6 +3218,24 @@ lastConfig["rates"]["fields"] =
 			{
 				"field_name" : "params.product_group",
 				"title" : "Product Group",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "params.additional_charge",
+				"title" : "Additional Charge",
+				"editable" : true,
+				"description" : "This field is used to record the price of calls with one-time charge"
+			},
+			{
+				"field_name" : "params.settlement_operator",
+				"title" : "Settlement Operator",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "params.virtual_operator",
+				"title" : "Virtual Operator",
 				"editable" : true,
 				"display" : true
 			}
