@@ -129,7 +129,6 @@ class Billrun_Processor_Util {
 	 * @return array - user and calculated field names
 	 */
 	public static function getCustomerAndRateUfAndCfByUsaget($type) {
-		$fieldNames = array();
 		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
 		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
 		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
@@ -138,8 +137,9 @@ class Billrun_Processor_Util {
 		$rateCalculators = $fileTypeConfig['rate_calculators'];
 		foreach ($rateCalculators as $rateByUsaget) {
 			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
+                                $rateFieldNames[$rateUsaget] = array();
 				foreach ($priorityByUsaget as $priority) {
-					$rateFieldNames[$rateUsaget] = array_column($priority, 'line_key');
+					$rateFieldNames[$rateUsaget] = array_unique(array_merge($rateFieldNames[$rateUsaget], array_column($priority, 'line_key')));
 				}
 			}
 		}
