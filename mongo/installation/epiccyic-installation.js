@@ -3330,6 +3330,15 @@ lastConfig["lines"]["fields"] =
 					"field" : "description"
 				},
 				"conditions" : [ ]
+			},
+						{
+				"field_name" : "foreign.account.ifs_operator_id",
+				"title" : "ifs_cust_code",
+				"foreign" : {
+					"entity" : "account",
+					"field" : "ifs_operator_id"
+				},
+				"conditions" : [ ]
 			}
 		];
 		
