@@ -3049,7 +3049,9 @@ lastConfig["export_generators"][0] =
 							{
 								"field" : "type",
 								"op" : "in",
-								"value" : ""
+								"value" : [
+									"ICT"
+								]
 							}
 						]
 					}
