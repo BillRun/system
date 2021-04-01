@@ -161,6 +161,13 @@ lastConfig["usage_types"] = [
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : ""
+		},
+                {
+			"usage_type" : "erp_mapping",
+			"label" : "erp_mapping",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
 		}
 	],
 
@@ -3280,7 +3287,43 @@ lastConfig["rates"]["fields"] =
 				"title" : "Virtual Operator",
 				"editable" : true,
 				"display" : true
-			}
+			},
+			{
+				"field_name" : "params.user_summarisation",
+				"title" : "User Summarisation",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "gl_account",
+				"title" : "GL Account",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "object_id",
+				"title" : "Accounting Object Id",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "gl_account_description",
+				"title" : "GL Account Description",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "mtn_ind",
+				"title" : "Mtn/Ind",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "prod_serv",
+				"title" : "Prod/Serv",
+				"editable" : true,
+				"display" : true
+			},
 		];
 
 //foreign fields
@@ -3943,8 +3986,119 @@ lastConfig["import"]["mapping"] = [
 				"value": "append"
 			}
 		]
-	}
+	},
+        {
+            "label" : "Missing ERP Mappings",
+            "map" : [
+                    {
+                            "field" : "price_from",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "params.product",
+                            "value" : "__csvindex__1"
+                    },
+                    {
+                            "field" : "mtn_ind",
+                            "value" : "__csvindex__9"
+                    },
+                    {
+                            "field" : "usage_type_value",
+                            "value" : "erp_mapping"
+                    },
+                    {
+                            "field" : "usage_type_unit",
+                            "value" : "counter"
+                    },
+                    {
+                            "field" : "params.operator",
+                            "value" : "__csvindex__5"
+                    },
+                    {
+                            "field" : "params.user_summarisation",
+                            "value" : "__csvindex__4"
+                    },
+                    {
+                            "field" : "gl_account_description",
+                            "value" : "__csvindex__8"
+                    },
+                    {
+                            "field" : "price_to",
+                            "value" : "UNLIMITED"
+                    },
+                    {
+                            "field" : "params.cash_flow",
+                            "value" : "__csvindex__3"
+                    },
+                    {
+                            "field" : "gl_account",
+                            "value" : "__csvindex__7"
+                    },
+                    {
+                            "field" : "params.component",
+                            "value" : "__csvindex__2"
+                    },
+                    {
+                            "field" : "params.scenario",
+                            "value" : "__csvindex__0"
+                    },
+                    {
+                            "field" : "tariff_category",
+                            "value" : "retail"
+                    },
+                    {
+                            "field" : "object_id",
+                            "value" : "__csvindex__6"
+                    },
+                    {
+                            "field" : "price_interval",
+                            "value" : "1"
+                    },
+                    {
+                            "field" : "price_value",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "prod_serv",
+                            "value" : "__csvindex__10"
+                    },
+                    {
+                            "field" : "key",
+                            "value" : "__csvindex__11"
+                    }
+            ],
+            "updater" : [ ],
+            "linker" : [ ],
+            "multiFieldAction" : [ ]
+        }
+
 ];
+
+var report_MissingERPMappings = {
+	"name": 'Missing ERP Mappings',
+	"id": "87a7991a-d195-4d75-8a41-2d64887b0e33",
+	"enable": true,
+	"day": "2",
+	"hour": "05",
+        "send_by_email" : [],
+	"csv_name": "MissingERPMappings",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
 var report_Armadilo = {
 	"name": 'Armadilo',
 	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
@@ -4017,7 +4171,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingERPMappings];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
