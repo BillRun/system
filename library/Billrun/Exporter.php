@@ -104,11 +104,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'line':
-                $value = Billrun_Util::getIn($params, $field, null);
-                if (!isset($value)) {
-                    $message = 'Unknown field in line';
-                    throw new Exception($message);
-                }
+                $value = Billrun_Util::getIn($params, $field, '');
                 return $value;
             default:
                 $message = "Unknown entity: " . $entity . ", as 'linked entity' in the config.";
