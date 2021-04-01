@@ -818,11 +818,12 @@ class ICT_Reports_Manager {
      * @param ICT_report $report
      */
     public function sendEmails($report) {
-        if(empty($report->emails)){
+        $emails = $report->getEmails();
+        if(empty($emails)){
             return;
         }
-        Billrun_Factory::log("Sending " . $report->name . " report to emails: " . print_r($report->emails, 1), Zend_Log::INFO);
-        Billrun_Util::sendMail($report->name . " Report", $report->getData(), $report->emails, array(), true);
+        Billrun_Factory::log("Sending " . $report->name . " report to emails: " . implode(', ', $emails), Zend_Log::INFO);
+        Billrun_Util::sendMail($report->name . " Report", $report->getData(), $emails, array(), true);
     }
 
     /**
@@ -967,6 +968,10 @@ class ICT_report {
 
     public function getData() {
         return $this->data;
+    }
+    
+    public function getEmails() {
+        return $this->emails;
     }
 
     public function setData($data) {
