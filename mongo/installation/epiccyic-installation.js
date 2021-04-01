@@ -3981,7 +3981,7 @@ lastConfig["import"]["mapping"] = [
 
 var report_MissingERPMappings = {
 	"name": 'Missing ERP Mappings',
-	"id": "",//TODO:: add the id.
+	"id": "87a7991a-d195-4d75-8a41-2d64887b0e33",
 	"enable": true,
 	"day": "2",
 	"hour": "05",
