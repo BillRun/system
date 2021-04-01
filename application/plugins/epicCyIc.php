@@ -67,6 +67,25 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 	}
+        
+        public function afterRunManualMappingQuery(&$output, $requestCollection, $update) {
+            if($requestCollection == 'rates' && $update['mapper_name'] == 'Missing ERP Mappings'){
+                $match = array(
+			'$match' => array(
+				"rates.erp_mapping" => array('$exists' => 1)
+			)
+		);
+                $out = array(
+			'$out' => "epic_cy_erp_mappings"
+		);
+                try {
+                    Billrun_Factory::db()->ratesCollection()->aggregate($match, $out);
+                } catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+            }
+
+	}
 	
 	public function generateProductKey($entity, $type) {
 		switch ($type) {
