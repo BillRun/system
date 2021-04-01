@@ -1,3 +1,45 @@
+function getIn (arr, path) {
+        path = path.split('.');
+        for (var i = 0, len = path.length; i < len - 1; i++){
+                arr = arr[path[i]];
+                if (typeof arr === 'undefined') {
+                        return arr;
+                }
+        }
+        return arr[path[len - 1]];
+}
+
+function setIn (arr, path, value) {
+        path = path.split('.');
+        for (var i = 0, len = path.length; i < len - 1; i++){
+                if (typeof arr[path[i]] === 'undefined') {
+                        arr[path[i]] = {};
+                }
+		arr = arr[path[i]];
+        }
+        arr[path[len - 1]] = value;
+}
+
+function addToConfig(config, lastConf) {
+    for (var path in config) {
+         var values = config[path];	
+         if (typeof getIn(lastConf, path) === 'undefined') {
+                 if (Array.isArray(values)){
+                         setIn(lastConf, path, []);
+                 }	
+         }
+         var fields = getIn(lastConf, path);
+         if (Array.isArray(values)){
+                 var new_values = values.filter(x => !fields.includes(x));
+                 setIn(lastConf, path, fields.concat(new_values));
+
+         } else{
+                 setIn(lastConf, path, values);
+         }
+    }
+    return lastConf;
+}
+
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 
@@ -116,6 +158,13 @@ lastConfig["usage_types"] = [
 		{
 			"usage_type" : "outgoing_sms",
 			"label" : "outgoing_sms",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
+		},
+                {
+			"usage_type" : "erp_mapping",
+			"label" : "erp_mapping",
 			"property_type" : "counter",
 			"invoice_uom" : "",
 			"input_uom" : ""
@@ -692,7 +741,16 @@ lastConfig["file_types"][0] =
 						"target_field" : "bnaa"
 					},
 					{
+						"target_field" : "product_title"
+					},
+					{
 						"target_field" : "product"
+					},
+					{
+						"target_field" : "product_group"
+					},
+					{
+						"target_field" : "event_direction"
 					},
 					{
 						"target_field" : "scenario"
@@ -701,13 +759,28 @@ lastConfig["file_types"][0] =
 						"target_field" : "component"
 					},
 					{
+						"target_field" : "settlement_operator"
+					},
+					{
+						"target_field" : "virtual_operator"
+					},
+					{
 						"target_field" : "cash_flow"
+					},
+					{
+						"target_field" : "incoming_poin"
+					},
+					{
+						"target_field" : "outgoing_poin"
 					},
 					{
 						"target_field" : "poin"
 					},
 					{
 						"target_field" : "tier"
+					},
+					{
+						"target_field" : "tier_derivation"
 					}
 				],
 				"orphan_files_time" : "6 hours"
@@ -3196,7 +3269,61 @@ lastConfig["rates"]["fields"] =
 				"title" : "Product Group",
 				"editable" : true,
 				"display" : true
-			}
+			},
+			{
+				"field_name" : "params.additional_charge",
+				"title" : "Additional Charge",
+				"editable" : true,
+				"description" : "This field is used to record the price of calls with one-time charge"
+			},
+			{
+				"field_name" : "params.settlement_operator",
+				"title" : "Settlement Operator",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "params.virtual_operator",
+				"title" : "Virtual Operator",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "params.user_summarisation",
+				"title" : "User Summarisation",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "gl_account",
+				"title" : "GL Account",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "object_id",
+				"title" : "Accounting Object Id",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "gl_account_description",
+				"title" : "GL Account Description",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "mtn_ind",
+				"title" : "Mtn/Ind",
+				"editable" : true,
+				"display" : true
+			},
+                        {
+				"field_name" : "prod_serv",
+				"title" : "Prod/Serv",
+				"editable" : true,
+				"display" : true
+			},
 		];
 
 //foreign fields
@@ -3244,6 +3371,15 @@ lastConfig["lines"]["fields"] =
 				"foreign" : {
 					"entity" : "rate",
 					"field" : "description"
+				},
+				"conditions" : [ ]
+			},
+						{
+				"field_name" : "foreign.account.ifs_operator_id",
+				"title" : "ifs_cust_code",
+				"foreign" : {
+					"entity" : "account",
+					"field" : "ifs_operator_id"
 				},
 				"conditions" : [ ]
 			}
@@ -3850,8 +3986,119 @@ lastConfig["import"]["mapping"] = [
 				"value": "append"
 			}
 		]
-	}
+	},
+        {
+            "label" : "Missing ERP Mappings",
+            "map" : [
+                    {
+                            "field" : "price_from",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "params.product",
+                            "value" : "__csvindex__1"
+                    },
+                    {
+                            "field" : "mtn_ind",
+                            "value" : "__csvindex__9"
+                    },
+                    {
+                            "field" : "usage_type_value",
+                            "value" : "erp_mapping"
+                    },
+                    {
+                            "field" : "usage_type_unit",
+                            "value" : "counter"
+                    },
+                    {
+                            "field" : "params.operator",
+                            "value" : "__csvindex__5"
+                    },
+                    {
+                            "field" : "params.user_summarisation",
+                            "value" : "__csvindex__4"
+                    },
+                    {
+                            "field" : "gl_account_description",
+                            "value" : "__csvindex__8"
+                    },
+                    {
+                            "field" : "price_to",
+                            "value" : "UNLIMITED"
+                    },
+                    {
+                            "field" : "params.cash_flow",
+                            "value" : "__csvindex__3"
+                    },
+                    {
+                            "field" : "gl_account",
+                            "value" : "__csvindex__7"
+                    },
+                    {
+                            "field" : "params.component",
+                            "value" : "__csvindex__2"
+                    },
+                    {
+                            "field" : "params.scenario",
+                            "value" : "__csvindex__0"
+                    },
+                    {
+                            "field" : "tariff_category",
+                            "value" : "retail"
+                    },
+                    {
+                            "field" : "object_id",
+                            "value" : "__csvindex__6"
+                    },
+                    {
+                            "field" : "price_interval",
+                            "value" : "1"
+                    },
+                    {
+                            "field" : "price_value",
+                            "value" : "0"
+                    },
+                    {
+                            "field" : "prod_serv",
+                            "value" : "__csvindex__10"
+                    },
+                    {
+                            "field" : "key",
+                            "value" : "__csvindex__11"
+                    }
+            ],
+            "updater" : [ ],
+            "linker" : [ ],
+            "multiFieldAction" : [ ]
+        }
+
 ];
+
+var report_MissingERPMappings = {
+	"name": 'Missing ERP Mappings',
+	"id": "87a7991a-d195-4d75-8a41-2d64887b0e33",
+	"enable": true,
+	"day": "2",
+	"hour": "05",
+        "send_by_email" : [],
+	"csv_name": "MissingERPMappings",
+	"need_post_process": false,
+	"params": [
+		{
+			"template_tag": "from",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of previous month"]
+		},
+		{
+			"template_tag": "to",
+			"type": "date",
+			"format": "Y-m-d",
+			"value": ["first day of this month", "-1 day"]
+		}
+	]
+};
+
 var report_Armadilo = {
 	"name": 'Armadilo',
 	"id": "bb8f7c00-920d-42a3-b40f-3247beca065c",
@@ -3924,7 +4171,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingERPMappings];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
@@ -3934,6 +4181,12 @@ var cy_ic_plugin =
 				"configuration" : {'values': { 'ic': { 'reports': reports } } }
 		};
 lastConfig.plugins = [cy_ic_plugin];
+
+//EPICIC-48
+var grouping = {
+    'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎']
+};
+lastConfig = addToConfig(grouping, lastConfig);
 
 db.config.insert(lastConfig);
 
