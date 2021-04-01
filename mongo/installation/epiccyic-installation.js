@@ -1,3 +1,45 @@
+function getIn (arr, path) {
+        path = path.split('.');
+        for (var i = 0, len = path.length; i < len - 1; i++){
+                arr = arr[path[i]];
+                if (typeof arr === 'undefined') {
+                        return arr;
+                }
+        }
+        return arr[path[len - 1]];
+}
+
+function setIn (arr, path, value) {
+        path = path.split('.');
+        for (var i = 0, len = path.length; i < len - 1; i++){
+                if (typeof arr[path[i]] === 'undefined') {
+                        arr[path[i]] = {};
+                }
+		arr = arr[path[i]];
+        }
+        arr[path[len - 1]] = value;
+}
+
+function addToConfig(config, lastConf) {
+    for (var path in config) {
+         var values = config[path];	
+         if (typeof getIn(lastConf, path) === 'undefined') {
+                 if (Array.isArray(values)){
+                         setIn(lastConf, path, []);
+                 }	
+         }
+         var fields = getIn(lastConf, path);
+         if (Array.isArray(values)){
+                 var new_values = values.filter(x => !fields.includes(x));
+                 setIn(lastConf, path, fields.concat(new_values));
+
+         } else{
+                 setIn(lastConf, path, values);
+         }
+    }
+    return lastConf;
+}
+
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 
@@ -127,7 +169,9 @@ lastConfig["usage_types"] = [
 			"invoice_uom" : "",
 			"input_uom" : ""
 		}
-	];
+	],
+
+
 //Input processor
 lastConfig["file_types"][0] = 
 		{
@@ -697,7 +741,16 @@ lastConfig["file_types"][0] =
 						"target_field" : "bnaa"
 					},
 					{
+						"target_field" : "product_title"
+					},
+					{
 						"target_field" : "product"
+					},
+					{
+						"target_field" : "product_group"
+					},
+					{
+						"target_field" : "event_direction"
 					},
 					{
 						"target_field" : "scenario"
@@ -706,13 +759,28 @@ lastConfig["file_types"][0] =
 						"target_field" : "component"
 					},
 					{
+						"target_field" : "settlement_operator"
+					},
+					{
+						"target_field" : "virtual_operator"
+					},
+					{
 						"target_field" : "cash_flow"
+					},
+					{
+						"target_field" : "incoming_poin"
+					},
+					{
+						"target_field" : "outgoing_poin"
 					},
 					{
 						"target_field" : "poin"
 					},
 					{
 						"target_field" : "tier"
+					},
+					{
+						"target_field" : "tier_derivation"
 					}
 				],
 				"orphan_files_time" : "6 hours"
@@ -3202,7 +3270,25 @@ lastConfig["rates"]["fields"] =
 				"editable" : true,
 				"display" : true
 			},
-                        {
+			{
+				"field_name" : "params.additional_charge",
+				"title" : "Additional Charge",
+				"editable" : true,
+				"description" : "This field is used to record the price of calls with one-time charge"
+			},
+			{
+				"field_name" : "params.settlement_operator",
+				"title" : "Settlement Operator",
+				"editable" : true,
+				"display" : true
+			},
+			{
+				"field_name" : "params.virtual_operator",
+				"title" : "Virtual Operator",
+				"editable" : true,
+				"display" : true
+			},
+			{
 				"field_name" : "params.user_summarisation",
 				"title" : "User Summarisation",
 				"editable" : true,
@@ -4086,6 +4172,12 @@ var cy_ic_plugin =
 				"configuration" : {'values': { 'ic': { 'reports': reports } } }
 		};
 lastConfig.plugins = [cy_ic_plugin];
+
+//EPICIC-48
+var grouping = {
+    'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎']
+};
+lastConfig = addToConfig(grouping, lastConfig);
 
 db.config.insert(lastConfig);
 

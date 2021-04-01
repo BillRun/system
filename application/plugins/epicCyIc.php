@@ -224,6 +224,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $current = $row->getRawData();
         $type = $current['type'];
         $current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
+		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0,1);
         $row->setRawData($current);
         $this->setOperator($row, $current, $type, $calculator);
         $row->setRawData($current);
@@ -236,6 +237,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
         $current["cf"]["product"] = $product_entity["params"]["product"];
         $current["cf"]["product_group"] = $product_entity["params"]["product_group"];
+        $current["cf"]["product_title"] = $product_entity["description"];
         $row->setRawData($current);
 
         $anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
@@ -265,7 +267,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $is_anaa_relevant = true;
         }
 
-        //TODO: check if there are multiple results and split
         $component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
         if (!$component_entities) {
             return [$current];
@@ -278,6 +279,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $newCurrent["cf"]["component"] = $component_entity["params"]["component"];
             $newCurrent["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
             $newCurrent["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
+            $newCurrent["cf"]["settlement_operator"] = $component_entity["params"]["settlement_operator"];
+            $newCurrent["cf"]["virtual_operator"] = $component_entity["params"]["virtual_operator"];
             $newRow->setRawData($newCurrent);
             if ($component_entity["params"]["anaa"] != "*") {
                 $is_anaa_relevant = true;
@@ -443,7 +446,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $current["cf"]["incoming_operator"] = "";
         $current["cf"]["outgoing_operator"] = "";
         if ($current["cf"]["call_direction"] != "O") {
-            //TODO - change to parameter_incoming operator
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
             $current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
@@ -454,7 +456,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $row->setRawData($current);
         }
         if ($current["cf"]["call_direction"] != "I") {
-            //TODO - change to parameter_outgoing_operator
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
             $current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
