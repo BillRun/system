@@ -4171,7 +4171,7 @@ var report_Armadilo_VCE = {
 	]
 };
 
-var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo, report_MissingERPMappings];
+var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo_VCE, report_MissingERPMappings];
 var cy_ic_plugin = 
 		{
 				"name" : "epicCyIcPlugin",
