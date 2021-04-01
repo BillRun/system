@@ -69,7 +69,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
         
         public function afterRunManualMappingQuery(&$output, $requestCollection, $update) {
-            if($requestCollection == 'rates'){
+            if($requestCollection == 'rates' && $update['mapper_name'] == 'Missing ERP Mappings'){
                 $match = array(
 			'$match' => array(
 				"rates.erp_mapping" => array('$exists' => 1)
