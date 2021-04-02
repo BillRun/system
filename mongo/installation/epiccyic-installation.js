@@ -3021,580 +3021,580 @@ lastConfig["file_types"][0] =
 			"enabled" : true
 		},
 				
-lastConfig["export_generators"][0] = 
-{
-			"filtration" : [
+lastConfig["export_generators"][0] =
+		{
+			"filtration": [
 				{
-					"collection" : "archive",
-					"query" : [
+					"collection": "archive",
+					"query": [
 						{
-							"field" : "type",
-							"op" : "in",
-							"value" : [
+							"field": "type",
+							"op": "in",
+							"value": [
 								"ICT"
 							]
 						}
 					],
-					"time_range" : "-8760 hours"
+					"time_range": "-8760 hours"
 				}
 			],
-			"name" : "DATA_WAREHOUSE",
-			"generator" : {
-				"type" : "separator",
-				"separator" : ",",
-				"record_type_mapping" : [
+			"name": "DATA_WAREHOUSE",
+			"generator": {
+				"type": "separator",
+				"separator": ",",
+				"record_type_mapping": [
 					{
-						"record_type" : "ICT",
-						"conditions" : [
+						"record_type": "ICT",
+						"conditions": [
 							{
-								"field" : "type",
-								"op" : "in",
-								"value" : [
+								"field": "type",
+								"op": "in",
+								"value": [
 									"ICT"
 								]
 							}
 						]
 					}
 				],
-				"header_structure" : [
+				"header_structure": [
 					{
-						"name" : "EVENT_START_TIME",
-						"type" : "string",
-						"path" : 1,
-						"hard_coded_value" : "EVENT_START_TIME"
+						"name": "EVENT_START_TIME",
+						"type": "string",
+						"path": 1,
+						"hard_coded_value": "EVENT_START_TIME"
 					},
 					{
-						"name" : "USER_SUMMARISATION",
-						"type" : "string",
-						"hard_coded_value" : "USER_SUMMARISATION",
-						"path" : 2
+						"name": "USER_SUMMARISATION",
+						"type": "string",
+						"hard_coded_value": "USER_SUMMARISATION",
+						"path": 2
 					},
 					{
-						"name" : "RATING_COMPONENT",
-						"type" : "string",
-						"hard_coded_value" : "RATING_COMPONENT",
-						"path" : 3
+						"name": "RATING_COMPONENT",
+						"type": "string",
+						"hard_coded_value": "RATING_COMPONENT",
+						"path": 3
 					},
 					{
-						"name" : "CASH_FLOW",
-						"type" : "string",
-						"hard_coded_value" : "CASH_FLOW",
-						"path" : 4
+						"name": "CASH_FLOW",
+						"type": "string",
+						"hard_coded_value": "CASH_FLOW",
+						"path": 4
 					},
 					{
-						"name" : "PRODUCT_GROUP",
-						"type" : "string",
-						"hard_coded_value" : "PRODUCT_GROUP",
-						"path" : 5
+						"name": "PRODUCT_GROUP",
+						"type": "string",
+						"hard_coded_value": "PRODUCT_GROUP",
+						"path": 5
 					},
 					{
-						"name" : "EVENT_DIRECTION",
-						"type" : "string",
-						"hard_coded_value" : "EVENT_DIRECTION",
-						"path" : 6
+						"name": "EVENT_DIRECTION",
+						"type": "string",
+						"hard_coded_value": "EVENT_DIRECTION",
+						"path": 6
 					},
 					{
-						"name" : "ANUM",
-						"type" : "string",
-						"hard_coded_value" : "ANUM",
-						"path" : 7
+						"name": "ANUM",
+						"type": "string",
+						"hard_coded_value": "ANUM",
+						"path": 7
 					},
 					{
-						"name" : "BNUM",
-						"type" : "string",
-						"hard_coded_value" : "BNUM",
-						"path" : 8
+						"name": "BNUM",
+						"type": "string",
+						"hard_coded_value": "BNUM",
+						"path": 8
 					},
 					{
-						"name" : "OUTGOING_PRODUCT",
-						"type" : "string",
-						"hard_coded_value" : "OUTGOING_PRODUCT",
-						"path" : 9
+						"name": "OUTGOING_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_PRODUCT",
+						"path": 9
 					},
 					{
-						"name" : "INCOMING_PRODUCT",
-						"type" : "string",
-						"hard_coded_value" : "INCOMING_PRODUCT",
-						"path" : 10
+						"name": "INCOMING_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "INCOMING_PRODUCT",
+						"path": 10
 					},
 					{
-						"name" : "SETTLEMENT_OPERATOR",
-						"type" : "string",
-						"hard_coded_value" : "SETTLEMENT_OPERATOR",
-						"path" : 11
+						"name": "SETTLEMENT_OPERATOR",
+						"type": "string",
+						"hard_coded_value": "SETTLEMENT_OPERATOR",
+						"path": 11
 					},
 					{
-						"name" : "BILLED_PRODUCT",
-						"type" : "string",
-						"hard_coded_value" : "BILLED_PRODUCT",
-						"path" : 12
+						"name": "BILLED_PRODUCT",
+						"type": "string",
+						"hard_coded_value": "BILLED_PRODUCT",
+						"path": 12
 					},
 					{
-						"name" : "NETWORK_ADDRESS_AGGR_ANUM",
-						"type" : "string",
-						"hard_coded_value" : "NETWORK_ADDRESS_AGGR_ANUM",
-						"path" : 13
+						"name": "NETWORK_ADDRESS_AGGR_ANUM",
+						"type": "string",
+						"hard_coded_value": "NETWORK_ADDRESS_AGGR_ANUM",
+						"path": 13
 					},
 					{
-						"name" : "NETWORK_ADDRESS_AGGR_BNUM",
-						"type" : "string",
-						"hard_coded_value" : "NETWORK_ADDRESS_AGGR_BNUM",
-						"path" : 14
+						"name": "NETWORK_ADDRESS_AGGR_BNUM",
+						"type": "string",
+						"hard_coded_value": "NETWORK_ADDRESS_AGGR_BNUM",
+						"path": 14
 					},
 					{
-						"name" : "USER_DATA",
-						"type" : "string",
-						"hard_coded_value" : "USER_DATA",
-						"path" : 15
+						"name": "USER_DATA",
+						"type": "string",
+						"hard_coded_value": "USER_DATA",
+						"path": 15
 					},
 					{
-						"name" : "USER_DATA_2",
-						"type" : "string",
-						"hard_coded_value" : "USER_DATA_2",
-						"path" : 16
+						"name": "USER_DATA_2",
+						"type": "string",
+						"hard_coded_value": "USER_DATA_2",
+						"path": 16
 					},
 					{
-						"name" : "USER_DATA_3",
-						"type" : "string",
-						"hard_coded_value" : "USER_DATA_3",
-						"path" : 17
+						"name": "USER_DATA_3",
+						"type": "string",
+						"hard_coded_value": "USER_DATA_3",
+						"path": 17
 					},
 					{
-						"name" : "COMPONENT_DIRECTION",
-						"type" : "string",
-						"hard_coded_value" : "COMPONENT_DIRECTION",
-						"path" : 18
+						"name": "COMPONENT_DIRECTION",
+						"type": "string",
+						"hard_coded_value": "COMPONENT_DIRECTION",
+						"path": 18
 					},
 					{
-						"name" : "CURRENCY",
-						"type" : "string",
-						"hard_coded_value" : "CURRENCY",
-						"path" : 19
+						"name": "CURRENCY",
+						"type": "string",
+						"hard_coded_value": "CURRENCY",
+						"path": 19
 					},
 					{
-						"name" : "ACTUAL_USAGE",
-						"type" : "string",
-						"hard_coded_value" : "ACTUAL_USAGE",
-						"path" : 20
+						"name": "ACTUAL_USAGE",
+						"type": "string",
+						"hard_coded_value": "ACTUAL_USAGE",
+						"path": 20
 					},
 					{
-						"name" : "APPORTIONED_DURATION_SECONDS",
-						"type" : "string",
-						"hard_coded_value" : "APPORTIONED_DURATION_SECONDS",
-						"path" : 21
+						"name": "APPORTIONED_DURATION_SECONDS",
+						"type": "string",
+						"hard_coded_value": "APPORTIONED_DURATION_SECONDS",
+						"path": 21
 					},
 					{
-						"name" : "AMOUNT",
-						"type" : "string",
-						"hard_coded_value" : "AMOUNT",
-						"path" : 22
+						"name": "AMOUNT",
+						"type": "string",
+						"hard_coded_value": "AMOUNT",
+						"path": 22
 					},
 					{
-						"name" : "BILLING_METHOD",
-						"type" : "string",
-						"hard_coded_value" : "BILLING_METHOD",
-						"path" : 23
+						"name": "BILLING_METHOD",
+						"type": "string",
+						"hard_coded_value": "BILLING_METHOD",
+						"path": 23
 					},
 					{
-						"name" : "INCOMING_NODE",
-						"type" : "string",
-						"hard_coded_value" : "INCOMING_NODE",
-						"path" : 24
+						"name": "INCOMING_NODE",
+						"type": "string",
+						"hard_coded_value": "INCOMING_NODE",
+						"path": 24
 					},
 					{
-						"name" : "OUTGOING_NODE",
-						"type" : "string",
-						"hard_coded_value" : "OUTGOING_NODE",
-						"path" : 25
+						"name": "OUTGOING_NODE",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_NODE",
+						"path": 25
 					},
 					{
-						"name" : "INCOMING_POI",
-						"type" : "string",
-						"hard_coded_value" : "INCOMING_POI",
-						"path" : 26
+						"name": "INCOMING_POI",
+						"type": "string",
+						"hard_coded_value": "INCOMING_POI",
+						"path": 26
 					},
 					{
-						"name" : "OUTGOING_POI",
-						"type" : "string",
-						"hard_coded_value" : "OUTGOING_POI",
-						"path" : 27
+						"name": "OUTGOING_POI",
+						"type": "string",
+						"hard_coded_value": "OUTGOING_POI",
+						"path": 27
 					},
 					{
-						"name" : "TIER",
-						"type" : "string",
-						"hard_coded_value" : "TIER",
-						"path" : 28
+						"name": "TIER",
+						"type": "string",
+						"hard_coded_value": "TIER",
+						"path": 28
 					},
 					{
-						"name" : "RECORD_SEQUENCE_NUMBER",
-						"type" : "string",
-						"hard_coded_value" : "RECORD_SEQUENCE_NUMBER",
-						"path" : 29
+						"name": "RECORD_SEQUENCE_NUMBER",
+						"type": "string",
+						"hard_coded_value": "RECORD_SEQUENCE_NUMBER",
+						"path": 29
 					},
 					{
-						"name" : "PROCESS_DATE",
-						"type" : "string",
-						"hard_coded_value" : "PROCESS_DATE",
-						"path" : 30
+						"name": "PROCESS_DATE",
+						"type": "string",
+						"hard_coded_value": "PROCESS_DATE",
+						"path": 30
 					},
 					{
-						"name" : "FILENAME",
-						"type" : "string",
-						"hard_coded_value" : "FILENAME",
-						"path" : 31
+						"name": "FILENAME",
+						"type": "string",
+						"hard_coded_value": "FILENAME",
+						"path": 31
 					},
 					{
-						"name" : "MESSAGE_DATE",
-						"type" : "string",
-						"hard_coded_value" : "MESSAGE_DATE",
-						"path" : 32
+						"name": "MESSAGE_DATE",
+						"type": "string",
+						"hard_coded_value": "MESSAGE_DATE",
+						"path": 32
 					},
 					{
-						"name" : "BILLING_DATE",
-						"type" : "string",
-						"hard_coded_value" : "BILLING_DATE",
-						"path" : 33
+						"name": "BILLING_DATE",
+						"type": "string",
+						"hard_coded_value": "BILLING_DATE",
+						"path": 33
 					},
 					{
-						"name" : "ADJUSTED_DATE",
-						"type" : "string",
-						"hard_coded_value" : "ADJUSTED_DATE",
-						"path" : 34
+						"name": "ADJUSTED_DATE",
+						"type": "string",
+						"hard_coded_value": "ADJUSTED_DATE",
+						"path": 34
 					},
 					{
-						"name" : "BILLRUN_UNIQUE_RECORD_ID",
-						"type" : "string",
-						"hard_coded_value" : "BILLRUN_UNIQUE_RECORD_ID",
-						"path" : 35
+						"name": "BILLRUN_UNIQUE_RECORD_ID",
+						"type": "string",
+						"hard_coded_value": "BILLRUN_UNIQUE_RECORD_ID",
+						"path": 35
 					}
 				],
-				"data_structure" : {
-					"ICT" : [
+				"data_structure": {
+					"ICT": [
 						{
-							"name" : "USER_SUMMARISATION",
-							"type" : "string",
-							"format" : "",
-							"path" : 1,
-							"linked_entity" : {
-								"field_name" : "uf.EVENT_START_TIME",
-								"entity" : "line"
+							"name": "USER_SUMMARISATION",
+							"type": "string",
+							"format": "",
+							"path": 1,
+							"linked_entity": {
+								"field_name": "uf.EVENT_START_TIME",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "EVENT_START_TIME",
-							"type" : "string",
-							"path" : 2,
-							"linked_entity" : {
-								"field_name" : "uf.USER_SUMMARISATION",
-								"entity" : "line"
+							"name": "EVENT_START_TIME",
+							"type": "string",
+							"path": 2,
+							"linked_entity": {
+								"field_name": "uf.USER_SUMMARISATION",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "RATING_COMPONENT",
-							"type" : "string",
-							"path" : 3,
-							"linked_entity" : {
-								"field_name" : "cf.component",
-								"entity" : "line"
+							"name": "RATING_COMPONENT",
+							"type": "string",
+							"path": 3,
+							"linked_entity": {
+								"field_name": "cf.component",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "CASH_FLOW",
-							"type" : "string",
-							"path" : 4,
-							"linked_entity" : {
-								"field_name" : "cf.cash_flow",
-								"entity" : "line"
+							"name": "CASH_FLOW",
+							"type": "string",
+							"path": 4,
+							"linked_entity": {
+								"field_name": "cf.cash_flow",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "PRODUCT_GROUP",
-							"type" : "string",
-							"path" : 5,
-							"linked_entity" : {
-								"field_name" : "cf.product_group",
-								"entity" : "line"
+							"name": "PRODUCT_GROUP",
+							"type": "string",
+							"path": 5,
+							"linked_entity": {
+								"field_name": "cf.product_group",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "EVENT_DIRECTION",
-							"type" : "string",
-							"path" : 6,
-							"linked_entity" : {
-								"field_name" : "cf.event_direction",
-								"entity" : "line"
+							"name": "EVENT_DIRECTION",
+							"type": "string",
+							"path": 6,
+							"linked_entity": {
+								"field_name": "cf.event_direction",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "ANUM",
-							"type" : "string",
-							"path" : 7,
-							"linked_entity" : {
-								"field_name" : "uf.ANUM",
-								"entity" : "line"
+							"name": "ANUM",
+							"type": "string",
+							"path": 7,
+							"linked_entity": {
+								"field_name": "uf.ANUM",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "BNUM",
-							"type" : "string",
-							"path" : 8,
-							"linked_entity" : {
-								"field_name" : "uf.BNUM",
-								"entity" : "line"
+							"name": "BNUM",
+							"type": "string",
+							"path": 8,
+							"linked_entity": {
+								"field_name": "uf.BNUM",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "OUTGOING_PRODUCT",
-							"type" : "string",
-							"path" : 9,
-							"linked_entity" : {
-								"field_name" : "cf.product",
-								"entity" : "line"
+							"name": "OUTGOING_PRODUCT",
+							"type": "string",
+							"path": 9,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "INCOMING_PRODUCT",
-							"type" : "string",
-							"path" : 10,
-							"linked_entity" : {
-								"field_name" : "cf.product",
-								"entity" : "line"
+							"name": "INCOMING_PRODUCT",
+							"type": "string",
+							"path": 10,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "SETTLEMENT_OPERATOR",
-							"type" : "string",
-							"path" : 11,
-							"linked_entity" : {
-								"field_name" : "cf.operator",
-								"entity" : "line"
+							"name": "SETTLEMENT_OPERATOR",
+							"type": "string",
+							"path": 11,
+							"linked_entity": {
+								"field_name": "cf.operator",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "BILLED_PRODUCT",
-							"type" : "string",
-							"path" : 12,
-							"linked_entity" : {
-								"field_name" : "cf.product",
-								"entity" : "line"
+							"name": "BILLED_PRODUCT",
+							"type": "string",
+							"path": 12,
+							"linked_entity": {
+								"field_name": "cf.product",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "NETWORK_ADDRESS_AGGR_ANUM",
-							"type" : "string",
-							"path" : 13,
-							"linked_entity" : {
-								"field_name" : "cf.anaa",
-								"entity" : "line"
+							"name": "NETWORK_ADDRESS_AGGR_ANUM",
+							"type": "string",
+							"path": 13,
+							"linked_entity": {
+								"field_name": "cf.anaa",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "NETWORK_ADDRESS_AGGR_BNUM",
-							"type" : "string",
-							"path" : 14,
-							"linked_entity" : {
-								"field_name" : "cf.bnaa",
-								"entity" : "line"
+							"name": "NETWORK_ADDRESS_AGGR_BNUM",
+							"type": "string",
+							"path": 14,
+							"linked_entity": {
+								"field_name": "cf.bnaa",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "USER_DATA",
-							"type" : "string",
-							"path" : 15,
-							"linked_entity" : {
-								"field_name" : "uf.USER_DATA",
-								"entity" : "line"
+							"name": "USER_DATA",
+							"type": "string",
+							"path": 15,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "USER_DATA_2",
-							"type" : "string",
-							"path" : 16,
-							"linked_entity" : {
-								"field_name" : "uf.USER_DATA2",
-								"entity" : "line"
+							"name": "USER_DATA_2",
+							"type": "string",
+							"path": 16,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA2",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "USER_DATA_3",
-							"type" : "string",
-							"path" : 17,
-							"linked_entity" : {
-								"field_name" : "uf.USER_DATA3",
-								"entity" : "line"
+							"name": "USER_DATA_3",
+							"type": "string",
+							"path": 17,
+							"linked_entity": {
+								"field_name": "uf.USER_DATA3",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "COMPONENT_DIRECTION",
-							"type" : "string",
-							"path" : 18,
-							"linked_entity" : {
-								"field_name" : "cf.call_direction",
-								"entity" : "line"
+							"name": "COMPONENT_DIRECTION",
+							"type": "string",
+							"path": 18,
+							"linked_entity": {
+								"field_name": "cf.call_direction",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "CURRENCY",
-							"type" : "string",
-							"hard_coded_value" : "EUR",
-							"path" : 19
+							"name": "CURRENCY",
+							"type": "string",
+							"hard_coded_value": "EUR",
+							"path": 19
 						},
 						{
-							"name" : "ACTUAL_USAGE",
-							"type" : "string",
-							"path" : 20,
-							"linked_entity" : {
-								"field_name" : "usagev",
-								"entity" : "line"
+							"name": "ACTUAL_USAGE",
+							"type": "string",
+							"path": 20,
+							"linked_entity": {
+								"field_name": "usagev",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "APPORTIONED_DURATION_SECONDS",
-							"type" : "string",
-							"path" : 21,
-							"linked_entity" : {
-								"field_name" : "usagev",
-								"entity" : "line"
+							"name": "APPORTIONED_DURATION_SECONDS",
+							"type": "string",
+							"path": 21,
+							"linked_entity": {
+								"field_name": "usagev",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "AMOUNT",
-							"type" : "string",
-							"path" : 22,
-							"linked_entity" : {
-								"field_name" : "aprice",
-								"entity" : "line"
+							"name": "AMOUNT",
+							"type": "string",
+							"path": 22,
+							"linked_entity": {
+								"field_name": "aprice",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "BILLING_METHOD",
-							"type" : "string",
-							"hard_coded_value" : "I",
-							"path" : 23
+							"name": "BILLING_METHOD",
+							"type": "string",
+							"hard_coded_value": "I",
+							"path": 23
 						},
 						{
-							"name" : "INCOMING_NODE",
-							"type" : "string",
-							"path" : 24,
-							"linked_entity" : {
-								"field_name" : "uf.INCOMING_NODE",
-								"entity" : "line"
+							"name": "INCOMING_NODE",
+							"type": "string",
+							"path": 24,
+							"linked_entity": {
+								"field_name": "uf.INCOMING_NODE",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "OUTGOING_NODE",
-							"type" : "string",
-							"path" : 25,
-							"linked_entity" : {
-								"field_name" : "uf.OUTGOING_NODE",
-								"entity" : "line"
+							"name": "OUTGOING_NODE",
+							"type": "string",
+							"path": 25,
+							"linked_entity": {
+								"field_name": "uf.OUTGOING_NODE",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "INCOMING_POI",
-							"type" : "string",
-							"path" : 26,
-							"linked_entity" : {
-								"field_name" : "cf.incoming_poin",
-								"entity" : "line"
+							"name": "INCOMING_POI",
+							"type": "string",
+							"path": 26,
+							"linked_entity": {
+								"field_name": "cf.incoming_poin",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "OUTGOING_POI",
-							"type" : "string",
-							"path" : 27,
-							"linked_entity" : {
-								"field_name" : "cf.outgoing_poin",
-								"entity" : "line"
+							"name": "OUTGOING_POI",
+							"type": "string",
+							"path": 27,
+							"linked_entity": {
+								"field_name": "cf.outgoing_poin",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "TIER",
-							"type" : "string",
-							"path" : 28,
-							"linked_entity" : {
-								"field_name" : "cf.tier",
-								"entity" : "line"
+							"name": "TIER",
+							"type": "string",
+							"path": 28,
+							"linked_entity": {
+								"field_name": "cf.tier",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "RECORD_SEQUENCE_NUMBER",
-							"type" : "string",
-							"path" : 29,
-							"linked_entity" : {
-								"field_name" : "uf.RECORD_SEQUENCE_NUMBER",
-								"entity" : "line"
+							"name": "RECORD_SEQUENCE_NUMBER",
+							"type": "string",
+							"path": 29,
+							"linked_entity": {
+								"field_name": "uf.RECORD_SEQUENCE_NUMBER",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "PROCESS_DATE",
-							"type" : "string",
-							"path" : 30,
-							"linked_entity" : {
-								"field_name" : "process_time",
-								"entity" : "line"
+							"name": "PROCESS_DATE",
+							"type": "string",
+							"path": 30,
+							"linked_entity": {
+								"field_name": "process_time",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "FILENAME",
-							"type" : "string",
-							"path" : 31,
-							"linked_entity" : {
-								"field_name" : "file",
-								"entity" : "line"
+							"name": "FILENAME",
+							"type": "string",
+							"path": 31,
+							"linked_entity": {
+								"field_name": "file",
+								"entity": "line"
 							}
 						},
 						{
-							"name" : "MESSAGE_DATE",
-							"type" : "date",
-							"path" : 32,
-							"linked_entity" : {
-								"field_name" : "urt",
-								"entity" : "line"
+							"name": "MESSAGE_DATE",
+							"type": "date",
+							"path": 32,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
 							},
-							"format" : "YmdHis"
+							"format": "YmdHis"
 						},
 						{
-							"name" : "BILLING_DATE",
-							"type" : "date",
-							"path" : 33,
-							"linked_entity" : {
-								"field_name" : "urt",
-								"entity" : "line"
+							"name": "BILLING_DATE",
+							"type": "date",
+							"path": 33,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
 							},
-							"format" : "YmdHis"
+							"format": "YmdHis"
 						},
 						{
-							"name" : "ADJUSTED_DATE",
-							"type" : "date",
-							"path" : 34,
-							"linked_entity" : {
-								"field_name" : "urt",
-								"entity" : "line"
+							"name": "ADJUSTED_DATE",
+							"type": "date",
+							"path": 34,
+							"linked_entity": {
+								"field_name": "urt",
+								"entity": "line"
 							},
-							"format" : "YmdHis"
+							"format": "YmdHis"
 						},
 						{
-							"name" : "BILLRUN_UNIQUE_RECORD_ID",
-							"type" : "string",
-							"path" : 35,
-							"linked_entity" : {
-								"field_name" : "stamp",
-								"entity" : "line"
+							"name": "BILLRUN_UNIQUE_RECORD_ID",
+							"type": "string",
+							"path": 35,
+							"linked_entity": {
+								"field_name": "stamp",
+								"entity": "line"
 							}
 						}
 					]
 				}
 			},
-			"senders" : {
-				"connections" : [
+			"senders": {
+				"connections": [
 					{
-						"connection_type" : "",
-						"name" : "",
-						"host" : "",
-						"password" : "",
-						"user" : "",
-						"remote_directory" : ""
+						"connection_type": "",
+						"name": "",
+						"host": "",
+						"password": "",
+						"user": "",
+						"remote_directory": ""
 					}
 				]
 			}
