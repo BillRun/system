@@ -93,6 +93,10 @@ application_cron:
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_process php public/index.php --env {{ app_env }} --process --type all"
     minute: "*/1"
     hour: "*"
+  - name: Minutely all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/minutely php public/index.php --env {{ app_env }} --cron --type minutely"
+    minute: "*"
+    hour: "*"
   - name: Hourly all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/hourly php public/index.php --env {{ app_env }} --cron --type hourly"
     minute: "0"
@@ -121,11 +125,3 @@ application_cron:
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rebalance php public/index.php --env {{ app_env }} --calculate --type rebalance"
     minute: "*/1"
     hour: "*"
-#  - name: Compute suggestions
-#    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rebalance php public/index.php --env {{ app_env }} --calculate --type rebalance"
-#    minute: "*/1"
-#    hour: "*"
-#  - name: Search for new ERP mappings
-#    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rebalance php public/index.php --env {{ app_env }} --calculate --type rebalance"
-#    minute: "*/1"
-#    hour: "*"
