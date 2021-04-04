@@ -3528,12 +3528,13 @@ lastConfig["export_generators"][0] =
 						},
 						{
 							"name": "PROCESS_DATE",
-							"type": "string",
+							"type": "date",
 							"path": 30,
 							"linked_entity": {
 								"field_name": "process_time",
 								"entity": "line"
-							}
+							},
+							"format": "YmdHis"
 						},
 						{
 							"name": "FILENAME",
