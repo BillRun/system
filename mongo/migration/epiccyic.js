@@ -3430,6 +3430,9 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 			};
 
 //import mappers
+	if (typeof lastConfig.import === 'undefined') {
+		lastConfig['import'] = {};
+	}
 	lastConfig["import"]["mapping"] = [
 		{
 			"label": "One file loader - Rates create I calls",
