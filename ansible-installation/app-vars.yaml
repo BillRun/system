@@ -71,9 +71,8 @@ db_setup:
     - "mongoimport  {{mongo_conn}} -d billing -c config < {{app_dir}}/mongo/base/config.export --batchSize 1"
     - "mongoimport  {{mongo_conn}} -d billing -c taxes < {{app_dir}}/mongo/base/taxes.export --batchSize 1"
     - "mongoimport  {{mongo_conn}} -d billing -c users < {{app_dir}}/mongo/first_users.json --batchSize 1"
-    - "mongo  {{mongo_conn}} billing  {{app_dir}}/mongo/installation/epiccyic-installation.js"
-#    - "mongo  {{mongo_conn}} billing  {{app_dir}}/mongo/migration/epiccy.js"
-#    - "mongo  {{mongo_conn}} billing  {{app_dir}}/mongo/migration/set_epic_payments_files.js"
+    - "mongo  {{mongo_conn}} billing  {{app_dir}}/mongo/migration/epiccyic.js"
+    - "mongorestore  {{mongo_conn}} --gzip --db billing {{app_dir}}/mongo/installation/initial_data/"
 
 shared_path: "/shared_data"
 
