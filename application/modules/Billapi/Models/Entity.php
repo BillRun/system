@@ -501,6 +501,9 @@ class Models_Entity {
 	 * @return true if check success else false
 	 */
 	protected function checkDateRangeFields($time = null) {
+		if (static::isAllowedChangeDuringClosedCycle()) {
+			return true;
+		}
 		if (is_null($time)) {
 			$time = time();
 		}
