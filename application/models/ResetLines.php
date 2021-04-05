@@ -139,7 +139,7 @@ class ResetLinesModel {
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
-		$former_exporters = array();
+		$former_exporter = array();
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
@@ -151,7 +151,7 @@ class ResetLinesModel {
 				foreach ($archivedLines as $archivedLine){
 					unset($archivedLine["u_s"]);
 					$archivedLinesToInsert[] = $archivedLine;
-					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporters);
+					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
                                         // If we've reached `$batchSize` entries, perform the batched insert.
                                         if(count($archivedLinesToInsert) >= $batchSize){
                                             Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
@@ -167,19 +167,19 @@ class ResetLinesModel {
 				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
 				continue;
 			}
-			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporters);
+			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
 		}
 
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporters)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
 				return false;
 			}
 		}
 	}
 
-	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporters){
+	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
 		$queue_line = array(
 			'calc_name' => false,
 			'calc_time' => false,
@@ -188,7 +188,7 @@ class ResetLinesModel {
 		$this->aggregateLineUsage($line);
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
-                $former_exporters = $this->buildFormerExportersForLine($line);
+                $former_exporter = $this->buildFormerExporterForLine($line);
 		if (!empty($line['rebalance'])) {
 			$queue_line['rebalance'] = $line['rebalance'];
 		}
@@ -198,16 +198,15 @@ class ResetLinesModel {
 	}
         
         
-        protected function buildFormerExportersForLine($line) {
-            $former_exporters =  $line['former_exporters'] ?? [];
+        protected function buildFormerExporterForLine($line) {
+            $former_exporter = [];
             if(isset($line['export_stamp']) && isset($line['export_start'])){
-                $former_exporters = array_merge($former_exporters, array(array(
-                        'export_stamp' => $line['export_stamp'],
-                        'export_start' => $line['export_start']
-                    ))
+                $former_exporter = array(
+                    'export_stamp' => $line['export_stamp'],
+                    'export_start' => $line['export_start']
                 );
             }
-            return $former_exporters;
+            return $former_exporter;
         }
 
 
@@ -258,7 +257,7 @@ class ResetLinesModel {
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
 	 */
-	protected function getUpdateQuery($rebalanceTime, $former_exporters) {
+	protected function getUpdateQuery($rebalanceTime, $former_exporter) {
 		$updateQuery = array(
 			'$unset' => array(
 				'aid' => 1,
@@ -302,8 +301,8 @@ class ResetLinesModel {
 				'rebalance' => $rebalanceTime,
 			),
 		);
-                if(!empty($former_exporters)){
-                    $updateQuery['$set']['former_exporters'] = $former_exporters;
+                if(!empty($former_exporter)){
+                    $updateQuery['$push']['former_exporters'] = $former_exporter;
                 }
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateRebalanceLines', array(&$updateQuery));
 		
@@ -332,8 +331,8 @@ class ResetLinesModel {
 	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporters) {
-		$update = $this->getUpdateQuery($rebalanceTime, $former_exporters);
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
+		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);
