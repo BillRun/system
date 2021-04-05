@@ -3053,7 +3053,7 @@ lastConfig["export_generators"][0] =
 							]
 						}
 					],
-					"time_range": "-8760 hours"
+					"time_range": "-90 days"
 				}
 			],
 			"name": "DATA_WAREHOUSE",
@@ -3284,6 +3284,12 @@ lastConfig["export_generators"][0] =
 						"type": "string",
 						"hard_coded_value": "BILLRUN_UNIQUE_RECORD_ID",
 						"path": 35
+					},
+					{
+						"name": "LAST_RECALCULATION",
+						"type": "string",
+						"hard_coded_value": "LAST_RECALCULATION",
+						"path": 36
 					}
 				],
 				"data_structure": {
@@ -3601,6 +3607,16 @@ lastConfig["export_generators"][0] =
 								"field_name": "stamp",
 								"entity": "line"
 							}
+						},
+						{
+							"name" : "LAST_RECALCULATION",
+							"type" : "date",
+							"path" : 36,
+							"linked_entity" : {
+								"field_name" : "rebalance",
+								"entity" : "line"
+							},
+							"format": "YmdHis"
 						}
 					]
 				}
