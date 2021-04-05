@@ -24,7 +24,7 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }
-                ]}}]},
+                ]}}]}]}},
                 {$group:{"_id":{rate_price:"$cf.rate_price",prod: "$cf.product",tier:"$cf.tier"}, "duration": {$sum: "$usagev"},count:{$sum:1}, "final_charge":{$sum: "$final_charge"}}},
 {$project:{_id:0,tier:"$_id.tier",prod:"$_id.prod",dur:"$duration",CALL_COUNT_D:"$count",UNIT_COST_USED_G:"$_id.rate_price",final_charge:{$sum:"$final_charge"}}}
 ]
