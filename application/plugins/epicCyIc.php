@@ -147,7 +147,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$str = str_replace('+', '_', $str);
 		$str = str_replace('___', '_', $str);
 		$str = str_replace('/', '_', $str);
-		$str = str_replace('*', '', $str);
+		$str = str_replace('*', '_ANY_', $str);
 		$str = str_replace('|', '_OR_', $str);
 		$str = str_replace('__', '_', $str);
 		return strtoupper($str);
@@ -157,7 +157,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         if ($calculator->getType() == 'rate') {
             $current = $row->getRawData();
 			$rate_tier_array = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"];
-			if(count($rate_tier_array) == 2 && $rate_tier_array[0]["to"] == 1 && $rate_tier_array[1]["price"] == 0) {
+			if($rate_tier_array[0]["uom_display"]["range"] == "counter" || (count($rate_tier_array) == 2 && $rate_tier_array[0]["to"] == 1 && $rate_tier_array[1]["price"] == 0)) {
 				$current["cf"]["rate_type"] = "flat_rate";
 			}
 			else {
