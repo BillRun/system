@@ -1,0 +1,127 @@
+app_owner: billrun
+
+yum_packages:
+  - php-common
+  - php-mongodb
+  - php-pear 
+  - php-pecl-mongodb
+  - php-cli 
+  - php-mysqlnd 
+  - php-devel
+  - php-curl
+  - php-json 
+  - php-xml 
+  - php-bcmath
+#  - php-pecl-stomp
+  - nginx
+  - php-fpm
+  - git
+  - https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox-0.12.5-1.centos7.x86_64.rpm
+  - fontconfig
+  - libXext 
+  - urw-fonts
+
+
+php_version: php73
+
+
+pecl_packages: "pecl/yaf-3.1.4"
+
+
+app_dir: "/var/www/{{ app_owner }}"
+app_env: prod
+app_hostname: billing.billrun.com
+
+app:
+  user: "{{ app_owner }}"
+  group: "{{ app_owner }}"
+  uid: 1100
+
+#php_fpm_listen: "127.0.0.1:9000"
+php_fpm_listen: /var/run/php-fpm/php-fpm.sock
+php_session_dir: /var/lib/php/session
+
+deploy_key_remove: no
+
+git:
+  repo: "git@git.bill.run:sdoc/epic-cy-ic-billrun-plugin.git"
+  branch: billrun_core_merge
+
+deploy_key_dir: "/etc/"
+deploy_key_file: "{{deploy_key_dir}}/deploy_key"
+deploy_private_keyfile: "deploy_private_key"
+deploy_private_key: "{{lookup('file', deploy_private_keyfile)}}"
+
+php_ini:
+  #date.timezone: "Europe/Monaco"
+  date.timezone: "UTC"  
+  memory_limit: "16384M"
+  post_max_size: "256M"
+  max_execution_time: "60​0"
+  extension: "yaf.so"
+
+ # User billrun must have the "dbAdmin" role
+mongo_conn: ""
+
+db_setup:
+  enable: yes
+  shell_finalize_commands:
+    - "mongo  {{mongo_conn}}  billing < {{app_dir}}/mongo/create.ini"
+    - "mongo   {{mongo_conn}} billing < {{app_dir}}/mongo/sharding.ini"
+    - "mongoimport  {{mongo_conn}} -d billing -c config < {{app_dir}}/mongo/base/config.export --batchSize 1"
+    - "mongoimport  {{mongo_conn}} -d billing -c taxes < {{app_dir}}/mongo/base/taxes.export --batchSize 1"
+    - "mongoimport  {{mongo_conn}} -d billing -c users < {{app_dir}}/mongo/first_users.json --batchSize 1"
+    - "mongo  {{mongo_conn}} billing  {{app_dir}}/mongo/migration/epiccyic.js"
+    - "mongorestore  {{mongo_conn}} --gzip --db billing {{app_dir}}/mongo/installation/initial_data/"
+
+shared_path: "/shared_data"
+
+## application mongo configuration
+mongos:
+  host: "mongodb://127.0.0.1:27017"
+  db: billing
+  user: "billrun"
+  password: "{{db_password_app}}"
+  port: 27017
+
+application_cron: 
+  - name: Receive all
+    minute: "*/1"
+    hour: "*"
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_receive php public/index.php --env {{ app_env }} --receive --type all"
+  - name: Process all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_process php public/index.php --env {{ app_env }} --process --type all"
+    minute: "*/1"
+    hour: "*"
+  - name: Minutely all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/minutely php public/index.php --env {{ app_env }} --cron --type minutely"
+    minute: "*"
+    hour: "*"
+  - name: Hourly all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/hourly php public/index.php --env {{ app_env }} --cron --type hourly"
+    minute: "0"
+    hour: "*"
+  - name: Calculate customer
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/customer php public/index.php --env {{ app_env }} --calculate --type customer"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rate php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/pricing php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/tax php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/unify php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Rebalance calculator
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rebalance php public/index.php --env {{ app_env }} --calculate --type rebalance"
+    minute: "*/1"
+    hour: "*"

@@ -8,8 +8,119 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function __construct($options = array()) {
         $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
     }
+	
+	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
+		if ($operation == "permanentchange") {
+			switch ($update['mapper_name']) {
+				case "One file loader - Tier create":
+				case "One file loader - Tier update":
+					$row[2] = "TIER_CB_" . $row[8] . "_" . $row[4] . "_" . $row[5];
+					$row[2] = $this->modifyStrigToKeyStructure($row[2]);
+					break;
+				case "One file loader - Rates create I calls":
+				case "One file loader - Rates create O calls":
+				case "One file loader - Rates create TI calls":
+				case "One file loader - Rates create TO calls":
+				case "One file loader - Rates create I SMS":
+				case "One file loader - Rates create O SMS":
+				case "One file loader - Rates update":
+					$row[2] = "RATE_" . $row[4] . "_" . $row[5] . "_" . $row[6] . "_" . $row[7] . "_" . $row[8];
+					$row[2] = $this->modifyStrigToKeyStructure($row[2]);
+					break;
+			}
+		}
+	}
 
-    public function afterProcessorParsing($processor) {
+	public function afterImportRowFormat(&$entity, $operation, $requestCollection, $update) {
+		switch ($update['mapper_name']){
+			case "One file loader - Tier create":
+			case "One file loader - Tier update":
+				$entity["key"] = $this->generateProductKey($entity, "tier");
+				break;
+			case "One file loader - Rates create I calls":
+			case "One file loader - Rates create O calls":
+			case "One file loader - Rates create TI calls":
+			case "One file loader - Rates create TO calls":
+			case "One file loader - Rates create I SMS":
+			case "One file loader - Rates create O SMS":
+			case "One file loader - Rates update":
+				$entity["key"] = $this->generateProductKey($entity, "rate");
+				if(!empty($entity["params"]["additional_charge"])) {
+					$entity["price_value"] = 0;
+				}
+				break;
+                        case "Missing ERP Mappings":
+                                $entity["key"] = 
+                                    $entity["params"]["scenario"]  . "_" .
+                                    $entity["params"]["product"]  . "_" .
+                                    $entity["params"]["component"]  . "_" .
+                                    $entity["params"]["cash_flow"]  . "_" .
+                                    $entity["params"]["user_summarisation"]  . "_" .
+                                    $entity["params"]["operator"];
+                                break;
+		}
+	}
+	
+	public function beforeImportEntity(&$entity, $operation, $requestCollection, $update) {
+		switch ($update['mapper_name']){
+			case "One file loader - Rates create I calls":
+			case "One file loader - Rates create O calls":
+			case "One file loader - Rates create TI calls":
+			case "One file loader - Rates create TO calls":
+			case "One file loader - Rates update":
+				if(!empty($entity["params"]["additional_charge"])) {
+					$usagetype = reset(array_keys($entity['rates']));
+					$entity["rates"][$usagetype]["BASE"]["rate"] = $this->addZeroPriceTier($entity);
+				}
+				break;
+		}
+
+	}
+        
+        public function afterRunManualMappingQuery(&$output, $requestCollection, $update) {
+            if($requestCollection == 'rates' && $update['mapper_name'] == 'Missing ERP Mappings'){
+                $match = array(
+			'$match' => array(
+				"rates.erp_mapping" => array('$exists' => 1)
+			)
+		);
+                $out = array(
+			'$out' => "epic_cy_erp_mappings"
+		);
+                try {
+                    Billrun_Factory::db()->ratesCollection()->aggregate($match, $out);
+                } catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+            }
+
+	}
+	
+	public function generateProductKey($entity, $type) {
+		switch ($type) {
+			case "tier":
+				$entity["key"] = "TIER_CB_" . $entity["params"]["tier"] . "_" . $entity["params"]["operator"] . "_" . $entity["params"]["cash_flow"];
+				$entity["key"] = $this->modifyStrigToKeyStructure($entity["key"]);
+				return $entity["key"];
+			case "rate":
+				$entity["key"] = "RATE_" . $entity["params"]["operator"] . "_" . $entity["params"]["component"] . "_" . $entity["params"]["product"] . "_" . $entity["params"]["direction"] . "_" . $entity["params"]["tier"];
+				$entity["key"] = $this->modifyStrigToKeyStructure($entity["key"]);
+				return $entity["key"];
+		}
+	}
+	
+	public function addZeroPriceTier($entity) {
+		$usagetype = reset(array_keys($entity['rates']));
+		$rates_array = $entity["rates"][$usagetype]["BASE"]["rate"];
+		$rates_array[1] = $rates_array[0];
+		$rates_array[0]["to"] = 1;
+		$rates_array[1]["from"] = 1;
+		$rates_array[0]["price"] = $entity["params"]["additional_charge"];
+		$rates_array[1]["price"] = 0;
+		return $rates_array;
+	}
+
+	public function afterProcessorParsing($processor) {
         if ($processor->getType() === 'ICT') {
             $dataRows = $processor->getData()['data'];
             foreach ($dataRows as $row) {
@@ -23,16 +134,40 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             }
         }
     }
+	
+	function modifyStrigToKeyStructure($str) {
+		$unwanted_array = array('Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A', 'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A', 'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E',
+			'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ø' => 'O', 'Ù' => 'U',
+			'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'a', 'ç' => 'c',
+			'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i', 'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o',
+			'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y', '(' => "", ')' => "");
+		$str = strtr($str, $unwanted_array);
+		$str = str_replace('&', '_AND_', $str);
+		$str = str_replace('(', '_', str_replace("'", "", str_replace('-', '_', (str_replace('__', '_', str_replace(' ', '_', str_replace('.', '_', str_replace('$', '_', str_replace(',', '_', str_replace('‘', '_', $str))))))))));
+		$str = str_replace('+', '_', $str);
+		$str = str_replace('___', '_', $str);
+		$str = str_replace('/', '_', $str);
+		$str = str_replace('*', '_ANY_', $str);
+		$str = str_replace('|', '_OR_', $str);
+		$str = str_replace('__', '_', $str);
+		return strtoupper($str);
+	}
 
     public function afterCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
         if ($calculator->getType() == 'rate') {
             $current = $row->getRawData();
-            $current["cf"]["rate_type"] = $current["cf"]["component"] == "ICTEC" ? "flat_rate" : "unit_cost";
+			$rate_tier_array = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"];
+			if($rate_tier_array[0]["uom_display"]["range"] == "counter" || (count($rate_tier_array) == 2 && $rate_tier_array[0]["to"] == 1 && $rate_tier_array[1]["price"] == 0)) {
+				$current["cf"]["rate_type"] = "flat_rate";
+			}
+			else {
+				$current["cf"]["rate_type"] = "unit_cost";
+			}
             $current["cf"]["rate_price"] = $current["foreign"]["rate"]["rates"][$current["usaget"]]["BASE"]["rate"][0]["price"];
             if ($current["cf"]["rate_type"] == "unit_cost") {
                 $current["cf"]["rate_price"] *= 60;
             }
-            unset($current["foreign"]["rate"]);
+            unset($current["foreign"]["rate"]["rates"]);
             $row->setRawData($current);
         }
 
@@ -108,6 +243,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $current = $row->getRawData();
         $type = $current['type'];
         $current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
+		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0,1);
         $row->setRawData($current);
         $this->setOperator($row, $current, $type, $calculator);
         $row->setRawData($current);
@@ -120,6 +256,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         }
         $current["cf"]["product"] = $product_entity["params"]["product"];
         $current["cf"]["product_group"] = $product_entity["params"]["product_group"];
+        $current["cf"]["product_title"] = $product_entity["description"];
         $row->setRawData($current);
 
         $anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
@@ -149,7 +286,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $is_anaa_relevant = true;
         }
 
-        //TODO: check if there are multiple results and split
         $component_entities = $this->getParameterProduct($type, "parameter_component", $row, $calculator, true);
         if (!$component_entities) {
             return [$current];
@@ -162,6 +298,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $newCurrent["cf"]["component"] = $component_entity["params"]["component"];
             $newCurrent["cf"]["cash_flow"] = $component_entity["params"]["cash_flow"];
             $newCurrent["cf"]["tier_derivation"] = $component_entity["params"]["tier_derivation"];
+            $newCurrent["cf"]["settlement_operator"] = $component_entity["params"]["settlement_operator"];
+            $newCurrent["cf"]["virtual_operator"] = $component_entity["params"]["virtual_operator"];
             $newRow->setRawData($newCurrent);
             if ($component_entity["params"]["anaa"] != "*") {
                 $is_anaa_relevant = true;
@@ -327,7 +465,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         $current["cf"]["incoming_operator"] = "";
         $current["cf"]["outgoing_operator"] = "";
         if ($current["cf"]["call_direction"] != "O") {
-            //TODO - change to parameter_incoming operator
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
             $current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
@@ -338,7 +475,6 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
             $row->setRawData($current);
         }
         if ($current["cf"]["call_direction"] != "I") {
-            //TODO - change to parameter_outgoing_operator
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
             $current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
@@ -531,6 +667,12 @@ class ICT_Reports_Manager {
                 Billrun_Factory::log("Report: " . $report_settings['name'] . " saving ERR: " . $e->getMessage(), Zend_Log::ALERT);
                 continue;
             }
+            try {
+                $this->sendEmails($report);
+            } catch (Exception $e) {
+                Billrun_Factory::log("Report: " . $report_settings['name'] . " sending emails ERR: " . $e->getMessage(), Zend_Log::ALERT);
+                continue;
+            }
         }
     }
 
@@ -670,6 +812,19 @@ class ICT_Reports_Manager {
             Billrun_Factory::log("Uploaded " . $report->getFileName() . " file successfully", Zend_Log::INFO);
         }
     }
+    
+    /**
+     * Function that send ICT (Metabase) reports by email
+     * @param ICT_report $report
+     */
+    public function sendEmails($report) {
+        $emails = $report->getEmails();
+        if(empty($emails)){
+            return;
+        }
+        Billrun_Factory::log("Sending " . $report->name . " report to emails: " . implode(', ', $emails), Zend_Log::INFO);
+        Billrun_Util::sendMail($report->name . " Report", $report->getData(), $emails, array(), true);
+    }
 
     /**
      * get ICT reports manager instance
@@ -751,6 +906,12 @@ class ICT_report {
      * @var boolean 
      */
     protected $enabled;
+    
+    /**
+     * Emails to send report
+     * @var array 
+     */
+    protected $emails;
 
     public function __construct($options) {
         if (is_null($options['id'])) {
@@ -765,6 +926,7 @@ class ICT_report {
         $this->need_post_process = !empty($options['need_post_process']) ? $options['need_post_process'] : false;
         $this->format = $this->need_post_process ? "json" : "csv";
         $this->enabled = !empty($options['enable']) ? $options['enable'] : true;
+        $this->emails = !empty($options['send_by_email']) ? $options['send_by_email'] : [];
     }
 
     public function reportPostProcess($values = []) {
@@ -806,6 +968,10 @@ class ICT_report {
 
     public function getData() {
         return $this->data;
+    }
+    
+    public function getEmails() {
+        return $this->emails;
     }
 
     public function setData($data) {
