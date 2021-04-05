@@ -3037,8 +3037,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 				"filters": [],
 				"enabled": true
 			},
-			
 
+lastConfig["export"] = 1;
 lastConfig["export_generators"][0] =
 		{
 			"filtration": [
