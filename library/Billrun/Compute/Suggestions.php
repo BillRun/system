@@ -80,6 +80,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                         $this->getFieldNameOfLine() => $retroactiveChange['key'],
                         'in_queue' => array('$ne' => true)
                     ), $this->addFiltersToFindMatchingLines());
+            if($isFake){
+                $filters['aid'] = $retroactiveChange['aid'];
+                $filters['sid'] = $retroactiveChange['sid'];
+            }
             $query = array(
                 array(
                     '$match' => $filters
@@ -264,12 +268,14 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $fakeRetroactiveChanges = array();
         $fakeRetroactiveChange['is_fake'] = true;
         $fakeRetroactiveChange['key'] = $overlapSuggestion['key']; //equal to suggestion['key']
+        $fakeRetroactiveChange['aid'] = $overlapSuggestion['aid']; //equal to suggestion['aid']
+        $fakeRetroactiveChange['sid'] = $overlapSuggestion['sid']; //equal to suggestion['sid']
         $fakeRetroactiveChange['retroactive_changes_info'] = array_merge(array_map(function ($retroactive_change) {
                     return array('audit_stamp' => $retroactive_change['audit_stamp']);
                 }, $overlapSuggestion['retroactive_changes_info']), array_map(function ($retroactive_change) {
                     return array('audit_stamp' => $retroactive_change['audit_stamp']);
                 }, $suggestion['retroactive_changes_info']));
-
+        
         $oldFrom = min($overlapSuggestion['from'], $suggestion['from']);
         $newFrom = max($overlapSuggestion['from'], $suggestion['from']);
         $oldTo = min($overlapSuggestion['to'], $suggestion['to']);
