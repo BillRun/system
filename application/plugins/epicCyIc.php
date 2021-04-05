@@ -6,7 +6,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     protected $ict_configuration = [];
 
     public function __construct($options = array()) {
-        $this->ict_configuration = !empty($options['ic']) ? $options['ic'] : [];
+        $this->ict_configuration = !empty($options['ict']) ? $options['ict'] : [];
     }
 	
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
