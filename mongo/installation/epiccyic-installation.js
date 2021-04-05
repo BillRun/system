@@ -3250,8 +3250,8 @@ var report_Billing_Cycle = {
 	"name": 'Billing_Cycle',
 	"id": "85a7d6cd-7c33-4673-a5ab-ae7728635336",
 	"enable": true,
-	"day": "1",
-	"hour": "16",
+	"day": "2",
+	"hour": "4",
 	"csv_name": "Billing_Cycle",
 	"need_post_process": false,
 	"params": [
