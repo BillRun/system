@@ -464,6 +464,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function setOperator($row, &$current, $type, $calculator) {
         $current["cf"]["incoming_operator"] = "";
         $current["cf"]["outgoing_operator"] = "";
+        $row->setRawData($current);
         if ($current["cf"]["call_direction"] != "O") {
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
