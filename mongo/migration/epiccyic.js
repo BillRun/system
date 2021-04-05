@@ -4190,7 +4190,31 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 		]
 	};
 
-	var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo_VCE, report_MissingERPMappings];
+	var report_Billing_Cycle = {
+		"name": 'Billing_Cycle',
+		"id": "85a7d6cd-7c33-4673-a5ab-ae7728635336",
+		"enable": true,
+		"day": "2",
+		"hour": "4",
+		"csv_name": "Billing_Cycle",
+		"need_post_process": false,
+		"params": [
+			{
+				"template_tag": "from",
+				"type": "date",
+				"format": "Y-m-d",
+				"value": ["first day of previous month"]
+			},
+			{
+				"template_tag": "to",
+				"type": "date",
+				"format": "Y-m-d",
+				"value": ["first day of this month", "-1 day"]
+			}
+		]
+	};
+
+	var reports = [report_Armadilo, report_Armadilo_SMS, report_Armadilo_VCE, report_MissingERPMappings, report_Billing_Cycle];
 	var cy_ic_plugin =
 			{
 				"name": "epicCyIcPlugin",
