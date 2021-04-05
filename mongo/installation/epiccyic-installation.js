@@ -4178,7 +4178,7 @@ var cy_ic_plugin =
 				"enabled" : true,
 				"system" : false,
 				"hide_from_ui" : false,
-				"configuration" : {'values': { 'ic': { 'reports': reports } } }
+				"configuration" : {'values': { 'ict': { 'reports': reports } } }
 		};
 lastConfig.plugins = [cy_ic_plugin];
 
