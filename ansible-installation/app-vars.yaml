@@ -86,12 +86,16 @@ mongos:
 
 application_cron: 
   - name: Receive all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_receive php public/index.php --env {{ app_env }} --receive --type all"
     minute: "*/1"
     hour: "*"
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_receive php public/index.php --env {{ app_env }} --receive --type all"
   - name: Process all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_process php public/index.php --env {{ app_env }} --process --type all"
     minute: "*/1"
+    hour: "*"
+  - name: Export generator
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_export php public/index.php --env {{ app_env }} --export --type all"
+    minute: "*/59"
     hour: "*"
   - name: Minutely all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/minutely php public/index.php --env {{ app_env }} --cron --type minutely"
