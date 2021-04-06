@@ -44,7 +44,7 @@ php_session_dir: /var/lib/php/session
 deploy_key_remove: no
 
 git:
-  repo: "git@git.bill.run:sdoc/epic-cy-ic-billrun-plugin.git"
+  repo: "git@gitlab.prod.lan:it-factory-cy/interconnect-billing.git"
   branch: billrun_core_merge
 
 deploy_key_dir: "/etc/"
