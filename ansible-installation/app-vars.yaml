@@ -95,7 +95,7 @@ application_cron:
     hour: "*"
   - name: Export generator
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_export php public/index.php --env {{ app_env }} --export --type all"
-    minute: "*/59"
+    minute: "*/30"
     hour: "*"
   - name: Minutely all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/minutely php public/index.php --env {{ app_env }} --cron --type minutely"
