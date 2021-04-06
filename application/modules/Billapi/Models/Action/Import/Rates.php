@@ -125,6 +125,16 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		}), 'value');
 		$revision_date_field = ($operation === 'create') ? 'from' : 'effective_date';
 		$entity_key = Billrun_Util::getIn($entities, [0, '__UPDATER__', 'value'], Billrun_Util::getIn($entities, 'key', 'key'));
+		if ($operation == 'permanentchange') {
+			$entities = array_map(function($entity) { 
+				$field = Billrun_Util::getIn($entity, ['__UPDATER__', 'field'], '');
+				$value = Billrun_Util::getIn($entity, ['__UPDATER__', 'value'], '');
+				if (empty(Billrun_Util::getIn($entity, $field, ''))){
+					Billrun_Util::setIn($entity, $field, $value);
+				}
+				return $entity;
+			}, $entities);
+		}
 		$entities_by_key = Billrun_Util::groupArrayBy($entities, [$entity_key, $revision_date_field]);
 		$combined_entities = [];
 		foreach ($entities_by_key as $key => $group_by_date) {
