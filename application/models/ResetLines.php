@@ -139,36 +139,78 @@ class ResetLinesModel {
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
-		$queue_line = array(
-			'calc_name' => false,
-			'calc_time' => false,
-			'skip_fraud' => true,
-		);
+		$former_exporter = array();
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
 			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
-			$this->aggregateLineUsage($line);
-			$queue_line['rebalance'] = array();
-			$stamps[] = $line['stamp'];
-			if (!empty($line['rebalance'])) {
-				$queue_line['rebalance'] = $line['rebalance'];
+			if($line['source'] === 'unify'){
+				$archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
+				$archivedLinesToInsert = [];
+                                $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 1000);
+				foreach ($archivedLines as $archivedLine){
+					unset($archivedLine["u_s"]);
+					$archivedLinesToInsert[] = $archivedLine;
+					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                                        // If we've reached `$batchSize` entries, perform the batched insert.
+                                        if(count($archivedLinesToInsert) >= $batchSize){
+                                            Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                            $archivedLinesToInsert = [];
+                                        }
+                                        
+                                }
+                                // Finish the last batch.
+                                if (!empty($archivedLinesToInsert)){
+                                     Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                }
+				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
+				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
+				continue;
 			}
-			$queue_line['rebalance'][] = $rebalanceTime;
-			$this->buildQueueLine($queue_line, $line, $advancedProperties);
-			$queue_lines[] = $queue_line;
+			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
 		}
 
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
 				return false;
 			}
 		}
 	}
 
-	/**
+	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
+		$queue_line = array(
+			'calc_name' => false,
+			'calc_time' => false,
+			'skip_fraud' => true,
+		);
+		$this->aggregateLineUsage($line);
+		$queue_line['rebalance'] = array();
+		$stamps[] = $line['stamp'];
+                $former_exporter = $this->buildFormerExporterForLine($line);
+		if (!empty($line['rebalance'])) {
+			$queue_line['rebalance'] = $line['rebalance'];
+		}
+		$queue_line['rebalance'][] = $rebalanceTime;
+		$this->buildQueueLine($queue_line, $line, $advancedProperties);
+		$queue_lines[] = $queue_line;
+	}
+        
+        
+        protected function buildFormerExporterForLine($line) {
+            $former_exporter = [];
+            if(isset($line['export_stamp']) && isset($line['export_start'])){
+                $former_exporter = array(
+                    'export_stamp' => $line['export_stamp'],
+                    'export_start' => $line['export_start']
+                );
+            }
+            return $former_exporter;
+        }
+
+
+        /**
 	 * Removes lines from queue, reset added fields off lines and re-insert to queue first stage
 	 * @todo support update/removal of credit lines
 	 */
@@ -215,7 +257,7 @@ class ResetLinesModel {
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
 	 */
-	protected function getUpdateQuery($rebalanceTime) {
+	protected function getUpdateQuery($rebalanceTime, $former_exporter) {
 		$updateQuery = array(
 			'$unset' => array(
 				'aid' => 1,
@@ -248,7 +290,10 @@ class ResetLinesModel {
 				'rates' => 1,
 				'services_data' => 1,
 				'foreign' => 1, // this should be replaced by querying lines.fields and resetting all custom fields found there
-			),
+                                'export_stamp'=>1,
+                                'export_start'=>1,
+                                'exported'=>1,
+                        ),
 			'$set' => array(
 				'in_queue' => true,
 			),
@@ -256,7 +301,9 @@ class ResetLinesModel {
 				'rebalance' => $rebalanceTime,
 			),
 		);
-
+                if(!empty($former_exporter)){
+                    $updateQuery['$push']['former_exporters'] = $former_exporter;
+                }
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateRebalanceLines', array(&$updateQuery));
 		
 		return $updateQuery;
@@ -284,8 +331,8 @@ class ResetLinesModel {
 	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
-		$update = $this->getUpdateQuery($rebalanceTime);
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
+		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);

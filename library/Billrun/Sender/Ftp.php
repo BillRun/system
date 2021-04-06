@@ -27,10 +27,10 @@ class Billrun_Sender_Ftp extends Billrun_Sender {
 	public function send($filePath) {
 		Billrun_Factory::dispatcher()->trigger('beforeFTPSendFiles', array($this));
 		$files = is_array($filePath) ? $filePath : array($filePath);
-		$connectionSettings = Billrun_Util::getIn($this->options, 'connection', array());
+		$connectionSettings = $this->options;
 		$ftp = (new Billrun_Connector_Ftp($connectionSettings))->connect();
 		if (!$ftp) {
-			Billrun_Factory::log()->log("Cannot get FTP connector. details: " . print_R($this->options, 1), Zend_Log::ERR);
+			Billrun_Factory::log()->log("Cannot get FTP connector. details: " . print_R($connectionSettings, 1), Zend_Log::ERR);
 			return false;
 		}
 
