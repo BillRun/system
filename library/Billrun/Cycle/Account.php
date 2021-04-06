@@ -290,6 +290,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$data = [
 			'rates' => $this->cycleAggregator->getRates(),
 			'discounts' => $this->cycleAggregator->getDiscounts(),
+                        'charges' => $this->cycleAggregator->getCharges(),
 		];
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
