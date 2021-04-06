@@ -1,0 +1,103 @@
+[
+    {
+            $match: {
+               $and: [ {$and : [ { $expr: {$gte:['$urt', {
+            $dateFromParts: {
+                'year': {$year:{{from}}},
+                'month': {$month:{{from}}},
+                'day': { $dayOfMonth: {{from}} },
+                'hour': {$hour:{{from}}},
+                'minute': {$minute:{{from}}},
+                'second': {$second:{{from}}},
+                'millisecond': { $millisecond: {{from}} },
+                'timezone' : "Asia/Nicosia"
+            }
+        }]}}, {$expr:{$lt:['$urt', {
+            $dateFromParts: {
+                'year': {$year: {{to}}},
+                'month': {$month: {{to}}},
+                'day': { $dayOfMonth:  {{to}} },
+                'hour': {$hour: {{to}}},
+                'minute': {$minute: {{to}}},
+                'second': {$second: {{to}}},
+                'millisecond': { $millisecond:  {{to}} },
+                'timezone' : "Asia/Nicosia"
+            }
+        }
+    ]}}]}]}},
+    {
+            $group: {
+                "_id":{
+                    cash_flow:"$cf.cash_flow",
+                    product: "$cf.product",
+                    operator:"$cf.operator",
+                    scenario:"$cf.scenario",
+                    component:"$cf.component",
+                    user_summarisation:"$uf.USER_SUMMARISATION"
+                }
+            }
+    },
+    {
+            $addFields: {
+                KEY: { $concat: [
+                        {$ifNull:["$_id.scenario",""]}, "_" ,
+                        {$ifNull:["$_id.product",""]}, "_" ,
+                        {$ifNull:["$_id.component",""]}, "_", 
+                        {$ifNull:["$_id.cash_flow",""]}, "_" ,
+                        {$ifNull:["$_id.user_summarisation",""]}, "_" ,
+                        {$ifNull:["$_id.operator",""]},
+                ]}
+            }
+    },
+    {        
+            $lookup: {
+                from: "epic_cy_erp_mappings",
+                let: { key: "$KEY"},
+                pipeline: [
+                        {$match:       
+                            {
+                                $expr:{$eq: ["$key", "$$key"]}
+                            }
+                        }],
+                as: "matching_rates"
+                }
+    },
+    {
+            $addFields: {
+               matching_rate: {$arrayElemAt: ["$matching_rates" , 0 ]}
+            }
+    },
+    {
+            $addFields: {
+                RATINGSCENARIO:{$ifNull:["$_id.scenario",""]},
+                BILLEDPRODUCT:{$ifNull:["$_id.product",""]},
+                RATINGCOMPONENT:{$ifNull:["$_id.component",""]},
+                CASHFLOW:{$ifNull:["$_id.cash_flow",""]},
+                USERSUMM:{$ifNull:["$_id.user_summarisation",""]}
+                BILLOP:{$ifNull:["$_id.operator",""]},
+                OBJECT_ID: {$ifNull:["$matching_rate.object_id",""]},
+                ACCOUNT: {$ifNull:["$matching_rate.gl_account",""]},
+                ACCOUNT_DESCRIPTION: {$ifNull:["$matching_rate.gl_account_description",""]},
+                MTN_IND: {$ifNull:["$matching_rate.mtn_ind",""]},
+                PROD_SERV: {$ifNull:["$matching_rate.prod_serv",""]},
+                KEY: ""
+            }
+    },
+    {       
+            $project:{
+                _id : 0,
+                RATINGSCENARIO: 1,
+                BILLEDPRODUCT: 1,
+                RATINGCOMPONENT:1,
+                CASHFLOW:1,
+                USERSUMM:1,
+                BILLOP:1,
+                OBJECT_ID:1,
+                ACCOUNT:1,
+                ACCOUNT_DESCRIPTION:1,
+                MTN_IND:1
+                PROD_SERV:1
+                KEY:1
+            }
+    }
+]

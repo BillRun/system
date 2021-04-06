@@ -1,0 +1,33 @@
+[
+
+		{$match: {
+			   $and: [ {$and : [ { $expr: {$gte:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year:{{from}}},
+                            'month': {$month:{{from}}},
+                            'day': { $dayOfMonth: {{from}} },
+                            'hour': {$hour:{{from}}},
+                            'minute': {$minute:{{from}}},
+                            'second': {$second:{{from}}},
+                            'millisecond': { $millisecond: {{from}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }]}}, {$expr:{$lt:['$urt', {
+                        $dateFromParts: {
+                            'year': {$year: {{to}}},
+                            'month': {$month: {{to}}},
+                            'day': { $dayOfMonth:  {{to}} },
+                            'hour': {$hour: {{to}}},
+                            'minute': {$minute: {{to}}},
+                            'second': {$second: {{to}}},
+                            'millisecond': { $millisecond:  {{to}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }
+                ]}}]},
+
+                {$group:{"_id":{rate_type:"$cf.rate_type",rate_price:"$cf.rate_price",cash_flow:"$cf.cash_flow", rate_type:"$cf.rate_type", rate_price:"$cf.rate_price", prod: "$cf.product",operator:"$cf.operator",MONTH:{$concat:[{$substr:["$uf.EVENT_START_DATE",0,4]},"-",{$substr:["$uf.EVENT_START_DATE",4,2]},"-",{$substr:["$uf.EVENT_START_DATE",6,2]}]}, call_dir:"$cf.call_direction",USER_SUMMARISATION:"$uf.USER_SUMMARISATION",incoming_operator:"$cf.incoming_operator",outgoing_operator:"$cf.outgoing_operator",product_group:"$cf.product_group",tier:"$cf.tier", component:"$cf.component"},"duration": {$sum: "$usagev"}, count:{$sum:1}, "aprice":{$sum: "$aprice"}}},
+{$addFields: {COSTY: 0,COSTX :0}},
+{$project:{_id : 0,MONTH:"$_id.MONTH",prod:"$_id.prod",operator:"$_id.operator",product_group:"$_id.product_group",call_dir:"$_id.call_dir",tier:"$_id.tier",component:"$_id.component",
+FLAT_RATE_CHARGE_G:{$cond:[{ $eq: ["$_id.rate_type","flat_rate"]},"$_id.rate_price","" ]},UNIT_COST_USED_G  :{$cond:[{ $eq: ["$_id.rate_type","unit_cost"]},"$_id.rate_price","" ]},USER_SUMMARISATION:"$_id.USER_SUMMARISATION",COSTX:{$cond:[{ $eq: ["$_id.cash_flow","R"]},{$sum:"$aprice"},""]},COSTY:{$cond:[{ $eq: ["$_id.cash_flow","E"]},{$sum:"$aprice"},""]},CALL_COUNT_D:"$count",dur:"$duration",INCOMING_OPERATOR_D:"$_id.incoming_operator",OUTGOING_OPERATOR_D:"$_id.outgoing_operator",cash_flow:"$_id.cash_flow",aprice:"$aprice"}}
+]

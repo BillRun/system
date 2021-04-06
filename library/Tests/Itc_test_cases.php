@@ -1316,7 +1316,7 @@ class Itc_test_cases {
 						"type" => "ICT",
 					]
 				],
-				"file_type" => "ICT", "expected" => [['aprice' => 0.001877, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OSD", "cf.cash_flow" => "E", "cf.component" => "ICTDC"]]
+				"file_type" => "ICT", "expected" => [['aprice' => 0.001877, 'cf.call_direction' => 'O', 'cf.product' => 'FIX', "cf.scenario" => "OSD", "cf.cash_flow" => "E", "cf.component" => "ICTDC" ,'billrun'=>null]]
 			],
 			["test_num" => 38,
 				"data" =>
@@ -1357,20 +1357,20 @@ class Itc_test_cases {
 			["test_num" => 39,
 				"file_type" => "ICT", 
 				"expected" => [
-					['aprice' => 0.0155, 'cf.call_direction' => 'TO', 'cf.product' => 'IVOICE', "cf.scenario" => "TSD", "cf.cash_flow" => "E", "cf.component" => "ICTDC"],
+					['aprice' => 0.0155, 'cf.call_direction' => 'TO', 'cf.product' => 'IVOICE', "cf.scenario" => "TSD", "cf.cash_flow" => "E", "cf.component" => "ICTDC",'billrun'=>null],
 					['aprice' => 0.0403, 'cf.call_direction' => 'TI', 'cf.product' => 'IVOICE', "cf.scenario" => "TSD", "cf.cash_flow" => "R", "cf.component" => "ICTDC"],
 				]
 			],
 			["test_num" => 40,
 				"file_type" => "ICT", 
 				"expected" => [
-					['aprice' => 0.049211333, 'cf.call_direction' => 'TO', 'cf.product' => 'FIX', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "E", "cf.component" => "ICTDC"],
+					['aprice' => 0.049211333, 'cf.call_direction' => 'TO', 'cf.product' => 'FIX', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "E", "cf.component" => "ICTDC",'billrun'=>null],
 					['aprice' => 0.051733333, 'cf.call_direction' => 'TI', 'cf.product' => 'FIX', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "R", "cf.component" => "ICTDC"],				]
 			],
 			["test_num" => 41,
 				"file_type" => "ICT", 
 				"expected" => [
-					['aprice' => 0.00517, 'cf.call_direction' => 'TO', 'cf.product' => 'MOB', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "E", "cf.component" => "ICTDC"],
+					['aprice' => 0.00517, 'cf.call_direction' => 'TO', 'cf.product' => 'MOB', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "E", "cf.component" => "ICTDC",'billrun'=>null],
 					['aprice' => 0.006, 'cf.call_direction' => 'TI', 'cf.product' => 'MOB', "cf.scenario" => "TSD_AB", "cf.cash_flow" => "R", "cf.component" => "ICTDC"],
 				]
 			],

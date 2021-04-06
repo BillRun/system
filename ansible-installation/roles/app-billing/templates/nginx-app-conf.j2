@@ -1,0 +1,44 @@
+server {
+        listen 80;        
+        server_name {{ app_hostname }};
+        root {{ app_dir }}/public;
+        index index.php index.html index.htm;
+        
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        client_max_body_size 20M;
+        client_body_buffer_size 1024k;
+        error_log /var/log/nginx/{{ app_owner }}.error.log info;
+        access_log /var/log/nginx/{{ app_owner }}.access.log;
+        client_header_timeout 30m;
+        send_timeout 30m;
+        keepalive_requests 1024;
+        keepalive_timeout  10000;
+        
+
+location = / {
+        return 301 $scheme://$host/index.html;
+        }
+
+if ( !-e $request_filename ) {
+        rewrite ^/(.*)  /index.php last;
+        }
+
+location ~ \.php$ {
+        fastcgi_pass {%if php_fpm_listen.startswith("/") %}unix:{%endif%}{{php_fpm_listen}};
+        fastcgi_index index.php;
+        fastcgi_read_timeout 1000s;
+        fastcgi_send_timeout 1000s;
+        fastcgi_connect_timeout 1000s;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param APPLICATION_ENV {{ app_env }};
+        }
+
+location ~ \.(js|css|png|jpg|jpeg|gif|swf|xml|txt|woff|woff2)$ {    
+        access_log off;
+        expires 30d;
+        add_header Pragma public;
+        add_header Cache-Control public;
+        }        
+}
