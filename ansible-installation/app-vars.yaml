@@ -79,7 +79,7 @@ shared_path: "/shared_data"
 ## application mongo configuration
 mongos:
   host: "mongodb://127.0.0.1:27017"
-  db: billing
+  db: billing_ict
   user: "billrun"
   password: "{{db_password_app}}"
   port: 27017
