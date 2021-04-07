@@ -4807,11 +4807,14 @@ lastConfig["export_generators"][0] =
 			};
 	lastConfig.plugins = [cy_ic_plugin];
 
-//EPICIC-48
-	var grouping = {
-		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎']
+
+	var conf = {
+                //EPICIC-48
+		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎'],
+                //EPICIC-52
+                'billrun.compute.suggestions.rate_recalculations.enabled': 1
 	};
-	lastConfig = addToConfig(grouping, lastConfig);
+	lastConfig = addToConfig(conf, lastConfig);
 //add taxes and modify default tax
 	db.taxes.update({key: "DEFAULT_VAT"}, {$set: {description: "VATL19", rate: 0.19, params: {vat_code: "VATL19"}}});
 	db.taxes.save({
