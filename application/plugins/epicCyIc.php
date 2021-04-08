@@ -46,7 +46,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			case "One file loader - Rates update":
 				$entity["key"] = $this->generateProductKey($entity, "rate");
 				if(!empty($entity["params"]["additional_charge"])) {
-					$entity["price_value"] = 0;
+					$entity["price_value"] = $entity["params"]["additional_charge"];
 				}
 				break;
                         case "Missing ERP Mappings":
@@ -70,7 +70,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			case "One file loader - Rates update":
 				if(!empty($entity["params"]["additional_charge"])) {
 					$usagetype = reset(array_keys($entity['rates']));
-					$entity["rates"][$usagetype]["BASE"]["rate"] = $this->addZeroPriceTier($entity);
+					$one_time_charge_call_usage_type = ["incoming_call", "outgoing_call", "transit_incoming_call", "transit_outgoing_call"];
+					if(in_array($usagetype, $one_time_charge_call_usage_type)) {
+						$entity["rates"][$usagetype]["BASE"]["rate"] = $this->addZeroPriceTier($entity);
+					}
 				}
 				break;
 		}
@@ -147,7 +150,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$str = str_replace('+', '_', $str);
 		$str = str_replace('___', '_', $str);
 		$str = str_replace('/', '_', $str);
-		$str = str_replace('*', '_ANY_', $str);
+		$str = str_replace('*', 'ANY', $str);
 		$str = str_replace('|', '_OR_', $str);
 		$str = str_replace('__', '_', $str);
 		return strtoupper($str);
@@ -464,6 +467,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
     public function setOperator($row, &$current, $type, $calculator) {
         $current["cf"]["incoming_operator"] = "";
         $current["cf"]["outgoing_operator"] = "";
+        $row->setRawData($current);
         if ($current["cf"]["call_direction"] != "O") {
             $operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
             $current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
