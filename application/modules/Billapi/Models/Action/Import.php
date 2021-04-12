@@ -490,8 +490,11 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function fromArray($value) {
-		$value = str_replace(', ', ',', $value);
-		return explode(",", $value);
+		$values = explode(",", $value);
+		$values = array_map('trim', $values); // clean
+		$values = array_filter($values, 'strlen'); // remove empty values
+		$values = array_values($values); // reset keys after filter
+		return $values;
 	}
 
 	protected function fromDate($value) {
