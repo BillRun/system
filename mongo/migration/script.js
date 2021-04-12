@@ -1109,7 +1109,7 @@ lastConfig = runOnce(lastConfig, 'BRCD-2791', function () {
 						calc_time: {$ne: false}
 			}).forEach(function(line){
 			if (typeof line['calc_time'] === "number") {
-				line['calc_time'] = ISODate(new Date(line['calc_time'] * 1000).toISOString());
+				line['calc_time'] = new Date(line['calc_time'] * 1000);
 			}
 			db.queue.save(line);
 		});
