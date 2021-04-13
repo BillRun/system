@@ -4825,7 +4825,7 @@ lastConfig["export_generators"][0] =
 
         //EPICIC-48
 	var grouping = {
-		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎']
+		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id']
 	};
 	lastConfig = addToConfig(grouping, lastConfig);
 //add taxes and modify default tax
@@ -4874,3 +4874,65 @@ var conf = {
 lastConfig = addToConfig(conf, lastConfig);
 
 db.config.insert(lastConfig);
+
+//Initial plans
+db.plans.save({
+	"_id" : ObjectId("5ffb45eae5f981402f45fcc2"),
+	"from" : ISODate("2019-01-11T00:00:00Z"),
+	"name" : "TEST",
+	"price" : [
+		{
+			"price" : 0,
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "test",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : true,
+	"connection_type" : "postpaid",
+	"rates" : [ ],
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"prorated_start" : true,
+	"prorated_end" : true,
+	"prorated_termination" : true,
+	"to" : ISODate("2170-01-10T18:22:34Z"),
+	"creation_time" : ISODate("2019-01-11T00:00:00Z")
+});
+db.plans.save({
+	"_id" : ObjectId("603d44ec5b11a7194d4b0d12"),
+	"from" : ISODate("2020-01-01T00:00:00Z"),
+	"name" : "PLAN",
+	"price" : [
+		{
+			"price" : 0,
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "Plan",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : false,
+	"connection_type" : "postpaid",
+	"rates" : [ ],
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	],
+	"prorated_start" : true,
+	"prorated_end" : true,
+	"prorated_termination" : true,
+	"to" : ISODate("2170-03-01T19:47:56Z"),
+	"creation_time" : ISODate("2020-01-01T00:00:00Z")
+});
