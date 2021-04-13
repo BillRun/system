@@ -30,7 +30,7 @@ if mongo require auth certificate or other argument for connecting, add variable
 update the repo and the branch as require on `app-vars.yaml`
 ```yaml
 git:
-  repo: "git@git.bill.run:sdoc/mtn-cy-billrun-plugin.git"
+  repo: "git@gitlab.prod.lan:it-factory-cy/interconnect-billing.git"
   branch: master
 ```
 

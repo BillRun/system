@@ -44,7 +44,7 @@ php_session_dir: /var/lib/php/session
 deploy_key_remove: no
 
 git:
-  repo: "git@git.bill.run:sdoc/epic-cy-ic-billrun-plugin.git"
+  repo: "git@gitlab.prod.lan:it-factory-cy/interconnect-billing.git"
   branch: billrun_core_merge
 
 deploy_key_dir: "/etc/"
@@ -79,19 +79,23 @@ shared_path: "/shared_data"
 ## application mongo configuration
 mongos:
   host: "mongodb://127.0.0.1:27017"
-  db: billing
+  db: billing_ict
   user: "billrun"
   password: "{{db_password_app}}"
   port: 27017
 
 application_cron: 
   - name: Receive all
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_receive php public/index.php --env {{ app_env }} --receive --type all"
     minute: "*/1"
     hour: "*"
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_receive php public/index.php --env {{ app_env }} --receive --type all"
   - name: Process all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_process php public/index.php --env {{ app_env }} --process --type all"
     minute: "*/1"
+    hour: "*"
+  - name: Export generator
+    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/all_export php public/index.php --env {{ app_env }} --export --type all"
+    minute: "*/30"
     hour: "*"
   - name: Minutely all
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/minutely php public/index.php --env {{ app_env }} --cron --type minutely"

@@ -584,6 +584,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			]
 		];
 	}
+	
+	public function ExportBeforeGetRecordData(&$row, $exporter) {
+		if (!empty($row['rebalance'])) {
+			end($row['rebalance']);
+			$row['rebalance'] = reset($row['rebalance']);
+		}
+	}
 }
 
 class ICT_Reports_Manager {
@@ -989,5 +996,5 @@ class ICT_report {
     public function getFileName() {
         return $this->file_name . '_' . date('Ymd', time()) . '.csv';
     }
-
+	
 }
