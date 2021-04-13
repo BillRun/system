@@ -396,13 +396,14 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					switch ($action) {
 						case 'append':
 							$oldValues = Billrun_Util::getIn($existingRate, $path, []);
-							$newValues = $entity[$fieldName];
-							$entity[$fieldName] = array_unique(array_merge($oldValues, $newValues));
+							$newValues = Billrun_Util::getIn($entity, $path, []);
+							$mergedValues = array_unique(array_merge($oldValues, $newValues));
+							Billrun_Util::setIn($entity, $path, $mergedValues);
 							break;
 						case 'remove':
-							$entity[$fieldName] = [];
+							Billrun_Util::setIn($entity, $path, []);
 							break;
-						case 'replace':
+						case 'replace': // use new values as is
 						default:
 							break;
 					}
