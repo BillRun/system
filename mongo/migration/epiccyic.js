@@ -4825,7 +4825,7 @@ lastConfig["export_generators"][0] =
 
         //EPICIC-48
 	var grouping = {
-		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id‎']
+		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id']
 	};
 	lastConfig = addToConfig(grouping, lastConfig);
 //add taxes and modify default tax
@@ -4882,7 +4882,7 @@ db.plans.save({
 	"name" : "TEST",
 	"price" : [
 		{
-			"price" : 1,
+			"price" : 0,
 			"from" : 0,
 			"to" : "UNLIMITED"
 		}
