@@ -4891,7 +4891,7 @@ db.plans.save({
 	"recurrence" : {
 		"periodicity" : "month"
 	},
-	"upfront" : true,
+	"upfront" : false,
 	"connection_type" : "postpaid",
 	"rates" : [ ],
 	"tax" : [
