@@ -25,13 +25,16 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 	
 	protected $nsnConfig = null;
 	
+	protected $fileStats = null;
+	
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		//TODO - we shouldn't use specific prossesor for NSN, everything should be in the parser.
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('external_parsers_config.nsn')))->toArray();
-		$this->headerLength = Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_header_length', 0);
-		$this->trailerLength = Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_trailer_length', 0);
+		$this->headerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_header_length', 0));
+		$this->trailerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_trailer_length', 0));
+		$this->nsn_record_alignment = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_record_alignment', 0));
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
@@ -91,38 +94,47 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
-		$bytes = null;
-
-		$headerData = fread($this->fileHandler, $this->headerLength);
-		$header = $this->parser->parseHeader($headerData);
-		if (isset($header['data_length_in_block']) && !feof($this->fileHandler)) {
-			$bytes = fread($this->fileHandler, $header['data_length_in_block'] - $this->headerLength);
+		if (!$this->fileStats) {
+			$this->fileStats = fstat($this->fileHandler);
 		}
-		if (in_array($header['format_version'], $this->nsnConfig['block_config']['supported_versions'])) {
-			do {
-				$row = $this->buildDataRow($bytes, $this->fileHandler);
-				if ($row) {
-					$this->addDataRow($row);
-				}
-				$bytes = substr($bytes, $this->parser->getLastParseLength());
-			} while (isset($bytes[$this->trailerLength + 1]));
-		} else {
-			$msg  = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
-			Billrun_Factory::log()->log($msg, Zend_log::CRIT);
-			throw new Exception($msg);
+		while (!$this->isProcessingFinished()) {
+			$bytes = null;
+
+			$headerData = fread($this->fileHandler, $this->headerLength);
+			$header = $this->parser->parseHeader($headerData);
+			if (isset($header['data_length_in_block']) && !feof($this->fileHandler)) {
+				$bytes = fread($this->fileHandler, $header['data_length_in_block'] - $this->headerLength);
+			}
+			if (in_array($header['format_version'], $this->nsnConfig['block_config']['supported_versions'])) {
+				do {
+					$row = $this->buildDataRow($bytes, $this->fileHandler);
+					if ($row) {
+						$row['usaget'] = $this->getLineUsageType($row['uf']);
+						$row['usagev'] = $this->getLineVolume($row['uf']);
+						$row['urt'] = !empty($row['uf']['urt']) ? $row['uf']['urt'] : new MongoDate();
+						$this->addDataRow($row);
+					}
+					$bytes = substr($bytes, $this->parser->getLastParseLength());
+					$parsed = $this->parser->parsedBytes;
+					Billrun_Factory::log()->log("Last parsed bytes length: " . $this->parser->parsedBytes, Zend_log::DEBUG);
+				} while (isset($bytes[$this->trailerLength + 1]));
+			} else {
+				$msg = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
+				Billrun_Factory::log()->log($msg, Zend_log::CRIT);
+				throw new Exception($msg);
+			}
+
+			$trailer = $this->parser->parseTrailer($bytes);
+			//align the readhead
+			$alignment = $this->nsn_record_alignment * max(1, $header['charging_block_size']);
+			if (($alignment - $header['data_length_in_block']) > 0) {
+				fread($this->fileHandler, ($alignment - $header['data_length_in_block']));
+			}
+
+			//add trailer data
+			$processorData = &$this->getData();
+			$processorData['trailer'] = $this->updateBlockData($trailer, $header, []);
 		}
-
-		$trailer = $this->parser->parseTrailer($bytes);
-		//align the readhead
-		$alignment = $this->nsn_record_alignment * max(1, $header['charging_block_size']);
-		if (($alignment - $header['data_length_in_block']) > 0) {
-			fread($this->fileHandler, ($alignment - $header['data_length_in_block']));
-		}
-
-		//add trailer data
-		$processorData = &$this->getData();
-		$processorData['trailer'] = $this->updateBlockData($trailer, $header, $processorData['trailer']);
-
 		return true;
 	}
 
@@ -174,5 +186,12 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 				'seq_no' => $header['block_seq_number']);
 		}
 		return $logTrailer;
+	}
+	
+	/**
+	 * @see 
+	 */
+	public function isProcessingFinished() {
+		return feof($this->fileHandler) || ftell($this->fileHandler) + $this->trailerLength >= $this->fileStats['size'];
 	}
 }
