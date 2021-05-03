@@ -4873,6 +4873,13 @@ var conf = {
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-63: Timezone should be Europe/Nicosia, currency = EUR
+lastConfig["pricing"]["currency"] = "EUR";
+lastConfig["billrun"]["timezone"] = {
+			"v" : "Europe/Nicosia",
+			"t" : "Timezone"
+		};
+
 db.config.insert(lastConfig);
 
 //Initial plans
