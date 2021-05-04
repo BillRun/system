@@ -25,9 +25,9 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$this->headerRows = array();
 		$this->trailerRows = array();
 
-		$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
-		$fileReadAheadLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_file_read_ahead_length');
-		$headerLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_header_length');
+		$maxChunklengthLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_max_chunklength_length', 0));
+		$fileReadAheadLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_file_read_ahead_length', 0));
+		$headerLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_header_length', 0));
 		if ($headerLength > 0) {
 			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength));
 		}
@@ -240,11 +240,22 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	}
 
 	public function parseHeader($data) {
-		
+		$nx12Data = unpack("N", substr($data, 0x12, 4));
+		$header['line_count'] = reset($nx12Data);
+		$nx16Data = unpack("N", substr($data, 0x16, 4));
+		$header['next_file_number'] = reset($nx16Data);
+		//Billrun_Factory::log(print_r($header,1));
+		$rev = unpack("C", substr($data, 0x7, 1));
+		$this->currentRevision = $header['revision'] = decoct( reset($rev) );
+		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
+
+		return $header;
 	}
 
 	public function parseTrailer($data) {
-		
+		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
+
+		return $trailer;
 	}
 	
 	/**
