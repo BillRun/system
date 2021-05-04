@@ -177,7 +177,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
         $this->afterExport();
         Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
-        Billrun_Factory::log("Exported " . $transactionCounter . " " . $this->getCollectionName());
+        Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
     }
 
     /**
