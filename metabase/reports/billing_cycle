@@ -1,7 +1,7 @@
 [
 		{
 			$match: {
-			   $and: [ {$and : [ { $expr: {$gte:['$urt', {
+			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -12,7 +12,7 @@
                             'millisecond': { $millisecond: {{from}} },
                             'timezone' : "Asia/Nicosia"
                         }
-                    }]}}, {$expr:{$lt:['$urt', {
+                    }]}}, {$expr:{$lte:['$urt', {
                         $dateFromParts: {
                             'year': {$year: {{to}}},
                             'month': {$month: {{to}}},
