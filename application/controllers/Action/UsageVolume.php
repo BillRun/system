@@ -49,6 +49,10 @@ class UsageVolumeAction extends ApiAction {
 				'total_volume' => array(
 					'$sum' => '$usagev',
 				),
+				'over_out_volume' => array(
+					'$sum' => ['$over_plan','$out_plan'],
+				),
+
 			)
 		);
 
@@ -59,20 +63,21 @@ class UsageVolumeAction extends ApiAction {
 				'country' => '$_id.country',
 				'imsi' => '$imsi',
 				'total_volume' => '$total_volume',
+				'over_out_volume' => '$over_out_volume',
 			)
 		);
 		
 		$match2 = array(
 			'$match' => array(
-				'total_volume' => array(
-					'$gt' => 50 * $to_mb, // minimum of 10MB
+				'over_out_volume' => array(
+					'$gt' => 10 * $to_mb, // minimum of 10MB
 				)
 			)
 		);
 		
 		$sort = array(
 			'$sort' => array(
-				'total_volume' => -1,
+				'over_out_volume' => -1,
 			),
 		);
 		
@@ -86,7 +91,7 @@ class UsageVolumeAction extends ApiAction {
 
 	protected function generateCsvToMail($filepath, $results) {
 		$fp = fopen($filepath, 'w');
-		$header = array('sid', 'imsi', 'country', 'total_volume');
+		$header = array('sid', 'imsi', 'country','over_out_volume', 'total_volume');
 		fputcsv($fp, $header);
 		foreach ($results as $result) {
 			$csvLine = array();
