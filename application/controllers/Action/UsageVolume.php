@@ -70,7 +70,7 @@ class UsageVolumeAction extends ApiAction {
 		$match2 = array(
 			'$match' => array(
 				'over_out_volume' => array(
-					'$gt' => 50 * $to_mb, // minimum of 10MB
+					'$gt' => 10 * $to_mb, // minimum of 10MB
 				)
 			)
 		);
