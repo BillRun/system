@@ -49,10 +49,12 @@ class UsageVolumeAction extends ApiAction {
 				'total_volume' => array(
 					'$sum' => '$usagev',
 				),
-				'over_out_volume' => array(
-					'$sum' => ['$over_plan','$out_plan'],
+				'over_volume' => array(
+						'$sum' => '$over_plan',
 				),
-
+				'out_volume' => array(
+						'$sum' => '$out_plan',
+				),
 			)
 		);
 
@@ -63,8 +65,8 @@ class UsageVolumeAction extends ApiAction {
 				'country' => '$_id.country',
 				'imsi' => '$imsi',
 				'total_volume' => '$total_volume',
-				'over_out_volume' => '$over_out_volume',
-			)
+				'over_out_volume' => [ '$sum' => ['$over_volume', '$out_volume' ] ],
+				)
 		);
 		
 		$match2 = array(
