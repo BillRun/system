@@ -87,6 +87,8 @@ class UsageVolumeAction extends ApiAction {
 		return array_map(function($ele) use($to_mb){
 			$ele['total_volume'] = $ele['total_volume'] / $to_mb;
 			$ele['total_volume'] = number_format($ele['total_volume'], 4);
+			$ele['over_out_volume'] = $ele['over_out_volume'] / $to_mb;
+			$ele['over_out_volume'] = number_format($ele['over_out_volume'], 4);
 			return $ele;
 		}, $res);	
 	}
