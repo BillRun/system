@@ -25,9 +25,9 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$this->headerRows = array();
 		$this->trailerRows = array();
 
-		$maxChunklengthLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_max_chunklength_length', 0));
-		$fileReadAheadLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_file_read_ahead_length', 0));
-		$headerLength = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_header_length', 0));
+		$maxChunklengthLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_max_chunklength_length', 0);
+		$fileReadAheadLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_file_read_ahead_length', 0);
+		$headerLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_header_length', 0);
 		if ($headerLength > 0) {
 			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength));
 		}
@@ -42,7 +42,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			
 			$this->setLine($bytes);
 			$rawRow = $this->parseData('ggsn', $this->getLine($fp));
-					
+			
 			if ($rawRow) {
 				$this->dataRows[] = $rawRow;
 				$processedData['data'][] = $rawRow;
@@ -58,7 +58,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	
 	public function parseData($type, $data) {
 		$asnObject = Asn_Base::parseASNString($data);
-		$recordPadding = Billrun_Factory::config()->getConfigValue('constants.ggsn_record_padding');
+		$recordPadding = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_record_padding', 0));
 		$this->setLastParseLength($asnObject->getRawDataLength() + $recordPadding);
 
 		$type = $asnObject->getType();
@@ -162,13 +162,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	protected function handleMultipleVolume($cdrLine) {
 		if (isset($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 			$fbc_uplink_volume = $fbc_downlink_volume = 0;
-			$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
-			$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+			$cdrLine['org_fbc_uplink_volume'] = !empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : "";
+			$cdrLine['org_fbc_downlink_volume'] = !empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : "";
 			$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
 			foreach ($cdrLine['rating_group'] as $key => $rateVal) {
 				if (!empty($this->ggsnConfig['rating_groups'][$rateVal])) {
-					$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
-					$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+					$fbc_uplink_volume += !empty($cdrLine['fbc_uplink_volume'][$key]) ? $cdrLine['fbc_uplink_volume'][$key] : 0;
+					$fbc_downlink_volume += !empty($cdrLine['fbc_downlink_volume'][$key]) ? $cdrLine['fbc_downlink_volume'][$key] : 0;
 				}
 			}
 			$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
@@ -177,17 +177,21 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		} else if (isset($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 			return false;
 		} else {
-			if(is_array($cdrLine['fbc_uplink_volume'])) {
-				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
-				$cdrLine['fbc_uplink_volume'] = array_sum($cdrLine['fbc_uplink_volume']);
+			if (!empty($cdrLine['fbc_uplink_volume'])) {
+				if (is_array($cdrLine['fbc_uplink_volume'])) {
+					$cdrLine['org_fbc_uplink_volume'] = !empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : "";
+					$cdrLine['fbc_uplink_volume'] = array_sum(!empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : [0]);
+				}
 			}
-			if(is_array($cdrLine['fbc_downlink_volume'])) {
-				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
-				$cdrLine['fbc_downlink_volume'] = array_sum($cdrLine['fbc_downlink_volume']);
+			if (!empty($cdrLine['fbc_downlink_volume'])) {
+				if (is_array($cdrLine['fbc_downlink_volume'])) {
+					$cdrLine['org_fbc_downlink_volume'] = !empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : "";
+					$cdrLine['fbc_downlink_volume'] = array_sum(!empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : [0]);
+				}
 			}
-		} 
-		
-		
+		}
+
+
 		return $cdrLine;
 	}
 	
