@@ -15,18 +15,9 @@
  */
 class Models_Action_Uniqueget_Rates extends Models_Action_Uniqueget {
 
+	use Models_Config;
+
 	public function getConfigParams($params) {
-		$settings = parent::getConfigParams($params);
-		if (in_array('rates.*', array_column($settings['query_parameters'], 'name'))) {
-			$usage_types = Billrun_Factory::config()->getConfigValue('usage_types');
-			$usage_types_names = array_column($usage_types, 'usage_type');
-			foreach ($usage_types_names as $usage_type_name) {
-				$settings['query_parameters'][] = [
-					'name' => "rates.$usage_type_name",
-					'type' => 'array'
-				];
-			}
-		}
-		return $settings;
+		return $this->getRatesConfigParams($params);
 	}
 }
