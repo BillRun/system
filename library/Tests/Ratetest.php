@@ -42,6 +42,9 @@ class Tests_Ratetest extends UnitTestCase {
 		//Test num 5 d2 test tow fildes with longest prefix 
 		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '972533406999', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL_A' => 'retail')),
+		//https://billrun.atlassian.net/browse/BRCD-3037
+		array('row' => array('stamp' => 'd21', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '97533406999', 'code' => '12', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('CALL_B' => 'retail')),
 		//Test num 6 d3 test Long prefix exists but it's in an expired revision: Take the shorter prefix from an active revision
 		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-04-14 11:00:00+03:00'),
 			'expected' => array('SMS' => 'retail')),
@@ -178,7 +181,7 @@ class Tests_Ratetest extends UnitTestCase {
 		if (!empty($retunrRates)) {
 			foreach ($row['expected'] as $rate => $tariff) {
 				$message .= (array_keys($row['expected'])[0] != $rate) ? '</br>' : '';
-				$checkRate = current(array_filter($retunrRates, function(array $cat) use ($tariff) {
+				$checkRate = current(array_filter($retunrRates, function (array $cat) use ($tariff) {
 						return $cat['tariff_category'] === $tariff;
 					}));
 
