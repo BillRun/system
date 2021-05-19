@@ -997,4 +997,7 @@ class ICT_report {
         return $this->file_name . '_' . date('Ymd', time()) . '.csv';
     }
 	
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		unset($update['$set']['tx.' . $row['stamp']]);
+	}
 }
