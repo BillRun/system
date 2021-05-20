@@ -729,7 +729,7 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 		var servicesValues = {};
 		conditionObject["subscriber"] = {};
 		if (oldParams.plan !== undefined) {
-			fieldsObject = [{"field": "plan", "op": "eq", "value": oldParams.plan}];
+			fieldsObject = [{"field": "plan", "op": "in", "value": oldParams.plan}];
 			conditionObject["subscriber"]["fields"] = fieldsObject;
 		}
 		var serviceObject = {};
