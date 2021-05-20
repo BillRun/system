@@ -89,8 +89,11 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeCommitSubscriberBalance($row, $pricingData, $query, $update, $rate, $calculator) {
-		$update['$addToSet']['balance.groups.VF.dates'] = date('Y-m-d', $row['urt']->sec);
-		$this->balances->update($query, $update, array('w' => 1));
+		foreach($pricingData['arategroups'] as $index => $group) {
+			$path = 'balance.groups.' . $group['name'] . '.dates';
+			$update['$addToSet'][$path] = date('Y-m-d', $row['urt']->sec);
+			$this->balances->update($query, $update, array('w' => 1));
+		}
 	}
 
 	/**
