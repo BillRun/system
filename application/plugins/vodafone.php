@@ -15,8 +15,16 @@
  */
 class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
+	/**
+	 * @var Mongodloid_Collection 
+	 */
+	protected $balances = null;
+	protected $count_days;
+	protected $premium_ir_not_included = null;
+	
 	public function __construct() {
 		$this->transferDaySmsc = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_smsc_transfer_day', "20170301000000");
+		$this->balances = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
@@ -40,7 +48,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!is_null($this->count_days) && empty($this->premium_ir_not_included) && !empty($pricingData['arategroup']) && in_array($pricingData['arategroup'], ['VF', 'IRP_VF_10_DAYS'])) {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
-
+		$this->removeRoamingBalanceTx($row, $balance->getId()->getMongoID());
 		$this->count_days = NULL;
 		$this->limit_count = [];
 		$this->usage_count = [];
@@ -81,7 +89,23 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeCommitSubscriberBalance($row, $pricingData, $query, $update, $rate, $calculator) {
-		$update['$addToSet']['balance.groups.VF.dates'] = date('Y-m-d',$row['urt']);
+		$update['$addToSet']['balance.groups.VF.dates'] = date('Y-m-d', $row['urt']->sec);
+		$this->balances->update($query, $update, array('w' => 1));
 	}
 
+	/**
+	 * removes the transactions from the subscriber's addon balance to save space.
+	 * @param type $row
+	 */
+	protected function removeRoamingBalanceTx($row, $balance_id){
+		$query = array(
+			'_id' => array('$in' => [$balance_id]),
+		);
+		$update = array(
+			'$unset' => array(
+				'tx.' . $row['stamp'] => 1
+			)
+		);
+		$this->balances->update($query, $update);
+	}
 }
