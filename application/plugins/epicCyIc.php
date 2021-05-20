@@ -587,6 +587,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row['rebalance'] = reset($row['rebalance']);
 		}
 	}
+	
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		unset($update['$set']['tx.' . $row['stamp']]);
+		if (count($update['$set']) === 0) {
+			unset($update['$set']);
+		}
+	}
 
 }
 
@@ -992,13 +999,6 @@ class ICT_report {
 
 	public function getFileName() {
 		return $this->file_name . '_' . date('Ymd', time()) . '.csv';
-	}
-
-	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
-		unset($update['$set']['tx.' . $row['stamp']]);
-		if (count($update['$set']) === 0) {
-			unset($update['$set']);
-		}
 	}
 
 }
