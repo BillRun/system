@@ -996,6 +996,9 @@ class ICT_report {
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		unset($update['$set']['tx.' . $row['stamp']]);
+		if (count($update['$set']) === 0) {
+			unset($update['$set']);
+		}
 	}
 
 }
