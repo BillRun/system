@@ -749,6 +749,12 @@ db.discounts.find({"discount_subject":{$exists: true}}).forEach(
 			conditionObject["subscriber"] = [conditionObject["subscriber"]];
 			obj.params.conditions = [conditionObject];
 		}
+
+		if (typeof obj.cycles !== 'undefined') {
+			obj.params.cycles = obj.cycles;
+			delete obj.cycles;
+		}
+
 		delete obj.discount_type;
 		delete obj.discount_subject;
 		delete obj.prorated;
