@@ -105,24 +105,124 @@ application_cron:
     job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/hourly php public/index.php --env {{ app_env }} --cron --type hourly"
     minute: "0"
     hour: "*"
-  - name: Calculate customer
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/customer php public/index.php --env {{ app_env }} --calculate --type customer"
+  - name: Calculate customer 1
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/customer php public/index.php --env {{ app_env }} --calculate --type customer"
     minute: "*/1"
     hour: "*"
-  - name: Calculate rate
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/rate php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+  - name: Calculate customer 1
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/customer php public/index.php --env {{ app_env }} --calculate --type customer"
     minute: "*/1"
     hour: "*"
-  - name: Calculate customer pricing
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/pricing php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+  - name: Calculate customer 1
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/customer php public/index.php --env {{ app_env }} --calculate --type customer"
     minute: "*/1"
     hour: "*"
-  - name: Calculate tax
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/tax php public/index.php --env {{ app_env }} --calculate --type tax"
+  - name: Calculate customer 2
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/customer2 php public/index.php --env {{ app_env }} --calculate --type customer"
     minute: "*/1"
     hour: "*"
-  - name: Unify calculator
-    job: "cd {{app_dir}} && flock -n {{ shared_path }}/cron/unify php public/index.php --env {{ app_env }} --calculate --type unify"
+  - name: Calculate customer 2
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/customer2 php public/index.php --env {{ app_env }} --calculate --type customer"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer 2
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/customer2 php public/index.php --env {{ app_env }} --calculate --type customer"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 1
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/rate php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 1
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/rate php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 1
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/rate php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 2
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/rate2 php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 2
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/rate2 php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate rate 2
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/rate2 php public/index.php --env {{ app_env }} --calculate --type Rate_Usage"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 1
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/pricing php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 1
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/pricing php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 1
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/pricing php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 2
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/pricing2 php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 2
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/pricing2 php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate customer pricing 2
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/pricing2 php public/index.php --env {{ app_env }} --calculate --type customerPricing"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 1
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/tax php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 1
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/tax php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 1
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/tax php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 2
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/tax2 php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 2
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/tax2 php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Calculate tax 2
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/tax2 php public/index.php --env {{ app_env }} --calculate --type tax"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 1
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/unify php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 1
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/unify php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 1
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/unify php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 2
+    job: "cd {{app_dir}} && flock -n {{app_dir}}/locks/unify2 php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 2
+    job: "cd {{app_dir}} && sleep 20 && flock -n {{app_dir}}/locks/unify2 php public/index.php --env {{ app_env }} --calculate --type unify"
+    minute: "*/1"
+    hour: "*"
+  - name: Unify calculator 2
+    job: "cd {{app_dir}} && sleep 40 && flock -n {{app_dir}}/locks/unify2 php public/index.php --env {{ app_env }} --calculate --type unify"
     minute: "*/1"
     hour: "*"
   - name: Rebalance calculator

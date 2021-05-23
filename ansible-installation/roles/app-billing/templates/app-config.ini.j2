@@ -3,7 +3,7 @@ db.port="{{mongos.port}}"
 db.user="{{mongos.user}}"
 db.password={{mongos.password}}
 db.name= {{mongos.db}}
-db.options.authSource=billing
+db.options.authSource=billing_ict
 db.options.context.ssl.local_cert="/etc/pki/tls/private/{{inventory_hostname}}.pem"
 
 #db.options.context.ssl.passphrase=""
@@ -11,3 +11,13 @@ db.options.context.ssl.local_cert="/etc/pki/tls/private/{{inventory_hostname}}.p
 #db.options.context.ssl.allow_self_signed=1
 #db.options.context.ssl.verify_peer=0
 #db.options.context.ssl.verify_peer_name=0
+
+queue.calculators[] = "customer"
+queue.calculators[] = "rate"
+queue.calculators[] = "pricing"
+queue.calculators[] = "tax"
+queue.calculators[] = "unify"
+
+customer.autosort=0
+unify.autosort=0
+unify.calculator.limit=5000

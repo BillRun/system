@@ -4868,10 +4868,12 @@ lastConfig["export_generators"][0] =
 
 var conf = {
     //EPICIC-52
-    'billrun.compute.suggestions.rate_recalculations.enabled': 1
+    'billrun.compute.suggestions.rate_recalculations.enabled': 1,
+	'log.debug.filterParams.priority.v': 5
 
 };
 lastConfig = addToConfig(conf, lastConfig);
+
 
 db.config.insert(lastConfig);
 
@@ -4891,7 +4893,7 @@ db.plans.save({
 	"recurrence" : {
 		"periodicity" : "month"
 	},
-	"upfront" : true,
+	"upfront" : false,
 	"connection_type" : "postpaid",
 	"rates" : [ ],
 	"tax" : [
