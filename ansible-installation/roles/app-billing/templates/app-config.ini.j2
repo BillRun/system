@@ -12,4 +12,12 @@ db.options.context.ssl.local_cert="/etc/pki/tls/private/{{inventory_hostname}}.p
 #db.options.context.ssl.verify_peer=0
 #db.options.context.ssl.verify_peer_name=0
 
+queue.calculators[] = "customer"
+queue.calculators[] = "rate"
+queue.calculators[] = "pricing"
+queue.calculators[] = "tax"
 queue.calculators[] = "unify"
+
+customer.autosort=0
+unify.autosort=0
+unify.calculator.limit=5000
