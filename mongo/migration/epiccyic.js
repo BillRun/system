@@ -3812,7 +3812,8 @@ lastConfig["export_generators"][0] =
 					"field_name" : "vat_code",
 					"title" : "VAT Code",
 					"editable" : true,
-					"display" : true
+					"display" : true,
+					"mandatory" : true
 				}
 			];
 	
