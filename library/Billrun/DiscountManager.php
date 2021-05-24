@@ -1175,7 +1175,7 @@ class Billrun_DiscountManager {
 	}
 	
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
-		$aid = $eligibility['aid';
+		$aid = $eligibility['aid'];
 		$billrun = $this->cycle->key();
 		$sids = [ 0 ];
 		$ret = [];
