@@ -1117,10 +1117,12 @@ class Billrun_DiscountManager {
 		$discountedAmount = 0;
 		
 		if ($type == 'charge' && $discount['type'] == 'monetary') { // monetary charge's subject can only be general
-			$eligibleLine = $this->getChargeEligibleLine($charge, $eligibility, $lines);
+			$eligibleLines = $this->getChargeEligibleLine($charge, $eligibility, $lines);
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
-				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
+				foreach($eligibleLines as $eligibleLine) {
+					$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
+				}
 			}
 			return $cdrs;
 		}
@@ -1173,13 +1175,34 @@ class Billrun_DiscountManager {
 	}
 	
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
-		return [
-			'aid' => $eligibility['aid'],
-			'sid' => 0,
-			'billrun' => $this->cycle->key(),
+		$aid = $eligibility['aid';
+		$billrun = $this->cycle->key();
+		$sids = [ 0 ];
+		$ret = [];
+
+		if (!empty($eligibility['subscribers'])) {
+			$sids = array_keys($eligibility['subscribers']);
+		} 
+
+		foreach($sids as $sid) {
+			foreach ($lines as $line) {
+				if ($line['sid'] == $sid) {
+					$aid = $line['aid'];
+					$billrun = $line['billrun'];
+					break;
+				}
+			}
+
+			$ret[] = [
+				'aid' => $aid,
+				'sid' => $sid,
+				'billrun' => $billrun,
 		];
 	}
 	
+		return $ret;
+	}
+
 	/**
 	 * get line's discount eligibility
 	 * 
