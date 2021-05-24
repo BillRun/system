@@ -40,11 +40,11 @@ class Tests_Ratetest extends UnitTestCase {
 		array('row' => array('stamp' => 'd1', 'aid' => 27, 'sid' => 30, 'type' => 'prefix', 'plan' => 'WITH_NOTHING', 'prefix' => '770', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL' => 'retail')),
 		//Test num 5 d2 test tow fildes with longest prefix 
-		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '972533406999', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '9725123456', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL_A' => 'retail')),
 		//https://billrun.atlassian.net/browse/BRCD-3037
-		array('row' => array('stamp' => 'd21', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '97533406999', 'code' => '12', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
-			'expected' => array('CALL_B' => 'retail')),
+		array('row' => array('stamp' => 'd21', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', "number"=>"8990","vlr"=>"6829", 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('ROAMING_CALLS' => 'retail')),
 		//Test num 6 d3 test Long prefix exists but it's in an expired revision: Take the shorter prefix from an active revision
 		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-04-14 11:00:00+03:00'),
 			'expected' => array('SMS' => 'retail')),

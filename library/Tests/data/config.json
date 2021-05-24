@@ -1092,6 +1092,113 @@
 							"enabled": true
 						},
 						{
+							"file_type": "2longest_prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "prefix"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"prefix"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "number"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.vlr_number",
+												"line_key": "vlr"
+											}
+										]
+									]
+
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "p",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
 							"file_type": "longest_prefix",
 							"parser": {
 								"type": "separator",
@@ -3010,7 +3117,11 @@
 						"closed_cycle_changes": false
 					},
 					"plays": [
-						{ "name": "Default", "enabled": true, "default": true }
+						{
+							"name": "Default",
+							"enabled": true,
+							"default": true
+						}
 					],
 					"lines": {
 						"fields": [
