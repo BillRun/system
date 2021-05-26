@@ -41,11 +41,12 @@ abstract class Billrun_Generator_File {
 	protected $footerToExport = array();
 	
 	protected $params = array();
-	/**
-	 * raw lines from DB that should be exported (before translation)
-	 * @var type 
+	
+    /**
+	 * stamps of the lines from DB that should be exported
+	 * @var array
 	 */
-	protected $rawRows = array();
+    protected $rowsStamps = array();
 	
 	protected $localDir = null;
 	

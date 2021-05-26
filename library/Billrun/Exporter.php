@@ -242,10 +242,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         foreach ($rows as $row) {
             $rawRow = $row->getRawData();
-            $this->rawRows[] = $rawRow;
+            $this->rowsStamps[] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
         }
-        Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+        Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rowsStamps, &$this->rowsToExport, $this));
         return $data;
     }
 
@@ -381,13 +381,9 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * mark the lines as exported
      */
     protected function afterExport() {
-        $stamps = array();
-        foreach ($this->rawRows as $row) {
-            $stamps[] = $row['stamp'];
-        }
         $query = array(
             'stamp' => array(
-                '$in' => $stamps,
+                '$in' => $this->rowsStamps,
             ),
         );
         $update = array(
