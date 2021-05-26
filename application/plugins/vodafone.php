@@ -31,7 +31,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($row['urt'])) {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
-				$this->line_time = date("YmdHis",  $timestamp);	
+				$this->line_time = date("YmdHis",  $timestamp);
 				if (isset($row['roaming'])) {
 					$this->roamingSms = true;
 				}
@@ -109,6 +109,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$sid = $subscriberBalance['sid'];
+		if($this->line_type == 'ggsn' && $subscriberBalance['balance']['groups']['VF']['data']['usagev']  > $rateUsageIncluded) {
+			$groupSelected = FALSE;
+			return;
+		}
 		$line_year = substr($this->line_time, 0, 4);
 		$line_month = substr($this->line_time, 4, 2);
 		$line_day = substr($this->line_time, 6, 2);
