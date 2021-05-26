@@ -1126,7 +1126,8 @@ class Billrun_DiscountManager {
 			}
 			return $cdrs;
 		}
-		
+		//if not a conditional *charge* then ...
+
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
@@ -1180,25 +1181,23 @@ class Billrun_DiscountManager {
 		$sids = [ 0 ];
 		$ret = [];
 
+		//is the  change on a specific  subscriber? because of a plan or a service or something else?
 		if (!empty($eligibility['subscribers'])) {
 			$sids = array_keys($eligibility['subscribers']);
-		} 
+		} else if (!empty($eligibility['plans'])) {
+			$sids = array_keys($eligibility['plans']);
+		} else if (!empty($eligibility['services'])) {
+			$sids = array_keys($eligibility['services']);
+		}
 
+		// these are the subscribers/account that should get charged and it`s assoociated billrun?
 		foreach($sids as $sid) {
-			foreach ($lines as $line) {
-				if ($line['sid'] == $sid) {
-					$aid = $line['aid'];
-					$billrun = $line['billrun'];
-					break;
-				}
-			}
-
 			$ret[] = [
 				'aid' => $aid,
 				'sid' => $sid,
 				'billrun' => $billrun,
-		];
-	}
+			];
+		}
 	
 		return $ret;
 	}
