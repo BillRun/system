@@ -238,7 +238,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function loadRows() {
         $collection = $this->getCollection();
         Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-        $rows = $collection->query($this->query)->cursor();
+        $rows = $collection->query($this->query)->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         $data = array();
         foreach ($rows as $row) {
             $rawRow = $row->getRawData();
@@ -320,7 +320,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         );
 
         $collection = $this->getCollection();
-        $idsCursor = $collection->query($this->query)->project(['_id' => 1])->cursor();
+        $idsCursor = $collection->query($this->query)->project(['_id' => 1])->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         if (!is_null($this->limit)) {
             $idsCursor->limit($this->limit);
         }
