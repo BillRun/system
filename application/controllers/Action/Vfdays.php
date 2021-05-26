@@ -132,7 +132,7 @@ class VfdaysAction extends Action_Base {
 				'count' => array('$sum' => 1),
 			),
 		);
-
+		//Billrun_Factory::log("vfdays nrtrde aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
 		$associatedResults = [];
 		foreach($results as $res) {
@@ -236,6 +236,7 @@ class VfdaysAction extends Action_Base {
 				),
 			);
 			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
+			//Billrun_Factory::log("vfdays tap3 aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
 			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
