@@ -92,12 +92,20 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @var array
      */
     protected $query = array();
+    
+    /**
+     * maximum number of records to fetch (in order to allow pagination)
+     *
+     * @var int
+     */
+    protected $limit = null;
 
     public function __construct($options = array()) {
         parent::__construct($options);
         $this->exportTime = time();
         $this->exportStamp = $this->getExportStamp();
         $this->query = $this->getFiltrationQuery();
+        $this->limit = $this->getLimit();
         $this->logCollection = Billrun_Factory::db()->logCollection();
     }
 
@@ -125,7 +133,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     /**
      * gets collection to load data from DB
      * 
-     * @return string
+     * @return Mongodloid_Collection
      */
     protected function getCollection() {
         if (is_null($this->collection)) {
@@ -160,6 +168,16 @@ class Billrun_Exporter extends Billrun_Generator_File {
             );
         }
         return $query;
+    }
+
+    /**
+     * get limitation for rows to be exported
+     *
+     * @return int
+     */
+    protected function getLimit() {
+        $querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
+        return $querySettings['limit'] ?? null;
     }
 
     /**
@@ -300,6 +318,21 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->query['export_stamp.' . static::$type] = array(
             '$exists' => false,
         );
+
+        $collection = $this->getCollection();
+        $idsCursor = $collection->query($this->query)->project(['_id' => 1])->cursor();
+        if (!is_null($this->limit)) {
+            $idsCursor->limit($this->limit);
+        }
+        
+        $ids = array_map(function($obj) {
+            return $obj->getId()->getMongoID();
+        }, iterator_to_array($idsCursor));
+        
+        $this->query['_id'] = [
+            '$in' => array_values($ids),
+        ];
+
         $update = array(
             '$set' => array(
                 'export_start.' . static::$type => new MongoDate(),
@@ -310,7 +343,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'multiple' => true,
         );
 
-        $collection = $this->getCollection();
         $collection->update($this->query, $update, $options);
         unset($this->query['export_start.' . static::$type]);
         $this->query['export_stamp.' . static::$type] = $this->exportStamp;
