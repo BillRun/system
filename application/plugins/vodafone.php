@@ -109,7 +109,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$sid = $subscriberBalance['sid'];
-		if($this->line_type == 'ggsn' && $subscriberBalance['balance']['groups']['VF']['data']['usagev']  > $rateUsageIncluded) {
+		if($this->line_type == 'ggsn' && isset($subscriberBalance['balance']['groups']['VF']['data']['usagev']) && $subscriberBalance['balance']['groups']['VF']['data']['usagev']  > $rateUsageIncluded) {
 			$groupSelected = FALSE;
 			return;
 		}
