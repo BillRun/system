@@ -55,13 +55,18 @@ class ReceiveAction extends Action_Base {
 				}
 				if (empty($paymentGatewayReceiver)) {
 					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
+					$this->getController()->addOutput("Custom payment gateways receiver action");
 					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
 						if($fileType === $options['file_type']) {
+							$this->getController()->addOutput("Receiving file type : " . $fileType);
 							foreach ($fileTypeSettings['connections'] as $connectionDetails) {
 								$connectionDetails['file_type'] = $fileType;
 								$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
+								$this->getController()->addOutput("Initilazing receiver connection");
 								$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
-								$connection->receive();
+								$this->getController()->addOutput("Receiving files...");
+								$files = $connection->receive();
+								$this->getController()->addOutput("Received " . count($files) . " files");
 							}
 						}
 					}
