@@ -1117,14 +1117,17 @@ class Billrun_DiscountManager {
 		$discountedAmount = 0;
 		
 		if ($type == 'charge' && $discount['type'] == 'monetary') { // monetary charge's subject can only be general
-			$eligibleLine = $this->getChargeEligibleLine($charge, $eligibility, $lines);
+			$eligibleLines = $this->getChargeEligibleLine($charge, $eligibility, $lines);
 			$chargeAmount = Billrun_Util::getIn($discount, 'subject.general.value', 0);
 			if ($chargeAmount > 0) {
-				$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
+				foreach($eligibleLines as $eligibleLine) {
+					$cdrs[] = $this->generateCdr($type, $discount, $chargeAmount, $eligibleLine);
+				}
 			}
 			return $cdrs;
 		}
-		
+		//if not a conditional *charge* then ...
+
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 		
 		foreach ($lines as $line) {
@@ -1173,13 +1176,32 @@ class Billrun_DiscountManager {
 	}
 	
 	protected function getChargeEligibleLine($charge, $eligibility, $lines) {
-		return [
-			'aid' => $eligibility['aid'],
-			'sid' => 0,
-			'billrun' => $this->cycle->key(),
-		];
-	}
+		$aid = $eligibility['aid'];
+		$billrun = $this->cycle->key();
+		$sids = [ 0 ];
+		$ret = [];
+
+		//is the  change on a specific  subscriber? because of a plan or a service or something else?
+		if (!empty($eligibility['subscribers'])) {
+			$sids = array_keys($eligibility['subscribers']);
+		} else if (!empty($eligibility['plans'])) {
+			$sids = array_keys($eligibility['plans']);
+		} else if (!empty($eligibility['services'])) {
+			$sids = array_keys($eligibility['services']);
+		}
+
+		// these are the subscribers/account that should get charged and it`s assoociated billrun?
+		foreach($sids as $sid) {
+			$ret[] = [
+				'aid' => $aid,
+				'sid' => $sid,
+				'billrun' => $billrun,
+			];
+		}
 	
+		return $ret;
+	}
+
 	/**
 	 * get line's discount eligibility
 	 * 
