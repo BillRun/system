@@ -40,6 +40,26 @@ function addToConfig(config, lastConf) {
 	return lastConf;
 }
 
+function addFieldToConfig(lastConf, fieldConf, entityName) {
+    if (typeof lastConf[entityName] === 'undefined') {
+            lastConf[entityName] = {'fields': []};
+    }
+    var fields = lastConf[entityName]['fields'];
+    var found = false;
+    for (var field_key in fields) {
+        if (fields[field_key].field_name === fieldConf.field_name) {
+						fields[field_key] = fieldConf;
+            found = true;
+        }
+    }
+    if (!found) {
+        fields.push(fieldConf);
+    }
+    lastConf[entityName]['fields'] = fields;
+
+    return lastConf;
+}
+
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
@@ -5056,8 +5076,87 @@ var conf = {
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-24: Initial customer custom fields
+var operator = {
+					"field_name" : "operator",
+					"title" : "Operator",
+					"editable" : true,
+					"display" : true,
+					"unique" : true,
+					"mandatory" : true
+				};
+var operator_label = {
+					"field_name" : "operator_label",
+					"title" : "Operator Label",
+					"editable" : true,
+					"display" : true
+				};
+var contact = {
+					"field_name" : "contact",
+					"title" : "Contact",
+					"editable" : true,
+					"display" : true
+				};
+var days_to_settle = {
+					"field_name" : "days_to_settle",
+					"title" : "Days to settle",
+					"editable" : true,
+					"display" : true
+				};
+var ifs_operator_id = {
+					"field_name" : "ifs_operator_id",
+					"title" : "IFS Operator ID",
+					"editable" : true,
+					"display" : true
+				};
+var include_vat = {
+					"field_name" : "include_vat",
+					"title" : "Include VAT",
+					"editable" : true,
+					"display" : true
+				};
+var location = {
+					"field_name" : "location",
+					"title" : "Location",
+					"editable" : true,
+					"display" : true
+				};
+var vat_code = {
+					"field_name" : "vat_code",
+					"title" : "VAT Code",
+					"editable" : true,
+					"display" : true,
+					"mandatory" : true
+				};
+var active = {
+					"field_name" : "active",
+					"title" : "Active",
+					"editable" : true,
+					"display" : true,
+					"description" : " ",
+					"type" : "boolean",
+					"default_value" : false
+				};
+				
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator_label, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], contact, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], days_to_settle, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ifs_operator_id, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], include_vat, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], active, 'account');
 
 db.config.insert(lastConfig);
+
+//EPICIC-61 - set vat_code for inactive operators
+var inactiveCustomers = db.subscribers.distinct("aid", {plan: "TEST"});
+db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$set: {vat_code: "VATLOS"}});
+
+//EpicIC-56 - Set "active" flag for active operators
+activeOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
+db.subscribers.updateMany({type: "account", operator: {$in: activeOperatorLabels}}, {$set: {active: true}});
 
 //Initial plans
 db.plans.save({
