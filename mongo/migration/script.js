@@ -1143,6 +1143,16 @@ function getServiceGroups(service) {
 // ============================= BRCD-2556: END ==============================================================================
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-2791', function () {
+	db.queue.find({
+						calc_time: {$ne: false}
+			}).forEach(function(line){
+			if (typeof line['calc_time'] === "number") {
+				line['calc_time'] = new Date(line['calc_time'] * 1000);
+			}
+			db.queue.save(line);
+		});
+});
 
 // BRCD-2491 convert Import mappers to not use '.' as mongo key
 if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping !== 'undefined' && Array.isArray(lastConfig.import.mapping)) {

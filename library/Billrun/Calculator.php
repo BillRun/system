@@ -349,7 +349,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
 			array('calc_time' => array(
-					'$ne' => true, '$lt' => $orphand_time
+					'$ne' => true, '$lt' => new MongoDate($orphand_time)
 				)),
 		);
 //		$queryData['hint'] = $current_calculator_queue_tag;
@@ -362,7 +362,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$this->signedMicrotime = microtime(true);
+		$this->signedMicrotime = new MongoDate();
 		$update = array(
 			'$set' => array(
 				'calc_time' => $this->signedMicrotime,
