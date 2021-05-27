@@ -312,12 +312,32 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * mark the lines which are about to be exported
      */
     function beforeExport() {
-        $this->query['export_start.' . static::$type] = array(
-            '$exists' => false,
-        );
-        $this->query['export_stamp.' . static::$type] = array(
-            '$exists' => false,
-        );
+        if (empty($this->query['$and'])) {
+            $this->query['$and'] = [];
+        }
+
+        $orphanConfigTime = Billrun_Factory::config()->getConfigValue('export.orphan_wait_time', '6 hours');
+        $exportStartIndex = count($this->query['$and']);
+        $this->query['$and'][] = [
+            '$or' => [
+                [
+                    'export_start.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                    'export_stamp.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                ],
+                [
+                    'exported.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                    'export_start.' . static::$type => [
+                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
+                    ],
+                ],
+            ],
+        ];
 
         $collection = $this->getCollection();
         $idsCursor = $collection->query($this->query)->project(['_id' => 1])->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
@@ -344,7 +364,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
         );
 
         $collection->update($this->query, $update, $options);
-        unset($this->query['export_start.' . static::$type]);
+        unset($this->query['$and'][$exportStartIndex]);
+        if (empty($this->query['$and'])) {
+            unset($this->query['$and']);
+        }
         $this->query['export_stamp.' . static::$type] = $this->exportStamp;
         $this->createLogDB($this->getLogStamp());
     }
