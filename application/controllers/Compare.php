@@ -492,7 +492,7 @@ class CompareController extends Yaf_Controller_Abstract {
 		$working_dir = "/home/shani/Documents/S.D.O.C/BillRun/Files/Docs/Tests/";
 		if (($handle = fopen($working_dir . "billing_crm.201312.diff_result_files.csv", "r")) !== FALSE) {
 			$connection = ssh2_connect('172.29.202.110');
-			ssh2_auth_password($connection, 'shani', 'abhskk7458010');
+			ssh2_auth_password($connection, 'shani', '');
 			$counter = 0;
 			while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
 				error_log(++$counter);
