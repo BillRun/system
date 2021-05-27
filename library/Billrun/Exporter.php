@@ -238,7 +238,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function loadRows() {
         $collection = $this->getCollection();
         Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-        $rows = $collection->query($this->query)->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
+        $rows = $collection->query($this->query)
+            ->hint(['stamp' => 1])
+            ->cursor()
+            ->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         $data = array();
         foreach ($rows as $row) {
             $rawRow = $row->getRawData();
@@ -340,17 +343,18 @@ class Billrun_Exporter extends Billrun_Generator_File {
         ];
 
         $collection = $this->getCollection();
-        $idsCursor = $collection->query($this->query)->project(['_id' => 1])->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
+        $stampsCursor = $collection->query($this->query)->project(['stamp' => 1])->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         if (!is_null($this->limit)) {
-            $idsCursor->limit($this->limit);
+            $stampsCursor->limit($this->limit);
         }
         
-        $ids = array_map(function($obj) {
-            return $obj->getId()->getMongoID();
-        }, iterator_to_array($idsCursor));
+        $stamps = [];
+        foreach ($stampsCursor as $obj) {
+            $stamps[] = $obj->get('stamp');
+        }        
         
-        $this->query['_id'] = [
-            '$in' => array_values($ids),
+        $this->query['stamp'] = [
+            '$in' => $stamps,
         ];
 
         $update = array(
