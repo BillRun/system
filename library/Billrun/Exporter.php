@@ -99,6 +99,13 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @var int
      */
     protected $limit = null;
+    
+    /**
+     * was the file moved (uploaded) successfully
+     *
+     * @var bool
+     */
+    protected $moved = false;
 
     public function __construct($options = array()) {
         parent::__construct($options);
@@ -193,8 +200,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->fileGenerator = new $className($generatorOptions);
         $this->fileGenerator->generate();
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
-        $this->afterExport();
-        Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
     }
 
@@ -407,7 +412,27 @@ class Billrun_Exporter extends Billrun_Generator_File {
     /**
      * mark the lines as exported
      */
-    protected function afterExport() {
+    public function afterExport() {
+        if ($this->shouldMarkAsExported()) {
+            $this->markAsExported();
+        }
+        
+        Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
+    }
+
+    protected function shouldMarkAsExported() {
+        if (!$this->shouldFileBeMoved()) {
+            return true;
+        }
+
+        if ($this->config['exported_after_move'] ?? true) {
+            return $this->moved;
+        }
+
+        return true;
+    }
+
+    protected function markAsExported() {
         $query = array(
             'stamp' => array(
                 '$in' => $this->rowsStamps,
@@ -471,14 +496,19 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public function move() {
+        $this->moved = true;
+        
         foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
                 $sender = Billrun_Sender::getInstance($connection);
                 if (!$sender) {
                     Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($connections, 1), Zend_Log::ERR);
+                    $this->moved = false;
                     continue;
                 }
-                $sender->send($this->getExportFilePath());
+                if (!$sender->send($this->getExportFilePath())) {
+                    $this->moved = false;
+                }
             }
         }
     }
