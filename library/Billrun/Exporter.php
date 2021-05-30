@@ -219,6 +219,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
             }
             return $recordTypeMapping['record_type'];
         }
+        
+        Billrun_Factory::log()->log("Billrun_Exporter::getRecordType - Cannot get record type for line {$row['stamp']}", Zend_Log::ERR);
         return '';
     }
 

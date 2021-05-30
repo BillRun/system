@@ -92,6 +92,11 @@ abstract class Billrun_Generator_File {
 		}else{
 			$dataStructure = Billrun_Util::getIn($this->config, array('generator', 'data_structure'), []);
 		}
+
+        if (empty($dataStructure)) {
+            Billrun_Factory::log()->log("Billrun_Exporter::getDataLine - No data structure for record type {$recordType}", Zend_Log::ERR);
+        }
+
 		return $this->buildLineFromStructure($dataStructure, $params);
     }
 	
