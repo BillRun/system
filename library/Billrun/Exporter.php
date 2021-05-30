@@ -193,6 +193,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @return array list of lines exported
      */
     public function generate() {
+        Billrun_Factory::log()->log("Billrun_Exporter::generate - starting to generate", Zend_Log::INFO);
         Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
         $this->beforeExport();
         $className = $this->getGeneratorClassName();
@@ -244,6 +245,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @return array
      */
     protected function loadRows() {
+        Billrun_Factory::log()->log("Billrun_Exporter::loadRows - starting to load rows", Zend_Log::INFO);
         $collection = $this->getCollection();
         Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
         $rows = $collection->query($this->query)
@@ -251,12 +253,17 @@ class Billrun_Exporter extends Billrun_Generator_File {
             ->hint(['stamp' => 1])
             ->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         $data = array();
+        $count = 0;
         foreach ($rows as $row) {
+            Billrun_Factory::log()->log("\tstart getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::INFO);
             $rawRow = $row->getRawData();
             $this->rowsStamps[] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
+            Billrun_Factory::log()->log("\tdone getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::INFO);
+            $count++;
         }
         Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rowsStamps, &$this->rowsToExport, $this));
+        Billrun_Factory::log()->log("Billrun_Exporter::loadRows - done", Zend_Log::INFO);
         return $data;
     }
 
@@ -500,10 +507,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public function move() {
+        Billrun_Factory::log()->log("Billrun_Exporter::move - start", Zend_Log::INFO);
         $this->moved = true;
         
         foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
+                Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - start", Zend_Log::INFO);
                 $sender = Billrun_Sender::getInstance($connection);
                 if (!$sender) {
                     Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($connections, 1), Zend_Log::ERR);
@@ -511,10 +520,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     continue;
                 }
                 if (!$sender->send($this->getExportFilePath())) {
+                    Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - failed!", Zend_Log::INFO);
                     $this->moved = false;
+                } else {
+                    Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - done", Zend_Log::INFO);
                 }
             }
         }
+        Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
     }
 
     protected function getExportFilePath() {
