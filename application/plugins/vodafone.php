@@ -112,6 +112,14 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 
+		if(	$this->line_type == 'tap3' && $usageType == 'data' &&
+			isset($subscriberBalance['balance']['groups']['VF']['data']['usagev']) &&
+			$subscriberBalance['balance']['groups']['VF']['data']['usagev']  > $rateUsageIncluded) {
+
+			$groupSelected = FALSE;
+			return;
+		}
+
 		$this->count_days = $this->getSidDaysCount($subscriberBalance['sid'], $limits, $plan, $groupSelected);
 		$this->limit_count['VF'] = $limits['days'];
 		if ($this->count_days <= $limits['days']) {
