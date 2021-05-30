@@ -197,6 +197,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->beforeExport();
         $className = $this->getGeneratorClassName();
         $generatorOptions = $this->buildGeneratorOptions();
+        $this->createLogDB($this->getLogStamp());
         $this->fileGenerator = new $className($generatorOptions);
         $this->fileGenerator->generate();
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
@@ -302,6 +303,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
             'export_start_time' => new MongoDate(),
+            'file_name' => $this->getFilename(),
+            'path' => $this->getExportFilePath(),
         );
         $logData = array_merge($basicLogData, $data);
 
@@ -378,7 +381,6 @@ class Billrun_Exporter extends Billrun_Generator_File {
             unset($this->query['$and']);
         }
         $this->query['export_stamp.' . static::$type] = $this->exportStamp;
-        $this->createLogDB($this->getLogStamp());
     }
 
     /**
