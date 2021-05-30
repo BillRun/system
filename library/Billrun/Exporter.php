@@ -244,8 +244,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $collection = $this->getCollection();
         Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
         $rows = $collection->query($this->query)
-            ->hint(['stamp' => 1])
             ->cursor()
+            ->hint(['stamp' => 1])
             ->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         $data = array();
         foreach ($rows as $row) {
