@@ -4946,12 +4946,11 @@ var vat_code = {
 					"display" : true,
 					"mandatory" : true
 				};
-var active = {
-					"field_name" : "active",
-					"title" : "Active operator",
+var billable = {
+					"field_name" : "billable",
+					"title" : "Billable",
 					"editable" : true,
 					"display" : true,
-					"description" : " If an operator is active the operator will receive an invoice",
 					"type" : "boolean",
 					"default_value" : false
 				};
@@ -4964,7 +4963,7 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ifs_oper
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], include_vat, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
-lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], active, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
 
 db.config.insert(lastConfig);
 
@@ -4972,9 +4971,9 @@ db.config.insert(lastConfig);
 var inactiveCustomers = db.subscribers.distinct("aid", {plan: "TEST"});
 db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$set: {vat_code: "VATLOS"}});
 
-//EpicIC-56 - Set "active" flag for active operators
-activeOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
-db.subscribers.updateMany({type: "account", operator: {$in: activeOperatorLabels}}, {$set: {active: true}});
+//EpicIC-56 - Set "billable" flag for active operators
+billableOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
+db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
 
 //Initial plans
 db.plans.save({
