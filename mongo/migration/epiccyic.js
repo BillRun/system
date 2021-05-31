@@ -4948,10 +4948,10 @@ var vat_code = {
 				};
 var active = {
 					"field_name" : "active",
-					"title" : "Active",
+					"title" : "Active operator",
 					"editable" : true,
 					"display" : true,
-					"description" : " ",
+					"description" : " If an operator is active the operator will receive an invoice",
 					"type" : "boolean",
 					"default_value" : false
 				};
