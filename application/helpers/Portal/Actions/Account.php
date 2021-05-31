@@ -32,7 +32,7 @@ class Portal_Actions_Account extends Portal_Actions {
     public function get($params = []) {
 		$query = $params['query'] ?? [];
 		if (empty($query)) {
-			throw new Portal_Exception('missing_query');
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
 		}
 		$billapiParams = $this->getBillApiParams('uniqueget', $query);
 		$res = $this->runBillApi($billapiParams);
@@ -53,7 +53,7 @@ class Portal_Actions_Account extends Portal_Actions {
     public function update($params = []) {
 		$query = $params['query'] ?? [];
 		if (empty($query)) {
-			throw new Portal_Exception('missing_query');
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
 		}
 
 		if (empty($query['effective_date'])) {
@@ -62,7 +62,7 @@ class Portal_Actions_Account extends Portal_Actions {
 		
 		$update = $params['update'] ?? [];
 		if (empty($update)) {
-			throw new Portal_Exception('missing_update');
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "update"');
 		}
 
 		if (empty($update['from'])) {
@@ -77,6 +77,15 @@ class Portal_Actions_Account extends Portal_Actions {
 
 		$account = $this->get($params);
 		return $this->getDetails($account);
+	}
+	
+	/**
+	 * get account invoices
+	 *
+	 * @param  array $params
+	 * @return array
+	 */
+	public function getInvoices($params = []) {
 	}
 	
 	/**
@@ -147,9 +156,10 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * Authenticate the request.
 	 * Currently, all actions are on the account which logged-in so no need for further authentication
 	 *
+	 * @param  array $params
 	 * @return boolean
 	 */
-    protected function authenticate() {
+    protected function authenticate($params = []) {
 		return true;
 	}
 
