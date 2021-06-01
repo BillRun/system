@@ -265,7 +265,7 @@
 							"from": 0,
 							"to": "UNLIMITED",
 							"price": 100
-						}
+				}
 					],
 					"description": "not taxable service",
 					"prorated": true,
