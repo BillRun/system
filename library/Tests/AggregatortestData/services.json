@@ -609,6 +609,98 @@
 					],
 					"to": "time*2170-01-12T15:49:02Z",
 					"creation_time": "time*2018-01-13T00:00:00Z"
+				},
+				{
+					"from": "time*2020-04-30T22:00:00Z",
+					"name": "DATA_ONLY_UNLIMITED",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 0
+						}
+					],
+					"description": "Data Only Unlimited",
+					"include": {
+						"groups": {
+							"DATA_ONLY_UNLIMITED_GROUP": {
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"MOB_DATA"
+								],
+								"value": "UNLIMITED",
+								"usage_types": {
+									"data": {
+										"unit": "byte"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"category": "",
+					"for_discount_only": "1",
+					"reference_code": "DATA_ONLY_UNLIMITED",
+					"description_fr": "",
+					"description_en": "",
+					"description_de": "",
+					"title_fr": "Pack de données CH",
+					"title_en": "",
+					"title_de": "",
+					"to": "time*2169-05-25T17:00:00Z",
+					"creation_time": "time*2020-04-30T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				}
+				, {
+					"from": "time*2017-12-31T23:00:00Z",
+					"name": "DISCOUNT_A_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "0"
+						}
+					],
+					"description": "Service discount",
+					"prorated": true,
+					"category": "",
+					"for_discount_only": "1",
+					"to": "time*2167-01-17T14:38:00Z",
+					"creation_time": "time*2018-01-15T23:00:00Z",
+					"reference_code": "SERVICE_DISCOUNT",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				}, {
+					"from": "time*2019-02-16T22:00:00Z",
+					"name": "TERMINATION",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": 100
+						}
+					],
+					"description": "termination",
+					"prorated": false,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-02-16T12:58:47Z",
+					"creation_time": "time*2019-02-16T22:00:00Z"
 				}
 
 
