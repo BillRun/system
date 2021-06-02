@@ -552,7 +552,7 @@
 					"to": "time*2168-07-30T12:35:34Z",
 					"creation_time": "time*2018-07-31T00:00:00Z"
 				},
-						{
+				{
 
 					"from": "time*2018-12-31T22:00:00Z",
 					"name": "TTT2",
@@ -590,7 +590,7 @@
 							"price": 44.56824512534819,
 							"from": 0,
 							"to": "UNLIMITED"
-				}
+						}
 					],
 					"description": "PLAN_FD",
 					"recurrence": {
@@ -614,7 +614,7 @@
 					"prorated_end": true,
 					"prorated_termination": true
 				},
-{
+				{
 
 					"from": "time*2019-11-30T22:00:00Z",
 					"name": "BROADBAND_HOME_BOX_1",
@@ -677,7 +677,7 @@
 					"management_reporting": "",
 					"object_id": ""
 				},
-{
+				{
 					"OBJID": "5ea1a2d4cd4acc4e0d336bc3",
 					"from": "time*2018-04-24T00:00:00Z",
 					"name": "NOT_TAXABLE_PLAN",
@@ -707,7 +707,7 @@
 					"to": "time*2169-04-23T14:14:44Z",
 					"creation_time": "time*2018-04-24T00:00:00Z"
 				},
-{
+				{
 					"from": "time*2018-01-12T22:00:00Z",
 					"name": "PRICELEVELS",
 					"price": [
@@ -796,7 +796,7 @@
 					"prorated_end": true,
 					"prorated_termination": true
 				},
-{
+				{
 
 					"from": "time*2018-01-13T00:00:00Z",
 					"name": "AZ",
@@ -825,7 +825,38 @@
 					"prorated_termination": true,
 					"to": "time*2170-01-12T14:04:21Z",
 					"creation_time": "time*2018-01-13T00:00:00Z"
+				},
+				{
+					"from": "time*2019-06-03T00:00:00Z",
+					"from": "time*2019-06-03T00:00:00Z",
+					"name": "CONDITIONAL_CHARGES_PLAN",
+					"price": [
+						{
+							"price": 100,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Conditional Charges",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-06-02T15:54:52Z",
+					"creation_time": "time*2019-06-03T00:00:00Z"
 				}
+
 
 
 
