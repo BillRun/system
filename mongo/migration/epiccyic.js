@@ -3320,7 +3320,7 @@ lastConfig["export_generators"][0] =
 							"format": "",
 							"path": 1,
 							"linked_entity": {
-								"field_name": "uf.EVENT_START_TIME",
+								"field_name": "uf.USER_SUMMARISATION",
 								"entity": "line"
 							}
 						},
@@ -3329,7 +3329,7 @@ lastConfig["export_generators"][0] =
 							"type": "string",
 							"path": 2,
 							"linked_entity": {
-								"field_name": "uf.USER_SUMMARISATION",
+								"field_name": "uf.EVENT_START_TIME",
 								"entity": "line"
 							}
 						},
@@ -4964,6 +4964,10 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], include_
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
+
+//EPICIC-66: user_summ/event_start_time position error in export generator
+lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
+lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
 
 db.config.insert(lastConfig);
 
