@@ -244,7 +244,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
 		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0, 1);
 		$row->setRawData($current);
-		$this->setOperator($row, $current, $type, $calculator);
+		$setOperator = $this->setOperator($row, $current, $type, $calculator);
+		if(!$setOperator) {
+			return [$current];
+		}
 		$row->setRawData($current);
 
 		//$row->setRawData(setParameter($current, ["operator", "poin"], $operator_entity));
@@ -466,6 +469,9 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row->setRawData($current);
 		if ($current["cf"]["call_direction"] != "O") {
 			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			if(!$operator_entity) {
+				return false;
+			}
 			$current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TO") {
@@ -476,6 +482,9 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if ($current["cf"]["call_direction"] != "I") {
 			$operator_entity = $this->getParameterProduct($type, "parameter_operator", $row, $calculator);
+			if(!$operator_entity) {
+				return false;
+			}
 			$current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TI") {
@@ -483,6 +492,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 		}
+		return true;
 	}
 
 	public function findLongestPrefix($num, $productPrefixes) {
