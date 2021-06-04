@@ -291,6 +291,7 @@ class Billrun_Utils_Time {
 	 * 
 	 * @param unixtimestamp $date1
 	 * @param unixtimestamp $date2
+	 * @param string $roundingType
 	 * @return int
 	 */
 	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil') {
@@ -299,6 +300,8 @@ class Billrun_Utils_Time {
 		} else {
 			$datediff = $date2 - $date1;
 		}
+		
+		
 		$days = $datediff / (60 * 60 * 24);
 		switch ($roundingType){
 			case 'floor':

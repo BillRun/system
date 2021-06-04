@@ -2652,7 +2652,7 @@
 					"activation_date": "time*2020-03-25T20:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				}, {
-
+					
 					"aid": 187501,
 					"firstname": "יוסיggj",
 					"lastname": "יוסף",
@@ -2714,8 +2714,7 @@
 					"activation_date": "time*2020-06-30T21:00:00Z",
 					"plan_deactivation": "time*2020-07-30T21:00:00Z"
 				},
-
-				{
+{
 					"aid": 2000000784,
 					"type": "account",
 					"from": "time*2020-12-24T14:57:49Z",
@@ -2806,7 +2805,140 @@
 					"portability_code": "P7RZI5DZ",
 					"discounts": null
 				},
+
+{					"aid": 230,
+					"sid": 80018,
+					"plan": "PLAN_FD",
+					"play": "MOBILE",
+					"firstname": "case1",
+					"lastname": "case1",
+					"address": "case1",
+					"extension": "case1",
+					"NDCSN": "case1",
+					"IMSI": "case1",
+					"manny_ref": "case1",
+					"type": "subscriber",
+					"plan_activation": "time*2020-11-06T13:33:00Z",
+					"to": "time*2169-11-06T10:23:55Z",
+					"deactivation_date": "time*2169-11-06T10:23:55Z",
+					"from": "time*2020-11-06T13:33:00Z",
+					"creation_time": "time*2020-11-06T10:23:55.985Z",
+					"activation_date": "time*2020-11-06T10:23:55.985Z",
+					"plan_deactivation": "time*2169-11-06T10:23:55Z",
+					"services": [
+						{
+							"from": "time*2020-11-06T10:41:09Z",
+							"name": "DISCOUNT_A_SERVICE",
+							"to": "time*2169-11-06T10:23:55Z",
+							"service_id": "1682606115279624",
+							"creation_time": "time*2020-11-06T10:23:56.807Z"
+						}
+					]
+				},
 				{
+
+					"aid": 230,
+					"firstname": "case1",
+					"lastname": "case1",
+					"email": "case1",
+					"street": "case1",
+					"city": "case1",
+					"zip_code": "case1",
+					"country": "case1",
+					"manny_ref": "case1",
+					"ban": "case1",
+					"dp": "case1",
+					"operator_code": "case1",
+					"type": "account",
+					"from": "time*2018-01-31T11:04:47.868Z",
+					"to": "time*2167-01-31T11:04:47Z",
+					"creation_time": "time*2018-01-31T11:04:47.868Z"
+				},
+				{
+					"from": "time*2017-12-31T22:00:00Z",
+					"aid": 399,
+					"firstname": "yossi",
+					"lastname": "yossi",
+					"email": "yossi",
+					"country": "yossi",
+					"address": "yossi",
+					"zip_code": "yossi",
+					"salutation": "yossi",
+					"type": "account",
+					"to": "time*2167-05-02T16:21:37Z",
+					"creation_time": "time*2018-05-01T21:00:00Z"
+				},
+				{
+					"from": "time*2017-12-31T22:00:00Z",
+					"aid": 399,
+					"sid": 499,
+					"plan": "FREE_WITH_NOTHING",
+					"firstname": "a",
+					"lastname": "a",
+					"address": "a",
+					"country": "a",
+					"type": "subscriber",
+					"plan_activation": "time*2017-12-31T22:00:00Z",
+					"to": "time*2021-02-16T22:00:00Z",
+					"creation_time": "time*2017-12-31T22:00:00Z",
+					"activation_date": "time*2017-12-31T22:00:00Z",
+					"plan_deactivation": "time*2021-02-24T22:00:00Z",
+					"deactivation_date": "time*2021-02-24T22:00:00Z"
+				},
+				{
+					"from": "time*2021-02-16T22:00:00Z",
+					"aid": 399,
+					"sid": 499,
+					"plan": "FREE_WITH_NOTHING",
+					"firstname": "a",
+					"lastname": "a",
+					"address": "a",
+					"country": "a",
+					"type": "subscriber",
+					"plan_activation": "time*2017-12-31T22:00:00Z",
+					"to": "time*2021-02-24T22:00:00Z",
+					"creation_time": "time*2017-12-31T22:00:00Z",
+					"activation_date": "time*2017-12-31T22:00:00Z",
+					"plan_deactivation": "time*2021-02-24T22:00:00Z",
+					"deactivation_date": "time*2021-02-24T22:00:00Z",
+					"services": [
+						{
+							"name": "TERMINATION",
+							"from": "time*2021-02-16T22:00:00Z",
+							"to": "time*2021-02-24T22:00:00Z",
+							"service_id": 1691857127426353,
+							"creation_time": "time*2021-02-16T13:04:49.477Z"
+						}
+			]
+},
+{
+					"sid": 291,
+					"aid": 2000000785,
+					"type": "subscriber",
+					"from": "time*2020-12-24T14:57:49Z",
+					"to": "time*2120-12-24T14:57:49Z",
+					"plan": "BROADBAND_HOME_BOX_1",
+					"services": [
+
+					],
+					"play": "mobile",
+					"firstname": "Legacy",
+					"lastname": "First",
+					"address": null,
+					"activation_date": "time*2020-12-24T14:57:49Z",
+					"deactivation_date": null,
+					"plan_activation": "time*2020-12-24T14:57:49Z",
+					"plan_deactivation": null,
+					"creation_time": "time*2020-12-24T14:57:49Z",
+					"former_plan": null,
+					"imsi": [
+						"236"
+					],
+					"sub_number": "35790000495",
+					"portability_code": "P7RZI5DZ",
+					"discounts": null
+				},
+{
 					"aid": 2000000785,
 					"type": "account",
 					"from": "time*2020-12-24T14:57:49Z",
@@ -2843,33 +2975,59 @@
 						}
 					]
 				},
-				{
-					"sid": 291,
-					"aid": 2000000785,
-					"type": "subscriber",
-					"from": "time*2020-12-24T14:57:49Z",
-					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BROADBAND_HOME_BOX_1",
-					"services": [
+{
 
+					"from": "time*2019-12-10T00:00:00Z",
+					"aid": 725,
+					"firstname": "yossi",
+					"lastname": "test",
+					"email": "test@gmail.com",
+					"country": "Israel",
+					"address": "hshalom 7",
+					"zip_code": "123ab",
+					"payment_gateway": "",
+					"salutation": "",
+					"invoice_shipping_method": "email",
+					"type": "account",
+					"to": "time*2170-01-12T14:04:38Z",
+					"creation_time": "time*2021-01-12T00:00:00Z"
+				},
+{
+
+					"from": "time*2019-12-10T00:00:00Z",
+					"aid": 725,
+					"sid": 825,
+					"plan": "AZ",
+					"services": [
+						{
+							"name": "ABCD",
+							"from": "time*2019-12-10T00:00:00Z",
+							"to": "time*2021-01-15T14:16:38Z",
+							"service_id": "1688698397218186",
+							"creation_time": "time*2020-01-12T16:18:09.611Z"
+						},
+						{
+							"name": "EFG",
+							"from": "time*2019-12-10T00:00:00Z",
+							"to": "time*2021-01-17T14:16:38Z",
+							"service_id": "1688698397218413",
+							"creation_time": "time*2020-01-12T16:18:09.611Z"
+						}
 					],
-					"play": "mobile",
-					"firstname": "Legacy",
-					"lastname": "First",
-					"address": null,
-					"activation_date": "time*2020-12-24T14:57:49Z",
-					"deactivation_date": null,
-					"plan_activation": "time*2020-12-24T14:57:49Z",
-					"plan_deactivation": null,
-					"creation_time": "time*2020-12-24T14:57:49Z",
-					"former_plan": null,
-					"imsi": [
-						"236"
-					],
-					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
-					"discounts": null
-				}, {
+					"play": "Default",
+					"firstname": "yossi",
+					"lastname": "test",
+					"address": "hshalom 7",
+					"country": "Israel",
+					"type": "subscriber",
+					"plan_activation": "time*2019-12-10T00:00:00Z",
+					"to": "time*2170-01-12T14:16:38Z",
+					"deactivation_date": "time*2170-01-12T14:16:38Z",
+					"creation_time": "time*2019-12-10T00:00:00Z",
+					"activation_date": "time*2019-12-10T00:00:00Z",
+					"plan_deactivation": "time*2170-01-12T14:16:38Z"
+				},
+{
 					"from": "time*2019-12-09T22:00:00Z",
 					"aid": 17975,
 					"invoice_language": "gr_CY",
@@ -2908,93 +3066,8 @@
 					"type": "account",
 					"to": "time*2170-01-12T13:57:52Z",
 					"creation_time": "time*2021-01-11T22:00:00Z"
-				},
-				{
-					"from": "time*2019-12-09T22:00:00Z",
-					"aid": 17975,
-					"sid": 17976,
-					"plan": "PRICELEVELS",
-					"services": [],
-					"play": "Default",
-					"firstname": "yossi",
-					"lastname": "test",
-					"address": "hshalom 7",
-					"country": "Israel",
-					"imsi": [],
-					"title": "",
-					"name": "yossi test",
-					"last_changed": "",
-					"last_charged": "",
-					"status": "",
-					"card_number": "",
-					"icc_number": [],
-					"sub_number": "",
-					"contract_number": "",
-					"contract_dates": [],
-					"type": "subscriber",
-					"plan_activation": "time*2019-12-09T22:00:00Z",
-					"to": "time*2170-01-12T13:58:54Z",
-					"deactivation_date": "time*2170-01-12T13:58:54Z",
-					"creation_time": "time*2019-12-09T22:00:00Z",
-					"activation_date": "time*2019-12-09T22:00:00Z",
-					"plan_deactivation": "time*2170-01-12T13:58:54Z"
-				},
-				{
-
-					"from": "time*2019-12-10T00:00:00Z",
-					"aid": 725,
-					"firstname": "yossi",
-					"lastname": "test",
-					"email": "test@gmail.com",
-					"country": "Israel",
-					"address": "hshalom 7",
-					"zip_code": "123ab",
-					"payment_gateway": "",
-					"salutation": "",
-					"invoice_shipping_method": "email",
-					"type": "account",
-					"to": "time*2170-01-12T14:04:38Z",
-					"creation_time": "time*2021-01-12T00:00:00Z"
-				},
-				{
-
-					"from": "time*2019-12-10T00:00:00Z",
-					"aid": 725,
-					"sid": 825,
-					"plan": "AZ",
-					"services": [
-						{
-							"name": "ABCD",
-							"from": "time*2019-12-10T00:00:00Z",
-							"to": "time*2021-01-15T14:16:38Z",
-							"service_id": "1688698397218186",
-							"creation_time": "time*2020-01-12T16:18:09.611Z"
-						},
-						{
-							"name": "EFG",
-							"from": "time*2019-12-10T00:00:00Z",
-							"to": "time*2021-01-17T14:16:38Z",
-							"service_id": "1688698397218413",
-							"creation_time": "time*2020-01-12T16:18:09.611Z"
-						}
-					],
-					"play": "Default",
-					"firstname": "yossi",
-					"lastname": "test",
-					"address": "hshalom 7",
-					"country": "Israel",
-					"type": "subscriber",
-					"plan_activation": "time*2019-12-10T00:00:00Z",
-					"to": "time*2170-01-12T14:16:38Z",
-					"deactivation_date": "time*2170-01-12T14:16:38Z",
-					"creation_time": "time*2019-12-10T00:00:00Z",
-					"activation_date": "time*2019-12-10T00:00:00Z",
-					"plan_deactivation": "time*2170-01-12T14:16:38Z"
 				}
-
-
 
 			]
 }
-
 
