@@ -44,6 +44,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalSubscriberDetailsRequest', array(&$externalQuery, &$this));
 		$results = json_decode(Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
 														 Zend_Http_Client::POST,
@@ -52,6 +53,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalSubscriberDetailsRequest', array(&$results));
 		return array_reduce($results, function($acc, $currentSub) {
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
@@ -87,5 +89,12 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		return $query;
 	}
 	
-}
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
+	}
 
+}
