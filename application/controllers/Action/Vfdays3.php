@@ -85,6 +85,7 @@ class Vfdays3Action extends Action_Base {
 							4
 						)
 					),
+					'plan' => '$plan',
 					'sid' => '$sid'
 				),
 			),
@@ -97,7 +98,10 @@ class Vfdays3Action extends Action_Base {
 		);
 		$elements[] = array(
 			'$group' => array(
-				'_id' => '$_id.sid',
+				'_id' => [
+					'sid'=>'$_id.sid',
+					'plan'=>'$_id.plan'
+					],
 				'days_num' => array(
 					'$sum' => 1,
 				),
@@ -116,7 +120,7 @@ class Vfdays3Action extends Action_Base {
 		$elements[] = array(
 			'$project' => array(
 				'_id' => 0,
-				'sid' => '$_id',
+				'sid' => '$_id.sid',
 				'count_days' => '$days_num',
 				'last_date' => '$last_day',
 				'min_days' => array(

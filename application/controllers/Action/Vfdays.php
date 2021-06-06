@@ -115,6 +115,7 @@ class VfdaysAction extends Action_Base {
 		$group = array(
 			'$group' => array(
 				'_id' => [
+							'plan'=> '$plan',
 							'date' =>['$substr' => [
 								'$record_opening_time',
 								4,
@@ -128,12 +129,26 @@ class VfdaysAction extends Action_Base {
 
 		$group2 = array(
 			'$group' => array(
-				'_id' => '$_id.arategroup',
+				'_id' => [
+						'arategroup' =>'$_id.arategroup',
+						'plan'=>'$_id.plan'
+					],
+				'max_date' => ['$max'=>'$_id.date' ],
 				'count' => array('$sum' => 1),
 			),
 		);
-		//Billrun_Factory::log("vfdays nrtrde aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
+		$sortPlans = [
+				'$sort' => ['max_date'=> -1]
+			];
+		$limitRes = ['$limit'=> 1];
+		$group3 = array(
+			'$group' => array(
+				'_id' => '$_id.arategroup',
+				'count' => array('$sum' => '$count'),
+			),
+		);
+		Billrun_Factory::log("vfdays nrtrde aggregate query : "+json_encode([$match1, $match2, $group, $group2,$sortPlans,$limitRes,$group3]));
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2,$sortPlans,$limitRes,$group3);
 		$associatedResults = [];
 		foreach($results as $res) {
 			$associatedResults[$res['_id']] = $res;
@@ -217,6 +232,7 @@ class VfdaysAction extends Action_Base {
 			$group = array(
 				'$group' => array(
 					'_id' => array(
+						'plan'=> '$plan',
 						'day_key' => array(
 							'$dayOfMonth' => array('$isr_time'),
 						),
@@ -229,6 +245,22 @@ class VfdaysAction extends Action_Base {
 			);
 			$group2 = array(
 				'$group' => array(
+					'_id' => [
+						'arategroup' =>'$_id.arategroup',
+						'plan'=>'$_id.plan'
+					],
+					'max_date' => ['$max'=>['$concat'=>['$_id.month_key','$_id.day_key']] ],
+					'day_sum' => array(
+						'$sum' => 1,
+					),
+				),
+			);
+			$sortPlans = [
+				'$sort' => ['max_date'=> -1]
+			];
+			$limitRes = ['$limit'=> 1];
+			$group3 = array(
+				'$group' => array(
 					'_id' => '$_id.arategroup',
 					'day_sum' => array(
 						'$sum' => 1,
@@ -236,8 +268,8 @@ class VfdaysAction extends Action_Base {
 				),
 			);
 			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-			//Billrun_Factory::log("vfdays tap3 aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
-			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2);
+			Billrun_Factory::log("vfdays tap3 aggregate query : "+json_encode([$match1, $match2, $group, $group2,$sortPlans,$limitRes,$group3]));
+			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2,$sortPlans,$limitRes,$group3);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			Billrun_Factory::log('We will skip the billing fetch for this call.', Zend_Log::WARN);

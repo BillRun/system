@@ -18,7 +18,7 @@ class Subscriber_UsageAction extends ApiAction {
 
 	public function execute() {
 		$body = json_decode(file_get_contents('php://input'),true);
-		
+
 		$sid = $body["sid"];
 		if(empty($sid)) {
 			$sid = $body["subscriber_id"];
@@ -91,7 +91,7 @@ class Subscriber_UsageAction extends ApiAction {
 // 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 // 		}
 
-
+		$vfMax = 0;
 		$sortedOffers = $params['offers'];
 		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
 		$lastOffer = reset($sortedOffers);
@@ -138,6 +138,9 @@ class Subscriber_UsageAction extends ApiAction {
 					$nationalPackages[$plan['name']] += 1;
 				}
 			}
+			if(isset($plan['includes']['groups']['VF'])) {
+				$vfMax = max($vfMax,$plan['includes']['groups']['VF']['limits']['days']);
+			}
 		}
 		//go though the  subscribers addons packages
 		$this->getActualUsagesOfPackages($packages, $mainBalances, $actualUsage);
@@ -152,7 +155,9 @@ class Subscriber_UsageAction extends ApiAction {
 // 		}
 // 		foreach($actualNationalUsage as  $type => $usageVal) {
 // 			$output['usage_israel'][$type.'_usage'] = $usageVal;
-// 		}
+		if($vfMax) {
+			$maxUsage['days'] += $vfMax;
+		}
 		foreach($maxUsage as  $type => $usageVal) {
 			$output['usage_abroad'][$type.'_usage'] = 0;
 			$output['usage_abroad'][$type.'_max'] = $usageVal;
@@ -160,8 +165,9 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($actualUsage as  $type => $usageVal) {
 			$output['usage_abroad'][$type.'_usage'] = $usageVal;
 		}
-
-
+		//days_max  will be set by  the getMaxUsagesOfPackages but there is no balance logic for usage so will query the lines
+		$vfResults = $this->countDays($params['sid'], date('Y',$startTime) );
+		$output['usage_abroad']['days_usage'] = 0 + @$vfResults['VF']['count'] + @$vfResults['IRP_VF_10_DAYS']['count'];
 
 		//do some beutyfing of the data
 		return $output;
@@ -183,6 +189,7 @@ class Subscriber_UsageAction extends ApiAction {
 	protected function getMaxUsagesOfPackages($addons, &$packages, &$maxUsage, $plan) {
 		$vfMapping = ['data' => 6442451000];
 		foreach($addons as  $addon) {
+			Billrun_Factory::log($addon['service_name']);
 			// for each national group / package
 			if(!empty($plan['include']['groups'][$addon['service_name']])) {
 					foreach($plan['include']['groups'][$addon['service_name']] as $type => $value) {
@@ -198,6 +205,10 @@ class Subscriber_UsageAction extends ApiAction {
 						}
 						@$packages[$addon['service_name']] += 1 ;
 					}
+					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days'])) {
+						@$maxUsage['days'] += $plan['include']['groups'][$addon['service_name']]['limits']['days'];
+					}
+
 			}
 		}
 	}
@@ -231,5 +242,62 @@ class Subscriber_UsageAction extends ApiAction {
 		}
 		return $generatedAddons;
 
+	}
+
+		/**
+	 * for subscriber with LARGE_PREIUM (?KOSHER) counts the number of days he used he's phone abroad
+	 * in the current year based on fraud lines
+	 * @param type $sid
+	 * @return number of days
+	 */
+	public function countDays($sid, $year = null) {
+
+		$vfrateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
+
+		$match1 = array(
+			'$match' => array(
+				'$or' => array(
+					array('subscriber_id' => $sid),
+					array('sid' => $sid),
+				)
+			),
+		);
+		$match2 = array(
+			'$match' => array(
+				'$or' => array(
+					array('arategroup' => [ '$in' => $vfrateGroups] )
+				),
+				'record_opening_time' => new MongoRegex("/^$year/")
+			),
+		);
+// max_datetime
+
+		$group = array(
+			'$group' => array(
+				'_id' => [
+							'date' =>['$substr' => [
+								'$record_opening_time',
+								4,
+								4
+							]],
+							'arategroup' => '$arategroup'
+				],
+				'count' => array('$sum' => 1),
+			),
+		);
+
+		$group2 = array(
+			'$group' => array(
+				'_id' => '$_id.arategroup',
+				'count' => array('$sum' => 1),
+			),
+		);
+		//Billrun_Factory::log("vfdays nrtrde aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
+		$associatedResults = [];
+		foreach($results as $res) {
+			$associatedResults[$res['_id']] = $res;
+		}
+		return $associatedResults;
 	}
 }
