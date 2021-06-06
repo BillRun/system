@@ -342,8 +342,8 @@
 						,{
 
 			"from": "time*2020-04-30T22:00:00Z",
-			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_1",
-			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"key": "BOX1",
+			"description": "Box",
 			"params": {
 				"min_subscribers": "",
 				"max_subscribers": "",
@@ -373,7 +373,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_2"
+											"BOX_2"
 										]
 									}
 								]
@@ -388,7 +388,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_1"
+											"BOX_1"
 										]
 									}
 								],
@@ -418,7 +418,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_4"
+											"BOX_4"
 										]
 									}
 								],
@@ -448,7 +448,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_3"
+											"BOX_3"
 										]
 									}
 								],
@@ -475,17 +475,9 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 12.60504202
-					},
-					"BROADBAND_HOME_BOX_3": {
+				
+					"BOX_1": {
 						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_2": {
-						"value": 12.60504202
 					}
 				}
 			},
@@ -503,7 +495,7 @@
 		{
 
 			"from": "time*2020-11-23T22:00:00Z",
-			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_2",
+			"key": "BOX_2",
 			"description": "Monthly Cycle Discount on Broadband Home Box",
 			"params": {
 				"min_subscribers": "",
@@ -511,36 +503,7 @@
 				"publication_end_date": "time*2038-06-01T00:00:00Z",
 				"publication_start_date": "time*2020-05-01T00:00:00Z",
 				"conditions": [
-					{
-						"subscriber": [
-							{
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								},
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_2"
-										]
-									}
-								]
-							}
-						]
-					},
+		
 					{
 						"subscriber": [
 							{
@@ -549,67 +512,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_1"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_4"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_3"
+											"BOX_1"
 										]
 									}
 								],
@@ -636,16 +539,8 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_3": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_2": {
+				
+					"BOX_1": {
 						"value": 8.394957983
 					}
 				}
@@ -788,8 +683,8 @@
 		},
 		{
 			"from": "time*2019-05-31T22:00:00Z",
-			"key": "DISCOUNT_MOBILOVER_SOFT",
-			"description": "Discount  MOBILOVER SOFT",
+			"key": "SOFT",
+			"description": "SOFT",
 			"params": {
 				"conditions": [
 					{

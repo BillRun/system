@@ -2757,7 +2757,7 @@
 					"type": "subscriber",
 					"from": "time*2020-12-24T14:57:49Z",
 					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BROADBAND_HOME_BOX_1",
+					"plan": "BOX_1",
 					"services": [
 						{
 							"name": "LEGACY_CUSTOMER",
@@ -2918,7 +2918,7 @@
 					"type": "subscriber",
 					"from": "time*2020-12-24T14:57:49Z",
 					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BROADBAND_HOME_BOX_1",
+					"plan": "BOX_1",
 					"services": [
 
 					],
