@@ -5367,7 +5367,7 @@
 		"testRailId": 584
 	}
 	, {
-		"description": "retrieve debt of all accounts,1st account with debt ,2nd account without refund",
+		"description": "retrieve debt of all accounts,1st account with debt ,2nd account with refund",
 		"test_id": 55,
 		"api": "bill",
 		"params": {

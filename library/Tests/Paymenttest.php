@@ -121,8 +121,8 @@ class Tests_paymenttest extends UnitTestCase {
 			if (!empty($row['api'])) {
 				try {
 					$this->respons = $this->bulidAPI($row);
-					echo '<pre>';
-					print_r($this->respons);
+//					echo '<pre>';
+//					print_r($this->respons);
 				} catch (Exception $ex) {
 					throw new Exception($ex);
 				}
@@ -680,8 +680,8 @@ class Tests_paymenttest extends UnitTestCase {
 		$signed = Billrun_Utils_Security::addSignature($request, $secret['key']);
 		$request['_sig_'] = $signed['_sig_'];
 		$request['_t_'] = $signed['_t_'];
-		echo '<pre>';
-		print_r($request);
+//		echo '<pre>';
+//		print_r($request);
 		return $this->sendAPI($url, $request);
 	}
 
