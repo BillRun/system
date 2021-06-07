@@ -80,6 +80,8 @@ class Tests_paymenttest extends UnitTestCase {
 				foreach ($cases as $case) {
 					if (in_array($case['test_id'], $this->test_cases))
 						$this->cases[] = $case;
+					if (in_array($case['testRailId'], $this->test_cases))
+						$this->cases[] = $case;
 				}
 			} else {
 				$this->cases = $cases;
@@ -141,7 +143,7 @@ class Tests_paymenttest extends UnitTestCase {
 						if (!$testFail) {
 							Billrun_Factory::log("test function : $fun - fail ", Zend_Log::ERR);
 							$this->TestRailCases[$row['testRailId']]['status'] = 5;
-							$this->fails .= "|---|<a href='#{$row['test_id']}'>{$row['test_id']}</a>";
+							$this->fails .= "  <a href='#{$row['test_id']}'>{$row['test_id']}</a> | ";
 						} else {
 
 							Billrun_Factory::log("test function : $fun - pass ", Zend_Log::INFO);
@@ -169,13 +171,14 @@ class Tests_paymenttest extends UnitTestCase {
 			Billrun_Factory::log("***** finish test number " . $row['test_id'], Zend_Log::INFO);
 		}
 		if (!empty($this->fails)) {
-			$this->message .= $this->fails;
+			$this->message .='<b>list of fails</b><br>'. $this->fails;
 		}
 		print_r($this->message);
 		if ($this->reportTR) {
 			$this->ReportTestRail();
 		}
 		$this->restoreColletions();
+		
 	}
 
 	/** 	
@@ -201,17 +204,23 @@ class Tests_paymenttest extends UnitTestCase {
 			$char = fgetc($f);
 		}
 		$commit = explode(' ', $line);
-		$version = " <br><b>test in branche {$commit[10]}  ,commit {$commit[1]}</b> ";
+		$commit_version = " <br><b>test in  commit {$commit[1]}</b> ";
+		$branch_version = $commit[10];
 		$client = new TestRailAPIClient('https://billrun.testrail.io/');
 		$client->set_user($this->user);
 		$client->set_password($this->password);
 		foreach ($this->TestRailCases as $id => $test) {
 			$status = isset($test['status']) == 5 ? 5 : 1;
 			$comment = isset($test['status']) == 5 ? $test['comment'] : "";
+			if($status ==5){
+				$comment .= "<br> to run this case "."http://$_SERVER[HTTP_HOST]$_SERVER[REDIRECT_URL]?tests=$id <br>";
+			}
+			
 			$results[] = [
 				"case_id" => $id,
 				"status_id" => $status,
-				"comment" => $comment . $version
+				"comment" => $comment . $commit_version,
+				"version" => $branch_version
 			];
 		}
 		try {
@@ -250,11 +259,13 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $params
 	 * @return boolean
 	 */
-	public function testFields($row, $params = null) {
+	public function FieldComparison($row, $params = null) {
 		$pass = true;
 		$bills = $this->getBills($this->buildQuery($params));
-		Billrun_Factory::log("run testFields function with params : " . print_r($params, 1), Zend_Log::INFO);
-		Billrun_Factory::log(" testFields function match bills : " . print_r($bills, 1), Zend_Log::INFO);
+		Billrun_Factory::log("run FieldComparison function with params : " . print_r($params, 1), Zend_Log::INFO);
+		Billrun_Factory::log(" FieldComparison function match bills : " . print_r($bills, 1), Zend_Log::INFO);
+		$this->TestRailCases[$row['testRailId']]['comment'].="run FieldComparison function with params : " . print_r($params, 1);
+		$this->TestRailCases[$row['testRailId']]['comment'].=" FieldComparison function match bills : " . print_r($bills, 1);
 		if (count($row['expected']) != count($bills)) {
 			$this->message .= "The number of invoices does not match the expected number of invoices" . $this->fail;
 			$this->TestRailCases[$row['testRailId']]['comment'] .= "The number of invoices does not match the expected number of invoices<br>";
@@ -320,7 +331,7 @@ class Tests_paymenttest extends UnitTestCase {
 				if (is_null($v)) {
 					if (array_key_exists($k, $bill) && !is_null($bill[$k])) {
 						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= " -- the key $k exists although it should not exist<br> ";
 						Billrun_Factory::log("The  key $k exists although it should not exist", Zend_Log::ERR);
 						$pass = false;
@@ -350,8 +361,8 @@ class Tests_paymenttest extends UnitTestCase {
 						if ($v != $Date_) {
 							Billrun_Factory::log("The result is diffrents from expected :  $Date_ ", Zend_Log::ERR);
 							$this->message .= '	-- the result is diffrents from expected : ' . $Date_ . $this->fail;
-							$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
-							$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $Date_ .'<br>';
+							$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+							$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $Date_ . '<br>';
 							$pass = false;
 						}
 					}
@@ -361,7 +372,7 @@ class Tests_paymenttest extends UnitTestCase {
 					if (empty(array_key_exists($k, $bill))) {
 						Billrun_Factory::log("The result key isnt exists", Zend_Log::ERR);
 						$this->message .= ' 	-- the result key isnt exists' . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= ' 	-- the result key isnt exists<br>';
 						$pass = false;
 					}
@@ -370,16 +381,17 @@ class Tests_paymenttest extends UnitTestCase {
 				if (empty($DataField) && $DataField != 0) {
 					Billrun_Factory::log("The  result is empty", Zend_Log::ERR);
 					$this->message .= '-- the result is empty' . $this->fail;
-					$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
+					$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
 					$this->TestRailCases[$row['testRailId']]['comment'] .= '-- the result is empty<br>';
-					$pass = false;
+	
+				$pass = false;
 				}
 				if (!is_numeric($DataField)) {
 					if ($DataField != $v) {
 						Billrun_Factory::log("The result is diffrents from expected : . $DataField .", Zend_Log::ERR);
 						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField.'<br>';
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if ($DataField == $v) {
@@ -389,8 +401,8 @@ class Tests_paymenttest extends UnitTestCase {
 					if (!Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
 						Billrun_Factory::log("The result is diffrents from expected : . $DataField .", Zend_Log::ERR);
 						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'].="  test filed  $k Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField.'<br>';
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if (Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
@@ -400,7 +412,7 @@ class Tests_paymenttest extends UnitTestCase {
 			}
 			$i++;
 		}
-		Billrun_Factory::log("finish test functioon testFields ", Zend_Log::INFO);
+		Billrun_Factory::log("finish test functioon FieldComparison ", Zend_Log::INFO);
 		return $pass;
 	}
 
@@ -425,8 +437,9 @@ class Tests_paymenttest extends UnitTestCase {
 	 * @param type $params
 	 * @return boolean
 	 */
-	public function testLink($row, $params = null) {
-		Billrun_Factory::log("test function testLink with params " . print_r($params, 1), Zend_Log::INFO);
+	public function checkLink($row, $params = null) {
+		Billrun_Factory::log("test function checkLink with params " . print_r($params, 1), Zend_Log::INFO);
+		$this->TestRailCases[$row['testRailId']]['comment'] .= "test function checkLink with params " .print_r($params, 1);
 		$pass = true;
 		$bills = $this->getBills($this->buildQuery($params));
 		$pays = $this->getPays($bills);
@@ -712,6 +725,7 @@ class Tests_paymenttest extends UnitTestCase {
 	public function checkApiRespons($row, $params = null) {
 		$pass = true;
 		Billrun_Factory::log("test function checkApiRespons with params " . print_r($params, 1), Zend_Log::INFO);
+		$this->TestRailCases[$row['testRailId']]['comment'] .="test function checkApiRespons with params " . print_r($params, 1);
 		Billrun_Factory::log("test API respons for {$row['api']} API", Zend_Log::INFO);
 		$this->message .= "test API respons for {$row['api']} API </br>";
 		foreach ($params as $path => $message) {
@@ -750,9 +764,9 @@ class Tests_paymenttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function testMergeBillDueDate($row, $params = null) {
+	public function checkMergeBillDueDate($row, $params = null) {
 		$pass = true;
-		Billrun_Factory::log("test function testMergeBillDueDate with params " . print_r($params, 1), Zend_Log::INFO);
+		Billrun_Factory::log("test function checkMergeBillDueDate with params " . print_r($params, 1), Zend_Log::INFO);
 		$bill = $this->getBills($this->buildQuery($params));
 		$mergedBill = $this->getBills($this->buildQuery(["bills_merged" => ['$exists' => true]]));
 		if (!empty($bill) && !empty($mergedBill)) {
@@ -760,7 +774,7 @@ class Tests_paymenttest extends UnitTestCase {
 				$pass = false;
 				Billrun_Factory::log("due date of merged insatllment which was not given a first_charge_date/first_due_date are wrong, expected to  :" . date('Y-m-d', $bill[0]['due_date']->sec) . 'result is :' . date('Y-m-d', $mergedBill[0]['due_date']->sec), Zend_Log::ERR);
 				$this->message .= "due date of merged insatllment which was not given a first_charge_date/first_due_date are wrong, expected to  :" . date('Y-m-d', $bill[0]['due_date']->sec) . 'result is :' . date('Y-m-d', $mergedBill[0]['due_date']->sec) . $this->fail;
-				$this->TestRailCases[$row['testRailId']]['comment'] .= "due date of merged insatllment which was not given a first_charge_date/first_due_date are wrong, expected to  :" . date('Y-m-d', $bill[0]['due_date']->sec) . 'result is :' . date('Y-m-d', $mergedBill[0]['due_date']->sec).'<br>';
+				$this->TestRailCases[$row['testRailId']]['comment'] .= "due date of merged insatllment which was not given a first_charge_date/first_due_date are wrong, expected to  :" . date('Y-m-d', $bill[0]['due_date']->sec) . 'result is :' . date('Y-m-d', $mergedBill[0]['due_date']->sec) . '<br>';
 			} else {
 				Billrun_Factory::log("due date of merged insatllment which was not given a first_charge_date/first_due_date is correct", Zend_Log::INFO);
 				$this->message .= "due date of merged insatllment which was not given a first_charge_date/first_due_date is correct" . $this->pass;

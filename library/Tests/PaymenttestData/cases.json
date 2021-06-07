@@ -23,13 +23,13 @@
 		"preTest": [],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"dir": "tc"
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -78,7 +78,7 @@
 		"preTest": [],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"dir": "fc"
 				}
@@ -147,14 +147,14 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"dir": "fc",
 					"due": -23.4
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -222,14 +222,14 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"dir": "fc",
 					"due": -15
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -297,12 +297,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -397,12 +397,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -488,12 +488,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -570,12 +570,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -634,12 +634,12 @@
 		"preTest": [],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -710,12 +710,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -789,7 +789,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -872,12 +872,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -971,12 +971,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1070,12 +1070,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1175,12 +1175,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1291,12 +1291,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1387,12 +1387,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1477,12 +1477,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1620,12 +1620,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1763,12 +1763,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -1906,7 +1906,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -1916,7 +1916,7 @@
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2000,12 +2000,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2120,12 +2120,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2242,7 +2242,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -2252,7 +2252,7 @@
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2336,7 +2336,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -2346,7 +2346,7 @@
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2430,7 +2430,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -2440,7 +2440,7 @@
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2523,7 +2523,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -2533,7 +2533,7 @@
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2618,13 +2618,13 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"note": "b\"la ,.'@$&bla bla"
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2719,13 +2719,13 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"paid": false
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -2856,12 +2856,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3033,12 +3033,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3247,12 +3247,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3440,12 +3440,12 @@
 		],
 		"testFunctions": [
 			{
-				"testMergeBillDueDate": {
+				"checkMergeBillDueDate": {
 					"payment_agreement.installment_index": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3555,17 +3555,17 @@
 		],
 		"testFunctions": [
 			{
-				"testMergeBillDueDate": {
+				"checkMergeBillDueDate": {
 					"payment_agreement.installment_index": 2
 				}
 			},
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3701,7 +3701,7 @@
 		"preTest": [],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1,
 					"dir": "fc"
 				}
@@ -3786,12 +3786,12 @@
 		],
 		"testFunctions": [
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3871,12 +3871,12 @@
 		],
 		"testFunctions": [
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -3952,12 +3952,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -4089,12 +4089,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -4223,12 +4223,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -4352,12 +4352,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			},
@@ -4481,12 +4481,12 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
 			{
-				"testLink": {
+				"checkLink": {
 					"aid": 1
 				}
 			}
@@ -5521,7 +5521,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -5616,7 +5616,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -5709,7 +5709,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -5805,7 +5805,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -5944,7 +5944,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6016,7 +6016,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -6115,7 +6115,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
@@ -6214,7 +6214,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6282,7 +6282,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6351,7 +6351,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6402,7 +6402,7 @@
 		"preTest": [],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6458,7 +6458,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			},
@@ -6528,7 +6528,7 @@
 		],
 		"testFunctions": [
 			{
-				"testFields": {
+				"FieldComparison": {
 					"aid": 1
 				}
 			}
