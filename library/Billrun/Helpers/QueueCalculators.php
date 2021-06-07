@@ -57,7 +57,7 @@ class Billrun_Helpers_QueueCalculators {
             $calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
             $extraLines = [];
             foreach ($data['data'] as $key => &$line) {
-                $extraLines = array_merge($extraLines, $this->addExtraLines($line, $queue_data, $calc, $processor));
+                $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
                 $this->calculateDataRow($data, $index, $line, $calc_name, $queue_data, $calc, $processor);
                 foreach ($extraLines as $stamp => &$extraLine) {
                     $this->calculateDataRow($data, $index, $extraLine, $calc_name, $queue_data, $calc, $processor);
