@@ -55,7 +55,7 @@ class Billrun_Helpers_QueueCalculators {
             $queue_data = $processor->getQueueData();
             $calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
             $calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
-			$allExtraLines = [];
+            $allExtraLines = [];
             foreach ($data['data'] as $key => &$line) {
                 $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
                 $this->calculateDataRow($data, $index, $line, $calc_name, $queue_data, $calc, $processor);
@@ -65,7 +65,7 @@ class Billrun_Helpers_QueueCalculators {
 
                 $allExtraLines =  array_merge($allExtraLines, $extraLines);
             }
-			$data['data'] =  array_merge($data['data'], $allExtraLines);
+            $data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
         }
         Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
