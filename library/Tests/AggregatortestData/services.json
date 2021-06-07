@@ -281,7 +281,7 @@
 				, {
 
 					"from": "time*2020-05-31T21:00:00Z",
-					"name": "BHB_PROFILE_1",
+					"name": "BP1",
 					"price": [
 						{
 							"from": 0,
@@ -289,41 +289,10 @@
 							"price": 0
 						}
 					],
-					"description": "BHB Profile 1",
+					"description": " 1",
 					"prorated": true,
-					"tech_name": "BHB_PROFILE_1",
-					"vti_name": "BHB Profile 1",
-					"display_in": {
-						"all": ""
-					},
-					"vat_type": "DEFAULT_VAT",
-					"erp_fis_msisdn_label": "",
-					"object_id": "",
-					"fis_descr": "",
-					"management_reporting": "",
-					"gl_account": "",
-					"epic_description": {
-						"download": "60Mbps",
-						"upload": "5Mbps",
-						"usage": "350GB"
-					},
-					"erp_fis_mapping_label": "",
 					"to": "time*2169-06-04T13:13:33Z",
 					"creation_time": "time*2020-06-04T21:00:00Z",
-					"billable_option": "",
-					"display_order": "",
-					"displayed_on_invoice": "",
-					"grouping": "",
-					"grouping_order": "",
-					"invoice_label": "",
-					"invoice_type": "",
-					"provisioning": {
-						"POM_TAG": "",
-						"OBJECT_NAME": [],
-						"ACTIONS": "",
-						"PARAMETERS": "",
-						"GROUPING": ""
-					},
 					"tax": [
 						{
 							"type": "vat",

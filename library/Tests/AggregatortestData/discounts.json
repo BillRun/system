@@ -482,13 +482,6 @@
 				}
 			},
 			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
 			"to": "time*2169-06-04T14:31:32Z",
 			"creation_time": "time*2020-04-30T22:00:00Z"
 		},
@@ -496,7 +489,7 @@
 
 			"from": "time*2020-11-23T22:00:00Z",
 			"key": "BOX_2",
-			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"description": "Box",
 			"params": {
 				"min_subscribers": "",
 				"max_subscribers": "",
@@ -545,14 +538,7 @@
 					}
 				}
 			},
-			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
+			"proration": "inherited",			
 			"to": "time*2020-12-01T22:00:00Z",
 			"creation_time": "time*2020-11-23T22:00:00Z"
 		}, {

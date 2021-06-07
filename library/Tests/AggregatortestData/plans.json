@@ -599,15 +599,6 @@
 					"upfront": false,
 					"connection_type": "postpaid",
 					"rates": [],
-					"title_en": "",
-					"title_fr": "",
-					"title_de": "",
-					"description_en": "",
-					"description_fr": "",
-					"description_de": "",
-					"data_fair_use_limit": "",
-					"throttle_service": "",
-					"report_code": "PLAN_FD",
 					"to": "time*2169-05-25T17:16:38Z",
 					"creation_time": "time*2020-04-30T22:00:00Z",
 					"prorated_start": true,
@@ -617,7 +608,7 @@
 				{
 
 					"from": "time*2019-11-30T22:00:00Z",
-					"name": "BROADBAND_HOME_BOX_1",
+					"name": "BOX_1",
 					"price": [
 						{
 							"price": 25.12606,
@@ -625,22 +616,14 @@
 							"to": "UNLIMITED"
 						}
 					],
-					"description": "BROADBAND HOMEBOX 60",
+					"description": " 60",
 					"recurrence": {
 						"periodicity": "month"
 					},
 					"upfront": false,
 					"connection_type": "postpaid",
-					"technical_name": "BROADBAND_HOME_BOX_1",
-					"key": "BROADBAND_HOME_BOX_1",
+					"key": "_BOX_1",
 					"provisioning": [],
-					"display_order": "1",
-					"vat_type": "DEFAULT_VAT",
-					"vti_name": "BROADBAND HOMEBOX 60",
-					"package_range": "BROADBAND HOMEBOX",
-					"forceCommitment": true,
-					"invoice_label": "BROADBAND HOMEBOX 60",
-					"invoice_type": "mobile",
 					"to": "time*2169-06-04T13:50:59Z",
 					"creation_time": "time*2019-10-17T22:00:00Z",
 					"optional": {
@@ -653,7 +636,7 @@
 					"include": {
 						"services": [
 							"COMMITMENT_24_MONTHS",
-							"BHB_PROFILE_1"
+							"BP1"
 						]
 					},
 					"rates": [],
@@ -665,17 +648,8 @@
 					],
 					"prorated_start": true,
 					"prorated_end": true,
-					"prorated_termination": false,
-					"bill_every": "",
-					"prorate_purchase": "",
-					"prorate_cease": "",
-					"epic_description": "",
-					"erp_fis_mapping_label": "BROADBAND HOMEBOX 60",
-					"erp_fis_msisdn_label": "",
-					"fis_descr": "",
-					"gl_account": "10500211",
-					"management_reporting": "",
-					"object_id": ""
+					"prorated_termination": false
+				
 				},
 				{
 					"OBJID": "5ea1a2d4cd4acc4e0d336bc3",
@@ -738,29 +712,6 @@
 					"prorated_start": true,
 					"prorated_end": true,
 					"prorated_termination": true,
-					"technical_name": "",
-					"key": "",
-					"provisioning": [],
-					"display_order": "",
-					"vat_type": "",
-					"vti_name": "",
-					"package_range": "",
-					"forceCommitment": false,
-					"invoice_label": "",
-					"invoice_type": "",
-					"optional": {
-						"services": []
-					},
-					"bill_every": "",
-					"prorate_purchase": "",
-					"prorate_cease": "",
-					"erp_fis_msisdn_label": "",
-					"object_id": "",
-					"fis_descr": "",
-					"management_reporting": "",
-					"gl_account": "",
-					"epic_description": "",
-					"erp_fis_mapping_label": "",
 					"to": "time*2170-01-12T13:57:39Z",
 					"creation_time": "time*2018-01-12T22:00:00Z"
 				},
@@ -774,22 +725,14 @@
 							"to": "UNLIMITED"
 						}
 					],
-					"description": "MobiSurfer Unlimited",
+					"description": "Md",
 					"recurrence": {
 						"periodicity": "month"
 					},
 					"upfront": false,
 					"connection_type": "postpaid",
 					"rates": [],
-					"title_en": "",
-					"title_fr": "",
-					"title_de": "",
-					"description_en": "",
-					"description_fr": "",
-					"description_de": "",
-					"data_fair_use_limit": "",
-					"throttle_service": "",
-					"report_code": "PLAN_MU",
+				
 					"to": "time*2169-05-25T17:15:02Z",
 					"creation_time": "time*2020-04-30T22:00:00Z",
 					"prorated_start": true,
