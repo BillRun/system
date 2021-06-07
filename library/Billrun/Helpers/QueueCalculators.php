@@ -63,7 +63,7 @@ class Billrun_Helpers_QueueCalculators {
                     $this->calculateDataRow($data, $index, $extraLine, $calc_name, $queue_data, $calc, $processor);
                 }
 
-				$allExtraLines =  array_merge($allExtraLines, $extraLines);
+                $allExtraLines =  array_merge($allExtraLines, $extraLines);
             }
 			$data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
