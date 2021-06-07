@@ -2926,19 +2926,19 @@
 					"invoice_message": null,
 					"invoice_language": "en_GB",
 					"invoice_detailed": false,
-					"address": "22 Αμαθούντος, 2020 Λευκωσία, CY",
-					"street": "Αμαθούντος",
-					"house_number": "22QA",
+					"address": "22 ",
+					"street": "fff",
+					"house_number": "g",
 					"apartment": null,
 					"province": null,
-					"city": "Λευκωσία",
+					"city": "fff",
 					"country": "CY",
 					"zip_code": "2020",
 					"po_box": "",
 					"creation_time": "time*2020-12-24T14:57:49Z",
 					"activation_time": "time*2020-12-24T14:57:49Z",
 					"deactivation_time": null,
-					"addressCode": "480",
+					"addressCode": "5",
 					"services": [
 						{
 							"name": "PAPER_INVOICE",
@@ -3000,7 +3000,6 @@
 						"236"
 					],
 					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
 					"discounts": null
 				},
 				{
@@ -3027,7 +3026,6 @@
 						"236"
 					],
 					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
 					"discounts": null
 				},
 				{
@@ -3044,12 +3042,12 @@
 					"invoice_message": null,
 					"invoice_language": "en_GB",
 					"invoice_detailed": false,
-					"address": "22 Αμαθούντος, 2020 Λευκωσία, CY",
-					"street": "Αμαθούντος",
-					"house_number": "22QA",
+					"address": "22 ",
+					"street": "aaaa",
+					"house_number": "aaa",
 					"apartment": null,
 					"province": null,
-					"city": "Λευκωσία",
+					"city": "ss",
 					"country": "CY",
 					"zip_code": "2020",
 					"po_box": "",
