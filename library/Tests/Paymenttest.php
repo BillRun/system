@@ -312,12 +312,13 @@ class Tests_paymenttest extends UnitTestCase {
 		$i = 0;
 		foreach ($bills as $bill) {
 			$identify = isset($bill['invoice_id']) ? $bill['invoice_id'] : $bill['txid'];
-			$this->message .= " ****  test bill id  $identify **** <br>";
-			Billrun_Factory::log("  ****  test bill id  $identify ****", Zend_Log::INFO);
+			$this->message .= " ****  tests for  bill id  $identify **** <br>";
+			Billrun_Factory::log("  ****  tests for  bill id $identify ****", Zend_Log::INFO);
+			$this->TestRailCases[$row['testRailId']]['comment'] .= " **tests for  bill id  $identify**<br> ";
 			foreach ($row['expected'][$i] as $k => $v) {
 				if (!is_array($v)) {
-					Billrun_Factory::log("  test filed  $k Expected is $v", Zend_Log::INFO);
-					$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
+					Billrun_Factory::log("  test field  $k Expected is $v", Zend_Log::INFO);
+					$this->message .= '<b>test field</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
 					$this->message .= '	Result : </br>';
 				}
 				$nested = false;
@@ -331,7 +332,7 @@ class Tests_paymenttest extends UnitTestCase {
 				if (is_null($v)) {
 					if (array_key_exists($k, $bill) && !is_null($bill[$k])) {
 						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  $k Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= " -- the key $k exists although it should not exist<br> ";
 						Billrun_Factory::log("The  key $k exists although it should not exist", Zend_Log::ERR);
 						$pass = false;
@@ -355,14 +356,14 @@ class Tests_paymenttest extends UnitTestCase {
 							$v = date($format, strtotime($v['date']['date']));
 						}
 						$Date_ = date($format, $DataField->sec);
-						$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
-						Billrun_Factory::log("  test filed  $k Expected is $v", Zend_Log::INFO);
+						$this->message .= '<b>test field</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
+						Billrun_Factory::log("  test field  $k Expected is $v", Zend_Log::INFO);
 						$this->message .= '	Result : </br>';
 						if ($v != $Date_) {
-							Billrun_Factory::log("The result is diffrents from expected :  $Date_ ", Zend_Log::ERR);
-							$this->message .= '	-- the result is diffrents from expected : ' . $Date_ . $this->fail;
-							$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
-							$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $Date_ . '<br>';
+							Billrun_Factory::log("but the actual result  is  :  $Date_ ", Zend_Log::ERR);
+							$this->message .= '	-- but the actual result  is : ' . $Date_ . $this->fail;
+							$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field **$k** Expected is $v<br> ";
+							$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- but the actual result  is : ' . $Date_ . '<br>';
 							$pass = false;
 						}
 					}
@@ -372,7 +373,7 @@ class Tests_paymenttest extends UnitTestCase {
 					if (empty(array_key_exists($k, $bill))) {
 						Billrun_Factory::log("The result key isnt exists", Zend_Log::ERR);
 						$this->message .= ' 	-- the result key isnt exists' . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k**  Expected is $v<br> ";
 						$this->TestRailCases[$row['testRailId']]['comment'] .= ' 	-- the result key isnt exists<br>';
 						$pass = false;
 					}
@@ -381,17 +382,17 @@ class Tests_paymenttest extends UnitTestCase {
 				if (empty($DataField) && $DataField != 0) {
 					Billrun_Factory::log("The  result is empty", Zend_Log::ERR);
 					$this->message .= '-- the result is empty' . $this->fail;
-					$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
+					$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
 					$this->TestRailCases[$row['testRailId']]['comment'] .= '-- the result is empty<br>';
 	
 				$pass = false;
 				}
 				if (!is_numeric($DataField)) {
 					if ($DataField != $v) {
-						Billrun_Factory::log("The result is diffrents from expected : . $DataField .", Zend_Log::ERR);
-						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField . '<br>';
+						Billrun_Factory::log(" but the actual result  is : . $DataField .", Zend_Log::ERR);
+						$this->message .= '	--  but the actual result  is : ' . $DataField . $this->fail;
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field   **$k** Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  but the actual result  is : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if ($DataField == $v) {
@@ -401,8 +402,8 @@ class Tests_paymenttest extends UnitTestCase {
 					if (!Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
 						Billrun_Factory::log("The result is diffrents from expected : . $DataField .", Zend_Log::ERR);
 						$this->message .= '	-- the result is diffrents from expected : ' . $DataField . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test filed  $k Expected is $v<br> ";
-						$this->TestRailCases[$row['testRailId']]['comment'] .= '	-- the result is diffrents from expected : ' . $DataField . '<br>';
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "  test field  **$k** Expected is $v<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= '	--  but the actual result  is : ' . $DataField . '<br>';
 						$pass = false;
 					}
 					if (Billrun_Util::isEqual($DataField, $v, $this->epsilon)) {
@@ -724,7 +725,7 @@ class Tests_paymenttest extends UnitTestCase {
 	 */
 	public function checkApiRespons($row, $params = null) {
 		$pass = true;
-		Billrun_Factory::log("test function checkApiRespons with params " . print_r($params, 1), Zend_Log::INFO);
+		Billrun_Factory::log("test function checkApiRespons, with array  of pathes and valuses  with params " . print_r($params, 1), Zend_Log::INFO);
 		$this->TestRailCases[$row['testRailId']]['comment'] .="test function checkApiRespons with params " . print_r($params, 1);
 		Billrun_Factory::log("test API respons for {$row['api']} API", Zend_Log::INFO);
 		$this->message .= "test API respons for {$row['api']} API </br>";
@@ -739,7 +740,7 @@ class Tests_paymenttest extends UnitTestCase {
 					$pass = false;
 					Billrun_Factory::log("respons will be null  but it $respons ", Zend_Log::ERR);
 					$this->message .= "respons will be null  but it  $respons " . $this->fail;
-					$this->TestRailCases[$row['testRailId']]['comment'] .= "respons will be null  but it  $respons <br> ";
+					$this->TestRailCases[$row['testRailId']]['comment'] .= "Expected respons for \"$path\" to be null  but actual $respons <br> ";
 				}
 			} else {
 				if (isset($respons)) {
@@ -749,9 +750,9 @@ class Tests_paymenttest extends UnitTestCase {
 						$this->message .= "-- respons is\"$message\" " . $this->pass;
 					} else {
 						$pass = false;
-						Billrun_Factory::log("respons will be \"$message\" but it $respons ", Zend_Log::ERR);
+						Billrun_Factory::log("respons  for path \"$path\" will be \"$message\" but it $respons ", Zend_Log::ERR);
 						$this->message .= "respons will be \"$message\" but it $respons " . $this->fail;
-						$this->TestRailCases[$row['testRailId']]['comment'] .= "respons will be \"$message\" but it $respons<br> ";
+						$this->TestRailCases[$row['testRailId']]['comment'] .= "Expected respons  for  \"$path\" to be  \"$message\" but actual  $respons<br> ";
 					}
 				} else {
 					$pass = false;
