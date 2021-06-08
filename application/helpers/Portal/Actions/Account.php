@@ -84,6 +84,7 @@ class Portal_Actions_Account extends Portal_Actions {
 	 *
 	 * @param  array $params
 	 * @return array
+	 * @todo implement
 	 */
 	public function getInvoices($params = []) {
 	}
