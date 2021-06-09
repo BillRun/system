@@ -388,6 +388,7 @@ class Models_Entity {
 	 * Performs the permanentchange action by a query.
 	 */
 	public function permanentChange() {
+		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
@@ -403,6 +404,9 @@ class Models_Entity {
 			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
+			}
+			if($this->before === null){
+				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
 			}
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
@@ -420,6 +424,12 @@ class Models_Entity {
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
+			if($oldRevision === null){
+				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+			}
+			if ($newRevision === null){
+				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
 		return true;

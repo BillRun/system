@@ -34,7 +34,7 @@ class Tests_Discounttest extends UnitTestCase {
 		$this->discounts = (array) $this->discountData->Discount;
 		$this->conditions = (array) $this->discountData->conditions;
 		//list of indexs to run a subset of tests
-//		$this->subsetTests($this->Tests ,[]);
+		//->subsetTests($this->Tests ,[66]);
 	}
 
 	public function TestPerform() {
@@ -45,7 +45,7 @@ class Tests_Discounttest extends UnitTestCase {
 			$expectedEligibility = '<b>expected </b> </br>';
 
 			foreach ($row['expected'] as $Dname => $dates) {
-				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b>";
+				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
 					$expectedEligibility .= ' from ' . date("Y-m-d H:i:s", strtotime($date['from']));
 					$expectedEligibility .= ' to ' . date("Y-m-d H:i:s", strtotime($date['to'])) . '</br>';
@@ -171,14 +171,14 @@ class Tests_Discounttest extends UnitTestCase {
 						$this->message .= "$discountName worng 'from' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['from']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
 					}
 					if ($dates['eligibility'][$i]['to']->sec != $returnEligibal[$i]['to']) {
 						$pass = false;
 						$this->message .= "$discountName worng 'to' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['to']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
 					}
 				}
 			} else {

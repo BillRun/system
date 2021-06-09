@@ -1,6 +1,7 @@
 <?php
 
 trait Billrun_Cycle_Aggregation_Common {
+	use Billrun_Traits_ForeignFields;
 
 	protected $exclusionQuery = [];
 	protected $passthroughFields = [];
@@ -36,8 +37,15 @@ trait Billrun_Cycle_Aggregation_Common {
 
 	// TODO: Move this function to a "collection aggregator class"
 	public function getPlansProjectPipeline() {
+		$foreignFieldsProject = [];
+		$planForeignFields = $this->getForeignFieldsConfOfEntity("plan");
+		foreach ($planForeignFields as $value){
+			if(isset($value['foreign']['field'])){
+				$foreignFieldsProject[$value['foreign']['field']] = 1;
+			}
+		}
 		return array(
-			'$project' => array(
+			'$project' => array_merge(array(
 				'plan' => '$name',
 				'upfront' => 1,
 				'prorated' => 1,
@@ -51,7 +59,7 @@ trait Billrun_Cycle_Aggregation_Common {
 				'plan_deactivation' => 1,
 				'include' => 1,
 				'tax' => 1,
-			)
+			), $foreignFieldsProject)
 		);
 	}
 
