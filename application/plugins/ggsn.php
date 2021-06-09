@@ -79,6 +79,25 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	}
 
 	/**
+	 * (dispatcher hook)
+	 * alter the file name to match the month the file was recevied to prevent duplicate files.
+	 */
+	public function beforeFTPFileReceived(&$file, $receiver, &$hostName, &$extraData) {
+		if ($receiver->getType() != $this->getName() || !$file->isFile()) {
+			return;
+		}
+		if(!empty($hostName)) {
+			$currentHostConfig =  Billrun_Factory::config()->getConfigValue($this->getName() . '.ftp.'.$hostName,[]);
+			if(!empty($currentHostConfig)  && !empty($currentHostConfig['replicated_hosts'])) {
+				$hostnames =  array_merge([$hostName],$currentHostConfig['replicated_hosts']);
+				asort($hostnames);
+				Billrun_Factory::log()->log("Consilodating  host name to :". implode('_',$hostnames), Zend_Log::INFO);
+				$hostName = implode('_',$hostnames);
+			}
+		}
+	}
+
+	/**
 	 * Check the  received files sequence.
 	 * @param type $receiver
 	 * @param type $filepaths
@@ -86,7 +105,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 * @return type
 	 * @throws Exception
 	 */
-	public function afterFTPReceived($receiver, $filepaths, $hostname) {
+	public function afterFTPReceived($receiver, $filepaths, $hostname, $hostConfig) {
 		if ($receiver->getType() != 'ggsn') {
 			return;
 		}
@@ -102,6 +121,42 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
+
+
+		//REmove  replicated CDRs
+		$deleteFromReplicationHost = Billrun_Util::getFieldVal($hostConfig['delete_from_replication'],false);
+		if($deleteFromReplicationHost && !empty($hostConfig['replicated_hosts']) ) {
+			$ftpHosts = Billrun_Factory::config()->getConfigValue($this->getName() . '.ftp', []);
+			$fileNames = array_map(function($path) { return basename($path);}, $filepaths);
+			Billrun_Factory::log(json_encode($fileNames,JSON_PRETTY_PRINT));
+ 			if(empty($ftpHosts)) {
+				Billrun_Factory::log("Couldn't retrive  FTP host to clear file replication",Zend_Log::WARN);
+			}
+			foreach($hostConfig['replicated_hosts'] as $hostname) {
+				if(!empty($ftpHosts[$hostname])) {
+					$replicaConfig = $ftpHosts[$hostname];
+					if( !Billrun_Util::getFieldVal($replicaConfig['delete_received'],false) ) {
+						Billrun_Factory::log("Relpcated host {$hostname} is  not configurated for file deletion.",Zend_Log::WARN);
+						continue;
+					}
+					try {
+						$ftp = Zend_Ftp::connect($replicaConfig['host'], $replicaConfig['user'], $replicaConfig['password']);
+						$ftp->setPassive(isset($replicaConfig['passive']) ? $replicaConfig['passive'] : false);
+						$files = $ftp->getDirectory($replicaConfig['remote_directory'])->getContents();
+						foreach($files as $file) {
+							Billrun_Factory::log($file->name);
+							if(in_array($file->name, $fileNames)) {
+								Billrun_Factory::log("Removing replicated file {$file->name} at : {$file->path} ",Zend_Log::INFO);
+								$file->delete();
+							}
+						}
+					} catch (\Exception $e) {
+						Billrun_Factory::log("File Replication removal failed on host  : {$hostname}",Zend_Log::ERR);
+					}
+				}
+			}
+		}
+
 	}
 
 	/**
