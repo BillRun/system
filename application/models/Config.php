@@ -1792,7 +1792,7 @@ class ConfigModel {
 	 * @return default invoicing day, if multi day cycle mode, else returns false
 	 */
 	public function isMultiDayCycleMode() {
-		return Billrun_Factory::config()->isMultiDayCycle() ? Billrun_Factory::config()->getConfigChargingDay() : false;
+		return Billrun_Factory::config()->isMultiDayCycle();
 	}
 
 	protected function getSecurePaymentGateway($paymentGatewaySetting){

@@ -44,7 +44,7 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$pipelines[] = $this->getSortPipeline();
 
 		$pipelines[] = $this->getFinalProject($addedPassthroughFields);
-
+			
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return ["data" => $this->aggregatePipelines($pipelines,$collection), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
@@ -119,6 +119,9 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 				'card_token' => array(
 					'$first' => '$card_token'
 				),
+				'invoicing_day' => array(
+					'$first' => '$invoicing_day'
+				)
 			)),
 		);
 		if (!empty($invoicing_days)) {

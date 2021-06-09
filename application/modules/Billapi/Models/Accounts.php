@@ -19,7 +19,9 @@ class Models_Accounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
-		$this->invoicing_day = $this->getInvoicingDay();
+		if(Billrun_Factory::config()->isMultiDayCycle()) {
+			$this->invoicing_day = $this->getInvoicingDay();
+		}
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
 		$this->verifyAllowances();
 	}
@@ -93,6 +95,6 @@ class Models_Accounts extends Models_Entity {
 	}
 	
 	public function getInvoicingDay () {
-		return !empty($additional['invoicing_day']) ? $additional['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+		return !empty($this->originalUpdate['invoicing_day']) ? $this->originalUpdate['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 	}
 }
