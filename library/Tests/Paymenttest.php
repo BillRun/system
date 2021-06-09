@@ -679,8 +679,13 @@ class Tests_paymenttest extends UnitTestCase {
 
 						foreach ($val as $k => &$v) {
 							if (is_array($v['txid'])) {
+								$query=[];
+								$query['aid']=1;
+								foreach ($v['txid'] as $field=>$fvualue){
+									$query[$field]=$fvualue;
+								}
 								$KeyQueryField = array_key_first($v['txid']);
-								$Bill = $this->getBills($this->buildQuery(['aid' => 1, $KeyQueryField => $v['txid'][$KeyQueryField], 'pays' => ['$exists' => 1]]));
+								$Bill = $this->getBills($this->buildQuery(/*['aid' => 1, $KeyQueryField => $v['txid'][$KeyQueryField],'left' => ['$exists' => 1]]*/$query));
 								$v['txid'] = $Bill[0]['txid'];
 							}
 						}

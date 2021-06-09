@@ -6554,6 +6554,148 @@
 			}
 		],
 		"testRailId": 599
+	},
+	{
+		"description": "customer cancel 3 payments , one of them is pays an invoice ",
+		"test_id": 71,
+		"api": "pay",
+		"params": {
+			"action": "cancel_payments",
+			"cancellations": [
+				{
+					"txid": {
+						"amount": 23.4,
+						"left": 0
+					}
+				},
+				{
+					"txid": {
+						"left": 15
+					}
+				},
+				{
+					"txid": {
+						"left": 20
+					}
+				}
+			],
+			"sid": "0",
+			"aid": "1",
+			"method": "cash"
+		},
+		"source": "api",
+		"request_method": "GET",
+		"preTest": [
+			{
+				"bulidAPI": {
+					"api": "onetimeinvoice",
+					"aid": "1",
+					"step": "1",
+					"invoice_unixtime": "past",
+					"cdrs": [
+						{
+							"aid": "1",
+							"sid": "0",
+							"rate": "CALL",
+							"credit_time": "2021-03-18T17:18:56.385Z",
+							"usagev": 1,
+							"type": "credit",
+							"aprice": "20.00"
+						}
+					]
+				}
+			},
+			{
+				"bulidAPI": {
+					"api": "pay",
+					"sid": "0",
+					"aid": "1",
+					"method": "cash",
+					"dir": "fc",
+					"amount": "23.4",
+					"payments": [
+						{
+							"dir": "fc",
+							"amount": "23.4",
+							"aid": "1",
+							"sid": "0"
+						}
+					]
+				}
+			},
+			{
+				"bulidAPI": {
+					"api": "pay",
+					"aid": "1",
+					"method": "cash",
+					"dir": "fc",
+					"amount": "15",
+					"payments": [
+						{
+							"dir": "fc",
+							"amount": "15",
+							"aid": "1"
+						}
+					]
+				}
+			},
+			{
+				"bulidAPI": {
+					"api": "pay",
+					"aid": "1",
+					"method": "cash",
+					"dir": "fc",
+					"amount": "20",
+					"payments": [
+						{
+							"dir": "fc",
+							"amount": "20",
+							"aid": "1"
+						}
+					]
+				}
+			}
+		],
+		"testFunctions": [
+			{
+				"FieldComparison": {
+					"aid": 1,
+					"type": "inv"
+				}
+			},
+			{
+				"checkLink": {
+					"aid": 1,
+					"type": "inv"
+				}
+			}
+		],
+		"postTest": [
+{
+				"cleanDB": {
+					"aid": 1
+				}
+			}
+		],
+		"expected": [
+			{
+				"aid": 1,
+				"type": "inv",
+				"amount": 23.4,
+				"due": 23.4,
+				"due_before_vat": 20,
+				"invoice_type": "immediate",
+				"lastname": "yoss",
+				"left_to_pay": 23.4,
+				"method": "automatic",
+				"paid": false,
+				"payer_name": "yoss yossi",
+				"total_paid": 0,
+				"vatable_left_to_pay": 0,
+				"paid_by": []
+			}
+		],
+		"testRailId": 601
 	}
 
 
