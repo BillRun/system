@@ -339,147 +339,11 @@
 				}
 			}
 		}
-											]
-										}
-									]
-								},
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_2"
-										]
-									}
-								]
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_1"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_4"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					},
-					{
-						"subscriber": [
-							{
-								"fields": [
-									{
-										"field": "plan",
-										"op": "in",
-										"value": [
-											"BROADBAND_HOME_BOX_3"
-										]
-									}
-								],
-								"service": {
-									"any": [
-										{
-											"fields": [
-												{
-													"field": "name",
-													"op": "in",
-													"value": [
-														"LEGACY_CUSTOMER"
-													]
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					}
-				]
-			},
-			"type": "monetary",
-			"subject": {
-				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 12.60504202
-					},
-					"BROADBAND_HOME_BOX_3": {
-						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 16.73109244
-					},
-					"BROADBAND_HOME_BOX_2": {
-						"value": 12.60504202
-					}
-				}
-			},
-			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
-			"to": "time*2169-06-04T14:31:32Z",
-			"creation_time": "time*2020-04-30T22:00:00Z"
-		},
-		{
+						,{
 
-			"from": "time*2020-11-23T22:00:00Z",
-			"key": "BHB_MONTHLY_CYCLE_FEES_DSC_2",
-			"description": "Monthly Cycle Discount on Broadband Home Box",
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "BOX1",
+			"description": "Box",
 			"params": {
 				"min_subscribers": "",
 				"max_subscribers": "",
@@ -509,7 +373,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_2"
+											"BOX_2"
 										]
 									}
 								]
@@ -524,7 +388,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_1"
+											"BOX_1"
 										]
 									}
 								],
@@ -554,7 +418,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_4"
+											"BOX_4"
 										]
 									}
 								],
@@ -584,7 +448,7 @@
 										"field": "plan",
 										"op": "in",
 										"value": [
-											"BROADBAND_HOME_BOX_3"
+											"BOX_3"
 										]
 									}
 								],
@@ -611,28 +475,70 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-					"BROADBAND_HOME_BOX_4": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_3": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_1": {
-						"value": 8.394957983
-					},
-					"BROADBAND_HOME_BOX_2": {
-						"value": 8.394957983
+				
+					"BOX_1": {
+						"value": 16.73109244
 					}
 				}
 			},
 			"proration": "inherited",
-			"erp_fis_msisdn_label": "",
-			"object_id": "",
-			"fis_descr": "",
-			"management_reporting": "",
-			"gl_account": "10500211",
-			"epic_description": "",
-			"erp_fis_mapping_label": "Monthly Cycle Discount on Broadband Home Box",
+			"to": "time*2169-06-04T14:31:32Z",
+			"creation_time": "time*2020-04-30T22:00:00Z"
+		},
+		{
+
+			"from": "time*2020-11-23T22:00:00Z",
+			"key": "BOX_2",
+			"description": "Box",
+			"params": {
+				"min_subscribers": "",
+				"max_subscribers": "",
+				"publication_end_date": "time*2038-06-01T00:00:00Z",
+				"publication_start_date": "time*2020-05-01T00:00:00Z",
+				"conditions": [
+		
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": [
+											"BOX_1"
+										]
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"LEGACY_CUSTOMER"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"type": "monetary",
+			"subject": {
+				"plan": {
+				
+					"BOX_1": {
+						"value": 8.394957983
+					}
+				}
+			},
+			"proration": "inherited",			
 			"to": "time*2020-12-01T22:00:00Z",
 			"creation_time": "time*2020-11-23T22:00:00Z"
 		}, {
@@ -760,7 +666,157 @@
 			"proration": "inherited",
 			"to": "time*2170-01-12T16:58:43Z",
 			"creation_time": "time*2018-01-13T00:00:00Z"
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT",
+			"description": "SOFT",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MOB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MOB": {
+						"value": 0.2632
+					}
+				}
+			}
 		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_FD",
+			"description": "Discount FD",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_FD"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:19:34Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_FD": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		}
+		,
+		{
+
+			"from": "time*2020-04-30T22:00:00Z",
+			"key": "DISCOUNT_MU",
+			"description": "Discount MU",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "eq",
+										"value": "PLAN_MU"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2169-05-25T17:18:20Z",
+			"creation_time": "time*2020-04-30T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"PLAN_MU": {
+						"value": 0.20829999999999999
+					}
+				}
+			}
+		}
+
+
 
 
 
