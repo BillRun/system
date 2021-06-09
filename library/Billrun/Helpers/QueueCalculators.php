@@ -180,6 +180,7 @@ class Billrun_Helpers_QueueCalculators {
 		$queue_data = $processor->getQueueData();
 		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+		$this->unifyCalc->init();
 		$this->unifyCalc->prepareData($data['data']);
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->shouldSkipCalc($line, 'unify')) {
