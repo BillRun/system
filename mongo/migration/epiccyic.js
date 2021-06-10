@@ -4969,6 +4969,17 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
 
+//EPICIC-83: Unify "tier title" is directed to the wrong path
+for (var i = 0; i < lastConfig.file_types.length; i++) {
+	if (lastConfig.file_types[i].file_type === "ICT") {
+		const index = lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].indexOf("cf.tier_title");
+		if (index > -1) {
+			lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].splice(index, 1);
+		}
+		lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('foreign')
+	}
+}
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
