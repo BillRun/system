@@ -91,7 +91,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			if(!empty($currentHostConfig)  && !empty($currentHostConfig['replicated_hosts'])) {
 				$hostnames =  array_merge([$hostName],$currentHostConfig['replicated_hosts']);
 				asort($hostnames);
-				Billrun_Factory::log()->log("Consilodating  host name to :". implode('_',$hostnames), Zend_Log::INFO);
+				Billrun_Factory::log()->log("consolidating host name to :". implode('_',$hostnames), Zend_Log::DEBUG);
 				$hostName = implode('_',$hostnames);
 			}
 		}
@@ -128,7 +128,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if($deleteFromReplicationHost && !empty($hostConfig['replicated_hosts']) ) {
 			$ftpHosts = Billrun_Factory::config()->getConfigValue($this->getName() . '.ftp', []);
 			$fileNames = array_map(function($path) { return basename($path);}, $filepaths);
-			Billrun_Factory::log(json_encode($fileNames,JSON_PRETTY_PRINT));
  			if(empty($ftpHosts)) {
 				Billrun_Factory::log("Couldn't retrive  FTP host to clear file replication",Zend_Log::WARN);
 			}
@@ -144,7 +143,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 						$ftp->setPassive(isset($replicaConfig['passive']) ? $replicaConfig['passive'] : false);
 						$files = $ftp->getDirectory($replicaConfig['remote_directory'])->getContents();
 						foreach($files as $file) {
-							Billrun_Factory::log($file->name);
 							if(in_array($file->name, $fileNames)) {
 								Billrun_Factory::log("Removing replicated file {$file->name} at : {$file->path} ",Zend_Log::INFO);
 								$file->delete();
