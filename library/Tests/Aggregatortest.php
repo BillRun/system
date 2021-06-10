@@ -394,9 +394,9 @@
              'expected' => array('billrun' => array( 'billrun_key' => '202101', 'aid' => 13261, 'after_vat' => array("82329" =>0), 'total' => 0, 'vatable' => 0, 'vat' => 0),
                  'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3099",
          ),
-	 array('test' => array('label'=>'discount isnt created in case that subscriber is subscribe in the mid cycle ','test_number' => 72, "aid" => 171645, 'sid' => 171646, 
-		 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(171645))),
-             'expected' => array('billrun' => array( 'billrun_key' => '202103', 'aid' => 171645, 'after_vat' => array("171646" => 56.17469026866747), 'total' => 56.17469026866747, 'vatable' =>   48.012555785185874, 'vat' => 17),
+	 array('test' => array('label'=>'discount isnt created in case that subscriber is subscribe in the mid cycle ','test_number' => 72, "aid" => 991645, 'sid' => 991646, 
+		 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(991645))),
+             'expected' => array('billrun' => array( 'billrun_key' => '202103', 'aid' => 991645, 'after_vat' => array("991646" => 56.17469026866747), 'total' => 56.17469026866747, 'vatable' =>   48.012555785185874, 'vat' => 17),
                  'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3095",
          ),
 		array(
