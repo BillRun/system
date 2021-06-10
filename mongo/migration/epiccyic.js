@@ -4970,27 +4970,29 @@ lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["lin
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
 
 //EPICIC-75 "Undefined index: stamp" when processing files
-if (lastConfig["file_types"][0]["file_type"] == "ICT") {
-	var cfFieldsArray = lastConfig["file_types"][0]["processor"]["calculated_fields"];
-	for (var i = 0; i < cfFieldsArray.length; i++) {
-		cfFieldsArray[i]["line_keys"] =
-				[
-					{
-						"key": "ANUM",
-					},
-					{
-						"key": "ANUM",
-					}
-				];
-		cfFieldsArray[i]["operator"] = "$eq";
-		cfFieldsArray[i]["type"] = "condition";
-		cfFieldsArray[i]["must_met"] = true;
-		cfFieldsArray[i]["projection"] = {
-			"on_true": {
-				"key": "hard_coded",
-				"value": ""
-			}
-		};
+for (var i = 0; i < lastConfig.file_types.length; i++) {
+	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+		for (var j = 0; j < cfFieldsArray.length; j++) {
+			cfFieldsArray[j]["line_keys"] =
+					[
+						{
+							"key": "ANUM",
+						},
+						{
+							"key": "ANUM",
+						}
+					];
+			cfFieldsArray[j]["operator"] = "$eq";
+			cfFieldsArray[j]["type"] = "condition";
+			cfFieldsArray[j]["must_met"] = true;
+			cfFieldsArray[j]["projection"] = {
+				"on_true": {
+					"key": "hard_coded",
+					"value": ""
+				}
+			};
+		}
 	}
 }
 
