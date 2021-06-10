@@ -90,6 +90,7 @@ class Tests_Icttest extends UnitTestCase {
 		$this->Tests = $this->TestsC->tests();
 		$this->configCol = Billrun_Factory::db()->configCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
+		$this->archiveCol = Billrun_Factory::db()->archiveCollection();
 		$this->construct(basename(__FILE__, '.php'), ['queue', 'lines']);
 		$this->setColletions($this->useExistingConfig);
 		$this->loadDbConfig();
@@ -108,13 +109,18 @@ class Tests_Icttest extends UnitTestCase {
 			$this->addCaseToLog();
 			$this->process($row);
 			$this->message .= "<span id={$row['test_num']}>test number : " . $row['test_num'] . '</span><br>';
-			$lines = Billrun_Factory::db()->linesCollection()->query()->cursor();
+			if (in_array('unify', Billrun_Factory::config()->getConfigValue('queue.calculators'))) {
+				$archive_lines = Billrun_Factory::db()->archiveCollection()->query()->cursor();
+			} else {
+				$archive_lines = Billrun_Factory::db()->linesCollection()->query()->cursor();
+			}
 			$data = [];
-			foreach ($lines as $line) {
-				if ($line->getRawData()) {
-					$data[] = $line->getRawData();
+			foreach ($archive_lines as $ARline) {
+				if ($ARline->getRawData()) {
+					$data[] = $ARline->getRawData();
 				}
 			}
+			Billrun_Factory::db()->archiveCollection()->remove(["type" => "ICT"]);
 			Billrun_Factory::db()->linesCollection()->remove(["type" => "ICT"]);
 			Billrun_Factory::db()->logCollection()->remove(["stamp" => $this->stamp]);
 			$testFail = $this->assertTrue($this->compareExpected($key, $row['expected'], $data));
@@ -166,7 +172,6 @@ class Tests_Icttest extends UnitTestCase {
 		$epsilon = 0.00001;
 		Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon);
 
-	
 		$sort = function ($a, $b) {
 			$fields = [
 				'aprice',
@@ -191,7 +196,7 @@ class Tests_Icttest extends UnitTestCase {
 		foreach ($data as $data_) {
 			$this->message .= "*************************** line usaget {$data_['usaget']}  ***************************" . '</br>';
 			foreach ($expected[$i] as $k => $v) {
-			
+
 				$this->message .= '<b>test filed</b> : ' . $k . ' </br>	Expected : ' . $v . '</br>';
 				$this->message .= '	Result : </br>';
 				$nested = false;
@@ -207,7 +212,7 @@ class Tests_Icttest extends UnitTestCase {
 						$this->message .= " -- the key $k exists although it should not exist " . $this->fail;
 						$result = false;
 					} else {
-						$this->message .= "-- the key $k isn't exists  " .  $this->pass;
+						$this->message .= "-- the key $k isn't exists  " . $this->pass;
 					}
 					continue;
 				}
