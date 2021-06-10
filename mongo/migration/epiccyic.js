@@ -4969,6 +4969,33 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
 
+//EPICIC-75 "Undefined index: stamp" when processing files
+for (var i = 0; i < lastConfig.file_types.length; i++) {
+	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+		for (var j = 0; j < cfFieldsArray.length; j++) {
+			cfFieldsArray[j]["line_keys"] =
+					[
+						{
+							"key": "ANUM",
+						},
+						{
+							"key": "ANUM",
+						}
+					];
+			cfFieldsArray[j]["operator"] = "$eq";
+			cfFieldsArray[j]["type"] = "condition";
+			cfFieldsArray[j]["must_met"] = true;
+			cfFieldsArray[j]["projection"] = {
+				"on_true": {
+					"key": "hard_coded",
+					"value": ""
+				}
+			};
+		}
+	}
+}
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
