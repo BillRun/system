@@ -4970,26 +4970,28 @@ lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["lin
 lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
 
 //EPICIC-75 "Undefined index: stamp" when processing files
-var cfFieldsArray = lastConfig["file_types"][0]["processor"]["calculated_fields"];
-for (var i = 0; i < cfFieldsArray.length; i++) {
-	cfFieldsArray[i]["line_keys"] =
-			[
-				{
-					"key": "ANUM",
-				},
-				{
-					"key": "ANUM",
-				}
-			];
-	cfFieldsArray[i]["operator"] = "$eq";
-	cfFieldsArray[i]["type"] = "condition";
-	cfFieldsArray[i]["must_met"] = true;
-	cfFieldsArray[i]["projection"] = {
-        "on_true": {
-          "key": "hard_coded",
-          "value": ""
-        }
-      };
+if (lastConfig["file_types"][0]["file_type"] == "ICT") {
+	var cfFieldsArray = lastConfig["file_types"][0]["processor"]["calculated_fields"];
+	for (var i = 0; i < cfFieldsArray.length; i++) {
+		cfFieldsArray[i]["line_keys"] =
+				[
+					{
+						"key": "ANUM",
+					},
+					{
+						"key": "ANUM",
+					}
+				];
+		cfFieldsArray[i]["operator"] = "$eq";
+		cfFieldsArray[i]["type"] = "condition";
+		cfFieldsArray[i]["must_met"] = true;
+		cfFieldsArray[i]["projection"] = {
+			"on_true": {
+				"key": "hard_coded",
+				"value": ""
+			}
+		};
+	}
 }
 
 db.config.insert(lastConfig);
