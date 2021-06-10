@@ -4966,8 +4966,12 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
 
 //EPICIC-66: user_summ/event_start_time position error in export generator
-lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
-lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
+for (var i = 0; i < lastConfig.export_generators.length; i++) {
+	if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
+	}
+}
 
 //EPICIC-75 "Undefined index: stamp" when processing files
 for (var i = 0; i < lastConfig.file_types.length; i++) {
