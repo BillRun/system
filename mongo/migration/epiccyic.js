@@ -4894,6 +4894,13 @@ var conf = {
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-63: Timezone should be Europe/Nicosia, currency = EUR
+lastConfig["pricing"]["currency"] = "EUR";
+lastConfig["billrun"]["timezone"] = {
+			"v" : "Europe/Nicosia",
+			"t" : "Timezone"
+		};
+
 //EPICIC-59: Make more custom products fields searchable
 var searchableProductFields = ["params.prefix", "params.operator", "params.product", "params.path", "params.poin", "params.direction", "params.scenario", "params.component", "params.cash_flow", "params.tier_derivation", "params.tier", "params.incoming_operator", "params.outgoing_operator", "params.incoming_product", "params.outgoing_product", "params.anaa", "params.bnaa"];
 for (var i = 0; i < lastConfig["rates"]["fields"].length; i++) {
