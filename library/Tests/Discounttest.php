@@ -43,7 +43,9 @@ class Tests_Discounttest extends UnitTestCase {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-
+			foreach ($row['test']['cdrs'] as &$cdr){
+				$cdr['aprice'] = $cdr['final_charge']/100*85.47008547008548;
+			}
 			foreach ($row['expected'] as $Dname => $dates) {
 				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
