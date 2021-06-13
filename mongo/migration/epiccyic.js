@@ -4894,6 +4894,21 @@ var conf = {
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-63: Timezone should be Europe/Nicosia, currency = EUR
+lastConfig["pricing"]["currency"] = "EUR";
+lastConfig["billrun"]["timezone"] = {
+			"v" : "Europe/Nicosia",
+			"t" : "Timezone"
+		};
+
+//EPICIC-59: Make more custom products fields searchable
+var searchableProductFields = ["params.prefix", "params.operator", "params.product", "params.path", "params.poin", "params.direction", "params.scenario", "params.component", "params.cash_flow", "params.tier_derivation", "params.tier", "params.incoming_operator", "params.outgoing_operator", "params.incoming_product", "params.outgoing_product", "params.anaa", "params.bnaa"];
+for (var i = 0; i < lastConfig["rates"]["fields"].length; i++) {
+	if(searchableProductFields.includes(lastConfig["rates"]["fields"][i].field_name)) {
+		lastConfig["rates"]["fields"][i]["searchable"] = true;
+	}
+}
+
 //EPICIC-24: Initial customer custom fields
 var operator = {
 					"field_name" : "operator",
@@ -4966,8 +4981,39 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
 
 //EPICIC-66: user_summ/event_start_time position error in export generator
-lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
-lastConfig["export_generators"][0]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
+for (var i = 0; i < lastConfig.export_generators.length; i++) {
+	if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
+	}
+}
+
+//EPICIC-75 "Undefined index: stamp" when processing files
+for (var i = 0; i < lastConfig.file_types.length; i++) {
+	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+		for (var j = 0; j < cfFieldsArray.length; j++) {
+			cfFieldsArray[j]["line_keys"] =
+					[
+						{
+							"key": "ANUM",
+						},
+						{
+							"key": "ANUM",
+						}
+					];
+			cfFieldsArray[j]["operator"] = "$eq";
+			cfFieldsArray[j]["type"] = "condition";
+			cfFieldsArray[j]["must_met"] = true;
+			cfFieldsArray[j]["projection"] = {
+				"on_true": {
+					"key": "hard_coded",
+					"value": ""
+				}
+			};
+		}
+	}
+}
 
 //EPICIC-83: Unify "tier title" is directed to the wrong path
 for (var i = 0; i < lastConfig.file_types.length; i++) {
