@@ -61,7 +61,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	 * @param type $hostname
 	 * @return type
 	 */
-	public function afterFTPReceived($receiver, $filepaths, $hostname) {
+	public function afterFTPReceived($receiver, $filepaths, $hostname, $hostConfig) {
 		if ($receiver->getType() != $this->getName()) {
 			return;
 		}
@@ -84,7 +84,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	 * (dispatcher hook)
 	 * alter the file name to match the month the file was recevied to prevent duplicate files.
 	 */
-	public function beforeFTPFileReceived(&$file, $receiver, $hostName, &$extraData) {
+	public function beforeFTPFileReceived(&$file, $receiver, &$hostName, &$extraData) {
 		if ($receiver->getType() != $this->getName() || !$file->isFile()) {
 			return;
 		}

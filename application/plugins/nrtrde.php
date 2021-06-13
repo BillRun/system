@@ -36,7 +36,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Zend_Ftp_File $file ftp object
 	 * @param Billrun_Receiver_Ftp $ftp ftp receiver
 	 */
-	public function afterFTPFileReceived($local_path, $file, $ftp) {
+	public function afterFTPFileReceived($local_path, $file, $ftp, $hostName, $extraData, $hostConfig) {
 		//Create filter object
 //		$filter = new Zend_Filter_Decompress(
 //			array(
@@ -66,7 +66,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return true;
 	}
 
-	public function afterFTPReceived($ftp, $files) {
+	public function afterFTPReceived($ftp, $files, $hostname, $hostConfig) {
 		return true;
 	}
 

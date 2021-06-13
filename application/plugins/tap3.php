@@ -58,7 +58,7 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @param type $hostname
 	 * @return type
 	 */
-	public function afterFTPReceived($receiver, $filepaths, $hostname) {
+	public function afterFTPReceived($receiver, $filepaths, $hostname, $hostConfig) {
 		if ($receiver->getType() != $this->getName()) {
 			return;
 		}

@@ -36,7 +36,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 * @throws Exception
 	 */
-	public function afterFTPReceived($receiver, $filepaths, $hostname) {
+	public function afterFTPReceived($receiver, $filepaths, $hostname, $hostConfig) {
 		if($receiver->getType() != 'smsc' && $receiver->getType() != "smpp" && $receiver->getType() != "mmsc" ) { return; }
 		
 		$this->checkFilesSeq($filepaths, $hostname);
