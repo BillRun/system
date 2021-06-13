@@ -374,7 +374,7 @@
 },
 {
 	"from" : "time*2020-03-11T23:00:00Z",
-	"name" : "DISCOUNT_3_MONTHS_FREE_SERVICE",
+	"name" : "3_MONTHS_FREE_SERVICE",
 	"price" : [
 		{
 			"from" : 0,
@@ -382,7 +382,7 @@
 			"price" : 0
 		}
 	],
-	"description" : "Service discount 3 mois offerts",
+	"description" : " discount 3 month",
 	"prorated" : true,
 	"category" : "",
 	"for_discount_only" : "1",

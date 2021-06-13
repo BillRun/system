@@ -542,8 +542,8 @@
 		},
 		{
 			"from": "time*2019-05-31T22:00:00Z",
-			"key": "DISCOUNT_SOFT",
-			"description": "Discount  SOFT",
+			"key": "SOFT",
+			"description": "SOFT",
 			"params": {
 				"conditions": [
 					{
@@ -582,7 +582,7 @@
 			"proration": "inherited",
 			"subject": {
 				"plan": {
-					"MOBILOVER_1GB": {
+					"1GB": {
 						"value": 0.2632
 					}
 				}
