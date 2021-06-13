@@ -2136,7 +2136,7 @@
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-10T21:00:00Z",
+					"from": "time*2018-07-04T21:00:00Z",
 					"aid": 1202,
 					"sid": 202,
 					"plan": "TTF",
@@ -2147,9 +2147,9 @@
 					"type": "subscriber",
 					"plan_activation": "time*2020-03-10T21:00:00Z",
 					"to": "time*2020-03-20T22:00:00Z",
-					"deactivation_date": "time*2020-03-20T22:00:00Z",
+					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-10T21:00:00Z",
+					"activation_date": "time*2018-07-04T21:00:00Z",
 					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
@@ -2163,14 +2163,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T21:00:00Z",
+					"to": "time*2020-03-05T22:00:00Z",
 					"deactivation_date": "time*2120-03-20T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T21:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T22:00:00Z",
 					"aid": 1203,
 					"sid": 203,
 					"plan": "TTF",
@@ -2179,11 +2179,11 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
+					"plan_activation": "time*2020-03-25T22:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2120-03-20T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
+					"activation_date": "time*2020-03-25T22:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
@@ -2252,7 +2252,7 @@
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T22:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
 					"from": "time*2020-03-25T22:00:00Z",
@@ -2306,7 +2306,7 @@
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-10T21:00:00Z",
+					"from": "time*2018-07-04T21:00:00Z",
 					"aid": 1402,
 					"sid": 402,
 					"plan": "TFF",
@@ -2317,9 +2317,9 @@
 					"type": "subscriber",
 					"plan_activation": "time*2020-03-10T21:00:00Z",
 					"to": "time*2020-03-20T22:00:00Z",
-					"deactivation_date": "time*2020-03-20T22:00:00Z",
+					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-10T21:00:00Z",
+					"activation_date": "time*2018-07-04T21:00:00Z",
 					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
@@ -2333,14 +2333,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T20:00:00Z",
+					"to": "time*2020-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T20:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T22:00:00Z",
 					"aid": 1403,
 					"sid": 403,
 					"plan": "TFF",
@@ -2349,12 +2349,12 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
+					"plan_activation": "time*2020-03-25T22:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
-					"plan_deactivation": "time*2119-03-05T21:00:00Z"
+					"activation_date": "time*2020-03-25T22:00:00Z",
+					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
 					"from": "time*2018-07-04T21:00:00Z",
@@ -2391,7 +2391,7 @@
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-10T21:00:00Z",
+					"from": "time*2018-07-04T21:00:00Z",
 					"aid": 1502,
 					"sid": 502,
 					"plan": "FTT",
@@ -2401,11 +2401,11 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2020-03-10T21:00:00Z",
-					"to": "time*2020-03-28T21:00:00Z",
-					"deactivation_date": "time*2020-03-28T21:00:00Z",
+					"to": "time*2020-03-20T22:00:00Z",
+					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-28T21:00:00Z",
-					"plan_deactivation": "time*2020-03-28T21:00:00Z"
+					"activation_date": "time*2018-07-04T21:00:00Z",
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
 					"from": "time*2018-07-04T21:00:00Z",
@@ -2418,14 +2418,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T20:00:00Z",
+					"to": "time*2020-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T20:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T22:00:00Z",
 					"aid": 1503,
 					"sid": 503,
 					"plan": "FTT",
@@ -2434,11 +2434,11 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
+					"plan_activation": "time*2020-03-25T22:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
+					"activation_date": "time*2020-03-25T22:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
@@ -2476,7 +2476,7 @@
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-10T20:00:00Z",
+					"from": "time*2018-07-04T21:00:00Z",
 					"aid": 1602,
 					"sid": 602,
 					"plan": "TTT",
@@ -2485,12 +2485,12 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-10T20:00:00Z",
-					"to": "time*2020-03-20T21:00:00Z",
-					"deactivation_date": "time*2020-03-20T21:00:00Z",
+					"plan_activation": "time*2020-03-10T21:00:00Z",
+					"to": "time*2020-03-20T22:00:00Z",
+					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-10T20:00:00Z",
-					"plan_deactivation": "time*2020-03-20T21:00:00Z"
+					"activation_date": "time*2018-07-04T21:00:00Z",
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
 					"from": "time*2018-07-04T21:00:00Z",
@@ -2503,14 +2503,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T21:00:00Z",
+					"to": "time*2020-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T21:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T22:00:00Z",
 					"aid": 1603,
 					"sid": 603,
 					"plan": "TTT",
@@ -2519,7 +2519,7 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
+					"plan_activation": "time*2020-03-25T22:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
@@ -2588,14 +2588,14 @@
 					"country": "d",
 					"type": "subscriber",
 					"plan_activation": "time*2018-07-04T21:00:00Z",
-					"to": "time*2020-03-05T20:00:00Z",
+					"to": "time*2020-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
 					"activation_date": "time*2018-07-04T21:00:00Z",
-					"plan_deactivation": "time*2020-03-05T20:00:00Z"
+					"plan_deactivation": "time*2020-03-20T22:00:00Z"
 				},
 				{
-					"from": "time*2020-03-25T20:00:00Z",
+					"from": "time*2020-03-25T22:00:00Z",
 					"aid": 1703,
 					"sid": 703,
 					"plan": "FFT",
@@ -2604,52 +2604,11 @@
 					"address": "d",
 					"country": "d",
 					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
+					"plan_activation": "time*2020-03-25T22:00:00Z",
 					"to": "time*2119-03-05T22:00:00Z",
 					"deactivation_date": "time*2119-03-05T22:00:00Z",
 					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
-					"plan_deactivation": "time*2119-03-05T22:00:00Z"
-				},
-				{
-
-					"from": "time*2018-01-27T22:00:00Z",
-					"aid": 1770,
-					"firstname": "a",
-					"lastname": "s",
-					"email": "s",
-					"country": "s",
-					"address": "s",
-					"zip_code": "s",
-					"salutation": "s",
-					"type": "account",
-					"to": "time*2167-06-28T10:16:31Z",
-					"creation_time": "time*2018-06-27T21:00:00Z"
-				},
-				{
-					"from": "time*2020-03-25T20:00:00Z",
-					"aid": 1770,
-					"sid": 1771,
-					"plan": "NOT_TAXABLE_PLAN",
-					"services": [
-						{
-							"name": "NOT_TAXABLE_SERVICE",
-							"from": "time*2019-03-30T21:00:00Z",
-							"to": "time*2118-03-10T14:24:43Z",
-							"service_id": "1600087131219770",
-							"creation_time": "time*2018-03-10T14:24:47.165Z"
-						}
-					],
-					"firstname": "d",
-					"lastname": "d",
-					"address": "d",
-					"country": "d",
-					"type": "subscriber",
-					"plan_activation": "time*2020-03-25T20:00:00Z",
-					"to": "time*2119-03-05T22:00:00Z",
-					"deactivation_date": "time*2119-03-05T22:00:00Z",
-					"creation_time": "time*2019-03-04T22:00:00Z",
-					"activation_date": "time*2020-03-25T20:00:00Z",
+					"activation_date": "time*2020-03-25T22:00:00Z",
 					"plan_deactivation": "time*2119-03-05T22:00:00Z"
 				}, {
 
@@ -2713,100 +2672,38 @@
 					"creation_time": "time*2018-10-26T21:00:00Z",
 					"activation_date": "time*2020-06-30T21:00:00Z",
 					"plan_deactivation": "time*2020-07-30T21:00:00Z"
-				},
-				{
-					"aid": 2000000784,
-					"type": "account",
-					"from": "time*2020-12-24T14:57:49Z",
-					"to": "time*2119-08-14T06:35:41Z",
-					"firstname": "Legacy",
-					"lastname": "First",
-					"title": "MR",
-					"email": "a@c.co",
-					"invoice_shipping_method": "email",
-					"category": "RESIDENTIAL",
-					"invoice_message": null,
-					"invoice_language": "en_GB",
-					"invoice_detailed": false,
-					"address": "22 Αμαθούντος, 2020 Λευκωσία, CY",
-					"street": "Αμαθούντος",
-					"house_number": "22QA",
-					"apartment": null,
-					"province": null,
-					"city": "Λευκωσία",
-					"country": "CY",
-					"zip_code": "2020",
-					"po_box": "",
-					"creation_time": "time*2020-12-24T14:57:49Z",
-					"activation_time": "time*2020-12-24T14:57:49Z",
-					"deactivation_time": null,
-					"addressCode": "480",
+				}, {
+					"aid": 230,
+					"sid": 80018,
+					"plan": "PLAN_MU",
+					"play": "MOBILE",
+					"firstname": "case1",
+					"lastname": "case1",
+					"address": "case1",
+					"extension": "case1",
+					"NDCSN": "case1",
+					"IMSI": "case1",
+					"manny_ref": "case1",
+					"type": "subscriber",
+					"plan_activation": "time*2020-11-06T10:23:55.985Z",
+					"to": "time*2020-11-06T13:33:00Z",
+					"deactivation_date": "time*2169-11-06T10:23:55Z",
+					"from": "time*2020-11-06T10:23:55.985Z",
+					"creation_time": "time*2020-11-06T10:23:55.985Z",
+					"activation_date": "time*2020-11-06T10:23:55.985Z",
+					"plan_deactivation": "time*2020-11-06T13:33:00Z",
 					"services": [
 						{
-							"name": "PAPER_INVOICE",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2044,
-							"creation_time": "time*2020-12-24T14:57:49Z"
+							"from": "time*2020-11-06T10:41:09Z",
+							"name": "DISCOUNT_A_SERVICE",
+							"to": "time*2169-11-06T10:23:55Z",
+							"service_id": "1682606115279624",
+							"creation_time": "time*2020-11-06T10:23:56.807Z"
 						}
 					]
 				},
 				{
-					"sid": 290,
-					"aid": 2000000784,
-					"type": "subscriber",
-					"from": "time*2020-12-24T14:57:49Z",
-					"to": "time*2120-12-24T14:57:49Z",
-					"plan": "BOX_1",
-					"services": [
-						{
-							"name": "LEGACY_CUSTOMER",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2200-12-24T14:57:49Z",
-							"service_id": 2044,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2051,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2021-12-24T14:57:49Z",
-							"service_id": 2052,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						},
-						{
-							"name": "TOP_UP_1",
-							"from": "time*2020-12-24T14:57:49Z",
-							"to": "time*2120-12-24T14:57:49Z",
-							"service_id": 2053,
-							"creation_time": "time*2020-12-24T14:57:49Z"
-						}
-					],
-					"play": "mobile",
-					"firstname": "Legacy",
-					"lastname": "First",
-					"address": null,
-					"activation_date": "time*2020-12-24T14:57:49Z",
-					"deactivation_date": null,
-					"plan_activation": "time*2020-12-24T14:57:49Z",
-					"plan_deactivation": null,
-					"creation_time": "time*2020-12-24T14:57:49Z",
-					"former_plan": null,
-					"imsi": [
-						"236"
-					],
-					"sub_number": "35790000495",
-					"portability_code": "P7RZI5DZ",
-					"discounts": null
-				},
 
-				{
 					"aid": 230,
 					"sid": 80018,
 					"plan": "PLAN_FD",
@@ -2912,7 +2809,7 @@
 						}
 					]
 				},
-				{
+{
 					"aid": 2000000784,
 					"type": "account",
 					"from": "time*2020-12-24T14:57:49Z",
@@ -2932,7 +2829,7 @@
 					"apartment": null,
 					"province": null,
 					"city": "fff",
-					"country": "CY",
+					"country": "",
 					"zip_code": "2020",
 					"po_box": "",
 					"creation_time": "time*2020-12-24T14:57:49Z",
@@ -3211,6 +3108,96 @@
 					"creation_time": "time*2019-06-02T00:00:00Z",
 					"activation_date": "time*2019-06-02T00:00:00Z",
 					"plan_deactivation": "time*2170-06-02T15:56:10Z"
+				},
+{
+
+					"aid": 13261,
+					"firstname": "aa",
+					"lastname": "aa bb",
+					"email": "applications@aa",
+					"street": "dd 3",
+					"city": "Sierre",
+					"zip_code": "3960",
+					"country": "",
+					"invoice_shipping_method": "email",
+					"type": "account",
+					"from": "time*2018-09-03T08:20:57.963Z",
+					"to": "time*2167-09-03T09:20:57Z",
+					"creation_time": "time*2018-09-03T08:20:57.963Z"
+				},
+				{
+
+					"aid": 13261,
+					"sid": 82329,
+					"plan": "8GB",
+					"firstname": "dd",
+					"lastname": "dd dd",
+					"address": "dd 3",
+					"type": "subscriber",
+					"plan_activation": "time*2020-12-02T14:44:37.217Z",
+					"to": "time*2169-12-02T14:44:37Z",
+					"deactivation_date": "time*2169-12-02T14:44:37Z",
+					"from": "time*2020-12-02T14:44:37.217Z",
+					"creation_time": "time*2020-12-02T14:44:37.217Z",
+					"activation_date": "time*2020-12-02T14:44:37.217Z",
+					"plan_deactivation": "time*2169-12-02T14:44:37Z",
+					"services": [
+						{
+							"to": "time*2169-12-02T14:44:37Z",
+							"creation_time": "time*2020-12-02T14:44:37Z",
+							"from": "time*2020-12-02T14:44:37Z",
+							"name": "3_MONTHS_FREE_SERVICE",
+							"service_id": "1684978037267263"
+						},
+						{
+							"from": "time*2020-12-02T14:44:38Z",
+							"name": "DISCOUNT_A_SERVICE_2",
+							"to": "time*2169-12-02T14:44:37Z",
+							"service_id": "1684978038187743",
+							"creation_time": "time*2020-12-02T14:44:38.763Z"
+						}
+					]
+				},
+				{
+
+					"aid": 991645,
+					"firstname": "ff",
+					"lastname": "ff",
+					"email": "ff@gg",
+					"street": "cc 3",
+					"city": "kkk",
+					"zip_code": "3960",
+					"country": "ll",
+					"invoice_shipping_method": "email",
+					"type": "account",
+					"from": "time*2021-03-29T15:06:59.101Z",
+					"to": "time*2170-03-29T16:06:59Z",
+					"creation_time": "time*2021-03-29T15:06:59.101Z"
+				},
+				{
+					"aid": 991645,
+					"sid": 991646,
+					"plan": "1GB",
+					"firstname": "ff",
+					"lastname": "fff",
+					"address": "gg 3",
+					"type": "subscriber",
+					"plan_activation": "time*2021-03-29T15:07:00.353Z",
+					"to": "time*2170-03-29T16:07:00Z",
+					"deactivation_date": "time*2170-03-29T16:07:00Z",
+					"from": "time*2021-03-29T15:07:00.353Z",
+					"creation_time": "time*2021-03-29T15:07:00.353Z",
+					"activation_date": "time*2021-03-29T15:07:00.353Z",
+					"plan_deactivation": "time*2170-03-29T16:07:00Z",
+					"services": [
+						{
+							"from": "time*2021-03-29T15:07:02Z",
+							"name": "DISCOUNT_A_SERVICE_2",
+							"to": "time*2170-03-29T16:07:00Z",
+							"service_id": "1695579292838721",
+							"creation_time": "time*2021-03-29T15:07:03.011Z"
+						}
+					]
 				}
 
 

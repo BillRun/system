@@ -671,7 +671,54 @@
 					"to": "time*2170-02-16T12:58:47Z",
 					"creation_time": "time*2019-02-16T22:00:00Z"
 				}
-
+,{
+	"from" : "time*2017-12-31T23:00:00Z",
+	"name" : "DISCOUNT_A_SERVICE_2",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : "0"
+		}
+	],
+	"description" : "Service discount",
+	"prorated" : true,
+	"category" : "",
+	"for_discount_only" : "1",
+	"to" : "time*2167-01-17T14:38:00Z",
+	"creation_time" : "time*2018-01-15T23:00:00Z",
+	"reference_code" : "SERVICE_DISCOUNT",
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	]
+},
+{
+	"from" : "time*2020-03-11T23:00:00Z",
+	"name" : "3_MONTHS_FREE_SERVICE",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : 3,
+			"price" : 0
+		}
+	],
+	"description" : " discount 3 month",
+	"prorated" : true,
+	"category" : "",
+	"for_discount_only" : "1",
+	"reference_code" : "DISCOUNT_3_MONTHS_FREE_SERVICE",
+	"to" : "time*2169-03-11T19:18:19Z",
+	"creation_time" : "time*2020-03-11T23:00:00Z",
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	]
+}
 
 
 			]
