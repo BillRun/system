@@ -143,13 +143,12 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
-	
+
 	/**
 	 * Flag to indicate that action triggered by import
 	 * @var Boolean
 	 */
 	protected $is_import = false;
-
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -395,6 +394,7 @@ class Models_Entity {
 	 * Performs the permanentchange action by a query.
 	 */
 	public function permanentChange() {
+		Billrun_Factory::log("Performs the permanentchange action", Zend_Log::DEBUG);
 		$this->action = 'permanentchange';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
@@ -407,10 +407,13 @@ class Models_Entity {
 		$permanentUpdate = $this->getPermanentChangeUpdate();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$field = $this->getKeyField();
-                if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
-                        $res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
+		if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
+			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
 			if (!isset($res['nModified']) || !$res['nModified']) {
 				return false;
+			}
+			if($this->before === null){
+				throw new Exception('No entity before the change was found. stack:' . print_r(debug_backtrace(), 1));
 			}
                         $newRevision = $this->before->getRawData();
                         $newRevision['to'] = $this->update['from'];
@@ -425,12 +428,18 @@ class Models_Entity {
 		$oldRevisions = iterator_to_array($beforeChangeRevisions);
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
-		$this->fixEntityFields($this->before);		
+		$this->fixEntityFields($this->before);
 		foreach ($afterChangeRevisions as $newRevision) {
 			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
 			$oldRevision = $oldRevisions[$currentId];
 			
 			$key = $oldRevision[$field];
+			if($oldRevision === null){
+				throw new Exception('No old Revision was found. stack:' . print_r(debug_backtrace(), 1));
+			}
+			if ($newRevision === null){
+				throw new Exception('No new Revision was found. stack:' . print_r(debug_backtrace(), 1));
+			}
 			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->entityName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
 		return true;
