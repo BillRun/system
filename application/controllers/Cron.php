@@ -75,6 +75,13 @@ class CronController extends Yaf_Controller_Abstract {
 						'retrieved_from' => $server,
 						$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
 					);
+					$replicatedHosts =  Billrun_Factory::config()->getConfigValue("{$type}.ftp.{$server}.replicated_hosts", array());
+					if(!empty($replicatedHosts)) {
+						$hostnames =  array_merge([$server],$replicatedHosts);
+						asort($hostnames);
+						$query['$or'] = [['retrieved_from' => $server],['retrieved_from' => implode('_',$hostnames)]];
+						unset($query['retrieved_from']);
+					}
 				}
 				$results = $logsModel->getData($query)->current();
 				if ($results->isEmpty()) {
