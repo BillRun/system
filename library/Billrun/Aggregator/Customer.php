@@ -283,6 +283,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return $this->discountsCache;
 	}
+        
+        public function &getCharges() {
+		if(empty($this->chargesCache)) {
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$coll = Billrun_Factory::db()->chargesCollection();
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->chargesCache = $this->toKeyHashedArray($res, '_id');
+		}
+		return $this->chargesCache;
+	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
@@ -297,7 +307,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$linesRemoveQuery = array('aid' => array('$nin' => $billedAids), 'billrun' => $billrunKey, 
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
-										array( 'type'=>'credit','usaget'=>'discount' )
+										array('$or' => array(
+                                                                                    array( 'type'=>'credit','usaget'=>'discount' ),
+                                                                                    array( 'type'=>'credit','usaget'=>'conditional_charge' )
+                                                                                ))
 									));
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
@@ -306,7 +319,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 										'billrun' => $billrunKey,
 										'$or' => array(
 											array( 'type' => array('$in' => array('service', 'flat')) ),
-											array( 'type'=>'credit','usaget'=>'discount' )
+                                                                                        array( '$or' => array(
+                                                                                                array( 'type'=>'credit','usaget'=>'discount' ),
+                                                                                                array( 'type'=>'credit','usaget'=>'conditional_charge' )
+                                                                                            ))
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
