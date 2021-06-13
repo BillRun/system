@@ -140,7 +140,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 	}
 		
 	protected function writeRows() {
-		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - start writing rows to file", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - start writing rows to file", Zend_Log::DEBUG);
 		$fileContents = '';
 		$counter = 0;
 		foreach ($this->data as $index => $entity) {
@@ -153,7 +153,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents.= PHP_EOL;
 			}
 			if ($counter == 50000) {
-				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::INFO);
+				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
 				$this->writeToFile($fileContents);
 				$fileContents = '';
 				$counter = 0;
@@ -164,7 +164,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			$fileContents.= PHP_EOL;
 		}
 		$this->writeToFile($fileContents);
-		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);
 	}
 	
 	protected function getRowContent($entity) {

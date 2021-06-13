@@ -255,11 +255,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
-            Billrun_Factory::log()->log("\tstart getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::INFO);
+            Billrun_Factory::log()->log("\tstart getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
             $this->rowsStamps[] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
-            Billrun_Factory::log()->log("\tdone getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::INFO);
+            Billrun_Factory::log()->log("\tdone getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $count++;
         }
         Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rowsStamps, &$this->rowsToExport, $this));
