@@ -131,30 +131,45 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
  			if(empty($ftpHosts)) {
 				Billrun_Factory::log("Couldn't retrive  FTP host to clear file replication",Zend_Log::WARN);
 			}
-			foreach($hostConfig['replicated_hosts'] as $hostname) {
-				if(!empty($ftpHosts[$hostname])) {
-					$replicaConfig = $ftpHosts[$hostname];
-					if( !Billrun_Util::getFieldVal($replicaConfig['delete_received'],false) ) {
-						Billrun_Factory::log("Relpcated host {$hostname} is  not configurated for file deletion.",Zend_Log::WARN);
-						continue;
-					}
-					try {
-						$ftp = Zend_Ftp::connect($replicaConfig['host'], $replicaConfig['user'], $replicaConfig['password']);
-						$ftp->setPassive(isset($replicaConfig['passive']) ? $replicaConfig['passive'] : false);
-						$files = $ftp->getDirectory($replicaConfig['remote_directory'])->getContents();
-						foreach($files as $file) {
-							if(in_array($file->name, $fileNames)) {
-								Billrun_Factory::log("Removing replicated file {$file->name} at : {$file->path} ",Zend_Log::INFO);
-								$file->delete();
-							}
+			if($this->isReplicationConfiguredWell($hostConfig)) {
+				foreach($hostConfig['replicated_hosts'] as $replicaHostname) {
+					if(!empty($ftpHosts[$replicaHostname])) {
+						$replicaConfig = $ftpHosts[$replicaHostname];
+						if( !$this->isReplicationConfiguredWell($replicaConfig, $hostname) ) {
+							Billrun_Factory::log("Host {$replicaHostname} replication is not configured well.",Zend_Log::ALERT);
+							continue;
 						}
-					} catch (\Exception $e) {
-						Billrun_Factory::log("File Replication removal failed on host  : {$hostname}",Zend_Log::ERR);
+
+						try {
+							$ftp = Zend_Ftp::connect($replicaConfig['host'], $replicaConfig['user'], $replicaConfig['password']);
+							$ftp->setPassive(isset($replicaConfig['passive']) ? $replicaConfig['passive'] : false);
+							$files = $ftp->getDirectory($replicaConfig['remote_directory'])->getContents();
+							foreach($files as $file) {
+								if(in_array($file->name, $fileNames)) {
+									Billrun_Factory::log("Removing replicated file {$file->name} at : {$file->path} ",Zend_Log::INFO);
+									$file->delete();
+								}
+							}
+						} catch (\Exception $e) {
+							Billrun_Factory::log("File Replication removal failed on host  : {$hostname}",Zend_Log::ERR);
+						}
 					}
 				}
+			} else {
+				Billrun_Factory::log("Host {$hostname} replication is not configured well.",Zend_Log::ALERT);
 			}
+
 		}
 
+	}
+
+	protected function isReplicationConfiguredWell($hostConfig,$hostToCheck = false) {
+		if(!Billrun_Util::getFieldVal($hostConfig['delete_received'],false)) {
+			Billrun_Factory::log("Relpcated host is not configurated for file deletion.",Zend_Log::WARN);
+			return false;
+		}
+		return  !empty($hostConfig['replicated_hosts']) && is_array($hostConfig['replicated_hosts']) &&
+				(false === $hostToCheck || in_array($hostToCheck,$hostConfig['replicated_hosts']) );
 	}
 
 	/**
