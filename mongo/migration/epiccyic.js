@@ -5019,12 +5019,12 @@ for (var i = 0; i < lastConfig.file_types.length; i++) {
 //EPICIC-86: Add 'cf.anaa' to unified fields
 for (var i = 0; i < lastConfig.file_types.length; i++) {
 	if (lastConfig.file_types[i].file_type === "ICT") {
-		const index = lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].indexOf("cf.tier_title");
+		const index = lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].indexOf("cf.tier_title");
 		if (index > -1) {
-			lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].splice(index, 1);
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].splice(index, 1);
 		}
-		lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('foreign');
-		lastConfig["file_types"][0]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
+		lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('foreign');
+		lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 	}
 }
 
