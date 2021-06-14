@@ -255,11 +255,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
-            Billrun_Factory::log()->log("\tstart getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("start getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
             $this->rowsStamps[] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
-            Billrun_Factory::log()->log("\tdone getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
+            Billrun_Factory::log()->log("done getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $count++;
         }
         Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rowsStamps, &$this->rowsToExport, $this));
@@ -512,7 +512,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         
         foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
-                Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - start", Zend_Log::INFO);
+                Billrun_Factory::log()->log("Move to sender {$connection['name']} - start", Zend_Log::INFO);
                 $sender = Billrun_Sender::getInstance($connection);
                 if (!$sender) {
                     Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($connections, 1), Zend_Log::ERR);
@@ -520,10 +520,10 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     continue;
                 }
                 if (!$sender->send($this->getExportFilePath())) {
-                    Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - failed!", Zend_Log::INFO);
+                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::INFO);
                     $this->moved = false;
                 } else {
-                    Billrun_Factory::log()->log("\tMove to sender {$connection['name']} - done", Zend_Log::INFO);
+                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
                 }
             }
         }
