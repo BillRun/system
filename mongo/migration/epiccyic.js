@@ -5017,6 +5017,7 @@ for (var i = 0; i < lastConfig.file_types.length; i++) {
 
 //EPICIC-83: Unify "tier title" is directed to the wrong path
 //EPICIC-86: Add 'cf.anaa' to unified fields
+//EPICIC-87: Add 'cf.settlement_operator' to unified fields
 lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 	for (var i = 0; i < lastConfig.file_types.length; i++) {
 		if (lastConfig.file_types[i].file_type === "ICT") {
@@ -5026,6 +5027,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			}
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('foreign');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
 		}
 	}
 });
