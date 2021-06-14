@@ -184,11 +184,21 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 						}
 					}
 				}
+				//close the current revision and open a new revision if the last one had altered the 'to' date to be before the  end of the cycle
+				if($activeRev['to'] < $revision['to']) {
+					$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
+					if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
+						$retRevisions[] = $saveRevision;
+					}
+					$activeRev['from'] = $activeRev['to'];
+					$activeRev['to'] = $revision['to'];
+				}
 			}
 			//Save the last revision
 			$retRevisions[] = $this->cleanRevisionStructure($activeRev, $subRevisionsFields);
 		}
 		usort($retRevisions,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
+
 		return $retRevisions;
 	}
 
