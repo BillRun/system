@@ -2196,8 +2196,8 @@ class discountTestCases {
 //				
 //						]
 //		)
-//		
-//		[
+
+
 		[
 			'test_num' => 1,
 			'test' =>
@@ -2215,11 +2215,13 @@ class discountTestCases {
 				'subsRevisions' =>
 				[
 					[
-						'sid' => 2,
-						'plan' => 'planMinMax',
-						'plan_activation' => '2019-01-01',
-						'from' => '2019-01-01',
-						'to' => '2119-07-02',
+						[
+							'sid' => 2,
+							'plan' => 'planMinMax',
+							'plan_activation' => '2019-01-01',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
 					],
 				],
 				'discounts' =>
@@ -2235,9 +2237,11 @@ class discountTestCases {
 							'condition' =>
 							[
 								[
-									'type' => 'subscriber',
-									'field' => 'plan',
-									'values' => 'planMinMax',
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
 								],
 							],
 							'min_subscribers' => 3,
@@ -2255,32 +2259,15 @@ class discountTestCases {
 							'condition' =>
 							[
 								[
-									'type' => 'subscriber',
-									'field' => 'plan',
-									'values' => 'planMinMax',
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
 								],
 							],
 							'min_subscribers' => 3,
 						],
-					],
-					[
-						'name' => 'MaxSubscribers',
-						'root' => [
-							'full_price' => 100
-						],
-						'params_override' => [
-							'condition' => [
-								[
-									['type' => 'subscriber',
-										[
-											'from' => '2019-01-01'
-										],
-										'field' => 'plan',
-										'values' => 'planMinMax']
-								]
-							],
-							'max_subscribers' => 5
-						]
 					],
 					[
 						'name' => 'MaxSubscribers',
@@ -2293,7 +2280,14 @@ class discountTestCases {
 							'condition' =>
 							[
 								[
-									'from' => '2019-01-01',
+									[
+										'type' => 'subscriber',
+										[
+											'from' => '2019-01-01',
+										],
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
 								],
 							],
 							'max_subscribers' => 5,
@@ -2320,8809 +2314,9215 @@ class discountTestCases {
 				],
 			],
 		]
-//		, [
-//			'test_num' => 2,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 4,
-//						'plan' => 'planMinMax',
-//						'plan_activation' => '2019-01-01',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 5,
-//						'plan' => 'planMinMax',
-//						'plan_activation' => '2019-01-01',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 6,
-//						'plan' => 'planMinMax',
-//						'plan_activation' => '2019-01-01',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'MinMaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//							'max_subscribers' => 5,
-//						],
-//					],
-//					[
-//						'name' => 'MinSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//						],
-//					],
-//					[
-//						'name' => 'MaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'max_subscribers' => 5,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'MaxSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'MinSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'MinMaxSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 3,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 7,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 8,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 9,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 10,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'MinMaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//							'max_subscribers' => 5,
-//						],
-//					],
-//					[
-//						'name' => 'MinSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//						],
-//					],
-//					[
-//						'name' => 'MaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'max_subscribers' => 5,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 4,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 11,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 8,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 9,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 10,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 11,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 12,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 13,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'MinMaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//							'max_subscribers' => 5,
-//						],
-//					],
-//					[
-//						'name' => 'MinSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//						],
-//					],
-//					[
-//						'name' => 'MaxSubscribers',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'max_subscribers' => 5,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'overideDiscount' =>
-//			[
-//			],
-//			'expected' =>
-//			[
-//				'MinSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 5,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2019-05-01',
-//					],
-//					[
-//						'sid' => 20,
-//						'plan' => 'abc',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-05',
-//					],
-//					[
-//						'sid' => 20,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-04-05',
-//						'to' => '2019-04-10',
-//					],
-//					[
-//						'sid' => 20,
-//						'plan' => 'abc',
-//						'from' => '2019-04-10',
-//						'to' => '2019-05-01',
-//					],
-//					[
-//						'sid' => 21,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2019-04-05',
-//					],
-//					[
-//						'sid' => 21,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-04-05',
-//						'to' => '2019-05-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'MinMaxSubscribers',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//							'max_subscribers' => 5,
-//						],
-//					],
-//					[
-//						'name' => 'MinSubscribers',
-//						'root' =>
-//						[
-//							'priority' => 2,
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'min_subscribers' => 3,
-//						],
-//					],
-//					[
-//						'name' => 'MaxSubscribers',
-//						'root' =>
-//						[
-//							'priority' => 3,
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'planMinMax',
-//								],
-//							],
-//							'max_subscribers' => 5,
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'stamp' => 'a1',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'planMinMax',
-//						'aprice' => 100.0,
-//					],
-//					[
-//						'stamp' => 'a2',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-05',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 20,
-//						'final_charge' => 19,
-//						'full_price' => 16,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'abc',
-//						'aprice' => 16.239316239316242,
-//					],
-//					[
-//						'stamp' => 'a3',
-//						'start' => '2019-04-05',
-//						'end' => '2019-04-10',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 20,
-//						'final_charge' => 19,
-//						'full_price' => 16,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'planMinMax',
-//						'aprice' => 16.239316239316242,
-//					],
-//					[
-//						'stamp' => 'a4',
-//						'start' => '2019-04-10',
-//						'end' => '2019-05-01',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 20,
-//						'final_charge' => 81,
-//						'full_price' => 70,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'abc',
-//						'aprice' => 69.23076923076924,
-//					],
-//					[
-//						'stamp' => 'a5',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-05',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 21,
-//						'final_charge' => 19,
-//						'full_price' => 16,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'abc',
-//						'aprice' => 16.239316239316242,
-//					],
-//					[
-//						'stamp' => 'a6',
-//						'start' => '2019-04-05',
-//						'end' => '2019-05-01',
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'aid' => 18,
-//						'sid' => 21,
-//						'final_charge' => 97,
-//						'full_price' => 83,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'planMinMax',
-//						'aprice' => 82.90598290598291,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'MaxSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'MinSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-05',
-//							'to' => '2019-04-10',
-//						],
-//					],
-//				],
-//				'MinMaxSubscribers' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-05',
-//							'to' => '2019-04-10',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'MaxSubscribers',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'abc' => -100,
-//					],
-//					'affected_sections' =>
-//					[
-//						'flat',
-//					],
-//				],
-//				[
-//					'sid' => 20,
-//					'key' => 'MaxSubscribers',
-//					'full_price' => -16,
-//					'billrun' => '201905',
-//					'final_charge' => -19,
-//					'discount' =>
-//					[
-//						'abc' => -19,
-//					],
-//					'affected_sections' =>
-//					[
-//						'flat',
-//					],
-//				],
-//				[
-//					'sid' => 21,
-//					'key' => 'MaxSubscribers',
-//					'full_price' => -83,
-//					'billrun' => '201905',
-//					'final_charge' => -97,
-//					'discount' =>
-//					[
-//						'abc' => -10,
-//					],
-//					'affected_sections' =>
-//					[
-//						'flat',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 6,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//						'street' => 'abc',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'testAccountCondition',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountA',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'values' => 'abc',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'condAccountA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 7,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//						'street' => 'abc',
-//						'country' => 'israel',
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountA',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'values' => 'abc',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'condAccountC',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'ne',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'condAccountA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'condAccountC' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 8,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//						'street' => 'z',
-//						'country' => 'israel',
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'planMinMax',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'regex',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'condAccountB' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 9,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 25,
-//						'plan' => 'abcdef',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'root' =>
-//							[
-//								'full_price' => 100,
-//							],
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'regex',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'overideDiscount' =>
-//			[
-//			],
-//			'SubscribersDiscount' =>
-//			[
-//				[
-//					'discounts' =>
-//					[
-//						[
-//							'name' => 'SDA',
-//							'root' =>
-//							[
-//								'full_price' => 100,
-//							],
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => '',
-//										'field' => '',
-//										'values' => '',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'SDA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 10,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 25,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'aid',
-//									'values' => 4,
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'SubscribersDiscount' =>
-//			[
-//				[
-//					'discounts' =>
-//					[
-//						[
-//							'name' => 'SDA',
-//							'root' =>
-//							[
-//								'full_price' => 100,
-//							],
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => 'subscriber',
-//										'field' => 'plan',
-//										'op' => 'eq',
-//										'values' => 'abc',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'SDA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 11,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 25,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'regex',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'overideDiscount' =>
-//			[
-//			],
-//			'SubscribersDiscount' =>
-//			[
-//				[
-//					'discounts' =>
-//					[
-//						[
-//							'name' => 'SDA',
-//							'root' =>
-//							[
-//								'full_price' => 100,
-//							],
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => 'subscriber',
-//										'field' => 'plan',
-//										'values' => 'abcd',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 12,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 25,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 26,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'full_price' => 100,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'regex',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'overideDiscount' =>
-//			[
-//			],
-//			'SubscribersDiscount' =>
-//			[
-//				[
-//					'discounts' =>
-//					[
-//						[
-//							'name' => 'SDA',
-//							'root' =>
-//							[
-//								'full_price' => 100,
-//							],
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => 'subscriber',
-//										'field' => 'plan',
-//										'values' => 'abc',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'SDA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 13,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 3,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 25,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//					[
-//						'sid' => 26,
-//						'plan' => 'abc',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'condAccountB',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'account',
-//									'field' => 'street',
-//									'op' => 'regex',
-//									'values' => 'z',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'overideDiscount' =>
-//			[
-//			],
-//			'SubscribersDiscount' =>
-//			[
-//				[
-//					'discounts' =>
-//					[
-//						[
-//							'name' => 'SDA',
-//							'root' =>
-//							[
-//								'priority' => 3,
-//								'excludes' =>
-//								[
-//									'regular',
-//									'condAccountB',
-//								],
-//							],
-//							'priority' => 3,
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => 'subscriber',
-//										'field' => 'plan',
-//										'values' => 'abc',
-//									],
-//								],
-//							],
-//						],
-//						[
-//							'name' => 'regular',
-//							'root' =>
-//							[
-//								'priority' => 2,
-//							],
-//							'params_override' =>
-//							[
-//								'condition' =>
-//								[
-//									[
-//										'type' => 'subscriber',
-//										'field' => 'plan',
-//										'values' => 'abc',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'SDA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 14,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-01-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-02-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => '$gte',
-//									'values' => '2019-03-01',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 15,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'activation_date' => '2019-04-01',
-//						'contract' =>
-//						[
-//							'type' => 'Residential',
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-04-01',
-//									'to' => '2019-05-01',
-//								],
-//							],
-//						],
-//						'former_plan' => 'PLAN_Z',
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'deactivation_date' => '2019-08-01',
-//						'plan_activation' => '2019-04-01 00:00:00',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => 'is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => 'in',
-//									'values' => 'PLAN_X',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'former_plan',
-//									'op' => 'nin',
-//									'values' => 'PLAN_Y',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => 'gte',
-//									'values' => '2019-04-01',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'deactivation_date',
-//									'op' => 'gt',
-//									'values' => '@cycle_end_date@',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'conditionA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 16,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'deactivation_date' => '2020-04-01',
-//						'contract' =>
-//						[
-//							'type' => 'Residential',
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-04-15',
-//									'to' => '2019-05-01',
-//								],
-//							],
-//						],
-//						'former_plan' => 'PLAN_Z',
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-01-01',
-//						'to' => '2019-05-01',
-//						'activation_date' => '2019-04-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => '$is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'former_plan',
-//									'op' => '$nin',
-//									'values' => 'PLAN_Y',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => '$gte',
-//									'values' => '2019-04-01',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'deactivation_date',
-//									'op' => '$gt',
-//									'values' => '@cycle_end_date@',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'conditionA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-15',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 17,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'deactivation_date' => '2020-04-01',
-//						'contract' =>
-//						[
-//							'type' => 'Residential',
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-03-15',
-//									'to' => '2019-04-15',
-//								],
-//							],
-//						],
-//						'former_plan' => 'PLAN_Z',
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//						'activation_date' => '2019-04-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => '$is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$in',
-//									'values' => 'PLAN_X',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'former_plan',
-//									'op' => '$nin',
-//									'values' => 'PLAN_Y',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => '$gte',
-//									'values' => '2019-04-01',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'deactivation_date',
-//									'op' => '$gt',
-//									'values' => '@cycle_end_date@',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'conditionA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-15',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 18,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'deactivation_date' => '2020-04-01',
-//						'contract' =>
-//						[
-//							'type' => 'Residential',
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-04-10',
-//									'to' => '2019-04-21',
-//								],
-//							],
-//						],
-//						'former_plan' => 'PLAN_Z',
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//						'activation_date' => '2019-04-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => '$is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$in',
-//									'values' => 'PLAN_X',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'former_plan',
-//									'op' => '$nin',
-//									'values' => 'PLAN_Y',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => '$gte',
-//									'values' => '2019-04-01',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'deactivation_date',
-//									'op' => '$gt',
-//									'values' => '@cycle_end_date@',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'conditionA' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-21',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 19,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'activation_date' => '2019-04-01',
-//						'contract' =>
-//						[
-//							'type' => 'Residential',
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-03-10',
-//									'to' => '2019-03-10',
-//								],
-//							],
-//						],
-//						'former_plan' => 'PLAN_Z',
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-01-01',
-//						'to' => '2119-07-02',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionA',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => '$is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$in',
-//									'values' => 'PLAN_X',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'former_plan',
-//									'op' => '$nin',
-//									'values' => 'PLAN_Y',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan_activation',
-//									'op' => '$gte',
-//									'values' => '2019-04-01',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'deactivation_date',
-//									'op' => '$gt',
-//									'values' => '@cycle_end_date@',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 20,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'contract' =>
-//						[
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-04-01',
-//									'to' => '2019-04-11',
-//								],
-//								[
-//									'from' => '2019-04-20',
-//									'to' => '2019-05-01',
-//								],
-//							],
-//						],
-//						'contractB' =>
-//						[
-//							'dates' =>
-//							[
-//								[
-//									'from' => '2019-04-01',
-//									'to' => '2019-05-01',
-//								],
-//							],
-//						],
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2119-01-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'conditionB',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 0,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contractB.dates',
-//									'op' => 'is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'contract.dates',
-//									'op' => 'is',
-//									'values' => 'active',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'conditionB' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-11',
-//						],
-//						[
-//							'from' => '2019-04-20',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'conditionB',
-//					'full_price' => -16,
-//					'billrun' => '201905',
-//					'final_charge' => -19,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -10,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'key' => 'conditionB',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'final_charge' => -21,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -10,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 21,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201907',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2119-10-19',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_PLAN_FOR_3_MONTH',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//							'cycles' => 3,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'D_PLAN_FOR_3_MONTH' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-06-01',
-//							'to' => '2019-07-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 22,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201908',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-07-01',
-//						'to' => '2119-04-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_PLAN_FOR_3_MONTH',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'A',
-//								],
-//							],
-//							'cycles' => 3,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 23,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201907',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2019-06-15',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'B',
-//						'from' => '2019-06-15',
-//						'to' => '2119-08-15',
-//						'plan_activation' => '2019-06-15',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_PLAN_FOR_3_MONTH',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'D_PLAN_FOR_3_MONTH' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-06-01',
-//							'to' => '2019-06-15',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 24,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201907',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2119-06-15',
-//						'services' =>
-//						[
-//							[
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2220-0101',
-//							],
-//						],
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_SERVICE_FOR_3_MONTH',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//							'cycles' => 3,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'D_SERVICE_FOR_3_MONTH' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-06-01',
-//							'to' => '2019-07-01',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 25,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201908',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'B',
-//						'from' => '2019-07-01',
-//						'to' => '2019-08-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2220-01-01',
-//							],
-//						],
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_SERVICE_FOR_3_MONTH',
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//							'cycles' => 3,
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 26,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201907',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-06-01',
-//						'to' => '2019-06-15',
-//						'services' =>
-//						[
-//							[
-//								'name' => 'A',
-//								'key' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-06-01',
-//								'to' => '2019-06-15',
-//							],
-//						],
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'B',
-//						'from' => '2019-06-01',
-//						'to' => '2019-07-01',
-//						'services' =>
-//						[
-//							[
-//								'name' => 'B',
-//								'key' => 'B',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-06-01',
-//								'to' => '2019-07-01',
-//							],
-//						],
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'D_SERVICE_FOR_3_MONTH',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_services' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'op' => '$eq',
-//									'values' => 'A',
-//								],
-//							],
-//							'cycles' => 3,
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-06-01',
-//						'end' => '2019-06-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 54,
-//						'full_price' => 46,
-//						'billrun' => '201907',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 46.15384615384616,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'D_SERVICE_FOR_3_MONTH' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-06-01',
-//							'to' => '2019-06-15',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'D_SERVICE_FOR_3_MONTH',
-//					'full_price' => -46,
-//					'billrun' => '201907',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'A' => -10,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 27,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'BB',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-10',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'ZZZ',
-//						'from' => '2019-04-10',
-//						'to' => '2019-04-20',
-//						'plan_activation' => '2019-04-10',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'BB',
-//						'from' => '2019-04-20',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-20',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'AB',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' => 50,
-//							],
-//							'priority' => 2,
-//							'excludes' =>
-//							[
-//								'ABC',
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'BB',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'ABC',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' => 50,
-//							],
-//							'priority' => 1,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'BB',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'ZZZ',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'AB' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-10',
-//						],
-//						[
-//							'from' => '2019-04-20',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'ABC' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-20',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 28,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'abcd',
-//						'firstname' => 'yossi',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-10',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'abcd',
-//						'firstname' => 'yossef',
-//						'from' => '2019-04-10',
-//						'to' => '2019-04-20',
-//						'plan_activation' => '2019-04-10',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'abcd',
-//						'firstname' => 'yossi',
-//						'from' => '2019-04-20',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-20',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'X',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' => 50,
-//							],
-//							'priority' => 3,
-//							'excludes' =>
-//							[
-//								'Z',
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'abcd',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => '$eq',
-//									'values' => 'yossi',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'Z',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' => 50,
-//							],
-//							'priority' => 2,
-//							'excludes' =>
-//							[
-//								'Y',
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'abcd',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'Y',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' => 50,
-//							],
-//							'priority' => 1,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'abcd',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'X' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-10',
-//						],
-//						[
-//							'from' => '2019-04-20',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'Z' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-20',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 29,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -100,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 30,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-15',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 54,
-//						'full_price' => 46,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 46.15384615384616,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-15',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -46,
-//					'billrun' => '201905',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -46,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 31,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 58,
-//						'full_price' => 50,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 49.572649572649574,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -50,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 32,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abfc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 0.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//			],
-//		]
-//		, [
-//			'test_num' => 33,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -50,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 34,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 100.0,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -50,
-//					],
-//					'service' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 35,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-15',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_Y',
-//						'from' => '2019-04-15',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-15',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 50,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_Y',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 54,
-//						'full_price' => 46,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 46.15384615384616,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-15',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 62,
-//						'full_price' => 53,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_Y',
-//						'aprice' => 52.991452991452995,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'abc',
-//					'full_price' => -46,
-//					'billrun' => '201905',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -46,
-//					],
-//					'service' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => 19,
-//					'key' => 'ab',
-//					'full_price' => -26,
-//					'billrun' => '201905',
-//					'final_charge' => -31,
-//					'discount' =>
-//					[
-//						'PLAN_Y' => -26,
-//					],
-//					'service' => 'PLAN_Y',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 36,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-15',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_Y',
-//						'from' => '2019-04-15',
-//						'to' => '2019-04-20',
-//						'plan_activation' => '2019-04-15',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-20',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-20',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_X',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_plans' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN_Y',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 54,
-//						'full_price' => 46,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 46.15384615384616,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-15',
-//						'end' => '2019-04-20',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 16,
-//						'full_price' => 19,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_Y',
-//						'aprice' => 13.675213675213676,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-20',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 42,
-//						'full_price' => 36,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 35.8974358974359,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'abc',
-//					'full_price' => -46,
-//					'billrun' => '201905',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -46,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => 19,
-//					'key' => 'ab',
-//					'full_price' => -16,
-//					'billrun' => '201905',
-//					'final_charge' => -19,
-//					'discount' =>
-//					[
-//						'PLAN_Y' => -16,
-//					],
-//					'plan' => 'PLAN_Y',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => 19,
-//					'key' => 'abc',
-//					'full_price' => -36,
-//					'billrun' => '201905',
-//					'final_charge' => -42,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -36,
-//					],
-//					'plan' => 'PLAN_X',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 37,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_Y',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_services' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_Y',
-//						'aprice' => 100.0,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'ab',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'PLAN_X' => -100,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 38,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-04-15',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_services' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 100.0,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'ab',
-//					'full_price' => -46,
-//					'billrun' => '201905',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'A' => -46,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 39,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-15',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-04-15',
-//							],
-//						],
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_Y',
-//						'from' => '2019-04-15',
-//						'to' => '2019-04-20',
-//						'plan_activation' => '2019-04-15',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'B',
-//								'name' => 'B',
-//								'service_activation' => '2019-04-15',
-//								'from' => '2019-04-15',
-//								'to' => '2019-04-20',
-//							],
-//						],
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-20',
-//						'to' => '2019-04-30',
-//						'plan_activation' => '2019-04-20',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-20',
-//								'from' => '2019-04-20',
-//								'to' => '2019-04-30',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_services' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'matched_services' =>
-//								[
-//									'value' => 100,
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'B',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-04-15',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 54,
-//						'full_price' => 46,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 46.15384615384616,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-15',
-//						'end' => '2019-04-20',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 16,
-//						'full_price' => 19,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'B',
-//						'aprice' => 13.675213675213676,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-20',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 33,
-//						'full_price' => 38,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 28.205128205128208,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'abc',
-//					'full_price' => -46,
-//					'billrun' => '201905',
-//					'final_charge' => -54,
-//					'discount' =>
-//					[
-//						'A' => -46,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => 19,
-//					'key' => 'ab',
-//					'full_price' => -16,
-//					'billrun' => '201905',
-//					'final_charge' => -19,
-//					'discount' =>
-//					[
-//						'B' => -16,
-//					],
-//					'service' => 'B',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => 19,
-//					'key' => 'abc',
-//					'full_price' => -33,
-//					'billrun' => '201905',
-//					'final_charge' => -38,
-//					'discount' =>
-//					[
-//						'A' => -33,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 40,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 100,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 100,
-//						'full_price' => 117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'ab' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'ab',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 41,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'quantity' => 10,
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'ab',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 10,
-//										'operations' =>
-//										[
-//											[
-//												'name' => 'recurring_by_quantity',
-//												'params' =>
-//												[
-//													[
-//														'name' => 'quantity',
-//														'value' => 10,
-//													],
-//												],
-//											],
-//										],
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'quantity' => 10,
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 1000,
-//						'price' => 1000,
-//						'full_price' => 1117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'service' => 'A',
-//						'usagev' => 100,
-//						'aprice' => 854.7008547008547,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'ab' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => 19,
-//					'key' => 'ab',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 42,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 100,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 100,
-//						'full_price' => 117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '19',
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'plan' => 'A',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 43,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 100,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 100,
-//						'full_price' => 117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '19',
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'plan' => 'A',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 44,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'firstname' => 'yossi',
-//					],
-//					[
-//						'sid' => 20,
-//						'plan' => 'A',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'firstname' => 'yonatan',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 100,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => '$eq',
-//									'values' => 'yossi',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 19,
-//						'final_charge' => 100,
-//						'full_price' => 117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 18,
-//						'sid' => 20,
-//						'final_charge' => 100,
-//						'full_price' => 117,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '19',
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -117,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'plan' => 'A',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 46,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 77,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 78,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 10,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 77,
-//						'sid' => 78,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 77,
-//						'sid' => 78,
-//						'final_charge' => 100,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -10,
-//					'billrun' => '201905',
-//					'final_charge' => -10,
-//					'discount' =>
-//					[
-//						'A' => -10,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 47,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 77,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 78,
-//						'plan' => 'PLAN_X',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'A',
-//								'name' => 'A',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'abc',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'A' =>
-//									[
-//										'value' => 1,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'service',
-//									'field' => 'name',
-//									'values' => 'A',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 77,
-//						'sid' => 78,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN_X',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 77,
-//						'sid' => 78,
-//						'final_charge' => 100,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'A',
-//						'aprice' => 85.47008547008548,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'abc' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'key' => 'abc',
-//					'full_price' => -100,
-//					'billrun' => '201905',
-//					'final_charge' => -100,
-//					'discount' =>
-//					[
-//						'A' => -100,
-//					],
-//					'service' => 'A',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 48,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'final_charge' => -29,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -15,
-//					'billrun' => '201905',
-//					'final_charge' => -17,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -30,
-//					'billrun' => '201905',
-//					'final_charge' => -35,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 49,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-17',
-//							'to' => '2019-04-20',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-13',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -3,
-//					'billrun' => '201905',
-//					'final_charge' => -3,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -6,
-//					'billrun' => '201905',
-//					'final_charge' => -7,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -57,
-//					'billrun' => '201905',
-//					'final_charge' => -67,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 50,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-12',
-//							'to' => '2019-04-30',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-16',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'final_charge' => -21,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -20,
-//					'billrun' => '201905',
-//					'final_charge' => -23,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -40,
-//					'billrun' => '201905',
-//					'final_charge' => -47,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 51,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-17',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-16',
-//							'to' => '2019-05-01',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -40,
-//					'billrun' => '201905',
-//					'final_charge' => -46,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -73,
-//					'billrun' => '201905',
-//					'final_charge' => -86,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 52,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'service' => 'SERVICE2',
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'SERVICE2',
-//								'name' => 'SERVICE2',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -15,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -30,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 53,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'service' => 'SERVICE2',
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'SERVICE2',
-//								'name' => 'SERVICE2',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-17',
-//							'to' => '2019-04-20',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-13',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -1,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -2,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -19,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 54,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'firstname' => 'OR',
-//					],
-//					[
-//						'sid' => 23,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'firstname' => 'DANA',
-//					],
-//					[
-//						'sid' => 24,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'firstname' => 'NOA',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-12',
-//							'to' => '2019-04-30',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => '$eq',
-//									'values' => 'DANA',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => '$eq',
-//									'values' => 'DANA',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-16',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => '$eq',
-//									'values' => 'DANA',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS2',
-//					'full_price' => -20,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS3',
-//					'full_price' => -40,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 55,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 18,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 19,
-//						'plan' => 'BB',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-10',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'ZZZ',
-//						'from' => '2019-04-10',
-//						'to' => '2019-04-20',
-//						'plan_activation' => '2019-04-10',
-//					],
-//					[
-//						'sid' => 19,
-//						'plan' => 'BB',
-//						'from' => '2019-04-20',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-20',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'AB',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 50,
-//									'sequential' => true,
-//								],
-//							],
-//							'priority' => 2,
-//							'excludes' =>
-//							[
-//								'ABC',
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'BB',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'ABC',
-//						'root' =>
-//						[
-//							'subject' =>
-//							[
-//								'monthly_fees' =>
-//								[
-//									'value' => 50,
-//									'sequential' => true,
-//								],
-//							],
-//							'priority' => 1,
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'BB',
-//								],
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'op' => '$eq',
-//									'values' => 'ZZZ',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//				'cdrs' => NULL,
-//			],
-//			'expected' =>
-//			[
-//				'AB' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-01',
-//							'to' => '2019-04-10',
-//						],
-//						[
-//							'from' => '2019-04-20',
-//							'to' => '2019-05-01',
-//						],
-//					],
-//				],
-//				'ABC' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-20',
-//						],
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 56,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'monetary',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 30,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -30,
-//					'billrun' => '201905',
-//					'final_charge' => -35,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 57,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'monetary',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 25,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'final_charge' => -29,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -15,
-//					'billrun' => '201905',
-//					'final_charge' => -17,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -30,
-//					'billrun' => '201905',
-//					'final_charge' => -35,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 58,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'monetary',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 25,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'final_charge' => -29,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -5,
-//					'billrun' => '201905',
-//					'final_charge' => -5,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 59,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'monetary',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 50,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 60,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 23,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 24,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-12',
-//							'to' => '2019-04-30',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 24,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 24,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '24',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 61,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 23,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'sid' => 24,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'from' => '2019-04-12',
-//							'to' => '2019-04-30',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'from' => '2019-04-10',
-//							'to' => '2019-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 24,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 24,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 23,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 0,
-//						'full_price' => 0,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 0.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 351,
-//						'full_price' => 300,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 0,
-//							'total_tax' => 0,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 300.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '24',
-//					'key' => 'DIS1',
-//					'full_price' => -18,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '23',
-//					'key' => 'DIS2',
-//					'full_price' => -20,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -20,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '24',
-//					'key' => 'DIS2',
-//					'full_price' => -20,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 62,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS3',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'type' => 'monetary',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 60,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS3',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'final_charge' => -58,
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 63,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//						'services' =>
-//						[
-//							[
-//								'key' => 'SERVICE2',
-//								'name' => 'SERVICE2',
-//								'service_activation' => '2019-04-01',
-//								'from' => '2019-04-01',
-//								'to' => '2019-05-01',
-//							],
-//						],
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'priority' => 2,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-30',
-//							'type' => 'monitory',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 50,
-//									],
-//								],
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 50,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'service' =>
-//								[
-//									'SERVICE2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 17,
-//							'total_tax' => 17,
-//							'taxes' =>
-//							[
-//							],
-//							'plan' => 'PLAN2',
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//					[
-//						'usaget' => 'flat',
-//						'type' => 'service',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//							'total_amount' => 17,
-//							'total_tax' => 17,
-//							'taxes' =>
-//							[
-//							],
-//						],
-//						'service' => 'SERVICE2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -50,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'service' => 'SERVICE2',
-//					'affected_sections' =>
-//					[
-//						'service',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 64,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'firstname' => 'p',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-16',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'firstname' => 'pp',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-16',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'priority' => 2,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-30',
-//							'type' => 'monitory',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 50,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'values' => 'p',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'values' => 'pp',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 65,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '201905',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'firstname' => 'p',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-01',
-//						'to' => '2019-04-16',
-//						'plan_activation' => '2019-04-01',
-//					],
-//					[
-//						'firstname' => 'pp',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2019-04-16',
-//						'to' => '2019-05-01',
-//						'plan_activation' => '2019-04-01',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'priority' => 2,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-30',
-//							'type' => 'monitory',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 50,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'values' => 'p',
-//								],
-//							],
-//						],
-//					],
-//					[
-//						'name' => 'DIS2',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-21',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//										'sequential' => true,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'firstname',
-//									'op' => 'in',
-//									'values' =>
-//									[
-//										'pp',
-//										'p',
-//									],
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2019-04-01',
-//						'end' => '2019-05-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 117,
-//						'full_price' => 100,
-//						'billrun' => '201905',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 100.0,
-//					],
-//				],
-//				'function' =>
-//				[
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -25,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS2',
-//					'full_price' => -37,
-//					'billrun' => '201905',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 66,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '202101',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'firstname' => 'p',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2020-12-01',
-//						'to' => '2021-01-01',
-//						'plan_activation' => '2019-12-10',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'from' => '2019-04-01',
-//							'to' => '2119-04-30',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2020-12-01',
-//						'end' => '2020-12-10',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 33,
-//						'full_price' => 100,
-//						'billrun' => '202101',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 28.205128205128208,
-//					],
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2020-12-10',
-//						'end' => '2021-01-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 166,
-//						'full_price' => 200,
-//						'billrun' => '202101',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 141.8803418803419,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//				'DIS1' =>
-//				[
-//					'eligibility' =>
-//					[
-//						[
-//							'from' => '2020-12-01',
-//							'to' => '2021-01-01',
-//						],
-//					],
-//				],
-//			],
-//			'subjectExpected' =>
-//			[
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -5,
-//					'billrun' => '202101',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//				[
-//					'sid' => '22',
-//					'key' => 'DIS1',
-//					'full_price' => -28,
-//					'billrun' => '202101',
-//					'plan' => 'PLAN2',
-//					'affected_sections' =>
-//					[
-//						'plan',
-//					],
-//				],
-//			],
-//		]
-//		, [
-//			'test_num' => 67,
-//			'test' =>
-//			[
-//				'options' =>
-//				[
-//					'stamp' => '202101',
-//				],
-//				'subsAccount' =>
-//				[
-//					[
-//						'aid' => 21,
-//					],
-//				],
-//				'subsRevisions' =>
-//				[
-//					[
-//						'firstname' => 'p',
-//						'sid' => 22,
-//						'plan' => 'PLAN2',
-//						'from' => '2020-12-10',
-//						'to' => '2021-01-01',
-//						'plan_activation' => '2020-12-10',
-//					],
-//				],
-//				'discounts' =>
-//				[
-//					[
-//						'name' => 'DIS1',
-//						'root' =>
-//						[
-//							'priority' => 1,
-//							'from' => '2019-04-01',
-//							'to' => '2020-12-03',
-//							'type' => 'percentage',
-//							'subject' =>
-//							[
-//								'plan' =>
-//								[
-//									'PLAN2' =>
-//									[
-//										'value' => 0,
-//									],
-//								],
-//							],
-//						],
-//						'params_override' =>
-//						[
-//							'condition' =>
-//							[
-//								[
-//									'type' => 'subscriber',
-//									'field' => 'plan',
-//									'values' => 'PLAN2',
-//								],
-//							],
-//						],
-//					],
-//				],
-//				'cdrs' =>
-//				[
-//					[
-//						'prorated_end' => true,
-//						'prorated_start' => true,
-//						'usaget' => 'flat',
-//						'type' => 'flat',
-//						'start' => '2020-12-10',
-//						'end' => '2021-01-01',
-//						'aid' => 21,
-//						'sid' => 22,
-//						'final_charge' => 166,
-//						'full_price' => 200,
-//						'billrun' => '202101',
-//						'tax_data' =>
-//						[
-//						],
-//						'plan' => 'PLAN2',
-//						'aprice' => 141.8803418803419,
-//					],
-//				],
-//				'function' =>
-//				[
-//					'checkEligibility',
-//				],
-//			],
-//			'expected' =>
-//			[
-//			],
-//			'subjectExpected' =>
-//			[
-//			],
-//		]
+		, [
+			'test_num' => 2,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 4,
+							'plan' => 'planMinMax',
+							'plan_activation' => '2019-01-01',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 5,
+							'plan' => 'planMinMax',
+							'plan_activation' => '2019-01-01',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 6,
+							'plan' => 'planMinMax',
+							'plan_activation' => '2019-01-01',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'MinMaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+							'max_subscribers' => 5,
+						],
+					],
+					[
+						'name' => 'MinSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+						],
+					],
+					[
+						'name' => 'MaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'max_subscribers' => 5,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'MaxSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'MinSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'MinMaxSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 3,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 7,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 8,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 9,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 10,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'MinMaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+							'max_subscribers' => 5,
+						],
+					],
+					[
+						'name' => 'MinSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+						],
+					],
+					[
+						'name' => 'MaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'max_subscribers' => 5,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 4,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 11,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 8,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 9,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 10,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 11,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 12,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 13,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'MinMaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+							'max_subscribers' => 5,
+						],
+					],
+					[
+						'name' => 'MinSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+						],
+					],
+					[
+						'name' => 'MaxSubscribers',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'max_subscribers' => 5,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'overideDiscount' =>
+			[
+				[
+				],
+			],
+			'expected' =>
+			[
+				'MinSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 5,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2019-05-01',
+						],
+					],
+					[
+						[
+							'sid' => 20,
+							'plan' => 'abc',
+							'from' => '2019-04-01',
+							'to' => '2019-04-05',
+						],
+						[
+							'sid' => 20,
+							'plan' => 'planMinMax',
+							'from' => '2019-04-05',
+							'to' => '2019-04-10',
+						],
+						[
+							'sid' => 20,
+							'plan' => 'abc',
+							'from' => '2019-04-10',
+							'to' => '2019-05-01',
+						],
+					],
+					[
+						[
+							'sid' => 21,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2019-04-05',
+						],
+						[
+							'sid' => 21,
+							'plan' => 'planMinMax',
+							'from' => '2019-04-05',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'MinMaxSubscribers',
+						'root' =>
+						[
+							'priority' => 1,
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+							'max_subscribers' => 5,
+						],
+					],
+					[
+						'name' => 'MinSubscribers',
+						'root' =>
+						[
+							'priority' => 2,
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'min_subscribers' => 3,
+						],
+					],
+					[
+						'name' => 'MaxSubscribers',
+						'root' =>
+						[
+							'priority' => 3,
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'planMinMax',
+									],
+								],
+							],
+							'max_subscribers' => 5,
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'stamp' => 'a1',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'planMinMax',
+						'aprice' => 100.0,
+					],
+					[
+						'stamp' => 'a2',
+						'start' => '2019-04-01',
+						'end' => '2019-04-05',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 20,
+						'final_charge' => 19.49988,
+						'full_price' => 16.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'abc',
+						'aprice' => 16.666564102564106,
+					],
+					[
+						'stamp' => 'a3',
+						'start' => '2019-04-05',
+						'end' => '2019-04-10',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 20,
+						'final_charge' => 19.49988,
+						'full_price' => 16.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'planMinMax',
+						'aprice' => 16.666564102564106,
+					],
+					[
+						'stamp' => 'a4',
+						'start' => '2019-04-10',
+						'end' => '2019-05-01',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 20,
+						'final_charge' => 81.9,
+						'full_price' => 70,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'abc',
+						'aprice' => 70.00000000000001,
+					],
+					[
+						'stamp' => 'a5',
+						'start' => '2019-04-01',
+						'end' => '2019-04-05',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 21,
+						'final_charge' => 19.49988,
+						'full_price' => 16.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'abc',
+						'aprice' => 16.666564102564106,
+					],
+					[
+						'stamp' => 'a6',
+						'start' => '2019-04-05',
+						'end' => '2019-05-01',
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'aid' => 18,
+						'sid' => 21,
+						'final_charge' => 97.49999,
+						'full_price' => 83.33333,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'planMinMax',
+						'aprice' => 83.3333247863248,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'MaxSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'MinSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-05',
+							'to' => '2019-04-10',
+						],
+					],
+				],
+				'MinMaxSubscribers' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-05',
+							'to' => '2019-04-10',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'MaxSubscribers',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'abc' => -100,
+					],
+					'affected_sections' =>
+					[
+						'flat',
+					],
+				],
+				[
+					'sid' => 20,
+					'key' => 'MaxSubscribers',
+					'full_price' => -16.66666,
+					'billrun' => '201905',
+					'final_charge' => -19.4999,
+					'discount' =>
+					[
+						'abc' => -19.4999,
+					],
+					'affected_sections' =>
+					[
+						'flat',
+					],
+				],
+				[
+					'sid' => 21,
+					'key' => 'MaxSubscribers',
+					'full_price' => -83.333333,
+					'billrun' => '201905',
+					'final_charge' => -97.4999,
+					'discount' =>
+					[
+						'abc' => -10,
+					],
+					'affected_sections' =>
+					[
+						'flat',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 6,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+						'street' => 'abc',
+						'from' => '2019-04-01',
+						'to' => '2019-05-01',
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'testAccountCondition',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountA',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'values' => 'abc',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'condAccountA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 7,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+						'street' => 'abc',
+						'country' => 'israel',
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountA',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'values' => 'abc',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'condAccountC',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'ne',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'condAccountA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'condAccountC' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 8,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+						'street' => 'z',
+						'country' => 'israel',
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'planMinMax',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'regex',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'condAccountB' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 9,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 25,
+							'plan' => 'abcdef',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'root' =>
+							[
+								'full_price' => 100,
+							],
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'regex',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' => NULL,
+			],
+			'overideDiscount' =>
+			[
+				[
+				],
+			],
+			'SubscribersDiscount' =>
+			[
+				25 => [
+					'discounts' =>
+					[
+						[
+							'name' => 'SDA',
+							'root' =>
+							[
+								'full_price' => 100,
+							],
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => '',
+											'field' => '',
+											'values' => '',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+			],
+			'expected' =>
+			[
+				'SDA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 10,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 25,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'aid',
+										'values' => 4,
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' => NULL,
+			],
+			'SubscribersDiscount' =>
+			[
+				25 => [
+					'discounts' =>
+					[
+						[
+							'name' => 'SDA',
+							'root' =>
+							[
+								'full_price' => 100,
+							],
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => 'subscriber',
+											'field' => 'plan',
+											'op' => 'eq',
+											'values' => 'abc',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+			],
+			'expected' =>
+			[
+				'SDA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 11,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 25,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'regex',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' => NULL,
+			],
+			'overideDiscount' =>
+			[
+				[
+				],
+			],
+			'SubscribersDiscount' =>
+			[
+				25 => [
+					'discounts' =>
+					[
+						[
+							'name' => 'SDA',
+							'root' =>
+							[
+								'full_price' => 100,
+							],
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => 'subscriber',
+											'field' => 'plan',
+											'values' => 'abcd',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 12,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 25,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 26,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'full_price' => 100,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'regex',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' => NULL,
+			],
+			'overideDiscount' =>
+			[
+				[
+				],
+			],
+			'SubscribersDiscount' =>
+			[
+				25 => [
+					'discounts' =>
+					[
+						[
+							'name' => 'SDA',
+							'root' =>
+							[
+								'full_price' => 100,
+							],
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => 'subscriber',
+											'field' => 'plan',
+											'values' => 'abc',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+			],
+			'expected' =>
+			[
+				'SDA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 13,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 3,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 25,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+					[
+						[
+							'sid' => 26,
+							'plan' => 'abc',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'condAccountB',
+						'root' =>
+						[
+							'priority' => 1,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'account',
+										'field' => 'street',
+										'op' => 'regex',
+										'values' => 'z',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' => NULL,
+			],
+			'overideDiscount' =>
+			[
+				[
+				],
+			],
+			'SubscribersDiscount' =>
+			[
+				25 => [
+					'discounts' =>
+					[
+						[
+							'name' => 'SDA',
+							'root' =>
+							[
+								'priority' => 3,
+								'excludes' =>
+								[
+									'regular',
+									'condAccountB',
+								],
+							],
+							'priority' => 3,
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => 'subscriber',
+											'field' => 'plan',
+											'values' => 'abc',
+										],
+									],
+								],
+							],
+						],
+						[
+							'name' => 'regular',
+							'root' =>
+							[
+								'priority' => 2,
+							],
+							'params_override' =>
+							[
+								'condition' =>
+								[
+									[
+										[
+											'type' => 'subscriber',
+											'field' => 'plan',
+											'values' => 'abc',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+			],
+			'expected' =>
+			[
+				'SDA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 14,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-01-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-02-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => '$gte',
+										'values' => '2019-03-01',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 15,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'activation_date' => '2019-04-01',
+							'contract' =>
+							[
+								'type' => 'Residential',
+								'dates' =>
+								[
+									[
+										'from' => '2019-04-01',
+										'to' => '2019-05-01',
+									],
+								],
+							],
+							'former_plan' => 'PLAN_Z',
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'deactivation_date' => '2019-08-01',
+							'plan_activation' => '2019-04-01 00:00:00',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => 'is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => 'in',
+										'values' => 'PLAN_X',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'former_plan',
+										'op' => 'nin',
+										'values' => 'PLAN_Y',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => 'gte',
+										'values' => '2019-04-01',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'deactivation_date',
+										'op' => 'gt',
+										'values' => '@cycle_end_date@',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'conditionA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 16,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'deactivation_date' => '2020-04-01',
+							'contract' =>
+							[
+								'type' => 'Residential',
+								'dates' =>
+								[
+									[
+										'from' => '2019-04-15',
+										'to' => '2019-05-01',
+									],
+								],
+							],
+							'former_plan' => 'PLAN_Z',
+							'plan' => 'PLAN_X',
+							'from' => '2019-01-01',
+							'to' => '2019-05-01',
+							'activation_date' => '2019-04-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => '$is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'former_plan',
+										'op' => '$nin',
+										'values' => 'PLAN_Y',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => '$gte',
+										'values' => '2019-04-01',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'deactivation_date',
+										'op' => '$gt',
+										'values' => '@cycle_end_date@',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'conditionA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-15',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 17,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'deactivation_date' => '2020-04-01',
+							'contract' =>
+							[
+								'type' => 'Residential',
+								'dates' =>
+								[
+									[
+										'from' => '2019-03-15',
+										'to' => '2019-04-15',
+									],
+								],
+							],
+							'former_plan' => 'PLAN_Z',
+							'plan' => 'PLAN_X',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+							'activation_date' => '2019-04-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => '$is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$in',
+										'values' => 'PLAN_X',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'former_plan',
+										'op' => '$nin',
+										'values' => 'PLAN_Y',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => '$gte',
+										'values' => '2019-04-01',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'deactivation_date',
+										'op' => '$gt',
+										'values' => '@cycle_end_date@',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'conditionA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 18,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'deactivation_date' => '2020-04-01',
+							'contract' =>
+							[
+								'type' => 'Residential',
+								'dates' =>
+								[
+									[
+										'from' => '2019-04-10',
+										'to' => '2019-04-21',
+									],
+								],
+							],
+							'former_plan' => 'PLAN_Z',
+							'plan' => 'PLAN_X',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+							'activation_date' => '2019-04-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => '$is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$in',
+										'values' => 'PLAN_X',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'former_plan',
+										'op' => '$nin',
+										'values' => 'PLAN_Y',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => '$gte',
+										'values' => '2019-04-01',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'deactivation_date',
+										'op' => '$gt',
+										'values' => '@cycle_end_date@',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'conditionA' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-21',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 19,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'activation_date' => '2019-04-01',
+							'contract' =>
+							[
+								'type' => 'Residential',
+								'dates' =>
+								[
+									[
+										'from' => '2019-03-10',
+										'to' => '2019-03-10',
+									],
+								],
+							],
+							'former_plan' => 'PLAN_Z',
+							'plan' => 'PLAN_X',
+							'from' => '2019-01-01',
+							'to' => '2119-07-02',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionA',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => '$is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$in',
+										'values' => 'PLAN_X',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'former_plan',
+										'op' => '$nin',
+										'values' => 'PLAN_Y',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan_activation',
+										'op' => '$gte',
+										'values' => '2019-04-01',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'deactivation_date',
+										'op' => '$gt',
+										'values' => '@cycle_end_date@',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 20,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'contract' =>
+							[
+								'dates' =>
+								[
+									[
+										'from' => '2019-04-01',
+										'to' => '2019-04-11',
+									],
+									[
+										'from' => '2019-04-20',
+										'to' => '2019-05-01',
+									],
+								],
+							],
+							'contractB' =>
+							[
+								'dates' =>
+								[
+									[
+										'from' => '2019-04-01',
+										'to' => '2019-05-01',
+									],
+								],
+							],
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2119-01-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'conditionB',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 0.5,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'contractB.dates',
+										'op' => 'is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'contract.dates',
+										'op' => 'is',
+										'values' => 'active',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'conditionB' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-11',
+						],
+						[
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'conditionB',
+					'full_price' => -16.6666666,
+					'billrun' => '201905',
+					'final_charge' => -19.5,
+					'discount' =>
+					[
+						'PLAN_X' => -10,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'key' => 'conditionB',
+					'full_price' => -18.3333333,
+					'billrun' => '201905',
+					'final_charge' => -21.45,
+					'discount' =>
+					[
+						'PLAN_X' => -10,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 21,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201907',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2119-10-19',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_PLAN_FOR_3_MONTH',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+								],
+							],
+							'cycles' => 3,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'D_PLAN_FOR_3_MONTH' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-06-01',
+							'to' => '2019-07-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 22,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201908',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-07-01',
+							'to' => '2119-04-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_PLAN_FOR_3_MONTH',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'A',
+									],
+								],
+							],
+							'cycles' => 3,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 23,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201907',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2019-06-15',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'B',
+							'from' => '2019-06-15',
+							'to' => '2119-08-15',
+							'plan_activation' => '2019-06-15',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_PLAN_FOR_3_MONTH',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'D_PLAN_FOR_3_MONTH' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-06-01',
+							'to' => '2019-06-15',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 24,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201907',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2119-06-15',
+							'services' =>
+							[
+								[
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2220-0101',
+								],
+							],
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_SERVICE_FOR_3_MONTH',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+								],
+							],
+							'cycles' => 3,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'D_SERVICE_FOR_3_MONTH' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-06-01',
+							'to' => '2019-07-01',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 25,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201908',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'B',
+							'from' => '2019-07-01',
+							'to' => '2019-08-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2220-01-01',
+								],
+							],
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_SERVICE_FOR_3_MONTH',
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+							'cycles' => 3,
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 26,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201907',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-06-01',
+							'to' => '2019-06-15',
+							'services' =>
+							[
+								[
+									'name' => 'A',
+									'key' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-06-01',
+									'to' => '2019-06-15',
+								],
+							],
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'B',
+							'from' => '2019-06-01',
+							'to' => '2019-07-01',
+							'services' =>
+							[
+								[
+									'name' => 'B',
+									'key' => 'B',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-06-01',
+									'to' => '2019-07-01',
+								],
+							],
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'D_SERVICE_FOR_3_MONTH',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_services' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'op' => '$eq',
+										'values' => 'A',
+									],
+								],
+							],
+							'cycles' => 3,
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-06-01',
+						'end' => '2019-06-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 54.599988667,
+						'full_price' => 46.66666,
+						'billrun' => '201907',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 46.666656980341884,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'D_SERVICE_FOR_3_MONTH' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-06-01',
+							'to' => '2019-06-15',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'D_SERVICE_FOR_3_MONTH',
+					'full_price' => -46.66666,
+					'billrun' => '201907',
+					'final_charge' => -54.599988667,
+					'discount' =>
+					[
+						'A' => -10,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 27,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'BB',
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'ZZZ',
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+							'plan_activation' => '2019-04-10',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'BB',
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-20',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'AB',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' => 50,
+							],
+							'priority' => 2,
+							'excludes' =>
+							[
+								'ABC',
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'BB',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'ABC',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' => 50,
+							],
+							'priority' => 1,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'BB',
+									],
+								],
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'ZZZ',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'AB' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+						],
+						[
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'ABC' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 28,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'abcd',
+							'firstname' => 'yossi',
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'abcd',
+							'firstname' => 'yossef',
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+							'plan_activation' => '2019-04-10',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'abcd',
+							'firstname' => 'yossi',
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-20',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'X',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' => 50,
+							],
+							'priority' => 3,
+							'excludes' =>
+							[
+								'Z',
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'abcd',
+									],
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => '$eq',
+										'values' => 'yossi',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'Z',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' => 50,
+							],
+							'priority' => 2,
+							'excludes' =>
+							[
+								'Y',
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'abcd',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'Y',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' => 50,
+							],
+							'priority' => 1,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'abcd',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'X' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+						],
+						[
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'Z' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 29,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'PLAN_X' => -100,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 30,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-04-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 54.599998,
+						'full_price' => 46.66666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 46.666664957264956,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -46.66666,
+					'billrun' => '201905',
+					'final_charge' => -54.599998,
+					'discount' =>
+					[
+						'PLAN_X' => -46.66666,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 31,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 58.5,
+						'full_price' => 50,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 50.0,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'discount' =>
+					[
+						'PLAN_X' => -50,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 32,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abfc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 0.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+			],
+		]
+		, [
+			'test_num' => 33,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+						'services' =>
+						[
+							[
+								'key' => 'A',
+								'name' => 'A',
+								'service_activation' => '2019-04-01',
+								'from' => '2019-04-01',
+								'to' => '2019-05-01',
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -50,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 34,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+						'services' =>
+						[
+							[
+								'key' => 'A',
+								'name' => 'A',
+								'service_activation' => '2019-04-01',
+								'from' => '2019-04-01',
+								'to' => '2019-05-01',
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 100.0,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'PLAN_X' => -50,
+					],
+					'service' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 35,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_Y',
+							'from' => '2019-04-15',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-15',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 50,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_Y',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-04-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 54.599998,
+						'full_price' => 46.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 46.666664957264956,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-15',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 62.343333,
+						'full_price' => 53.333333,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_Y',
+						'aprice' => 53.28490000000001,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'abc',
+					'full_price' => -46.66666,
+					'billrun' => '201905',
+					'final_charge' => -54.599998,
+					'discount' =>
+					[
+						'PLAN_X' => -46.66666,
+					],
+					'service' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => 19,
+					'key' => 'ab',
+					'full_price' => -26.666,
+					'billrun' => '201905',
+					'final_charge' => -31.19998,
+					'discount' =>
+					[
+						'PLAN_Y' => -26.666,
+					],
+					'service' => 'PLAN_Y',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 36,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_Y',
+							'from' => '2019-04-15',
+							'to' => '2019-04-20',
+							'plan_activation' => '2019-04-15',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-20',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_X',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_plans' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN_Y',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-04-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 54.599998,
+						'full_price' => 46.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 46.666664957264956,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-15',
+						'end' => '2019-04-20',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 16.66666,
+						'full_price' => 19.499999,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_Y',
+						'aprice' => 14.245008547008549,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-20',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 42.8998,
+						'full_price' => 36.6666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 36.66649572649573,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'abc',
+					'full_price' => -46.66666,
+					'billrun' => '201905',
+					'final_charge' => -54.599998,
+					'discount' =>
+					[
+						'PLAN_X' => -46.66666,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => 19,
+					'key' => 'ab',
+					'full_price' => -16.66666,
+					'billrun' => '201905',
+					'final_charge' => -19.499999,
+					'discount' =>
+					[
+						'PLAN_Y' => -16.66666,
+					],
+					'plan' => 'PLAN_Y',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => 19,
+					'key' => 'abc',
+					'full_price' => -36.6666,
+					'billrun' => '201905',
+					'final_charge' => -42.89998,
+					'discount' =>
+					[
+						'PLAN_X' => -36.6666,
+					],
+					'plan' => 'PLAN_X',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 37,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_Y',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_services' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_Y',
+						'aprice' => 100.0,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'ab',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'PLAN_X' => -100,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 38,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-04-15',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_services' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 100.0,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-04-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'ab',
+					'full_price' => -46.666,
+					'billrun' => '201905',
+					'final_charge' => -54.6,
+					'discount' =>
+					[
+						'A' => -46.666,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 39,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-04-15',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-04-15',
+								],
+							],
+						],
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_Y',
+							'from' => '2019-04-15',
+							'to' => '2019-04-20',
+							'plan_activation' => '2019-04-15',
+							'services' =>
+							[
+								[
+									'key' => 'B',
+									'name' => 'B',
+									'service_activation' => '2019-04-15',
+									'from' => '2019-04-15',
+									'to' => '2019-04-20',
+								],
+							],
+						],
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-20',
+							'to' => '2019-04-30',
+							'plan_activation' => '2019-04-20',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-20',
+									'from' => '2019-04-20',
+									'to' => '2019-04-30',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_services' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'matched_services' =>
+								[
+									'value' => 100,
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'B',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-04-15',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 54.599998,
+						'full_price' => 46.666666,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 46.666664957264956,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-15',
+						'end' => '2019-04-20',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 16.66666,
+						'full_price' => 19.499999,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'B',
+						'aprice' => 14.245008547008549,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-20',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 33.3333,
+						'full_price' => 38.99999,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 28.490000000000002,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'abc',
+					'full_price' => -46.66666,
+					'billrun' => '201905',
+					'final_charge' => -54.599998,
+					'discount' =>
+					[
+						'A' => -46.66666,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => 19,
+					'key' => 'ab',
+					'full_price' => -16.66666,
+					'billrun' => '201905',
+					'final_charge' => -19.499999,
+					'discount' =>
+					[
+						'B' => -16.66666,
+					],
+					'service' => 'B',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => 19,
+					'key' => 'abc',
+					'full_price' => -33.33333,
+					'billrun' => '201905',
+					'final_charge' => -38.99999,
+					'discount' =>
+					[
+						'A' => -33.33333,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 40,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'service' =>
+								[
+									'A' =>
+									[
+										'value' => 100,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 100,
+						'full_price' => 117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'ab' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'ab',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 41,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'quantity' => 10,
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'ab',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'service' =>
+								[
+									'A' =>
+									[
+										'value' => 10,
+										'operations' =>
+										[
+											[
+												'name' => 'recurring_by_quantity',
+												'params' =>
+												[
+													[
+														'name' => 'quantity',
+														'value' => 10,
+													],
+												],
+											],
+										],
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'quantity' => 10,
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 1000,
+						'price' => 1000,
+						'full_price' => 1117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'service' => 'A',
+						'usagev' => 100,
+						'aprice' => 854.7008547008547,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'ab' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => 19,
+					'key' => 'ab',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 42,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'A' =>
+									[
+										'value' => 100,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 100,
+						'full_price' => 117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '19',
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'plan' => 'A',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 43,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'A' =>
+									[
+										'value' => 100,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 100,
+						'full_price' => 117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '19',
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'plan' => 'A',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 44,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'firstname' => 'yossi',
+						],
+					],
+					[
+						[
+							'sid' => 20,
+							'plan' => 'A',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'firstname' => 'yonatan',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'A' =>
+									[
+										'value' => 100,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => '$eq',
+										'values' => 'yossi',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 19,
+						'final_charge' => 100,
+						'full_price' => 117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 18,
+						'sid' => 20,
+						'final_charge' => 100,
+						'full_price' => 117,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '19',
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -117,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'plan' => 'A',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 46,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 77,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 78,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'service' =>
+								[
+									'A' =>
+									[
+										'value' => 10,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 77,
+						'sid' => 78,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 77,
+						'sid' => 78,
+						'final_charge' => 100,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -10,
+					'billrun' => '201905',
+					'final_charge' => -10,
+					'discount' =>
+					[
+						'A' => -10,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 47,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 77,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 78,
+							'plan' => 'PLAN_X',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'A',
+									'name' => 'A',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'abc',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'A' =>
+									[
+										'value' => 1,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'service',
+										'field' => 'name',
+										'values' => 'A',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 77,
+						'sid' => 78,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN_X',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 77,
+						'sid' => 78,
+						'final_charge' => 100,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'A',
+						'aprice' => 85.47008547008548,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'abc' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'key' => 'abc',
+					'full_price' => -100,
+					'billrun' => '201905',
+					'final_charge' => -100,
+					'discount' =>
+					[
+						'A' => -100,
+					],
+					'service' => 'A',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 48,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.25,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'final_charge' => -29.25,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -15,
+					'billrun' => '201905',
+					'final_charge' => -17.55,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -30,
+					'billrun' => '201905',
+					'final_charge' => -35.1,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 49,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-17',
+							'to' => '2019-04-20',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-13',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.3,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -3,
+					'billrun' => '201905',
+					'final_charge' => -3.51,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -6,
+					'billrun' => '201905',
+					'final_charge' => -7.02,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -57.3,
+					'billrun' => '201905',
+					'final_charge' => -67.041,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 50,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-12',
+							'to' => '2019-04-30',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-16',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.3,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'final_charge' => -21.06,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -20.2,
+					'billrun' => '201905',
+					'final_charge' => -23.634,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -40.494,
+					'billrun' => '201905',
+					'final_charge' => -47.37798,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 51,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-17',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.25,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-16',
+							'to' => '2019-05-01',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -40,
+					'billrun' => '201905',
+					'final_charge' => -46.8,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -73.75,
+					'billrun' => '201905',
+					'final_charge' => -86.2875,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 52,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'service' => 'SERVICE2',
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'SERVICE2',
+									'name' => 'SERVICE2',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.25,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -15,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -30,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 53,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'service' => 'SERVICE2',
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'SERVICE2',
+									'name' => 'SERVICE2',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-17',
+							'to' => '2019-04-20',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-13',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.3,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -1,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -2,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -19.1,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 54,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'firstname' => 'OR',
+						],
+					],
+					[
+						[
+							'sid' => 23,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'firstname' => 'DANA',
+						],
+					],
+					[
+						[
+							'sid' => 24,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'firstname' => 'NOA',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-12',
+							'to' => '2019-04-30',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => '$eq',
+										'values' => 'DANA',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => '$eq',
+										'values' => 'DANA',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-16',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.3,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => '$eq',
+										'values' => 'DANA',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '23',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '23',
+					'key' => 'DIS2',
+					'full_price' => -20.2,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '23',
+					'key' => 'DIS3',
+					'full_price' => -40.494,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 55,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 18,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 19,
+							'plan' => 'BB',
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'ZZZ',
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+							'plan_activation' => '2019-04-10',
+						],
+						[
+							'sid' => 19,
+							'plan' => 'BB',
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-20',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'AB',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 50,
+									'sequential' => true,
+								],
+							],
+							'priority' => 2,
+							'excludes' =>
+							[
+								'ABC',
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'BB',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'ABC',
+						'root' =>
+						[
+							'subject' =>
+							[
+								'monthly_fees' =>
+								[
+									'value' => 50,
+									'sequential' => true,
+								],
+							],
+							'priority' => 1,
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'BB',
+									],
+								],
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'op' => '$eq',
+										'values' => 'ZZZ',
+									],
+								],
+							],
+						],
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+				'cdrs' => NULL,
+			],
+			'expected' =>
+			[
+				'AB' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-01',
+							'to' => '2019-04-10',
+						],
+						[
+							'from' => '2019-04-20',
+							'to' => '2019-05-01',
+						],
+					],
+				],
+				'ABC' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-20',
+						],
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 56,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'monetary',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 30,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -30,
+					'billrun' => '201905',
+					'final_charge' => -35.1,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 57,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'monetary',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 25,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'final_charge' => -29.25,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -15,
+					'billrun' => '201905',
+					'final_charge' => -17.55,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -30,
+					'billrun' => '201905',
+					'final_charge' => -35.1,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 58,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'monetary',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 25,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'final_charge' => -29.25,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -5,
+					'billrun' => '201905',
+					'final_charge' => -5.85,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 59,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'monetary',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 50,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 60,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+					[
+						[
+							'sid' => 23,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+					[
+						[
+							'sid' => 24,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-12',
+							'to' => '2019-04-30',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 24,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 24,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '23',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '24',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 61,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+					[
+						[
+							'sid' => 23,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+					[
+						[
+							'sid' => 24,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'from' => '2019-04-12',
+							'to' => '2019-04-30',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.1,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'from' => '2019-04-10',
+							'to' => '2019-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 24,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 24,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 23,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 0,
+						'full_price' => 0,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 0.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 351,
+						'full_price' => 300,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 0,
+							'total_tax' => 0,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 300.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '23',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '24',
+					'key' => 'DIS1',
+					'full_price' => -18,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '23',
+					'key' => 'DIS2',
+					'full_price' => -20.2,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -20.2,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '24',
+					'key' => 'DIS2',
+					'full_price' => -20.2,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 62,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS3',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'type' => 'monetary',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 60,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS3',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'final_charge' => -58.5,
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 63,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+							'services' =>
+							[
+								[
+									'key' => 'SERVICE2',
+									'name' => 'SERVICE2',
+									'service_activation' => '2019-04-01',
+									'from' => '2019-04-01',
+									'to' => '2019-05-01',
+								],
+							],
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'priority' => 2,
+							'from' => '2019-04-01',
+							'to' => '2119-04-30',
+							'type' => 'monitory',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 50,
+									],
+								],
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 50,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'priority' => 1,
+							'from' => '2019-04-01',
+							'to' => '2119-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'service' =>
+								[
+									'SERVICE2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 17,
+							'total_tax' => 17,
+							'taxes' =>
+							[
+							],
+							'plan' => 'PLAN2',
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+					[
+						'usaget' => 'flat',
+						'type' => 'service',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+							'total_amount' => 17,
+							'total_tax' => 17,
+							'taxes' =>
+							[
+							],
+						],
+						'service' => 'SERVICE2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -50,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'service' => 'SERVICE2',
+					'affected_sections' =>
+					[
+						'service',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 64,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'firstname' => 'p',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-04-16',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'firstname' => 'pp',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-16',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'priority' => 2,
+							'from' => '2019-04-01',
+							'to' => '2119-04-30',
+							'type' => 'monitory',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 50,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'values' => 'p',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'priority' => 1,
+							'from' => '2019-04-01',
+							'to' => '2119-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'values' => 'pp',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 65,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '201905',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'firstname' => 'p',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-01',
+							'to' => '2019-04-16',
+							'plan_activation' => '2019-04-01',
+						],
+						[
+							'firstname' => 'pp',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2019-04-16',
+							'to' => '2019-05-01',
+							'plan_activation' => '2019-04-01',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'priority' => 2,
+							'from' => '2019-04-01',
+							'to' => '2119-04-30',
+							'type' => 'monitory',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 50,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'values' => 'p',
+									],
+								],
+							],
+						],
+					],
+					[
+						'name' => 'DIS2',
+						'root' =>
+						[
+							'priority' => 1,
+							'from' => '2019-04-01',
+							'to' => '2119-04-21',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.5,
+										'sequential' => true,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'firstname',
+										'op' => 'in',
+										'values' =>
+										[
+											'pp',
+											'p',
+										],
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2019-04-01',
+						'end' => '2019-05-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 117,
+						'full_price' => 100,
+						'billrun' => '201905',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 100.0,
+					],
+				],
+				'function' =>
+				[
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -25,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS2',
+					'full_price' => -37.5,
+					'billrun' => '201905',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 66,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '202101',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'firstname' => 'p',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2020-12-01',
+							'to' => '2021-01-01',
+							'plan_activation' => '2019-12-10',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'priority' => 1,
+							'from' => '2019-04-01',
+							'to' => '2119-04-30',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2020-12-01',
+						'end' => '2020-12-10',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 33.967741936,
+						'full_price' => 100,
+						'billrun' => '202101',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 29.03225806495727,
+					],
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2020-12-10',
+						'end' => '2021-01-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 166.064516129,
+						'full_price' => 200,
+						'billrun' => '202101',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 141.93548387094017,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+				'DIS1' =>
+				[
+					'eligibility' =>
+					[
+						[
+							'from' => '2020-12-01',
+							'to' => '2021-01-01',
+						],
+					],
+				],
+			],
+			'subjectExpected' =>
+			[
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -5.806451612,
+					'billrun' => '202101',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+				[
+					'sid' => '22',
+					'key' => 'DIS1',
+					'full_price' => -28.387096774,
+					'billrun' => '202101',
+					'plan' => 'PLAN2',
+					'affected_sections' =>
+					[
+						'plan',
+					],
+				],
+			],
+		]
+		, [
+			'test_num' => 67,
+			'test' =>
+			[
+				'options' =>
+				[
+					'stamp' => '202101',
+				],
+				'subsAccount' =>
+				[
+					[
+						'aid' => 21,
+					],
+				],
+				'subsRevisions' =>
+				[
+					[
+						[
+							'firstname' => 'p',
+							'sid' => 22,
+							'plan' => 'PLAN2',
+							'from' => '2020-12-10',
+							'to' => '2021-01-01',
+							'plan_activation' => '2020-12-10',
+						],
+					],
+				],
+				'discounts' =>
+				[
+					[
+						'name' => 'DIS1',
+						'root' =>
+						[
+							'priority' => 1,
+							'from' => '2019-04-01',
+							'to' => '2020-12-03',
+							'type' => 'percentage',
+							'subject' =>
+							[
+								'plan' =>
+								[
+									'PLAN2' =>
+									[
+										'value' => 0.2,
+									],
+								],
+							],
+						],
+						'params_override' =>
+						[
+							'condition' =>
+							[
+								[
+									[
+										'type' => 'subscriber',
+										'field' => 'plan',
+										'values' => 'PLAN2',
+									],
+								],
+							],
+						],
+					],
+				],
+				'cdrs' =>
+				[
+					[
+						'prorated_end' => true,
+						'prorated_start' => true,
+						'usaget' => 'flat',
+						'type' => 'flat',
+						'start' => '2020-12-10',
+						'end' => '2021-01-01',
+						'aid' => 21,
+						'sid' => 22,
+						'final_charge' => 166.064516129,
+						'full_price' => 200,
+						'billrun' => '202101',
+						'tax_data' =>
+						[
+						],
+						'plan' => 'PLAN2',
+						'aprice' => 141.93548387094017,
+					],
+				],
+				'function' =>
+				[
+					'checkEligibility',
+				],
+			],
+			'expected' =>
+			[
+			],
+			'subjectExpected' =>
+			[
+			],
+		]
 	];
 
 }
