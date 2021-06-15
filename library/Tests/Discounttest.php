@@ -47,9 +47,9 @@ class Tests_Discounttest extends UnitTestCase {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-			foreach ($row['test']['cdrs'] as &$cdr) {
-				$cdr['aprice'] = $cdr['final_charge'] / 100 * 85.47008547008548;
-			}
+//			foreach ($row['test']['cdrs'] as &$cdr) {
+//				$cdr['aprice'] = $cdr['final_charge'] / 100 * 85.47008547008548;
+//			}
 //			echo '<pre>';
 //			$a = var_export($row, 1);
 //			$pattern = '/(\d){1,2}+(\s)+(=>)/';
@@ -134,12 +134,12 @@ class Tests_Discounttest extends UnitTestCase {
 		foreach ($cdrs as &$cdr) {
 			if (empty($cdr['tax_data'])) {
 				$cdr['tax_data'] = [
-					"total_amount" => $cdr['full_price'],
+					"total_amount" => $cdr['aprice'],
 					"total_tax" => 0.17,
 					"taxes" => [
 						[
 							"tax" => 0.17,
-							"amount" => $cdr['full_price'],
+							"amount" => $cdr['aprice'],
 							"description" => "Vat",
 							"pass_to_customer" => 1
 						]

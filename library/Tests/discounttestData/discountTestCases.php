@@ -2198,7 +2198,7 @@ class discountTestCases {
 //		)
 
 
-		[
+		/*[
 			'test_num' => 1,
 			'test' =>
 			[
@@ -6246,8 +6246,8 @@ class discountTestCases {
 					],
 				],
 			],
-		]
-		, [
+		]*/
+		 [
 			'test_num' => 36,
 			'test' =>
 			[
@@ -6354,7 +6354,7 @@ class discountTestCases {
 						'aid' => 18,
 						'sid' => 19,
 						'final_charge' => 54.599998,
-						'full_price' => 46.666666,
+						'full_price' => 100,
 						'billrun' => '201905',
 						'tax_data' =>
 						[
@@ -6362,7 +6362,7 @@ class discountTestCases {
 						'plan' => 'PLAN_X',
 						'aprice' => 46.666664957264956,
 					],
-					[
+					[ 
 						'prorated_end' => true,
 						'prorated_start' => true,
 						'usaget' => 'flat',
@@ -6378,7 +6378,7 @@ class discountTestCases {
 						[
 						],
 						'plan' => 'PLAN_Y',
-						'aprice' => 14.245008547008549,
+						'aprice' => 20,
 					],
 					[
 						'prorated_end' => true,
@@ -6389,14 +6389,14 @@ class discountTestCases {
 						'end' => '2019-05-01',
 						'aid' => 18,
 						'sid' => 19,
-						'final_charge' => 42.8998,
-						'full_price' => 36.6666,
+						'final_charge' => 39,
+						'full_price' => 100,
 						'billrun' => '201905',
 						'tax_data' =>
 						[
 						],
 						'plan' => 'PLAN_X',
-						'aprice' => 36.66649572649573,
+						'aprice' => 33.333333333333336,
 					],
 				],
 				'function' =>
@@ -6411,7 +6411,7 @@ class discountTestCases {
 				[
 					'sid' => 19,
 					'key' => 'abc',
-					'full_price' => -46.66666,
+					'full_price' => -100,
 					'billrun' => '201905',
 					'final_charge' => -54.599998,
 					'discount' =>
@@ -6427,12 +6427,12 @@ class discountTestCases {
 				[
 					'sid' => 19,
 					'key' => 'ab',
-					'full_price' => -16.66666,
+					'full_price' => -100,
 					'billrun' => '201905',
-					'final_charge' => -19.499999,
+					'final_charge' => -23.4,
 					'discount' =>
 					[
-						'PLAN_Y' => -16.66666,
+						'PLAN_Y' => -20,
 					],
 					'plan' => 'PLAN_Y',
 					'affected_sections' =>
@@ -6443,12 +6443,12 @@ class discountTestCases {
 				[
 					'sid' => 19,
 					'key' => 'abc',
-					'full_price' => -36.6666,
+					'full_price' => -100,
 					'billrun' => '201905',
-					'final_charge' => -42.89998,
+					'final_charge' => -39,
 					'discount' =>
 					[
-						'PLAN_X' => -36.6666,
+						'PLAN_X' => -33.333333333333336,
 					],
 					'plan' => 'PLAN_X',
 					'affected_sections' =>
@@ -6457,7 +6457,7 @@ class discountTestCases {
 					],
 				],
 			],
-		]
+		]/*
 		, [
 			'test_num' => 37,
 			'test' =>
@@ -11522,7 +11522,7 @@ class discountTestCases {
 			'subjectExpected' =>
 			[
 			],
-		]
+		]*/
 	];
 
 }
