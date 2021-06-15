@@ -35,30 +35,15 @@ class Tests_Discounttest extends UnitTestCase {
 		$this->conditions = (array) $this->discountData->conditions;
 		//list of indexs to run a subset of tests
 		//$this->subsetTests($this->Tests ,[66]);
-		ini_set('xdebug.var_display_max_depth', 100);
-		ini_set('xdebug.var_display_max_children', 256);
-		ini_set('xdebug.var_display_max_data', 1024);
 	}
 
-
 	public function TestPerform() {
-		$myfile = fopen("/home/yossi/Documents/discounttestAprice", "w") or die("Unable to open file!");
+		
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-//			foreach ($row['test']['cdrs'] as &$cdr) {
-//				$cdr['aprice'] = $cdr['final_charge'] / 100 * 85.47008547008548;
-//			}
-//			echo '<pre>';
-//			$a = var_export($row, 1);
-//			$pattern = '/(\d){1,2}+(\s)+(=>)/';
-//
-//			$txt .= preg_replace($pattern, '', $a);
-			//	$pattern = '/(\d)+(\d)+(\s)+(=>)/';
-			//$txt .= $this->revar($row);
-//			
-//			
+			
 			foreach ($row['expected'] as $Dname => $dates) {
 				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
@@ -123,10 +108,6 @@ class Tests_Discounttest extends UnitTestCase {
 			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
-
-
-//		fwrite($myfile, $txt);
-//		fclose($myfile);
 		print_r($this->message);
 	}
 
@@ -215,8 +196,9 @@ class Tests_Discounttest extends UnitTestCase {
 			$fields = [
 				'sid',
 				'aprice',
-				'key',
 				'final_charge',
+				'full_price',
+				'key',
 				'type'
 			];
 
@@ -225,6 +207,11 @@ class Tests_Discounttest extends UnitTestCase {
 					if (isset($a['aprice'])) {
 						if ($a['aprice'] != $b['aprice']) {
 							return $a['aprice'] < $b['aprice'];
+						}
+					}
+					if (isset($a['final_charge'])) {
+						if ($a['final_charge'] != $b['final_charge']) {
+							return $a['final_charge'] < $b['final_charge'];
 						}
 					}
 					if ($a['full_price'] != $b['full_price']) {
@@ -258,12 +245,12 @@ class Tests_Discounttest extends UnitTestCase {
 					$this->message .= "the eligibale subscriber is: {$expected[$i]['sid']} NOT  {$returndCdrs[$i]['sid']}" . $this->fail;
 				}
 			}$this->message .= '</b>';
-			if (isset($expected[$i]['full_price'])) {
-				if (Billrun_Util::isEqual($expected[$i]['full_price'], $returndCdrs[$i]['aprice'], $epsilon)) {
-					$this->message .= 'the aprice is ' . $expected[$i]['full_price'] . $this->pass;
+			if (isset($expected[$i]['aprice'])) {
+				if (Billrun_Util::isEqual($expected[$i]['aprice'], $returndCdrs[$i]['aprice'], $epsilon)) {
+					$this->message .= 'the aprice is ' . $expected[$i]['aprice'] . $this->pass;
 				} else {
 					$pass = false;
-					$this->message .= 'the aprice worng!!! expected is ' . $expected[$i]['full_price'] . ' result is' . $returndCdrs[$i]['aprice'] . $this->fail;
+					$this->message .= 'the aprice worng!!! expected is ' . $expected[$i]['aprice'] . ' result is' . $returndCdrs[$i]['aprice'] . $this->fail;
 				}
 			}
 			if (isset($expected[$i]['final_charge'])) {
