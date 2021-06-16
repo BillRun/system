@@ -513,7 +513,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_3_MONTHS_FREE_SERVICE"
+														"3_MONTHS_FREE_SERVICE"
 													]
 												}
 											]
