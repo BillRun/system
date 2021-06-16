@@ -386,7 +386,7 @@
 	"prorated" : true,
 	"category" : "",
 	"for_discount_only" : "1",
-	"reference_code" : "DISCOUNT_3_MONTHS_FREE_SERVICE",
+	"reference_code" : "3_MONTHS_FREE_SERVICE",
 	"to" : "time*2169-03-11T19:18:19Z",
 	"creation_time" : "time*2020-03-11T23:00:00Z",
 	"tax" : [
