@@ -76,6 +76,7 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountsDetailsRequest', array(&$requestData, &$this));
 		$res = json_decode(Billrun_Util::sendRequest($this->remote,
 													 json_encode($requestData),
 													 Zend_Http_Client::POST,
@@ -85,6 +86,7 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsRequest', array(&$res));
 		foreach ($res as $account) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
@@ -110,6 +112,7 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountDetailsRequest', array(&$externalQuery, &$this));
 		$results = json_decode(Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
 														 Zend_Http_Client::POST,
@@ -118,6 +121,7 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsRequest', array(&$results));
 		return array_reduce($results, function($acc, $currentAcc) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($currentAcc, static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentAcc);
@@ -162,6 +166,14 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+	
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
 	}
 
 }
