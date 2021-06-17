@@ -108,7 +108,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$revision['from'] = max($minFrom,$revision['from']);
 		$revision['to'] = min($maxTo,$revision['to']);
 		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
-
+		$mongoServices = $this->cycleAggregator->getServices();
 		//Retrive all the relevent change dates
 		foreach($subRevisionsFields as $fieldName) {
 			if(empty($revision[$fieldName])) { continue; }
@@ -134,6 +134,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			// Sort the changes by "from" dates
 			uksort($cutDates,function($a,$b){ return $a - $b; });
 			$activeRev = $revision;
+
 			foreach($cutDates as $from => $fromCuts) {
 				// Sort the from dates changes by their erliest "to" date
 				uksort($fromCuts,function($a,$b){ return $a - $b; });
@@ -141,11 +142,28 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($fromCuts as $toCuts) {
 					foreach($toCuts as $fieldName => $fieldCuts) {
 						foreach($fieldCuts as  $fieldCut) {
+							if(!empty($fieldCut['name']) && !empty($mongoServices[$fieldCut['name']])) {
+								$creationTime = !empty($fieldCut['creation_time']) ? $fieldCut['creation_time']->sec : $fieldCut['from'];
+								if(is_array($mongoServices[$fieldCut['name']]['price'])) {
+									$customFieldCut = $fieldCut['to'];
+									foreach($mongoServices[$fieldCut['name']]['price'] as $price) {
+										if ($price['to'] == 'UNLIMITED') {
+										$customFieldCut = $fieldCut['to'];
+											break ;
+										}
+
+										$customFieldCut = Billrun_Plan::monthDiffToDate($price['to'],$creationTime,true,false,true);
+									}
+									$fieldCut['to'] = $customFieldCut;
+								}
+							}
 							//should we break the revision?
 							if($activeRev['from'] < $fieldCut['from'] ) {
 								$activeRev['to'] = min($fieldCut['from'],$activeRev['to']);
 							}
+
 							if($activeRev['to'] > $fieldCut['to']) {
+
 								$fieldsEnded[] = $fieldCut;
 							}
 							//copy filds to the root of the revision if need
