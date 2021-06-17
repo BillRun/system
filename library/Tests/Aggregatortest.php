@@ -393,6 +393,13 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 13261, 'after_vat' => array("82329" => 0), 'total' => 0, 'vatable' => 0, 'vat' => 0),
 				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3099",
 		),
+		
+
+			array('test' => array('label' => 'test  subscriber with discount about 3 month , from 02/12 to 02/03 , test thet the discount is created for 2 days in 03 ', 'test_number' => 73, "aid" => 13261, 'sid' => 82329,
+				'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(13261))),
+			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 13261, 'after_vat' => array("82329" => 69.10593943749474), 'total' => 69.10593943749474, 'vatable' =>59.064905502132255, 'vat' => 0),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3133",
+		),
 		array('test' => array('label' => 'discount isnt created in case that subscriber is subscribe in the mid cycle ', 'test_number' => 72, "aid" => 991645, 'sid' => 991646,
 				'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(991645))),
 			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 991645, 'after_vat' => array("991646" => 5.267302363194426), 'total' => 5.267302363194426, 'vatable' => 4.5019678317901075, 'vat' => 17),
