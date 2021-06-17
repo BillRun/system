@@ -371,6 +371,30 @@
 			"taxation" : "global"
 		}
 	]
+}
+,{
+	"from" : "time*2017-12-31T23:00:00Z",
+	"name" : "DISCOUNT_A_SERVICE_3",
+	"price" : [
+		{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : "0"
+		}
+	],
+	"description" : "Service discount",
+	"prorated" : true,
+	"category" : "",
+	"for_discount_only" : "1",
+	"to" : "time*2167-01-17T14:38:00Z",
+	"creation_time" : "time*2018-01-15T23:00:00Z",
+	"reference_code" : "SERVICE_DISCOUNT",
+	"tax" : [
+		{
+			"type" : "vat",
+			"taxation" : "global"
+		}
+	]
 },
 {
 	"from" : "time*2020-03-11T23:00:00Z",

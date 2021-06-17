@@ -621,7 +621,7 @@ class Tests_Aggregator extends UnitTestCase {
 		if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.0000001)) {
 			$this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->pass;
 		} else {
-			$this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->fail;
+			$this->message .= " total after vat is  Expected is  : {$row['expected']['billrun']['total']}actaul result is  :  " . $returnBillrun['totals']['after_vat'] . $this->fail;
 			$passed = FALSE;
 		}
 		$vatable = (isset($row['expected']['billrun']['vatable']) ) ? $row['expected']['billrun']['vatable'] : null;
@@ -630,7 +630,7 @@ class Tests_Aggregator extends UnitTestCase {
 			if (Billrun_Util::isEqual($vat, $row['expected']['billrun']['vat'], 0.000001)) {
 				$this->message .= "total befor vat is : " . $returnBillrun['totals']['before_vat'] . $this->pass;
 			} else {
-				$this->message .= "total befor vat is : " . $returnBillrun['totals']['before_vat'] . $this->fail;
+				$this->message .= "total befor vat Expected to be : ".$vatable." Actual is  : " . $returnBillrun['totals']['before_vat'] . $this->fail;
 				$passed = FALSE; /* Percentage of tax */
 			}
 			$this->message .= "Percentage of tax :$vat %</br>";
