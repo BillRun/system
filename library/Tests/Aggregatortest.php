@@ -399,7 +399,12 @@ class Tests_Aggregator extends UnitTestCase {
 				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3133",
 		),
 
-		array('test' => array('label' => 'test  subscriber with 2 discounts 1st about 3 month , from 02/12 to 02/03 2nd is about 26.32% forever , test thet the discount is created for 2 days in 03 ', 'test_number' => 74, "aid" => 13262, 'sid' => 82330,
+		array('test' => array('label' => 'test  subscriber with discount about 3 month , from 03/12 to 02/03 , test thet the discount is created for 3 days in 03 ', 'test_number' => 75, "aid" => 13263, 'sid' => 82331,
+				'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(13263))),
+			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 13263, 'after_vat' => array("82331" => 66.7229760086156), 'total' => 66.7229760086156, 'vatable' => 57.028184622748384, 'vat' => 0),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3133",
+		),
+			array('test' => array('label' => 'test  subscriber with 2 discounts 1st about 3 month , from 02/12 to 02/03 2nd is about 26.32% forever , test thet the discount is created for 2 days in 03 ', 'test_number' => 74, "aid" => 13262, 'sid' => 82330,
 				'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(13262))),
 			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 13262, 'after_vat' => array("82330" => 49.662864228584155), 'total' => 49.662864228584155, 'vatable' => 42.44689250306338, 'vat' => 0),
 				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3133",
