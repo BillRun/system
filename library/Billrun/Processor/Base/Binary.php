@@ -47,6 +47,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$row = false;
 		$this->getParser()->setLine($data);
 		$rawRow = $this->getParser()->parse($fileHandle);
+		$newRowStruct = [];
 		if ($rawRow) {
 			$row = $this->filterFields($rawRow);
 			$newRowStruct['uf'] = $row;
