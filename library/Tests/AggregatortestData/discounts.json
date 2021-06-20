@@ -635,7 +635,56 @@
 					}
 				}
 			}
+		},	{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "14P",
+			"description": "14P",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"14PS"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.14
+					}
+				}
+			}
 		}
+
+
 
 
 
