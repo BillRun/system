@@ -885,7 +885,7 @@ abstract class Billrun_Bill {
 		}
 		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
 		array_push($waiting_payments, $billId);
-		$this->data['waiting_payments'] = $waiting_payments;
+		$this->data['waiting_payments'] = array_unique($waiting_payments);
 	}
 	
 	protected function addToRejectedPayments($billId, $billType) {
