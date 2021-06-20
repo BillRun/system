@@ -434,7 +434,7 @@ abstract class Billrun_Bill {
 		}
 		return $this;
 	}
-
+	
 	/**
 	 * 
 	 * @param int $id
@@ -861,7 +861,7 @@ abstract class Billrun_Bill {
 				$pending = $this->data['waiting_payments'];
 				if (count($pending)) {
 					$this->removeFromWaitingPayments($billId);
-					$result = '2';
+					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}
 				else {
 					$result = $this->isPaid() ? '1' : '0'; 
