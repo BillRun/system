@@ -84,10 +84,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$subscribersRevisions[$revSid] = $subRevisions;
 			}
 		}
-		//TODO remove debug lines (below)
-		//Billrun_Factory::log(json_encode($subscribersRevisions,JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-		//Billrun_Factory::log(json_encode($accountRevs, JSON_UNESCAPED_UNICODE));
-		//Billrun_Factory::log(json_encode($flatLines,JSON_PRETTY_PRINT |  JSON_UNESCAPED_UNICODE));
 
 		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
 		$this->discounts = $dm->generateCdrs($flatLines);
@@ -201,7 +197,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$retRevisions[] = $this->cleanRevisionStructure($activeRev, $subRevisionsFields);
 		}
 		usort($retRevisions,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
-// 		Billrun_Factory::log(json_encode($retRevisions,JSON_PRETTY_PRINT));
+
 		return $retRevisions;
 	}
 
@@ -232,9 +228,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach($subRevisionsFields as $fieldName) {
 			if(!empty($endedField[$fieldName]) && !empty($activeRev[$fieldName])) {
 				$activeRev[$fieldName] =array_values (
-						array_map(function($m1) { return json_decode($m1,JSON_OBJECT_AS_ARRAY);},
+						array_map(function($m1) { return unserialize($m1);},
 						array_unique(
-							array_map(function($m2) { return json_encode($m2);},
+							array_map(function($m2) { return  serialize($m2);},
 								array_filter(array_merge($activeRev[$fieldName],$endedField[$fieldName]),function($b) use ($activeRev) {
 									return (!empty($b) && $b['to'] > $activeRev['from'] && $b['from'] <= $activeRev['from']);})
 							)
