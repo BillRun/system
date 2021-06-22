@@ -40,6 +40,26 @@ function addToConfig(config, lastConf) {
 	return lastConf;
 }
 
+function addFieldToConfig(lastConf, fieldConf, entityName) {
+    if (typeof lastConf[entityName] === 'undefined') {
+            lastConf[entityName] = {'fields': []};
+    }
+    var fields = lastConf[entityName]['fields'];
+    var found = false;
+    for (var field_key in fields) {
+        if (fields[field_key].field_name === fieldConf.field_name) {
+						fields[field_key] = fieldConf;
+            found = true;
+        }
+    }
+    if (!found) {
+        fields.push(fieldConf);
+    }
+    lastConf[entityName]['fields'] = fields;
+
+    return lastConf;
+}
+
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
@@ -3300,7 +3320,7 @@ lastConfig["export_generators"][0] =
 							"format": "",
 							"path": 1,
 							"linked_entity": {
-								"field_name": "uf.EVENT_START_TIME",
+								"field_name": "uf.USER_SUMMARISATION",
 								"entity": "line"
 							}
 						},
@@ -3309,7 +3329,7 @@ lastConfig["export_generators"][0] =
 							"type": "string",
 							"path": 2,
 							"linked_entity": {
-								"field_name": "uf.USER_SUMMARISATION",
+								"field_name": "uf.EVENT_START_TIME",
 								"entity": "line"
 							}
 						},
@@ -3634,8 +3654,8 @@ lastConfig["export_generators"][0] =
 				]
 			}
 		}			
-
-//Subscriber custom fields
+	
+	//Subscriber custom fields
 
 	lastConfig["subscribers"]["subscriber"]["fields"] =
 			[
@@ -4874,8 +4894,136 @@ var conf = {
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-63: Timezone should be Europe/Nicosia, currency = EUR
+lastConfig["pricing"]["currency"] = "EUR";
+lastConfig["billrun"]["timezone"] = {
+			"v" : "Europe/Nicosia",
+			"t" : "Timezone"
+		};
+
+//EPICIC-59: Make more custom products fields searchable
+var searchableProductFields = ["params.prefix", "params.operator", "params.product", "params.path", "params.poin", "params.direction", "params.scenario", "params.component", "params.cash_flow", "params.tier_derivation", "params.tier", "params.incoming_operator", "params.outgoing_operator", "params.incoming_product", "params.outgoing_product", "params.anaa", "params.bnaa"];
+for (var i = 0; i < lastConfig["rates"]["fields"].length; i++) {
+	if(searchableProductFields.includes(lastConfig["rates"]["fields"][i].field_name)) {
+		lastConfig["rates"]["fields"][i]["searchable"] = true;
+	}
+}
+
+//EPICIC-24: Initial customer custom fields
+var operator = {
+					"field_name" : "operator",
+					"title" : "Operator",
+					"editable" : true,
+					"display" : true,
+					"unique" : true,
+					"mandatory" : true
+				};
+var operator_label = {
+					"field_name" : "operator_label",
+					"title" : "Operator Label",
+					"editable" : true,
+					"display" : true
+				};
+var contact = {
+					"field_name" : "contact",
+					"title" : "Contact",
+					"editable" : true,
+					"display" : true
+				};
+var days_to_settle = {
+					"field_name" : "days_to_settle",
+					"title" : "Days to settle",
+					"editable" : true,
+					"display" : true
+				};
+var ifs_operator_id = {
+					"field_name" : "ifs_operator_id",
+					"title" : "IFS Operator ID",
+					"editable" : true,
+					"display" : true
+				};
+var include_vat = {
+					"field_name" : "include_vat",
+					"title" : "Include VAT",
+					"editable" : true,
+					"display" : true
+				};
+var location = {
+					"field_name" : "location",
+					"title" : "Location",
+					"editable" : true,
+					"display" : true
+				};
+var vat_code = {
+					"field_name" : "vat_code",
+					"title" : "VAT Code",
+					"editable" : true,
+					"display" : true,
+					"mandatory" : true
+				};
+var billable = {
+					"field_name" : "billable",
+					"title" : "Billable",
+					"editable" : true,
+					"display" : true,
+					"type" : "boolean",
+					"default_value" : false
+				};
+				
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator_label, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], contact, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], days_to_settle, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ifs_operator_id, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], include_vat, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
+
+//EPICIC-66: user_summ/event_start_time position error in export generator
+for (var i = 0; i < lastConfig.export_generators.length; i++) {
+	if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
+		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
+	}
+}
+
+//EPICIC-75 "Undefined index: stamp" when processing files
+for (var i = 0; i < lastConfig.file_types.length; i++) {
+	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+		for (var j = 0; j < cfFieldsArray.length; j++) {
+			cfFieldsArray[j]["line_keys"] =
+					[
+						{
+							"key": "ANUM",
+						},
+						{
+							"key": "ANUM",
+						}
+					];
+			cfFieldsArray[j]["operator"] = "$eq";
+			cfFieldsArray[j]["type"] = "condition";
+			cfFieldsArray[j]["must_met"] = true;
+			cfFieldsArray[j]["projection"] = {
+				"on_true": {
+					"key": "hard_coded",
+					"value": ""
+				}
+			};
+		}
+	}
+}
 
 db.config.insert(lastConfig);
+
+//EPICIC-61 - set vat_code for inactive operators
+var inactiveCustomers = db.subscribers.distinct("aid", {plan: "TEST"});
+db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$set: {vat_code: "VATLOS"}});
+
+//EpicIC-56 - Set "billable" flag for active operators
+billableOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
+db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
 
 //Initial plans
 db.plans.save({
