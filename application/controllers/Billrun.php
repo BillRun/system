@@ -27,7 +27,7 @@ class BillrunController extends ApiController {
 	
 	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
 
-	protected $model;
+	protected $config_model;
 
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
@@ -43,7 +43,7 @@ class BillrunController extends ApiController {
 	 * This method is for initializing controller's model.
 	 */
 	protected function initializeModel() {
-		$this->model = new ConfigModel();
+		$this->config_model = new ConfigModel();
 	}
 
 	/**
@@ -288,9 +288,9 @@ class BillrunController extends ApiController {
 		$params['newestFirst'] = $request->get('newestFirst');
 		$params['timeStatus'] = $request->get('timeStatus');
 		$invoicing_day = $request->get('invoicing_day');
-		if ($default_invoicing_day = $this->model->isMultiDayCycleMode()) {
+		if ($this->config_model->isMultiDayCycleMode()) {
 			if (empty($invoicing_day)) {
-				$params['invoicing_day'] = $default_invoicing_day;
+				$params['invoicing_day'] = Billrun_Factory::config()->getConfigChargingDay();
 				Billrun_Factory::log('No invoicing day was passed, the default one was taken', Zend_Log::DEBUG);
 			} else {
 				$params['invoicing_day'] = ltrim($invoicing_day, "0");
@@ -420,7 +420,7 @@ class BillrunController extends ApiController {
 		if (!empty($invoicing_day)) {
 			$cmd .= ' invoicing_days=' . $invoicing_day;
 		}
-		return Billrun_Util::forkProcessCli($cmd);
+		return Billrun_Util::forkProcessCli(escapeshellarg($cmd));
 	}
 	
 	protected function processCharge($mode, $params = array()) {
