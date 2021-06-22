@@ -40,19 +40,23 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 		}
 
 		$remoteDirectory = rtrim(Billrun_Util::getIn($connectionSettings, 'remote_directory', ''), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		$ret = true;
 		foreach ($files as $file) {
 			if (empty($file) || !file_exists($file)) {
 				Billrun_Factory::log()->log("Cannot get file " . $file, Zend_Log::ERR);
+				$ret = false;
 				continue;
 			}
 			$fileName = basename($file);
 			$remoteFilePath = $remoteDirectory . $fileName;
 			if (!$ssh->put($file, $remoteFilePath)){
 				Billrun_Factory::log()->log("Cannot put file in SSH server. file: " . $file . ", directory: " . $remoteDirectory, Zend_Log::ERR);
+				$ret = false;
 			}
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterSSHSendFiles', array($this));
+		return $ret;
 	}
 
 }

@@ -35,19 +35,23 @@ class Billrun_Sender_Ftp extends Billrun_Sender {
 		}
 
 		$remoteDirectory = rtrim(Billrun_Util::getIn($connectionSettings, 'remote_directory', ''), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		$ret = true;
 		foreach ($files as $file) {
 			if (empty($file) || !file_exists($file)) {
 				Billrun_Factory::log()->log("Cannot get file " . $file, Zend_Log::ERR);
+				$ret = false;
 				continue;
 			}
 			$fileName = basename($file);
 			$remoteFilePath = $remoteDirectory . $fileName;
 			if (!ftp_put($ftp->getConnection(), $remoteFilePath, $file, FTP_BINARY)) {
 				Billrun_Factory::log()->log("Cannot put file in FTP server. file: " . $file . ", directory: " . $remoteDirectory, Zend_Log::ERR);
+				$ret = false;
 			}
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterFTPSendFiles', array($this));
+		return $ret;
 	}
 
 }
