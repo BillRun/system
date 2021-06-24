@@ -126,7 +126,7 @@ class Vfdays2Action extends Action_Base {
 				),
 			)
 		);
-
+		Billrun_Factory::log("vfdays2 NRTRDE aggregate query : ".json_encode($elements));
 		$res = call_user_func_array(array(Billrun_Factory::db()->linesCollection(), 'aggregate'), $elements);
 		return $this->mergeDaysCount($res);
 	}
@@ -231,7 +231,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => ['$cond'=> [ ['$or'=>[['$eq'=>['VF','$arategroup']],['$eq'=>['IRP_VF_10_DAYS','$arategroup']]]],'$vf_count_days',0]],
 				),
 				'count_days_addon' => array(
-					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],'$vf_addon_days',0]],
+					'$max' => ['$cond'=> [['$eq'=>['IRP_VF_10_DAYS','$arategroup']],['$ifNull'=> ['$vf_addon_days',0]], 0]],
 				),
 				'last_usage_time' => array(
 					'$max' => '$isr_time',
@@ -262,7 +262,7 @@ class Vfdays2Action extends Action_Base {
 				),
 			)
 		);
-		
+		Billrun_Factory::log("vfdays2 tap3 aggregate query : ".json_encode([$match, $match2 ,$project1, $match3, $group, $project2]));
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
 		$results = $billing_connection->aggregate($match, $match2 ,$project1, $match3, $group, $project2);
 		return $this->mergeDaysCount($this->fixResultString($results));
