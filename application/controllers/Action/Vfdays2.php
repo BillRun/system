@@ -126,7 +126,7 @@ class Vfdays2Action extends Action_Base {
 				),
 			)
 		);
-
+		Billrun_Factory::log("vfdays2 NRTRDE aggregate query : ".json_encode($elements));
 		$res = call_user_func_array(array(Billrun_Factory::db()->linesCollection(), 'aggregate'), $elements);
 		return $this->mergeDaysCount($res);
 	}
@@ -262,7 +262,7 @@ class Vfdays2Action extends Action_Base {
 				),
 			)
 		);
-		
+		Billrun_Factory::log("vfdays2 tap3 aggregate query : ".json_encode([$match, $match2 ,$project1, $match3, $group, $project2]));
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
 		$results = $billing_connection->aggregate($match, $match2 ,$project1, $match3, $group, $project2);
 		return $this->mergeDaysCount($this->fixResultString($results));
