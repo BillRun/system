@@ -54,6 +54,9 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		$alpha = $row['alpha3'];
 		$line_time = $row['urt'];
+		if(!$this->isRatingNeeded($row,$usage_type)) {
+			return false;
+		}
 		$number_to_rate = $this->number_to_rate($row);
 		$call_number_prefixes = Billrun_Util::getPrefixes($number_to_rate);
 		$call_number_prefixes[] = null;
@@ -125,7 +128,27 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		}
 	}
 
+	protected function isRatingNeeded($row, $usage_type) {
+		$ignoreRatingRules = Billrun_Factory::config()->getConfigValue('nrtrde.calculator.ignore_rating');
+		foreach($ignoreRatingRules as $ignoreRule) {
+			$matched = true;
+			foreach($ignoreRule as $ruleCompareType => $rules) {
+				foreach($rules as $ruleField =>  $ruleVal) {
+					$matched &= !empty($row[$ruleField]) && (
+									($ruleCompareType == 'regex' &&  preg_match($ruleVal,$row[$ruleField])) ||
+									($ruleCompareType == 'lt' &&  $ruleVal > $row[$ruleField]) ||
+									($ruleCompareType == 'gt' &&  $ruleVal < $row[$ruleField]) ||
+									($ruleCompareType == 'eq' &&  $ruleVal == $row[$ruleField])
+								);
+				}
+			}
+			if($matched) {
+				return false;
+			}
 
+		}
+		return true;
+	}
 
 	/**
 	 * "e" - data, "9" - outgoing(call/sms), "a" - incoming 
