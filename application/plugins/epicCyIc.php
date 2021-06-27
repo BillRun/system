@@ -476,6 +476,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TO") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 			$row->setRawData($current);
@@ -489,6 +490,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TI") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 		}

@@ -2986,7 +2986,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 								"cf.outgoing_operator",
 								"cf.tier",
 								"cf.component",
-								"cf.scenario"
+								"cf.scenario",
+								"cf.operator_title"
 							],
 							"field": []
 						},
