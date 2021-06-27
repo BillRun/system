@@ -367,7 +367,7 @@
 											]
 										}
 									]
-								},
+		},
 								"fields": [
 									{
 										"field": "plan",
@@ -475,7 +475,7 @@
 			"type": "monetary",
 			"subject": {
 				"plan": {
-				
+
 					"BOX_1": {
 						"value": 16.73109244
 					}
@@ -840,7 +840,7 @@
 													"field": "name",
 													"op": "in",
 													"value": [
-														"DISCOUNT_3_MONTHS_FREE_SERVICE"
+														"3_MONTHS_FREE_SERVICE"
 													]
 												}
 											]
@@ -852,8 +852,7 @@
 					}
 				],
 				"min_subscribers": "",
-				"max_subscribers": "",
-				"cycles": 3
+				"max_subscribers": ""
 			},
 			"to": "time*2169-03-11T19:22:47Z",
 			"creation_time": "time*2020-03-11T23:00:00Z",
@@ -865,7 +864,10 @@
 						"value": 1
 					}
 				}
-			}
+			},
+			"excludes": [
+				"14P"
+			]
 		},
 		{
 			"from": "time*2019-05-31T22:00:00Z",
@@ -914,9 +916,102 @@
 					}
 				}
 			}
+		},
+		{
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "SOFT3",
+			"description": "SOFT3",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
 		}
-
-
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"DISCOUNT_A_SERVICE_3"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.2632
+					}
+				}
+			}
+		}, {
+			"from": "time*2019-05-31T22:00:00Z",
+			"key": "14P",
+			"description": "14P",
+			"params": {
+				"conditions": [
+					{
+						"subscriber": [
+							{
+								"fields": [
+									{
+										"field": "plan",
+										"op": "in",
+										"value": "8GB"
+									}
+								],
+								"service": {
+									"any": [
+										{
+											"fields": [
+												{
+													"field": "name",
+													"op": "in",
+													"value": [
+														"14PS"
+													]
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			},
+			"to": "time*2168-05-16T14:05:30Z",
+			"creation_time": "time*2019-05-31T22:00:00Z",
+			"type": "percentage",
+			"proration": "inherited",
+			"subject": {
+				"plan": {
+					"8GB": {
+						"value": 0.14
+					}
+				}
+			}
+		}
 
 
 	]
