@@ -32,6 +32,7 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary {
 		$data['record_type'] = $this->parseField(substr($line, $offset, 1), array('bcd_encode' => 1));
 		$offset += 1;
 		//Billrun_Factory::log()->log("Record_type : {$data['record_type']}",Zend_log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
 		if (isset($this->nsnConfig[$data['record_type']])) {
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
 				if ($fieldDesc) {
@@ -48,53 +49,7 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary {
 				}
 			}
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
-			//Use the  actual charing time duration instead of the  duration  that  was set by the switch
-			if (isset($data['duration'])) {
-				$data['org_dur'] = $data['duration']; // save the original duration.
-			}
-			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
-					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
-				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
-				if ($computed_dur >= 0) {
-					$data['duration'] = $computed_dur;
-				} else {
-					Billrun_Factory::log("Parser received line (cf : " . $data['call_reference'] . " , cft : " . $data['call_reference_time'] . " ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ", Zend_Log::ALERT);
-				}
-			}
-			//Remove  the  "10" in front of the national call with an international prefix
-//		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
-			if (isset($data['calling_number'])) {
-				$data['calling_number'] = Billrun_Util::msisdn($data['calling_number']);
-			}
-			if (isset($data['called_number'])) {
-			//Remove  the  "10" in front of the national call with an international prefix
-				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()) && substr($data['called_number'], 0, 2) == "10") {
-					$data['called_number'] = substr($data['called_number'], 2);
-				} else if (in_array($data['record_type'], array('30')) && (in_array($data['out_circuit_group'], Billrun_Util::getIldsOneWayCircuitGroups())) &&  
-                                          (preg_match('/^GNTV|^GBZQ|^GBZI|^GSML|^GHOT/', $data['in_circuit_group_name']))) {
-                                                $data['ild_prefix'] = substr($data['in_circuit_group_name'], 0, 4);
-                                                if (preg_match($this->ild_called_number_regex, $data['called_number'])){
-                                                    $data['called_number'] = substr($data['called_number'], 3);
-                                                } 
-				}
-				if (
-					(!isset($data['out_circuit_group'])) 
-					|| 
-					(
-						!(
-							($data['out_circuit_group'] >= '2000' && $data['out_circuit_group'] <= '2069') 
-							|| 
-							($data['out_circuit_group'] >= '2500' && $data['out_circuit_group'] <= '2529') 
-							|| 
-							($data['out_circuit_group'] >= '1230' && $data['out_circuit_group'] <= '1233')
-							||
-							(in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()))
-						)
-					)
-				) {
-					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
-				}
-			}
+			Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$data, $this));
 		} else {
 			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
 		}

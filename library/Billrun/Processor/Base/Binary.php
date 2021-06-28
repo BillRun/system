@@ -43,7 +43,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data the raw row data
 	 * @return Array that conatins all the parsed and processed data.
 	 */
-	public function buildDataRow($data, $fileHandle) {
+	public function parseData($data, $fileHandle) {
 		$row = false;
 		$this->getParser()->setLine($data);
 		$rawRow = $this->getParser()->parse($fileHandle);

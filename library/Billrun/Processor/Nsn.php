@@ -60,7 +60,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 		return null;
 	}
 
-	protected function getLineUsageType($row) {
+	public function getLineUsageType($row) {
 		switch ($row['record_type']) {
 			case '08':
 			case '09':
@@ -69,13 +69,6 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 			case '02':
 			case '12':
 				return 'incoming_call';
-
-			case '31':
-				if (preg_match('/^RCEL/', $row['out_circuit_group_name'])) {
-					return 'incoming_call';
-				} else {
-					return 'call';
-				}
 
 			case '11':
 			case '01':
@@ -107,11 +100,13 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 			}
 			if (in_array($header['format_version'], $this->nsnConfig['block_config']['supported_versions'])) {
 				do {
-					$row = $this->buildDataRow($bytes, $this->fileHandler);
+					$row = $this->parseData($bytes, $this->fileHandler);
 					if ($row) {
+						Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 						$row['usaget'] = $this->getLineUsageType($row['uf']);
 						$row['usagev'] = $this->getLineVolume($row['uf']);
 						$row['urt'] = !empty($row['uf']['urt']) ? $row['uf']['urt'] : new MongoDate();
+						Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 						$this->addDataRow($row);
 					}
 					$bytes = substr($bytes, $this->parser->getLastParseLength());
