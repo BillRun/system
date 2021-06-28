@@ -55,6 +55,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		$alpha = $row['alpha3'];
 		$line_time = $row['urt'];
 		if(!$this->isRatingNeeded($row,$usage_type)) {
+			Billrun_Factory::log("Rating  for line {$row['stamp']}  is  ignored due to configuration.");
 			return false;
 		}
 		$number_to_rate = $this->number_to_rate($row);
