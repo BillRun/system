@@ -125,20 +125,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 			"input_uom": ""
 		},
 		{
-			"usage_type": "parameter_anaa",
-			"label": "parameter_anaa",
-			"property_type": "counter",
-			"invoice_uom": "",
-			"input_uom": ""
-		},
-		{
-			"usage_type": "parameter_bnaa",
-			"label": "parameter_bnaa",
-			"property_type": "counter",
-			"invoice_uom": "",
-			"input_uom": ""
-		},
-		{
 			"property_type": "counter",
 			"invoice_uom": "",
 			"input_uom": "",
@@ -207,6 +193,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 			"property_type": "counter",
 			"invoice_uom": "",
 			"input_uom": ""
+		},
+		{
+			"usage_type" : "parameter_naa",
+			"label" : "parameter_naa",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
 		}
 	],
 //Input processor
@@ -410,50 +403,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 							],
 							"pattern": "a",
 							"usaget": "parameter_product",
-							"unit": "counter",
-							"volume_type": "value",
-							"volume_src": 1
-						},
-						{
-							"src_field": "DATA_UNIT",
-							"conditions": [
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$eq",
-									"op_label": "Equals"
-								},
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$ne",
-									"op_label": "Not Equals"
-								}
-							],
-							"pattern": "a",
-							"usaget": "parameter_anaa",
-							"unit": "counter",
-							"volume_type": "value",
-							"volume_src": 1
-						},
-						{
-							"src_field": "DATA_UNIT",
-							"conditions": [
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$eq",
-									"op_label": "Equals"
-								},
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$ne",
-									"op_label": "Not Equals"
-								}
-							],
-							"pattern": "a",
-							"usaget": "parameter_bnaa",
 							"unit": "counter",
 							"volume_type": "value",
 							"volume_src": 1
@@ -753,6 +702,28 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 							"volume_src": [
 								"EVENT_DURATION"
 							]
+						},
+						{
+							"src_field": "DATA_UNIT",
+							"conditions": [
+								{
+									"src_field": "DATA_UNIT",
+									"pattern": "a",
+									"op": "$eq",
+									"op_label": "Equals"
+								},
+								{
+									"src_field": "DATA_UNIT",
+									"pattern": "a",
+									"op": "$ne",
+									"op_label": "Not Equals"
+								}
+							],
+							"pattern": "a",
+							"usaget": "parameter_naa",
+							"unit": "counter",
+							"volume_type": "value",
+							"volume_src": 1
 						}
 					],
 					"time_field": "EVENT_START_TIME",
@@ -760,64 +731,404 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 					"time_format": "His",
 					"calculated_fields": [
 						{
-							"target_field": "call_direction"
+							"target_field": "call_direction",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "incoming_operator"
+							"target_field": "incoming_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "outgoing_operator"
+							"target_field": "outgoing_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "operator"
+							"target_field": "operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "anaa"
+							"target_field": "anaa",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "bnaa"
+							"target_field": "bnaa",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product_title"
+							"target_field": "product_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product"
+							"target_field": "product",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product_group"
+							"target_field": "product_group",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "event_direction"
+							"target_field": "event_direction",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "scenario"
+							"target_field": "scenario",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "component"
+							"target_field": "component",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "settlement_operator"
+							"target_field": "settlement_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "virtual_operator"
+							"target_field": "virtual_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "cash_flow"
+							"target_field": "cash_flow",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "incoming_poin"
+							"target_field": "incoming_poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "outgoing_poin"
+							"target_field": "outgoing_poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "poin"
+							"target_field": "poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "tier"
+							"target_field": "tier",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "tier_derivation"
+							"target_field": "tier_derivation",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						}
 					],
 					"orphan_files_time": "6 hours"
@@ -827,32 +1138,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 						{
 							"target_key": "operator_path",
 							"src_key": "INCOMING_PATH",
-							"conditions": [
-								{
-									"field": "usaget",
-									"regex": "/.*/"
-								}
-							],
-							"clear_regex": "//"
-						}
-					],
-					"parameter_bnaa": [
-						{
-							"target_key": "sid",
-							"src_key": "REASON_FOR_CLEARDOWN",
-							"conditions": [
-								{
-									"field": "usaget",
-									"regex": "/.*/"
-								}
-							],
-							"clear_regex": "//"
-						}
-					],
-					"parameter_anaa": [
-						{
-							"target_key": "sid",
-							"src_key": "REASON_FOR_CLEARDOWN",
 							"conditions": [
 								{
 									"field": "usaget",
@@ -970,6 +1255,19 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 						{
 							"target_key": "operator_path",
 							"src_key": "INCOMING_PATH",
+							"conditions": [
+								{
+									"field": "usaget",
+									"regex": "/.*/"
+								}
+							],
+							"clear_regex": "//"
+						}
+					],
+					"parameter_naa": [
+						{
+							"target_key": "sid",
+							"src_key": "REASON_FOR_CLEARDOWN",
 							"conditions": [
 								{
 									"field": "usaget",
@@ -1105,24 +1403,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 									"type": "match",
 									"rate_key": "params.tier",
 									"line_key": "tier"
-								}
-							]
-						],
-						"parameter_bnaa": [
-							[
-								{
-									"type": "longestPrefix",
-									"rate_key": "params.prefix",
-									"line_key": "BNUM"
-								}
-							]
-						],
-						"parameter_anaa": [
-							[
-								{
-									"type": "longestPrefix",
-									"rate_key": "params.prefix",
-									"line_key": "ANUM"
 								}
 							]
 						],
@@ -2772,6 +3052,40 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 								}
 							]
 						],
+						"parameter_naa": [
+							[
+								{
+									"type": "longestPrefix",
+									"rate_key": "params.prefix",
+									"line_key": "computed",
+									"computed": {
+										"line_keys": [
+											{
+												"key": "anaa"
+											},
+											{
+												"key": "/^$/"
+											}
+										],
+										"operator": "$regex",
+										"type": "condition",
+										"must_met": false,
+										"projection": {
+											"on_true": {
+												"key": "ANUM",
+												"regex": "",
+												"value": ""
+											},
+											"on_false": {
+												"key": "BNUM",
+												"regex": "",
+												"value": ""
+											}
+										}
+									}
+								}
+							]
+						],
 						"parameter_tier_aba": [
 							[
 								{
@@ -2921,8 +3235,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 				},
 				"pricing": {
 					"incoming_sms": [],
-					"parameter_bnaa": [],
-					"parameter_anaa": [],
 					"transit_outgoing_call": [],
 					"parameter_tier_cb": [],
 					"outgoing_sms": [],
@@ -2932,6 +3244,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 					"outgoing_call": [],
 					"parameter_tier_pb_anaa": [],
 					"incoming_call": [],
+					"parameter_naa": [],
 					"parameter_tier_aba": [],
 					"parameter_product": [],
 					"parameter_tier_pb": [],
@@ -2987,7 +3300,9 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 								"cf.tier",
 								"cf.component",
 								"cf.scenario",
-								"cf.operator_title"
+								"cf.operator_title",
+								"cf.anaa_title",
+								"cf.anaa_group"
 							],
 							"field": []
 						},
@@ -3959,6 +4274,20 @@ lastConfig["export_generators"][0] =
 					"editable": true,
 					"display": true
 				},
+				{
+					"field_name" : "params.naa",
+					"title" : "Network Address Aggregation",
+					"editable" : true,
+					"display" : true,
+					"searchable" : true
+				},
+				{
+					"field_name" : "params.naa_parent",
+					"title" : "Network Address Aggregation Parent",
+					"editable" : true,
+					"display" : true,
+					"searchable" : true
+				}
 			];
 
 //foreign fields
@@ -4989,32 +5318,32 @@ for (var i = 0; i < lastConfig.export_generators.length; i++) {
 	}
 }
 
-//EPICIC-75 "Undefined index: stamp" when processing files
-for (var i = 0; i < lastConfig.file_types.length; i++) {
-	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
-		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
-		for (var j = 0; j < cfFieldsArray.length; j++) {
-			cfFieldsArray[j]["line_keys"] =
-					[
-						{
-							"key": "ANUM",
-						},
-						{
-							"key": "ANUM",
-						}
-					];
-			cfFieldsArray[j]["operator"] = "$eq";
-			cfFieldsArray[j]["type"] = "condition";
-			cfFieldsArray[j]["must_met"] = true;
-			cfFieldsArray[j]["projection"] = {
-				"on_true": {
-					"key": "hard_coded",
-					"value": ""
-				}
-			};
-		}
-	}
-}
+//EPICIC-75 "Undefined index: stamp" when processing files (now included directly in the processor's configuration)
+//for (var i = 0; i < lastConfig.file_types.length; i++) {
+//	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+//		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+//		for (var j = 0; j < cfFieldsArray.length; j++) {
+//			cfFieldsArray[j]["line_keys"] =
+//					[
+//						{
+//							"key": "ANUM",
+//						},
+//						{
+//							"key": "ANUM",
+//						}
+//					];
+//			cfFieldsArray[j]["operator"] = "$eq";
+//			cfFieldsArray[j]["type"] = "condition";
+//			cfFieldsArray[j]["must_met"] = true;
+//			cfFieldsArray[j]["projection"] = {
+//				"on_true": {
+//					"key": "hard_coded",
+//					"value": ""
+//				}
+//			};
+//		}
+//	}
+//}
 
 db.config.insert(lastConfig);
 
