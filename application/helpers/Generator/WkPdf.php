@@ -136,6 +136,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('decimal_mark', Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator', Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
+		$this->view->assign('company_address', Billrun_Util::getCompanyAddress());
+		$this->view->assign('company_phone', Billrun_Util::getCompanyPhone());
+		$this->view->assign('company_email', Billrun_Util::getCompanyEmail());
 		$this->view->assign('sumup_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('details_table_template', APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', '/application/views/invoices/details/details_table.phtml'));
@@ -158,6 +161,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('template', $this->template);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
+		$this->view->assign('is_onetime', $this->is_onetime);
 		$this->prepareGraphicsResources();
 	}
 

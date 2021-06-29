@@ -45,10 +45,15 @@ class Billrun_Utils_Usage {
 				$entityQueryData['sort'] = array('from' => -1);
 
 				break;
-//			case 'service' :
-//				TODO find what to do with multiple possible values
-//				break;
+			case 'service' :
+				if(empty($row['service'])) {
+					return null;
+				}
+				$entityQueryData['collection'] = 'services';
+				$entityQueryData['query'] = array('name' => $row['service']);
+				break;
 			case 'product' :
+			case 'rate':
 				if(empty($row['arate'])) {
 					return null;
 				}
