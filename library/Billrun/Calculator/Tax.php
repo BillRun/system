@@ -45,7 +45,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			$newData = $this->updateNonTaxableRowTaxInformation($current);
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
-				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
+				Billrun_Factory::log("Line {$current['stamp']} is missing/has illegal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
 				return FALSE;
 			}
 			$subscriberSearchData = ['sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];

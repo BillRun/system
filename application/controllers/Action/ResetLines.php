@@ -72,9 +72,6 @@ class ResetLinesAction extends ApiAction {
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
 				);
-				if (!is_null($invoicing_day)) {
-					$query['foreign.account.invoicing_day'] = $invoicing_day;
-				}
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
 			}

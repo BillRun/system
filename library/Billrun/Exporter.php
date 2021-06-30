@@ -92,12 +92,27 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @var array
      */
     protected $query = array();
+    
+    /**
+     * maximum number of records to fetch (in order to allow pagination)
+     *
+     * @var int
+     */
+    protected $limit = null;
+    
+    /**
+     * was the file moved (uploaded) successfully
+     *
+     * @var bool
+     */
+    protected $moved = false;
 
     public function __construct($options = array()) {
         parent::__construct($options);
         $this->exportTime = time();
         $this->exportStamp = $this->getExportStamp();
         $this->query = $this->getFiltrationQuery();
+        $this->limit = $this->getLimit();
         $this->logCollection = Billrun_Factory::db()->logCollection();
     }
 
@@ -125,7 +140,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     /**
      * gets collection to load data from DB
      * 
-     * @return string
+     * @return Mongodloid_Collection
      */
     protected function getCollection() {
         if (is_null($this->collection)) {
@@ -163,20 +178,30 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     /**
+     * get limitation for rows to be exported
+     *
+     * @return int
+     */
+    protected function getLimit() {
+        $querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
+        return $querySettings['limit'] ?? null;
+    }
+
+    /**
      * general function to handle the export
      *
      * @return array list of lines exported
      */
     public function generate() {
+        Billrun_Factory::log()->log("Billrun_Exporter::generate - starting to generate", Zend_Log::INFO);
         Billrun_Factory::dispatcher()->trigger('beforeExport', array($this));
         $this->beforeExport();
         $className = $this->getGeneratorClassName();
         $generatorOptions = $this->buildGeneratorOptions();
+        $this->createLogDB($this->getLogStamp());
         $this->fileGenerator = new $className($generatorOptions);
         $this->fileGenerator->generate();
         $transactionCounter = $this->fileGenerator->getTransactionsCounter();
-        $this->afterExport();
-        Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
         Billrun_Factory::log("Exported " . $transactionCounter . " lines from " . $this->getCollectionName() . " collection");
     }
 
@@ -195,6 +220,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
             }
             return $recordTypeMapping['record_type'];
         }
+        
+        Billrun_Factory::log()->log("Billrun_Exporter::getRecordType - Cannot get record type for line {$row['stamp']}", Zend_Log::ERR);
         return '';
     }
 
@@ -218,16 +245,25 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * @return array
      */
     protected function loadRows() {
+        Billrun_Factory::log()->log("Billrun_Exporter::loadRows - starting to load rows", Zend_Log::INFO);
         $collection = $this->getCollection();
         Billrun_Factory::dispatcher()->trigger('ExportBeforeLoadRows', array(&$this->query, $collection, $this));
-        $rows = $collection->query($this->query)->cursor();
+        $rows = $collection->query($this->query)
+            ->cursor()
+            ->hint(['stamp' => 1])
+            ->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
         $data = array();
+        $count = 0;
         foreach ($rows as $row) {
+            Billrun_Factory::log()->log("start getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
-            $this->rawRows[] = $rawRow;
+            $this->rowsStamps[] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
+            Billrun_Factory::log()->log("done getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
+            $count++;
         }
-        Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rawRows, &$this->rowsToExport, $this));
+        Billrun_Factory::dispatcher()->trigger('ExportAfterLoadRows', array(&$this->rowsStamps, &$this->rowsToExport, $this));
+        Billrun_Factory::log()->log("Billrun_Exporter::loadRows - done", Zend_Log::INFO);
         return $data;
     }
 
@@ -276,6 +312,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
             'export_start_time' => new MongoDate(),
+            'file_name' => $this->getFilename(),
+            'path' => $this->getExportFilePath(),
         );
         $logData = array_merge($basicLogData, $data);
 
@@ -294,12 +332,48 @@ class Billrun_Exporter extends Billrun_Generator_File {
      * mark the lines which are about to be exported
      */
     function beforeExport() {
-        $this->query['export_start.' . static::$type] = array(
-            '$exists' => false,
-        );
-        $this->query['export_stamp.' . static::$type] = array(
-            '$exists' => false,
-        );
+        if (empty($this->query['$and'])) {
+            $this->query['$and'] = [];
+        }
+
+        $orphanConfigTime = Billrun_Factory::config()->getConfigValue('export.orphan_wait_time', '6 hours');
+        $exportStartIndex = count($this->query['$and']);
+        $this->query['$and'][] = [
+            '$or' => [
+                [
+                    'export_start.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                    'export_stamp.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                ],
+                [
+                    'exported.' . static::$type => [
+                        '$exists' => false,
+                    ],
+                    'export_start.' . static::$type => [
+                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
+                    ],
+                ],
+            ],
+        ];
+
+        $collection = $this->getCollection();
+        $stampsCursor = $collection->query($this->query)->project(['stamp' => 1])->cursor()->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 10800000));
+        if (!is_null($this->limit)) {
+            $stampsCursor->limit($this->limit);
+        }
+        
+        $stamps = [];
+        foreach ($stampsCursor as $obj) {
+            $stamps[] = $obj->get('stamp');
+        }        
+        
+        $this->query['stamp'] = [
+            '$in' => $stamps,
+        ];
+
         $update = array(
             '$set' => array(
                 'export_start.' . static::$type => new MongoDate(),
@@ -310,11 +384,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'multiple' => true,
         );
 
-        $collection = $this->getCollection();
         $collection->update($this->query, $update, $options);
-        unset($this->query['export_start.' . static::$type]);
+        unset($this->query['$and'][$exportStartIndex]);
+        if (empty($this->query['$and'])) {
+            unset($this->query['$and']);
+        }
         $this->query['export_stamp.' . static::$type] = $this->exportStamp;
-        $this->createLogDB($this->getLogStamp());
     }
 
     /**
@@ -348,14 +423,30 @@ class Billrun_Exporter extends Billrun_Generator_File {
     /**
      * mark the lines as exported
      */
-    protected function afterExport() {
-        $stamps = array();
-        foreach ($this->rawRows as $row) {
-            $stamps[] = $row['stamp'];
+    public function afterExport() {
+        if ($this->shouldMarkAsExported()) {
+            $this->markAsExported();
         }
+        
+        Billrun_Factory::dispatcher()->trigger('afterExport', array(&$this->rowsToExport, $this));
+    }
+
+    protected function shouldMarkAsExported() {
+        if (!$this->shouldFileBeMoved()) {
+            return true;
+        }
+
+        if ($this->config['exported_after_move'] ?? true) {
+            return $this->moved;
+        }
+
+        return true;
+    }
+
+    protected function markAsExported() {
         $query = array(
             'stamp' => array(
-                '$in' => $stamps,
+                '$in' => $this->rowsStamps,
             ),
         );
         $update = array(
@@ -416,16 +507,27 @@ class Billrun_Exporter extends Billrun_Generator_File {
     }
 
     public function move() {
+        Billrun_Factory::log()->log("Billrun_Exporter::move - start", Zend_Log::INFO);
+        $this->moved = true;
+        
         foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
+                Billrun_Factory::log()->log("Move to sender {$connection['name']} - start", Zend_Log::INFO);
                 $sender = Billrun_Sender::getInstance($connection);
                 if (!$sender) {
                     Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($connections, 1), Zend_Log::ERR);
+                    $this->moved = false;
                     continue;
                 }
-                $sender->send($this->getExportFilePath());
+                if (!$sender->send($this->getExportFilePath())) {
+                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::INFO);
+                    $this->moved = false;
+                } else {
+                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
+                }
             }
         }
+        Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
     }
 
     protected function getExportFilePath() {

@@ -144,6 +144,8 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		$this->query['aid'] = $this->subscriber['aid'];
 		if (!$this->sharedBalance) {
 			$this->query['sid'] = $this->subscriber['sid'];
+		} else {
+			$this->query['sid'] = 0;
 		}
 		$this->preload();
 	}

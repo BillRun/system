@@ -55,15 +55,17 @@ class Billrun_Helpers_QueueCalculators {
             $queue_data = $processor->getQueueData();
             $calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
             $calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
-            $extraLines = [];
+            $allExtraLines = [];
             foreach ($data['data'] as $key => &$line) {
                 $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
                 $this->calculateDataRow($data, $index, $line, $calc_name, $queue_data, $calc, $processor);
                 foreach ($extraLines as $stamp => &$extraLine) {
                     $this->calculateDataRow($data, $index, $extraLine, $calc_name, $queue_data, $calc, $processor);
                 }
+
+                $allExtraLines =  array_merge($allExtraLines, $extraLines);
             }
-            $data['data'] =  array_merge($data['data'], $extraLines);
+            $data['data'] =  array_merge($data['data'], $allExtraLines);
             $index++;
         }
         Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
@@ -178,6 +180,7 @@ class Billrun_Helpers_QueueCalculators {
 		$queue_data = $processor->getQueueData();
 		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+		$this->unifyCalc->init();
 		$this->unifyCalc->prepareData($data['data']);
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->shouldSkipCalc($line, 'unify')) {
