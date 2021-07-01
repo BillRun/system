@@ -29,12 +29,42 @@ class CreditAction extends ApiAction {
 	 */
 	public function execute() {
 		$this->allowed();
-		
-		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
-		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
-		$this->setEventsData();
-		$this->process();
-		return $this->response();
+		$request = $this->getRequest();
+		try {
+			switch ($request->get('action')) {
+				case 'prepone' :
+					$response = $this->preponeCreditInstallments($request);
+					break;
+				default :
+					Billrun_Factory::log("Execute credit", Zend_Log::INFO);
+					$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
+					$this->setEventsData();
+					$this->process();
+					return $this->response();
+			}
+			if ($response !== FALSE) {
+				$this->getController()->setOutput(array(array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request->getPost(),
+						'details' => $response,
+				)));
+			}
+		} catch (Exception $ex) {
+			$this->setError($ex->getMessage(), $request->getPost());
+			return;
+		}
+	}
+	
+	protected function preponeCreditInstallments($request){
+		$sid = $request->get('sid');
+		$aid = $request->get('aid');
+		if(!is_numeric($sid) || !is_numeric($aid)){
+			$this->setError('Illegal sid/aid', $request->getPost());
+			return FALSE;
+		}		
+		$accountArray = [intval($aid) => [intval($sid)]];
+		Billrun_Aggregator_Customer::preponeInstallments($accountArray);
 	}
 	
 	protected function setEventsData() {
@@ -83,16 +113,15 @@ class CreditAction extends ApiAction {
 		}
 		
 		
-		$totalPrice = round($firstInstallment['aprice'], self::INSTALLMENTS_PRECISION);
-		$installmentPrice = round($totalPrice / $numOfInstallments, self::INSTALLMENTS_PRECISION);
-		$firstInstallmentPrice = round($totalPrice - ($installmentPrice * ($numOfInstallments - 1)), self::INSTALLMENTS_PRECISION);
+		$totalPrice = $firstInstallment['aprice'];
+		$installmentPrice = $totalPrice / $numOfInstallments;
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($firstInstallment['credit_time']);
 		
 		// handle first installment
-		$firstInstallment['aprice'] = $firstInstallmentPrice;
+		$firstInstallment['aprice'] = $installmentPrice;
 		unset($firstInstallment['stamp']);
 		$firstInstallment['stamp'] = Billrun_Util::generateArrayStamp($firstInstallment); // update stamp because data was changed
-		
+		$firstInstallment['first_installment'] = $firstInstallment['stamp'];
 		// handle other installments
 		for ($i = 2; $i <= $numOfInstallments; $i++) {
 			$billrunKey = Billrun_Billingcycle::getFollowingBillrunKey($billrunKey);
@@ -175,16 +204,13 @@ class CreditAction extends ApiAction {
 	
 	protected function getCreditUsaget($row) {
 		if (!isset($row['aprice'])) {
-			return 'refund';
+			return (isset($row['credit_type']) && in_array($row['credit_type'], ['charge' , 'refund'])) ? $row['credit_type'] : 'refund';
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
 	
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if(!empty($row['aid']) && $row['sid'] == '0') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
-            $skipArray[] = 'customer';
-		}
 		return $skipArray;
 	}
 	

@@ -61,7 +61,7 @@ class Billrun_Tariff_Util {
 			}
 
 			$rate = self::buildRate($currRate, $lastRate);
-
+			$lastRate = $rate;
 			// volume could be negative if it's a refund amount
 			if (0 == $volumeCount) {
 				//break if no volume left to price.
@@ -69,7 +69,6 @@ class Billrun_Tariff_Util {
 			}
 
 			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate, $pricingMethod);
-			$lastRate = $rate;
 		}
 		return $pricingMethod === self::PRICING_METHOD_TIERED ? $charge : self::getChargeValueForRateStep($volume, $lastRate);
 	}

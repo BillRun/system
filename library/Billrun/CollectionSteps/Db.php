@@ -27,6 +27,67 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->collection_stepsCollection();
 	}
+	
+	protected function getClosestValidDate($date, $on_holidays, $on_days, $findDateRetry = 0) {
+		$valid_date = true;
+		if ($findDateRetry >= 30) { // to prevent recursion loop, search max for 30 days.
+			return $date;
+		}
+		if (!$on_holidays && $valid_date) {
+			$is_holiday = in_array(Billrun_HebrewCal::getDayType($date), [HEBCAL_SHORTDAY, HEBCAL_HOLIDAY]);
+			if ($is_holiday) {
+				$valid_date = false;
+			}
+		}
+		if (!empty($on_days) && $valid_date) { // default if not set = true
+			$all_days_disabled_or_enabled= count($on_days) == 7 && (!in_array(true, $on_days) || !in_array(false, $on_days)); // ignore configuration
+			if (!$all_days_disabled_or_enabled) {
+				$day_num = intval(date('w', $date));
+				if (isset($on_days[$day_num]) && !$on_days[$day_num]) {
+					$valid_date = false;
+				}
+			}
+		}
+		if ($valid_date) {
+			return $date;
+		}
+		$findDateRetry++;
+		$next_date = strtotime("+1 day", $date); // check next day
+		return $this->getClosestValidDate($next_date, $on_holidays, $on_days, $findDateRetry);
+	}
+	
+	protected function getClosestValidTime($date, $on_hours){
+		if (!empty($on_hours)) {
+			// get rendom period allowd to avoid mass step execution at same time
+			$rand_range = $on_hours[array_rand($on_hours)];
+			$from_time = $rand_range[0];
+			$to_time = $rand_range[1];
+			$to_time_day = ($from_time > $to_time) ? "tomorrow" : "today";
+			// get random datetime from rendom period
+			$from_date = strtotime("today {$from_time}", $date);
+			$to_date = strtotime("{$to_time_day} {$to_time}", $date);
+			$rand_date = mt_rand($from_date, $to_date);
+			return $rand_date;
+		}
+		return $date;
+	}
+
+	protected function getStepTriggerTime($step) {
+		$on_holidays = (isset($step['run_on']['holidays']))
+			? $step['run_on']['holidays']
+			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_holidays', false);
+		$on_days = (isset($step['run_on']['days']))
+			? $step['run_on']['days']
+			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_days', array());
+		$on_hours = (isset($step['run_on']['hours']))
+			? $step['run_on']['hours']
+			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_hours', array());
+		$do_after_days = '+' . intval($step['do_after_days']) . ' days';
+		$triggerDate = strtotime($do_after_days);
+		$triggerDate = $this->getClosestValidTime($triggerDate, $on_hours);
+		$triggerDate = $this->getClosestValidDate($triggerDate, $on_holidays, $on_days);
+		return new MongoDate($triggerDate);
+	}
 
 	public function createCollectionSteps($aid) {
 		$steps = Billrun_Factory::config()->getConfigValue('collection.steps', Array());
@@ -35,8 +96,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		foreach ($steps as $step) {
 			if ($step['active']) {
 				unset($step['active']);
-				$do_after_days = '+' . intval($step['do_after_days']) . ' days';
-				$trigger_date = new MongoDate(strtotime($do_after_days));
+				$trigger_date = $this->getStepTriggerTime($step);
 				$newStep = array();
 				$newStep['step_code'] = $step['name'];
 				$newStep['step_type'] = $step['type'];
@@ -53,10 +113,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 					}
 				}
 				$newStep['extra_params']['aid'] = $aid;
-				$newStep['stamp'] = Billrun_Util::generateArrayStamp($step);
+				$newStep['stamp'] = Billrun_Util::generateArrayStamp($newStep);
 				$newStep['trigger_date'] = $trigger_date;
 				$newStep['creation_time'] = $create_date;
-
 				$newSteps[] = $newStep;
 			}
 		}
@@ -111,11 +170,18 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		return $results;
 	}
 
-	protected function runStep($step) {
+	/**
+	 * trigger the step
+	 * 
+	 * @param array $step collection step details
+	 * 
+	 * @return mixed array response details if success, else false
+	 */
+	protected function triggerStep($step) {
 		$notifier = new Billrun_CollectionSteps_Notifier($step);
 		return $notifier->notify();
 	}
-
+	
 	protected function markStepAsCompleted($step, $response) {
 		$query = array(
 			'_id' => $step['_id'],

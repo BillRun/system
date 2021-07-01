@@ -166,6 +166,15 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		$options = array(
 			'new' => TRUE,
 		);
+		
+		// this is for balances sharding, although this is _id query
+		if (!isset($query['sid'])) {
+			$query['sid'] = $this->row['sid'];
+		}
+		if (!isset($query['aid'])) {
+			$query['aid'] = $this->row['aid'];
+		}
+		
 		$ret = $this->collection()->findAndModify($query, $update, null, $options);
 		if ($ret->isEmpty()) {
 			return FALSE;
@@ -178,6 +187,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (!$skipEvents) {
 			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec)));
 		}
+		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdate', array($this->row, $after));
 		$this->setRawData($after);
 		return $ret;
 	}
@@ -218,6 +228,37 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			return 0;
 		}
 		return $this->get('balance')['totals'][$balance_totals_key]['usagev'];
+	}
+	
+	/**
+	 * get main balance usagev used.
+	 * should only contain services included in the plan, and usages outside of all services
+	 *
+	 * @param  array $pricingData
+	 * @param  float $usagev
+	 * @return float
+	 */
+	protected function getTotalUsagevToUpdate($pricingData, $usagev) {
+		$arateGroups = $pricingData['arategroups'] ?? [];
+		if (empty($arateGroups)) {
+			return $usagev;
+		}
+		
+		$usagev = 0;
+
+		if (!empty($pricingData['over_group'])) {
+			$usagev += $pricingData['over_group'];
+		} else if (!empty($pricingData['out_group'])) {
+			$usagev += $pricingData['out_group'];
+		}
+
+		foreach ($arateGroups as $arateGroup) {
+			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
+				$usagev += $arateGroup['usagev'] ?? 0;
+			}
+		}
+
+		return $usagev;
 	}
 
 	/**

@@ -17,7 +17,7 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 		$this->tax = Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun());
 	}
 	
-	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
+	public function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData, $params = []) {
 		
 		$line['tax_data'] = array(
 								'total_amount'=> $line['aprice'] * $this->tax,

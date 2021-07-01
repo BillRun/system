@@ -43,7 +43,13 @@ class ResetLinesModel {
 	 * Usage to substract from default balance in rebalance.
 	 * @var array
 	 */
-	protected $balanceSubstract;
+	protected $balanceSubstract = [];
+	
+	/**
+	 * used for rebalance multiple balances affected by the same line
+	 * @var type 
+	 */
+	protected $alreadyUpdated = [];
 	
 	protected $balances;
 	
@@ -133,36 +139,78 @@ class ResetLinesModel {
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
-		$queue_line = array(
-			'calc_name' => false,
-			'calc_time' => false,
-			'skip_fraud' => true,
-		);
+		$former_exporter = array();
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
 			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
-			$this->aggregateLineUsage($line);
-			$queue_line['rebalance'] = array();
-			$stamps[] = $line['stamp'];
-			if (!empty($line['rebalance'])) {
-				$queue_line['rebalance'] = $line['rebalance'];
+			if($line['source'] === 'unify'){
+				$archivedLines = Billrun_Calculator_Unify::getUnifyLines($line['stamp']);
+				$archivedLinesToInsert = [];
+                                $batchSize = Billrun_Config::getInstance()->getConfigValue('resetlines.archived_lines.batch_size', 1000);
+				foreach ($archivedLines as $archivedLine){
+					unset($archivedLine["u_s"]);
+					$archivedLinesToInsert[] = $archivedLine;
+					$this->resetLineForAccounts($archivedLine, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
+                                        // If we've reached `$batchSize` entries, perform the batched insert.
+                                        if(count($archivedLinesToInsert) >= $batchSize){
+                                            Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                            $archivedLinesToInsert = [];
+                                        }
+                                        
+                                }
+                                // Finish the last batch.
+                                if (!empty($archivedLinesToInsert)){
+                                     Billrun_Factory::db()->linesCollection()->batchInsert($archivedLinesToInsert);
+                                }
+				Billrun_Factory::db()->linesCollection()->remove(array('stamp' => $line['stamp']));
+				Billrun_Factory::db()->archiveCollection()->remove(array('u_s' => $line['stamp']));
+				continue;
 			}
-			$queue_line['rebalance'][] = $rebalanceTime;
-			$this->buildQueueLine($queue_line, $line, $advancedProperties);
-			$queue_lines[] = $queue_line;
+			$this->resetLineForAccounts($line, $stamps, $queue_lines, $rebalanceTime, $advancedProperties, $former_exporter);
 		}
 
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter)) {
 				return false;
 			}
 		}
 	}
 
-	/**
+	protected function resetLineForAccounts($line, &$stamps, &$queue_lines, $rebalanceTime, $advancedProperties, &$former_exporter){
+		$queue_line = array(
+			'calc_name' => false,
+			'calc_time' => false,
+			'skip_fraud' => true,
+		);
+		$this->aggregateLineUsage($line);
+		$queue_line['rebalance'] = array();
+		$stamps[] = $line['stamp'];
+                $former_exporter = $this->buildFormerExporterForLine($line);
+		if (!empty($line['rebalance'])) {
+			$queue_line['rebalance'] = $line['rebalance'];
+		}
+		$queue_line['rebalance'][] = $rebalanceTime;
+		$this->buildQueueLine($queue_line, $line, $advancedProperties);
+		$queue_lines[] = $queue_line;
+	}
+        
+        
+        protected function buildFormerExporterForLine($line) {
+            $former_exporter = [];
+            if(isset($line['export_stamp']) && isset($line['export_start'])){
+                $former_exporter = array(
+                    'export_stamp' => $line['export_stamp'],
+                    'export_start' => $line['export_start']
+                );
+            }
+            return $former_exporter;
+        }
+
+
+        /**
 	 * Removes lines from queue, reset added fields off lines and re-insert to queue first stage
 	 * @todo support update/removal of credit lines
 	 */
@@ -209,7 +257,7 @@ class ResetLinesModel {
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
 	 */
-	protected function getUpdateQuery($rebalanceTime) {
+	protected function getUpdateQuery($rebalanceTime, $former_exporter) {
 		$updateQuery = array(
 			'$unset' => array(
 				'aid' => 1,
@@ -242,7 +290,10 @@ class ResetLinesModel {
 				'rates' => 1,
 				'services_data' => 1,
 				'foreign' => 1, // this should be replaced by querying lines.fields and resetting all custom fields found there
-			),
+                                'export_stamp'=>1,
+                                'export_start'=>1,
+                                'exported'=>1,
+                        ),
 			'$set' => array(
 				'in_queue' => true,
 			),
@@ -250,7 +301,9 @@ class ResetLinesModel {
 				'rebalance' => $rebalanceTime,
 			),
 		);
-
+                if(!empty($former_exporter)){
+                    $updateQuery['$push']['former_exporters'] = $former_exporter;
+                }
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateRebalanceLines', array(&$updateQuery));
 		
 		return $updateQuery;
@@ -278,8 +331,8 @@ class ResetLinesModel {
 	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
-		$update = $this->getUpdateQuery($rebalanceTime);
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime, $former_exporter) {
+		$update = $this->getUpdateQuery($rebalanceTime, $former_exporter);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
 		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);
@@ -336,7 +389,8 @@ class ResetLinesModel {
 		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
-		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec);
+		$lineInvoicingDay = $this->getLineInvoicingDay($line);
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec, $lineInvoicingDay);
 		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
 		foreach ($arategroups as $arategroup) {
 			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
@@ -350,73 +404,92 @@ class ResetLinesModel {
 			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
 		}
 
-		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups) || (isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0)) {
-			$balanceUsaget = $line['usaget'];
-			$balanceUsagev = $line['usagev'];
-			if (isset($line['out_plan']) && $line['out_plan'] > 0 && $line['usagev'] > 0) {
-				$balanceUsaget = 'out_plan_' . $line['usaget'];
-				$balanceUsagev = $line['out_plan'];
-				if (isset($line['in_plan'])) {
-					$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
-					$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] = $aggregatedUsage + $line['in_plan'];
-					@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['count'] += 1;
-				}
-			}
+		if ($this->affectsMainBalance($line)) {
 			if (!empty(($line['over_group']))) {
-				$overGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['over_group']['usage'] = $overGroupUsage + $line['over_group'];
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'over_group', 'usage'], $line['over_group']);
+				}
+			if (!empty(($line['out_group']))) {
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'out_group', 'usage'], $line['out_group']);
 			}
-			if (!empty($line['out_group'])) {
-				$outGroupUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$line['usaget']]['out_group']['usage'] = $outGroupUsage + $line['out_group'];
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'usage'], $this->getMainBalanceUsage($line));
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
+			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
 			}
-			if ($balanceUsagev > 0 || isset($line['over_group'])) {
-			$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
-			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
-			$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
-			$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
-			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
 			}
-			@$this->balanceSubstract[$line['aid']][$line['sid']][$billrunKey]['cost'] += $line['aprice'];
+	protected function affectsMainBalance($line) {
+		$arategroups = $line['arategroups'] ?? [];
+		return empty($arategroups) ||
+			$this->isInMainBalance($arategroups) ||
+			(isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0);
+			}
+	protected function getMainBalanceUsage($line) {
+		$arategroups = $line['arategroups'] ?? [];
+		if (empty($arategroups)) {
+			return $line['usagev'];
 		}
+		$ret = 0;
+		if (!empty($line['over_group'])) {
+			$ret += $line['over_group'];
+		} else if (!empty($line['out_group'])) {
+			$ret += $line['out_group'];
+		}
+
+		foreach ($arategroups as $arategroup) {
+			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
+			if ($this->isMainBalance($balanceId)) {
+				$ret += $arategroup['usagev'] ?? 0;
+			}
+		}
+
+		return $ret;
 	}
 
-	protected function getRelevantBalance($balances, $balanceId, $params = array()) {
+	protected function getRelevantBalances($balances, $balanceId, $params = array(),  $invoicing_day = null) {
+		$this->alreadyUpdated = [];
+		$ret = [];
 		foreach ($balances as $balance) {
 			$rawData = $balance->getRawData();
 			if (isset($rawData['_id']) && !empty($balanceId) && $rawData['_id']->{'$id'} == $balanceId) {
-				return $rawData;
+				return [$rawData];
 			}
 
 			if (empty($balanceId) && !empty($params)) {
-				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
-				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
-				if ($params['aid'] == $rawData['aid'] && $params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
-					return $rawData;
+				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key'], $invoicing_day);
+				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key'], $invoicing_day);
+				if ($params['aid'] == $rawData['aid'] && in_array($rawData['sid'], [$params['sid'], 0]) && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
+					$ret[] = $rawData;
 				}
 			}
 		}
-		return false;
+		return !empty($ret) ? $ret : false;
 	}
 
 	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
+		$isMainBlalance = isset($balance['balance']['totals']);
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
-			foreach ($usaget as $usagev) {
+			foreach ($usaget as $usageType => $usagev) {
 				if (isset($balance['balance']['groups'][$group])) {
-					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					$usedUsage = isset($balance['balance']['groups'][$group]['usagev']) ? $balance['balance']['groups'][$group]['usagev'] : $balance['balance']['groups'][$group]['cost'];
+					$usage = min($usagev['usage'] + ($this->alreadyUpdated[$group]['usage'] ?? 0), $usedUsage);
+					$count = min($usagev['count'] + ($this->alreadyUpdated[$group]['count'] ?? 0), $balance['balance']['groups'][$group]['count']);
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usage;
+					$usageToSet = $usedUsage - $usage;
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
-						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $usageToSet;
 					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
-						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+						$update['$set']['balance.groups.' . $group . '.cost'] = $usageToSet;
 					}
-					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $count;
+					$this->alreadyUpdated[$group]['usage'] = $usage;
+					$this->alreadyUpdated[$group]['count'] = $count;
 				}
 			}
 		}
 
+		if ($isMainBlalance) {
 		foreach ($totalsUsage as $usageType => $usage) {
-			if (isset($balance['balance']['totals'])) {
 				if (isset($usage['usage'])) {
 				$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usage['usage'];
 				}
@@ -452,17 +525,24 @@ class ResetLinesModel {
 		);
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
+			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
+			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
-				if (empty($balanceToUpdate)) {
+				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
+				if (empty($relevantBalances)) {
 					continue;
 				}
-				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
-				$query = array(
-					'_id' => new MongoId($balanceId),
-				);
-				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
-				$balancesColl->update($query, $updateData);
+				foreach ($relevantBalances as $balanceToUpdate) {
+					if (empty($balanceToUpdate)) {
+						continue;
+					}
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+					$query = array(
+						'_id' => new MongoId($balanceId),
+					);
+					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
+					$balancesColl->update($query, $updateData);
+				}
 			}
 		}
 
@@ -479,25 +559,33 @@ class ResetLinesModel {
 		);
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
+		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
+			$current_account = array_filter($accounts, function($account) use($aid) {
+				return $account['aid'] == $aid;
+			});
+			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey));
-					if (empty($balanceToUpdate)) {
-						continue;
+					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
+					foreach ($relevantBalances as $balanceToUpdate) {
+						if (empty($balanceToUpdate)) {
+							continue;
+						}
+						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
+						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
+						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
+						if (empty($updateData)) {
+							continue;
+						}
+						
+						$query = array(
+							'_id' => $balanceToUpdate['_id'],
+						);
+						Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
+						$ret = $balancesColl->update($query, $updateData);
 					}
-					$groups = !empty($usage['groups']) ? $usage['groups'] : array();
-					$totals = !empty($usage['totals']) ? $usage['totals'] : array();
-					$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
-					if (empty($updateData)) {
-						continue;
-					}
-					$query = array(
-						'_id' => $balanceToUpdate['_id'],
-					);
-					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
-					$ret = $balancesColl->update($query, $updateData);
 				}
 			}
 		}
@@ -527,6 +615,24 @@ class ResetLinesModel {
 		}
 
 		return false;
+	}
+
+	protected function isInMainBalance($arategroups) {
+		$arategroupBalances = array_column($arategroups, 'balance_ref');
+		foreach ($arategroupBalances as $balanceRef) {
+			$balanceId = $balanceRef['$id']->{'$id'};
+			if ($this->isMainBalance($balanceId)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected function isMainBalance($balanceId) {
+		return isset($this->balances[$balanceId]) &&
+			$this->balances[$balanceId]['period'] == 'default' &&
+			!empty($this->balances[$balanceId]['balance']['totals']);
 	}
 	
 	protected function buildConditionsQuery($updateAids) {
@@ -569,6 +675,10 @@ class ResetLinesModel {
 	protected function translateCondition($condition) {
 		$op = $condition['op'];
 		return array($condition['field_name'] => array("$op" => $condition['value']));
+	}
+	
+	protected function getLineInvoicingDay($line) {
+		return isset($line['foregin']['account']['invoicing_day']) ? $line['foregin']['account']['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 	}
 
 }

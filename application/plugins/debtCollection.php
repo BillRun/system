@@ -60,7 +60,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->immediateExit) {
 			$this->collection->collect([$bill['aid']], 'exit_collection');
 		}
-	}	
+	}
 
 	public function afterRejection($bill) {
 		if ($this->immediateEnter) {
@@ -86,4 +86,11 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
+	public function afterDenial($denialParams) {
+		if ($denialParams['amount'] < (0 - Billrun_Bill::precision) && $this->immediateEnter) { // When amount of denial in response is negative the due of the created rec will be positive.
+			$this->collection->collect([$denialParams['aid']], 'enter_collection');
+		} else if ($denialParams['amount'] > (0 + Billrun_Bill::precision) && $this->immediateExit) {
+			$this->collection->collect([$denialParams['aid']], 'exit_collection');
+		}
+	}
 }

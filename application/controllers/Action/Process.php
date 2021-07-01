@@ -37,6 +37,10 @@ class ProcessAction extends Action_Base {
 			return;
 		}
 
+		$extraParams = $this->getController()->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
 		// If not type all process normaly.
 		if(!$this->handleTypeAll($options)) {
 			$this->loadProcessor($options);	
@@ -44,14 +48,14 @@ class ProcessAction extends Action_Base {
 	}
 	
 	protected function loadProcessor($options) {
-		$this->_controller->addOutput("Loading processor");
+		$this->getController()->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
 
 		if (!$processor) {
-			$this->_controller->addOutput("Processor cannot be loaded");
+			$this->getController()->addOutput("Processor cannot be loaded");
 			return;
 		}
-		$this->_controller->addOutput("Starting to process. This action can take a while...");
+		$this->getController()->addOutput("Starting to process. This action can take a while...");
 		// buffer all action output
 		ob_start();
 		if (isset($options['path']) && $options['path']) {
@@ -60,8 +64,8 @@ class ProcessAction extends Action_Base {
 			$linesProcessedCount = $processor->process_files();
 		}
 		// write the buffer into log and output
-		$this->_controller->addOutput("processed " . $linesProcessedCount . " lines");
-		$this->_controller->addOutput(ob_get_contents());
+		$this->getController()->addOutput("processed " . $linesProcessedCount . " lines");
+		$this->getController()->addOutput(ob_get_contents());
 		ob_end_clean();
 	}
 	

@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates' ));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf' ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -203,13 +203,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row->getRawData();
 		$rate = $this->getLineRate($row);
+		// TODO: need to refactoring the real-time handling
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;
 		}
 
-		if ($this->isRateBlockedByPlan($row, $rate)) {
+		// TODO: need to refactoring the real-time handling
+		if (isset($row['realtime']) && $row['realtime'] && $this->isRateBlockedByPlan($row, $rate)) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;

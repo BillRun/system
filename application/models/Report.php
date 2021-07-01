@@ -43,6 +43,16 @@ class ReportModel {
 				'target_field' => 'aid',
 			),
 		),
+		'usage_archive' => array(
+			'subscription' => array(
+				'source_field' => 'sid',
+				'target_field' => 'sid',
+			),
+			'customer' => array(
+				'source_field' => 'aid',
+				'target_field' => 'aid',
+			),
+		),
 		'subscription' => array(
 			'usage' => array(
 				'source_field' => 'sid',
@@ -211,6 +221,19 @@ class ReportModel {
 				$formats[] = $formatter;
 			}
 		}
+//		$field_names = array_column($this->report['columns'], 'field_name', 'key');
+//		// if field is subscriber.play forse add default empty value formater to be default Play
+//		if($field_names[$key] === 'subscriber.play') {
+//			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+//			if(!empty($defaultPlay['name'])) {
+//				$defaultEmptyPlayformat = [
+//					'field' => $key,
+//					'op' => 'default_empty',
+//					'value' => $defaultPlay['name'],
+//				];
+//				array_unshift($formats, $defaultEmptyPlayformat);
+//			}
+//		}
 		return $formats;
 	}
 	
@@ -391,8 +414,6 @@ class ReportModel {
 		return $this->currentTime;
 	}
 
-
-	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
 		$value = $condition['value'];
@@ -411,6 +432,14 @@ class ReportModel {
 					return 'in';
 				default:
 					return $op;
+			}
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			if ($op === 'nin' || ($op === 'in' && in_array($defaultPlay['name'], $values))) {
+				return 'and';
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
@@ -448,6 +477,47 @@ class ReportModel {
 					'from' => date("c", strtotime("{$days} day midnight")),
 					'to' => date("c", strtotime("today") - 1)
 				);
+		}
+		// If subscriber.play doesn't exists in line we need to check for default play
+		if($condition['entity'] === 'usage' && $field === 'subscriber.play') {
+			$values = explode(',', $value);
+			$defaultPlay = Billrun_Utils_Plays::getDefaultPlay();
+			$withDefault = in_array($defaultPlay['name'], $values);
+			// IN + DEFAULT
+			if ($op === 'in' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$or' => [
+						['subscriber.play' => ['$exists' => false]],
+						['subscriber.play' => ['$in' => $values]],
+					]]
+				];
+			}
+			// NIN + DEFAULT
+			if ($op === 'nin' && $withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['$and' => [
+						['subscriber.play' => ['$exists' => true]],
+						['subscriber.play' => ['$nin' => $values]],
+					]]
+				];
+			}
+			// NIN + NO DEFAULT
+			if ($op === 'nin' && !$withDefault) {
+				return [
+					['subscriber' => [
+						'$exists' => true,
+					]],
+					['subscriber.play' => ['$nin' => $values]],
+				];
+			}
+			// IN + NO DEFAULT
+			// Nornal case return only [] value
 		}
 		// search by field_name
 		if($field === 'billrun') {
@@ -631,15 +701,34 @@ class ReportModel {
 				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
 			case 'logFile':
-				$defaultEntityMatch[]['file_name'] = array(
-					"\$exists" => true
-				);
+				$defaultEntityMatch[]['file_name'] = [
+					"\$exists" => true,
+				];
+				$defaultEntityMatch[]['type'] = [
+					"\$ne" => 'custom_payment_gateway',
+				];
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsRequest':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_request';
+				return $defaultEntityMatch;
+			case 'paymentsTransactionsResponse':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'transactions_response';
+				return $defaultEntityMatch;
+			case 'paymentDenials':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'denials';
+				return $defaultEntityMatch;
+			case 'paymentsFiles':
+				$defaultEntityMatch[]['type'] = 'custom_payment_gateway';
+				$defaultEntityMatch[]['payments_file_type'] = 'payments';
 				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
 		}
 	}
-	
+
 	protected function getCollection() {
 		$entity = $this->getReportEntity();
 		if(empty($entity)) {
@@ -659,6 +748,8 @@ class ReportModel {
 		switch ($entity) {
 			case 'usage':
 				return 'lines';
+			case 'usage_archive':
+				return 'archive';
 			case 'subscription':
 				return 'subscribers';
 			case 'customer':
@@ -668,6 +759,10 @@ class ReportModel {
 			case 'event':
 				return 'events';
 			case 'logFile':
+			case 'paymentsTransactionsRequest':
+			case 'paymentsTransactionsResponse':
+			case 'paymentDenials':
+			case 'paymentsFiles':
 				return 'log';
 			case 'bills':
 				return 'bills';
@@ -929,8 +1024,10 @@ class ReportModel {
 					"\${$op}" => (bool) $value
 				);
 				break;
-			case 'and': // for complex queries
-				$field = '$and';
+			case 'and':
+			case 'or':
+				// for complex queries
+				$field = "\${$op}";
 				$formatedExpression = $value;
 				break;
 			default:

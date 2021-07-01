@@ -19,7 +19,7 @@ class ErrorController extends Yaf_Controller_Abstract {
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 	   if(php_sapi_name() != "cli") {
 		   print_r($output);
-		   Billrun_Factory::log(print_r($output,1));
+		   Billrun_Factory::log(print_r($output,1), Zend_Log::ERR);
 	   } else {
 		   echo "Exception: " . $output;
 	   }

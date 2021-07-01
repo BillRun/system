@@ -60,6 +60,13 @@
 							"input_uom": "seconds"
 						},
 						{
+							"usage_type": "gr",
+							"label": "gr",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
 							"usage_type": "call_to_gaza",
 							"label": "call_to_gaza",
 							"property_type": "time",
@@ -2746,18 +2753,13 @@
 					],
 					"taxation": {
 						"tax_type": "usage",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"default": {
+							"key": "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
 							}
 						}
 					},
@@ -3010,7 +3012,11 @@
 						"closed_cycle_changes": false
 					},
 					"plays": [
-						{ "name": "Default", "enabled": true, "default": true }
+						{
+							"name": "Default",
+							"enabled": true,
+							"default": true
+						}
 					],
 					"lines": {
 						"fields": [

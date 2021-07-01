@@ -255,9 +255,422 @@
 					"balance_period": "+1 months",
 					"to": "time*2167-01-10T08:15:43Z",
 					"creation_time": "time*2018-01-11T00:00:00Z"
+				},
+				{
+					"OBJID": "5ea1a308cd4acc7d23618933",
+					"from": "time*2018-04-24T00:00:00Z",
+					"name": "NOT_TAXABLE_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
 				}
+					],
+					"description": "not taxable service",
+					"prorated": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"to": "time*2169-04-23T14:15:36Z",
+					"creation_time": "time*2018-04-24T00:00:00Z"
+				}
+				, {
 
+					"from": "time*2020-05-31T21:00:00Z",
+					"name": "BP1",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 0
+						}
+					],
+					"description": " 1",
+					"prorated": true,
+					"to": "time*2169-06-04T13:13:33Z",
+					"creation_time": "time*2020-06-04T21:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				},
+				{
 
+					"name": "COMMITMENT_24_MONTHS",
+					"price": [
+						{
+							"price": 0,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Commitment 24 Months",
+					"include": [],
+					"prorated": true,
+					"invoice_type": "broadband_services",
+					"vat_type": "DEFAULT_VAT",
+					"invoice_label": "",
+					"displayed_on_invoice": "",
+					"display_order": "",
+					"from": "time*2019-10-22T09:53:49.905Z",
+					"to": "time*2168-10-22T10:53:49Z",
+					"creation_time": "time*2019-10-22T09:53:49.905Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"billable_option": "",
+					"epic_description": "",
+					"erp_fis_mapping_label": "",
+					"erp_fis_msisdn_label": "",
+					"fis_descr": "",
+					"gl_account": "",
+					"management_reporting": "",
+					"object_id": "",
+					"provisioning": {
+						"POM_TAG": "",
+						"OBJECT_NAME": [],
+						"ACTIONS": "",
+						"PARAMETERS": "",
+						"GROUPING": ""
+					},
+					"tech_name": "",
+					"display_in": {
+						"all": []
+					},
+					"grouping": "Commitments",
+					"grouping_order": "",
+					"vti_name": "Commitment 24 Months"
+				},
+				{
+
+					"name": "LEGACY_CUSTOMER",
+					"price": [
+						{
+							"price": 0,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Legacy Customer Discount",
+					"include": [],
+					"prorated": true,
+					"vti_name": "Legacy Customer Discount",
+					"invoice_type": "broadband_services",
+					"grouping": "Discounts",
+					"grouping_order": "1",
+					"display_in": {
+						"all": [
+							"SUB",
+							"EDIT"
+						]
+					},
+					"vat_type": "DEFAULT_VAT",
+					"invoice_label": "Legacy Customer Discount",
+					"displayed_on_invoice": 0,
+					"display_order": 1,
+					"from": "time*2020-05-29T21:00:00Z",
+					"to": "time*2168-10-22T10:53:49Z",
+					"creation_time": "time*2019-10-22T09:53:49.938Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"tech_name": "",
+					"provisioning": {
+						"POM_TAG": "",
+						"OBJECT_NAME": [],
+						"ACTIONS": "",
+						"PARAMETERS": "",
+						"GROUPING": ""
+					},
+					"billable_option": "",
+					"erp_fis_msisdn_label": "",
+					"object_id": "",
+					"fis_descr": "",
+					"management_reporting": "",
+					"gl_account": "",
+					"epic_description": "",
+					"erp_fis_mapping_label": ""
+				},
+				{
+
+					"name": "PAPER_INVOICE",
+					"price": [
+						{
+							"price": 1.67226,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "Paper invoice",
+					"include": [],
+					"prorated": false,
+					"vti_name": "Paper invoice",
+					"invoice_type": "miscellaneous",
+					"vat_type": "DEFAULT_VAT",
+					"invoice_label": "Paper invoice",
+					"displayed_on_invoice": 1,
+					"display_order": 1,
+					"from": "time*2019-06-27T12:45:38.782Z",
+					"to": "time*2168-06-27T13:45:38Z",
+					"creation_time": "time*2019-06-27T12:45:38.782Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"billable_option": "",
+					"epic_description": "",
+					"erp_fis_mapping_label": "Paper invoice",
+					"erp_fis_msisdn_label": "",
+					"fis_descr": "",
+					"gl_account": "11700233",
+					"management_reporting": "",
+					"object_id": "",
+					"provisioning": {
+						"POM_TAG": "",
+						"OBJECT_NAME": [],
+						"ACTIONS": "",
+						"PARAMETERS": "",
+						"GROUPING": ""
+					},
+					"tech_name": "",
+					"grouping": "",
+					"grouping_order": "",
+					"display_in": {
+						"all": [
+							"SUB",
+							"EDIT"
+						]
+					}
+				},
+				{
+
+					"name": "TOP_UP_1",
+					"price": [
+						{
+							"price": 7.56303,
+							"from": 0,
+							"to": 1
+						}
+					],
+					"description": "Top-up 50GB - 60Mbps",
+					"include": {
+						"groups": {
+							"TOP_UP_1": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [],
+								"value": "53687091200",
+								"usage_types": {
+									"data": {
+										"unit": "gb1024"
+									}
+								},
+								"quantity_affected": true
+							}
+						}
+					},
+					"prorated": false,
+					"vti_name": "Top-up 50GB",
+					"invoice_type": "broadband_services",
+					"grouping": "Data Mobile Add-ons",
+					"grouping_order": "1",
+					"display_in": {
+						"all": [
+							"EDIT"
+						]
+					},
+					"vat_type": "DEFAULT_VAT",
+					"invoice_label": "Top-up 50GB",
+					"displayed_on_invoice": 1,
+					"display_order": 28,
+					"from": "time*2020-05-27T21:00:00Z",
+					"to": "time*2168-10-22T10:53:49Z",
+					"creation_time": "time*2019-10-22T09:53:49.973Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"tech_name": "TOP_UP_1",
+					"provisioning": {
+						"POM_TAG": "",
+						"OBJECT_NAME": [],
+						"ACTIONS": "",
+						"PARAMETERS": "",
+						"GROUPING": ""
+					},
+					"billable_option": "",
+					"erp_fis_msisdn_label": "",
+					"object_id": "",
+					"fis_descr": "",
+					"management_reporting": "",
+					"gl_account": "12500211",
+					"epic_description": {
+						"download": "60Mbps",
+						"upload": "5Mbps",
+						"quantifiable": 1,
+						"volume": "53687091200"
+					},
+					"erp_fis_mapping_label": "Top-up 50GB - 60Mbps",
+					"quantitative": true,
+					"properties": {
+						"quantifiable": 1,
+						"volume": "53687091200"
+					}
+				},
+				{
+
+					"from": "time*2018-01-13T00:00:00Z",
+					"name": "ABCD",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "abcd",
+					"prorated": true,
+					"vatable": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-01-12T15:48:33Z",
+					"creation_time": "time*2018-01-13T00:00:00Z"
+				},
+				{
+
+					"from": "time*2018-01-13T00:00:00Z",
+					"name": "EFG",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 100
+						}
+					],
+					"description": "efg",
+					"prorated": true,
+					"vatable": true,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-01-12T15:49:02Z",
+					"creation_time": "time*2018-01-13T00:00:00Z"
+				},
+				{
+					"from": "time*2020-04-30T22:00:00Z",
+					"name": "DATA_ONLY_UNLIMITED",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": 0
+						}
+					],
+					"description": "Data Only Unlimited",
+					"include": {
+						"groups": {
+							"DATA_ONLY_UNLIMITED_GROUP": {
+								"account_shared": false,
+								"account_pool": false,
+								"quantity_affected": false,
+								"rates": [
+									"MOB_DATA"
+								],
+								"value": "UNLIMITED",
+								"usage_types": {
+									"data": {
+										"unit": "byte"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"category": "",
+					"for_discount_only": "1",
+					"reference_code": "DATA_ONLY_UNLIMITED",
+					"description_fr": "",
+					"description_en": "",
+					"description_de": "",
+					"title_fr": "Pack de données CH",
+					"title_en": "",
+					"title_de": "",
+					"to": "time*2169-05-25T17:00:00Z",
+					"creation_time": "time*2020-04-30T22:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				}
+				, {
+					"from": "time*2017-12-31T23:00:00Z",
+					"name": "DISCOUNT_A_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "0"
+						}
+					],
+					"description": "Service discount",
+					"prorated": true,
+					"category": "",
+					"for_discount_only": "1",
+					"to": "time*2167-01-17T14:38:00Z",
+					"creation_time": "time*2018-01-15T23:00:00Z",
+					"reference_code": "SERVICE_DISCOUNT",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					]
+				}, {
+					"from": "time*2019-02-16T22:00:00Z",
+					"name": "TERMINATION",
+					"price": [
+						{
+							"from": 0,
+							"to": 1,
+							"price": 100
+						}
+					],
+					"description": "termination",
+					"prorated": false,
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"to": "time*2170-02-16T12:58:47Z",
+					"creation_time": "time*2019-02-16T22:00:00Z"
+				}
 
 
 

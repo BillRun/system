@@ -14,6 +14,7 @@ abstract class Billrun_Cycle_Data_Line {
 	protected $stumpLine = array();
 	protected $vatable = null;
 	protected $charges = array();
+	protected $subscriberFields = array();
 
 	public function __construct($options) {
 		$this->constructOptions($options);
@@ -51,6 +52,10 @@ abstract class Billrun_Cycle_Data_Line {
 
 		if (isset($options['vatable'])) {
 			$this->vatable = $options['vatable'];
+		}
+		
+		if (isset($options['subscriber_fields'])) {
+			$this->subscriberFields = $options['subscriber_fields'];
 		}
 
 		$this->charges = $this->getCharges($options);

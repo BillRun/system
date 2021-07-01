@@ -35,8 +35,9 @@ class AdjustPaymentsAction extends ApiAction {
 							}
 							$payment = Billrun_Bill_Payment::getInstanceByid($rawAdjustment['id']);
 							if ($payment) {
-								$method = $payment->getPaymentMethod();
-								if (in_array($method, $this->payment_methods) && !($payment->isRejection() || $payment->isRejected() || $payment->isCancellation() || $payment->isCancelled() || $payment ->isWaiting())) {
+								$method = $payment->getBillMethod();
+								if (in_array($method, $this->payment_methods) && !($payment->isRejection() || $payment->isRejected() || $payment->isCancellation() || $payment->isCancelled() 
+									|| $payment->isDeniedPayment() || $payment->isDenial() || $payment ->isWaiting())) {
 									if (isset($rawAdjustment['method'])) {
 										if (in_array($rawAdjustment['method'], $this->payment_methods)) {
 											if ($rawAdjustment['method'] != $method) {

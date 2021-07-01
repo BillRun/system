@@ -1,0 +1,506 @@
+{
+	"collection": "linesCollection",
+	"data":
+			[
+				{
+					"OBJID": "5ce52d9c05e68c5e1817c258",
+					"uf": {
+						"sid": 2,
+						"date": "2019-02-22 10:15:23",
+						"usage": "call",
+						"rate": "NONTAX_CALL",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "2a59f077692f3247811d50598b64e892",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2019-05-22T11:08:12.550Z",
+					"timezone": 0,
+					"urt": "time*2019-02-22T10:15:23Z",
+					"eurt": "time*2019-02-22T10:15:23Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "NONTAX_PLAN",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ab",
+						"isDbRef": true
+					},
+					"services": [],
+					"services_data": [],
+					"sid": 2,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "NONTAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5ce4e6797cbf797d96b503a7",
+						"isDbRef": true
+					},
+					"arate_key": "NONTAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "NONTAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e6797cbf797d96b503a7",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201906",
+								"charge": 100
+							}
+						}
+					],
+					"aprice": 100,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "NONTAX_PLAN"
+						}
+					},
+					"out_group": 100,
+					"out_plan": 100
+				},
+				{
+					"OBJID": "5ce53ada05e68c33db3391c3",
+					"uf": {
+						"sid": 2,
+						"date": "2019-02-22 10:15:23",
+						"usage": "call",
+						"rate": "DEFAULT_TAX_CALL",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "0f721f8984107a5cc3e3e3a6b06babd2",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2019-05-22T12:04:42.759Z",
+					"timezone": 0,
+					"urt": "time*2019-02-22T10:15:23Z",
+					"eurt": "time*2019-02-22T10:15:23Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "NONTAX_PLAN",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ab",
+						"isDbRef": true
+					},
+					"services": [],
+					"services_data": [],
+					"sid": 2,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "NONTAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "arate",
+						"ObjectId": "5ce4e70b05e68c1cc5502b63",
+						"isDbRef": true
+					},
+
+					"arate_key": "DEFAULT_TAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "DEFAULT_TAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e70b05e68c1cc5502b63",
+								"isDbRef": true
+							},
+
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201906",
+								"charge": 100
+							}
+						}
+					],
+					"aprice": 100,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "NONTAX_PLAN"
+						}
+					},
+					"out_group": 100,
+					"out_plan": 100
+				},
+				{
+					"OBJID": "5ce53ae605e68c5e9642c3a6",
+					"uf": {
+						"sid": 2,
+						"date": "2019-02-22 10:15:23",
+						"usage": "call",
+						"rate": "USE_GLOBAL_TAX_CALL",
+						"volume": 100
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "54c97046cd6cfcd877f99783e1f48d2c",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 100,
+					"process_time": "time*2019-05-22T12:04:54.870Z",
+					"timezone": 0,
+					"urt": "time*2019-02-22T10:15:23Z",
+					"eurt": "time*2019-02-22T10:15:23Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "NONTAX_PLAN",
+
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ab",
+						"isDbRef": true
+					},
+					"services": [],
+					"services_data": [],
+					"sid": 2,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "NONTAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5ce4e6797cbf797d96b503a8",
+						"isDbRef": true
+					},
+					"arate_key": "USE_GLOBAL_TAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "USE_GLOBAL_TAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e6797cbf797d96b503a8",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 100,
+								"out_plan": 100,
+								"billrun": "201906",
+								"charge": 100
+							}
+						}
+					],
+					"aprice": 100,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "NONTAX_PLAN"
+						}
+					},
+					"out_group": 100,
+					"out_plan": 100
+				},
+				{
+					"OBJID": "5cea721005e68c57a06c0772",
+					"uf": {
+						"sid": 2,
+						"date": "2019-05-22 10:15:23",
+						"usage": "call",
+						"rate": "OVERRIDE_GLOBAL_TAX_CALL",
+						"volume": 10
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "7d9ea6298c17a9336410592f09fb1c65",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 10,
+					"process_time": "time*2019-05-26T11:01:36.953Z",
+					"timezone": 0,
+					"urt": "time*2019-05-22T10:15:23Z",
+					"eurt": "time*2019-05-22T10:15:23Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "NONTAX_PLAN",
+
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ab",
+						"isDbRef": true
+					},
+
+					"services": [],
+					"services_data": [],
+					"sid": 2,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "NONTAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5ce4e6797cbf797d96b503a9",
+						"isDbRef": true
+					},
+
+					"arate_key": "OVERRIDE_GLOBAL_TAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "OVERRIDE_GLOBAL_TAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e6797cbf797d96b503a9",
+								"isDbRef": true
+							},
+
+							"pricing": {
+								"out_group": 10,
+								"out_plan": 10,
+								"billrun": "201906",
+								"charge": 10
+							}
+						}
+					],
+					"aprice": 10,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "NONTAX_PLAN"
+						}
+					},
+					"out_group": 10,
+					"out_plan": 10
+				},
+				{
+					"OBJID": "5cea721005e68c57a06c0773",
+					"uf": {
+						"sid": 3,
+						"date": "2019-05-22 10:15:24",
+						"usage": "call",
+						"rate": "FALLBACK_TAX_CALL",
+						"volume": 10
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "7d9ea6298c17a9336410592f09fb1c66",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 10,
+					"process_time": "time*2019-05-26T11:01:37.953Z",
+					"timezone": 0,
+					"urt": "time*2019-05-22T10:15:25Z",
+					"eurt": "time*2019-05-22T10:15:25Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "OVERRIDE_GLOBAL_TAX_PLAN",
+
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ad",
+						"isDbRef": true
+					},
+
+					"services": [],
+					"services_data": [],
+					"sid": 3,
+					"subscriber": {
+						"aid": 1,
+						"sid": 3,
+						"plan": "OVERRIDE_GLOBAL_TAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5ce4e6797cbf797d96b503a9",
+						"isDbRef": true
+					},
+
+				"arate_key": "FALLBACK_TAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "FALLBACK_TAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e6797cbf797d96b503aa",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 10,
+								"out_plan": 10,
+								"billrun": "201906",
+								"charge": 10
+							}
+						}
+					],
+					"aprice": 10,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "OVERRIDE_GLOBAL_TAX_PLAN"
+						}
+					},
+					"out_group": 10,
+					"out_plan": 10
+				},
+				{
+					"OBJID": "5cea723905e68c245516f8c3",
+					"uf": {
+						"sid": 2,
+						"date": "2019-05-22 10:15:23",
+						"usage": "call",
+						"rate": "FALLBACK_TAX_CALL",
+						"volume": 10
+					},
+					"source": "realtime",
+					"type": "realTime",
+					"skip_calc": [
+						"unify"
+					],
+					"request_type": "4",
+					"stamp": "169788ab8db858b08659e74db90185f5",
+					"record_type": "postpay_charge_request",
+					"billrun_pretend": false,
+					"usaget": "call",
+					"usagev_unit": "seconds",
+					"usagev": 10,
+					"process_time": "time*2019-05-26T11:02:17.272Z",
+					"timezone": 0,
+					"urt": "time*2019-05-22T10:15:23Z",
+					"eurt": "time*2019-05-22T10:15:23Z",
+					"in_queue": true,
+					"aid": 1,
+					"firstname": "p",
+					"lastname": "p",
+					"plan": "NONTAX_PLAN",
+					"plan_ref": {
+						"collection": "plans",
+						"ObjectId": "5ce4ffe97cbf797d96b503ab",
+						"isDbRef": true
+					},
+
+					"services": [],
+					"services_data": [],
+					"sid": 2,
+					"subscriber": {
+						"aid": 1,
+						"sid": 2,
+						"plan": "NONTAX_PLAN",
+						"firstname": "p",
+						"lastname": "p",
+						"services": [],
+						"services_data": []
+					},
+					"arate": {
+						"collection": "rates",
+						"ObjectId": "5ce4e6797cbf797d96b503aa",
+						"isDbRef": true
+					},
+
+					"arate_key": "FALLBACK_TAX_CALL",
+					"rates": [
+						{
+							"tariff_category": "retail",
+							"key": "FALLBACK_TAX_CALL",
+							"add_to_retail": true,
+							"rate": {
+								"collection": "rates",
+								"ObjectId": "5ce4e6797cbf797d96b503aa",
+								"isDbRef": true
+							},
+							"pricing": {
+								"out_group": 10,
+								"out_plan": 10,
+								"billrun": "201906",
+								"charge": 10
+							}
+						}
+					],
+					"aprice": 10,
+					"billrun": "201906",
+					"foreign": {
+						"plan": {
+							"name": "NONTAX_PLAN"
+						}
+					},
+					"out_group": 10,
+					"out_plan": 10
+				}
+
+
+			]
+}

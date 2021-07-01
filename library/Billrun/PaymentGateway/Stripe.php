@@ -54,7 +54,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway.active' => array(
+			'active' => array(
 				'name' => $this->billrunName,
 				'customer_id' => $this->saveDetails['customer_id'],
 				'stripe_email' => $this->saveDetails['email'],
@@ -65,7 +65,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		);
 	}
 
-	public function pay($gatewayDetails) {
+	public function pay($gatewayDetails, $addonData) {
 		$credentials = $this->getGatewayCredentials();
 		$this->setApiKey($credentials['secret_key']);
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
@@ -235,5 +235,13 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
+	}
+
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+
+	public function getSecretFields() {
+		return array('secret_key');
 	}
 }
