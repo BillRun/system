@@ -14,8 +14,8 @@ class Billrun_Account_External extends Billrun_Account {
 	
 	protected $remote;
 	protected $remote_authentication;
-    protected $remote_billable_url;
-    protected $remote_billable_authentication;
+	protected $remote_billable_url;
+	protected $remote_billable_authentication;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
