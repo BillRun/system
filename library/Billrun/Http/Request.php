@@ -178,6 +178,10 @@ class Billrun_Http_Request {
         }
 
         $authenticator = Billrun_Http_Authentication_Base::getInstance($this, $authParams);
-        return $authenticator ? $authenticator->authenticate() : false;
+        if (!$authenticator) {
+            throw new Exception("Failed to authenticate");
+        }
+        
+        $authenticator->authenticate();
     }
 }
