@@ -370,7 +370,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return An overriden entites hashed list.
 	 */
 
-	protected function overrideEntityValues($entites, $overrideConditions,$entityType) {
+	protected function overrideEntityValues($entites, $overrideConditions, $entityType) {
 		$overridenEntites = $entites;
 		if(!empty($overrideConditions)) {
 			foreach($overrideConditions as $overideRule) {

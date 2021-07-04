@@ -208,7 +208,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data);
+		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
 		$dataForAggration['plans'] = $constructedData['plans'];
