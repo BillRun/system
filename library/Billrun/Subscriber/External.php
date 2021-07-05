@@ -18,7 +18,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
+		$this->setRemoteDetails(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', ''));
 	}
 	
 	public function delete() {
@@ -44,11 +44,12 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		Billrun_Factory::dispatcher()->trigger('beforeGetExternalSubscriberDetailsRequest', array(&$externalQuery, &$this));
+		$request_type = Zend_Http_Client::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalSubscriberDetailsRequest', array(&$externalQuery, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$results = Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
-														 Zend_Http_Client::POST,
+														 $request_type,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
 		$results = json_decode($results, true);
