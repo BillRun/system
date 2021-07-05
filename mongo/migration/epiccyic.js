@@ -8556,6 +8556,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-88', function () {
 										"cf.component",
 										"cf.scenario",
 										"cf.product_title",
+										"cf.operator_title",
 										"cf.anaa_title",
 										"cf.anaa_group"
 									]
