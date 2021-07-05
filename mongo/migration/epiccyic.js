@@ -1129,6 +1129,66 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 									"value": ""
 								}
 							}
+						},
+						{
+							"target_field": "operator_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						},
+						{
+							"target_field": "anaa_group",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						},
+						{
+							"target_field": "anaa_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						}
 					],
 					"orphan_files_time": "6 hours"
@@ -3346,7 +3406,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 											"cf.component",
 											"cf.scenario",
 											"cf.product_title",
-											"cf.tier_title"
+											"cf.anaa_title",
+											"cf.anaa_group"
 										]
 									},
 									{
