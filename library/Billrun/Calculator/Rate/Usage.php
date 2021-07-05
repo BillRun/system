@@ -247,7 +247,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		$row->setRawData($newData);
 	}
 	
-	protected function getFullEntityDataQuery($rawEntity) {
+	public function getFullEntityDataQuery($rawEntity) {
 		$query = $this->entityGetterGetFullEntityDataQuery($rawEntity);
 		if (!$query || !isset($rawEntity['key'])) {
  			return false;	

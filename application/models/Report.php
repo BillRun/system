@@ -43,6 +43,16 @@ class ReportModel {
 				'target_field' => 'aid',
 			),
 		),
+		'usage_archive' => array(
+			'subscription' => array(
+				'source_field' => 'sid',
+				'target_field' => 'sid',
+			),
+			'customer' => array(
+				'source_field' => 'aid',
+				'target_field' => 'aid',
+			),
+		),
 		'subscription' => array(
 			'usage' => array(
 				'source_field' => 'sid',
@@ -738,6 +748,8 @@ class ReportModel {
 		switch ($entity) {
 			case 'usage':
 				return 'lines';
+			case 'usage_archive':
+				return 'archive';
 			case 'subscription':
 				return 'subscribers';
 			case 'customer':
