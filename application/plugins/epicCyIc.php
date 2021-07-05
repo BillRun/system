@@ -12,7 +12,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 /*
 	EPICIC-56: Invoice only customers that are flagged as "active" ones
 */
-	public function afterBillableCustomer(&$pipelines) {
+	public function afterGetMatchPipeline(&$pipelines) {
 		$match = array(
 			'$match' => array(
 			'billable' => array(
