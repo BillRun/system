@@ -5025,7 +5025,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			if (index > -1) {
 				lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].splice(index, 1);
 			}
-			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('foreign');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
 		}
