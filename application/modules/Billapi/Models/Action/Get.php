@@ -114,7 +114,7 @@ class Models_Action_Get extends Models_Action {
 			if ($revision_info && isset($record['from'], $record['to'])) {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
 			}
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record, $this->getDateFields());
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record, $this->getDateFields());
 		}
 		return $records;
 	}

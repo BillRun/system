@@ -260,7 +260,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
                     $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
                     $date = $billrunObject[$paramObj['linked_entity']['field_name']];
-                    if($date instanceof MongoDate){
+                    if($date instanceof Mongodloid_Date){
                         $date = $date->sec;
                         if (isset($paramObj['offset'])){
                             $date = $this->getDateWithOffset($paramObj['offset'], $date);
@@ -547,14 +547,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * generate graphic that is required for generating the invoice.
 	 */
 	protected function prepareGraphicsResources() {
-		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$gridFsColl = Billrun_Factory::db()->getGridFS();
 		// generate the tenant logo.
 		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
 		if ($logo) {
-			if (!($logo instanceof MongoGridFSFile)) {
-				$logo = new MongoGridFSFile($gridFsColl, $logo);
+			if (!($logo instanceof Mongodloid_GridFSFile)) {
+				$logo = new Mongodloid_GridFSFile($gridFsColl, $logo);
 			}
-			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . ($logo instanceof MongoGridFSFile ? $logo->getFilename() : $logo['filename'] );
+			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . ($logo instanceof Mongodloid_GridFSFile ? $logo->getFilename() : $logo['filename'] );
 			$fileData = $logo->getBytes();
 
 			if (file_put_contents($exportPath, $fileData) === FALSE) {

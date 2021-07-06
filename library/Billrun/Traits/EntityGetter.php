@@ -497,7 +497,7 @@ trait Billrun_Traits_EntityGetter {
 	 * @return array
 	 */
 	protected function getFullEntityDataQuery($rawEntity) {		
-		if (!isset($rawEntity['_id']['_id']) || !($rawEntity['_id']['_id'] instanceof MongoId)) {
+		if (!isset($rawEntity['_id']['_id']) || !($rawEntity['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
 		

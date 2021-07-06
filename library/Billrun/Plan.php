@@ -53,7 +53,7 @@ class Billrun_Plan extends Billrun_Service {
 	protected function constructWithID($id) {
 		if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id->getMongoId());
-		} else if ($id instanceof MongoId) {
+		} else if ($id instanceof Mongodloid_Id) {
 			$filter_id = strval($id);
 		} else {
 			// probably a string
@@ -75,7 +75,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @todo use load method
 	 */
 	protected function constructWithActivePlan($params) {
-		$date = new MongoDate($params['time']);
+		$date = new Mongodloid_Date($params['time']);
 		$plan = static::getByNameAndTime($params['name'], $date);
 		if ($plan) {
 			$this->data = $plan;
@@ -362,7 +362,7 @@ class Billrun_Plan extends Billrun_Service {
 	/**
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.
-	 * @return MongoDBRef the refernce to current plan.
+	 * @return Mongodloid_Ref the refernce to current plan.
 	 * @todo Should the collection here really be false by default? I think it's safer
 	 * if the user of this function will have to specify a collection.
 	 */

@@ -20,7 +20,7 @@ abstract class Billrun_Autorenew_Record {
 
 	/**
 	 * Get the next renew date for this recurring plan.
-	 * @return MongoDate Next update date.
+	 * @return Mongodloid_Date Next update date.
 	 */
 	protected abstract function getNextRenewDate();
 	
@@ -70,7 +70,7 @@ abstract class Billrun_Autorenew_Record {
 		$update = array(
 			'$set' => array(
 				'next_renew' => $this->getNextRenewDate(),
-				'last_renew' => new MongoDate(),
+				'last_renew' => new Mongodloid_Date(),
 			),
 			'$inc' => array(
 				'cycles_remaining' => - 1,

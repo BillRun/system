@@ -228,7 +228,7 @@ class PayAction extends ApiAction {
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$executeSplitBill));
 		if (!$executeSplitBill) {
@@ -358,11 +358,11 @@ Billrun_Factory::dispatcher()->trigger('beforeSplitDebt', array($params, &$execu
 			throw new Exception('In action merge_installments must transfer split_bill_id and aid parameters');
 		}
 		if (!empty($request->get('due_date'))) {
-			$params['due_date'] = new MongoDate(strtotime($request->get('due_date')));
+			$params['due_date'] = new Mongodloid_Date(strtotime($request->get('due_date')));
 		}
 		if (!empty($request->get('first_charge_date'))) {
 			$chargeNotBefore = strtotime($request->get('first_charge_date'));	
-			$params['charge']['not_before'] = new MongoDate($chargeNotBefore);
+			$params['charge']['not_before'] = new Mongodloid_Date($chargeNotBefore);
 		}
 		$params['autoload'] = true;
 		$success = Billrun_Bill_Payment::mergeSpllitedInstallments($params);

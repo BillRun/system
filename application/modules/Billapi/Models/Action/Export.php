@@ -112,7 +112,7 @@ class Models_Action_Export extends Models_Action {
 			case 'boolean':
 				return $this->formatBoolean($value);
 			default:
-				if ($value instanceof MongoDate) {
+				if ($value instanceof Mongodloid_Date) {
 					return $this->formatDate($value);
 				}
 				if (is_array($value) /*&& Billrun_Util::getIn($params, 'multiple', false)*/) {
@@ -181,7 +181,7 @@ class Models_Action_Export extends Models_Action {
 	}
 
 	protected function formatDate($value) {
-		return Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
+		return Billrun_Utils_Mongo::convertMongodloidDatesToReadable($value);
 	}
 
 	protected function formatBoolean($value) {

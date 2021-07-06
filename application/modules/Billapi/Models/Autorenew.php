@@ -66,7 +66,7 @@ class Models_Autorenew extends Models_Entity {
 	
 	protected function getNextRenewDate() {
 		if ($this->isImmediateAutoRenew()) {
-			return new MongoDate(strtotime("tomorrow")); // in case the immediate charge will fail, the charge will occur on next Cron run
+			return new Mongodloid_Date(strtotime("tomorrow")); // in case the immediate charge will fail, the charge will occur on next Cron run
 		}
 		
 		return Billrun_Utils_Autorenew::getNextRenewDate(time());

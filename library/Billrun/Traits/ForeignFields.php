@@ -81,7 +81,7 @@ trait Billrun_Traits_ForeignFields  {
 		switch($foreignConf['translate']['type']) {
 			case 'unixTimeToString' : $translated = date(Billrun_Util::getFieldVal($foreignConf['translate']['format'],  Billrun_Base::base_datetimeformat),$value);
 				break;
-			case 'unixTimeToMongoDate' : $translated = new MongoDate($value);
+			case 'unixTimeToMongoDate' : $translated = new Mongodloid_Date($value);
 				break;
 			default: Billrun_Factory::log("Couldn't find translation function : {$foreignConf['translate']['type']}",Zend_Log::WARN);
 		}

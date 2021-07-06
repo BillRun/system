@@ -576,7 +576,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return array - services names array if $addServiceData is false, services names and data otherwise
 	 */
 	protected function getPlanIncludedServices($planName, $time, $addServiceData, $subscriberData) {
-		if ($time instanceof MongoDate) {
+		if ($time instanceof Mongodloid_Date) {
 			$time = $time->sec;
 		}
 

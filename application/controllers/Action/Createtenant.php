@@ -178,10 +178,10 @@ class CreatetenantAction extends ApiAction {
 
 	protected function addDbConfigData(&$dbConfig) {
 		$dbConfig['shared_secret'][] = Billrun_Utils_Security::generateSecretKey();
-		$dbConfig['creation_date'] = new MongoDate();
+		$dbConfig['creation_date'] = new Mongodloid_Date();
 		$dbConfig['name'] = 'Initial Secret';
 		$dbConfig['company_name'] = $this->tenant;
-		$dbConfig['registration_date'] = new MongoDate();
+		$dbConfig['registration_date'] = new Mongodloid_Date();
 		$dbConfig['tenant']['name']['v'] = $this->request['companyname'];
 	}
 

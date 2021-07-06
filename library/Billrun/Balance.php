@@ -159,7 +159,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @param array $update the update command
 	 * 
 	 * @return array update command results
-	 * @throws MongoResultException
 	 */
 	public function update($query, $update) {
 		$skipEvents = false;

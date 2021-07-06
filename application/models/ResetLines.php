@@ -102,8 +102,8 @@ class ResetLinesModel {
 						'$exists' => FALSE,
 					),
 					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
+						'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->billrun_key)),
+						'$lt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($this->billrun_key)),
 					)
 				),
 			),
@@ -114,7 +114,7 @@ class ResetLinesModel {
 				'$nin' => array('credit', 'flat', 'service'),
 			),
 			'process_time' => array(
-				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+				'$lt' => new Mongodloid_Date(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
 	}
@@ -136,7 +136,7 @@ class ResetLinesModel {
 			$query = $basicQuery;
 		}
 		$lines = $lines_coll->query($query);
-		$rebalanceTime = new MongoDate();
+		$rebalanceTime = new Mongodloid_Date();
 		$stamps = array();
 		$queue_lines = array();
 		$queue_line = array(
@@ -493,7 +493,7 @@ class ResetLinesModel {
 					}
 					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
 					$query = array(
-						'_id' => new MongoId($balanceId),
+						'_id' => new Mongodloid_Id($balanceId),
 					);
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 					$balancesColl->update($query, $updateData);

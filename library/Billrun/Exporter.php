@@ -175,8 +175,8 @@ abstract class Billrun_Exporter extends Billrun_Base {
 				$startTime = strtotime($timeRange, $endTime);
 			}
 			$query['urt'] = array(
-				'$gte' => new MongoDate($startTime),
-				'$lt' => new MongoDate($endTime),
+				'$gte' => new Mongodloid_Date($startTime),
+				'$lt' => new Mongodloid_Date($endTime),
 			);
 		}
 		return $query;
@@ -328,7 +328,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 			'source' => 'export',
 			'type' => static::$type,
 			'export_hostname' => Billrun_Util::getHostName(),
-			'export_start_time' => new MongoDate(),
+			'export_start_time' => new Mongodloid_Date(),
 		);
 		$logData = array_merge($basicLogData, $data);
 
@@ -372,7 +372,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		);
 		$update = array(
 			'$set' => array(
-				'export_start.' . static::$type => new MongoDate(),
+				'export_start.' . static::$type => new Mongodloid_Date(),
 				'export_stamp.' . static::$type => $this->exportStamp,
 			),
 		);
@@ -395,7 +395,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	protected function getLogData() {
 		return array(
 			'sequence_num' => $this->getSequenceNumber(),
-			'exported_time' => new MongoDate(),
+			'exported_time' => new Mongodloid_Date(),
 		);
 	}
 	
@@ -430,7 +430,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 		);
 		$update = array(
 			'$set' => array(
-				'exported.' . static::$type => new MongoDate(),
+				'exported.' . static::$type => new Mongodloid_Date(),
 			),
 		);
 		$options = array(
@@ -516,7 +516,7 @@ abstract class Billrun_Exporter extends Billrun_Base {
 	}
 	
 	protected function formatDate($date, $mapping) {
-		if ($date instanceof MongoDate) {
+		if ($date instanceof Mongodloid_Date) {
 			$date = $date->sec;
 		} else if (is_string($date)) {
 			$date = strtotime($date);

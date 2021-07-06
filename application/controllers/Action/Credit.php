@@ -167,7 +167,7 @@ class CreditAction extends ApiAction {
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
-		$ret['process_time'] = new MongoDate();
+		$ret['process_time'] = new Mongodloid_Date();
 		$ret['usaget'] = $this->getCreditUsaget($ret);
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		if ($rate->isEmpty()) {

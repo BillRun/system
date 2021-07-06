@@ -177,7 +177,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$query = $this->getRelatedBillrunQuery($data);
 		$update = array(
 			'$set' => array(
-				'email_sent' => new MongoDate(),
+				'email_sent' => new Mongodloid_Date(),
 			),
 		);
 		Billrun_Factory::db()->billrunCollection()->update($query, $update);

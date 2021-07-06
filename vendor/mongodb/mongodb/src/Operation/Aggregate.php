@@ -48,7 +48,7 @@ use function sprintf;
  * @see \MongoDB\Collection::aggregate()
  * @see http://docs.mongodb.org/manual/reference/command/aggregate/
  */
-class Aggregate implements Executable, Explainable
+class Aggregate implements Executable
 {
     /** @var integer */
     private static $wireVersionForCollation = 5;
@@ -285,12 +285,9 @@ class Aggregate implements Executable, Explainable
         }
 
         $hasExplain = ! empty($this->options['explain']);
-        $hasWriteStage = $this->hasWriteStage();
+        $hasWriteStage = is_last_pipeline_operator_write($this->pipeline);
 
-        $command = new Command(
-            $this->createCommandDocument($server, $hasWriteStage),
-            $this->createCommandOptions()
-        );
+        $command = $this->createCommand($server, $hasWriteStage);
         $options = $this->createOptions($hasWriteStage, $hasExplain);
 
         $cursor = $hasWriteStage && ! $hasExplain
@@ -318,17 +315,20 @@ class Aggregate implements Executable, Explainable
         return new ArrayIterator($result->result);
     }
 
-    public function getCommandDocument(Server $server)
-    {
-        return $this->createCommandDocument($server, $this->hasWriteStage());
-    }
-
-    private function createCommandDocument(Server $server, bool $hasWriteStage) : array
+    /**
+     * Create the aggregate command.
+     *
+     * @param Server  $server
+     * @param boolean $hasWriteStage
+     * @return Command
+     */
+    private function createCommand(Server $server, $hasWriteStage)
     {
         $cmd = [
-            'aggregate' => $this->collectionName ?? 1,
+            'aggregate' => isset($this->collectionName) ? $this->collectionName : 1,
             'pipeline' => $this->pipeline,
         ];
+        $cmdOptions = [];
 
         $cmd['allowDiskUse'] = $this->options['allowDiskUse'];
 
@@ -352,6 +352,10 @@ class Aggregate implements Executable, Explainable
             $cmd['hint'] = is_array($this->options['hint']) ? (object) $this->options['hint'] : $this->options['hint'];
         }
 
+        if (isset($this->options['maxAwaitTimeMS'])) {
+            $cmdOptions['maxAwaitTimeMS'] = $this->options['maxAwaitTimeMS'];
+        }
+
         if ($this->options['useCursor']) {
             /* Ignore batchSize if pipeline includes an $out or $merge stage, as
              * no documents will be returned and sending a batchSize of zero
@@ -361,18 +365,7 @@ class Aggregate implements Executable, Explainable
                 : new stdClass();
         }
 
-        return $cmd;
-    }
-
-    private function createCommandOptions() : array
-    {
-        $cmdOptions = [];
-
-        if (isset($this->options['maxAwaitTimeMS'])) {
-            $cmdOptions['maxAwaitTimeMS'] = $this->options['maxAwaitTimeMS'];
-        }
-
-        return $cmdOptions;
+        return new Command($cmd, $cmdOptions);
     }
 
     /**
@@ -405,10 +398,5 @@ class Aggregate implements Executable, Explainable
         }
 
         return $options;
-    }
-
-    private function hasWriteStage() : bool
-    {
-        return is_last_pipeline_operator_write($this->pipeline);
     }
 }

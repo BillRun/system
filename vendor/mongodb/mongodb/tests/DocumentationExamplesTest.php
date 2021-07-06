@@ -1564,7 +1564,7 @@ class DocumentationExamplesTest extends FunctionalTestCase
 
         $client = new \MongoDB\Client($uriString);
 
-        // Prerequisite: Create collections.
+        // Prerequisite: Create collections. CRUD operations in transactions must be on existing collections.
         $client->selectCollection(
             'mydb1',
             'foo',
