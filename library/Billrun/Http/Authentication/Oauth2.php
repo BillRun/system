@@ -11,7 +11,7 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
     public function authenticate() {
         $accessToken = $this->getAccessToken();
         if (!empty($accessToken)) {
-            $this->request->addHeader('Authorization', "Bearer {$accessToken}");
+            $this->request->setHeaders('Authorization', "Bearer {$accessToken}");
         }
     } 
     
@@ -34,15 +34,10 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
             }
         }
         
-        $params = [
-            'headers' => [
-                'Cache-Control' => 'no-store',
-                'Content-Type' => 'application/x-www-form-urlencoded',
-            ],
-        ];
-        
-        $request = new Billrun_Http_Request($url, $data, $params);
-        $response = json_decode((string)$request->send(), JSON_OBJECT_AS_ARRAY);
+        $request = new Billrun_Http_Request($url);
+        $request->setHeaders(['Cache-Control' => 'no-store', 'Content-Type' => 'application/x-www-form-urlencoded']);
+        $request->setParameterPost($data);
+        $response = json_decode((string)$request->request(Billrun_Http_Request::POST)->getBody(), JSON_OBJECT_AS_ARRAY);
         $accessToken = $response['access_token'] ?? '';
 
         if (empty($accessToken)) {
