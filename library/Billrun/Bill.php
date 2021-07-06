@@ -1104,10 +1104,7 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
-		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
+		$accountQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {

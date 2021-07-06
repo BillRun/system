@@ -68,16 +68,20 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$result['alreadyRunning'] = true;
 				continue;
 			}
-			$this->createBillFromInvoice($invoice->getRawData(), array($this, 'updateBillrunONBilled'));
+			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 			$invoicesIds[] = $invoice['invoice_id'];
 			$invoices[] = $invoice->getRawData();
 			if (!$this->release()) {
 				Billrun_Factory::log("Problem in releasing operation for aid " . $invoice['aid'], Zend_Log::ALERT);
 				$result['releasingProblem'] = true;
-			}
+		}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
-		$this->handleSendInvoicesByMail($invoicesIds);
+		if (count($invoicesIds) > 0) {
+			$this->handleSendInvoicesByMail($invoicesIds);
+		} else {
+			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
+		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
@@ -212,7 +216,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return true;
 	}
 		
-	protected function getConflictingQuery() {
+	protected function getConflictingQuery() {	
                 return array('filtration' => $this->filtration);
 	}
 	
