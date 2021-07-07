@@ -53,11 +53,11 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
 		$results = json_decode($results, true);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalSubscriberDetailsResponse', array(&$results));
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetExternalSubscriberDetailsResponse', array(&$results));
 		return array_reduce($results, function($acc, $currentSub) {
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;

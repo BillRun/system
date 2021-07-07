@@ -93,12 +93,12 @@ class Billrun_Account_External extends Billrun_Account {
 													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
 		foreach ($res as $account) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
@@ -134,11 +134,11 @@ class Billrun_Account_External extends Billrun_Account {
 		
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsResponse', array(&$results));
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsResponse', array(&$results));
 		return array_reduce($results, function($acc, $currentAcc) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($currentAcc, static::API_DATETIME_REGEX);
 			$acc[] = new Mongodloid_Entity($currentAcc);
