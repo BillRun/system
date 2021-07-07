@@ -18,7 +18,6 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary {
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('external_parsers_config.nsn')))->toArray();
-		$this->ild_called_number_regex = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.called_number_regex');
 		$this->initParsing();
 	}
 
