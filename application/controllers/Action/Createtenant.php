@@ -208,7 +208,7 @@ class CreatetenantAction extends ApiAction {
 		} else {
 			foreach ($dbConfig as $key => $val) {
 				if (isset($val['$date'])) {
-					$dbConfig[$key] = new MongoDate($val['$date']);
+					$dbConfig[$key] = new Mongodloid_Date($val['$date']);
 				}
 			}
 		}
