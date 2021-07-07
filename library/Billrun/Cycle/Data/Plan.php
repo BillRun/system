@@ -65,6 +65,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['end'] = new MongoDate($chargeData['end']);
 		}
 
+
 		$entry = $this->addExternalFoerignFields($entry);
 		$entry = $this->addTaxationToLine($entry);
 		unset($entry['tax']);
@@ -98,7 +99,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	}
 	
 	protected function addExternalFoerignFields($entry) {
-		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), array('account', 'subscriber')), $entry);
+		return array_merge($this->getForeignFields(array(), array_merge($this->foreignFields, $entry), true), $entry);
 	}
 
 	protected function generateLineStamp($line) {
@@ -112,7 +113,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);
 			if (!$entryWithTax) {
-				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...", Zend_Log::WARN);
+				Billrun_Factory::log("Taxation of {$entry['name']} failed. Retrying...", Zend_Log::WARN);
 				sleep(1);
 			}
 		}

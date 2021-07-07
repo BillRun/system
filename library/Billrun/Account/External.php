@@ -25,7 +25,7 @@ class Billrun_Account_External extends Billrun_Account {
 	}
 	
 
-	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 			// Prepare request
 			$requestParams = [
 				'start_date' => date('Y-m-d',$cycle->start()->sec),
@@ -37,9 +37,17 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($aids)) {
 				$requestParams['aids'] = implode(',',$aids);
 			}
+			
+			if(!empty($invoicing_days)) {
+				$requestParams['invoicing_days'] = $invoicing_days;
+			}
+			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
-			$results = json_decode(Billrun_Util::sendRequest($this->remote_billable_url,$requestParams),true);
+			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
 
+			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
+			
+			$results = json_decode($results, true);		
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
@@ -76,10 +84,13 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-		$res = json_decode(Billrun_Util::sendRequest($this->remote,
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
+		$res = Billrun_Util::sendRequest($this->remote,
 													 json_encode($requestData),
 													 Zend_Http_Client::POST,
-													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json'] ));
+													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
+		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
+		$res = json_decode($res);
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
@@ -110,10 +121,14 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		$results = json_decode(Billrun_Util::sendRequest($this->remote,
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
+		$results = Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
 														 Zend_Http_Client::POST,
-														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']), true);
+														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);		
+		
+		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
+		$results = json_decode($results, true);
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;

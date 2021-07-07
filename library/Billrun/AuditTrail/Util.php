@@ -26,6 +26,7 @@ class Billrun_AuditTrail_Util {
 	 * @return boolean true on success, false otherwise
 	 */
 	public static function trackChanges($type = '', $key = '', $collection = '', $old = null, $new = null, array $additionalParams = array()) {
+		Billrun_Factory::log("Track changes in audit trail", Zend_Log::DEBUG);
 		try {
 			$user = Billrun_Factory::user();
 			if ($user) {
