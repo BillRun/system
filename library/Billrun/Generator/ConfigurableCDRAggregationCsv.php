@@ -220,7 +220,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					} else if (function_exists($trans['translation']['function'])) {
 						$line[$key] = call_user_func($trans['translation']['function'], $line[$key]);
 					} else {
-						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::ERR);
+						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::DEBUG);
 					}
 					break;
 				case 'regex' :
