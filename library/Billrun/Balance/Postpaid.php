@@ -156,6 +156,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'new' => true,
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('beforeCreateBasicBalance', array(&$update, $urt, $service_name));
 		$output = $this->collection()->findAndModify($query, $update, array(), $options, false);
 
 		if (!is_array($output)) {
