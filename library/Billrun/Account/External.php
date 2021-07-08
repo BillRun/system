@@ -84,13 +84,16 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
+		$request_type = Zend_Http_Client::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountsDetails', array(&$requestData, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
 		$res = Billrun_Util::sendRequest($this->remote,
 													 json_encode($requestData),
-													 Zend_Http_Client::POST,
+													 $request_type,
 													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
@@ -121,14 +124,17 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
+		$request_type = Zend_Http_Client::POST;
+		Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountDetails', array(&$externalQuery, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$results = Billrun_Util::sendRequest($this->remote,
 														 json_encode($externalQuery),
-														 Zend_Http_Client::POST,
+														 $request_type,
 														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);		
 		
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
+		Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsResponse', array(&$results));
 		if (!$results) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
@@ -177,6 +183,14 @@ class Billrun_Account_External extends Billrun_Account {
 		}
 		$query['params'] = $params;
 		return $query;
+	}
+	
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
 	}
 
 }

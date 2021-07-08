@@ -347,10 +347,10 @@ class Billrun_Service {
 					return array('usagev' => 0);
 				}
 			}
-			
+
 			$groupSelected = $staticGroup;
 		}
-		
+
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
 			&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
