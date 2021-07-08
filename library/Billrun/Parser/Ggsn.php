@@ -28,8 +28,10 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$maxChunklengthLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_max_chunklength_length', 0);
 		$fileReadAheadLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_file_read_ahead_length', 0);
 		$headerLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_header_length', 0);
+		$recordPadding = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_record_padding', 0));
+
 		if ($headerLength > 0) {
-			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength));
+			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength+$recordPadding));
 		}
 		$bytes = null;
 		while (true) {
