@@ -12,17 +12,14 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 /*
 	EPICIC-56: Invoice only customers that are flagged as "active" ones
 */
-	public function afterGetMatchPipeline(&$pipelines) {
-		$match = array(
-			'$match' => array(
-			'billable' => array(
-				'$eq' => true,
-			),			
-		),
-	);
-	array_push($pipelines, $match);
+	public function afterAggregatorLoadData($arr, &$data){ 
+		for ($i = 0; $i < sizeof($data); $i++) {			
+			if (!$data[$i]->getInvoice()->getRawData()['attributes']['billable']) {
+				unset($data[$i]);	
+			}
+		}
 	}	
-	
+
 	public function beforeImportRowFormat(&$row, $operation, $requestCollection, $update) {
 		if ($operation == "permanentchange") {
 			switch ($update['mapper_name']) {
