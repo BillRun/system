@@ -789,7 +789,7 @@ class ReportModel {
 	
 	protected function getGroup() {
 		$group = array();
-		if ($this->report['type'] === 1) {
+		if ($this->report['type'] == 1) {
 			foreach ($this->report['columns'] as $column) {
 				if  (substr($column['field_name'], 0, strlen('rate_tariff_category_')) === 'rate_tariff_category_') {
 					$column['field_name'] = implode(".", array($column['field_name'], implode(".", $column['field_key'])));
