@@ -5371,18 +5371,6 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
 
-//EPICIC-66: user_summ/event_start_time position error in export generator
-lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
-	for (var i = 0; i < lastConfig.export_generators.length; i++) {
-		if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
-			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["name"] = "EVENT_START_TIME";
-			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME";
-			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["name"] = "USER_SUMMARISATION";
-			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION";
-		}
-	}
-});
-
 //EPICIC-75 "Undefined index: stamp" when processing files (now included directly in the processor's configuration)
 //for (var i = 0; i < lastConfig.file_types.length; i++) {
 //	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
@@ -8844,6 +8832,18 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			}
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
+		}
+	}
+});
+
+//EPICIC-66: user_summ/event_start_time position error in export generator
+lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
+	for (var i = 0; i < lastConfig.export_generators.length; i++) {
+		if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["name"] = "EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["name"] = "USER_SUMMARISATION";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION";
 		}
 	}
 });
