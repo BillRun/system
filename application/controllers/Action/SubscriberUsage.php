@@ -138,7 +138,7 @@ class Subscriber_UsageAction extends ApiAction {
 					$nationalPackages[$plan['name']] += 1;
 				}
 			}
-			if(isset($plan['includes']['groups']['VF'])) {
+			if(isset($plan['includes']['groups']['VF']) && empty($packages['IRP_PREMIUM_QUALIFICATION'])) {
 				$vfMax = max($vfMax,$plan['includes']['groups']['VF']['limits']['days']);
 			}
 		}
@@ -189,11 +189,14 @@ class Subscriber_UsageAction extends ApiAction {
 	protected function getMaxUsagesOfPackages($addons, &$packages, &$maxUsage, $plan) {
 		$vfMapping = ['data' => 6442451000];
 		foreach($addons as  $addon) {
-			Billrun_Factory::log($addon['service_name']);
+// 			Billrun_Factory::log($addon['service_name']);
 			// for each national group / package
 			if(!empty($plan['include']['groups'][$addon['service_name']])) {
 					foreach($plan['include']['groups'][$addon['service_name']] as $type => $value) {
-						if(is_array($value)) { continue; }
+						if(	is_array($value) ||
+							(isset($packages[$addon['service_name']]['ids']) && in_array( $addon['id'], $packages[$addon['service_name']]['ids'] )) ) {
+								continue;
+						}
 						if (@$maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
 							@$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
 						} else {
@@ -203,7 +206,10 @@ class Subscriber_UsageAction extends ApiAction {
 									@$maxUsage[$type] = -1;
 							}
 						}
-						@$packages[$addon['service_name']] += 1 ;
+						@$packages[$addon['service_name']] = [
+																'count' => Billrun_Util::getFieldVal($packages[$addon['service_name']],0) + 1,
+																'ids' => array_merge([$addon['id']],Billrun_Util::getFieldVal($packages[$addon['service_name']]['ids'],[]))
+																];
 					}
 					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days'])) {
 						@$maxUsage['days'] += $plan['include']['groups'][$addon['service_name']]['limits']['days'];
