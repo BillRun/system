@@ -84,7 +84,16 @@
             }
     },
     
- {$match: { $and: [ { OBJECT_ID: { $eq: "" } }, { ACCOUNT: { $eq: "" } } ,{ ACCOUNT_DESCRIPTION: { $eq: "" } } , { MTN_IND: { $eq: "" } },  { PROD_SERV: { $eq: "" } }] } },
+  {
+      $match: { 
+          OBJECT_ID: { $eq: "" },  
+          ACCOUNT: { $eq: "" }, 
+          ACCOUNT_DESCRIPTION: { $eq: "" },  
+          MTN_IND: { $eq: "" },   
+          PROD_SERV: { $eq: "" } 
+          } 
+    },
+
     {       
             $project:{
                 _id : 0,
