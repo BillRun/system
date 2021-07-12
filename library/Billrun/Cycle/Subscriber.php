@@ -174,8 +174,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		} while (($addCount = $cursor->count(true)) > 0);
 		
 		// Add future installments to cycle
-		foreach ($futureCharges as $line) {
-			$ret[$line['stamp']] = 	$line->getRawData();
+		if(!empty($futureCharges) ) {
+			foreach ($futureCharges as $line) {
+				$ret[$line['stamp']] = 	$line->getRawData();
+			}
 		}
 		
 		Billrun_Factory::log('Finished querying for subscriber ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
@@ -206,7 +208,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-
+		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
 		$dataForAggration['plans'] = $constructedData['plans'];
@@ -255,21 +257,21 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$services = Billrun_Util::getFieldVal($data["services"], array());
 		//Get services active at billing cycle date
-		$mongoServices = $this->cycleAggregator->getServices();
+		$this->mongoServices = $this->cycleAggregator->getServices(null,$data);
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 
-		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$mongoServices,&$services,&$stumpLine));
+		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,$this->mongoServices,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
 			// Service name
 			$index = $arrService['name'];
-			if(!isset($mongoServices[$index])) {
+			if(!isset($this->mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
-			$mongoServiceData = $mongoServices[$index]->getRawData();
+			$mongoServiceData = $this->mongoServices[$index]->getRawData();
 			unset($mongoServiceData['_id']);
 			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
@@ -279,7 +281,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$this->records['services'][] = $serviceData;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,&$mongoServices));
+		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,$this->mongoServices));
 	}
 
 	/**
@@ -295,7 +297,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			return;
 		}
 		$this->plan = $plans[count($plans) - 1]['plan'];
-		$mongoPlans = $this->cycleAggregator->getPlans();
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
@@ -303,14 +304,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach ($plans as &$value) {
 			// Plan name
 			$index = $value['plan'];
-			if(!isset($mongoPlans[$index])) {
+			if(!isset($this->mongoPlans[$index])) {
 				if(!empty($value['sid'])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
 				}
 				continue;
 			}
 
-			$rawMongo = $mongoPlans[$index]->getRawData();
+			$rawMongo = $this->mongoPlans[$index]->getRawData();
 			unset($rawMongo['_id']);
 			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
@@ -442,12 +443,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function getServicesIncludedInPlan($plansData) {
-		$mongoPlans = $this->cycleAggregator->getPlans();
+
 		$includedServices = array();
 		if(!empty($plansData['plans']) ) {
 			foreach($plansData['plans'] as $planData) {
-				if(!empty($mongoPlans[$planData['plan']]['include']['services'])) {
-					foreach($mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
+				if(!empty($this->mongoPlans[$planData['plan']]['include']['services'])) {
+					foreach($this->mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
 						$includedServices[] = array(
 												'name'=> $srvName,
 												'quantity' => 1,

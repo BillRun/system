@@ -268,7 +268,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return new Billrun_DataTypes_CycleTime($this->getStamp());
 	}
 
-	public function getPlans() {
+	public function getPlans($account=null, $subscriber=null) {
 		if(empty($this->plansCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$pipelines[] = $this->aggregationLogic->getPlansProjectPipeline();
@@ -277,37 +277,44 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->plansCache =  $this->toKeyHashedArray($res,'plan');
 		}
 
-		return $this->plansCache;
+		$localPlans = $this->overrideEntityValues($this->plansCache,@$account['overrides'],'plan');
+		return $this->overrideEntityValues($localPlans,@$subscriber['overrides'],'plan');
 	}
 
-	public function &getServices() {
+	public function &getServices($account=null, $subscriber=null) {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
 			$res =  $this->aggregatePipelines($pipelines,$coll);
 			$this->servicesCache = $this->toKeyHashedArray($res , 'name');
 		}
-		return $this->servicesCache;
+
+		$localServices = $this->overrideEntityValues($this->servicesCache,@$account['overrides'],'service');
+		return $this->overrideEntityValues($localServices,@$subscriber['overrides'],'service');
 	}
 
-	public function &getRates() {
+	public function &getRates($account=null, $subscriber=null) {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
 		}
-		return $this->ratesCache;
+
+		$localRates = $this->overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
+		return $this->overrideEntityValues($localRates,@$subscriber['overrides'],'rate');
 	}
 
-	public function &getDiscounts() {
+	public function &getDiscounts($account=null, $subscriber=null) {
 		if(empty($this->discountsCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->discountsCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->discountsCache = $this->toKeyHashedArray($res, '_id');
 		}
-		return $this->discountsCache;
+
+		$localDiscounts = $this->overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
+		return $this->overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
 	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -355,6 +362,32 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	//--------------------------------------------------------------------
+	/**
+	 * Override  entiries  values  based on certain condtions.
+	 * @param $entites A  Key Hashed object  containg the  entities tht might be  overriden
+	 * @param $overrideConditions Conditions to  override specific entites (must contain the entity  key) in the  hashed  entities list.
+	 * @param $entityType the entity type to override.
+	 * @return An overriden entites hashed list.
+	 */
+
+	protected function overrideEntityValues($entites, $overrideConditions, $entityType) {
+		$overridenEntites = $entites;
+		if(!empty($overrideConditions)) {
+			foreach($overrideConditions as $overideRule) {
+				$ruleKey = $overideRule['key'];
+				if($overideRule['type'] == $entityType && !empty($entites[$ruleKey])  ) {
+					if(	(empty($overideRule['condition']) || Billrun_Util::isConditionMet($entites[$ruleKey],$overideRule['condition'])) ) {
+							$overridenEntites[$ruleKey] = new Mongodloid_Entity( array_merge(
+															$entites[$ruleKey]->getRawData(),
+															$overideRule['value']
+														) );
+					}
+				}
+			}
+		}
+
+		return $overridenEntites;
+	}
 
 	protected function buildBillrun($options) {
 		if (isset($options['stamp']) && $options['stamp']) {
