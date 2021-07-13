@@ -259,22 +259,25 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$current["cf"]["product"] = $product_entity["params"]["product"];
 		$current["cf"]["product_group"] = $product_entity["params"]["product_group"];
 		$current["cf"]["product_title"] = $product_entity["description"];
+		$current["cf"]["anaa"] = "";
 		$row->setRawData($current);
 
-		$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
+		$anaa_entity = $this->getParameterProduct($type, "parameter_naa", $row, $calculator);
 		if (!$anaa_entity) {
 			return [$current];
 		}
-		$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
+		$current["cf"]["anaa"] = $anaa_entity["params"]["naa_parent"];
+		$current["cf"]["anaa_group"] = $anaa_entity["params"]["naa"];
+		$current["cf"]["anaa_title"] = $anaa_entity["description"];
 		$row->setRawData($current);
 
 		$sms_activity_types = ["incoming_sms", "outgoing_sms"];
 		if (!in_array($current["usaget"], $sms_activity_types)) {
-			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
+			$bnaa_entity = $this->getParameterProduct($type, "parameter_naa", $row, $calculator);
 			if (!$bnaa_entity) {
 				return [$current];
 			}
-			$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
+			$current["cf"]["bnaa"] = $bnaa_entity["params"]["naa"];
 			$row->setRawData($current);
 		}
 
@@ -476,6 +479,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TO") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 			$row->setRawData($current);
@@ -489,6 +493,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TI") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 		}
