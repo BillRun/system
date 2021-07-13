@@ -73,7 +73,7 @@
                 BILLEDPRODUCT:{$ifNull:["$_id.product",""]},
                 RATINGCOMPONENT:{$ifNull:["$_id.component",""]},
                 CASHFLOW:{$ifNull:["$_id.cash_flow",""]},
-                USERSUMM:{$ifNull:["$_id.user_summarisation",""]}
+                USERSUMM:{$ifNull:["$_id.user_summarisation",""]},
                 BILLOP:{$ifNull:["$_id.operator",""]},
                 OBJECT_ID: {$ifNull:["$matching_rate.object_id",""]},
                 ACCOUNT: {$ifNull:["$matching_rate.gl_account",""]},
@@ -95,8 +95,8 @@
                 OBJECT_ID:1,
                 ACCOUNT:1,
                 ACCOUNT_DESCRIPTION:1,
-                MTN_IND:1
-                PROD_SERV:1
+                MTN_IND:1,
+                PROD_SERV:1,
                 KEY:1
             }
     }
