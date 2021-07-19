@@ -25,8 +25,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	public function __construct(array $options) {
 		parent::__construct($options);
 		if (!isset($options['plan'], $options['cycle'])) {
-			Billrun_Factory::log("Invalid aggregate plan data!");
-			return;
+			Billrun_Factory::log("Invalid aggregate plan data!",Zend_Log::ERR);
 		}
 		$this->name = $options['plan'];
 		$this->plan = $options['plan'];
@@ -39,7 +38,10 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected function getCharges($options) {
 		$charger = new Billrun_Plans_Charge();
-		return $charger->charge($options, $options['cycle']);
+		//Only charge  if the configuration suggest it should be in the cycle
+		return empty($options['cycle']) || Billrun_Utils_Cycle::shouldBeInCycle($options,$options['cycle'])  ?
+					$charger->charge($options, $options['cycle']) :
+					[];
 	}
 
 	protected function getLine($chargeingKey, $chargeData) {
