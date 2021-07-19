@@ -8848,6 +8848,36 @@ lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
 	}
 });
 
+//EPICIC-29 - cach db queries
+lastConfig = runOnce(lastConfig, 'EPICIC-29', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			var rateMappingObj = lastConfig["file_types"][i]["rate_calculators"]["retail"];
+			var newRateMapping = {};
+			var dbQueriesArray = ["parameter_operator", "parameter_scenario", "parameter_component", "incoming_call", "outgoing_call",
+				"transit_incoming_call", "transit_outgoing_call", "incoming_sms", "outgoing_sms", "parameter_tier_aba", "parameter_tier_pb_anaa"];
+			Object.keys(rateMappingObj).forEach(key => {
+				var prioritiesObj = {
+					priorities: []
+				};
+				for (var i = 0; i < rateMappingObj[key].length; i++) {
+					var filterObj = {
+						filters: []
+					};
+					filterObj.filters = rateMappingObj[key][i];
+					if (dbQueriesArray.includes(key)) {
+						filterObj["cache_db_queries"] = true;
+					}
+					prioritiesObj.priorities.push(filterObj);
+				}
+				newRateMapping[key] = prioritiesObj;
+			});
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = {};
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = newRateMapping;
+		}
+	}
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
