@@ -435,8 +435,14 @@ class Billrun_Cycle_Account_Invoice {
     //======================================================
     
 	function isAccountActive() {
-		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
-			return true;
+		$hasActiveSubscribers = !empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);}))
+							|| !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}));
+		$hasActivePlans = !empty(array_filter($this->subscribers ,function($sub){ return !is_null($sub->getData()['totals']['flat']['after_vat']) ;}))
+							|| !empty(array_filter($this->data['subs'] ,function($sub){ return !is_null($sub['totals']['flat']['after_vat']) ;}));
+		if(	$hasActiveSubscribers &&
+			(!Billrun_Factory::config()->getConfigValue('billrun.ignore_no_plans_invoices',false) || $hasActivePlans || $this->data['totals']['after_vat_rounded']) ) {
+			 ;
+			 return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
 		if (is_numeric($accountActivenessLinesHistory)) {
