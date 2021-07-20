@@ -789,7 +789,7 @@ class ReportModel {
 	
 	protected function getGroup() {
 		$group = array();
-		if ($this->report['type'] == 1) {
+		if ($this->isReportGrouped()) {
 			foreach ($this->report['columns'] as $column) {
 				if  (substr($column['field_name'], 0, strlen('rate_tariff_category_')) === 'rate_tariff_category_') {
 					$column['field_name'] = implode(".", array($column['field_name'], implode(".", $column['field_key'])));
@@ -1039,10 +1039,10 @@ class ReportModel {
 	protected function getLimit($size = -1) {
 		return intval($size);
 	}
-	
+
 	protected function getProject() {
 		$project = array('_id' => 0);
-		$isReportGrouped = $this->report['type'] === 1;
+		$isReportGrouped = $this->isReportGrouped();
 		if(empty($this->report['columns'])) {
 			throw new Exception("Columns list is empty, nothing to display");
 		}
@@ -1079,5 +1079,9 @@ class ReportModel {
 	
 	protected function isRatesTariffCategoryField($field) {
 		return (substr($field, 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.');
+	}
+	
+	protected function isReportGrouped() {
+		return $this->report['type'] == 1;
 	}
 }
