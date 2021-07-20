@@ -191,7 +191,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		$result = $this->load([$accountsQuery]);
 		if(empty($result)) {
-			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log('Failed to load account data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
 			return $result;
 		}
 		return $result;
