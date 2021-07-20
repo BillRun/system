@@ -23,4 +23,26 @@ class Billrun_Utils_Cycle {
 
 	}
 
+	public static function addMonthsToCycleKey($cycleKey,$monthsToAdd) {
+		$year = substr($cycleKey,0,4);
+		$month = substr($cycleKey,4,2);
+		$year = $year + floor(($MonthsToAdd + $month) / 12 );
+		$month = ( (($MonthsToAdd + $month - 1) % 12) + 1 );
+		return $year . str_pad($month,2,'0') . substr($cycleKey,6);
+	}
+
+	public static  function substractMonthsFromCycleKey($cycleKey,$monthsTosubstract) {
+		return self::addMonthsToCycleKey($cycleKey,-$monthsTosubstract);
+	}
+
+	public static function getRecurrenceOffset($recurrenceConfig, $cycleKey,$activationDate = null) {
+		$activationDate = ($activationDate ?
+						$activationDate :
+						Billrun_Billingcycle::getStartTime($cycleKey));
+		$startDate = ($recurrenceConfig['start'] ?
+						date("Y-{$recurrenceConfig['start']}-01", $activationDate) :
+						date(Billrun_Base::base_dateformat,$activationDate));
+
+		return Billrun_Plan::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey))) % $recurrenceConfig['frequency'];
+	}
 }

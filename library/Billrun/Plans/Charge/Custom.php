@@ -12,32 +12,15 @@
  * @package  Plans
  * @since    5.2
  */
-class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
+Trait Billrun_Plans_Charge_Custom  {
 
 	public function __construct($plan) {
-		parent::__construct($plan);
+		parent::__construct($plan);;
+		$this->updateCycleByConfig($plan);
 	}
 
-	/**
-	 * Get the price of the current plan.
-	 */
-	public function getPrice($quantity = 1) {
-
-		$charges = array();
-		if($this->activation >= $this->cycle->start() && $this->activation < $this->cycle->end() ) {
-			foreach ($this->price as $tariff) {
-				$price = Billrun_Plan::getPriceByTariff($tariff, 0, 1,$this->activation);
-				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity,
-						'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
-						'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
-						'cycle' => $tariff['from'],
-						'full_price' => floatval($tariff['price']) );
-
-				}
-			}
-		}
-		return $charges;
+	protected function updateCycleByConfig($config) {
+		$this->cycle = new Billrun_DataTypes_CustomCycleTime($this->cycle->key(),$config['recurrence'],$config['invoiceing_day'],$config['activation_date']);
 	}
 	
 }
