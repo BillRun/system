@@ -19,7 +19,7 @@ class Billrun_Utils_Cycle {
 									$activationDate :
 									strtotime(date("Y-{$entryConfig['recurrence']['start']}-01 00:00:00", $activationDate));
 
-		return empty($entryConfig['recurrence']['frequency']) ||  (Billrun_Plan::getMonthsDiff(date(Billrun_Base::base_dateformat,$startDate), date(Billrun_Base::base_dateformat,$cycle->end())) % $entryConfig['recurrence']['frequency']) == 0;
+		return empty($entryConfig['recurrence']['frequency']) ||  (Billrun_Utils_Time::getMonthsDiff(date(Billrun_Base::base_dateformat,$startDate), date(Billrun_Base::base_dateformat,$cycle->end())) % $entryConfig['recurrence']['frequency']) == 0;
 
 	}
 
@@ -43,6 +43,6 @@ class Billrun_Utils_Cycle {
 						date("Y-{$recurrenceConfig['start']}-01", $activationDate) :
 						date(Billrun_Base::base_dateformat,$activationDate));
 
-		return Billrun_Plan::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey))) % $recurrenceConfig['frequency'];
+		return Billrun_Utils_Time::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey))) % $recurrenceConfig['frequency'];
 	}
 }

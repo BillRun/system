@@ -65,8 +65,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		
 
 
-		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
-		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
+		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
+		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
 
 	}
 	

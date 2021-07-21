@@ -39,7 +39,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		if($fraction === null) {
 			return null;
 		}
-		$startOffset = Billrun_Plan::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
+		$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
 		return array(
 			'value'=> $price * $fraction, 
 			'start' => $this->activation, 
@@ -54,7 +54,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getPriceForcycle($cycle) {
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		return $this->getPriceByOffset($startOffset);
 	}
 	

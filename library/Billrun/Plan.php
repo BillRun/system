@@ -229,8 +229,8 @@ class Billrun_Plan extends Billrun_Service {
 			$firstActivation = $this->getActivation();
 		}
 
-		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
-		$endOffset = static::getMonthsDiff($firstActivation, $to);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
+		$endOffset = Billrun_Utils_Time::getMonthsDiff($firstActivation, $to);
 		$charges = array();
 		if ($this->isUpfrontPayment()) {
 			return $this->getPriceForUpfrontPayment($startOffset);
@@ -249,7 +249,7 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	public function getNextTierDate($firstActivation,  $currentDate) {
-		$startOffset = static::getMonthsDiff( date(Billrun_Base::base_dateformat,$firstActivation ), date(Billrun_Base::base_dateformat, strtotime('-1 day', $currentDate)));
+		$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat,$firstActivation ), date(Billrun_Base::base_dateformat, strtotime('-1 day', $currentDate)));
 		foreach ($this->data['price'] as $tariff) {
 			if($tariff['from'] > $startOffset) {
 				return static::monthDiffToDate($tariff['from'], $firstActivation);
@@ -410,38 +410,6 @@ class Billrun_Plan extends Billrun_Service {
 
 	public function isUpfrontPayment() {
 		return !empty($this->data['upfront']);
-	}
-
-	/**
-	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
-	 * @param type $from
-	 * @param type $to
-	 * @return type
-	 */
-	public static function getMonthsDiff($from, $to) {
-		$minDate = new DateTime($from);
-		$maxDate = new DateTime($to);
-//		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
-//			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
-//		}
-// BRCD-2742 : Commented out as this cause werid edge cases as exampled in :  https://billrun.atlassian.net/browse/BRCD-2742 ,  https://billrun.atlassian.net/browse/BRCD-2741
-// 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-// 			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
-// 			return $diff->m + ($diff->y * 12);
-// 		}
-		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
-			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
-		}
-		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
-		switch ($yearDiff) {
-			case 0:
-				$months = $maxDate->format('m') - $minDate->format('m') - 1;
-				break;
-			default :
-				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
-				break;
-		}
-		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
 
 	/**
