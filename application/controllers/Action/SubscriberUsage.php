@@ -90,7 +90,8 @@ class Subscriber_UsageAction extends ApiAction {
 // 		if(empty($mainBalances) ) {
 // 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 // 		}
-		if(!empty(array_filter($roamingAddons,function($i){return  $i['service_name'] == 'IRP_PREMIUM_QUALIFICATION';}))) {
+		$hasIRPQualification = array_filter($roamingAddons,function($i){return  $i['service_name'] == 'IRP_PREMIUM_QUALIFICATION';});
+		if(!empty($hasIRPQualification)) {
 			$roamingAddons = array_values(array_filter($roamingAddons, function($pkg){ return $pkg['service_name'] != 'VF';}));
 		}
 		$vfMax = 0;
