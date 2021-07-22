@@ -1617,7 +1617,7 @@ class Billrun_Util {
 		foreach ($translations as $key => $trans) {
 			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
 			if (!isset($source[$sourceKey])&& empty($trans['nullable'])) {
-				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
 				$retData[$trans] =  $source[$sourceKey];
@@ -1634,7 +1634,7 @@ class Billrun_Util {
 							$val = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
 																										   $userData) );
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
+							Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::DEBUG);
 						}
 						break;
 					//Handle regex translation
@@ -1646,7 +1646,7 @@ class Billrun_Util {
 						} else if(isset($trans['translation'])) {
 							$val = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 						} else {
-							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
 						break;
 					default :
