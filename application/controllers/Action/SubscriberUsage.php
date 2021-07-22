@@ -90,7 +90,9 @@ class Subscriber_UsageAction extends ApiAction {
 // 		if(empty($mainBalances) ) {
 // 			return $this->setError('Couldn`t retriver the subecriber balance from DB.', $params);
 // 		}
-
+		if(!empty(array_filter($roamingAddons,function($i){return  $i['service_name'] == 'IRP_PREMIUM_QUALIFICATION';}))) {
+			$roamingAddons = array_values(array_filter($roamingAddons, function($pkg){ return $pkg['service_name'] != 'VF';}));
+		}
 		$vfMax = 0;
 		$sortedOffers = $params['offers'];
 		usort($sortedOffers,function($a,$b){return strcmp($b['end_date'],$a['end_date']); });
@@ -100,7 +102,7 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($roamingAddons as $idx => $roamingAddon) {
 			if($horizion && strtotime($roamingAddon['to_date']) < $horizion ) {
 				$this->getActualUsagesOfPackages([$roamingAddon['service_name']=> 1], $mainBalances, $maxUsage);
-				$packages[$roamingAddon['service_name']] += 1;
+				@$packages[$roamingAddon['service_name']]['count'] += 1;
 				array_splice($roamingAddons,$idx,1);
 			}
 		}
@@ -108,7 +110,7 @@ class Subscriber_UsageAction extends ApiAction {
 		foreach($nationalAddons as $idx => $nationalAddon) {
 			if($horizion && strtotime($nationalAddon['to_date']) < $horizion ) {
 				$this->getActualUsagesOfPackages([$nationalAddon['service_name']=> 1], $mainBalances, $maxNationalUsage);
-				$nationalPackages[$nationalAddon['service_name']] += 1;
+				@$nationalPackages[$nationalAddon['service_name']]['count'] += 1;
 				array_splice($roamingAddons,$idx,1);
 
 			}
@@ -138,7 +140,7 @@ class Subscriber_UsageAction extends ApiAction {
 					$nationalPackages[$plan['name']] += 1;
 				}
 			}
-			if(isset($plan['includes']['groups']['VF'])) {
+			if(isset($plan['includes']['groups']['VF']) && empty($packages['IRP_PREMIUM_QUALIFICATION'])) {
 				$vfMax = max($vfMax,$plan['includes']['groups']['VF']['limits']['days']);
 			}
 		}
@@ -189,11 +191,12 @@ class Subscriber_UsageAction extends ApiAction {
 	protected function getMaxUsagesOfPackages($addons, &$packages, &$maxUsage, $plan) {
 		$vfMapping = ['data' => 6442451000];
 		foreach($addons as  $addon) {
-			Billrun_Factory::log($addon['service_name']);
+// 			Billrun_Factory::log($addon['service_name']);
 			// for each national group / package
-			if(!empty($plan['include']['groups'][$addon['service_name']])) {
+			if(!empty($plan['include']['groups'][$addon['service_name']]) && !((isset($packages[$addon['service_name']]['ids']) && in_array( $addon['id'], $packages[$addon['service_name']]['ids'] ))) ) {
+
 					foreach($plan['include']['groups'][$addon['service_name']] as $type => $value) {
-						if(is_array($value)) { continue; }
+						if(	is_array($value) ) {	continue;	}
 						if (@$maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
 							@$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
 						} else {
@@ -203,7 +206,10 @@ class Subscriber_UsageAction extends ApiAction {
 									@$maxUsage[$type] = -1;
 							}
 						}
-						@$packages[$addon['service_name']] += 1 ;
+						@$packages[$addon['service_name']] = [
+																'count' => Billrun_Util::getFieldVal($packages[$addon['service_name']]['count'],0) + 1,
+																'ids' => array_merge([$addon['id']],Billrun_Util::getFieldVal($packages[$addon['service_name']]['ids'],[]))
+																];
 					}
 					if(!empty($plan['include']['groups'][$addon['service_name']]['limits']['days'])) {
 						@$maxUsage['days'] += $plan['include']['groups'][$addon['service_name']]['limits']['days'];
