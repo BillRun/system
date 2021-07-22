@@ -196,9 +196,7 @@ class Subscriber_UsageAction extends ApiAction {
 			if(!empty($plan['include']['groups'][$addon['service_name']]) && !((isset($packages[$addon['service_name']]['ids']) && in_array( $addon['id'], $packages[$addon['service_name']]['ids'] ))) ) {
 
 					foreach($plan['include']['groups'][$addon['service_name']] as $type => $value) {
-						if(	is_array($value) ) {
-								continue;
-						}
+						if(	is_array($value) ) {	continue;	}
 						if (@$maxUsage[$type] !== -1 && $plan['include']['groups'][$addon['service_name']][$type] !=='UNLIMITED'){
 							@$maxUsage[$type] += $plan['include']['groups'][$addon['service_name']][$type];
 						} else {
@@ -208,7 +206,7 @@ class Subscriber_UsageAction extends ApiAction {
 									@$maxUsage[$type] = -1;
 							}
 						}
-						$packages[$addon['service_name']] = [
+						@$packages[$addon['service_name']] = [
 																'count' => Billrun_Util::getFieldVal($packages[$addon['service_name']]['count'],0) + 1,
 																'ids' => array_merge([$addon['id']],Billrun_Util::getFieldVal($packages[$addon['service_name']]['ids'],[]))
 																];
