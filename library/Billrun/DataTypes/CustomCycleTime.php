@@ -22,10 +22,10 @@ class Billrun_DataTypes_CustomCycleTime extends Billrun_DataTypes_CycleTime{
 		$this->key = $billrunKey;
 		$this->invoicing_day = $invoicing_day;
 		$recurrenceOffset = Billrun_Utils_Cycle::getRecurrenceOffset($recurrenceConfig,$billrunKey,$activationDate);
-		$startCyclKey = Billrun_Utils_Cycle::substractMonthsFromCycleKey($billrunKey,$recurrenceOffset);
-		$this->start = Billrun_Billingcycle::getStartTime($startCyclKey, $invoicing_day);
-		$endCyclKey = Billrun_Utils_Cycle::addMonthsToCycleKey($billrunKey,$recurrenceOffset ? $recurrenceConfig['frequencey'] - $recurrenceOffset : 0 );
-		$this->end = Billrun_Billingcycle::getEndTime($endCyclKey, $invoicing_day);
+		$startCycleKey = Billrun_Utils_Cycle::substractMonthsFromCycleKey($billrunKey,$recurrenceConfig['frequency']-$recurrenceOffset);
+		$this->start = Billrun_Billingcycle::getStartTime($startCycleKey, $invoicing_day);
+		$endCycleKey = Billrun_Utils_Cycle::addMonthsToCycleKey($billrunKey, $recurrenceOffset);
+		$this->end = Billrun_Billingcycle::getEndTime($endCycleKey, $invoicing_day);
 	}
 
 

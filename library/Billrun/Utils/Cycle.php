@@ -26,12 +26,15 @@ class Billrun_Utils_Cycle {
 	public static function addMonthsToCycleKey($cycleKey,$monthsToAdd) {
 		$year = substr($cycleKey,0,4);
 		$month = substr($cycleKey,4,2);
-		$year = $year + floor(($MonthsToAdd + $month) / 12 );
-		$month = ( (($MonthsToAdd + $month - 1) % 12) + 1 );
-		return $year . str_pad($month,2,'0') . substr($cycleKey,6);
+		$year = $year + floor(($monthsToAdd + $month) / 12 );
+		$month = ( (($monthsToAdd + $month + 11) % 12) + 1 );
+
+		return $year . str_pad($month,2,'0',STR_PAD_LEFT) . substr($cycleKey,6);
+
 	}
 
 	public static  function substractMonthsFromCycleKey($cycleKey,$monthsTosubstract) {
+
 		return self::addMonthsToCycleKey($cycleKey,-$monthsTosubstract);
 	}
 

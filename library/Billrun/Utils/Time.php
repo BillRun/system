@@ -314,7 +314,7 @@ class Billrun_Utils_Time {
 		}
 	}
 
-		/**
+	/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
 	 * @param type $from
 	 * @param type $to
@@ -338,5 +338,16 @@ class Billrun_Utils_Time {
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
 
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getMonthsDiffUnix($from, $to) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
 
+		return static::getMonthsDiff($formatedFrom,$formatedTo);
+	}
 }

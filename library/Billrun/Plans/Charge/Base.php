@@ -44,5 +44,12 @@ abstract class Billrun_Plans_Charge_Base {
 	 * @return float the price of the plan without VAT.
 	 */
 	public abstract function getPrice($quantity = 1);
-	
+
+
+	/**
+	 *
+	 */
+	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
+		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
+	}
 }
