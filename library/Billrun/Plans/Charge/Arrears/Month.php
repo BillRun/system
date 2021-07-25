@@ -66,8 +66,12 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
 	}
-	
 
-	
+	/**
+	 *
+	 */
+	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
+		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
+	}
 	
 }

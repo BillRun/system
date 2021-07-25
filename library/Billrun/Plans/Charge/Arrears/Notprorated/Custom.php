@@ -12,7 +12,7 @@
  * @package  Plans
  * @since    5.2
  */
-class Billrun_Plans_Charge_Arrears_Custom extends Billrun_Plans_Charge_Arrears_Month {
+class Billrun_Plans_Charge_Arrears_Notprorated_Custom extends Billrun_Plans_Charge_Arrears_Notprorated_Month {
 	use Billrun_Plans_Charge_Custom;
 
 	public function __construct($plan) {

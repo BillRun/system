@@ -35,7 +35,4 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 		return null;
 	}
-
-	protected function setMonthlyCover(){
-	}
 }

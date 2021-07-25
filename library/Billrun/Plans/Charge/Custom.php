@@ -20,19 +20,10 @@ Trait Billrun_Plans_Charge_Custom  {
 		parent::__construct($plan);;
 		$this->recurrenceConfig = $plan['recurrence'];
 		$this->updateCycleByConfig($plan);
-		$this->setMonthlyCover();
 	}
 
 	protected function updateCycleByConfig($config) {
 		$this->cycle = new Billrun_DataTypes_CustomCycleTime($this->cycle->key(),$config['recurrence'],@$config['invoicing_day'],@$config['activation_date']);
-	}
-
-	/**
-	 *
-	 */
-	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
-		$frequency = $this->recurrenceConfig['frequency'];
-		return Billrun_Plan::getPriceByTariff($tariff, $startOffset/$frequency, $endOffset/$frequency ,$activation);
 	}
 
 	abstract protected function setMonthlyCover();
