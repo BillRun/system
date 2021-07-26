@@ -8878,6 +8878,35 @@ lastConfig = runOnce(lastConfig, 'EPICIC-29', function () {
 	}
 });
 
+//EPICIC-98: Add rate_price CF array
+lastConfig = runOnce(lastConfig, 'EPICIC-98', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["processor"]["calculated_fields"].push(
+					{
+							"target_field": "rate_price",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						});
+		}
+	}
+});
+
 db.config.insert(lastConfig);
 
 //EPICIC-61 - set vat_code for inactive operators
