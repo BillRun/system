@@ -12,7 +12,7 @@
  * @package  Plans
  * @since    5.2
  */
-Trait Billrun_Plans_Charge_Custom  {
+trait Billrun_Plans_Charge_Traits_Custom  {
 
 	protected $recurrenceConfig = [];
 

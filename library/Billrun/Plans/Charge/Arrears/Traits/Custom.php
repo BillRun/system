@@ -12,8 +12,8 @@
  * @package  Plans
  * @since    5.2
  */
-class Billrun_Plans_Charge_Arrears_Notprorated_Custom extends Billrun_Plans_Charge_Arrears_Notprorated_Month {
-	use Billrun_Plans_Charge_Arrears_Traits_Custom;
+trait Billrun_Plans_Charge_Arrears_Traits_Custom {
+	use Billrun_Plans_Charge_Traits_Custom;
 
 	public function __construct($plan) {
 		parent::__construct($plan);;
