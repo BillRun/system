@@ -50,7 +50,7 @@ class Billrun_Account_External extends Billrun_Account {
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
 			$results = json_decode($results, true);	
-			Billrun_Factory::dispatcher()->trigger('afterExternalBillableResponse', array(&$results));
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
