@@ -15,7 +15,7 @@
  */
 abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 
-	protected $parsedBytes = 0;
+	public $parsedBytes = 0;
 
 	/**
 	 * Get the amount of bytes that were parsed on the last parsing run.
@@ -49,4 +49,13 @@ abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 	abstract public function parseTrailer($data);
 
 	abstract public function parseField($data, $fileDesc);
+	
+	/**
+	 * Set the amount of bytes that were parsed on the last parsing run.
+	 * @param $parsedBytes	Containing the count of the bytes that were processed/parsed.
+	 */
+	public function setLastParseLength($record_length) {
+		$this->parsedBytes = $record_length;
+	}
+	
 }

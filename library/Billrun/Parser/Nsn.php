@@ -168,13 +168,6 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary {
 		}
 		return $trailer;
 	}
-
-	/**
-	 * Set the amount of bytes that were parsed on the last parsing run.
-	 * @param $parsedBytes	Containing the count of the bytes that were processed/parsed.
-	 */
-	public function setLastParseLength($record_length) {
-		$this->parsedBytes = $record_length;
-	}
+	
 
 }
