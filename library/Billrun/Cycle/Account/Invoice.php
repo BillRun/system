@@ -435,7 +435,7 @@ class Billrun_Cycle_Account_Invoice {
     //======================================================
     
 	function isAccountActive() {
-		$ignoreSubsWithNoPlans = Billrun_Factory::config()->getConfigValue('billrun.ignore_no_plans_invoices',false);
+		$ignoreSubsWithNoPlans = Billrun_Factory::config()->getConfigValue('billrun.ignore_no_plans_invoices',true);
 		$hasActiveSubscribers = !empty(array_filter($this->subscribers ,function($sub) use ($ignoreSubsWithNoPlans) {
 									$subData = $sub->getData();
 									return !empty($subData['sid']) && (!$ignoreSubsWithNoPlans || !is_null($subData['totals']['flat']['after_vat'])) ;
