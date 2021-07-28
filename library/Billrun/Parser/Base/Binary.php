@@ -15,7 +15,7 @@
  */
 abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 
-	public $parsedBytes = 0;
+	protected $parsedBytes = 0;
 
 	/**
 	 * Get the amount of bytes that were parsed on the last parsing run.

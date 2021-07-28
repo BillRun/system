@@ -110,8 +110,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 						$this->addDataRow($row);
 					}
 					$bytes = substr($bytes, $this->parser->getLastParseLength());
-					$parsed = $this->parser->parsedBytes;
-					Billrun_Factory::log()->log("Last parsed bytes length: " . $this->parser->parsedBytes, Zend_log::DEBUG);
+					Billrun_Factory::log()->log("Last parsed bytes length: " . $this->parser->getLastParseLength(), Zend_log::DEBUG);
 				} while (isset($bytes[$this->trailerLength + 1]));
 			} else {
 				$msg = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
