@@ -41,13 +41,16 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($invoicing_days)) {
 				$requestParams['invoicing_days'] = $invoicing_days;
 			}
+			$request_type = Zend_Http_Client::POST;
+			Billrun_Factory::dispatcher()->trigger('beforeGetExternalBillableDetails', array(&$requestParams, &$request_type, &$this));
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
-			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
+			$results = Billrun_Util::sendRequest($this->remote_billable_url, $requestParams, $request_type);
 
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
-			$results = json_decode($results, true);		
+			$results = json_decode($results, true);	
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
 			//Check for errors
 			if(empty($results)) {
 				Billrun_Factory::log('Failed to retrive valid results for billable, remote returned no data.',Zend_Log::WARN);
