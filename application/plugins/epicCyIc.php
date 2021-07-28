@@ -240,9 +240,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row = new Mongodloid_Entity($row);
 		}
 		$current = $row->getRawData();
+		Billrun_Factory::log('Start rate mapping for stamp - ' . $current["stamp"] . ", RECORD_SEQUENCE_NUMBER - " . $current["uf"]["RECORD_SEQUENCE_NUMBER"]);
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
 		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0, 1);
+		Billrun_Factory::log('The call direction is - ' . $current["cf"]["call_direction"]);
 		$row->setRawData($current);
 		$setOperator = $this->setOperator($row, $current, $type, $calculator);
 		if(!$setOperator) {
