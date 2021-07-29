@@ -477,6 +477,9 @@ abstract class Billrun_Bill {
 		if ($index > -1) {
 			unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
+			if ($billType == 'rec') {
+				$this->removeFromWaitingPayments($id);
+			}
 		}
 		return $this;
 	}
