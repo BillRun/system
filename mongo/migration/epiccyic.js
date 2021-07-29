@@ -5371,14 +5371,6 @@ lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
 lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
 
-//EPICIC-66: user_summ/event_start_time position error in export generator
-for (var i = 0; i < lastConfig.export_generators.length; i++) {
-	if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
-		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION"
-		lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME"
-	}
-}
-
 //EPICIC-75 "Undefined index: stamp" when processing files (now included directly in the processor's configuration)
 //for (var i = 0; i < lastConfig.file_types.length; i++) {
 //	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
@@ -8840,6 +8832,77 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			}
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
+		}
+	}
+});
+
+//EPICIC-66: user_summ/event_start_time position error in export generator
+lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
+	for (var i = 0; i < lastConfig.export_generators.length; i++) {
+		if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["name"] = "EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["name"] = "USER_SUMMARISATION";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION";
+		}
+	}
+});
+
+//EPICIC-29 - cach db queries
+lastConfig = runOnce(lastConfig, 'EPICIC-29', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			var rateMappingObj = lastConfig["file_types"][i]["rate_calculators"]["retail"];
+			var newRateMapping = {};
+			var dbQueriesArray = ["parameter_operator", "parameter_scenario", "parameter_component", "incoming_call", "outgoing_call",
+				"transit_incoming_call", "transit_outgoing_call", "incoming_sms", "outgoing_sms", "parameter_tier_aba", "parameter_tier_pb_anaa"];
+			Object.keys(rateMappingObj).forEach(key => {
+				var prioritiesObj = {
+					priorities: []
+				};
+				for (var i = 0; i < rateMappingObj[key].length; i++) {
+					var filterObj = {
+						filters: []
+					};
+					filterObj.filters = rateMappingObj[key][i];
+					if (dbQueriesArray.includes(key)) {
+						filterObj["cache_db_queries"] = true;
+					}
+					prioritiesObj.priorities.push(filterObj);
+				}
+				newRateMapping[key] = prioritiesObj;
+			});
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = {};
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = newRateMapping;
+		}
+	}
+});
+
+//EPICIC-98: Add rate_price CF array
+lastConfig = runOnce(lastConfig, 'EPICIC-98', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["processor"]["calculated_fields"].push(
+					{
+							"target_field": "rate_price",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						});
 		}
 	}
 });
