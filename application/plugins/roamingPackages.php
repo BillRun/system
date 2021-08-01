@@ -244,7 +244,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			$legitimate= (bool)($this->lineTime >= $from && $this->lineTime <= $to);
 			Billrun_Factory::dispatcher()->trigger('checkPackageRules', [&$legitimate,$package,$this->row,$plan, $usageType, $rate, $subscriberBalance]);
-			if(!$legitimate) {	continue;	}
+			if(!$legitimate) {
+				if($groupSelected === $package['service_name']) {
+					$groupSelected = FALSE;
+					return;
+				}
+				continue;
+			}
 
 			$matchedIds[] = $package['id'];
 
@@ -269,7 +275,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
+			if(!empty($matchedIds)) {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
+			}
 			$groupSelected = FALSE;
 			return;
 		}
