@@ -681,12 +681,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		} else if($row['type'] == "nrtrde" ) {
 			$usage_type = $row['usaget'];
-			foreach($update['$set'] as $key => $val) {
-				if($key != 'tx.'. $row['stamp']) {
-					unset($update['$set'][$key]);
-				}
-			}
-			unset($update['$inc']);
+// 			foreach($update['$set'] as $key => $val) {
+// 				if($key != 'tx.'. $row['stamp']) {
+// 					unset($update['$set'][$key]);
+// 				}
+// 			}
+			//unset($update['$inc']);
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.usagev'] = $row['usagev'];
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.cost'] = $pricingData[$calculator->pricingField];
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.count'] = 1;
