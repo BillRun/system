@@ -301,11 +301,12 @@ class Billrun_Plan {
 			if ($groupSelected === FALSE) {
 				$rateUsageIncluded = 0;
 				// @todo: add more logic instead of fallback to first
-				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
+// 				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
 			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+				$groupSelected = FALSE;
 				continue;
 			}
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
