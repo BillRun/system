@@ -63,6 +63,7 @@ class CronController extends Yaf_Controller_Abstract {
 			$ftp_settings = array_keys(Billrun_Factory::config()->getConfigValue($type . '.ftp', array()));
 			$hosts = in_array("host", $ftp_settings) ? array("_HOST_") : $ftp_settings;
 			foreach ($hosts as $server) {
+				if(!empty($server['is_secondary'])) { continue; }
 				if (in_array("_HOST_", $hosts)){ 
 					$server = $type;
 					$query = array(
