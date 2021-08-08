@@ -26,7 +26,7 @@ class Billrun_Utils_Cycle {
 	public static function addMonthsToCycleKey($cycleKey,$monthsToAdd) {
 		$year = substr($cycleKey,0,4);
 		$month = substr($cycleKey,4,2);
-		$year = $year + floor(($monthsToAdd + $month) / 12 );
+		$year = $year + (ceil(($monthsToAdd + $month ) / 12  ) - 1);
 		$month = ( (($monthsToAdd + $month + 11) % 12) + 1 );
 
 		return $year . str_pad($month,2,'0',STR_PAD_LEFT) . substr($cycleKey,6);
