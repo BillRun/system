@@ -147,7 +147,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new MongoDate())));
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new Mongodloid_Date())));
 	}
 	
 	/**
