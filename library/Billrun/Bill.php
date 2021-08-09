@@ -434,7 +434,7 @@ abstract class Billrun_Bill {
 		}
 		return $this;
 	}
-
+	
 	/**
 	 * 
 	 * @param int $id
@@ -477,6 +477,9 @@ abstract class Billrun_Bill {
 		if ($index > -1) {
 			unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
+			if ($billType == 'rec') {
+				$this->removeFromWaitingPayments($id);
+			}
 		}
 		return $this;
 	}
@@ -861,7 +864,7 @@ abstract class Billrun_Bill {
 				$pending = $this->data['waiting_payments'];
 				if (count($pending)) {
 					$this->removeFromWaitingPayments($billId);
-					$result = '2';
+					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}
 				else {
 					$result = $this->isPaid() ? '1' : '0'; 
@@ -885,7 +888,7 @@ abstract class Billrun_Bill {
 		}
 		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
 		array_push($waiting_payments, $billId);
-		$this->data['waiting_payments'] = $waiting_payments;
+		$this->data['waiting_payments'] = array_unique($waiting_payments);
 	}
 	
 	protected function addToRejectedPayments($billId, $billType) {
