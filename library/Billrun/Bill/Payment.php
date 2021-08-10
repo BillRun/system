@@ -839,7 +839,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markApproved($status) {
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
+			$billObj->updatePendingBillToConfirmed($this->getId(), $status, $this->getType())->save();
 		}
 	}
 
