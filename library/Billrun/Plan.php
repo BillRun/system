@@ -274,17 +274,17 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $endOffset) {
-			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;
