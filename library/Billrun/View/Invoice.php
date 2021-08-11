@@ -360,4 +360,12 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			}
 		}
 	}
+
+
+	/**
+	 * TODO implement
+	 */
+	public function  getFormatedDate($date,$formatType = '' ) {
+		return date('Y-m-d' ,$date);
+	}
 }
