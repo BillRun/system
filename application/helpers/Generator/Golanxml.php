@@ -1857,6 +1857,9 @@ EOI;
 
 	protected function beautifyPhoneNumber($phone_number) {
 		$separator = "-";
+		if(preg_match("/^\*43/",$phone_number)) {
+			return $phone_number;
+		}
 		$phone_number = intval($phone_number);
 		if (substr($phone_number, 0, 3) == "972") {
 			$phone_number = intval(substr($phone_number, 3));
