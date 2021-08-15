@@ -517,11 +517,15 @@ class Billrun_Exporter extends Billrun_Generator_File {
                 if (!$sender) {
                     Billrun_Factory::log()->log("Cannot get sender. details: " . print_R($connections, 1), Zend_Log::ERR);
                     $this->moved = false;
+					Billrun_Factory::log()->log("Trying to move the file by 'move' command..", Zend_Log::INFO);
+					$this->retryMovingTheFile();
                     continue;
                 }
                 if (!$sender->send($this->getExportFilePath())) {
-                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::INFO);
+                    Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::ERR);
                     $this->moved = false;
+					Billrun_Factory::log()->log("Trying to move the file by 'move' command..", Zend_Log::INFO);
+					$this->retryMovingTheFile();
                 } else {
                     Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
                 }

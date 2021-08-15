@@ -278,6 +278,8 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 		$res = $connection->export($fileName);
 		if (!$res) {
 			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
+			Billrun_Factory::log()->log("Trying to move the file by 'move' command..", Zend_Log::INFO);
+			$this->retryMovingTheFile();
 		}
 	}
 
