@@ -767,9 +767,13 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST + $flatCostWithoutVat);
 					$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
 					$this->writer->endElement();
+					$access_charged_in_plan = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'])
+										&& is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'])
+											? array_filter($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'],function($i){return  !empty($i['totals']['call']) && array_sum($i['totals']['call']) > 0; })
+											: array();
 					$over_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base'] : array();
 					$out_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base'] : array();
-					$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
+					$over_out_plan_base = array_merge_recursive($access_charged_in_plan,$over_plan_base, $out_plan_base);
 					foreach ($over_out_plan_base as $zone_name => $zone) {
 						if ($zone_name != 'service') {
 							//							$out_of_usage_entry->addChild('TITLE', ?);
@@ -1853,6 +1857,9 @@ EOI;
 
 	protected function beautifyPhoneNumber($phone_number) {
 		$separator = "-";
+		if(preg_match("/^\*43/",$phone_number)) {
+			return $phone_number;
+		}
 		$phone_number = intval($phone_number);
 		if (substr($phone_number, 0, 3) == "972") {
 			$phone_number = intval(substr($phone_number, 3));

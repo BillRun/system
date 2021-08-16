@@ -293,7 +293,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_plan'] = $volume;
-				$accessPrice = 0;
+				$accessPrice = empty($rate['rates'][$usageType]['access_price_out_of_package']) ?  0 : $accessPrice ;
 			} else if ($volumeToCharge > 0) {
 				if ($planVolumeLeft > 0) {
 					$ret['in_plan'] = $volume - $volumeToCharge;
@@ -306,7 +306,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
-				$accessPrice = 0;
+				$accessPrice = empty($rate['rates'][$usageType]['access_price_out_of_package']) ?  0 : $accessPrice ;
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
