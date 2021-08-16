@@ -432,6 +432,7 @@ abstract class Billrun_Bill {
 			}
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 	
@@ -471,6 +472,7 @@ abstract class Billrun_Bill {
 				$this->setPendingLinkedBills($billType, $billId);
 			}
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
@@ -484,6 +486,7 @@ abstract class Billrun_Bill {
 				$this->removeFromWaitingPayments($id, $billType);
 			}
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 	
@@ -494,6 +497,7 @@ abstract class Billrun_Bill {
 			unset($pays[$index]);
 			$this->updatePays(array_values($pays));
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
@@ -521,6 +525,7 @@ abstract class Billrun_Bill {
 		}
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
@@ -900,28 +905,46 @@ abstract class Billrun_Bill {
 		if ($index > -1) {
 			$paidBy[$index]['pending'] = true;
 			$this->data['paid_by'] = array_values($paidBy);
-		}
-		$pays = $this->getPaidBills();
-		$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
-		if ($index > -1) {
-			$pays[$index]['pending'] = true;
-			$this->data['pays'] = array_values($pays);
+		} else {
+			$pays = $this->getPaidBills();
+			$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
+			if ($index > -1) {
+				$pays[$index]['pending'] = true;
+				$this->data['pays'] = array_values($pays);
+			}
 		}
 	}
-	
+
 	protected function unsetPendingLinkedBills($billType, $billId) {
 		$paidBy = $this->getPaidByBills();
 		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
 		if ($index > -1) {
 			unset($paidBy[$index]['pending']);
 			$this->data['paid_by'] = array_values($paidBy);
+		} else {
+			$pays = $this->getPaidBills();
+			$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
+			if ($index > -1) {
+				unset($pays[$index]['pending']);
+				$this->data['pays'] = array_values($pays);
+			}
 		}
-		$pays = $this->getPaidBills();
-		$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
-		if ($index > -1) {
-			unset($pays[$index]['pending']);
-			$this->data['pays'] = array_values($pays);
+	}
+	
+	/**
+	 * This method assumes paid_by / pays field are already updated with the correct pending status
+	 */
+	protected function setPendingCoveringAmount() {
+		$this->data['pending_covering_amount'] = 0;
+		foreach (array('pays', 'paid_by') as $key) {
+			if (isset($this->data[$key])) {
+				$this->data['pending_covering_amount'] += array_sum(array_column(array_filter($this->data[$key], array($this, 'isPendingLink')), 'amount'));
+			}
 		}
+	}
+
+	protected function isPendingLink($link) {
+		return !empty($link['pending']);
 	}
 
 	protected function addToRejectedPayments($billId, $billType) {
