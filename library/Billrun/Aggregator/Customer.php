@@ -281,7 +281,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->overrideEntityValues($localPlans,@$subscriber['overrides'],'plan');
 	}
 
-	public function &getServices($account=null, $subscriber=null) {
+	public function getServices($account=null, $subscriber=null) {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
@@ -293,7 +293,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->overrideEntityValues($localServices,@$subscriber['overrides'],'service');
 	}
 
-	public function &getRates($account=null, $subscriber=null) {
+	public function getRates($account=null, $subscriber=null) {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
@@ -305,7 +305,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->overrideEntityValues($localRates,@$subscriber['overrides'],'rate');
 	}
 
-	public function &getDiscounts($account=null, $subscriber=null) {
+	public function getDiscounts($account=null, $subscriber=null) {
 		if(empty($this->discountsCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->discountsCollection();
@@ -370,7 +370,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return An overriden entites hashed list.
 	 */
 
-	protected function overrideEntityValues($entites, $overrideConditions, $entityType) {
+	protected function &overrideEntityValues($entites, $overrideConditions, $entityType) {
 		$overridenEntites = $entites;
 		if(!empty($overrideConditions)) {
 			foreach($overrideConditions as $overideRule) {

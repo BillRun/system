@@ -12,7 +12,7 @@
  * @package  Plans
  * @since    5.2
  */
-class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
+class Billrun_Plans_Charge_Singleperiod extends Billrun_Plans_Charge_Base {
 
 	public function __construct($plan) {
 		parent::__construct($plan);
@@ -39,5 +39,5 @@ class Billrun_Plans_Charge_Custom extends Billrun_Plans_Charge_Base {
 		}
 		return $charges;
 	}
-	
+
 }
