@@ -69,6 +69,18 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		if (!empty($this->connection)) {
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
+			if (!$this->connection->isConnected()) {
+				Billrun_Factory::log()->log("Connecting the ftp server...", Zend_Log::DEBUG);
+				$this->connection->connect();
+				if ($this->connection->isConnected()) {
+					Billrun_Factory::log()->log("successfully connected to server", Zend_Log::DEBUG);
+				} else {
+					Billrun_Factory::log()->log("Couldn't connect to the server. File wasn't uploaded. Details: " . print_R([], 1), Zend_Log::ALERT);
+					return false;
+				}
+			} else {
+				Billrun_Factory::log()->log("Already connected to ftp server, starting to export...", Zend_Log::DEBUG);
+			}
 			$ftpResource = $this->connection->getConnection();
 			ftp_put($ftpResource, $remote, $local, FTP_BINARY);
 		}
