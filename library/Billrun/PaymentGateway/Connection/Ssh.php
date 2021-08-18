@@ -135,8 +135,8 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	 * copy the file to the location defined
 	 * @since 5.0
 	 */
-	public function export($fileName) {
-		if (!empty($this->connection)) {
+	public function export($fileName){
+		if (!empty($this->connection)){
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
 			if (!$this->connection->connected()) {
@@ -159,7 +159,8 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
 			}
 			return $this->connection->put($local, $remote);
-		} else {
+		}
+		else {
 			if ($this->move_exported) {
 				$source = $this->localDir . '/' . $fileName;
 				$dest = $this->remoteDir . '/' . $fileName;
@@ -167,7 +168,6 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 			}
 		}
 	}
-
 	/**
 	 * delete file from remote host
 	 * @param String $file_path
