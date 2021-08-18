@@ -50,6 +50,12 @@ abstract class Billrun_Generator_File {
 	
 	protected $localDir = null;
 	
+	/**
+	 * flag to decide if an empty generated file should be created & export
+	 * @var array
+	 */
+    protected $moveEmptyFile;
+	
 	public function __construct($options) {
 		$this->config = $options;
 	}
@@ -292,9 +298,14 @@ abstract class Billrun_Generator_File {
 	
 	public function shouldFileBeMoved() {
         $localPath = $this->localDir . '/' . $this->getFilename();
-        if (file_exists($localPath) && !empty(file_get_contents($localPath))) {
+		if (file_exists($localPath) && !empty(file_get_contents($localPath))) {
             return true;
-        }
+		} else {
+			if ($this->moveEmptyFile) {
+				$this->createEmptyFile($localPath);
+				return true;
+			}
+		}
         if (file_exists($localPath)) {
             Billrun_Factory::log("Removing empty generated file", Zend_Log::DEBUG);
             $this->removeEmptyFile();
@@ -302,7 +313,11 @@ abstract class Billrun_Generator_File {
         return false;
     }
 
-    protected function removeEmptyFile() {
+	public function createEmptyFile($localPath) {
+		file_put_contents($localPath, "");
+	}
+
+	protected function removeEmptyFile() {
         $localPath = $this->localDir . '/' . $this->getFilename();
         $ret = unlink($localPath);
         if ($ret) {

@@ -114,6 +114,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->query = $this->getFiltrationQuery();
         $this->limit = $this->getLimit();
         $this->logCollection = Billrun_Factory::db()->logCollection();
+		$this->moveEmptyFile = !empty($this->config['move_empty_file']) ? $this->config['move_empty_file'] : true;
     }
 
     protected function getLinkedEntityData($entity, $params, $field) {
@@ -510,7 +511,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         Billrun_Factory::log()->log("Billrun_Exporter::move - start", Zend_Log::INFO);
         $this->moved = true;
         
-        foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
+		foreach (Billrun_Util::getIn($this->config, 'senders', array()) as $connections) {
             foreach ($connections as $connection) {
                 Billrun_Factory::log()->log("Move to sender {$connection['name']} - start", Zend_Log::INFO);
                 $sender = Billrun_Sender::getInstance($connection);
