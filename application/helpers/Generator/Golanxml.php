@@ -242,6 +242,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$lines = $this->get_lines($billrun);
 		}
         Billrun_Factory::db()->setMongoNativeLong(1);
+        $hardCodedTotalInPlanSum = 0;
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriberFlatCosts = 0;
@@ -595,12 +596,15 @@ class Generator_Golanxml extends Billrun_Generator {
 				}	
 			}
 
+			$hardCodedInPlanSum = $this->getPriceUnderRates($subscriber['breakdown'],['IL_STAR_43'],['over_plan','out_plan']);
+			$hardCodedTotalInPlanSum += $hardCodedInPlanSum;
 			$this->writer->startElement('SUBSCRIBER_SUMUP');
 			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
 //			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) + (isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0)); // vatable over/out plan cost
 			$subscriber_sumup_TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0));
-			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT + $hardCodedInPlanSum); // vatable overplan cost
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
+			$this->writer->writeElement('TOTAL_MIXED_IN_OUT_GIFT', $hardCodedInPlanSum);
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT = floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0) + floatval(isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0);;
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
@@ -674,7 +678,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->startElement('SUBSCRIBER_CHARGE_SUMMARY');
 			$this->writer->writeElement('TOTAL_GIFT', $subscriberFlatCosts);
 			$totalAboveGift = $subscriber_sumup_TOTAL_ABOVE_GIFT_WITH_VAT + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT * (1 + $billrun['vat']) + $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT;
-			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $totalAboveGift);
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $totalAboveGift + ($hardCodedInPlanSum * (1 + $billrun['vat'])));
+			$this->writer->writeElement('TOTAL_MIXED_IN_OUT_GIFT', $hardCodedInPlanSum* (1 + $billrun['vat']));
 		//	$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT * (1 + $billrun['vat']));
 		//	$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NO_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NO_VAT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_WITH_VAT);
@@ -899,6 +904,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							}
 						}
 					}
+
 					foreach ($subscriber_special as $zone_name => $zone) {
 						foreach ($zone['totals'] as $usage_type => $usage_totals) {
 							$this->writer->startElement('BREAKDOWN_ENTRY');
@@ -1120,7 +1126,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->startElement('INVOICE_CHARGE_SUMMARY');
 		$this->writer->writeElement('TOTAL_GIFT', $invoice_total_gift);
 		$invoiceTotalAboveGift = $invoice_total_above_gift + $invoice_total_outside_gift_vat * (1 + $billrun['vat']) + $invoice_total_outside_gift_no_vat;
-		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoiceTotalAboveGift);
+		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoiceTotalAboveGift + ($hardCodedTotalInPlanSum * (1 + $billrun['vat'])) );
+		$this->writer->writeElement('TOTAL_MIXED_IN_OUT_GIFT', $hardCodedTotalInPlanSum * (1 + $billrun['vat']) );
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND', $invoice_total_manual_correction_refund);
 		$this->writer->writeElement("TOTAL_FIXED_CHARGE", $servicesTotalCostPerAccount);
@@ -2156,6 +2163,21 @@ EOI;
 			}
 		};
 		return $ret;
-}
+	}
+
+	protected function getPriceUnderRates($subBrkDown,$rateKeys,$ignoreKeys = []) {
+		$ret = 0;
+		foreach($subBrkDown as  $key => $val) {
+			if(in_array($key,$ignoreKeys)) { continue; }
+			if(in_array($key,$rateKeys) && isset($val['totals'])) {
+				$ret += array_sum(array_map(function($e) {
+					return $e['cost'];
+				},$val['totals']));
+			} else if(is_array($val)) {
+				$ret += $this->getPriceUnderRates($val,$rateKeys,$ignoreKeys);
+			}
+		}
+		return $ret;
+	}
 
 }
