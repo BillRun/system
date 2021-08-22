@@ -8909,10 +8909,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-98', function () {
 	}
 });
 
-for (var i = 0; i < lastConfig.export_generators.length; i++) {
-	lastConfig.export_generators[i]['generator']["force_header"] = true;
-	lastConfig.export_generators[i]['generator']["force_footer"] = true;
-}
+//EPICIC-104: Add "force_header" + "force_footer" to ic "exporter" configuration
+lastConfig = runOnce(lastConfig, 'EPICIC-104', function () {
+	for (var i = 0; i < lastConfig.export_generators.length; i++) {
+		lastConfig.export_generators[i]['generator']["force_header"] = true;
+		lastConfig.export_generators[i]['generator']["force_footer"] = true;
+	}
+});
 
 
 db.config.insert(lastConfig);
