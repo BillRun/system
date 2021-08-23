@@ -20,6 +20,7 @@
 class Billrun_Exporter extends Billrun_Generator_File {
 
     use Billrun_Traits_ConditionsCheck;
+	use Billrun_Traits_Api_OperationsLock;
 
     /**
      * Type of exporter
@@ -114,6 +115,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->query = $this->getFiltrationQuery();
         $this->limit = $this->getLimit();
         $this->logCollection = Billrun_Factory::db()->logCollection();
+		$this->exporter_name = $options['type'];
     }
 
     protected function getLinkedEntityData($entity, $params, $field) {
@@ -314,6 +316,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'export_start_time' => new MongoDate(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
+			'name' => $this->exporter_name
         );
         $logData = array_merge($basicLogData, $data);
 
@@ -519,12 +522,21 @@ class Billrun_Exporter extends Billrun_Generator_File {
                     $this->moved = false;
                     continue;
                 }
+				if (!$this->lock()) {
+					Billrun_Factory::log("Sending file is already running", Zend_Log::NOTICE);
+					$this->moved = false;
+					return;
+				}
                 if (!$sender->send($this->getExportFilePath())) {
                     Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::ERR);
                     $this->moved = false;
                 } else {
                     Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
                 }
+				if (!$this->release()) {
+					Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+					return;
+				}
             }
         }
         Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
@@ -575,5 +587,24 @@ class Billrun_Exporter extends Billrun_Generator_File {
     public function getAction() {
         return "export_generators";
     }
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'send_file',
+			'filtration' => 'export_' . $this->exporter_name,
+			'end_time' => array('$exists' => false)
+		);
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'send_file',
+			'filtration' => 'export_' . $this->exporter_name
+		);
+	}
+	
+	protected function getConflictingQuery() {	
+        return array('filtration' => 'export_' . $this->exporter_name);
+	}
 
 }
