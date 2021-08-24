@@ -1101,7 +1101,7 @@ class Models_Entity {
 		}
 
 		if ($newId) {
-			$this->after = $this->loadById($newId);
+			$this->after = $this->loadById($newId, true);
 		}
 
 		$old = !is_null($this->before) ? $this->before->getRawData() : null;
@@ -1118,9 +1118,13 @@ class Models_Entity {
 	 * 
 	 * @return array the entity loaded
 	 */
-	protected function loadById($id) {
+	protected function loadById($id, $readPrimary = false) {
 		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
-		return $this->collection->query($fetchQuery)->cursor()->current();
+		$cursor = $this->collection->query($fetchQuery)->cursor();
+		if ($readPrimary) {
+			$cursor->setReadPreference('RP_PRIMARY');
+		}
+		return $cursor->current();
 	}
 
 	/**
