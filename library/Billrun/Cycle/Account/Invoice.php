@@ -205,7 +205,7 @@ class Billrun_Cycle_Account_Invoice {
 				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], true);
 			}
 		}
-		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
+		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data',array())) ?  Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data') : [];
 		$this->aggregateIntoInvoice($configValue);
 		$this->updateTotals();
 	}
@@ -226,6 +226,8 @@ class Billrun_Cycle_Account_Invoice {
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
 			'EndTime' => $invoiceData['end_date']->sec,
+			'ISOStartTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['start_date']->sec),
+			'ISOEndTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['end_date']->sec),
 			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
 			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key']),
 			'NextNextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key'])),
@@ -235,8 +237,9 @@ class Billrun_Cycle_Account_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
+				 Billrun_Utils_Mongo::convertQueryMongoDates($pipeline);
 				if (empty($aggregateConf['use_db'])) {
-					$aggrResults = $aggregate->aggregate($pipeline, [$invoiceData]);
+					$aggrResults = $aggregate->aggregate( $pipeline, [$invoiceData]);
 				} else {
 					$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($pipeline)->setRawReturn(true);
 				}
@@ -513,7 +516,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 
 	/**
-	 * This function add to the account totals grouping his subscriber totals group.
+	 * This function add to the account totals grouping the provided subscriber totals group.
 	 * @param type $currentTotalGroups 
 	 * @param type $subTotalGroups 
 	 * @return the new sum up of the account totals grouping
