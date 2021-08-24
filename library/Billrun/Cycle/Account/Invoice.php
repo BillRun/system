@@ -225,6 +225,7 @@ class Billrun_Cycle_Account_Invoice {
 			'BillrunKey' => $invoiceData['billrun_key'],
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
+			'EndTime' => $invoiceData['end_date']->sec,
 			'ISOStartTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['start_date']->sec),
 			'ISOEndTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['end_date']->sec),
 			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
