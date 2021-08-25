@@ -56,9 +56,10 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-        protected $totalGroupHashMap = array();
-        protected $groupingEnabled = true;
+	protected $totalGroupHashMap = array();
+	protected $groupingEnabled = true;
 
+	protected $aggregationTranslations = [];
 
         /**
 	 * @todo used only in current balance API. Needs refactoring
@@ -221,19 +222,17 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
 		$invoiceData = $this->data->getRawData();
-		$translations = array(
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,[
 			'BillrunKey' => $invoiceData['billrun_key'],
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
 			'EndTime' => $invoiceData['end_date']->sec,
-			'ISOStartTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['start_date']->sec),
-			'ISOEndTimeStr' => date(Billrun_Utils_Mongo::datetimeISOformat,$invoiceData['end_date']->sec),
 			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
 			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key']),
 			'NextNextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key'])),
 			'NextBillrunKeyOfLastMonthlyBillrun' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key'])['billrun_key'])
-		);
-		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		]);
+		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig), $this->aggregationTranslations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
@@ -554,4 +553,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
+	public function addAggragtionTranslations($translations) {
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
+	}
 }
