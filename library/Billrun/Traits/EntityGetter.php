@@ -126,13 +126,13 @@ trait Billrun_Traits_EntityGetter {
 	protected function getEntityByFilters($row, $filters, $params = []) {
 		$category = Billrun_Util::getIn($params, 'category', '');
 		$matchedEntity = null;
-		foreach ($filters as $priority) {
+		foreach ($filters as $index => $priority) {
 			$currentPriorityFilters = Billrun_Util::getIn($priority, 'filters', $priority);
 			$params['cache_db_queries'] = Billrun_Util::getIn($priority, 'cache_db_queries', false);
 			$query = $this->getEntityQuery($row, $currentPriorityFilters, $category, $params);
 			
 			if (!$query) {
-				Billrun_Factory::log('Cannot get query for row ' . $row['stamp'] . '. filters: ' . print_R($currentPriorityFilters, 1) . ', params: ' . print_R($params, 1), Billrun_Log::DEBUG);
+				Billrun_Factory::log("Cannot get query for row " . $row['stamp'] . ". Usaget: " . (isset($params['usaget']) ? $params['usaget'] : "") . " : priority index: " . $index, Billrun_Log::DEBUG);
 				continue;
 			}
 			
