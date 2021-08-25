@@ -190,21 +190,37 @@ class Billrun_Parser_Xml {
     protected function parseLine($segment, $currentChild, $data) {
         $this->{$segment.'RowsNum'}++;
         for ($i = 0; $i < count($this->input_array[$segment]); $i++) {
-            $SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
-            if($this->name_space_prefix === ""){
-                $SubPath = '//' . str_replace(".", "/" , $SubPath);
-            }else{
-                $SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
-            }
-            $ReturndValue = $data->xpath($SubPath);
-            if ($ReturndValue) {
-                $Value = strval($ReturndValue[0]);
-            } else {
-                $Value = '';
-            }
-                $this->{$segment.'Rows'}[$this->{$segment.'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;
-        }
-    }
+			$SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
+			if ($this->name_space_prefix === "") {
+				$SubPath = '//' . str_replace(".", "/", $SubPath);
+			} else {
+				$SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
+			}
+			$ReturndValue = $data->xpath($SubPath);
+			$Value = null;
+			if ($ReturndValue) {
+				if (!empty($ReturndValue[0]->attributes()) && !empty($this->input_array[$segment][$i]['attribute'])) {
+					foreach ($ReturndValue[0]->attributes() as $attribute_name => $attribute_value) {
+						if ($attribute_name == $this->input_array[$segment][$i]['attribute']) {
+							$Value = strval($attribute_value);
+						}
+					}
+					if(is_null($Value)) {
+						Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t find attribute: ' . $this->input_array[$segment][$i]['attribute'] . ' in ' . $this->input_array[$segment][$i]['name'] . ' field. Empty string was inserted.', Zend_Log::WARN);
+						$Value = '';
+					}
+				} else {
+					$Value = strval($ReturndValue[0]);
+				}
+			} else {
+				$Value = '';
+			}
+			if(is_null($Value)) {
+				$Value = '';
+			}
+			$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $Value;
+		}
+	}
     
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
