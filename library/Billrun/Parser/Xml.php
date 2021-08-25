@@ -206,7 +206,7 @@ class Billrun_Parser_Xml {
 						}
 					}
 					if(is_null($Value)) {
-						Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t find attribute: ' . $this->input_array[$segment][$i]['attribute'] . ' in ' . $this->input_array[$segment][$i]['name'] . ' field. Empty string was inserted.', Zend_Log::WARN);
+						Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t find attribute: ' . $this->input_array[$segment][$i]['attribute'] . ' in ' . $this->input_array[$segment][$i]['name'] . ' field. Considered as empty.', Zend_Log::WARN);
 						$Value = '';
 					}
 				} else {
