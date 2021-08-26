@@ -22,15 +22,19 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 			return 1;
 		}
 		$frequency = $this->recurrenceConfig['frequency'];
+		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatStart,$formatCycleEnd);
+
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
 		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
 			$endActivation = strtotime('-1 second', $this->deactivation);
-			return 1 + (Billrun_Utils_Time::getMonthsDiffUnix($this->activation, $this->cycle->end()) / $frequency);
+			return 1 + (Billrun_Utils_Time::getDaySpanDiff($this->activation, $this->cycle->end(),$cycleSpan) );
 		}
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation > $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
 			$endActivation = strtotime('-1 second', $this->deactivation);
-			return Billrun_Utils_Time::getMonthsDiffUnix($this->activation, $endActivation) / $frequency ;
+			return Billrun_Utils_Time::getDaySpanDiff($this->activation, $endActivation,$cycleSpan);
 		}
 
 		return null;
