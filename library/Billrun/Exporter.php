@@ -22,7 +22,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     use Billrun_Traits_ConditionsCheck;
 	use Billrun_Traits_Api_OperationsLock;
 
-    /**
+	/**
      * Type of exporter
      *
      * @var string
@@ -591,7 +591,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	protected function getReleaseQuery() {
 		return array(
 			'action' => 'send_file',
-			'filtration' => 'export_' . $this->exporter_name,
+			'filtration' => 'send_' . $this->exporter_name,
 			'end_time' => array('$exists' => false)
 		);
 	}
@@ -599,12 +599,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
 	protected function getInsertData() {
 		return array(
 			'action' => 'send_file',
-			'filtration' => 'export_' . $this->exporter_name
+			'filtration' => 'send_' . $this->exporter_name
 		);
 	}
 	
 	protected function getConflictingQuery() {	
-        return array('filtration' => 'export_' . $this->exporter_name);
+        return array('filtration' => 'send_' . $this->exporter_name);
 	}
 
 }
