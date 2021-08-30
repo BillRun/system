@@ -24,19 +24,47 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$frequency = $this->recurrenceConfig['frequency'];
 		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
 		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
-		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatStart,$formatCycleEnd);
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
 
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
 		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
-			$endActivation = strtotime('-1 second', $this->deactivation);
-			return 1 + (Billrun_Utils_Time::getDaySpanDiff($this->activation, $this->cycle->end(),$cycleSpan) );
+			return 1 + (Billrun_Utils_Time::getDaysSpanDiffUnix($this->activation, $this->cycle->end(),$cycleSpan) );
 		}
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation > $this->cycle->start() && $this->deactivation <= $this->cycle->end()) {
 			$endActivation = strtotime('-1 second', $this->deactivation);
-			return Billrun_Utils_Time::getDaySpanDiff($this->activation, $endActivation,$cycleSpan);
+			return Billrun_Utils_Time::getDaysSpanDiffUnix($this->activation, $endActivation,$cycleSpan);
 		}
 
 		return null;
+	}
+
+	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
+
+		if (empty($this->deactivation)  ) {
+			return null;
+		}
+
+		// get a refund for a cancelled plan paid upfront
+		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
+			 ||
+			$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
+			) {
+			return null;
+		}
+
+		$formatCycleStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+		$formatCycleEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end()-1);
+
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
+
+
+		$lastUpfrontCharge = $this->getPriceForcycle($cycle);
+		$endActivation  = strtotime('-1 second', $this->deactivation);
+		$refundFraction = 1- Billrun_Utils_Time::getDaysSpanDiffUnix($this->cycle->start(), $endActivation, $cycleSpan);
+
+		return array( 'value' => -$lastUpfrontCharge * $refundFraction,
+			'start' => $this->activation,
+			'end' => $this->deactivation);
 	}
 }

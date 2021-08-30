@@ -324,7 +324,7 @@ class Billrun_Utils_Time {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
 
-		return ($minDate->diff($to)->days+1) / $daySpan;
+		return ($minDate->diff($maxDate)->days+1) / $daySpan;
 	}
 
 	/**
@@ -337,7 +337,7 @@ class Billrun_Utils_Time {
 		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
 		$formatedTo = date(Billrun_Base::base_dateformat,$to);
 
-		return static::getDaySpanDiff($formatedFrom, $formatedTo, $daySpan);
+		return static::getDaysSpanDiff($formatedFrom, $formatedTo, $daySpan);
 	}
 
 	/**
@@ -350,7 +350,7 @@ class Billrun_Utils_Time {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
 
-		return $minDate->diff($to)->days;
+		return $minDate->diff($maxDate)->days;
 	}
 
 
