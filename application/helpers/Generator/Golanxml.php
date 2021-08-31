@@ -774,7 +774,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$this->writer->endElement();
 					$access_charged_in_plan = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'])
 										&& is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'])
-											? array_filter($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'],function($i){return  !empty($i['totals']['call']) && array_sum($i['totals']['call']) > 0; })
+											? array_filter($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['in_plan']['base'],function($i){return  !empty($i['totals']['call']['cost']) && array_sum($i['totals']['call']['cost']) > 0; })
 											: array();
 					$over_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['over_plan']['base'] : array();
 					$out_plan_base = isset($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) && is_array($subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base']) ? $subscriber['breakdown'][$planToCharge['plan']][$planUniqueId]['out_plan']['base'] : array();
