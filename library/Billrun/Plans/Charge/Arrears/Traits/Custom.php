@@ -45,8 +45,8 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		$adjustedDeactivation = (empty($this->deactivation) || (!$this->proratedEnd && !$this->isTerminated || !$this->proratedTermination && $this->isTerminated ) ? $this->cycle->end() : $this->deactivation - 1);
 		$formatEnd = date(Billrun_Base::base_dateformat, min( $adjustedDeactivation, $this->cycle->end() - 1) );
 
-		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatStart,$formatCycleEnd);
-		$this->startOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatStart,$cycleSpan);
+		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
+		$this->startOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatCycleStart,$cycleSpan);
 		$this->endOffset = Billrun_Utils_Time::getDaysSpanDiff($formatActivation, $formatEnd,$cycleSpan);
 	}
 
