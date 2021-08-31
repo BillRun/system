@@ -255,14 +255,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
-            if (in_array($row['stamp'], $this->rowsStamps)) {
+            if (isset($this->rowsStamps[$row['stamp']])) {
                 Billrun_Factory::log()->log("Skipping stamp {$row['stamp']} as it was already loaded", Zend_Log::DEBUG);
                 continue;
             }
             
             Billrun_Factory::log()->log("start getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
-            $this->rowsStamps[] = $rawRow['stamp'];
+            $this->rowsStamps[$rawRow['stamp']] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
             Billrun_Factory::log()->log("done getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $count++;
@@ -451,7 +451,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function markAsExported() {
         $query = array(
             'stamp' => array(
-                '$in' => $this->rowsStamps,
+                '$in' => array_values($this->rowsStamps),
             ),
         );
         $update = array(
