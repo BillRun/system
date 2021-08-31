@@ -179,15 +179,15 @@ class Billrun_Parser_Xml {
         }
     }
     
-    protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild ,$data){
-        foreach($this->getChildren($data) as $child => $childData){
-            if ($child === $repeatedTags[$segment]['repeatedTag'][count($repeatedTags[$segment]['repeatedTag']) - 1]){
-                return $data;
-            }
-        }
-    }
-    
-    protected function parseLine($segment, $currentChild, $data) {
+   protected function getSegmentFixedTag($segment, $repeatedTags, $currentChild, $data) {
+		foreach ($this->getChildren($data) as $child => $childData) {
+			if ($child === $repeatedTags[$segment]['repeatedTag'][array_search($currentChild, $repeatedTags[$segment]['repeatedTag']) + 1]) {
+				return $data;
+			}
+		}
+	}
+
+	protected function parseLine($segment, $currentChild, $data) {
         $this->{$segment.'RowsNum'}++;
         for ($i = 0; $i < count($this->input_array[$segment]); $i++) {
             $SubPath = trim(str_replace(($this->commonPath . '.' . $currentChild), "", $this->input_array[$segment][$i]['path']), $this->pathDelimiter);
