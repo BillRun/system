@@ -255,6 +255,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
+            if (in_array($row['stamp'], $this->rowsStamps)) {
+                Billrun_Factory::log()->log("Skipping stamp {$row['stamp']} as it was already loaded", Zend_Log::DEBUG);
+                continue;
+            }
+            
             Billrun_Factory::log()->log("start getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
             $this->rowsStamps[] = $rawRow['stamp'];
