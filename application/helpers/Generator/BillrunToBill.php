@@ -24,6 +24,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $logo = null;
 	protected $confirmDate;
 	protected $sendEmail = true;
+	protected $sendToRremoteServer = false;
 	protected $filtration = null;
 	protected $invoicing_days = [];
 
@@ -34,6 +35,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		if (isset($options['send_email'])) {
 			$this->sendEmail = $options['send_email'];
+		}
+		if (isset($options['send_to_remote_server'])) {
+			$this->sendToRremoteServer = $options['send_to_remote_server'];
 		}
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
 			$this->invoicing_days = !empty($options['invoicing_days']) ? [$options['invoicing_days']] : null;
@@ -86,8 +90,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('afterInvoicesConfirmation', array($invoices, (string) $this->stamp));
 		if (count($invoicesIds) > 0) {
 			$this->handleSendInvoicesByMail($invoicesIds);
+			$this->handleSendInvoicesRemoteServer($invoices);
 		} else {
 			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
+			Billrun_Factory::log()->log('There are no invoices to send to remore server. No files was moved.', Zend_Log::INFO);
 		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
@@ -245,7 +251,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		);
 	}
 	
-	
+
 	public function handleSendInvoicesByMail($invoices) {
 		if (!$this->sendEmail) {
 			return;
@@ -257,6 +263,60 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'invoices' => $invoices,
 		);
 		Billrun_Factory::emailSenderManager($options)->notify();
+	}
+	
+	public function handleSendInvoicesRemoteServer($invoices) {
+		if (!$this->sendToRremoteServer) {
+			return;
+		}
+		$connections = $this->getActiveInvoicesRemoteServerSenders($invoices);
+		foreach ($connections as $connection) {
+			$sender = $connection['sender'];
+			if ($sender) {
+				$files = $connection['files'];
+				if (!$sender->send($files)) {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::INFO);
+				} else {
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
+				}
+			} else {
+					Billrun_Factory::log()->log("Cannot get sender {$connection['name']}, files fill not be moved: " . print_R($files, 1), Zend_Log::ERR);
+			}
+		}
+		Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
+	}
+	
+	protected function getActiveInvoicesRemoteServerSenders($invoices) {
+		$output = [];
+		$invoices_senders = Billrun_Factory::config()->getConfigValue('invoice_export.senders', []);
+		foreach ($invoices_senders as $invoices_sender) {
+			$is_active = Billrun_Util::getIn($invoices_sender, 'active', false);
+			if (!$is_active) {
+				continue;
+			}
+			$conditions = Billrun_Util::getIn($invoices_sender, 'conditions', []);
+			foreach ($invoices as $invoice) {
+				if ($this->isConditionsMeet($invoice, $conditions)) {
+					$connections = Billrun_Util::getIn($invoices_sender, 'connections', []);
+					foreach ($connections as $connection) {
+						$sender_hash = md5($connection['host'].$connection['user'].$connection['password'].$connection['remote_directory']);
+						if (!array_key_exists($sender_hash, $output)) {
+							$sender = Billrun_Sender::getInstance($connection);
+							$output[$sender_hash]['name'] = $connection['name'];
+							if ($sender) {
+								$output[$sender_hash]['sender'] = $sender;
+							} else {
+								$output[$sender_hash]['sender'] = null;
+							}
+						} else if (is_null($output[$sender_hash])) {
+							continue;
+						}
+						$output[$sender_hash]['files'][] = $invoice['invoice_file'];
+					}
+				}
+			}
+		}
+		return $output;
 	}
 	
 	protected function updateDueDate($invoice) {
