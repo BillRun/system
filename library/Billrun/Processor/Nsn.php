@@ -127,7 +127,8 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 
 			//add trailer data
 			$processorData = &$this->getData();
-			$processorData['trailer'] = $this->updateBlockData($trailer, $header, []);
+			$processorData['trailer'] = !empty($trailer = $this->updateBlockData($trailer, $header, [])) ? $trailer : array('trailer' => TRUE);
+			$processedData['header'] = !empty($header) ? $header : array('header' => TRUE);
 		}
 		return true;
 	}
