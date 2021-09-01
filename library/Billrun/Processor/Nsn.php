@@ -36,7 +36,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 		$this->headerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_header_length', 0));
 		$this->trailerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_trailer_length', 0));
 		$this->nsn_record_alignment = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_record_alignment', 0));
-		$this->save_block_header = isset($options['processor']['save_block_header']) ? $options['processor']['save_block_header'] : false;
+		$this->save_block_header = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.save_block_header', 0));
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
