@@ -129,6 +129,9 @@ class Send_fileAction extends Action_Base {
 				array('exported_time' => array('$exists' => false)),
 			)
 		];
+		if (isset($options['file_name'])) {
+			$query['file_name'] = $options['file_name'];
+		}
 		$relevant_files = Billrun_Factory::db()->logCollection()->query($query)->cursor();
 		if (count($relevant_files) == 0) {
 			$this->_controller->addOutput("No files to send");
