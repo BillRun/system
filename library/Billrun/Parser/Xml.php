@@ -193,7 +193,7 @@ class Billrun_Parser_Xml {
 				$SubPath = '//' . $this->name_space_prefix . ':' . str_replace(".", "/" . $this->name_space_prefix . ':', $SubPath);
 			}
 			$ReturndValue = $data->xpath($SubPath);
-			$value = $this->getValue($ReturndValue, $segment, $field_index);
+			$value = $this->getValue($ReturndValue, $segment, $i);
 			$this->{$segment . 'Rows'}[$this->{$segment . 'RowsNum'} - 1][$this->input_array[$segment][$i]['name']] = $value;
 		}
 	}
