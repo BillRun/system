@@ -128,7 +128,7 @@ class Billrun_Billingcycle {
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null) {
+	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null,$planConfig = null) {
 		if($timestamp === null) {
 			$timestamp = time();
 		}
@@ -137,12 +137,25 @@ class Billrun_Billingcycle {
 			$config = Billrun_Factory::config();
 			$dayofmonth = $config->getConfigChargingDay();
 		}
+
 		$format = "Ym";
+		if(!empty($planConfig)) {
+			$month = date('m',$timestamp);
+			foreach(Billrun_Utils_Cycle::getPlanCycleMonths($planConfig) as  $legitimateMonth) {
+				if($month <=  $legitimateMonth) {
+					$month = $legitimateMonth;
+					break;
+				}
+			}
+			$format = 'Y'.str_pad($month,2,'0',STR_PAD_LEFT);
+
+		}
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
 			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
+
 		return $key;
 	}
 
@@ -173,8 +186,24 @@ class Billrun_Billingcycle {
 	 * @param string $key - Current key
 	 * @return string The following key
 	 */
-	public static function getFollowingBillrunKey($key) {
-		if(!empty(self::$followingCycleKeysTable[$key])) {
+	public static function getFollowingBillrunKey($key, $planConfig  = null ) {
+
+		if(!empty($planConfig)) { // using  none querterly cycle
+			$currentMonthNumber = 0 + (substr($key,-2));
+			$year = substr($key,0,4);
+			$nextCycleMonth = false;
+			$monthsList = Billrun_Utils_Cycle::getPlanCycleMonths($planConfig);
+			foreach ($monthsList as  $month) {
+				if($month > $currentMonthNumber && !$nextCycleMonth  || $nextCycleMonth > $month ) {
+					$nextCycleMonth =  str_pad($month,2,'0',STR_PAD_LEFT);
+				}
+			}
+			if(!$nextCycleMonth) {
+				$nextCycleMonth = str_pad(reset($monthsList),2,'0',STR_PAD_LEFT);
+				$year++;
+			}
+			return "${year}${nextCycleMonth}";
+		} else if(!empty(self::$followingCycleKeysTable[$key])) { //regular cached  cycle
 			return self::$followingCycleKeysTable[$key];
 		}
 		$datetime = $key . "01000000";

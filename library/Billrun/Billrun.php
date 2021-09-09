@@ -971,22 +971,26 @@ class Billrun_Billrun {
 	 * @return string billrun_key
 	 * @todo create an appropriate index on billrun collection
 	 */
-	public static function getActiveBillrun($invoicing_day = null) {
+	public static function getActiveBillrun($invoicing_day = null,$planConfig = null) {
 		$config = Billrun_Factory::config();
-		if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day])) {
+		$billrunRegex =  '^\d{6}$';
+		if(!empty($planConfig['recurrence']['frequency'])) {
+			$legitimateMonths = array_map(function($m){ return str_pad($m,2,'0',STR_PAD_LEFT);}, Billrun_Utils_Cycle::getPlanCycleMonths($planConfig));
+			$billrunRegex =  '^\d{4}('.implode('|',$legitimateMonths).')$';
+		} else if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day]) ) {
 			return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
 		} else {
 			if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
 				return self::$activatedBillrunsByInvoicingDay[0];
 			}
 		}
-		$query = array(
-			'billrun_key' => array('$regex' => '^\d{6}$'),
-		);
+
+		$query = [	'billrun_key' => [ '$regex' =>  $billrunRegex ] ];
+
 		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
 			$query = array(
 				'attributes.invoicing_day' => $invoicing_day,
-		);
+			);
 		}
 		$now = time();
 		$sort = array(
@@ -996,22 +1000,24 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$config = Billrun_Factory::config();
-		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
+		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day,$planConfig) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now,null, $planConfig);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
-			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key']);
+			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'],$planConfig);
 			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
 		}
-		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
-			self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
-		} else {
-			self::$activatedBillrunsByInvoicingDay[0] = $active_billrun;
+		if(empty($planConfig)) {
+			if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
+				self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
+			} else {
+				self::$activatedBillrunsByInvoicingDay[0] = $active_billrun;
+			}
 		}
 		return $active_billrun;
 	}

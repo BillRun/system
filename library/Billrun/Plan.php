@@ -359,6 +359,13 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->data['recurrence']['periodicity'];
 	}
 
+		public function getRecurrenceConfig() {
+		return $this->data['recurrence'];
+	}
+
+	public function isNonMonthly() {
+		return !empty($this->data['recurrence']['frequency']) && $this->data['recurrence']['frequency'] != 1;
+	}
 	/**
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.

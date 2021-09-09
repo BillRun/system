@@ -50,4 +50,19 @@ class Billrun_Utils_Cycle {
 
 		return Billrun_Utils_Time::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey))) % $recurrenceConfig['frequency'];
 	}
+
+	public static function getPlanCycleMonths($planConfig) {
+		if(empty($planConfig['recurrence'])) {
+			Billrun_Factory::log('getPlanCycleMonths: Incorrect configuration provided',Zend_Log::ERR);
+			throw new Exception('getPlanCycleMonths: Incorrect configuration provided');
+		}
+		$startMonth = 	!empty($planConfig['activation_date']) ? date('m',$planConfig['activation_date']->sec) : $planConfig['recurrence']['start'];
+		$months = [];
+		for($i=0; $i < 12; $i += $planConfig['recurrence']['frequency']) {
+			$months[] = ($i + $startMonth - 1) % 12 + 1;
+		}
+		asort( $months );
+
+		return $months;
+	}
 }
