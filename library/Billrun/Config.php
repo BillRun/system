@@ -221,7 +221,7 @@ class Billrun_Config {
 			}
 		} catch (MongoException $e) {
 			// TODO: Exception should be thrown and handled by the error controller.
-			error_log('cannot load database config');
+			error_log('MongoException - cannot load database config. Message: ' . $e->getMessage() . '. Trace: ' . $e->getTraceAsString());
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
