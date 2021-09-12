@@ -871,7 +871,7 @@
 		},
 		{
 			"from": "time*2019-05-31T22:00:00Z",
-			"key": "SOFT",
+			"key": "SOFT2",
 			"description": "SOFT",
 			"params": {
 				"conditions": [
