@@ -261,6 +261,23 @@ class CreditAction extends ApiAction {
 			}
 		}
 		
+		// credit custom fields
+		if (isset($credit_row['uf'])) {
+			if (!isset($ret['uf'])) {
+				$ret['uf'] = array();
+			}
+			$entry = json_decode($credit_row['uf'], JSON_OBJECT_AS_ARRAY);
+			$ufFields = Billrun_Factory::config()->getConfigValue('lines.credit.fields', array());
+			foreach ($ufFields as $field) {
+				$key = $field['field_name'];
+				if (!empty($field['mandatory']) && !isset($entry[$key])) {
+					$this->setError('Following field is missing: uf.' . $key);
+				} else if (isset($entry[$key])) {
+					$ret['uf'][$key] = $entry[$key];
+				}
+			}
+		}
+
 		return $ret;
 	}
 	
