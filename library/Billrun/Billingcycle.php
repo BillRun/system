@@ -139,21 +139,21 @@ class Billrun_Billingcycle {
 		}
 
 		$format = "Ym";
-		if(!empty($planConfig)) {
-			$month = date('m',$timestamp);
-			foreach(Billrun_Utils_Cycle::getPlanCycleMonths($planConfig) as  $legitimateMonth) {
-				if($month <=  $legitimateMonth) {
-					$month = $legitimateMonth;
-					break;
-				}
-			}
-			$format = 'Y'.str_pad($month,2,'0',STR_PAD_LEFT);
 
-		}
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
 			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
+		}
+
+		//If we're on a non monthly plan
+		if(!empty($planConfig['recurrence']['frequency'])) {
+			// Check iof the current billrun key is a legitimate non monthly key
+			$onLegitimateCycleRegex = '/\d{4}('.implode('|', Billrun_Utils_Cycle::getPlanCycleMonths($planConfig) ).')/';
+			if(!preg_match($onLegitimateCycleRegex, $key))  {
+				//if not move to the next legitimaate billrun key.
+				$key = static::getFollowingBillrunKey($key, $planConfig);
+			}
 		}
 
 		return $key;
@@ -188,7 +188,7 @@ class Billrun_Billingcycle {
 	 */
 	public static function getFollowingBillrunKey($key, $planConfig  = null ) {
 
-		if(!empty($planConfig)) { // using  none querterly cycle
+		if(!empty($planConfig['recurrence']['frequency'])) { // using  none querterly cycle
 			$currentMonthNumber = 0 + (substr($key,-2));
 			$year = substr($key,0,4);
 			$nextCycleMonth = false;
@@ -199,6 +199,8 @@ class Billrun_Billingcycle {
 				}
 			}
 			if(!$nextCycleMonth) {
+				//The current  month key  is bigger then the largest legitimate billing month so
+				// the next billrunkey  must be  in the first legitimate month next year
 				$nextCycleMonth = str_pad(reset($monthsList),2,'0',STR_PAD_LEFT);
 				$year++;
 			}

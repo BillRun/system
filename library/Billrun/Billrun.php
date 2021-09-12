@@ -973,19 +973,18 @@ class Billrun_Billrun {
 	 */
 	public static function getActiveBillrun($invoicing_day = null,$planConfig = null) {
 		$config = Billrun_Factory::config();
-		$billrunRegex =  '^\d{6}$';
-		if(!empty($planConfig['recurrence']['frequency'])) {
-			$legitimateMonths = array_map(function($m){ return str_pad($m,2,'0',STR_PAD_LEFT);}, Billrun_Utils_Cycle::getPlanCycleMonths($planConfig));
-			$billrunRegex =  '^\d{4}('.implode('|',$legitimateMonths).')$';
-		} else if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day]) ) {
-			return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
-		} else {
-			if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
-				return self::$activatedBillrunsByInvoicingDay[0];
+
+		if(empty($planConfig['recurrence']['frequency'])) {
+			if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day]) ) {
+				return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
+			} else {
+				if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
+					return self::$activatedBillrunsByInvoicingDay[0];
+				}
 			}
 		}
 
-		$query = [	'billrun_key' => [ '$regex' =>  $billrunRegex ] ];
+		$query = [	'billrun_key' => [ '$regex' =>  '^\d{6}$' ] ];
 
 		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
 			$query = array(
@@ -1000,7 +999,9 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$config = Billrun_Factory::config();
-		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day,$planConfig) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now,null, $planConfig);
+		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ?
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day,$planConfig) :
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now,null, $planConfig);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;

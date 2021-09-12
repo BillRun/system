@@ -355,14 +355,27 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->data['recurrence']['unit'];
 	}
 
+	/**
+	 * @deprecated
+	 * (replaced by non-monthly plans)
+	 * Get the plan periodicity value
+	 */
 	public function getPeriodicity() {
 		return $this->data['recurrence']['periodicity'];
 	}
 
-		public function getRecurrenceConfig() {
+	/**
+	 * get the plan  recurence (frequency/start month) configuration
+	 * @returns the plan recurence configuration (frequency/start month)
+	 */
+	public function getRecurrenceConfig() {
 		return $this->data['recurrence'];
 	}
 
+	/**
+	 * Is the current plan is a non monthly/quertely plan
+	 * @returns  true if the plan is configred to be a non-monthly plan false otherwise
+	 */
 	public function isNonMonthly() {
 		return !empty($this->data['recurrence']['frequency']) && $this->data['recurrence']['frequency'] != 1;
 	}
