@@ -271,7 +271,7 @@ class CreditAction extends ApiAction {
 			foreach ($ufFields as $field) {
 				$key = $field['field_name'];
 				if (!empty($field['mandatory']) && !isset($entry[$key])) {
-					$this->setError('Following field/s are missing: ' . $key);
+					$this->setError('Following field is missing: uf.' . $key);
 				} else if (isset($entry[$key])) {
 					$ret['uf'][$key] = $entry[$key];
 				}
