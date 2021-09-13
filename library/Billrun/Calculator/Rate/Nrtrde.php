@@ -53,6 +53,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$alpha = $row['alpha3'];
+		$sender = $row['sender'];
 		$line_time = $row['urt'];
 		if(!$this->isRatingNeeded($row,$usage_type)) {
 			Billrun_Factory::log("Rating  for line {$row['stamp']}  is ignored due to configuration.");
@@ -66,6 +67,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 				'$match' => array(
 					 '$or' => [
 							[ 'params.serving_networks' => new MongoRegex("/^$alpha/")],
+							[ 'params.serving_networks' => $sender ],
 							[ 'params.serving_networks' => "/.*/"]
 						],
 					'to' => array(
