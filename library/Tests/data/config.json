@@ -1886,6 +1886,10 @@
 														"on_true": {
 															"key": "rate",
 															"regex": "/123/"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1956,6 +1960,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1983,6 +1991,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2010,6 +2022,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2071,6 +2087,11 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},
+															"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2399,11 +2420,6 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
 													}
 												}
@@ -2430,12 +2446,8 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
+														
 													}
 												}
 											}
