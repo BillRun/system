@@ -92,8 +92,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$this->handleSendInvoicesByMail($invoicesIds);
 			$this->handleSendInvoicesRemoteServer($invoices);
 		} else {
-			Billrun_Factory::log()->log('There are no invoices to send by email. No mail was sent.', Zend_Log::INFO);
-			Billrun_Factory::log()->log('There are no invoices to send to remore server. No files was moved.', Zend_Log::INFO);
+			Billrun_Factory::log()->log('There are no invoices to send by email \ move to remote server. No mail was sent \ moved.', Zend_Log::INFO);
 		}
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
@@ -275,12 +274,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			if ($sender) {
 				$files = $connection['files'];
 				if (!$sender->send($files)) {
-					Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::INFO);
+					Billrun_Factory::log()->log("Move to sender {$connection['name']} - failed!", Zend_Log::NOTICE);
 				} else {
 					Billrun_Factory::log()->log("Move to sender {$connection['name']} - done", Zend_Log::INFO);
 				}
 			} else {
-					Billrun_Factory::log()->log("Cannot get sender {$connection['name']}, files fill not be moved: " . print_R($files, 1), Zend_Log::ERR);
+					Billrun_Factory::log()->log("Cannot get sender {$connection['name']}, files will not be moved.", Zend_Log::ERR);
 			}
 		}
 		Billrun_Factory::log()->log("Billrun_Exporter::move - done", Zend_Log::INFO);
