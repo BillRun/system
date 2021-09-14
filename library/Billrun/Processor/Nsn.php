@@ -27,6 +27,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 	
 	protected $fileStats = null;
 	
+	protected $save_block_header;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -35,6 +36,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 		$this->headerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_header_length', 0));
 		$this->trailerLength = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_trailer_length', 0));
 		$this->nsn_record_alignment = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.nsn_record_alignment', 0));
+		$this->save_block_header = intval(Billrun_Util::getIn($this->nsnConfig, 'constants.save_block_header', 0));
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
@@ -127,7 +129,8 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 
 			//add trailer data
 			$processorData = &$this->getData();
-			$processorData['trailer'] = $this->updateBlockData($trailer, $header, []);
+			$processorData['trailer'] = !empty($trailer = $this->updateBlockData($trailer, $header, [])) ? $trailer : array('trailer' => TRUE);
+			$processedData['header'] = !empty($header) ? $header : array('header' => TRUE);
 		}
 		return true;
 	}
@@ -165,7 +168,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_Binary {
 	 * @return the updated log  trailer entry. 
 	 */
 	protected function updateBlockData($trailer, $header, $logTrailer) {
-		if (Billrun_Factory::config()->getConfigValue('nsn.processor.save_block_header', false)) {
+		if ($this->save_block_header) {
 			if (!isset($logTrailer['block_data'])) {
 				$logTrailer['block_data'] = array();
 			}
