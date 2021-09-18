@@ -55,7 +55,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['cycle'] = $chargeData['cycle'];
 		}
 		$entry['stamp'] = $this->generateLineStamp($entry);
-		foreach(self::$copyFromChargeData as $field) {
+		$chargeFieldsToCopy = array_merge(Billrun_Factory::config()->getConfigValue('plans.plan_charge_fields_to_copy.fields',[]),self::$copyFromChargeData);
+		foreach($chargeFieldsToCopy as $field) {
 			if( isset($chargeData[$field]) ) {
 				$entry[$field] = $chargeData[$field];
 			}
