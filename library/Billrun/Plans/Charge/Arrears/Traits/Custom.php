@@ -30,4 +30,18 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		return Billrun_Plan::getPriceByTariff($tariff, $startOffset/$frequency, $endOffset/$frequency ,$activation);
 	}
 
+	protected function getProrationData($price) {
+		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
+		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
+		$frequency = $this->recurrenceConfig['frequency'];
+		return [	'start_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation ,true,false,false, $frequency)),
+					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start(),
+					'prorated_start' =>  $this->proratedStart ,
+					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
+					'end_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
+					'prorated_end' =>  $endProration
+				];
+	}
+
 }

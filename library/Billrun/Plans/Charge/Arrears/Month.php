@@ -29,20 +29,12 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		$charges = array();
 		foreach ($this->price as $tariff) {
 			$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset ,$this->activation);
-			$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
-			$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
-			$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 			if (!empty($price)) {
-				$charges[] = array('value' => $price['price'] * $quantity,
-					'start_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation )),
-					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
-					'prorated_start' =>  $this->proratedStart ,
-					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation) : $this->cycle->end(),
-					'end_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation)),
-					'prorated_end' =>  $endProration,
-
-					'cycle' => $tariff['from'],
-					'full_price' => floatval($tariff['price']) );
+				$prorationData = $this->getProrationData($price);
+				$charges[] = array_merge( [	'value' => $price['price'] * $quantity,
+											'cycle' => $tariff['from'],
+											'full_price' => floatval($tariff['price']) ],
+										$prorationData);
 					
 			}
 		}
@@ -72,6 +64,19 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	 */
 	protected function getTariffForMonthCover($tariff, $startOffset, $endOffset ,$activation = FALSE) {
 		return Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset ,$activation);
+	}
+
+	protected function getProrationData($price) {
+		$endProration =  $this->proratedEnd && !$this->isTerminated || ($this->proratedTermination && $this->isTerminated);
+		$proratedActivation =  $this->proratedStart  || $this->startOffset ?  $this->activation :  $this->cycle->start();
+		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
+		return [	'start_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation )),
+					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation) : $this->cycle->start(),
+					'prorated_start' =>  $this->proratedStart ,
+					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation) : $this->cycle->end(),
+					'end_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation)),
+					'prorated_end' =>  $endProration
+				];
 	}
 	
 }
