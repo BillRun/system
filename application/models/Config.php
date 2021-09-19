@@ -1312,6 +1312,9 @@ class ConfigModel {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
+			$calculatedFields = array_map(function($mapping) {
+				return $mapping['target_field'];
+			}, $fileSettings['processor']['calculated_fields'] ?? []);
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$volumeFields = $this->getVolumeFields($fileSettings);
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
@@ -1389,10 +1392,13 @@ class ConfigModel {
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
+			$calculatedFields = array_merge($calculatedFields, array_map(function($field) {
+				return 'cf.' . $field;
+			}, $calculatedFields));
 			$additionalFields = array('computed');
-			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields, $calculatedFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', array_unique($diff)));
-		}
+			}
 		}
 		return true;
 	}

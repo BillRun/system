@@ -7,7 +7,7 @@
  */
 
 
-require_once(APPLICATION_PATH . '/library/OAuth2/Autoloader.php');
+//require_once(APPLICATION_PATH . '/library/OAuth2/Autoloader.php');
 
 /**
  * Billing oauth2 controller

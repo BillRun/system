@@ -380,6 +380,9 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
 }
+if (typeof lastConfig['collection']['settings'] === 'undefined') {
+	lastConfig['collection']['settings'] = {};
+}
 if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
     lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
 }
@@ -1164,11 +1167,16 @@ db.archive.dropIndex('call_reference_1')
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
-	sh.shardCollection("billing.archive", {"stamp": 1});
+	var _dbName = db.getName();
+	sh.shardCollection(_dbName + ".archive", {"stamp": 1});
 	// BRCD-2099 - sharding rates, billrun and balances
-	sh.shardCollection("billing.rates", { "key" : 1 } );
-	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
-	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
+	sh.shardCollection(_dbName + ".rates", { "key" : 1 } );
+	sh.shardCollection(_dbName + ".billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection(_dbName + ".balances",{ "aid" : 1, "sid" : 1 }  );
+        // BRCD-2244 audit sharding
+	sh.shardCollection(_dbName + ".audit",  { "stamp" : 1 } );
+        // BRCD-2185 sharding queue as added support for sharded collection transaction
+	sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
 }
 /*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
 lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
