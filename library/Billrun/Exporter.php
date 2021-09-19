@@ -184,7 +184,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     protected function getLimit() {
         $querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
-        return $querySettings['limit'] ?? null;
+        if (empty($querySettings['limit'])) {
+            return null;
+        }
+        
+        return min($querySettings['limit'], Billrun_Factory::config()->getConfigValue('db.export_max_limit', 200000));
     }
 
     /**
