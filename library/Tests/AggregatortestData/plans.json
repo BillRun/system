@@ -771,7 +771,6 @@
 				},
 				{
 					"from": "time*2019-06-03T00:00:00Z",
-					"from": "time*2019-06-03T00:00:00Z",
 					"name": "CONDITIONAL_CHARGES_PLAN",
 					"price": [
 						{

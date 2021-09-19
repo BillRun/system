@@ -18,6 +18,7 @@
 
      use Tests_SetUp;
 
+     protected $fails;
      protected $ratesCol;
      protected $plansCol;
      protected $linesCol;
@@ -42,15 +43,15 @@
      );
      public $LatestResults;
      public $sumBillruns;
-     protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span></br>';
-     protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span></br>';
+	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span><br>';
+	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span><br>';
      protected $tests = array(
          /* check if the pagination work */
          array('test' => array('test_number' => 1, 'aid' => 0, 'function' => array('pagination'), 'options' => array("page" => 3000, "size" => 3000, "stamp" => "201805")),
              'expected' => array(),
              'postRun' => array()),
          /* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-         array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
+		array('test' => array('test_number' => 2, "aid" => 3, 'function' => array('basicCompare', 'invoice_exist', 'lineExists', 'passthrough'), 'invoice_path' => '201805_3_101.pdf', 'options' => array('generate_pdf' => 1, "stamp" => "201805", "force_accounts" => array(3))),
              'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
                  'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
              'postRun' => array()),
@@ -174,18 +175,18 @@
          /*   Subscriber with some units (aid:62,sid:63 ,service:iphonex) */
          array(
              'test' => array('test_number' => 28, "aid" => 62, 'sid' => 63, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(62))),
-             'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201807', 'aid' => 62, 'after_vat' => array("63" => 2457), 'total' => 2457, 'vatable' => 2100, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201807', 'aid' => 62, 'after_vat' => array("63" => 2457), 'total' => 2457, 'vatable' => 2100, 'vat' => 17),
                  'line' => array('types' => array('flat', 'service'))),
          ),
          array(
              'test' => array('test_number' => 29, "aid" => 62, 'sid' => 63, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(62))),
-             'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201808', 'aid' => 62, 'after_vat' => array("63" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201808', 'aid' => 62, 'after_vat' => array("63" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
                  'line' => array('types' => array('flat'))),
          ),
          /* Check charge of a subscriber that reopened the same plan in the same cycle */
          array(
              'test' => array('test_number' => 30, "aid" => 64, 'sid' => 65, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(64))),
-             'expected' => array('billrun' => array('invoice_id' => 127, 'billrun_key' => '201807', 'aid' => 64, 'after_vat' => array("65" => 89.7), 'total' => 89.7, 'vatable' => 76.666666667, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201807', 'aid' => 64, 'after_vat' => array("65" => 89.7), 'total' => 89.7, 'vatable' => 76.666666667, 'vat' => 17),
                  'line' => array('types' => array('flat'))),
          ),
 //		/* force_accounts overrides invoice ids when forcing 10 accounts at once */
@@ -196,7 +197,7 @@
          /* cdr non vatable and cradit not vatable */
          array(
              'test' => array('test_number' => 32, "aid" => 1, 'sid' => 2, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(1))),
-             'expected' => array('billrun' => array('invoice_id' => 128, 'billrun_key' => '201807', 'aid' => 1, 'after_vat' => array("2" => 307), 'total' => 307, 'vatable' => 100, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201807', 'aid' => 1, 'after_vat' => array("2" => 307), 'total' => 307, 'vatable' => 100, 'vat' => 17),
                  'line' => array('types' => array('flat', 'non', 'credit', 'service'))),
          ),
          //attributes
@@ -211,7 +212,7 @@
 ////		array(
 ////			'preRun' => array('changeConfig',),
 ////			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
-////			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
+////			'expected' => array('billrun' => array( 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
 ////				'line' => array(
 //			"discount_subject": {
 //				"plan": {
@@ -225,18 +226,18 @@
          ),
          //BRCD-1725
          array('test' => array('test_number' => 35, "aid" => 73, 'sid' => 74, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201901", "force_accounts" => array(73))),
-             'expected' => array('billrun' => array('invoice_id' => 131, 'billrun_key' => '201901', 'aid' => 73, 'after_vat' => array("74" => 117))),
+             'expected' => array('billrun' => array( 'billrun_key' => '201901', 'aid' => 73, 'after_vat' => array("74" => 117))),
              'line' => array('types' => array('flat')),
              'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
          ),
          /* (not included in plan) service limited to X cycles - verify no charge / line since the X+1 cycle  + check BRCD-1730 */
          array('test' => array('test_number' => 36, "aid" => 75, 'sid' => 76, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(75))),
-             'expected' => array('billrun' => array('invoice_id' => 132, 'billrun_key' => '201807', 'aid' => 75, 'after_vat' => array("76" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201807', 'aid' => 75, 'after_vat' => array("76" => 234), 'total' => 234, 'vatable' => 200, 'vat' => 17),
                  'line' => array('types' => array('flat', 'service'))),
              'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1725'
          ),
          array('test' => array('test_number' => 37, "aid" => 75, 'sid' => 76, 'function' => array('planExist', 'basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(75))),
-             'expected' => array('billrun' => array('invoice_id' => 133, 'billrun_key' => '201808', 'aid' => 75, 'after_vat' => array("76" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+             'expected' => array('billrun' => array( 'billrun_key' => '201808', 'aid' => 75, 'after_vat' => array("76" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
                  'line' => array('types' => array('flat',))),
              'postRun' => array('saveId'),
              'jiraLink' => array('https://billrun.atlassian.net/browse/BRCD-1725',
@@ -244,24 +245,24 @@
              )
          ),
          array('test' => array('test_number' => 38, "aid" => 79, 'sid' => 78, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201903", "force_accounts" => array(79))),
-             'expected' => array('billrun' => array('invoice_id' => 134, 'billrun_key' => '201903', 'aid' => 79, 'after_vat' => array("78" => 117))),
+             'expected' => array('billrun' => array( 'billrun_key' => '201903', 'aid' => 79, 'after_vat' => array("78" => 117))),
              'line' => array('types' => array('flat', 'service')),
              'jiraLink' => 'https://billrun.atlassian.net/browse/BRCD-1758'
          ),
          //check prorated service - subscribers start in 05/03/19 with a prorated service need to pay for only 27 days
          array('test' => array('test_number' => 39, "aid" => 80, 'sid' => 81, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201904", "force_accounts" => array(80))),
-             'expected' => array('billrun' => array('invoice_id' => 135, 'billrun_key' => '201904', 'aid' => 80, 'after_vat' => array("81" => 101.903225))),
+             'expected' => array('billrun' => array( 'billrun_key' => '201904', 'aid' => 80, 'after_vat' => array("81" => 101.903225))),
              'line' => array('types' => array('flat', 'service')),
          ),
          //check prorated service - subscribers end in 05/03/19 with a prorated service need to pay for only 5 days
          array('test' => array('test_number' => 40, "aid" => 82, 'sid' => 83, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201904", "force_accounts" => array(82))),
-             'expected' => array('billrun' => array('invoice_id' => 136, 'billrun_key' => '201904', 'aid' => 82, 'after_vat' => array("83" => 18.870967742))),
+             'expected' => array('billrun' => array( 'billrun_key' => '201904', 'aid' => 82, 'after_vat' => array("83" => 18.870967742))),
              'line' => array('types' => array('flat', 'service')),
          ),
          //subscriber with duplicate service with diffrent invoice_id
          array('test' => array('test_number' => 41, "aid" => 26, 'function' => array('basicCompare', 'linesVSbillrun', 'lineExists', 'rounded', 'passthrough', 'totalsPrice'), 'options' => array("stamp" => "202003",
                      "force_accounts" => array(26))),
-             'expected' => array('billrun' => array('invoice_id' => 137, 'billrun_key' => '202003', 'aid' => 26, 'after_vat' => array("100" => 245.7), 'total' => 245.7, 'vatable' => 210, 'vat' => 17)),
+             'expected' => array('billrun' => array( 'billrun_key' => '202003', 'aid' => 26, 'after_vat' => array("100" => 245.7), 'total' => 245.7, 'vatable' => 210, 'vat' => 17)),
              'line' => array('types' => array('flat', 'service')),
              'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-1493",
          ),
@@ -380,6 +381,30 @@
 			'expected' => array('billrun' => array('billrun_key' => '202008', 'aid' => 187501, 'after_vat' => array("187500" => 113.22580645161288), 'total' => 113.22580645161288, 'vatable' => 96.77419354838709, 'vat' => 17),
                  'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2742",
          ),
+		array('test' => array('test_number' => 68, "aid" => 1770, 'sid' => 1771, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202005", "force_accounts" => array(1770))),
+			'expected' => array('billrun' => array('billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2492"
+		),
+		//BRCD-2993 with discount 
+		array('test' => array('test_number' => 69, "aid" => 2000000784, 'sid' =>290 , 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000784))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000784, 'after_vat' => array("290" => 29.08097389230968,"0"=>1.9565442), 'total' => 30.339039414890326, 'vatable' => 25.93080291870968 , 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//BRCD-2993 without discount 
+		array('test' => array('test_number' => 70, "aid" => 2000000785, 'sid' =>291 , 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000785))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000785, 'after_vat' => array("291" => 7.586449083870966,"0"=>1.9565442), 'total' => 9.542993283870967, 'vatable' => 7.5594141935483865 , 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//
+		array('test' => array('test_number' => 71, "aid" => 17975, 'sid' =>17976 , 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(17975))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 17975, 'after_vat' => array("17976" => 160.0258064516129), 'total' => 160.0258064516129, 'vatable' =>136.7741935483871 , 'vat' => 17)),
+			'line' => array('types' => array('flat','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2988"
+		),
+		//case for BRCD-2996 (It seems that the 'expandSubRevisions'  will not fully support  multiple termination of services  under the same  revision.)
+			array('test' => array('test_number' => 72, "aid" => 725, 'sid' =>825 , 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202102", "force_accounts" => array(725))),
+			'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' =>182.5806451612904 , 'vat' => 0)),
+			'line' => array('types' => array('flat','credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
+		),
 		array('test' => array('label' => 'test the prorated discounts days is rounded down', 'test_number' => 68, "aid" => 230, 'sid' => 80018, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202012", "force_accounts" => array(230))),
 			'expected' => array('billrun' => array('billrun_key' => '202012', 'aid' => 230, 'after_vat' => array("80018" => 35.778665181058486), 'total' => 35.778665181058486, 'vatable' => 30.58005571030641, 'vat' => 17),
                  'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3014",
@@ -406,7 +431,7 @@
 		),
 		array('test' => array('label' => 'test  subscriber with 2 discounts 1st about 3 month , from 02/12 to 02/03 2nd is about 26.32% forever , test thet the discount is created for 2 days in 03 ', 'test_number' => 74, "aid" => 13262, 'sid' => 82330,
 				'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202104", "force_accounts" => array(13262))),
-			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 13262, 'after_vat' => array("82330" => 50.917256177546115), 'total' => 50.917256177546115, 'vatable' => 43.51902237397104, 'vat' => 0),
+			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 13262, 'after_vat' => array("82330" => 52.045827657463285), 'total' => 52.045827657463285, 'vatable' =>44.48361338244725 , 'vat' =>17),
 				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3133",
 		),
 		array('test' => array('label' => 'test  subscriber with discount about 3 month , from 03/12 to 02/03 , test thet the discount is created for 3 days in 03 ', 'test_number' => 75, "aid" => 13263, 'sid' => 82331,
@@ -504,7 +529,7 @@
 			'expected' => array('billrun' => array('billrun_key' => '202104', 'aid' => 991663, 'after_vat' => array("991663" => 34.83892533021287), 'total' => 34.83892533021287, 'vatable' => 29.776859256592193, 'vat' => 17),
 				'line' => array('types' => array('flat'))), 'jiraLink' => "" * 1.17
          ),
-		array('test' => array('label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two', 'test_number' => 75, "aid" => 3082, 'sid' => array(3083,3084), 'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202106", "force_accounts" => array(3082))),
+		array('test' => array('label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two', 'test_number' => 94, "aid" => 3082, 'sid' => array(3083,3084), 'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202106", "force_accounts" => array(3082))),
 			'expected' => array('billrun' => array( 'billrun_key' => '202106', 'aid' => 3082, 'after_vat' => array("3083" => 175.5, "3084" => 175.5), 'total' => 351, 'vatable' => 300, 'vat' => 17),
 				'line' => array('types' => array('credit')))
 			
@@ -532,7 +557,7 @@
          $this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
          $this->balancesCol = Billrun_Factory::db()->discountsCollection();
          $this->billrunCol = Billrun_Factory::db()->billrunCollection();
-         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes']);
+         $this->construct(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts', 'taxes','charges']);
          $this->setColletions();
          $this->loadDbConfig();
      }
@@ -571,7 +596,7 @@
          foreach ($this->tests as $key => $row) {
 
              $aid = $row['test']['aid'];
-             $this->message .= 'test number : ' . $row['test']['test_number'];
+	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
 	         $this->message .= '<br>test label :  ' . $row['test']['label'];
 	      }
@@ -596,7 +621,10 @@
                      $function = array($row['test']['function']);
                  }
                  foreach ($function as $func) {
-                     $this->assertTrue($this->$func($key, $returnBillrun, $row));
+					$testFail = $this->assertTrue($this->$func($key, $returnBillrun, $row));
+					if (!$testFail) {
+						$this->fails .= "|---|<a href='#{$row['test']['test_number']}'>{$row['test']['test_number']}</a>";
+					}
                  }
              }
              $this->saveLatestResults($returnBillrun, $row);
@@ -612,6 +640,9 @@
                  }
              }
              $this->message .= '<p style="border-top: 1px dashed black;"></p>';
+         }
+		if ($this->fails) {
+			$this->message .= $this->fails;
          }
          print_r($this->message);
         $this->restoreColletions();
@@ -642,16 +673,16 @@
          $passed = TRUE;
          $billrun_key = $row['expected']['billrun']['billrun_key'];
          $aid = $row['expected']['billrun']['aid'];
-		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+	$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
          $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
          foreach ($jiraLink as $link) {
-             $this->message .= '</br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
+			$this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
-         $this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b></br> ' . '— aid : ' . $aid . '<br> — invoice_id: ' . $invoice_id . '<br> — billrun_key: ' . $billrun_key;
-         $this->message .= '</br><b> Result: </b> <br>';
+		$this->message .= '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . '<b> Expected: </b><br> ' . '— aid : ' . $aid . '<br> — billrun_key: ' . $billrun_key;
+		$this->message .= '<br><b> Result: </b> <br>';
          if (!empty($retun_billrun_key) && $retun_billrun_key == $billrun_key) {
              $this->message .= 'billrun_key :' . $retun_billrun_key . $this->pass;
          } else {
@@ -716,7 +747,7 @@
          if (Billrun_Util::isEqual($returnBillrun['totals']['after_vat'], $row['expected']['billrun']['total'], 0.0000001)) {
              $this->message .= "total after vat is : " . $returnBillrun['totals']['after_vat'] . $this->pass;
          } else {
-			$this->message .= " total after vat is  Expected is  : {$row['expected']['billrun']['total']}actaul result is  :  " . $returnBillrun['totals']['after_vat'] . $this->fail;
+			$this->message .= " total after vat is  Expected is  : {$row['expected']['billrun']['total']} actaul result is  :  " . $returnBillrun['totals']['after_vat'] . $this->fail;
              $passed = FALSE;
          }
          $vatable = (isset($row['expected']['billrun']['vatable']) ) ? $row['expected']['billrun']['vatable'] : null;
@@ -1086,20 +1117,22 @@
       * @param array $row current test case
       * @return boolean true if the test is pass and false if the tast is fail
       */
-     public function passthrough($key, $returnBillrun, $row) {
-         $passed = true;
-         $billrun = new Billrun_Account_Db;
-         $this->message .= "<b> passthrough_fields :</b> <br>";
-         $account = $billrun->getAccountsByQuery(array('aid' => $row['test']['aid'], 'type' => 'account'))->current()->getRawData();
-         $address = $account['address'];
-         if ($returnBillrun['attributes']['address'] === $address) {
-             $this->message .= "passthrough work well" . $this->pass;
-         } else {
-             $this->message .= "passthrough fill" . $this->fail;
-             $passed = false;
-         }
-         return $passed;
-     }
+public function passthrough($key, $returnBillrun, $row) {
+		$passed = true;
+		$accounts = Billrun_Factory::account();
+		$this->message .= "<b> passthrough_fields :</b> <br>";
+		$account = $accounts->loadAccountForQuery((array('aid' => $row['test']['aid'])));
+		$account = $accounts->getCustomerData();
+		$address = $account['address'];
+		if ($returnBillrun['attributes']['address'] === $address) {
+			$this->message .= "passthrough work well" . $this->pass;
+		} else {
+			$this->message .= "passthrough fill" . $this->fail;
+			$passed = false;
+		}
+		return $passed;
+	}
+
 
      /**
       *  save invoice_id 
