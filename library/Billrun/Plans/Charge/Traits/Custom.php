@@ -26,5 +26,4 @@ trait Billrun_Plans_Charge_Traits_Custom  {
 		$this->cycle = new Billrun_DataTypes_CustomCycleTime($this->cycle->key(),$config['recurrence'],@$config['invoicing_day'],@$config['activation_date']);
 	}
 
-	abstract protected function setMonthlyCover();
 }

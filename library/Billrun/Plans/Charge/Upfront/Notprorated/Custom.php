@@ -14,7 +14,7 @@
  */
 class Billrun_Plans_Charge_Upfront_Notprorated_Custom extends Billrun_Plans_Charge_Upfront_Notprorated_Month {
 
-	use Billrun_Plans_Charge_Custom;
+	use Billrun_Plans_Charge_Traits_Custom;
 
 	protected function getFractionOfMonth() {
 
