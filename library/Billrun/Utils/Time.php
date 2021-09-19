@@ -315,6 +315,46 @@ class Billrun_Utils_Time {
 	}
 
 	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiff($from, $to, $daySpan) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return ($minDate->diff($maxDate)->days+1) / $daySpan;
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount with unix timestamps
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiffUnix($from, $to, $daySpan) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+
+		return static::getDaysSpanDiff($formatedFrom, $formatedTo, $daySpan);
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpan($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return $minDate->diff($maxDate)->days;
+	}
+
+
+		/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
 	 * @param type $from
 	 * @param type $to
@@ -337,6 +377,7 @@ class Billrun_Utils_Time {
 		}
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
+
 
 	/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0

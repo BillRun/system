@@ -21,7 +21,7 @@ class Billrun_Utils_Cycle {
 		$startDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $startDate : $cycle->end()));
 		$endDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $cycle->end() : $startDate));
 
-		return empty($entryConfig['recurrence']['frequency']) ||  (Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0;
+		return empty($entryConfig['recurrence']['frequency']) ||  (Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0 || !empty($entryConfig['deactivation_date']) && $entryConfig['deactivation_date']->sec <= $cycle->end();
 
 	}
 
