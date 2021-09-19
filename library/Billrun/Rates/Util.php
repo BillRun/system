@@ -23,7 +23,7 @@ class Billrun_Rates_Util {
 	 * @param type $rate_ref
 	 * @return type
 	 */
-	public function getRateByRef($rate_ref, $useCache = FALSE) {
+	public static function getRateByRef($rate_ref, $useCache = FALSE) {
 		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 
