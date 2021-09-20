@@ -420,7 +420,6 @@ class Billrun_Plan extends Billrun_Service {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
-		var_dump($cycleFraction , $activationTime , $isStart , $deactivationTime ,$deactivated ,$cycleDuration);
 		$cycleFraction = $cycleFraction * $cycleDuration;
 		$activation  =  new DateTime(date('Y-m-d 00:00:00', $activationTime));
 		$addedMonths = 0;
@@ -454,7 +453,6 @@ class Billrun_Plan extends Billrun_Service {
 				$resultDate->modify('-1 day');
 			}
 		}
-			var_dump($cycleFraction , $activationTime , $isStart , $deactivationTime ,$deactivated ,$cycleDuration,$resultDate);
 		return $resultDate->format('U') + ($isStart ? 0 : -1);
 	}
 
