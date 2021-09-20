@@ -182,6 +182,7 @@
     ]
   },
   "billrun" : {
+        "fields": [],
         "allowances" : {
             "enabled": false,
             "included_in_allowance": false,
