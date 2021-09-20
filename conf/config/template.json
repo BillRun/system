@@ -80,6 +80,12 @@
 			}
 		}
 	},
+	"suggestions" : {
+		"fields": []
+	},
+	"user" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {
@@ -102,6 +108,9 @@
         "import": {
             "mapping": []
         },
+	"report":{
+		"fields": []
+	},
 	"taxes": {
 		"fields": [
 			{
