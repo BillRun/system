@@ -324,7 +324,7 @@ class Billrun_Utils_Time {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
 
-		return ($minDate->diff($maxDate)->days+1) / $daySpan;
+		return (($minDate->diff($maxDate)->days+1) / $daySpan) * ($from > $to ? -1 : 1);
 	}
 
 	/**
