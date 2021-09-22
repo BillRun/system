@@ -28,6 +28,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     static protected $type = 'exporter';
 
+    const EXPORT_MAX_LIMIT = 200000;
     const SEQUENCE_NUM_INIT = 1;
     const DEFAULT_FILENAME = 'EXPORT_[[param1]]_[[param2]].CSV';
     const DEFAULT_FILENAME_PARMS = [
@@ -184,7 +185,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     protected function getLimit() {
         $querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
-        return $querySettings['limit'] ?? null;
+        if (empty($querySettings['limit'])) {
+            return self::EXPORT_MAX_LIMIT;
+        }
+        
+        return min($querySettings['limit'], self::EXPORT_MAX_LIMIT);
     }
 
     /**
