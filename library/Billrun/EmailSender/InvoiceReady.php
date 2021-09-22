@@ -138,6 +138,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
 		$attachment->encoding = Zend_Mime::ENCODING_BASE64;
 		$attachment->filename = $data['billrun_key'] . '_' . $data['aid'] . '_' . $data['invoice_id'] . ".pdf";
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceReadyGetAttachment',[&$attachment, $data ,$this]);
 		return $attachment;
 	}
 	

@@ -56,9 +56,10 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $invoicedLines = array();
 
-        protected $totalGroupHashMap = array();
-        protected $groupingEnabled = true;
+	protected $totalGroupHashMap = array();
+	protected $groupingEnabled = true;
 
+	protected $aggregationTranslations = [];
 
         /**
 	 * @todo used only in current balance API. Needs refactoring
@@ -205,7 +206,7 @@ class Billrun_Cycle_Account_Invoice {
 				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid], true);
 			}
 		}
-		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array())) ? : Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data');
+		$configValue = !empty(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data',array())) ?  Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.added_data') : [];
 		$this->aggregateIntoInvoice($configValue);
 		$this->updateTotals();
 	}
@@ -221,7 +222,7 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
 		$invoiceData = $this->data->getRawData();
-		$translations = array(
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,[
 			'BillrunKey' => $invoiceData['billrun_key'],
 			'Aid' => $invoiceData['aid'],
 			'StartTime' => $invoiceData['start_date']->sec,
@@ -230,13 +231,14 @@ class Billrun_Cycle_Account_Invoice {
 			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key']),
 			'NextNextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key'])),
 			'NextBillrunKeyOfLastMonthlyBillrun' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key'])['billrun_key'])
-		);
-		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		]);
+		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig), $this->aggregationTranslations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
+				 Billrun_Utils_Mongo::convertQueryMongoDates($pipeline);
 				if (empty($aggregateConf['use_db'])) {
-					$aggrResults = $aggregate->aggregate($pipeline, [$invoiceData]);
+					$aggrResults = $aggregate->aggregate( $pipeline, [$invoiceData]);
 				} else {
 					$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($pipeline)->setRawReturn(true);
 				}
@@ -435,8 +437,18 @@ class Billrun_Cycle_Account_Invoice {
     //======================================================
     
 	function isAccountActive() {
-		if(!empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);}))) {
-			return true;
+		$ignoreSubsWithNoPlans = Billrun_Factory::config()->getConfigValue('billrun.ignore_no_plans_invoices',true);
+		$hasActiveSubscribers = !empty(array_filter($this->subscribers ,function($sub) use ($ignoreSubsWithNoPlans) {
+									$subData = $sub->getData();
+									return !empty($subData['sid']) && (!$ignoreSubsWithNoPlans || !is_null($subData['totals']['flat']['after_vat'])) ;
+								}))
+							||
+								!empty(array_filter($this->data['subs'] ,function($sub) use ($ignoreSubsWithNoPlans) {
+									return !empty($sub['sid']) && (!$ignoreSubsWithNoPlans || !is_null($sub['totals']['flat']['after_vat']) );
+								}));
+
+		if(	$hasActiveSubscribers || !empty($this->data['totals']['after_vat_rounded']) ) {
+			 return true;
 		}
 		$accountActivenessLinesHistory = Billrun_Factory::config()->getConfigValue("pricing.months_limit", 3);
 		if (is_numeric($accountActivenessLinesHistory)) {
@@ -503,7 +515,7 @@ class Billrun_Cycle_Account_Invoice {
 	}
 
 	/**
-	 * This function add to the account totals grouping his subscriber totals group.
+	 * This function add to the account totals grouping the provided subscriber totals group.
 	 * @param type $currentTotalGroups 
 	 * @param type $subTotalGroups 
 	 * @return the new sum up of the account totals grouping
@@ -541,4 +553,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawData['invoicing_day'] = !empty($attributes['invoicing_day']) ? $attributes['invoicing_day'] : $config->getConfigChargingDay();
 	}
 
+	public function addAggragtionTranslations($translations) {
+		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
+	}
 }

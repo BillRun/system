@@ -136,7 +136,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			}
         }
         $startDate = $cover['start'];
-        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
+        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Utils_Time::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 

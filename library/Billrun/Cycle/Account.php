@@ -302,8 +302,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
 
 		$data = [
-			'rates' => $this->cycleAggregator->getRates(),
-			'discounts' => $this->cycleAggregator->getDiscounts(),
+			'rates' => $this->cycleAggregator->getRates(null,end($sorted)),
+			'discounts' => $this->cycleAggregator->getDiscounts(null,end($sorted)),
 		];
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
