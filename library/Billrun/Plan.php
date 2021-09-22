@@ -436,10 +436,11 @@ class Billrun_Plan extends Billrun_Service {
 	 * calcualte the date based on monthly difference from activation.
 	 * @return the unix time of the  monthly fraction from activation.
 	 */
-	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE) {
+	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE,$cycleDuration = 1) {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
+		$cycleFraction = $cycleFraction * $cycleDuration;
 		$activation  =  new DateTime(date('Y-m-d 00:00:00', $activationTime));
 		$addedMonths = 0;
 
