@@ -271,7 +271,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @param type $subscriber
 	 */
 	protected function getTotalExtraOutOfPackage($subscriber) {
-		return floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
+		$inplanSpecialCharge = $this->getPriceUnderRates($subscriber['breakdown'],['IL_STAR_43'],['over_plan','out_plan']);
+		return floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0) +  floatval(!empty($inplanSpecialCharge) ? $inplanSpecialCharge : 0);
 	}
 
 	protected function getManualCorrectionCredit($subscriber) {
@@ -450,6 +451,21 @@ class Generator_Golancsv extends Billrun_Generator {
 			}
 		}
 		return $lastOffer;
+	}
+
+	protected function getPriceUnderRates($subBrkDown,$rateKeys,$ignoreKeys = []) {
+		$ret = 0;
+		foreach($subBrkDown as  $key => $val) {
+			if(in_array($key,$ignoreKeys)) { continue; }
+			if(in_array($key,$rateKeys) && isset($val['totals'])) {
+				$ret += array_sum(array_map(function($e) {
+					return $e['cost'];
+				},$val['totals']));
+			} else if(is_array($val)) {
+				$ret += $this->getPriceUnderRates($val,$rateKeys,$ignoreKeys);
+			}
+		}
+		return $ret;
 	}
 
 }
