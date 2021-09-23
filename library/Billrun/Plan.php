@@ -274,17 +274,17 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $endOffset) {
-			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::CRIT);
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;
@@ -355,10 +355,30 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->data['recurrence']['unit'];
 	}
 
+	/**
+	 * @deprecated
+	 * (replaced by non-monthly plans)
+	 * Get the plan periodicity value
+	 */
 	public function getPeriodicity() {
 		return $this->data['recurrence']['periodicity'];
 	}
 
+	/**
+	 * get the plan  recurence (frequency/start month) configuration
+	 * @returns the plan recurence configuration (frequency/start month)
+	 */
+	public function getRecurrenceConfig() {
+		return $this->data['recurrence'];
+	}
+
+	/**
+	 * Is the current plan is a non monthly/quertely plan
+	 * @returns  true if the plan is configred to be a non-monthly plan false otherwise
+	 */
+	public function isNonMonthly() {
+		return !empty($this->data['recurrence']['frequency']) && $this->data['recurrence']['frequency'] != 1;
+	}
 	/**
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.
@@ -416,10 +436,11 @@ class Billrun_Plan extends Billrun_Service {
 	 * calcualte the date based on monthly difference from activation.
 	 * @return the unix time of the  monthly fraction from activation.
 	 */
-	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE) {
+	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE,$cycleDuration = 1) {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
+		$cycleFraction = $cycleFraction * $cycleDuration;
 		$activation  =  new DateTime(date('Y-m-d 00:00:00', $activationTime));
 		$addedMonths = 0;
 

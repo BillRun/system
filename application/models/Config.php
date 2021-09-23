@@ -1377,8 +1377,8 @@ class ConfigModel {
 					$ratingLineKeys = array();
 					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
 						foreach ($rates as $rules) {
-							foreach ($rules as $usageRules) {
-								foreach ($usageRules as $rule) {
+							foreach ($rules['priorities'] as $usageRules) {
+								foreach ($usageRules['filters'] as $rule) {
 									$ratingLineKeys[] = $rule['line_key'];
 								}
 							}
@@ -1534,8 +1534,8 @@ class ConfigModel {
 		$longestPrefixParams = array();
 		foreach ($rateCalculatorsSettings as $category => $usagetRates) {
 			foreach ($usagetRates as $usaget => $rates) {
-				foreach ($rates as $rateRules) {
-					foreach ($rateRules as $rule) {
+				foreach ($rates['priorities'] as $rateRules) {
+					foreach ($rateRules['filters'] as $rule) {
 						if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
 							throw new Exception('Illegal rating rules for usaget ' . $usaget);
 						}

@@ -86,6 +86,9 @@
 	"prepaid_plan" : {
 		"fields": []
 	},
+	"user" : {
+		"fields": []
+	},
 	"taxation" :{
 		"tax_type": "usage",
 		 "CSI": {
@@ -184,6 +187,7 @@
   "billrun" : {
         "multi_day_cycle":  false,
         "invoicing_day": 1,
+        "fields": [],
         "allowances" : {
             "enabled": false,
             "included_in_allowance": false,
