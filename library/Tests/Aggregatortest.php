@@ -10,7 +10,7 @@
  * @package  calculator
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
@@ -386,6 +386,42 @@ class Tests_Aggregator extends UnitTestCase {
 			'expected' => array('billrun' => array('billrun_key' => '202005', 'aid' => 1770, 'after_vat' => array("1771" => 200), 'total' => 200, 'vatable' => 200, 'vat' => 0)),
 			'line' => array('types' => array('flat', 'service')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2492"
 		),
+		//BRCD-2993 with discount 
+		array('test' => array('test_number' => 69, "aid" => 2000000784, 'sid' => 290, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000784))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000784, 'after_vat' => array("290" => 29.08097389230968, "0" => 1.9565442), 'total' => 30.339039414890326, 'vatable' => 25.93080291870968, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//BRCD-2993 without discount 
+		array('test' => array('test_number' => 70, "aid" => 2000000785, 'sid' => 291, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(2000000785))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 2000000785, 'after_vat' => array("291" => 7.586449083870966, "0" => 1.9565442), 'total' => 9.542993283870967, 'vatable' => 7.5594141935483865, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'service', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2993"
+		),
+		//
+		array('test' => array('test_number' => 71, "aid" => 17975, 'sid' => 17976, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202101", "force_accounts" => array(17975))),
+			'expected' => array('billrun' => array('billrun_key' => '202101', 'aid' => 17975, 'after_vat' => array("17976" => 160.0258064516129), 'total' => 160.0258064516129, 'vatable' => 136.7741935483871, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2988"
+		),
+		//case for BRCD-2996 (It seems that the 'expandSubRevisions'  will not fully support  multiple termination of services  under the same  revision.)
+		array('test' => array('test_number' => 72, "aid" => 725, 'sid' => 825, 'function' => array('basicCompare', 'subsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202102", "force_accounts" => array(725))),
+			'expected' => array('billrun' => array('billrun_key' => '202102', 'aid' => 725, 'after_vat' => array("825" => 213.61935483870974), 'total' => 213.61935483870974, 'vatable' => 182.5806451612904, 'vat' => 0)),
+			'line' => array('types' => array('flat', 'credit')), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-2996"
+		),
+		array('test' => array('label' => 'test the prorated discounts days is rounded down', 'test_number' => 73, "aid" => 230, 'sid' => 80018, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202012", "force_accounts" => array(230))),
+			'expected' => array('billrun' => array('billrun_key' => '202012', 'aid' => 230, 'after_vat' => array("80018" => 35.778665181058486), 'total' => 35.778665181058486, 'vatable' => 30.58005571030641, 'vat' => 17),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3014",
+		),
+		array('test' => array('label' => 'test the service line created', 'test_number' => 74, "aid" => 399, 'sid' => 499, 'function' => array('basicCompare', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202103", "force_accounts" => array(399))),
+			'expected' => array('billrun' => array('billrun_key' => '202103', 'aid' => 399, 'after_vat' => array("499" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+				'line' => array('types' => array('flat'))), 'jiraLink' => "https://billrun.atlassian.net/browse/BRCD-3013",
+		),
+		array('test' => array('label' => 'test the Conditional charge is applied only to one subscriber under the account instead of two', 'test_number' => 75, "aid" => 3082, 'sid' => array(3083,3084), 'function' => array('basicCompare', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "202106", "force_accounts" => array(3082))),
+			'expected' => array('billrun' => array( 'billrun_key' => '202106', 'aid' => 3082, 'after_vat' => array("3083" => 175.5, "3084" => 175.5), 'total' => 351, 'vatable' => 300, 'vat' => 17),
+				'line' => array('types' => array('credit')))
+		),
+		array('test' => array('test_number' => 76, "aid" => 145, 'sid' => 245, 'function' => array('checkForeignFileds', 'basicCompare', 'lineExists', 'linesVSbillrun', 'rounded'), 'checkForeignFileds' => ['plan' => ["foreign.plan.name" => 'PLAN_C'], 'service' => ['foreign.service.name' => 'NOT_TAXABLE'], 'discount' => ['foreign.service.name' => 'NOT_TAXABLE', "foreign.plan.name" => 'PLAN_C']], 'options' => array("stamp" => "202103", "force_accounts" => array(145))),
+			'expected' => array('billrun' => array('invoice_id' => 108, 'billrun_key' => '202103', 'aid' => 145, 'after_vat' => array("245" => 207), 'total' => 207, 'vatable' => 190, 'vat' => 17),
+				'line' => array('types' => array('flat', 'credit'))),
+		),
 		array(
 			'preRun' => ('expected_invoice'),
 			'test' => array('test_number' => 67,),
@@ -449,6 +485,9 @@ class Tests_Aggregator extends UnitTestCase {
 
 			$aid = $row['test']['aid'];
 			$this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
+			if (isset($row['test']['label'])) {
+				$this->message .= '<br>test label :  ' . $row['test']['label'];
+			}
 			// run fenctions before the test begin 
 			if (isset($row['preRun']) && !empty($row['preRun'])) {
 				$preRun = $row['preRun'];
@@ -494,7 +533,7 @@ class Tests_Aggregator extends UnitTestCase {
 			$this->message .= $this->fails;
 		}
 		print_r($this->message);
-		 $this->restoreColletions();
+		$this->restoreColletions();
 	}
 
 	/**
@@ -663,43 +702,6 @@ class Tests_Aggregator extends UnitTestCase {
 			$allLines[] = $line->getRawData();
 		}
 		return $allLines;
-	}
-        	/**
-	 *  check if  Foreign Fileds create correctly
-	 * 
-	 * @param int $key number of the test case
-	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
-	 * @param array $row current test case current test case
-	 * @return boolean true if the test is pass and false if the tast is fail
-	 */
-	public function checkForeignFileds($key, $returnBillrun, $row) {
-		$passed = TRUE;
-		$this->message .= "<b> Foreign Fileds :</b> <br>";
-		$entitys = $row['test']['checkForeignFileds'];
-		$lines = $this->getLines($row);
-		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
-			$entitys[] = $key;
-			if ($key == 'discount') {//TODO  Add compatibility to all usage types
-				$line = array_filter($lines, function ($line) {
-					if ($line['usaget'] == 'discount') {
-						return $line;
-					}
-				});
-				foreach ($val as $path => $value) {
-					foreach ($line as $l) {
-						if ($lineValue = Billrun_Util::getIn($l, $path)) {
-							if ($lineValue == $value) {
-								$this->message .= "Foreign Fileds exists  ,</br> path : ". $path. "</br>value : " .$value .$this->pass;
-							}
-						} else {
-							$this->message .= "Foreign Fileds not created ,</br> path : ". $path. "</br>value : " .$value .$this->fail;
-							$passed = FALSE; 
-						}
-					}
-				}
-			}
-		}
-		return $passed;
 	}
 
 	/**
@@ -1144,6 +1146,50 @@ class Tests_Aggregator extends UnitTestCase {
 			}
 		}
 
+         return $passed;
+     }
+
+	/**
+	 *  check if  Foreign Fileds create correctly
+	 * 
+	 * @param int $key number of the test case
+	 * @param Mongodloid_Entity|array $returnBillrun is the billrun object of current test after aggregation 
+	 * @param array $row current test case current test case
+	 * @return boolean true if the test is pass and false if the tast is fail
+	 */
+	public function checkForeignFileds($key, $returnBillrun, $row) {
+		$passed = TRUE;
+		$this->message .= "<b> Foreign Fileds :</b> <br>";
+		$entitys = $row['test']['checkForeignFileds'];
+		$lines = $this->getLines($row);
+		foreach ($lines as $line) {
+			if ($line['usaget'] == 'discount') {
+				$lines_['discount'][] = $line;
+			}
+			if ($line['type'] == 'service') {
+				$lines_['service'][] = $line;
+			}
+			if ($line['type'] == 'flat') {
+				$lines_['plan'][] = $line;
+			}
+ }
+ 
+		foreach ($row['test']['checkForeignFileds'] as $key => $val) {
+			foreach ($val as $path => $value) {
+				for ($i = 0; $i <= count($lines_[$key]); $i++) {
+					if ($lineValue = Billrun_Util::getIn($lines_[$key][$i], $path)) {
+						if ($lineValue == $value) {
+							$this->message .= "Foreign Fileds exists  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->pass;
+							continue 2;
+						}
+					} else {
+						$this->message .= "Foreign Fileds not created  line type $key ,</br> path : " . $path . "</br>value : " . $value . $this->fail;
+						$passed = FALSE;
+						continue 2;
+					}
+				}
+			}
+		}
 		return $passed;
 	}
 
