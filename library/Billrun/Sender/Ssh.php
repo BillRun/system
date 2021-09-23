@@ -20,8 +20,8 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 	 * @var string
 	 */
 	static protected $type = 'ssh';
-        protected $port = '22';
-        
+	protected $port = '22';
+
 
 	/**
 	 * see parent::send()
@@ -30,16 +30,17 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 		Billrun_Factory::dispatcher()->trigger('beforeSSHSendFiles', array($this));
 		$files = is_array($filePath) ? $filePath : array($filePath);
 		$connectionSettings = $this->options;
-                $hostAndPort = $connectionSettings['host'] . ':'. $this->port;
-                $auth = array('password' => $connectionSettings['password']);
+		$hostAndPort = $connectionSettings['host'] . ':'. $this->port;
+		$auth = array('password' => $connectionSettings['password']);
 		$ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
-                $connected = $ssh->connect($connectionSettings['user']);
+		$connected = $ssh->connect($connectionSettings['user']);
 		if (!$connected) {
 			Billrun_Factory::log()->log("Cannot get SSH connector. details: " . print_R($connectionSettings, 1), Zend_Log::ERR);
 			return false;
 		}
 
 		$remoteDirectory = rtrim(Billrun_Util::getIn($connectionSettings, 'remote_directory', ''), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		$ssh->mkdir($remoteDirectory);
 		$ret = true;
 		foreach ($files as $file) {
 			if (empty($file) || !file_exists($file)) {
