@@ -83,6 +83,9 @@
 	"suggestions" : {
 		"fields": []
 	},
+	"prepaid_plan" : {
+		"fields": []
+	},
 	"user" : {
 		"fields": []
 	},
