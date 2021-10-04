@@ -144,7 +144,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected function getLineAggregationKey($line,$rate,$name) {
 		$key = $name;
 		$invoice_params = $this->__get();
-		if(!empty($invoice_params['render_detailed_services']) && $line['type'] == 'service' && $rate['quantitative']) {
+		if(!empty($invoice_params['render_detailed_quantitative_services']) && $line['type'] == 'service' && $rate['quantitative']) {
 			$key .= $line['usagev']. $line['sid'];
 		}
 		if(!empty($line['start'])) {
