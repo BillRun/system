@@ -13,7 +13,9 @@ class Billrun_Account_External extends Billrun_Account {
 	protected static $queryBaseKeys = ['id', 'time', 'limit'];
 	
 	protected $remote;
-    protected $remote_billable_url;
+	protected $remote_authentication;
+	protected $remote_billable_url;
+	protected $remote_billable_authentication;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
@@ -21,11 +23,14 @@ class Billrun_Account_External extends Billrun_Account {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue(	'subscribers.account.external_url',
 																	Billrun_Util::getFieldVal($options['external_url'],	''));
+		$defaultAuthentication = Billrun_Factory::config()->getConfigValue('subscribers.external_authentication', []);
+		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.account.external_authentication', $defaultAuthentication);
 		$this->remote_billable_url = Billrun_Factory::config()->getConfigValue('subscribers.billable.url', '');
+		$this->remote_billable_authentication = Billrun_Factory::config()->getConfigValue('subscribers.billable.external_authentication', $defaultAuthentication);
 	}
 	
 
-	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = []) {
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 			// Prepare request
 			$requestParams = [
 				'start_date' => date('Y-m-d',$cycle->start()->sec),
@@ -37,10 +42,16 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($aids)) {
 				$requestParams['aids'] = implode(',',$aids);
 			}
+			
+			if(!empty($invoicing_days)) {
+				$requestParams['invoicing_days'] = $invoicing_days;
+			}
 			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
 			//Actually  do the request
-			$results = Billrun_Util::sendRequest($this->remote_billable_url,$requestParams);
-			
+			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
+			$request->setParameterPost($requestParams);
+			$results = $request->request(Billrun_Http_Request::POST)->getBody();
+
 			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
 			
 			$results = json_decode($results, true);		
@@ -53,7 +64,7 @@ class Billrun_Account_External extends Billrun_Account {
 				Billrun_Factory::log("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams), Zend_Log::ALERT);
 				return [];
 			}
-			
+
 			// Preform translation if needed and return results
 			$fieldMapping = ['firstname' => 'first_name', 'lastname' => 'last_name'];
 			foreach($results['data'] as &$rev) {
@@ -81,19 +92,20 @@ class Billrun_Account_External extends Billrun_Account {
 			$requestData['date'] = $globalDate;
 		}
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
-		$res = Billrun_Util::sendRequest($this->remote,
-													 json_encode($requestData),
-													 Zend_Http_Client::POST,
-													 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);
+		$params = [
+			'authentication' => $this->remote_authentication,
+		];
+		$request = new Billrun_Http_Request($this->remote, $params);
+		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+		$request->setParameterPost($requestData);
+		$res = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
 		$res = json_decode($res);
-		
 		$accounts = [];
 		if (!$res) {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		
 		foreach ($res as $account) {
 			Billrun_Utils_Mongo::convertQueryMongodloidDates($account, static::API_DATETIME_REGEX);
 			$accounts[] = new Mongodloid_Entity($account);
@@ -120,11 +132,13 @@ class Billrun_Account_External extends Billrun_Account {
 			$externalQuery['date'] = $globalDate;
 		}
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
-		$results = Billrun_Util::sendRequest($this->remote,
-														 json_encode($externalQuery),
-														 Zend_Http_Client::POST,
-														 ['Accept-encoding' => 'deflate','Content-Type'=>'application/json']);		
-		
+		$params = [
+			'authentication' => $this->remote_authentication,
+		];
+		$request = new Billrun_Http_Request($this->remote, $params);
+		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+		$request->setParameterPost($externalQuery);
+		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
 		$results = json_decode($results, true);
 		if (!$results) {
