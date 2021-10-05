@@ -288,12 +288,12 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Couldn\'t find export generator name');
 			}
-			if (empty($data['file_type'])) {
-				throw new Exception('Export generator must be associated to input processor');
-			}
-			if (empty($data['segments']) || !is_array($data['segments'])){
-				throw new Exception('Segments must be an array and contain at least one value');
-			}
+//			if (empty($data['file_type'])) {
+//				throw new Exception('Export generator must be associated to input processor');
+//			}
+//			if (empty($data['segments']) || !is_array($data['segments'])){
+//				throw new Exception('Segments must be an array and contain at least one value');
+//			}
 			
 			$rawExportGenSettings = $this->getExportGeneratorSettings($updatedData, $data['name']);
 			if ($rawExportGenSettings) {
@@ -962,6 +962,13 @@ class ConfigModel {
 					break;
 				}
 			}
+		} else if ($category === 'export_generators') {
+			foreach ($updatedData['export_generators'] as &$someFtSettings) {
+				if ($someFtSettings['name'] == $data['name']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
 		}
  
 		$ret = $this->collection->insert($updatedData);
@@ -982,7 +989,7 @@ class ConfigModel {
  		if ($filtered = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] === $pg;
  		})) {
-			return current($filtered);
+ 			return current($filtered);
  		}
  		return FALSE;
  	}
@@ -1111,12 +1118,9 @@ class ConfigModel {
  	}
 	
 	protected function unsetExportGeneratorSettings(&$config, $name) {
-		$config['export_generators'] = array_map(function($ele) use($name){
-			if ($ele['name'] == $name){
-				$ele['enabled'] = false;
-			}
-			return $ele;
-		}, $config['export_generators']);	
+		$config['export_generators'] = array_values(array_filter($config['export_generators'], function($egSettings) use ($name) {
+ 			return $egSettings['name'] !== $name;
+ 		}));	
 	}
 	
 	protected function unsetSharedSecretSettings(&$config, $secret) {
@@ -1270,19 +1274,19 @@ class ConfigModel {
  	}
  
 	protected function validateExportGeneratorSettings(&$config, $eg) {
-		$fileTypeSettings = $this->getFileTypeSettings($config, $eg['file_type']);
-		if (empty($fileTypeSettings)){
-			Billrun_Factory::log("There's no matching file type "  . $eg['file_type']);
-			return false;
-		}
-		$parserSettings = $fileTypeSettings['parser'];
-		$inputProcessorFields = $parserSettings['structure'];
-		foreach ($eg['segments'] as $segment){
-			if (!in_array($segment['field'], $inputProcessorFields)){
-				Billrun_Factory::log("There's no matching field in the name of "  . $segment['field'] . "in input processor: ", $eg['file_type']);
-				return false;
-			}
-		}
+//		$fileTypeSettings = $this->getFileTypeSettings($config, $eg['file_type']);
+//		if (empty($fileTypeSettings)){
+//			Billrun_Factory::log("There's no matching file type "  . $eg['file_type']);
+//			return false;
+//		}
+//		$parserSettings = $fileTypeSettings['parser'];
+//		$inputProcessorFields = $parserSettings['structure'];
+//		foreach ($eg['segments'] as $segment){
+//			if (!in_array($segment['field'], $inputProcessorFields)){
+//				Billrun_Factory::log("There's no matching field in the name of "  . $segment['field'] . "in input processor: ", $eg['file_type']);
+//				return false;
+//			}
+//		}
 		
 		return true;
  	}
@@ -1786,7 +1790,15 @@ class ConfigModel {
 	protected function getPrepaidUnifyConfig() {
 		return Billrun_Factory::config()->getConfigValue('unify', []);
 	}
-	
+
+	/**
+	 * Function to check if the system in multi day cycle mode
+	 * @return default invoicing day, if multi day cycle mode, else returns false
+	 */
+	public function isMultiDayCycleMode() {
+		return Billrun_Factory::config()->isMultiDayCycle();
+	}
+
 	protected function getSecurePaymentGateway($paymentGatewaySetting){
 		$fakePassword = Billrun_Factory::config()->getConfigValue('billrun.fake_password', 'password');
 		$securePaymentGateway = $paymentGatewaySetting; 

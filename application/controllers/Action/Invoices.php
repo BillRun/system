@@ -126,12 +126,15 @@ class AccountInvoicesAction extends ApiAction {
 			'aid' => $params['aid'],
 			'stamp' => $params['billrun_key'],
 		);
+		if (!empty($params['invoicing_day'])) {
+			$options['invoicing_day'] = $params['invoicing_day'];
+		}
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->load();
 		$pdfPath = $generator->generate();
 		$cont = file_get_contents($pdfPath);
 		if ($cont) {
-			header('Content-disposition: inline; filename="'.$file_name.'"');
+			header('Content-disposition: inline; filename="'. basename($pdfPath).'"');
 			header('Cache-Control: public, must-revalidate, max-age=0');
 			header('Pragma: public');
 			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
