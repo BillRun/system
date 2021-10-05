@@ -42,7 +42,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'field_name' => 'authentication_field',
 					'title' => 'Authentication Field',
 					'select_list' => true,
-					'select_options' => implode(',', $this->getAccountUniqueFields()),
+					'select_options' => implode(',', $this->getAccountUniqueFields()), //TODO: add support for subscriber level login
 					'editable' => true,
 					'display' => true,
 					'nullable' => false,

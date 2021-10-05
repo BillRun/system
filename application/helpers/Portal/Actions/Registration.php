@@ -209,14 +209,16 @@ class Portal_Actions_Registration extends Portal_Actions {
     protected function getValidity($type = '') {
         return self::VALIDITY_TIME[$type] ?? self::VALIDITY_TIME['DEFAULT'];
     }
-	
-	/**
-	 * Authenticate the request.
-	 * all registration actions does not require authentication
+
+    /**
+	 * Authorize the request.
+	 * all registration actions does not require authorization
 	 *
+	 * @param  string $action
+	 * @param  array $params
 	 * @return boolean
 	 */
-    protected function authenticate($params = []) {
+    protected function authorize($action, &$params = []) {
 		return true;
 	}
 

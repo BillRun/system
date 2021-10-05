@@ -42,6 +42,10 @@ class Portal_Exception extends Exception {
             'code' => 4511,
             'desc' => 'Failed to update account',
         ],
+        'subscriber_update_failure' => [
+            'code' => 4512,
+            'desc' => 'Failed to update subscriber',
+        ],
         'send_email_failed' => [
             'code' => 4601,
             'desc' => 'Failed to send Email',

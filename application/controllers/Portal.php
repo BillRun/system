@@ -32,6 +32,20 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @var array
 	 */
 	protected $requestBody = [];
+	
+	/**
+	 * holds request's query
+	 *
+	 * @var array
+	 */
+	protected $query = [];
+	
+	/**
+	 * holds request's update
+	 *
+	 * @var array
+	 */
+	protected $update = [];
 		
 	/**
 	 * the response object
@@ -67,14 +81,18 @@ class PortalController extends Yaf_Controller_Abstract {
 			return $this->forward('PortalError', 'notFound');
 		}
 
-		if (!$this->authorize('account')) {
-			return $this->forward('PortalError', 'unauthorized');
-		}
-		
 		$this->request = $this->getRequest();
-		$this->requestBody = json_decode($this->request->getRaw(), JSON_OBJECT_AS_ARRAY);
+		$this->requestBody = json_decode(file_get_contents('php://input'), JSON_OBJECT_AS_ARRAY) ?? [];
+		$this->update = $this->requestBody['update'] ?? [];
+		$this->query = json_decode($this->request->getRequest()['query'], JSON_OBJECT_AS_ARRAY) ?? [];
 		$this->response = $this->getResponse();
-		$this->action = array_keys($this->request->getParams())[0] ?? '';
+		$this->action = array_keys($this->request->getParams())[0] ?? 
+			$this->request->getMethod() === 'GET' ? 'get' : 'update';
+	
+		if (!$this->authenticate('selfcare')) {
+			return $this->forward('PortalError', 'unauthenticated');
+		}
+	
 		$this->setUser();
 	}
 	
@@ -128,12 +146,28 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function accountAction() {
-		$params = [
-			'query' => $this->getAccountQuery(),
-			'update' => $this->requestBody['update'] ?? [],
-		];
+		$params = array_merge($this->requestBody, [
+			'query' => $this->query,
+			'update' => $this->update,
+		]);
 
-		$module = Portal_Actions::getInstance(['type' => 'account']);
+		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'account']));
+		$res = $module->run($this->action, $params);
+		$this->setResponse($res);
+	}
+	
+	/**
+	 * Subscriber entry point
+	 *
+	 * @return void
+	 */
+	public function subscriberAction() {
+		$params = array_merge($this->requestBody, [
+			'query' => $this->query,
+			'update' => $this->update,
+		]);
+
+		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'subscriber']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
@@ -149,22 +183,6 @@ class PortalController extends Yaf_Controller_Abstract {
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
-	
-	/**
-	 * get account query from OAuth2 credentials (username)
-	 *
-	 * @return array
-	 */
-	protected function getAccountQuery() {
-		$authField = $this->getSetting('authentication_field');
-		if (empty($this->tokenData['user_id'])) {
-			return false;
-		}
-		
-		return [
-			$authField => $this->tokenData['user_id'],
-		];
-	}
 
 	/**
 	 * set the user performing the action
@@ -175,20 +193,39 @@ class PortalController extends Yaf_Controller_Abstract {
 	}
 	
 	/**
-	 * Authorize the reqeust using OAuth2
+	 * Authenticate the reqeust using OAuth2
 	 *
 	 * @return boolean
 	 */
-	protected function authorize($scope) {
+	protected function authenticate($scope) {
 		$oauth = Billrun_Factory::oauth2();
 		$oauthRequest = OAuth2\Request::createFromGlobals();
 		$oauth->getResourceController();
-		if (!$oauth->verifyResourceRequest($oauthRequest, null, $scope)) {
+
+		switch ($this->request->getActionName()) {
+			case 'account':
+				$verify = $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} account");
+				break;
+			case 'subscriber':
+				$verify = $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} account")
+					|| $oauth->verifyResourceRequest($oauthRequest, null, "{$scope} subscriber");
+				break;
+			case 'registration':
+			case 'login':
+			default:
+				$verify = $oauth->verifyResourceRequest($oauthRequest, null, $scope);
+		}
+
+		if (!$verify) {
 			return false;
 		}
 
 		$this->tokenData = $oauth->getAccessTokenData($oauthRequest);
 		return true;
+	}
+
+	protected function getDefaultParams() {
+		return array_merge(Billrun_Util::getIn($this->settings, 'configuration.values', []), ['token_data' => $this->tokenData]);
 	}
     
     /**

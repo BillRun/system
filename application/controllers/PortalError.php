@@ -15,7 +15,8 @@
 class PortalerrorController extends Yaf_Controller_Abstract {
 
 	const NOT_FOUND_STATUS_CODE = 404;
-	const UNAUTHORIZED_STATUS_CODE = 401;
+	const UNAUTHENTICATED_STATUS_CODE = 401;
+	const UNAUTHORIZED_STATUS_CODE = 403;
 
 	public function notFoundAction() {
 		$request = $this->getRequest();
@@ -23,10 +24,10 @@ class PortalerrorController extends Yaf_Controller_Abstract {
 		$response->setHeader($request->getServer('SERVER_PROTOCOL'), self::NOT_FOUND_STATUS_CODE);
 	}
 
-	public function unauthorizedAction() {
+	public function unauthenticatedAction() {
 		$request = $this->getRequest();
 		$response = $this->getResponse();
-		$response->setHeader($request->getServer('SERVER_PROTOCOL'), self::UNAUTHORIZED_STATUS_CODE);
+		$response->setHeader($request->getServer('SERVER_PROTOCOL'), self::UNAUTHENTICATED_STATUS_CODE);
 	}
 
 	protected function render($tpl, array $parameters = null) {

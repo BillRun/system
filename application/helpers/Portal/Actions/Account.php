@@ -14,8 +14,6 @@
  */
 class Portal_Actions_Account extends Portal_Actions {
 
-	const DATETIME_FORMAT = 'Y-m-d H:i:s';
-
 	public function __construct($params = []) {
 		parent::__construct($params);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
@@ -31,10 +29,15 @@ class Portal_Actions_Account extends Portal_Actions {
      */
     public function get($params = []) {
 		$query = $params['query'] ?? [];
+		if (!empty($this->loggedInEntity)) {
+			$query['aid'] = $this->loggedInEntity['aid'];
+		}
+		
 		if (empty($query)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
 		}
-		$billapiParams = $this->getBillApiParams('uniqueget', $query);
+		
+		$billapiParams = $this->getBillApiParams('accounts', 'uniqueget', $query);
 		$res = $this->runBillApi($billapiParams);
 		if ($res === false) {
 			throw new Portal_Exception('account_get_failure');
@@ -51,10 +54,10 @@ class Portal_Actions_Account extends Portal_Actions {
      * @return array account updated details
      */
     public function update($params = []) {
-		$query = $params['query'] ?? [];
-		if (empty($query)) {
-			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
-		}
+		$query = [
+			'aid' => $this->loggedInEntity['aid'],
+			'type' => 'account',
+		];
 
 		if (empty($query['effective_date'])) {
 			$query['effective_date'] = date(self::DATETIME_FORMAT);
@@ -69,7 +72,7 @@ class Portal_Actions_Account extends Portal_Actions {
 			$update['from'] = $query['effective_date'];
 		}
 		
-		$billapiParams = $this->getBillapiParams('permanentchange', $query, $update);
+		$billapiParams = $this->getBillapiParams('accounts', 'permanentchange', $query, $update);
 		$res = $this->runBillApi($billapiParams);
 		if ($res === false) {
 			throw new Portal_Exception('account_update_failure');
@@ -96,72 +99,65 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @return array
 	 */
 	protected function getDetails($account) {
+		$account = parent::getDetails($account);
+		if ($account === false ) {
+			return false;
+		}
+		
+		$account['subscribers'] = $this->getSubscribers($account);
 		unset($account['_id'], $account['payment_gateway']);
 		return $account;
 	}
 	
 	/**
-	 * run BillApi action
+	 * get the subscribers related to the account
 	 *
-	 * @param  array $params
-	 * @return mixed
+	 * @param  mixed $account
+	 * @return array
 	 */
-	protected function runBillApi($params) {
-		try {
-			$action = $params['request']['action'];
-			switch ($action) {
-				case 'uniqueget':
-				case 'get':
-					$modelAction = Models_Action::getInstance($params);
-					return $modelAction->execute();
-				default:
-					$entityModel = Models_Entity::getInstance($params);
-					return $entityModel->{$action}();
-			}
-		} catch (Exception $ex) {
-            Billrun_Factory::log("Portal_Actions_Account::runBillApi got Error: {$ex->getCode()} - {$ex->getMessage()}", Billrun_Log::ERR);
-            return false;
-		}
+	protected function getSubscribers($account) {
+		$query = [
+			'type' => 'subscriber',
+			'aid' => $account['aid'],
+		];
+
+		$billapiParams = $this->getBillApiParams('subscribers', 'uniqueget', $query);
+		$subscribers = $this->runBillApi($billapiParams);
+		$subscriberFields = $this->getSubscriberFields();
+		return array_map(function($subscriber) use ($subscriberFields) {
+			return array_intersect_key($subscriber, array_flip($subscriberFields));
+		}, $subscribers);
 	}
 	
 	/**
-	 * get parameters required to run BillApi
+	 * get the basic fields to show for a subscriber
 	 *
-	 * @param  mixed $action
-	 * @param  mixed $query
-	 * @param  mixed $update
-	 * @return void
+	 * @return array
 	 */
-	protected function getBillApiParams($action, $query = [], $update = []) {
-		$ret = [
-			'collection' => 'accounts',
-			'request' => [
-				'collection' => 'accounts',
-				'action' => $action,
-			],
-			'settings' => Billrun_Factory::config()->getConfigValue("billapi.accounts.{$action}", []),
-		];
-
-		if (!empty($query)) {
-			$ret['request']['query'] = json_encode($query);
-		}
-
-		if (!empty($update)) {
-			$ret['request']['update'] = json_encode($update);
-		}
-
-		return $ret;
+	protected function getSubscriberFields() {
+		$customFields = array_merge(
+			Billrun_Factory::config()->getConfigValue('subscribers.fields', []),
+			Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', [])
+		);
+		
+		return array_column(array_filter($customFields, function($customField) {
+			return !empty($customField['system']) || !empty($customField['show_in_list']) || !empty($customField['unique']);
+		}), 'field_name');
 	}
 
 	/**
-	 * Authenticate the request.
-	 * Currently, all actions are on the account which logged-in so no need for further authentication
+	 * Authorize the request.
 	 *
+	 * @param  string $action
 	 * @param  array $params
 	 * @return boolean
 	 */
-    protected function authenticate($params = []) {
-		return true;
+    protected function authorize($action, &$params = []) {
+		if (!parent::authorize($action, $params)) {
+			return false;
+		}
+		
+		return $this->loginLevel === self::LOGIN_LEVEL_ACCOUNT;
 	}
 
 }

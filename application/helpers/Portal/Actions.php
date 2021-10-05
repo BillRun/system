@@ -8,6 +8,7 @@
 
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Registration.php';
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Account.php';
+require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Subscriber.php';
 
 /**
  * Customer Portal actions
@@ -16,6 +17,10 @@ require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Account.php
  * @since    5.14
  */
 abstract class Portal_Actions {
+
+    const DATETIME_FORMAT = 'Y-m-d H:i:s';
+    const LOGIN_LEVEL_ACCOUNT = 'account';
+    const LOGIN_LEVEL_SUBSCRIBER = 'subscriber';
     
     /**
      * action general parameters
@@ -30,6 +35,9 @@ abstract class Portal_Actions {
 	 * @var string
 	 */
 	protected $loggerID;
+
+    protected $loginLevel = '';
+    protected $loggedInEntity = '';
 
     public function __construct($params = []) {
         $this->params = $params;
@@ -58,8 +66,8 @@ abstract class Portal_Actions {
         $this->log("Starting action {$action}", Billrun_Log::DEBUG);
         $this->loggerID = uniqid();
         try {
-            if (!$this->authenticate($params)) {
-                throw new Portal_Exception('authentication_failed');
+            if (!$this->authorize($action, $params)) {
+                throw new Portal_Exception('authorization_failed');
             }
             
             if (!$this->actionExists($action)) {
@@ -128,10 +136,121 @@ abstract class Portal_Actions {
     }
     
     /**
-     * Authenticate the request
+     * Authorize the request
 	 *
+     * @param  string $action
      * @param  array $params
      * @return boolean
-	 */    
-    protected abstract function authenticate($params = []);
+	 */
+    protected function authorize($action, &$params = []) {
+        $accountModel = new Portal_Actions_Account($this->params);
+        $account = $accountModel->get(['query' => $this->getLoggedInEntityQuery()]);
+        if ($account) {
+            $this->loggedInEntity = $account;
+            $this->loginLevel = self::LOGIN_LEVEL_ACCOUNT;
+            return true;
+        }
+
+        $subscriberModel = new Portal_Actions_Subscriber($this->params);
+        $subscriber = $subscriberModel->get(['query' => $this->getLoggedInEntityQuery()]);
+        if ($subscriber) {
+            $this->loggedInEntity = $subscriber;
+            $this->loginLevel = self::LOGIN_LEVEL_SUBSCRIBER;
+            return true;
+        }
+		
+        return false;
+	}
+    
+    /**
+     * get account's identification query based on the authentication
+     *
+     * @return array
+     */
+    protected function getLoggedInEntityQuery() {
+		$authField = $this->params['authentication_field'] ?? '';		
+        $authValue = $this->params['token_data']['user_id'] ?? '';
+
+        if (empty($authField) || empty($authValue)) {
+            return false;
+        }
+		
+        return [
+			$authField => $authValue,
+		];
+	}
+
+    /**
+	 * run BillApi action
+	 *
+	 * @param  array $params
+	 * @return mixed
+	 */
+	protected function runBillApi($params) {
+		try {
+			$action = $params['request']['action'];
+			switch ($action) {
+				case 'uniqueget':
+				case 'get':
+                    $params['force_reload'] = true;
+					$modelAction = Models_Action::getInstance($params);
+					return $modelAction->execute();
+				default:
+					$entityModel = Models_Entity::getInstance($params);
+					return $entityModel->{$action}();
+			}
+		} catch (Exception $ex) {
+            Billrun_Factory::log("Portal_Actions::runBillApi got Error: {$ex->getCode()} - {$ex->getMessage()}", Billrun_Log::ERR);
+            return false;
+		}
+	}
+	
+	/**
+	 * get parameters required to run BillApi
+	 *
+	 * @param  mixed $action
+	 * @param  mixed $query
+	 * @param  mixed $update
+	 * @return void
+	 */
+	protected function getBillApiParams($module, $action, $query = [], $update = []) {
+		$ret = [
+			'collection' => $module,
+			'request' => [
+				'collection' => $module,
+				'action' => $action,
+			],
+			'settings' => Billrun_Factory::config()->getConfigValue("billapi.{$module}.{$action}", []),
+		];
+
+		if (!empty($query)) {
+			$ret['request']['query'] = json_encode($query);
+		}
+
+		if (!empty($update)) {
+			$ret['request']['update'] = json_encode($update);
+		}
+
+		return $ret;
+	}
+
+    /**
+	 * format entity details to return
+	 *
+	 * @param  array $entity
+	 * @return array
+	 */
+	protected function getDetails($entity) {
+		if (empty($entity)) {
+			return false;
+		}
+
+        foreach ($entity as $field => $value) {
+            if ($value instanceof MongoDate) {
+                $entity[$field] = Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
+            }
+        }
+
+        return $entity;
+    }
 }
