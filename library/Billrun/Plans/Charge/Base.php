@@ -44,5 +44,5 @@ abstract class Billrun_Plans_Charge_Base {
 	 * @return float the price of the plan without VAT.
 	 */
 	public abstract function getPrice($quantity = 1);
-	
+
 }

@@ -51,7 +51,11 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
 							 'service' => array('rate'=> 'description','line' => 'name'));
 		
-		if(in_array($line['type'],array_keys($typeMapping))) {			
+		if (isset($rate['invoice_description'])) {
+			return $rate['invoice_description'];
+		}
+		
+		if(in_array($line['type'],array_keys($typeMapping))) {
 			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
 								$rate[$typeMapping[$line['type']]['rate']] :
 								ucfirst(strtolower(preg_replace('/_/', ' ',$line[$typeMapping[$line['type']]['line']])));
@@ -138,7 +142,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
 			$rate = $flatRate->getData();
 		}
-		return $rate;			
+		return $rate;
 	}
 	
 	protected function getLineAggregationKey($line,$rate,$name) {
@@ -355,5 +359,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				}
 			}
 		}
+	}
+
+
+	/**
+	 * TODO implement
+	 */
+	public function  getFormatedDate($date,$formatType = '' ) {
+		return date('Y-m-d' ,$date);
 	}
 }
