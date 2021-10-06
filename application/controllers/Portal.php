@@ -86,8 +86,9 @@ class PortalController extends Yaf_Controller_Abstract {
 		$this->update = $this->requestBody['update'] ?? [];
 		$this->query = json_decode($this->request->getRequest()['query'], JSON_OBJECT_AS_ARRAY) ?? [];
 		$this->response = $this->getResponse();
-		$this->action = array_keys($this->request->getParams())[0] ?? 
-			$this->request->getMethod() === 'GET' ? 'get' : 'update';
+		$requestParams = $this->request->getParams();
+		$this->action = !empty($requestParams) ? array_keys($requestParams)[0] :
+			($this->request->getMethod() === 'GET' ? 'get' : 'update');
 	
 		if (!$this->authenticate('selfcare')) {
 			return $this->forward('PortalError', 'unauthenticated');

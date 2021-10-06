@@ -19,6 +19,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/subscribers.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/balances.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/lines.ini');
 	}
         
     /**
@@ -37,6 +38,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 
 		if ($this->loginLevel === self::LOGIN_LEVEL_SUBSCRIBER) {
 			$query['sid'] = $this->loggedInEntity['sid'];
+			$query['aid'] = $this->loggedInEntity['aid'];
 		} else if ($this->loginLevel === self::LOGIN_LEVEL_ACCOUNT) {		
 			$query['aid'] = $this->loggedInEntity['aid'];
 		}
@@ -67,6 +69,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		$query['type'] = 'subscriber';
 		if ($this->loginLevel === self::LOGIN_LEVEL_SUBSCRIBER) {
 			$query['sid'] = $this->loggedInEntity['sid'];
+			$query['aid'] = $this->loggedInEntity['aid'];
 		} else if ($this->loginLevel === self::LOGIN_LEVEL_ACCOUNT) {		
 			$query['aid'] = $this->loggedInEntity['aid'];
 		}
@@ -107,7 +110,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 			return false;
 		}
 		
-		$subscriber['usages'] = $this->getUsages($subscriber);
+		$subscriber['usages'] = $this->getAggregatedUsages($subscriber);
 		unset($subscriber['_id']);
 		return $subscriber;
 	}
@@ -118,7 +121,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 * @param  mixed $subscriber
 	 * @return array
 	 */
-	protected function getUsages($subscriber) {
+	protected function getAggregatedUsages($subscriber) {
 		$endOfCycle = date(DATE_ISO8601, (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp()));
 		$totals = $this->getTotalUsages($subscriber);
 		$used = [];
@@ -219,6 +222,30 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		}
 
 		return $totals;
+	}
+	
+	/**
+	 * get subscriber usages (lines) 
+	 *
+	 * @param  array $params
+	 * @return array
+	 */
+	public function usages($params = []) {
+		$query = $params['query'] ?? [];
+
+		if ($this->loginLevel !== self::LOGIN_LEVEL_SUBSCRIBER && empty($query) || empty($query['sid'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
+		}
+
+		if ($this->loginLevel === self::LOGIN_LEVEL_SUBSCRIBER) {
+			$query['sid'] = $this->loggedInEntity['sid'];
+			$query['aid'] = $this->loggedInEntity['aid'];
+		} else if ($this->loginLevel === self::LOGIN_LEVEL_ACCOUNT) {		
+			$query['aid'] = $this->loggedInEntity['aid'];
+		}
+		
+		$billapiParams = $this->getBillApiParams('lines', 'get', $query);
+		return $this->runBillApi($billapiParams);
 	}
 
 	/**
