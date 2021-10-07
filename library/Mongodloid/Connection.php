@@ -193,7 +193,7 @@ class Mongodloid_Connection {
 
 }
 
-// depracated classes; will be remove on version 6.0
+// deprecated classes; will be remove on version 6.0
 if (!class_exists('MongoRegex')) {
 	Class MongoRegex extends Mongodloid_Regex {}
 }
