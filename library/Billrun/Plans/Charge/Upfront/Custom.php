@@ -74,8 +74,8 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
 			return ['start' => $this->activation,
 					'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
-					'start_date' =>new MongoDate(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation ,true,false,false ,$frequency )),
-					'end_date' => new MongoDate($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
+					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation ,true,false,false ,$frequency )),
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
 	}
 
 }
