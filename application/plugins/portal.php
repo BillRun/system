@@ -47,6 +47,15 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'display' => true,
 					'nullable' => false,
 				],
+				[
+					'type' => 'string',
+					'field_name' => 'token_secret',
+					'title' => 'Token Secret (Salt)',
+					'mandatpry' => true,
+					'editable' => true,
+					'display' => true,
+					'nullable' => false,
+				],
 			];
 	}
 	
