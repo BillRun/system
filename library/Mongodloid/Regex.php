@@ -43,8 +43,3 @@ class Mongodloid_Regex implements Mongodloid_TypeInterface{
     }
 
 }
-
-// Legacy class; will be removed on version 6.0
-if (!class_exists('MongoRegex')) {
-	Class MongoRegex extends Mongodloid_Regex {}
-}

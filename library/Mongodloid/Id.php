@@ -100,8 +100,3 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Seria
         $this->setMongoID(new MongoDB\BSON\ObjectId($serialized));
     }
 }
-
-// Legacy class; will be removed on version 6.0
-if (!class_exists('MongoId')) {
-	Class MongoId extends Mongodloid_Id {}
-}
