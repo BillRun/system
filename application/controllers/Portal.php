@@ -180,7 +180,7 @@ class PortalController extends Yaf_Controller_Abstract {
 	 */
 	public function registrationAction() {
 		$params = $this->requestBody;
-		$module = Portal_Actions::getInstance(['type' => 'registration']);
+		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'registration']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}

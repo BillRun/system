@@ -109,7 +109,11 @@ class Portal_Actions_Registration extends Portal_Actions {
 	 * @return string
 	 */
 	protected function generateToken($data, $type = '', $try = 0) {
-		$secret = 'K#PgCwg}#?mB>/`[w{z"~u#>&@y]X_)V+,vz7,7K';
+		$secret = $this->params['token_secret'] ?? '';
+		if (empty($secret)) {
+			throw new Portal_Exception('token_secret_missing');
+		}
+
 		$tokenFields = [
 			'id',
 			'email',

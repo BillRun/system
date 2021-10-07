@@ -26,6 +26,10 @@ class Portal_Exception extends Exception {
             'code' => 3003,
             'desc' => 'Authentication Failed',
         ],
+        'token_secret_missing' => [
+            'code' => 3004,
+            'desc' => 'Token secret is not configured',
+        ],
         'no_account' => [
             'code' => 4001,
             'desc' => 'No account found',
