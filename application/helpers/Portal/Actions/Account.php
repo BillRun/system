@@ -18,6 +18,7 @@ class Portal_Actions_Account extends Portal_Actions {
 		parent::__construct($params);
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/accounts.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/bills.ini');
 	}
         
     /**
@@ -87,9 +88,40 @@ class Portal_Actions_Account extends Portal_Actions {
 	 *
 	 * @param  array $params
 	 * @return array
-	 * @todo implement
 	 */
-	public function getInvoices($params = []) {
+	public function invoices($params = []) {
+		$query = $params['query'] ?? [];
+		$query['aid'] = $this->loggedInEntity['aid'];
+		$query['type'] = 'inv';
+		
+		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
+		$invoices = $this->runBillApi($billapiParams);
+		
+		foreach ($invoices as &$invoice) {
+			$invoice = $this->getInvoiceDetails($invoice);
+		}
+		
+		return $invoices;
+	}
+	
+	/**
+	 * Format invoice details
+	 *
+	 * @param  array $invoice
+	 * @return array
+	 */
+	protected function getInvoiceDetails($invoice) {
+		$invoice = parent::getDetails($invoice);
+		$fieldsToHide = [
+			'_id',
+			'invoice_file',
+		];
+		
+		foreach($fieldsToHide as $fieldToHide) {
+			unset($invoice[$fieldToHide]);
+		}
+
+		return $invoice;
 	}
 	
 	/**
