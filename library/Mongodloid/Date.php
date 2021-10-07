@@ -59,8 +59,3 @@ class Mongodloid_Date implements Mongodloid_TypeInterface{
     }
 
 }
-
-// Legacy class; will be removed on version 6.0
-if (!class_exists('MongoDate')) {
-	Class MongoDate extends Mongodloid_Date {}
-}

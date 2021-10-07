@@ -181,6 +181,24 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	}
 	
 	/**
+	 * Load legacy classes of old MongoDB layer
+	 * @deprecated since version 6.0
+	 */
+	public function _initLegacy() {
+		if (!class_exists('MongoRegex')) {
+			Class MongoRegex extends Mongodloid_Regex {}
+		}
+		
+		if (!class_exists('MongoId')) {
+			Class MongoId extends Mongodloid_Id {}
+		}
+		
+		if (!class_exists('MongoDate')) {
+			Class MongoDate extends Mongodloid_Date {}
+		}
+	}
+	
+	/**
 	 * Rearrange all the plugins from db and ini - to be in the latest plugins structure, and prevent duplications.
 	 * @param array $plugins
 	 * @return array.
