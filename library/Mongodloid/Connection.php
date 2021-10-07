@@ -192,3 +192,16 @@ class Mongodloid_Connection {
  	}
 
 }
+
+// depracated classes; will be remove on version 6.0
+if (!class_exists('MongoRegex')) {
+	Class MongoRegex extends Mongodloid_Regex {}
+}
+
+if (!class_exists('MongoId')) {
+	Class MongoId extends Mongodloid_Id {}
+}
+
+if (!class_exists('MongoDate')) {
+	Class MongoDate extends Mongodloid_Date {}
+}
