@@ -1649,6 +1649,12 @@ class Billrun_Util {
 							Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::DEBUG);
 						}
 						break;
+					//Handle date translation - assuimng mongo date was sent
+					case 'date' :
+						$dateFormat = isset($trans['format']) ? $trans['format'] : Billrun_Base::base_datetimeformat;
+						$dateValue = $source[$sourceKey]->sec;
+						$val = date($dateFormat, $dateValue);
+						break;
 					default :
 							Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
 						break;
