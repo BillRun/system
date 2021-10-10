@@ -1,7 +1,9 @@
 [
-		{
-			$match: {
-			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
+  {
+    $match: {
+      $and: [ {
+        $and : [ {
+          $expr: {$gt:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -12,7 +14,8 @@
                             'millisecond': { $millisecond: {{from}} },
                             'timezone' : "Asia/Nicosia"
                         }
-                    }]}}, {$expr:{$lte:['$urt', {
+                    }]}}, {
+            $expr: {$lte:['$urt', {
                         $dateFromParts: {
                             'year': {$year: {{to}}},
                             'month': {$month: {{to}}},
@@ -25,7 +28,30 @@
                         }
                     }
                 ]}}]}]}},
-                {$group:{"_id":{cash_flow:"$cf.cash_flow",rate_price:"$cf.rate_price",prod: "$cf.product",tier:"$cf.tier"}, "duration": {$sum: "$usagev"},count:{$sum:1}, "final_charge":{$sum: "$final_charge"}}},
-{$project:{_id:0,CASH_FLOW:{$cond: [ { $eq: [ "$_id.cash_flow", "R" ] }, "REVENUE", "EXPENSE" ]},tier:"$_id.tier",prod:"$_id.prod",dur:"$duration",CALL_COUNT_D:"$count",UNIT_COST_USED_G:"$_id.rate_price",final_charge:{$sum:"$final_charge"}}}
+  {
+    $group:{
+      "_id":{
+        cash_flow:"$cf.cash_flow",
+        rate_price:"$cf.rate_price",
+        prod: "$cf.product",
+        tier:"$cf.tier"
+        }, 
+      "duration": {$sum: "$usagev"},
+      count:{$sum:1}, 
+      "final_charge":{$sum: "$final_charge"}
+    }
+  },
+  {
+    $project:{
+      _id:0,
+      CASH_FLOW:{$cond: [ { $eq: [ "$_id.cash_flow", "R" ] }, "REVENUE", "EXPENSE" ]},
+      TIER_DESCRIPTION:"$_id.tier",
+      PRODUCT:"$_id.prod",
+      DURATION:"$duration",
+      CALL_COUNT_D:"$count",
+      UNIT_COST_USED_G:"$_id.rate_price",
+      AMOUNT:{$sum:"$final_charge"}
+    }
+  }
 ]
 
