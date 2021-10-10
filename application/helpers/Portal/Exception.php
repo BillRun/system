@@ -54,6 +54,10 @@ class Portal_Exception extends Exception {
             'code' => 4601,
             'desc' => 'Failed to send Email',
         ],
+        'no_invoice' => [
+            'code' => 4700,
+            'desc' => 'No invoice was found',
+        ],
     ];
 
     public function __construct($error = '', $code = '', $desc = '') {

@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Invoices.php';
+
 /**
  * Customer Portal account actions
  * 
@@ -13,13 +15,6 @@
  * @since    5.14
  */
 class Portal_Actions_Account extends Portal_Actions {
-
-	public function __construct($params = []) {
-		parent::__construct($params);
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/accounts.ini');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/bills.ini');
-	}
         
     /**
      * get account by given query
@@ -122,6 +117,36 @@ class Portal_Actions_Account extends Portal_Actions {
 		}
 
 		return $invoice;
+	}
+	
+	/**
+	 * Download an invoice
+	 * Will return invoice metadata as the response
+	 *
+	 * @param  array $params
+	 * @return void
+	 */
+	public function downloadInvoice($params = []) {
+		$invoiceParams = $params['invoice'];
+
+		if (empty($invoiceParams['invoice_id'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "invoice_id"');
+		}
+
+		if (empty($invoiceParams['billrun_key'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "billrun_key"');
+		}
+		
+		$request = [
+			'aid' => $this->loggedInEntity['aid'],
+			'iid' => $invoiceParams['invoice_id'],
+			'billrun_key' => $invoiceParams['billrun_key'],
+			'confirmed_only' => $invoiceParams['confirmed_only'] ?? false,
+		];
+
+		$invoicesAction = new AccountInvoicesAction();
+		$invoicesAction->downloadPDF($request);
+		throw new Portal_Exception('no_invoice'); // if we are here, that means that the invoice was not downloaded
 	}
 	
 	/**
