@@ -13,14 +13,6 @@
  * @since    5.14
  */
 class Portal_Actions_Subscriber extends Portal_Actions {
-
-	public function __construct($params = []) {
-		parent::__construct($params);
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/subscribers.ini');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/balances.ini');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/lines.ini');
-	}
         
     /**
      * get subscriber by given query
@@ -95,22 +87,27 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		}
 
 		$subscriber = $this->get($params);
-		return $this->getDetails($subscriber);
+		return $this->getDetails($subscriber, $params);
 	}
 	
 	/**
 	 * format subscriber details to return
 	 *
 	 * @param  array $subscriber
+	 * @param  array $params
 	 * @return array
 	 */
-	protected function getDetails($subscriber) {
+	protected function getDetails($subscriber, $params = []) {
 		$subscriber = parent::getDetails($subscriber);
 		if ($subscriber === false ) {
 			return false;
 		}
 		
-		$subscriber['usages'] = $this->getAggregatedUsages($subscriber);
+		$includeUsages = $params['include_usages'] ?? true;
+		if ($includeUsages) {
+			$subscriber['usages'] = $this->getAggregatedUsages($subscriber);
+		}
+		
 		unset($subscriber['_id']);
 		return $subscriber;
 	}
