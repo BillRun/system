@@ -79,6 +79,28 @@ class Portal_Actions_Account extends Portal_Actions {
 	}
 	
 	/**
+	 * Update account's password
+	 *
+	 * @param  array $params
+	 * @return boolean
+	 */
+	public function updatePassword($params = []) {
+		$newPassword = $params['update']['password'] ?? '';
+		$userId = $this->params['token_data']['user_id'] ?? '';
+		
+		if (empty($newPassword)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
+		}
+
+		$res = Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($userId, $newPassword);
+		if ($res === false) {
+			throw new Portal_Exception('account_update_failure');
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * get account invoices
 	 *
 	 * @param  array $params
