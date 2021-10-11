@@ -1,6 +1,7 @@
 [
     {
             $match: {
+				in_queue:{$ne:true},
                $and: [ {$and : [ { $expr: {$gte:['$urt', {
             $dateFromParts: {
                 'year': {$year:{{from}}},
