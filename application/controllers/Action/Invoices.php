@@ -80,7 +80,7 @@ class AccountInvoicesAction extends ApiAction {
 			$confirmedOnly = $request['confirmed_only'] ?? false;
 			$billrun_key = $request['billrun_key'] ?? '';
 			$invoiceId = $request['iid'] ?? '';
-			$detailed = $reques['detailed'] ?? false;
+			$detailed = $request['detailed'] ?? false;
 		}
 		
 		$query = array(
