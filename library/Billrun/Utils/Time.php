@@ -291,22 +291,104 @@ class Billrun_Utils_Time {
 	 * 
 	 * @param unixtimestamp $date1
 	 * @param unixtimestamp $date2
+	 * @param string $roundingType
 	 * @return int
 	 */
-	public static function getDaysDiff($date1, $date2) {
-		$datetime1 = new DateTime(date('Y-m-d H:i:s', $date1));
-		$datetime2 = new DateTime(date('Y-m-d H:i:s', $date2));
-		
+	public static function getDaysDiff($date1, $date2, $roundingType = 'ceil') {
 		if ($date1 > $date2) {
-			$diff = $datetime2->diff($datetime1);
+			$datediff = $date1 - $date2;
 		} else {
-			$diff = $datetime1->diff($datetime2);
+			$datediff = $date2 - $date1;
 		}
-		$daysDiff = $diff->format("%a");
-		if ($diff->format("%h") > 0 || $diff->format("%i") > 0 || $diff->format("%s") > 0) {
-			$daysDiff++;
+		
+		
+		$days = $datediff / (60 * 60 * 24);
+		switch ($roundingType){
+			case 'floor':
+				return floor($days);
+			case 'round':
+				return round($days);
+			case 'ceil': 
+			default:
+				return ceil($days);
 		}
-		return $daysDiff;
 	}
 
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiff($from, $to, $daySpan) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return (($minDate->diff($maxDate)->days+1) / $daySpan) * ($from > $to ? -1 : 1);
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0 by day amount with unix timestamps
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpanDiffUnix($from, $to, $daySpan) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+
+		return static::getDaysSpanDiff($formatedFrom, $formatedTo, $daySpan);
+	}
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getDaysSpan($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+
+		return $minDate->diff($maxDate)->days;
+	}
+
+
+		/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getMonthsDiff($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
+			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
+		}
+		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
+		switch ($yearDiff) {
+			case 0:
+				$months = $maxDate->format('m') - $minDate->format('m') - 1;
+				break;
+			default :
+				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
+				break;
+		}
+		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
+	}
+
+
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
+	public static function getMonthsDiffUnix($from, $to) {
+		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
+		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+
+		return static::getMonthsDiff($formatedFrom,$formatedTo);
+	}
 }

@@ -67,4 +67,82 @@ class Billrun_Processor_Util {
 		}
 		return null;
 	}
+	
+	public static function getCalculatedFields($type) {
+		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+		$calculated_fields = $fileTypeConfig['processor']['calculated_fields'] ?? [];
+		$cf = array_map(function($field){
+			return $field['target_field'];
+		}, $calculated_fields);
+		return $cf;
+	}
+	
+	public static function getUserFields($type) {
+		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+		$uf = $fileTypeConfig['parser']['custom_keys'] ?? [];
+		return $uf;
+	}
+	
+	/**
+	 *  Get all user fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user field names
+	 */
+	public static function getCustomerAndRateUfByUsaget($type) {
+		$customerAndRateUf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
+		$uf = self::getUserFields($type);
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $uf)){
+					$customerAndRateUf[$usaget][] = 'uf.' . $field;
+				}
+			}
+		}
+		return $customerAndRateUf;
+	}
+	
+	
+	/**
+	 *  Get all calcualted fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - calculated field names
+	 */
+	public static function getCustomerAndRateCfByUsaget($type) {
+		$customerAndRateCf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
+		$cf = self::getCalculatedFields($type);
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $cf)){
+					$customerAndRateCf[$usaget][] = 'cf.' . $field;
+				}
+			}
+		}
+		return $customerAndRateCf;
+	}
+
+	
+	/**
+	 *  Get all user fields and calculator fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user and calculated field names
+	 */
+	public static function getCustomerAndRateUfAndCfByUsaget($type) {
+		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
+		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'];
+		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
+			$customerFieldNames[$customerUsaget] = array_column($fields, 'src_key');
+		}
+		$rateCalculators = $fileTypeConfig['rate_calculators'];
+		foreach ($rateCalculators as $rateByUsaget) {
+			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
+                                $rateFieldNames[$rateUsaget] = array();
+				foreach ($priorityByUsaget as $priority) {
+					$rateFieldNames[$rateUsaget] = array_unique(array_merge($rateFieldNames[$rateUsaget], array_column($priority, 'line_key')));
+				}
+			}
+		}
+		return array_merge_recursive($customerFieldNames, $rateFieldNames);
+	}
 }

@@ -13,7 +13,7 @@
  * @subpackage      Config
  * @since           5.3
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 class Tests_Fieldenforcer extends UnitTestCase {
 	use Billrun_Traits_FieldValidator;

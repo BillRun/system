@@ -149,6 +149,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],
+				'credit_card' => $this->saveDetails['credit_card'] ?? '',
+				'expiration_date' => $this->saveDetails['expiration_date'] ?? '',
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time())
 			)
@@ -201,6 +203,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$this->saveDetails['aid'] = $aid;
 		$this->saveDetails['customer_profile_id'] = $profileId;
 		$this->saveDetails['payment_profile_id'] = $paymentProfileId;
+		$profileData = $this->getRecurringBillingProfile($profileId);
+		$cardNum = Billrun_Util::getIn($profileData, 'paymentProfiles.payment.creditCard.cardNumber', '');
+		$this->saveDetails['credit_card'] = substr($cardNum, -4);
+		$this->saveDetails['expiration_date'] = Billrun_Util::getIn($profileData, 'paymentProfiles.payment.creditCard.expirationDate', '');;
 		$this->savePaymentGateway();
         return $paymentProfileId;
 	}
@@ -304,7 +310,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			return [
 				'setting' => [
 					'settingName' => 'recurringBilling',
-					'settingValue' => true,
+					'settingValue' => 'true',
 				],
 			];
 		}
@@ -639,6 +645,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $customerId;
 	}
 	
+	public function getRecurringBillingProfile($customerProfileId, $params = []) {
+		$request = $this->buildTransactionPost($customerProfileId, $params);
+		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, ['Accept-encoding' => 'deflate'], null, 0);
+        $profileData = $this->decodeResponse($result, true);
+        return $profileData['profile'] ?? [];
+	}
+	
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		$request = $this->buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, ['Accept-encoding' => 'deflate'], null, 0);
@@ -882,6 +895,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return [
 			'setting' => $settings,
 		];
+	}
+	
+	public function getSecretFields() {
+		return array('transaction_key');
 	}
 
 }

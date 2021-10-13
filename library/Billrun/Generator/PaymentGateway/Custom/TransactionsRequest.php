@@ -117,6 +117,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
+		$this->setFileMandatoryFields();
 		foreach ($this->customers as $customer) {
 			if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
 				break;
@@ -124,6 +125,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams = array();
 			if (isset($accountsInArray[$customer['aid']])) {
 				$account = $accountsInArray[$customer['aid']];
+				if(!$this->validateMandatoryFieldsExistence($account, 'account')){
+					$message = "One or more of the file's mandatory fields is missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
+					Billrun_Factory::log($message, Zend_Log::ALERT);
+					$this->logFile->updateLogFileField('errors', $message);
+					continue;
+				}
 			} else {
 				$message = "The aid in one of the payments is : " . $customer['aid'] . " - didn't find account with this aid. Skipping this payment process";
 				Billrun_Factory::log($message, Zend_Log::ALERT);
@@ -205,11 +212,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (isset($account['payment_gateway']['active']['card_expiration'])) {
 				$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
 			}
-			$line = $this->getDataLine($params);
-			$this->data[] = $line;
+			if (!$this->validateMandatoryFieldsExistence($currentPayment, 'payment_request')) {
+				$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
+				Billrun_Factory::log($message, Zend_Log::WARN);
+				$this->logFile->updateLogFileField('warnings', $message);
+			}
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
+			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$params, $this));
 			$currentPayment->save();
+			$line = $this->getDataLine($params);
+			$this->data[] = $line;
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;

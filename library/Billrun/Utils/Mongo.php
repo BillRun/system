@@ -14,7 +14,12 @@
  * a data array, instead of a static class with service functions (make it OOP)
  */
 class Billrun_Utils_Mongo {
-		
+
+	/**
+	 * constant for ISO datetime format
+	 */
+	const datetimeISOformat = 'Y-m-d\TH:i:sP';
+
 	/**
 	 * Get a mongo date object based on a period object.
 	 * @param period $period

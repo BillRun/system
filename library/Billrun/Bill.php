@@ -507,6 +507,9 @@ abstract class Billrun_Bill {
 
 	public function attachPaidBill($billType, $billId, $amount) {
 		$paymentRawData = $this->data->getRawData();
+		if(!isset($paymentRawData['pays'])){
+			$paymentRawData['pays'] = [];
+		}
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
 		if ($relatedBillId == -1) {
 			Billrun_Bill::addRelatedBill($paymentRawData['pays'], $billType, $billId, $amount);
@@ -1101,10 +1104,7 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$account = Billrun_Factory::account();
-		$accountCurrentRevisionQuery = Billrun_Utils_Mongo::getDateBoundQuery();
-		$accountCurrentRevisionQuery['type'] = 'account';
-		$aidsQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		$accountQuery = array_merge($accountCurrentRevisionQuery, $aidsQuery);
+		$accountQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
 		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
 		$validGatewaysAids = array();
 		foreach ($currentAccounts as $activeAccount) {
