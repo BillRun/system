@@ -1330,8 +1330,8 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
         _obj = {
             "client_id": secret.name,
             "client_secret": secret.key,
-            "grant_types": null,
-            "scope": null,
+            "grant_types": 'client_credentials',
+            "scope": 'global',
             "user_id": null
         };
         db.oauth_clients.insert(_obj)
@@ -1349,6 +1349,31 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
+// BRCD-2897 add customer portal plugin to the UI
+runOnce(lastConfig, 'BRCD-2897', function () {
+    _customerPortalPluginsSettings = {
+        "name": "portalPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    };
+    lastConfig['plugins'].push(_customerPortalPluginsSettings);
+});
+
+// BRCD-2936: add email authentication template
+if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined') {
+	lastConfig['email_templates']['email_authentication'] = {
+		'subject': 'BillRun Customer Portal - Email Address Verification',
+		'content': '<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n',
+		'html_translation': [
+			'name',
+			'token',
+			'verification_link',
+			'company_email',
+        	'company_name',
+		]
+	};
+}
 
 db.config.insert(lastConfig);
 db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

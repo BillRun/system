@@ -68,11 +68,20 @@ class AccountInvoicesAction extends ApiAction {
 		return $retValue;
 	}
 
-	protected function downloadPDF($request) {
-		$aid = $request->get('aid');
-		$confirmedOnly = $request->get('confirmed_only');
-		$billrun_key = $request->get('billrun_key');
-		$invoiceId = $request->get('iid');
+	public function downloadPDF($request) {
+		if ($request instanceof Yaf_Request_Abstract) {
+			$aid = $request->get('aid');
+			$confirmedOnly = $request->get('confirmed_only');
+			$billrun_key = $request->get('billrun_key');
+			$invoiceId = $request->get('iid');
+			$detailed = $request->get('detailed');
+		} else {
+			$aid = $request['aid'] ?? '';
+			$confirmedOnly = $request['confirmed_only'] ?? false;
+			$billrun_key = $request['billrun_key'] ?? '';
+			$invoiceId = $request['iid'] ?? '';
+			$detailed = $reques['detailed'] ?? false;
+		}
 		
 		$query = array(
 			'aid' => (int) $aid,
@@ -96,7 +105,7 @@ class AccountInvoicesAction extends ApiAction {
 		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
 		$pdf = $invoiceData['invoice_file'];
 
-		if( $request->get('detailed') ) {
+		if ($detailed) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
 			$generator->load();
 			$generator->generate();

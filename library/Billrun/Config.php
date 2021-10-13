@@ -181,6 +181,17 @@ class Billrun_Config {
 		return $fileType;
 	}
 	
+	public function getPluginSettings($pluginName, $enabledOnly = false) {
+		$plugin = array_filter($this->getConfigValue('plugins'), function($pluginSettings) use ($pluginName, $enabledOnly) {
+			return $pluginSettings['name'] === "{$pluginName}Plugin" &&
+				(!$enabledOnly || Billrun_Config::isEnabled($pluginSettings));
+		});
+		if ($plugin) {
+			$plugin = current($plugin);
+		}
+		return $plugin;
+	}
+	
 	public function getExportGeneratorSettings($exportGenerator, $enabledOnly = true) {
 		$exportGenerator = array_filter($this->getConfigValue('export_generators'), function($exportGeneratorSettings) use ($exportGenerator, $enabledOnly) {
 			return $exportGeneratorSettings['name'] === $exportGenerator &&
@@ -479,6 +490,10 @@ class Billrun_Config {
 		
 	public static function isExportGeneratorConfigEnabled($exportGeneratorSettings) {
 		return (!isset($exportGeneratorSettings['enabled']) || $exportGeneratorSettings['enabled']);
+	}
+
+	public static function isEnabled($settings) {
+		return (!isset($settings['enabled']) || $settings['enabled']);
 	}
 
 	public static function getParserStructure($fileTypeName) {
