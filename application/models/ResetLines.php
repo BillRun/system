@@ -524,8 +524,7 @@ class ResetLinesModel {
 			'period' => array('$ne' => 'default')
 		);
 		
-		$iterator = $balancesColl->query($queryBalances)->cursor();
-		$balances = iterator_to_array($iterator);
+		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
@@ -560,8 +559,7 @@ class ResetLinesModel {
 			'period' => 'default'
 		);
 
-		$iterator = $balancesColl->query($queryBalances)->cursor();
-		$balances = iterator_to_array($iterator);
+		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			$current_account = array_filter($accounts, function($account) use($aid) {

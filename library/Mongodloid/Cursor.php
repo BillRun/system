@@ -113,12 +113,12 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function rewind() {
-		if ($this->_iterator === null) {
-          $this->doQuery();
-        }else{
-			$this->_iterator->rewind();
-		}
+		$this->doQuery();
 		return $this;
+	}
+	
+	public function reset() {
+		$this->_iterator = null;
 	}
 
 	public function valid() {
@@ -289,7 +289,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			if(method_exists($this->_collection, $command)){
 				$this->_cursor = $this->_collection->$command($this->_query, $this->_options);
 				$this->_iterator = new IteratorIterator($this->_cursor);
-				$this->rewind();
+				if (!is_null($this->_iterator)) {
+					$this->_iterator->rewind();
+				}
 			}
             
         } catch (\MongoDB\Driver\Exception\ExecutionTimeoutException $e) {
