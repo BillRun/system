@@ -113,6 +113,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function rewind() {
+		if (!is_null($this->_iterator)) {
+			$lastCalledStack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+			error_log('double running on cursor in ' . $lastCalledStack[0]['file'] . ' line ' . $lastCalledStack[0]['line']);
+		}
+
 		$this->doQuery();
 		return $this;
 	}
@@ -289,9 +294,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			if(method_exists($this->_collection, $command)){
 				$this->_cursor = $this->_collection->$command($this->_query, $this->_options);
 				$this->_iterator = new IteratorIterator($this->_cursor);
-				if (!is_null($this->_iterator)) {
-					$this->_iterator->rewind();
-				}
+				$this->_iterator->rewind();
 			}
             
         } catch (\MongoDB\Driver\Exception\ExecutionTimeoutException $e) {
