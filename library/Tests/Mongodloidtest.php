@@ -762,7 +762,7 @@ class Tests_Mongodloid extends UnitTestCase{
     }
 	
 	protected function getMongodloidDateClass() {
-		if(@class_exists('MongoDate')){
+		if(!@class_exists('Mongodloid_Date')){
 			$class = 'MongoDate';
 		}else{
 			$class = 'Mongodloid_Date';
@@ -812,7 +812,7 @@ class Tests_Mongodloid extends UnitTestCase{
 //////////////////////////Mongodloid_Id tests//////////////////////////////////////////
 	
 	protected function getMongodloidIdClass() {
-		if(@class_exists('MongoId')){
+		if(!@class_exists('Mongodloid_Id')){
 			$class = 'MongoId';
 		}else{
 			$class = 'Mongodloid_Id';
@@ -870,7 +870,7 @@ class Tests_Mongodloid extends UnitTestCase{
 
 
 	protected function getMongodloidRegexClass() {
-		if(@class_exists('MongoRegex')){
+		if(!@class_exists('Mongodloid_Regex')){
 			$class = 'MongoRegex';
 		}else{
 			$class = 'Mongodloid_Regex';
@@ -918,7 +918,7 @@ class Tests_Mongodloid extends UnitTestCase{
 //////////////////////////Mongodloid_Ref tests//////////////////////////////////////////
 
 	protected function getMongodloidRefClass() {
-		if(@class_exists('MongoDBRef')){
+		if(!@class_exists('Mongodloid_Ref')){
 			$class = 'MongoDBRef';
 		}else{
 			$class = 'Mongodloid_Ref';
@@ -1011,7 +1011,7 @@ class Tests_Mongodloid extends UnitTestCase{
 	
 	protected function changeValues(&$values) {
 		if(isset($values['_id'])){
-			if(@class_exists('MongoId')){
+			if(!@class_exists('Mongodloid_Id')){
 				$values['_id'] =  new MongoId($values['_id']);//for now check mongo
 			}
 			else{
@@ -1021,7 +1021,7 @@ class Tests_Mongodloid extends UnitTestCase{
 		$datesFields =['urt', 'time'];
 		foreach ($datesFields as $field){
 			if(isset($values[$field])){
-				if(@class_exists('MongoDate')){
+				if(!@class_exists('Mongodloid_Date')){
 					if(is_array($values[$field])){
 						$key = key($values[$field]);
 						$values[$field][$key] =  new MongoDate(strtotime($values[$field][$key]));//for now check mongo
