@@ -250,56 +250,42 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
         protected function roundingFinalCharge(&$row) {
-                if(!isset($row['rounding_rules']['rounding_decimals'])){
-                    switch ($row['rounding_rules']['rounding_type']){
-			case 'up': 
-                            $newFinalCharge = ceil($row['final_charge']);
-                            break;
-			case 'down':
-                            $newFinalCharge = floor($row['final_charge']);
-                            break;
-			case 'nearest':
-                            $newFinalCharge = round($row['final_charge']);
-                            break;
-			default:
-                            Billrun_Factory::log("Line {$row['stamp']} rounding_type didn't supported", Zend_Log::ALERT);
-                            return;
-                    }
-                }else{
-                    switch ($row['rounding_rules']['rounding_type']){
-			case 'up': 
-                            $roundingType = PHP_ROUND_HALF_UP;
-                            break;
-			case 'down':
-                            $roundingType = PHP_ROUND_HALF_DOWN;
-                            break;
-			case 'nearest':
-                            $roundingType = null;
-                            break;
-			default:
-                            Billrun_Factory::log("Line {$row['stamp']} rounding_type didn't supported", Zend_Log::ALERT);
-                            return;
-                    }
-                    $newFinalCharge = round($row['final_charge'], $row['rounding_rules']['rounding_decimals'], $roundingType);
+                $current = $row->getRawData();
+                if($current['final_charge'] == 0){
+                    return;
+                }
+                $decimals = $current['rounding_rules']['rounding_decimals'] ?? 0;
+                switch ($current['rounding_rules']['rounding_type']){
+                    case 'up': 
+                        $newFinalCharge = ceil($current['final_charge']*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'down':
+                        $newFinalCharge = floor($current['final_charge']*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'nearest':
+                        $newFinalCharge = round($current['final_charge'], $decimals);//also possible to add 
+                        break;
+                    default:
+                        Billrun_Factory::log("Line {$current['stamp']} rounding_type didn't supported", Zend_Log::ALERT);
+                        return;
                 }
 
                 //check if $newFinalCharge is not valid 
-                if(is_numeric($newFinalCharge)){
-                    Billrun_Factory::log("Line {$row['stamp']} rounding didn't success", Zend_Log::ALERT);
+                if(!is_numeric($newFinalCharge)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
                     return;
                 }
-                $div = $newFinalCharge != 0 ? $row['final_charge'] / $newFinalCharge : 0;
-                $row['origin_final_charge'] = $row['final_charge'];
-                $row['final_charge'] = $newFinalCharge;
-                $row['origin_aprice'] = $row['aprice'];
-                $row['aprice'] = $row['aprice'] * $div;
-                $row['tax_data']['origin_total_amount'] = $row['tax_data']['total_amount'];
-                $row['tax_data']['total_amount'] = $row['tax_data']['total_amount'] * $div;
-                foreach ($row['tax_data']['taxes'] as &$tax){
-                    $tax['origin_amount'] = $tax['amount'];
-                    $tax['amount'] = $tax['amount'] * $div;
+                $div = $newFinalCharge / $current['final_charge'];
+                $current['origin_final_charge'] = $current['final_charge'];
+                $current['final_charge'] = $newFinalCharge;
+                $current['origin_aprice'] = $current['aprice'];
+                $current['aprice'] = $current['aprice'] * $div;
+                Billrun_util::setIn($current, 'tax_data.origin_total_amount', $current['tax_data']['total_amount']);
+                $current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
+                foreach ($current['tax_data']['taxes'] as $index => $tax){
+                    $current['tax_data']['taxes'][$index]['origin_amount'] = $tax['amount'];
+                    $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
                 }
-                
-                
+                $row->setRawData($current);
 	}
 }
