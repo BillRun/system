@@ -177,8 +177,20 @@ class Mongodloid_Collection {
 	 * @param array $params
 	 * @return mongodloid createIndex result
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-createIndex/#phpmethod.MongoDB\Collection::createIndex
+	 * @deprecated since version 5.15 [please use createIndex]
 	 */
 	public function ensureIndex($fields, $params = array()) {
+		return $this->createIndex($fields, $params);
+	}
+	
+	/**
+	 * Create an index for the collection
+	 * @param array $fields - Specifies the field or fields to index and the index order.
+	 * @param array $params
+	 * @return mongodloid createIndex result
+	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-createIndex/#phpmethod.MongoDB\Collection::createIndex
+	 */
+	public function createIndex($fields, $params = array()) {
 		if (!is_array($fields)) {
 			$fields = array($fields => 1);
 		}
