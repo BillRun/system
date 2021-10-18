@@ -72,15 +72,15 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 					'$cond' => array(
 						'if' => array(
 							'$and' => array(
-								array('$lte' => array('$from', new MongoDate())),
-								array('$gt' => array('$to', new MongoDate())),
+								array('$lte' => array('$from', new Mongodloid_Date())),
+								array('$gt' => array('$to', new Mongodloid_Date())),
 							),
 						),
 						'then' => self::STATE_ACTIVE,
 						'else' => array(
 							'$cond' => array(
 								'if' => array(
-									'$gte' => array('$from', new MongoDate()),
+									'$gte' => array('$from', new Mongodloid_Date()),
 								),
 								'then' => self::STATE_FUTURE,
 								'else' => self::STATE_EXPIRE,

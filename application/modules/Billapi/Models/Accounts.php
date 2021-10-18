@@ -22,7 +22,7 @@ class Models_Accounts extends Models_Entity {
 		if(Billrun_Factory::config()->isMultiDayCycle()) {
 			$this->invoicing_day = $this->getInvoicingDay();
 		}
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 		$this->verifyAllowances();
 	}
 

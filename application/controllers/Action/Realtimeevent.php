@@ -59,7 +59,7 @@ class RealtimeeventAction extends ApiAction {
 	}
 
 	protected function rate() {
-		$this->event['arate'] = MongoDBRef::create($collection, $id);
+		$this->event['arate'] = Mongodloid_Ref::create($collection, $id);
 	}
 
 	protected function charge() {
@@ -114,10 +114,10 @@ class RealtimeeventAction extends ApiAction {
 
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		if (isset($this->event['time_date'])) {
-			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
+			$this->event['urt'] = new Mongodloid_Date(strtotime($this->event['time_date']));
 		} else {
 			// we are on real time -> the time is now
-			$this->event['urt'] = new MongoDate();
+			$this->event['urt'] = new Mongodloid_Date();
 		}
 
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));

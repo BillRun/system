@@ -293,7 +293,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 
  		$rawData = $matchedRate->getRawData();
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
  			return false;	
  		}
  		$idQuery = array(

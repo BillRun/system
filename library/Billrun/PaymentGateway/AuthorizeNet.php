@@ -152,7 +152,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'credit_card' => $this->saveDetails['credit_card'] ?? '',
 				'expiration_date' => $this->saveDetails['expiration_date'] ?? '',
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new Mongodloid_Date(time())
 			)
 		);
 	}

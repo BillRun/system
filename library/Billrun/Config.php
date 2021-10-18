@@ -362,7 +362,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof Mongodloid_Date) {
 			return false;
 		}
 		

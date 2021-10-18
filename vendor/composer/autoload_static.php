@@ -7,8 +7,8 @@ namespace Composer\Autoload;
 class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
 {
     public static $files = array (
-        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
         '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
         '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
@@ -51,23 +51,23 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         '883af48563631547925fa4c3b48ead07' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/multiply.php',
         'f190e3308e6ca23234a2875edc985c03' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideby.php',
         'ac9e33ce6841aa5bf5d16d465a2f03a7' => __DIR__ . '/..' . '/markbaker/complex/classes/src/operations/divideinto.php',
-        '9d8e013a5160a09477beb8e44f8ae97b' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/adjoint.php',
-        '6e78d1bdea6248d6aa117229efae50f2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/antidiagonal.php',
-        '4623d87924d94f5412fe5afbf1cef31d' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/cofactors.php',
-        '901fd1f6950a637ca85f66b701a45e13' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/determinant.php',
-        '83057abc0e4acc99ba80154ee5d02a49' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/diagonal.php',
-        '07b7fd7a434451149b4fd477fca0ce06' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/identity.php',
-        'c8d43b340583e07ae89f2a3baef2cf89' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/inverse.php',
-        '499bb10ed7a3aee2ba4c09a31a85e8d1' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/minors.php',
-        '1cad2e6414d652e8b1c64e8967f6f37d' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/trace.php',
-        '95a7f134ac17161d07def442b3b737e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/functions/transpose.php',
-        'b3a6bc628377118d4b4b8ba08d1eb949' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/add.php',
-        '5fef6d0e407f3f8887266dfa4a6c534c' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/directsum.php',
-        '684ba247e1385946e3babdaa054119de' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/subtract.php',
-        'aa53dcba601214d17ad405b7c291b7e8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/multiply.php',
-        '75c79eb1b25749b05a47976f32b0d8a2' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideby.php',
-        '6ab8ad87a734f276a6bcd5a0fe1289be' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/operations/divideinto.php',
-        '06dd8487319ccd8403765f5b8c9f2d61' => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo/functions.php',
+        '3af723442581d6c310bf44543f9f5c60' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/adjoint.php',
+        'd803221834c8b57fec95debb5406a797' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/antidiagonal.php',
+        '4714cafbd3be4c72c274a25eae9396bb' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/cofactors.php',
+        '89719dc7c77436609d1c1c31f0797b8f' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/determinant.php',
+        'c28af79ec7730859d83f2d4310b8dd0b' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/diagonal.php',
+        'c5d82bf1ac485e445f911e55789ab4e6' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/identity.php',
+        '0d2d594de24a247f7a33499e933aa21e' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/inverse.php',
+        'f37c25880804a014ef40c8bffbab1b10' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/minors.php',
+        'd6e4e42171df0dbea253b3067fefda38' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/trace.php',
+        '2c9b19fa954fd3e6fcc7e7a1383caddd' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Functions/transpose.php',
+        '0a538fc9b897450ec362480ebbebe94f' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/add.php',
+        'f0843f7f4089ec2343c7445544356385' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/directsum.php',
+        'ad3e8c29aa16d134661a414265677b61' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/subtract.php',
+        '8d37dad4703fab45bfec9dd0bbf3278e' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/multiply.php',
+        '4888a6f58c08148ebe17682f9ce9b2a8' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/divideby.php',
+        'eef6fa3879d3efa347cd24d5eb348f85' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operations/divideinto.php',
+        '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -85,7 +85,6 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
-            'PackageVersions\\' => 16,
         ),
         'M' => 
         array (
@@ -93,17 +92,9 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
             'MongoDB\\' => 8,
             'Matrix\\' => 7,
         ),
-        'J' => 
-        array (
-            'Jean85\\' => 7,
-        ),
         'C' => 
         array (
             'Complex\\' => 8,
-        ),
-        'A' => 
-        array (
-            'Alcaeus\\MongoDbAdapter\\' => 23,
         ),
     );
 
@@ -133,10 +124,6 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
         ),
-        'PackageVersions\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/package-versions-deprecated/src/PackageVersions',
-        ),
         'MyCLabs\\Enum\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
@@ -149,17 +136,9 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
         ),
-        'Jean85\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
-        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
-        ),
-        'Alcaeus\\MongoDbAdapter\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Alcaeus/MongoDbAdapter',
         ),
     );
 
@@ -171,11 +150,11 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
                 0 => __DIR__ . '/..' . '/bshaffer/oauth2-server-php/src',
             ),
         ),
-        'M' => 
+        'H' => 
         array (
-            'Mongo' => 
+            'HTMLPurifier' => 
             array (
-                0 => __DIR__ . '/..' . '/alcaeus/mongo-php-adapter/lib/Mongo',
+                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
     );
@@ -287,7 +266,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'NotAExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotEqualExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'NotIdenticalExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
-        'OpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/expectation_test.php',
+        'OpaqueContainer' => __DIR__ . '/..' . '/simpletest/simpletest/test/visual/visual_errors.php',
         'OtherTestException' => __DIR__ . '/..' . '/simpletest/simpletest/test/exceptions_test.php',
         'OutsideMarginExpectation' => __DIR__ . '/..' . '/simpletest/simpletest/expectation.php',
         'PHPUnitTestCase' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/phpunit/PHPUnitTestCase.php',
@@ -492,7 +471,7 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'TestOfLiveAuthentication' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveBrowser' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveCookies' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
-        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_test.php',
+        'TestOfLiveCssSelectors' => __DIR__ . '/..' . '/simpletest/simpletest/extensions/dom_tester/test/dom_tester_doc_test.php',
         'TestOfLiveFetching' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveFrontControllerEmulation' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',
         'TestOfLiveHeaders' => __DIR__ . '/..' . '/simpletest/simpletest/test/acceptance_test.php',

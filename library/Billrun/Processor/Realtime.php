@@ -51,13 +51,13 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
 		}
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
-			$row['urt'] = new MongoDate();
+			$row['urt'] = new Mongodloid_Date();
 		} else {
 			$row['timezone'] = $datetime->getOffset();
-			$row['urt'] = new MongoDate($datetime->format('U'));
+			$row['urt'] = new Mongodloid_Date($datetime->format('U'));
 		}
 		$row['eurt'] = $row['urt'];
 
@@ -72,7 +72,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		parent::processData();
 		foreach ($this->data['data'] as &$row) {
 			if (!isset($row['urt'])) {
-				$row['urt'] = new MongoDate();
+				$row['urt'] = new Mongodloid_Date();
 			}
 		}
 		return true;

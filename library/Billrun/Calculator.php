@@ -349,7 +349,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
 			array('calc_time' => array(
-					'$ne' => true, '$lt' => new MongoDate($orphand_time)
+					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
 //		$queryData['hint'] = $current_calculator_queue_tag;
@@ -362,7 +362,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$this->signedMicrotime = new MongoDate();
+		$this->signedMicrotime = new Mongodloid_Date();
 		$update = array(
 			'$set' => array(
 				'calc_time' => $this->signedMicrotime,
@@ -495,7 +495,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return boolean true on success else false
 	 */
 	protected function applyQueueHash($query, $update, $queue) {
-		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=') && Billrun_Factory::db()->compareClientVersion('1.5.0', '>=')) {
+		if (Billrun_Factory::db()->compareServerVersion('4.2.0', '>=')) {
 			$session = Billrun_Factory::db()->startSession();
 			if ($session !== false) {
 				$session->startTransaction();

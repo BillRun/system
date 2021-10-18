@@ -171,8 +171,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
                 $startTime = strtotime($timeRange, $endTime);
             }
             $query['urt'] = array(
-                '$gte' => new MongoDate($startTime),
-                '$lt' => new MongoDate($endTime),
+                '$gte' => new Mongodloid_Date($startTime),
+                '$lt' => new Mongodloid_Date($endTime),
             );
         }
         return $query;
@@ -321,7 +321,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'source' => 'export',
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
-            'export_start_time' => new MongoDate(),
+            'export_start_time' => new Mongodloid_Date(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
         );
@@ -363,7 +363,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
                         '$exists' => false,
                     ],
                     'export_start.' . static::$type => [
-                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
+                        '$lt' => new Mongodloid_Date(strtotime("{$orphanConfigTime} ago")),
                     ],
                 ],
             ],
@@ -386,7 +386,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
         $update = array(
             '$set' => array(
-                'export_start.' . static::$type => new MongoDate(),
+                'export_start.' . static::$type => new Mongodloid_Date(),
                 'export_stamp.' . static::$type => $this->exportStamp,
             ),
         );
@@ -410,7 +410,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function getLogData() {
         return array(
             'sequence_num' => $this->getSequenceNumber(),
-            'exported_time' => new MongoDate(),
+            'exported_time' => new Mongodloid_Date(),
         );
     }
 
@@ -461,7 +461,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
         );
         $update = array(
             '$set' => array(
-                'exported.' . static::$type => new MongoDate(),
+                'exported.' . static::$type => new Mongodloid_Date(),
             ),
         );
         $options = array(

@@ -113,7 +113,7 @@ class Billrun_Cycle_Paging {
 		if (!empty($this->invoicing_day)) {
 			$query['invoicing_day'] = $this->invoicing_day;
 		}
-		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new MongoDate()));
+		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new Mongodloid_Date()));
 		$modify = array('$setOnInsert' => $modifyQuery);
 		try {
 			$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));

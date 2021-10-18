@@ -102,16 +102,6 @@ class CommandExpectations implements CommandSubscriber
         return $o;
     }
 
-    public static function fromReadWriteConcern(array $expectedEvents)
-    {
-        $o = new self($expectedEvents);
-
-        $o->ignoreCommandFailed = true;
-        $o->ignoreCommandSucceeded = true;
-
-        return $o;
-    }
-
     public static function fromRetryableReads(array $expectedEvents)
     {
         $o = new self($expectedEvents);
@@ -140,7 +130,7 @@ class CommandExpectations implements CommandSubscriber
          * configureFailPoint needs to be ignored as the targetedFailPoint
          * operation will be caught by command monitoring and is also not
          * present in the expected commands in spec tests. */
-        $o->ignoredCommandNames = ['buildInfo', 'getParameter', 'configureFailPoint', 'listCollections', 'listIndexes'];
+        $o->ignoredCommandNames = ['buildInfo', 'getParameter', 'configureFailPoint'];
 
         return $o;
     }

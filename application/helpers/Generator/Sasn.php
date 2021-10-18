@@ -48,7 +48,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 												: 0;
 					$brokenLine['data_volume_gprs_downlink'] = $line['data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB : $line['data_volume_gprs_downlink'];
 					$this->writeRowToFile($this->translateCdrFields($brokenLine, $this->translations), $this->fieldDefinitions);
-					$line['record_opening_time'] = new MongoDate($line['record_opening_time']->sec + 1);
+					$line['record_opening_time'] = new Mongodloid_Date($line['record_opening_time']->sec + 1);
 					$line['data_volume_gprs_downlink'] -= static::$ONE_GB;
 					$line['orig_data_volume_gprs_downlink'] -= static::$ONE_GB;
 				}
@@ -63,7 +63,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	protected function getReportCandiateMatchQuery() {
 		return array('$and' => array(
 				array('$or' => array(
-						array('urt' => array('$gt' => new MongoDate($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)), 'record_type' => array('$ne' => 'final_request')),
+						array('urt' => array('$gt' => new Mongodloid_Date($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)), 'record_type' => array('$ne' => 'final_request')),
 						array('urt' => array('$gt' => $this->getLastRunDate(static::$type)))
 					))
 			)
@@ -71,7 +71,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('change_date_time' => array('$lt' => new MongoDate($this->startTime), '$gte' => $this->getLastRunDate(static::$type)));
+		return array('change_date_time' => array('$lt' => new Mongodloid_Date($this->startTime), '$gte' => $this->getLastRunDate(static::$type)));
 	}
 
 	// ------------------------------------ Helpers -----------------------------------------

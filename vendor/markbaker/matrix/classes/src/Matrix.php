@@ -33,6 +33,7 @@ namespace Matrix;
  * @method Matrix multiply(...$matrices)
  * @method Matrix divideby(...$matrices)
  * @method Matrix divideinto(...$matrices)
+ * @method Matrix directsum(...$matrices)
  */
 class Matrix
 {
@@ -306,7 +307,7 @@ class Matrix
      */
     public function isSquare(): bool
     {
-        return $this->rows == $this->columns;
+        return $this->rows === $this->columns;
     }
 
     /**
@@ -317,7 +318,7 @@ class Matrix
      */
     public function isVector(): bool
     {
-        return $this->rows == 1 || $this->columns == 1;
+        return $this->rows === 1 || $this->columns === 1;
     }
 
     /**
@@ -355,8 +356,8 @@ class Matrix
     }
 
     protected static $functions = [
-        'antidiagonal',
         'adjoint',
+        'antidiagonal',
         'cofactors',
         'determinant',
         'diagonal',

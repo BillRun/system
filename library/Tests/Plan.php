@@ -293,8 +293,8 @@ class Tests_Plan extends UnitTestCase {
 			// Create the plan
 			if(isset($test['create']) && $test['create']) {
 				$plan['name'] = $planName;
-				$plan['from'] = new MongoDate(strtotime($test['from']));
-				$plan['to'] = new MongoDate(strtotime($test['to']));
+				$plan['from'] = new Mongodloid_Date(strtotime($test['from']));
+				$plan['to'] = new Mongodloid_Date(strtotime($test['to']));
 				$plansColl->insert($plan);
 				$created = true;
 			}
