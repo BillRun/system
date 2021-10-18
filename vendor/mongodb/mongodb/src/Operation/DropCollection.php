@@ -18,7 +18,7 @@
 namespace MongoDB\Operation;
 
 use MongoDB\Driver\Command;
-use MongoDB\Driver\Exception\CommandException;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
@@ -38,9 +38,6 @@ use function MongoDB\server_supports_feature;
  */
 class DropCollection implements Executable
 {
-    /** @var integer */
-    private static $errorCodeNamespaceNotFound = 26;
-
     /** @var string */
     private static $errorMessageNamespaceNotFound = 'ns not found';
 
@@ -125,13 +122,13 @@ class DropCollection implements Executable
 
         try {
             $cursor = $server->executeWriteCommand($this->databaseName, $command, $this->createOptions());
-        } catch (CommandException $e) {
+        } catch (DriverRuntimeException $e) {
             /* The server may return an error if the collection does not exist.
-             * Check for an error code (or message for pre-3.2 servers) and
-             * return the command reply instead of throwing. */
-            if ($e->getCode() === self::$errorCodeNamespaceNotFound ||
-                $e->getMessage() === self::$errorMessageNamespaceNotFound) {
-                return $e->getResultDocument();
+             * Check for an error message (unfortunately, there isn't a code)
+             * and NOP instead of throwing.
+             */
+            if ($e->getMessage() === self::$errorMessageNamespaceNotFound) {
+                return (object) ['ok' => 0, 'errmsg' => self::$errorMessageNamespaceNotFound];
             }
 
             throw $e;

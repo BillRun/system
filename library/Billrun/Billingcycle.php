@@ -128,7 +128,7 @@ class Billrun_Billingcycle {
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null) {
+	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null,$planConfig = null) {
 		if($timestamp === null) {
 			$timestamp = time();
 		}
@@ -137,12 +137,25 @@ class Billrun_Billingcycle {
 			$config = Billrun_Factory::config();
 			$dayofmonth = $config->getConfigChargingDay();
 		}
+
 		$format = "Ym";
+
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
 			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
+
+		//If we're on a non monthly plan
+		if(!empty($planConfig['recurrence']['frequency'])) {
+			// Check iof the current billrun key is a legitimate non monthly key
+			$onLegitimateCycleRegex = '/\d{4}('.implode('|', Billrun_Utils_Cycle::getPlanCycleMonths($planConfig) ).')/';
+			if(!preg_match($onLegitimateCycleRegex, $key))  {
+				//if not move to the next legitimaate billrun key.
+				$key = static::getFollowingBillrunKey($key, $planConfig);
+			}
+		}
+
 		return $key;
 	}
 
@@ -173,8 +186,26 @@ class Billrun_Billingcycle {
 	 * @param string $key - Current key
 	 * @return string The following key
 	 */
-	public static function getFollowingBillrunKey($key) {
-		if(!empty(self::$followingCycleKeysTable[$key])) {
+	public static function getFollowingBillrunKey($key, $planConfig  = null ) {
+
+		if(!empty($planConfig['recurrence']['frequency'])) { // using  none querterly cycle
+			$currentMonthNumber = 0 + (substr($key,-2));
+			$year = substr($key,0,4);
+			$nextCycleMonth = false;
+			$monthsList = Billrun_Utils_Cycle::getPlanCycleMonths($planConfig);
+			foreach ($monthsList as  $month) {
+				if($month > $currentMonthNumber && !$nextCycleMonth  || $nextCycleMonth > $month ) {
+					$nextCycleMonth =  str_pad($month,2,'0',STR_PAD_LEFT);
+				}
+			}
+			if(!$nextCycleMonth) {
+				//The current  month key  is bigger then the largest legitimate billing month so
+				// the next billrunkey  must be  in the first legitimate month next year
+				$nextCycleMonth = str_pad(reset($monthsList),2,'0',STR_PAD_LEFT);
+				$year++;
+			}
+			return "${year}${nextCycleMonth}";
+		} else if(!empty(self::$followingCycleKeysTable[$key])) { //regular cached  cycle
 			return self::$followingCycleKeysTable[$key];
 		}
 		$datetime = $key . "01000000";

@@ -67,7 +67,7 @@ class ExportAction extends Action_Base {
 					}
 					$exporter->afterExport();
 				} catch (Exception $exc) {
-					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}");
+					$this->getController()->addOutput("failed to execute export generator {$exporter_name}, error: {$exc->getMessage()}. Stack trace: " . $exc->getTraceAsString());
 				}
 			} else {
 				$this->getController()->addOutput("Exporter cannot be loaded");

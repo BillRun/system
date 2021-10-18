@@ -268,7 +268,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return new Billrun_DataTypes_CycleTime($this->getStamp());
 	}
 
-	public function getPlans() {
+	public function getPlans($account=null, $subscriber=null) {
 		if(empty($this->plansCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$pipelines[] = $this->aggregationLogic->getPlansProjectPipeline();
@@ -277,37 +277,44 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->plansCache =  $this->toKeyHashedArray($res,'plan');
 		}
 
-		return $this->plansCache;
+		$localPlans = $this->overrideEntityValues($this->plansCache,@$account['overrides'],'plan');
+		return $this->overrideEntityValues($localPlans,@$subscriber['overrides'],'plan');
 	}
 
-	public function &getServices() {
+	public function getServices($account=null, $subscriber=null) {
 		if(empty($this->servicesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
 			$res =  $this->aggregatePipelines($pipelines,$coll);
 			$this->servicesCache = $this->toKeyHashedArray($res , 'name');
 		}
-		return $this->servicesCache;
+
+		$localServices = $this->overrideEntityValues($this->servicesCache,@$account['overrides'],'service');
+		return $this->overrideEntityValues($localServices,@$subscriber['overrides'],'service');
 	}
 
-	public function &getRates() {
+	public function getRates($account=null, $subscriber=null) {
 		if(empty($this->ratesCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
 		}
-		return $this->ratesCache;
+
+		$localRates = $this->overrideEntityValues($this->ratesCache,@$account['overrides'],'rate');
+		return $this->overrideEntityValues($localRates,@$subscriber['overrides'],'rate');
 	}
 
-	public function &getDiscounts() {
+	public function getDiscounts($account=null, $subscriber=null) {
 		if(empty($this->discountsCache)) {
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->discountsCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->discountsCache = $this->toKeyHashedArray($res, '_id');
 		}
-		return $this->discountsCache;
+
+		$localDiscounts = $this->overrideEntityValues($this->discountsCache,@$account['overrides'],'discount');
+		return $this->overrideEntityValues($localDiscounts,@$subscriber['overrides'],'discount');;
 	}
 
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
@@ -355,6 +362,32 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	//--------------------------------------------------------------------
+	/**
+	 * Override  entiries  values  based on certain condtions.
+	 * @param $entites A  Key Hashed object  containg the  entities tht might be  overriden
+	 * @param $overrideConditions Conditions to  override specific entites (must contain the entity  key) in the  hashed  entities list.
+	 * @param $entityType the entity type to override.
+	 * @return An overriden entites hashed list.
+	 */
+
+	protected function &overrideEntityValues($entites, $overrideConditions, $entityType) {
+		$overridenEntites = $entites;
+		if(!empty($overrideConditions)) {
+			foreach($overrideConditions as $overideRule) {
+				$ruleKey = $overideRule['key'];
+				if($overideRule['type'] == $entityType && !empty($entites[$ruleKey])  ) {
+					if(	(empty($overideRule['condition']) || Billrun_Util::isConditionMet($entites[$ruleKey],$overideRule['condition'])) ) {
+							$overridenEntites[$ruleKey] = new Mongodloid_Entity( array_merge(
+															$entites[$ruleKey]->getRawData(),
+															$overideRule['value']
+														) );
+					}
+				}
+			}
+		}
+
+		return $overridenEntites;
+	}
 
 	protected function buildBillrun($options) {
 		if (isset($options['stamp']) && $options['stamp']) {
@@ -415,7 +448,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$hashed = array();
 		foreach ($array as $value) {
 			$key = strval($value[$indxKey]);
-			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($value);
 			$hashed[$key] = $translatedDates;
 		}
 		return $hashed;
@@ -719,10 +752,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'type' => 'credit',
 			'billrun' => [
 				'$gt' => $billrun_key,
-				'$regex' => new MongoRegex('/^\d{6}$/i'), // 6 digits length billrun keys only
+				'$regex' => new Mongodloid_Regex('/^\d{6}$/i'), // 6 digits length billrun keys only
 			],
 			'urt' => [
-				'$gt' => new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key)),
+				'$gt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($billrun_key)),
 			],
 			'installments' => [
 				'$exists' => true,
@@ -768,7 +801,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$update = [
 			'$set' => [
 				'billrun' => $billrun_key,
-				'preponed' => new MongoDate(),
+				'preponed' => new Mongodloid_Date(),
 			],
 		];
 		
@@ -838,7 +871,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
-			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
+			$cycleUpdate = array('$set' => array('end_time' => new Mongodloid_Date()));
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);
 		}
 		if(Billrun_Billingcycle::hasCycleEnded($this->getCycle()->key(), $this->size)) {
@@ -948,7 +981,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	
 
 	protected function getPlanNextTeirDate($planDates) {
-		$currentTime = new MongoDate($this->getCycle()->end());
+		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
 			if($planData['to'] < $currentTime) {
 				continue;
@@ -956,13 +989,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 			$plan = new Billrun_Plan(array('name'=>$planData['plan'],'time' => $currentTime->sec));
 			$nextTeirDate = $plan->getNextTierDate($planData['plan_activation']->sec, $currentTime->sec);
-			return  $nextTeirDate ? new MongoDate($nextTeirDate) : NULL;
+			return  $nextTeirDate ? new Mongodloid_Date($nextTeirDate) : NULL;
 		}
 		return NULL;
 	}
 	
 	protected function getActivePlan($planDates) {
-		$currentTime = new MongoDate($this->getCycle()->end());
+		$currentTime = new Mongodloid_Date($this->getCycle()->end());
 		foreach($planDates as  $planData) {
 			if($planData['to'] < $currentTime) {
 				continue;

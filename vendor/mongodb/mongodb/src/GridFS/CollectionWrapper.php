@@ -17,18 +17,14 @@
 
 namespace MongoDB\GridFS;
 
-use ArrayIterator;
 use MongoDB\Collection;
 use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\UpdateResult;
-use MultipleIterator;
 use stdClass;
 use function abs;
-use function count;
-use function is_numeric;
 use function sprintf;
 
 /**
@@ -293,15 +289,13 @@ class CollectionWrapper
      */
     private function ensureChunksIndex()
     {
-        $expectedIndex = ['files_id' => 1, 'n' => 1];
-
         foreach ($this->chunksCollection->listIndexes() as $index) {
-            if ($index->isUnique() && $this->indexKeysMatch($expectedIndex, $index->getKey())) {
+            if ($index->isUnique() && $index->getKey() === ['files_id' => 1, 'n' => 1]) {
                 return;
             }
         }
 
-        $this->chunksCollection->createIndex($expectedIndex, ['unique' => true]);
+        $this->chunksCollection->createIndex(['files_id' => 1, 'n' => 1], ['unique' => true]);
     }
 
     /**
@@ -309,15 +303,13 @@ class CollectionWrapper
      */
     private function ensureFilesIndex()
     {
-        $expectedIndex = ['filename' => 1, 'uploadDate' => 1];
-
         foreach ($this->filesCollection->listIndexes() as $index) {
-            if ($this->indexKeysMatch($expectedIndex, $index->getKey())) {
+            if ($index->getKey() === ['filename' => 1, 'uploadDate' => 1]) {
                 return;
             }
         }
 
-        $this->filesCollection->createIndex($expectedIndex);
+        $this->filesCollection->createIndex(['filename' => 1, 'uploadDate' => 1]);
     }
 
     /**
@@ -340,36 +332,6 @@ class CollectionWrapper
 
         $this->ensureFilesIndex();
         $this->ensureChunksIndex();
-    }
-
-    private function indexKeysMatch(array $expectedKeys, array $actualKeys) : bool
-    {
-        if (count($expectedKeys) !== count($actualKeys)) {
-            return false;
-        }
-
-        $iterator = new MultipleIterator(MultipleIterator::MIT_NEED_ANY);
-        $iterator->attachIterator(new ArrayIterator($expectedKeys));
-        $iterator->attachIterator(new ArrayIterator($actualKeys));
-
-        foreach ($iterator as $key => $value) {
-            list($expectedKey, $actualKey)     = $key;
-            list($expectedValue, $actualValue) = $value;
-
-            if ($expectedKey !== $actualKey) {
-                return false;
-            }
-
-            /* Since we don't expect special indexes (e.g. text), we mark any
-             * index with a non-numeric definition as unequal. All others are
-             * compared against their int value to avoid differences due to
-             * some drivers using float values in the key specification. */
-            if (! is_numeric($actualValue) || (int) $expectedValue !== (int) $actualValue) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

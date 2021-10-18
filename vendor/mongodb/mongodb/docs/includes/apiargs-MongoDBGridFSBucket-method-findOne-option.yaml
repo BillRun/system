@@ -11,10 +11,6 @@ source:
   ref: skip
 ---
 source:
-  file: apiargs-MongoDBCollection-method-find-option.yaml
-  ref: allowDiskUse
----
-source:
   file: apiargs-MongoDBCollection-common-option.yaml
   ref: collation
 ---

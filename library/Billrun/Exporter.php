@@ -28,6 +28,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     static protected $type = 'exporter';
 
+    const EXPORT_MAX_LIMIT = 200000;
     const SEQUENCE_NUM_INIT = 1;
     const DEFAULT_FILENAME = 'EXPORT_[[param1]]_[[param2]].CSV';
     const DEFAULT_FILENAME_PARMS = [
@@ -170,8 +171,8 @@ class Billrun_Exporter extends Billrun_Generator_File {
                 $startTime = strtotime($timeRange, $endTime);
             }
             $query['urt'] = array(
-                '$gte' => new MongoDate($startTime),
-                '$lt' => new MongoDate($endTime),
+                '$gte' => new Mongodloid_Date($startTime),
+                '$lt' => new Mongodloid_Date($endTime),
             );
         }
         return $query;
@@ -184,7 +185,11 @@ class Billrun_Exporter extends Billrun_Generator_File {
      */
     protected function getLimit() {
         $querySettings = $this->config['filtration'][0]; // TODO: currenly, supporting 1 query might support more in the future
-        return $querySettings['limit'] ?? null;
+        if (empty($querySettings['limit'])) {
+            return self::EXPORT_MAX_LIMIT;
+        }
+        
+        return min($querySettings['limit'], self::EXPORT_MAX_LIMIT);
     }
 
     /**
@@ -255,9 +260,14 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $data = array();
         $count = 0;
         foreach ($rows as $row) {
+            if (isset($this->rowsStamps[$row['stamp']])) {
+                Billrun_Factory::log()->log("Skipping stamp {$row['stamp']} as it was already loaded", Zend_Log::DEBUG);
+                continue;
+            }
+            
             Billrun_Factory::log()->log("start getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $rawRow = $row->getRawData();
-            $this->rowsStamps[] = $rawRow['stamp'];
+            $this->rowsStamps[$rawRow['stamp']] = $rawRow['stamp'];
             $data[] = $this->getRecordData($rawRow);
             Billrun_Factory::log()->log("done getting data for row {$count} with stamp {$row['stamp']}", Zend_Log::DEBUG);
             $count++;
@@ -311,7 +321,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
             'source' => 'export',
             'type' => static::$type,
             'export_hostname' => Billrun_Util::getHostName(),
-            'export_start_time' => new MongoDate(),
+            'export_start_time' => new Mongodloid_Date(),
             'file_name' => $this->getFilename(),
             'path' => $this->getExportFilePath(),
         );
@@ -353,7 +363,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
                         '$exists' => false,
                     ],
                     'export_start.' . static::$type => [
-                        '$lt' => new MongoDate(strtotime("{$orphanConfigTime} ago")),
+                        '$lt' => new Mongodloid_Date(strtotime("{$orphanConfigTime} ago")),
                     ],
                 ],
             ],
@@ -376,7 +386,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
 
         $update = array(
             '$set' => array(
-                'export_start.' . static::$type => new MongoDate(),
+                'export_start.' . static::$type => new Mongodloid_Date(),
                 'export_stamp.' . static::$type => $this->exportStamp,
             ),
         );
@@ -400,7 +410,7 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function getLogData() {
         return array(
             'sequence_num' => $this->getSequenceNumber(),
-            'exported_time' => new MongoDate(),
+            'exported_time' => new Mongodloid_Date(),
         );
     }
 
@@ -446,12 +456,12 @@ class Billrun_Exporter extends Billrun_Generator_File {
     protected function markAsExported() {
         $query = array(
             'stamp' => array(
-                '$in' => $this->rowsStamps,
+                '$in' => array_values($this->rowsStamps),
             ),
         );
         $update = array(
             '$set' => array(
-                'exported.' . static::$type => new MongoDate(),
+                'exported.' . static::$type => new Mongodloid_Date(),
             ),
         );
         $options = array(

@@ -42,8 +42,7 @@
             "errorLabelsOmit": [
               "TransientTransactionError",
               "UnknownTransactionCommitResult"
-            ],
-            "errorContains": "E11000"
+            ]
           }
         },
         {
@@ -134,7 +133,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -224,7 +222,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -314,7 +311,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -411,7 +407,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -465,7 +460,7 @@
       }
     },
     {
-      "description": "add TransientTransactionError label to connection errors, but do not add RetryableWriteError label",
+      "description": "add transient label to connection errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -500,7 +495,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -516,7 +510,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -539,7 +532,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -556,7 +548,6 @@
               "TransientTransactionError"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ]
           }
@@ -671,7 +662,7 @@
       }
     },
     {
-      "description": "add RetryableWriteError and UnknownTransactionCommitResult labels to connection errors",
+      "description": "add unknown commit label to connection errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -707,7 +698,6 @@
           "object": "session0",
           "result": {
             "errorLabelsContain": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
@@ -810,7 +800,7 @@
       }
     },
     {
-      "description": "add RetryableWriteError and UnknownTransactionCommitResult labels to retryable commit errors",
+      "description": "add unknown commit label to retryable commit errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -820,10 +810,7 @@
           "failCommands": [
             "commitTransaction"
           ],
-          "errorCode": 11602,
-          "errorLabels": [
-            "RetryableWriteError"
-          ]
+          "errorCode": 11602
         }
       },
       "operations": [
@@ -849,7 +836,6 @@
           "object": "session0",
           "result": {
             "errorLabelsContain": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
@@ -952,7 +938,7 @@
       }
     },
     {
-      "description": "add RetryableWriteError and UnknownTransactionCommitResult labels to writeConcernError ShutdownInProgress",
+      "description": "add unknown commit label to writeConcernError ShutdownInProgress",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -961,160 +947,6 @@
         "data": {
           "failCommands": [
             "commitTransaction"
-          ],
-          "writeConcernError": {
-            "code": 91,
-            "errmsg": "Replication is being shut down",
-            "errorLabels": [
-              "RetryableWriteError"
-            ]
-          }
-        }
-      },
-      "operations": [
-        {
-          "name": "startTransaction",
-          "object": "session0",
-          "arguments": {
-            "options": {
-              "writeConcern": {
-                "w": "majority"
-              }
-            }
-          }
-        },
-        {
-          "name": "insertOne",
-          "object": "collection",
-          "arguments": {
-            "session": "session0",
-            "document": {
-              "_id": 1
-            }
-          },
-          "result": {
-            "insertedId": 1
-          }
-        },
-        {
-          "name": "commitTransaction",
-          "object": "session0",
-          "result": {
-            "errorLabelsContain": [
-              "RetryableWriteError",
-              "UnknownTransactionCommitResult"
-            ],
-            "errorLabelsOmit": [
-              "TransientTransactionError"
-            ]
-          }
-        },
-        {
-          "name": "commitTransaction",
-          "object": "session0"
-        }
-      ],
-      "expectations": [
-        {
-          "command_started_event": {
-            "command": {
-              "insert": "test",
-              "documents": [
-                {
-                  "_id": 1
-                }
-              ],
-              "ordered": true,
-              "readConcern": null,
-              "lsid": "session0",
-              "txnNumber": {
-                "$numberLong": "1"
-              },
-              "startTransaction": true,
-              "autocommit": false,
-              "writeConcern": null
-            },
-            "command_name": "insert",
-            "database_name": "transaction-tests"
-          }
-        },
-        {
-          "command_started_event": {
-            "command": {
-              "commitTransaction": 1,
-              "lsid": "session0",
-              "txnNumber": {
-                "$numberLong": "1"
-              },
-              "startTransaction": null,
-              "autocommit": false,
-              "writeConcern": {
-                "w": "majority"
-              }
-            },
-            "command_name": "commitTransaction",
-            "database_name": "admin"
-          }
-        },
-        {
-          "command_started_event": {
-            "command": {
-              "commitTransaction": 1,
-              "lsid": "session0",
-              "txnNumber": {
-                "$numberLong": "1"
-              },
-              "startTransaction": null,
-              "autocommit": false,
-              "writeConcern": {
-                "w": "majority",
-                "wtimeout": 10000
-              }
-            },
-            "command_name": "commitTransaction",
-            "database_name": "admin"
-          }
-        },
-        {
-          "command_started_event": {
-            "command": {
-              "commitTransaction": 1,
-              "lsid": "session0",
-              "txnNumber": {
-                "$numberLong": "1"
-              },
-              "startTransaction": null,
-              "autocommit": false,
-              "writeConcern": {
-                "w": "majority",
-                "wtimeout": 10000
-              }
-            },
-            "command_name": "commitTransaction",
-            "database_name": "admin"
-          }
-        }
-      ],
-      "outcome": {
-        "collection": {
-          "data": [
-            {
-              "_id": 1
-            }
-          ]
-        }
-      }
-    },
-    {
-      "description": "do not add RetryableWriteError label to writeConcernError ShutdownInProgress that occurs within transaction",
-      "failPoint": {
-        "configureFailPoint": "failCommand",
-        "mode": {
-          "times": 1
-        },
-        "data": {
-          "failCommands": [
-            "insert"
           ],
           "writeConcernError": {
             "code": 91,
@@ -1144,16 +976,23 @@
             }
           },
           "result": {
-            "errorLabelsContain": [],
-            "errorLabelsOmit": [
-              "RetryableWriteError",
-              "TransientTransactionError",
+            "insertedId": 1
+          }
+        },
+        {
+          "name": "commitTransaction",
+          "object": "session0",
+          "result": {
+            "errorLabelsContain": [
               "UnknownTransactionCommitResult"
+            ],
+            "errorLabelsOmit": [
+              "TransientTransactionError"
             ]
           }
         },
         {
-          "name": "abortTransaction",
+          "name": "commitTransaction",
           "object": "session0"
         }
       ],
@@ -1174,7 +1013,8 @@
                 "$numberLong": "1"
               },
               "startTransaction": true,
-              "autocommit": false
+              "autocommit": false,
+              "writeConcern": null
             },
             "command_name": "insert",
             "database_name": "transaction-tests"
@@ -1183,27 +1023,72 @@
         {
           "command_started_event": {
             "command": {
-              "abortTransaction": 1,
+              "commitTransaction": 1,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "1"
               },
               "startTransaction": null,
-              "autocommit": false
+              "autocommit": false,
+              "writeConcern": {
+                "w": "majority"
+              }
             },
-            "command_name": "abortTransaction",
+            "command_name": "commitTransaction",
+            "database_name": "admin"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
+              "commitTransaction": 1,
+              "lsid": "session0",
+              "txnNumber": {
+                "$numberLong": "1"
+              },
+              "startTransaction": null,
+              "autocommit": false,
+              "writeConcern": {
+                "w": "majority",
+                "wtimeout": 10000
+              }
+            },
+            "command_name": "commitTransaction",
+            "database_name": "admin"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
+              "commitTransaction": 1,
+              "lsid": "session0",
+              "txnNumber": {
+                "$numberLong": "1"
+              },
+              "startTransaction": null,
+              "autocommit": false,
+              "writeConcern": {
+                "w": "majority",
+                "wtimeout": 10000
+              }
+            },
+            "command_name": "commitTransaction",
             "database_name": "admin"
           }
         }
       ],
       "outcome": {
         "collection": {
-          "data": []
+          "data": [
+            {
+              "_id": 1
+            }
+          ]
         }
       }
     },
     {
-      "description": "add UnknownTransactionCommitResult label to writeConcernError WriteConcernFailed",
+      "description": "add unknown commit label to writeConcernError WriteConcernFailed",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1252,7 +1137,6 @@
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "TransientTransactionError"
             ]
           }
@@ -1335,7 +1219,7 @@
       }
     },
     {
-      "description": "add UnknownTransactionCommitResult label to writeConcernError WriteConcernFailed with wtimeout",
+      "description": "add unknown commit label to writeConcernError WriteConcernFailed with wtimeout",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1388,7 +1272,6 @@
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "TransientTransactionError"
             ]
           }
@@ -1471,7 +1354,7 @@
       }
     },
     {
-      "description": "omit UnknownTransactionCommitResult label from writeConcernError UnsatisfiableWriteConcern",
+      "description": "omit unknown commit label to writeConcernError UnsatisfiableWriteConcern",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1517,7 +1400,6 @@
           "object": "session0",
           "result": {
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "TransientTransactionError",
               "UnknownTransactionCommitResult"
             ]
@@ -1578,7 +1460,7 @@
       }
     },
     {
-      "description": "omit UnknownTransactionCommitResult label from writeConcernError UnknownReplWriteConcern",
+      "description": "omit unknown commit label to writeConcernError UnknownReplWriteConcern",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1624,7 +1506,6 @@
           "object": "session0",
           "result": {
             "errorLabelsOmit": [
-              "RetryableWriteConcern",
               "TransientTransactionError",
               "UnknownTransactionCommitResult"
             ]
@@ -1685,7 +1566,7 @@
       }
     },
     {
-      "description": "do not add UnknownTransactionCommitResult label to MaxTimeMSExpired inside transactions",
+      "description": "do not add unknown commit label to MaxTimeMSExpired inside transactions",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1732,7 +1613,6 @@
           },
           "result": {
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "UnknownTransactionCommitResult",
               "TransientTransactionError"
             ]
@@ -1815,7 +1695,7 @@
       }
     },
     {
-      "description": "add UnknownTransactionCommitResult label to MaxTimeMSExpired",
+      "description": "add unknown commit label to MaxTimeMSExpired",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1862,7 +1742,6 @@
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "TransientTransactionError"
             ]
           }
@@ -1947,7 +1826,7 @@
       }
     },
     {
-      "description": "add UnknownTransactionCommitResult label to writeConcernError MaxTimeMSExpired",
+      "description": "add unknown commit label to writeConcernError MaxTimeMSExpired",
       "failPoint": {
         "configureFailPoint": "failCommand",
         "mode": {
@@ -1997,7 +1876,6 @@
               "UnknownTransactionCommitResult"
             ],
             "errorLabelsOmit": [
-              "RetryableWriteError",
               "TransientTransactionError"
             ]
           }

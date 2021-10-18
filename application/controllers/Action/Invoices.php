@@ -127,14 +127,14 @@ class AccountInvoicesAction extends ApiAction {
 			'stamp' => $params['billrun_key'],
 		);
 		if (!empty($params['invoicing_day'])) {
-			$options['invoicing_day'];
+			$options['invoicing_day'] = $params['invoicing_day'];
 		}
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->load();
 		$pdfPath = $generator->generate();
 		$cont = file_get_contents($pdfPath);
 		if ($cont) {
-			header('Content-disposition: inline; filename="'.$file_name.'"');
+			header('Content-disposition: inline; filename="'. basename($pdfPath).'"');
 			header('Cache-Control: public, must-revalidate, max-age=0');
 			header('Pragma: public');
 			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
@@ -154,7 +154,7 @@ class AccountInvoicesAction extends ApiAction {
 		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
-			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);
+			$q['creation_date'] = $this->intToMongodloidDate($q['creation_date']);
 		}
 		$invoices = $billrunColl->query($q)->cursor()->setRawReturn(true);
 		if($sort) {
@@ -176,15 +176,15 @@ class AccountInvoicesAction extends ApiAction {
 		return $retValue;
 	}
 	
-	protected function intToMongoDate($arr) {
+	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

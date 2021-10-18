@@ -69,16 +69,14 @@ class Billrun_Cycle_Paging {
 	}
 	
 	/**
-	 * Validate the max processes config valus
-	 * @param string $host - Host name value
-	 * @param int $maxProcesses - The max number of proccesses
+	 * Validate the max processes config values
 	 * @return boolean true if valid
 	 */
 	protected function validateMaxProcesses() {
 		$query = array_merge( $this->identifingQuery, array('page_size' => $this->size, 'host'=> $this->host,'end_time' => array('$exists' => false)) );
 		$processCount = $this->pagerCollection->query($query)->count();
 		if ($processCount >= $this->maxProcesses) {
-			Billrun_Factory::log("Host ". $host. "is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
+			Billrun_Factory::log("Host ". $this->host. "is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
 			return false;
 		}
 		return true;
@@ -115,7 +113,7 @@ class Billrun_Cycle_Paging {
 		if (!empty($this->invoicing_day)) {
 			$query['invoicing_day'] = $this->invoicing_day;
 		}
-		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new MongoDate()));
+		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new Mongodloid_Date()));
 		$modify = array('$setOnInsert' => $modifyQuery);
 		try {
 			$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));

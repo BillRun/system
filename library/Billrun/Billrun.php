@@ -971,22 +971,25 @@ class Billrun_Billrun {
 	 * @return string billrun_key
 	 * @todo create an appropriate index on billrun collection
 	 */
-	public static function getActiveBillrun($invoicing_day = null) {
+	public static function getActiveBillrun($invoicing_day = null,$planConfig = null) {
 		$config = Billrun_Factory::config();
-		if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day])) {
-			return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
-		} else {
-			if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
-				return self::$activatedBillrunsByInvoicingDay[0];
+
+		if(empty($planConfig['recurrence']['frequency'])) {
+			if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day]) ) {
+				return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
+			} else {
+				if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
+					return self::$activatedBillrunsByInvoicingDay[0];
+				}
 			}
 		}
-		$query = array(
-			'billrun_key' => array('$regex' => '^\d{6}$'),
-		);
+
+		$query = [	'billrun_key' => [ '$regex' =>  '^\d{6}$' ] ];
+
 		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
 			$query = array(
 				'attributes.invoicing_day' => $invoicing_day,
-		);
+			);
 		}
 		$now = time();
 		$sort = array(
@@ -996,22 +999,26 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$config = Billrun_Factory::config();
-		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ? Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day) : Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
+		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ?
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day,$planConfig) :
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now,null, $planConfig);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
-			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key']);
+			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'],$planConfig);
 			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
 		}
-		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
-			self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
-		} else {
-			self::$activatedBillrunsByInvoicingDay[0] = $active_billrun;
+		if(empty($planConfig)) {
+			if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
+				self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
+			} else {
+				self::$activatedBillrunsByInvoicingDay[0] = $active_billrun;
+			}
 		}
 		return $active_billrun;
 	}
@@ -1071,27 +1078,27 @@ class Billrun_Billrun {
 
 	protected function initBillrunDates() {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
-		$this->data['creation_date'] = new MongoDate(time());
-		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
-		$this->data['end_date'] = new MongoDate($billrunDate);
-		$this->data['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
+		$this->data['creation_date'] = new Mongodloid_Date(time());
+		$this->data['invoice_date'] = new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$this->data['end_date'] = new Mongodloid_Date($billrunDate);
+		$this->data['start_date'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$this->data['due_date'] = $this->generateDueDate($billrunDate);
 	}
 	
 	/**
 	 * 
 	 * @param string $billrunDate
-	 * @return \MongoDate
+	 * @return Mongodloid_Date
 	 */
 	protected function generateDueDate($billrunDate) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
+				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	protected function getVatFromRow($row,$rate) {

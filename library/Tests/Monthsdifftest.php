@@ -6,7 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
- * test the Billrun_Plan::getMonthsDiff function
+ * test the Billrun_Utils_Time::getMonthsDiff function
  *
  * @author yossi
  */
@@ -101,7 +101,7 @@ class Tests_Monthsdifftest extends UnitTestCase {
 	 * @return number(int/float)
 	 */
 	protected function runT($from, $to) {
-		return Billrun_Plan::getMonthsDiff($from, $to);
+		return Billrun_Utils_Time::getMonthsDiff($from, $to);
 	}
 
 }
