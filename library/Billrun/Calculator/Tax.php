@@ -245,7 +245,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
         protected function ifLineNeedFinalChargeRounding($line) {
-                return isset($line['rounding_rules']) && isset($line['rounding_rules']['rounding_type']);
+                return isset($line['rounding_rules']) && !empty($line['rounding_rules']['rounding_type']);
                 
 	}
         
