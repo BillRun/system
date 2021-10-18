@@ -245,7 +245,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
         protected function ifLineNeedFinalChargeRounding($line) {
-                return isset($line['rounding_rules']) && isset($line['rounding_rules']['rounding_type']);
+                return isset($line['rounding_rules']) && !empty($line['rounding_rules']['rounding_type']);
                 
 	}
         
@@ -255,6 +255,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     return;
                 }
                 $decimals = $current['rounding_rules']['rounding_decimals'] ?? 0;
+                if($decimals >=0 && $decimals <= 10){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
+                    return;
+                    
+                }
                 switch ($current['rounding_rules']['rounding_type']){
                     case 'up': 
                         $newFinalCharge = ceil($current['final_charge']*pow(10,$decimals))/pow(10,$decimals);
