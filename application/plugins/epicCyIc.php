@@ -119,6 +119,15 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rates_array[1]["price"] = 0;
 		return $rates_array;
 	}
+        
+        public function beforeLineMediation($calculator, $type, &$row) {
+            if ($type === 'ICT') {
+                if ($row["EVENT_START_DATE"] == "" || $row["EVENT_START_TIME"] == "") {
+                    $row["EVENT_START_DATE"] = "19700101";
+                    $row["EVENT_START_TIME"] = "020000";
+                }
+            }
+	}
 
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
