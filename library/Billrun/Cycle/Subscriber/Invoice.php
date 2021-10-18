@@ -62,7 +62,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	public function getInvoiceGrouping() {
 		$fields = Billrun_Factory::config()->getConfigValue('billrun.grouping.fields', []);
 		if (!empty($fields)) {
-			return array(['conditions' => [], 'fields' => array_map(function ($field) {
+			return array(['conditions' => [], 'name' => 'default_grouping', 'fields' => array_map(function ($field) {
                     return ['field_name' => $field, 'op' => 'group'];
                 }, $fields)]);
 		} else {
@@ -586,11 +586,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		return $groupingKeys;
 	}
 
-	protected function createNewTotalsGrouping($groupingKeys, $row, $index, $row_grouping_fields = []) {
+	protected function createNewTotalsGrouping($groupingKeys, $row, $index, $row_grouping_options = []) {
 		foreach ($groupingKeys as $field => $value) {
 			$this->data['totals']['grouping'][$index][$field] = $value;
 		}
-		$this->updateTotalsGrouping($row, $index, $row_grouping_fields);
+		if(isset($row_grouping_options['name'])) {
+			$this->data['totals']['grouping'][$index]['group_name'] = $row_grouping_options['name'];
+		}
+		$this->updateTotalsGrouping($row, $index, $row_grouping_options['fields']);
 	}
 
 	protected function updateTotalsGrouping($row, $index, $row_grouping_fields = []) {
@@ -608,19 +611,19 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	protected function addGroupToTotalGrouping($row) {
-		if($row_grouping_fields = $this->getRowGroupOptions($row)) {
-			$groupingKeys = $this->getGroupingKeysforRow($row, $row_grouping_fields);
+		if($row_grouping_options = $this->getRowGroupOptions($row)) {
+			$groupingKeys = $this->getGroupingKeysforRow($row, $row_grouping_options['fields']);
 			if (isset($groupingKeys['tax_key'])) {
 				foreach ($groupingKeys['tax_key'] as $key => $types) {
 					foreach ($types as $type) {
 						$uniqeGroupingKeys = $groupingKeys;
 						$uniqeGroupingKeys['tax_key'] = !empty($key) ? $key : null;
 						$uniqeGroupingKeys['tax_type'] = !empty($type) ? $type : null;
-						$this->addGroup($uniqeGroupingKeys, $row, $row_grouping_fields);
+						$this->addGroup($uniqeGroupingKeys, $row, $row_grouping_options);
 					}
 				}
 			} else {
-				$this->addGroup($groupingKeys, $row, $row_grouping_fields);
+				$this->addGroup($groupingKeys, $row, $row_grouping_options);
 			}
 		}
 	}
@@ -633,20 +636,20 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected function getRowGroupOptions($row) {
 		foreach ($this->invoiceGrouping as $grouping_object) {
 			if ($this->isConditionsMeet($row, $grouping_object['conditions'])) {
-				return $grouping_object['fields'];
+				return ['fields' => $grouping_object['fields'], 'name' => $grouping_object['name']];
 			}
 		}
 		return false;
 	}
 
-	protected function addGroup($uniqeGroupingKeys, $row, $row_grouping_fields = []) {
-		$result = $this->findGroupTotalByGroupingKey($uniqeGroupingKeys);
+	protected function addGroup($uniqeGroupingKeys, $row, $row_grouping_options) {
+		$result = $this->findGroupTotalByGroupingKey($uniqeGroupingKeys, $row_grouping_options);
 		//if allready have group for this $uniqeGroupingKeys update this group
 		if ($result['status']) {
-			$this->updateTotalsGrouping($row, $result['index'], $row_grouping_fields);
+			$this->updateTotalsGrouping($row, $result['index'], $row_grouping_options['fields']);
 		} else {
 			//if dont have group for this $uniqeGroupingKeys creat new one.
-			$this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index'], $row_grouping_fields);
+			$this->createNewTotalsGrouping($uniqeGroupingKeys, $row, $result['index'], $row_grouping_options);
 		}
 	}
 
@@ -657,9 +660,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param $groupingkeys - the keys that distinguish a group.
 	 * @return if exist group return status=true and the index otherwise status=false and the the new index.
 	 */
-	protected function findGroupTotalByGroupingKey($groupingkeys) {
+	protected function findGroupTotalByGroupingKey($uniqeGroupingKeys, $groupingkeys) {
 		$result = array();
-		$stamp = Billrun_Util::generateArrayStamp($groupingkeys);
+		$stamp = Billrun_Util::generateArrayStamp(array_merge($uniqeGroupingKeys, $groupingkeys));
 		$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
 		if (isset($index)) {
 			$result['status'] = true;
