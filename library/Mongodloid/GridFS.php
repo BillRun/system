@@ -194,7 +194,8 @@ class Mongodloid_GridFS extends Mongodloid_Collection{
     private function isOKResult($result)
     {
         return (is_array($result) && $result['ok'] == 1.0) ||
-               (is_bool($result) && $result);
+               (is_bool($result) && $result) ||
+               (is_object($result) && $result instanceof MongoDB\InsertOneResult && $result->getInsertedCount());
     }
 	
 	/**
