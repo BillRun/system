@@ -499,8 +499,82 @@
 					},
 					"out_group": 10,
 					"out_plan": 10
-				}
-
-
+				},
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4872",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_UP"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "900f025a36c8ce1e32eda0a8b24e9a69",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616be87027577055c727bd17",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_UP",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_UP",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616be87027577055c727bd17",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "up"
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                }
 			]
 }

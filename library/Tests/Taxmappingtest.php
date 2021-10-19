@@ -97,7 +97,11 @@ class Tests_TaxMappingTest extends UnitTestCase {
 					'flat' => ['FALLBACK_TAX_PLAN' => ['tax_data' => ['total_amount' => 10, 'total_tax' => 0.1]]],
 					'services' => ['FALLBACK_TAX_SERVICE' => ['tax_data' => ['total_amount' => 2, 'total_tax' => 0.2]]],
 				]
-			)),		
+			)),	
+                //Test rounding rules
+                //rounding up (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '900f025a36c8ce1e32eda0a8b24e9a69'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
 	];
 	
 
@@ -315,6 +319,63 @@ class Tests_TaxMappingTest extends UnitTestCase {
 			}
 			
 				}
+		}
+		$this->message .= ' </p>';
+		return $passed;
+	}
+        
+        
+        protected function checkRounding($key, $returnRow, $row) {
+		$passed = true;
+		$epsilon = 0.000001;
+
+		if (isset($row['expected']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['final_charge'], $row['expected']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng final_charge {$returnRow['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "final_charge is :  {$returnRow['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['aprice'], $row['expected']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng aprice {$returnRow['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "aprice is :  {$returnRow['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['final_charge'], $row['expected']['before_rounding']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding final_charge {$returnRow['before_rounding']['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding final_charge is :  {$returnRow['before_rounding']['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['aprice'], $row['expected']['before_rounding']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding aprice {$returnRow['before_rounding']['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding aprice is :  {$returnRow['before_rounding']['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount'], $row['expected']['tax_data']['total_amount'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount {$returnRow['tax_data']['total_amount'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount is :  {$returnRow['tax_data']['total_amount'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount_before_rounding'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount_before_rounding'], $row['expected']['tax_data']['total_amount_before_rounding'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount_before_rounding {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount_before_rounding is :  {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->pass;
+			}
 		}
 		$this->message .= ' </p>';
 		return $passed;
