@@ -260,36 +260,42 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     return;
                     
                 }
-                switch ($current['rounding_rules']['rounding_type']){
-                    case 'up': 
-                        $newFinalCharge = ceil($current['final_charge']*pow(10,$decimals))/pow(10,$decimals);
-                        break;
-                    case 'down':
-                        $newFinalCharge = floor($current['final_charge']*pow(10,$decimals))/pow(10,$decimals);
-                        break;
-                    case 'nearest':
-                        $newFinalCharge = round($current['final_charge'], $decimals); 
-                        break;
-                    default:
-                        Billrun_Factory::log("Line {$current['stamp']} rounding_type didn't supported", Zend_Log::ALERT);
-                        return;
-                }
+                $newFinalCharge = $this->roundingPrice($current['rounding_rules']['rounding_type'], $current['final_charge'], $decimals);             
                 //check if $newFinalCharge is not valid 
                 if(!is_numeric($newFinalCharge)){
                     Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
                     return;
                 }
                 $div = $newFinalCharge / $current['final_charge'];
-                $current['origin_final_charge'] = $current['final_charge'];
+                $current['before_rounding']['final_charge'] = $current['final_charge'];
                 $current['final_charge'] = $newFinalCharge;
-                $current['origin_aprice'] = $current['aprice'];
+                $current['before_rounding']['aprice'] = $current['aprice'];
                 $current['aprice'] = $current['aprice'] * $div;
-                Billrun_util::setIn($current, 'tax_data.origin_total_amount', $current['tax_data']['total_amount']);
+                Billrun_util::setIn($current, 'tax_data.total_amount_before_rounding', $current['tax_data']['total_amount']);
                 $current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
                 foreach ($current['tax_data']['taxes'] as $index => $tax){
-                    $current['tax_data']['taxes'][$index]['origin_amount'] = $tax['amount'];
+                    $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
                     $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
                 }
                 $row->setRawData($current);
 	}
+        
+
+        protected function roundingPrice($roundingType, $originPrice, $decimals = 0){
+            switch ($roundingType){
+                    case 'up': 
+                        $newPrice = ceil($originPrice*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'down':
+                        $newPrice = floor($originPrice*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'nearest':
+                        $newPrice = round($originPrice, $decimals); 
+                        break;
+                    default:
+                        Billrun_Factory::log("Line rounding_type didn't supported", Zend_Log::ALERT);
+                        return;
+                }
+            return $newPrice;   
+        }
 }
