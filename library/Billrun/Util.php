@@ -1935,10 +1935,10 @@ class Billrun_Util {
         
         /**
          * Rounding a number.
-         * @param type $roundingType - round up, round down or round nearest. 
-         * @param type $number - the number we want to round 
-         * @param type $decimals-  (optional rounding by decimal
-         * @return type
+         * @param string $roundingType - round up, round down or round nearest. 
+         * @param float $number - the number we want to round 
+         * @param int $decimals-  The optional number of decimal digits to round to
+         * @return float
          */
         public static function roundingNumber($roundingType, $number, $decimals = 0){
             switch ($roundingType){
