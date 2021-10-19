@@ -260,7 +260,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     return;
                     
                 }
-                $newFinalCharge = $this->roundingPrice($current['rounding_rules']['rounding_type'], $current['final_charge'], $decimals);             
+                $newFinalCharge = Billrun_Util::roundingNumber($current['rounding_rules']['rounding_type'], $current['final_charge'], $decimals);             
                 //check if $newFinalCharge is not valid 
                 if(!is_numeric($newFinalCharge)){
                     Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
@@ -281,21 +281,4 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
         
 
-        protected function roundingPrice($roundingType, $originPrice, $decimals = 0){
-            switch ($roundingType){
-                    case 'up': 
-                        $newPrice = ceil($originPrice*pow(10,$decimals))/pow(10,$decimals);
-                        break;
-                    case 'down':
-                        $newPrice = floor($originPrice*pow(10,$decimals))/pow(10,$decimals);
-                        break;
-                    case 'nearest':
-                        $newPrice = round($originPrice, $decimals); 
-                        break;
-                    default:
-                        Billrun_Factory::log("Line rounding_type didn't supported", Zend_Log::ALERT);
-                        return;
-                }
-            return $newPrice;   
-        }
 }
