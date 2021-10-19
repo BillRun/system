@@ -1934,9 +1934,9 @@ class Billrun_Util {
 	}
         
         /**
-         * Rounding a number.
+         * Rounds a number.
          * @param string $roundingType - round up, round down or round nearest. 
-         * @param float $number - the number we want to round 
+         * @param float $number - The value to round
          * @param int $decimals-  The optional number of decimal digits to round to
          * @return float
          */
