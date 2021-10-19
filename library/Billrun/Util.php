@@ -1934,10 +1934,10 @@ class Billrun_Util {
 	}
         
         /**
-         * 
-         * @param type $roundingType 
-         * @param type $originPrice
-         * @param type $decimals
+         * Rounding a number.
+         * @param type $roundingType - round up, round down or round nearest. 
+         * @param type $number - the number we want to round 
+         * @param type $decimals-  (optional rounding by decimal
          * @return type
          */
         public static function roundingNumber($roundingType, $number, $decimals = 0){
