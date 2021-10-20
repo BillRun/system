@@ -124,8 +124,8 @@ class Portal_Actions_Account extends Portal_Actions {
         /**
 	 * get account debt
 	 *
-	 * @param  array $params
-	 * @return array
+	 * @param  array $params - the api params
+	 * @return array total account debt 
 	 */
 	public function debt($params = []) {
 		$query = $params['query'] ?? [];
