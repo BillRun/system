@@ -82,20 +82,22 @@ if(!found) {
 lastConfig['rates']['fields'] = fields;
 
 // BRCD-3227 Add new custom 'rounding_rules' field to Products(Rates)
-var fields = lastConfig['rates']['fields'];
-var found = false;
-for (var field_key in fields) {
-	if (fields[field_key].field_name === "rounding_rules") {
-		found = true;
-	}
-}
-if(!found) {
-	fields.push({
-		"system":true,
-		"field_name":"rounding_rules",
-	});
-}
-lastConfig['rates']['fields'] = fields;
+lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
+    var fields = lastConfig['rates']['fields'];
+    var found = false;
+    for (var field_key in fields) {
+            if (fields[field_key].field_name === "rounding_rules") {
+                    found = true;
+            }
+    }
+    if(!found) {
+            fields.push({
+                    "system":true,
+                    "field_name":"rounding_rules",
+            });
+    }
+    lastConfig['rates']['fields'] = fields;
+});
 
 // BRCD-1078: add rate categories
 for (var i in lastConfig['file_types']) {
