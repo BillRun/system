@@ -1932,5 +1932,29 @@ class Billrun_Util {
 
 		return array_unique($fieldNames);
 	}
+        
+        /**
+         * Rounds a number.
+         * @param string $roundingType - round up, round down or round nearest. 
+         * @param float $number - The value to round
+         * @param int $decimals-  The optional number of decimal digits to round to
+         * @return float
+         */
+        public static function roundingNumber($roundingType, $number, $decimals = 0){
+            switch ($roundingType){
+                    case 'up': 
+                        $newNumber = ceil($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'down':
+                        $newNumber = floor($number*pow(10,$decimals))/pow(10,$decimals);
+                        break;
+                    case 'nearest':
+                        $newNumber = round($number, $decimals); 
+                        break;
+                    default:
+                        return;
+                }
+            return $newNumber;   
+        }
 
 }
