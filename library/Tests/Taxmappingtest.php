@@ -102,7 +102,47 @@ class Tests_TaxMappingTest extends UnitTestCase {
                 //rounding up (without decimals)
                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '900f025a36c8ce1e32eda0a8b24e9a69'),
 			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
-	];
+	
+                //rounding up with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'feaa63e389a04d9607dfa0645d3cef1d'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding up with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ae9020df9411a9bbf7f9d73968ff5e4b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'f70cf4bb941d16d1d91ea331d4373ab0'),
+			'expected' => array('final_charge' => 1, 'aprice' => 0.8547008547008548, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.1452991452991453,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding down with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ac3a827b3ad76df44605ff2466b591dc'),
+			'expected' => array('final_charge' => 1.7, 'aprice' => 1.4529914529914532, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.24700854700854702,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '5e6e0b9b481e5c03f61df07aeef56e8b'),
+			'expected' => array('final_charge' => 1.75, 'aprice' => 1.4957264957264957, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2542735042735043,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '45bd347b51b7235ef91fcac3652ed498'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding nearest with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '69a4914a231ae416625a9fc832f09b10'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c50b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+                
+                //rounding empty
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c51b'),
+			'expected' => array('final_charge' => 1.755, 'aprice' => 1.5, 'tax_data' => ['total_amount' => 0.255])),
+            
+            
+            
+            
+            ];
 	
 
 	public function __construct($label = false) {
