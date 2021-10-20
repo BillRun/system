@@ -420,7 +420,7 @@ class BillrunController extends ApiController {
 		if (!empty($invoicing_day)) {
 			$cmd .= ' invoicing_days=' . $invoicing_day;
 		}
-		return Billrun_Util::forkProcessCli(escapeshellarg($cmd));
+		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
 	protected function processCharge($mode, $params = array()) {
