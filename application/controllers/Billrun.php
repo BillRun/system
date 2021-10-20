@@ -413,14 +413,14 @@ class BillrunController extends ApiController {
 			$invoicesId = implode(',', $invoicesArray);			
 		}
 		if (!empty($invoicesId)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey) . ' invoices=' . escapeshellarg($invoicesId);
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey);
 		}
 		if (!empty($invoicing_day)) {
-			$cmd .= ' invoicing_days=' . $invoicing_day;
+			$cmd .= ' invoicing_days=' . escapeshellarg($invoicing_day);
 		}
-		return Billrun_Util::forkProcessCli($cmd);
+		return Billrun_Util::forkProcessCli(escapeshellcmd($cmd));
 	}
 	
 	protected function processCharge($mode, $params = array()) {
