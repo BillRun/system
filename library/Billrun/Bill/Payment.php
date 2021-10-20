@@ -128,7 +128,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			$this->data['urt'] = new MongoDate();
+			$this->data['urt'] = isset($options['urt']) ? new MongoDate($options['urt']) : new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -1050,7 +1050,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['amount'] = $depositAmount;
 		$this->data['due'] = -$depositAmount;
 		$this->data['left'] = $depositAmount;
-		$this->setBalanceEffectiveDate();
+		$this->setUrt();
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;

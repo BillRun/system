@@ -77,6 +77,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		if (!empty($mergedBill) && !empty($mergedBill->getId())){
 			$mergedBill->setDueDate($this->installmentDueDate);
 			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);
+			$mergedBill->setUrt(strtotime($this->installmentChargeNotBefore));
 			$success = $mergedBill->insertMergeInstallment();
 			return $success;
 		}

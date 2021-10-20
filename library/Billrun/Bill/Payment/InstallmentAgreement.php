@@ -213,6 +213,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
 		$installment['invoices'] = $this->getInvoicesIdFromReceipt();
 		$installment['charge']['not_before'] = new MongoDate(strtotime($chargeNotBefore));
+		$installment['urt'] = new MongoDate(strtotime($chargeNotBefore));
 		return $installment;
 	}
 

@@ -1275,6 +1275,14 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
+	 * Function that sets urt, in every payment's bill.
+	 * @param int $date - unix timestamp to set as the urt.
+	 */
+	public function setUrt ($date = null) {
+		$this->data['urt'] = new MongoDate(!empty($date)? $date : time());
+	}
+	
+	/**
 	 * will add a related/linked bill to an existing bill
 	 * 
 	 * @param array $relatedBills - the bills object to which we want to add a linked bill	
