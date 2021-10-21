@@ -570,7 +570,8 @@
                                                 }
                                         ],
                                         "rounding_rules" : {
-                                                "rounding_type" : "up"
+                                                "rounding_type" : "up",
+                                                "rounding_decimals" : 0
                                         },
                                         "out_group" : 1,
                                         "out_plan" : 1,
@@ -800,7 +801,8 @@
                                                 }
                                         ],
                                         "rounding_rules" : {
-                                                "rounding_type" : "down"
+                                                "rounding_type" : "down",
+                                                "rounding_decimals" : 0
                                         },
                                         "out_group" : 1,
                                         "out_plan" : 1,
@@ -1030,7 +1032,8 @@
                                                 }
                                         ],
                                         "rounding_rules" : {
-                                                "rounding_type" : "nearest"
+                                                "rounding_type" : "nearest",
+                                                "rounding_decimals" : 0
                                         },
                                         "out_group" : 1,
                                         "out_plan" : 1,
