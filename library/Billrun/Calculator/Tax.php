@@ -260,7 +260,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                     return;
                     
                 }
-                $newFinalCharge = Billrun_Util::roundingNumber($current['rounding_rules']['rounding_type'], $current['final_charge'], $decimals);             
+                $newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);             
                 //check if $newFinalCharge is not valid 
                 if(!is_numeric($newFinalCharge)){
                     Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
