@@ -296,6 +296,22 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			} else if (!empty($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 				return false;
 			}
+			$data_volume_5g = 0;
+			$field_names = ['data_volume_uplink_5g', 'data_volume_downlink_5g'];
+			foreach ($field_names as $name) {
+				if (isset($cdrLine[$name])) {
+					if (is_array($cdrLine[$name])) {
+						foreach ($cdrLine[$name] as $vol) {
+							$data_volume_5g += $vol;
+						}
+					} else {
+						$data_volume_5g += $cdrLine[$name];
+					}
+				}
+			}
+			if ($data_volume_5g !== 0) {
+				$cdrLine['data_volume_5g'] = $data_volume_5g;
+			}
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
@@ -481,6 +497,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$dataArr = Asn_Base::getDataArray($data, true, true);
 		$valueArr = array();
 		foreach ($config as $key => $val) {
+			if(in_array($key, ['data_volume_uplink_5g', 'data_volume_downlink_5g'])){
+				echo '';
+			}
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
 			if ($tmpVal !== FALSE) {
 				$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
