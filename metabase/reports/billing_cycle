@@ -3,7 +3,7 @@
     $match: {
       $and: [ {
         $and : [ {
-          $expr: {$gt:['$urt', {
+          $expr: {$gte:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -15,7 +15,7 @@
                             'timezone' : "Asia/Nicosia"
                         }
                     }]}}, {
-            $expr: {$lte:['$urt', {
+            $expr: {$lt:['$urt', {
                         $dateFromParts: {
                             'year': {$year: {{to}}},
                             'month': {$month: {{to}}},
@@ -28,6 +28,12 @@
                         }
                     }
                 ]}}]}]}},
+  {$match:{
+     'in_queue':{ 
+       $ne : true
+       }
+      }
+  },
   {
     $group:{
       "_id":{
