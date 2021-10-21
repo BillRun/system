@@ -1940,7 +1940,7 @@ class Billrun_Util {
          * @param int $decimals-  The optional number of decimal digits to round to
          * @return float
          */
-        public static function roundingNumber($roundingType, $number, $decimals = 0){
+        public static function roundingNumber($number, $roundingType, $decimals = 0){
             switch ($roundingType){
                     case 'up': 
                         $newNumber = ceil($number*pow(10,$decimals))/pow(10,$decimals);
