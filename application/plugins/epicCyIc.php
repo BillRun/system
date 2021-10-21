@@ -123,8 +123,23 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
         public function beforeLineMediation($calculator, $type, &$row) {
             if ($type === 'ICT') {
                 if ($row["EVENT_START_DATE"] == "" || $row["EVENT_START_TIME"] == "") {
+                    $row["originalDate"] = $row["EVENT_START_DATE"];
                     $row["EVENT_START_DATE"] = "19700101";
+                    $row["originalTime"] = $row["EVENT_START_TIME"];
                     $row["EVENT_START_TIME"] = "020000";
+                    $row["dateOrTimeWasEmpty"] = true;
+                }
+            }
+	}
+        
+        public function afterLineMediation($calculator, $type, &$row) {
+            if ($type === 'ICT') {
+                if ($row["uf"]["dateOrTimeWasEmpty"]) {
+                    $row["uf"]["EVENT_START_DATE"] = $row["uf"]["originalDate"];
+                    $row["uf"]["EVENT_START_TIME"] = $row["uf"]["originalTime"];
+                    unset($row["uf"]["originalDate"]);
+                    unset($row["uf"]["originalTime"]);
+                    unset($row["uf"]["dateOrTimeWasEmpty"]);
                 }
             }
 	}
