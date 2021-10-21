@@ -169,7 +169,7 @@ class Subscriber_UsageAction extends ApiAction {
 			$output['usage_abroad'][$type.'_usage'] = $usageVal;
 		}
 		//days_max  will be set by  the getMaxUsagesOfPackages but there is no balance logic for usage so will query the lines
-		$vfResults = $this->countDays($params['sid'], date('Y',$startTime) );
+		$vfResults = $this->countDays($params['sid'], date('Y',$startTime), array_column($sortedOffers,'plan'));
 		$output['usage_abroad']['days_usage'] = 0 + @$vfResults;
 
 		//do some beutyfing of the data
@@ -251,15 +251,15 @@ class Subscriber_UsageAction extends ApiAction {
 
 	}
 
-	public function countDays($sid, $year = null) {
+	public function countDays($sid, $year = null, $plans = []) {
 		$fraudResult = $this->countDaysFraud($sid, $year);
 		$fraudCount = 0 + @$fraudResult['VF']['count'] + @$fraudResult['IRP_VF_10_DAYS']['count'];
-		$billingResult = $this->countDaysBilling($sid, $year);
-		$billingCount = 0 + ( empty($billingResult['VF']["day_sum"]) ? 0 :$billingResult['VF']["day_sum"] ) +  max(0,@$billingResult['IRP_VF_10_DAYS']["day_sum"]);
+		$billingResult = $this->countDaysBilling($sid, $year, $plans);
+		$billingCount = 0 + ( empty($billingResult['VF']["day_sum"]) ? 0 : $billingResult['VF']["day_sum"] ) +  max(0,@$billingResult['IRP_VF_10_DAYS']["day_sum"]);
 		return max($billingCount,$fraudCount);
 	}
 
-	public function countDaysBilling($sid, $year = null) {
+	public function countDaysBilling($sid, $year = null, $plans = []) {
 		$max_datetime = null;
 		try {
 			$vfRateGroups = Billrun_Factory::config()->getConfigValue('vfdays.fraud.groups.vodafone',['VF','IRP_VF_10_DAYS']);
@@ -290,7 +290,7 @@ class Subscriber_UsageAction extends ApiAction {
 						array('type' => 'tap3'),
 						array('type' => 'smsc'),
 					),
-					'plan' => array('$in' => $this->plans),
+					'plan' => array('$in' => $plans),
 					'arategroup' => ['$in'=> $vfRateGroups ],
 					'billrun' => array(
 						'$exists' => true,
@@ -372,7 +372,7 @@ class Subscriber_UsageAction extends ApiAction {
 				),
 			);
 			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-			Billrun_Factory::log("vfdays tap3 aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group33]));
+			Billrun_Factory::log("vfdays tap3 aggregate query : ".json_encode([$match, $project, $match2, $group, $group2,$sortPlans,$group3]));
 			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2,$sortPlans,$group3);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
@@ -449,7 +449,7 @@ class Subscriber_UsageAction extends ApiAction {
 				'count' => array('$sum' => '$count'),
 			),
 		);
-		//Billrun_Factory::log("vfdays nrtrde aggregate query : "+json_encode([$match1, $match2, $group, $group2]));
+		Billrun_Factory::log("vfdays fraud aggregate query : ".json_encode([$match1, $match2, $group, $group2,$sortPlans,$group3]));
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2,$sortPlans,$group3);
 		$associatedResults = [];
 		foreach($results as $res) {
