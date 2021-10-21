@@ -254,7 +254,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
                 if($current['final_charge'] == 0){
                     return;
                 }
-                $decimals = $current['rounding_rules']['rounding_decimals'] ?? 0;
+                $decimals = $current['rounding_rules']['rounding_decimals'] ?? null;
+                if(!isset($decimals)){
+                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals must supply if rounding type selected", Zend_Log::ALERT);
+                    return;
+                }
                 if(!($decimals >=0 && $decimals <= 10)){
                     Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
                     return;
