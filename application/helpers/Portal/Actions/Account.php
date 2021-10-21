@@ -7,6 +7,7 @@
  */
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Invoices.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/v3/Bills.php';
 
 /**
  * Customer Portal account actions
@@ -222,6 +223,28 @@ class Portal_Actions_Account extends Portal_Actions {
 		return array_column(array_filter($customFields, function($customField) {
 			return !empty($customField['system']) || !empty($customField['show_in_list']) || !empty($customField['unique']);
 		}), 'field_name');
+	}
+        
+        /**
+	 * get account charges
+	 *
+	 * @param  array $params - the api params
+	 * @return array the account charges
+	 */
+	public function charges($params = []) {
+		$query = $params['query'] ?? [];
+		$query['aid'] = $this->loggedInEntity['aid'];
+                if (empty($query['from'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "from"');
+		}
+
+		if (empty($query['to'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "to"');
+		}
+                $paymentHistoryAction = new V3_paymentHistoryAction();
+		$charges = $paymentHistoryAction->searchPayments($query);
+		
+		return $charges;
 	}
 
 	/**
