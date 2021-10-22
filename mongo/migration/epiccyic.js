@@ -40,6 +40,26 @@ function addToConfig(config, lastConf) {
 	return lastConf;
 }
 
+function addFieldToConfig(lastConf, fieldConf, entityName) {
+    if (typeof lastConf[entityName] === 'undefined') {
+            lastConf[entityName] = {'fields': []};
+    }
+    var fields = lastConf[entityName]['fields'];
+    var found = false;
+    for (var field_key in fields) {
+        if (fields[field_key].field_name === fieldConf.field_name) {
+						fields[field_key] = fieldConf;
+            found = true;
+        }
+    }
+    if (!found) {
+        fields.push(fieldConf);
+    }
+    lastConf[entityName]['fields'] = fields;
+
+    return lastConf;
+}
+
 // Perform specific migrations only once
 // Important note: runOnce is guaranteed to run some migration code once per task code only if the whole migration script completes without errors.
 function runOnce(lastConfig, taskCode, callback) {
@@ -100,20 +120,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 		{
 			"usage_type": "parameter_scenario",
 			"label": "parameter_scenario",
-			"property_type": "counter",
-			"invoice_uom": "",
-			"input_uom": ""
-		},
-		{
-			"usage_type": "parameter_anaa",
-			"label": "parameter_anaa",
-			"property_type": "counter",
-			"invoice_uom": "",
-			"input_uom": ""
-		},
-		{
-			"usage_type": "parameter_bnaa",
-			"label": "parameter_bnaa",
 			"property_type": "counter",
 			"invoice_uom": "",
 			"input_uom": ""
@@ -187,6 +193,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 			"property_type": "counter",
 			"invoice_uom": "",
 			"input_uom": ""
+		},
+		{
+			"usage_type" : "parameter_naa",
+			"label" : "parameter_naa",
+			"property_type" : "counter",
+			"invoice_uom" : "",
+			"input_uom" : ""
 		}
 	],
 //Input processor
@@ -390,50 +403,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 							],
 							"pattern": "a",
 							"usaget": "parameter_product",
-							"unit": "counter",
-							"volume_type": "value",
-							"volume_src": 1
-						},
-						{
-							"src_field": "DATA_UNIT",
-							"conditions": [
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$eq",
-									"op_label": "Equals"
-								},
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$ne",
-									"op_label": "Not Equals"
-								}
-							],
-							"pattern": "a",
-							"usaget": "parameter_anaa",
-							"unit": "counter",
-							"volume_type": "value",
-							"volume_src": 1
-						},
-						{
-							"src_field": "DATA_UNIT",
-							"conditions": [
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$eq",
-									"op_label": "Equals"
-								},
-								{
-									"src_field": "DATA_UNIT",
-									"pattern": "a",
-									"op": "$ne",
-									"op_label": "Not Equals"
-								}
-							],
-							"pattern": "a",
-							"usaget": "parameter_bnaa",
 							"unit": "counter",
 							"volume_type": "value",
 							"volume_src": 1
@@ -733,6 +702,28 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 							"volume_src": [
 								"EVENT_DURATION"
 							]
+						},
+						{
+							"src_field": "DATA_UNIT",
+							"conditions": [
+								{
+									"src_field": "DATA_UNIT",
+									"pattern": "a",
+									"op": "$eq",
+									"op_label": "Equals"
+								},
+								{
+									"src_field": "DATA_UNIT",
+									"pattern": "a",
+									"op": "$ne",
+									"op_label": "Not Equals"
+								}
+							],
+							"pattern": "a",
+							"usaget": "parameter_naa",
+							"unit": "counter",
+							"volume_type": "value",
+							"volume_src": 1
 						}
 					],
 					"time_field": "EVENT_START_TIME",
@@ -740,64 +731,464 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 					"time_format": "His",
 					"calculated_fields": [
 						{
-							"target_field": "call_direction"
+							"target_field": "call_direction",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "incoming_operator"
+							"target_field": "incoming_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "outgoing_operator"
+							"target_field": "outgoing_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "operator"
+							"target_field": "operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "anaa"
+							"target_field": "anaa",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "bnaa"
+							"target_field": "bnaa",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product_title"
+							"target_field": "product_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product"
+							"target_field": "product",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "product_group"
+							"target_field": "product_group",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "event_direction"
+							"target_field": "event_direction",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "scenario"
+							"target_field": "scenario",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "component"
+							"target_field": "component",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "settlement_operator"
+							"target_field": "settlement_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "virtual_operator"
+							"target_field": "virtual_operator",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "cash_flow"
+							"target_field": "cash_flow",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "incoming_poin"
+							"target_field": "incoming_poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "outgoing_poin"
+							"target_field": "outgoing_poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "poin"
+							"target_field": "poin",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "tier"
+							"target_field": "tier",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						},
 						{
-							"target_field": "tier_derivation"
+							"target_field": "tier_derivation",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						},
+						{
+							"target_field": "operator_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						},
+						{
+							"target_field": "anaa_group",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						},
+						{
+							"target_field": "anaa_title",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
 						}
 					],
 					"orphan_files_time": "6 hours"
@@ -807,32 +1198,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 						{
 							"target_key": "operator_path",
 							"src_key": "INCOMING_PATH",
-							"conditions": [
-								{
-									"field": "usaget",
-									"regex": "/.*/"
-								}
-							],
-							"clear_regex": "//"
-						}
-					],
-					"parameter_bnaa": [
-						{
-							"target_key": "sid",
-							"src_key": "REASON_FOR_CLEARDOWN",
-							"conditions": [
-								{
-									"field": "usaget",
-									"regex": "/.*/"
-								}
-							],
-							"clear_regex": "//"
-						}
-					],
-					"parameter_anaa": [
-						{
-							"target_key": "sid",
-							"src_key": "REASON_FOR_CLEARDOWN",
 							"conditions": [
 								{
 									"field": "usaget",
@@ -950,6 +1315,19 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 						{
 							"target_key": "operator_path",
 							"src_key": "INCOMING_PATH",
+							"conditions": [
+								{
+									"field": "usaget",
+									"regex": "/.*/"
+								}
+							],
+							"clear_regex": "//"
+						}
+					],
+					"parameter_naa": [
+						{
+							"target_key": "sid",
+							"src_key": "REASON_FOR_CLEARDOWN",
 							"conditions": [
 								{
 									"field": "usaget",
@@ -1085,24 +1463,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 									"type": "match",
 									"rate_key": "params.tier",
 									"line_key": "tier"
-								}
-							]
-						],
-						"parameter_bnaa": [
-							[
-								{
-									"type": "longestPrefix",
-									"rate_key": "params.prefix",
-									"line_key": "BNUM"
-								}
-							]
-						],
-						"parameter_anaa": [
-							[
-								{
-									"type": "longestPrefix",
-									"rate_key": "params.prefix",
-									"line_key": "ANUM"
 								}
 							]
 						],
@@ -2752,6 +3112,40 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 								}
 							]
 						],
+						"parameter_naa": [
+							[
+								{
+									"type": "longestPrefix",
+									"rate_key": "params.prefix",
+									"line_key": "computed",
+									"computed": {
+										"line_keys": [
+											{
+												"key": "anaa"
+											},
+											{
+												"key": "/^$/"
+											}
+										],
+										"operator": "$regex",
+										"type": "condition",
+										"must_met": false,
+										"projection": {
+											"on_true": {
+												"key": "ANUM",
+												"regex": "",
+												"value": ""
+											},
+											"on_false": {
+												"key": "BNUM",
+												"regex": "",
+												"value": ""
+											}
+										}
+									}
+								}
+							]
+						],
 						"parameter_tier_aba": [
 							[
 								{
@@ -2901,8 +3295,6 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 				},
 				"pricing": {
 					"incoming_sms": [],
-					"parameter_bnaa": [],
-					"parameter_anaa": [],
 					"transit_outgoing_call": [],
 					"parameter_tier_cb": [],
 					"outgoing_sms": [],
@@ -2912,6 +3304,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 					"outgoing_call": [],
 					"parameter_tier_pb_anaa": [],
 					"incoming_call": [],
+					"parameter_naa": [],
 					"parameter_tier_aba": [],
 					"parameter_product": [],
 					"parameter_tier_pb": [],
@@ -2966,7 +3359,10 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 								"cf.outgoing_operator",
 								"cf.tier",
 								"cf.component",
-								"cf.scenario"
+								"cf.scenario",
+								"cf.operator_title",
+								"cf.anaa_title",
+								"cf.anaa_group"
 							],
 							"field": []
 						},
@@ -3010,7 +3406,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 											"cf.component",
 											"cf.scenario",
 											"cf.product_title",
-											"cf.tier_title"
+											"cf.anaa_title",
+											"cf.anaa_group"
 										]
 									},
 									{
@@ -3060,6 +3457,8 @@ lastConfig["export_generators"][0] =
 			"generator": {
 				"type": "separator",
 				"separator": ",",
+				"force_header" : true,
+				"force_footer" : true,
 				"record_type_mapping": [
 					{
 						"record_type": "ICT",
@@ -3300,7 +3699,7 @@ lastConfig["export_generators"][0] =
 							"format": "",
 							"path": 1,
 							"linked_entity": {
-								"field_name": "uf.EVENT_START_TIME",
+								"field_name": "uf.USER_SUMMARISATION",
 								"entity": "line"
 							}
 						},
@@ -3309,7 +3708,7 @@ lastConfig["export_generators"][0] =
 							"type": "string",
 							"path": 2,
 							"linked_entity": {
-								"field_name": "uf.USER_SUMMARISATION",
+								"field_name": "uf.EVENT_START_TIME",
 								"entity": "line"
 							}
 						},
@@ -3634,8 +4033,8 @@ lastConfig["export_generators"][0] =
 				]
 			}
 		}			
-
-//Subscriber custom fields
+	
+	//Subscriber custom fields
 
 	lastConfig["subscribers"]["subscriber"]["fields"] =
 			[
@@ -3938,6 +4337,20 @@ lastConfig["export_generators"][0] =
 					"editable": true,
 					"display": true
 				},
+				{
+					"field_name" : "params.naa",
+					"title" : "Network Address Aggregation",
+					"editable" : true,
+					"display" : true,
+					"searchable" : true
+				},
+				{
+					"field_name" : "params.naa_parent",
+					"title" : "Network Address Aggregation Parent",
+					"editable" : true,
+					"display" : true,
+					"searchable" : true
+				}
 			];
 
 //foreign fields
@@ -4868,12 +5281,3652 @@ lastConfig["export_generators"][0] =
 
 var conf = {
     //EPICIC-52
-    'billrun.compute.suggestions.rate_recalculations.enabled': 1
+    'billrun.compute.suggestions.rate_recalculations.enabled': 1,
+	'log.debug.filterParams.priority.v': 5
 
 };
 lastConfig = addToConfig(conf, lastConfig);
 
+//EPICIC-63: Timezone should be Europe/Nicosia, currency = EUR
+lastConfig["pricing"]["currency"] = "EUR";
+lastConfig["billrun"]["timezone"] = {
+			"v" : "Europe/Nicosia",
+			"t" : "Timezone"
+		};
+
+//EPICIC-59: Make more custom products fields searchable
+var searchableProductFields = ["params.prefix", "params.operator", "params.product", "params.path", "params.poin", "params.direction", "params.scenario", "params.component", "params.cash_flow", "params.tier_derivation", "params.tier", "params.incoming_operator", "params.outgoing_operator", "params.incoming_product", "params.outgoing_product", "params.anaa", "params.bnaa"];
+for (var i = 0; i < lastConfig["rates"]["fields"].length; i++) {
+	if(searchableProductFields.includes(lastConfig["rates"]["fields"][i].field_name)) {
+		lastConfig["rates"]["fields"][i]["searchable"] = true;
+	}
+}
+
+//EPICIC-24: Initial customer custom fields
+var operator = {
+					"field_name" : "operator",
+					"title" : "Operator",
+					"editable" : true,
+					"display" : true,
+					"unique" : true,
+					"mandatory" : true
+				};
+var operator_label = {
+					"field_name" : "operator_label",
+					"title" : "Operator Label",
+					"editable" : true,
+					"display" : true
+				};
+var contact = {
+					"field_name" : "contact",
+					"title" : "Contact",
+					"editable" : true,
+					"display" : true
+				};
+var days_to_settle = {
+					"field_name" : "days_to_settle",
+					"title" : "Days to settle",
+					"editable" : true,
+					"display" : true
+				};
+var ifs_operator_id = {
+					"field_name" : "ifs_operator_id",
+					"title" : "IFS Operator ID",
+					"editable" : true,
+					"display" : true
+				};
+var include_vat = {
+					"field_name" : "include_vat",
+					"title" : "Include VAT",
+					"editable" : true,
+					"display" : true
+				};
+var location = {
+					"field_name" : "location",
+					"title" : "Location",
+					"editable" : true,
+					"display" : true
+				};
+var vat_code = {
+					"field_name" : "vat_code",
+					"title" : "VAT Code",
+					"editable" : true,
+					"display" : true,
+					"mandatory" : true
+				};
+var billable = {
+					"field_name" : "billable",
+					"title" : "Billable",
+					"editable" : true,
+					"display" : true,
+					"type" : "boolean",
+					"default_value" : false
+				};
+				
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], operator_label, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], contact, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], days_to_settle, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], ifs_operator_id, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], include_vat, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], location, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], vat_code, 'account');
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], billable, 'account');
+
+//EPICIC-75 "Undefined index: stamp" when processing files (now included directly in the processor's configuration)
+//for (var i = 0; i < lastConfig.file_types.length; i++) {
+//	if (lastConfig.file_types[i].file_type === "ICT") {//search for the relevant i.p
+//		var cfFieldsArray = lastConfig["file_types"][i]["processor"]["calculated_fields"];
+//		for (var j = 0; j < cfFieldsArray.length; j++) {
+//			cfFieldsArray[j]["line_keys"] =
+//					[
+//						{
+//							"key": "ANUM",
+//						},
+//						{
+//							"key": "ANUM",
+//						}
+//					];
+//			cfFieldsArray[j]["operator"] = "$eq";
+//			cfFieldsArray[j]["type"] = "condition";
+//			cfFieldsArray[j]["must_met"] = true;
+//			cfFieldsArray[j]["projection"] = {
+//				"on_true": {
+//					"key": "hard_coded",
+//					"value": ""
+//				}
+//			};
+//		}
+//	}
+//}
+
+lastConfig = runOnce(lastConfig, 'EPICIC-88', function () {
+
+//Activity types
+	lastConfig["usage_types"] = [
+		{
+			"usage_type": "incoming_call",
+			"label": "incoming_call",
+			"property_type": "time",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "outgoing_call",
+			"label": "outgoing_call",
+			"property_type": "time",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": "",
+			"usage_type": "parameter_product",
+			"label": "parameter_product"
+		},
+		{
+			"usage_type": "parameter_operator",
+			"label": "parameter_operator",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "parameter_scenario",
+			"label": "parameter_scenario",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": "",
+			"usage_type": "parameter_component",
+			"label": "parameter_component"
+		},
+		{
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": "",
+			"usage_type": "parameter_tier_cb",
+			"label": "parameter_tier_cb"
+		},
+		{
+			"usage_type": "parameter_tier_aba",
+			"label": "parameter_tier_aba",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": "",
+			"usage_type": "parameter_tier_pb",
+			"label": "parameter_tier_pb"
+		},
+		{
+			"usage_type": "parameter_tier_pb_anaa",
+			"label": "parameter_tier_pb_anaa",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"property_type": "time",
+			"invoice_uom": "",
+			"input_uom": "",
+			"usage_type": "transit_incoming_call",
+			"label": "transit_incoming_call"
+		},
+		{
+			"usage_type": "transit_outgoing_call",
+			"label": "transit_outgoing_call",
+			"property_type": "time",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "incoming_sms",
+			"label": "incoming_sms",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "outgoing_sms",
+			"label": "outgoing_sms",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "erp_mapping",
+			"label": "erp_mapping",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		},
+		{
+			"usage_type": "parameter_naa",
+			"label": "parameter_naa",
+			"property_type": "counter",
+			"invoice_uom": "",
+			"input_uom": ""
+		}
+	];
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig.file_types[i].processor = {
+				"type": "Usage",
+				"date_field": "EVENT_START_DATE",
+				"usaget_mapping": [
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_operator",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_product",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_scenario",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_component",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_tier_cb",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_tier_aba",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_tier_pb",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_tier_pb_anaa",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"src_field": "INCOMING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "OUTGOING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							}
+						],
+						"pattern": "^(?!\\s*$).+",
+						"usaget": "transit_incoming_call",
+						"unit": "seconds",
+						"volume_type": "field",
+						"volume_src": [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "transit_outgoing_call",
+						"unit": "seconds",
+						"volume_type": "field",
+						"volume_src": [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"src_field": "BNUM",
+								"pattern": "^S",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "INCOMING_PATH",
+								"pattern": "^$",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "OUTGOING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							}
+						],
+						"pattern": "^(?!\\s*$).+",
+						"usaget": "outgoing_sms",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"src_field": "BNUM",
+								"pattern": "^S",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "INCOMING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "OUTGOING_PATH",
+								"pattern": "^$",
+								"op": "$regex",
+								"op_label": "Regex"
+							}
+						],
+						"pattern": "^$",
+						"usaget": "incoming_sms",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					},
+					{
+						"src_field": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"src_field": "BNUM",
+								"pattern": "^[0-9]",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "INCOMING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "OUTGOING_PATH",
+								"pattern": "^$",
+								"op": "$regex",
+								"op_label": "Regex"
+							}
+						],
+						"pattern": "^$",
+						"usaget": "incoming_call",
+						"unit": "seconds",
+						"volume_type": "field",
+						"volume_src": [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"src_field": "BNUM",
+								"pattern": "^[0-9]",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "INCOMING_PATH",
+								"pattern": "^$",
+								"op": "$regex",
+								"op_label": "Regex"
+							},
+							{
+								"src_field": "OUTGOING_PATH",
+								"pattern": "^(?!\\s*$).+",
+								"op": "$regex",
+								"op_label": "Regex"
+							}
+						],
+						"pattern": "^(?!\\s*$).+",
+						"usaget": "outgoing_call",
+						"unit": "seconds",
+						"volume_type": "field",
+						"volume_src": [
+							"EVENT_DURATION"
+						]
+					},
+					{
+						"src_field": "DATA_UNIT",
+						"conditions": [
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$eq",
+								"op_label": "Equals"
+							},
+							{
+								"src_field": "DATA_UNIT",
+								"pattern": "a",
+								"op": "$ne",
+								"op_label": "Not Equals"
+							}
+						],
+						"pattern": "a",
+						"usaget": "parameter_naa",
+						"unit": "counter",
+						"volume_type": "value",
+						"volume_src": 1
+					}
+				],
+				"time_field": "EVENT_START_TIME",
+				"date_format": "Ymd",
+				"time_format": "His",
+				"calculated_fields": [
+					{
+						"target_field": "call_direction",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "incoming_operator",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "outgoing_operator",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "operator",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "anaa",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "bnaa",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "product_title",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "product",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "product_group",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "event_direction",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "scenario",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "component",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "settlement_operator",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "virtual_operator",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "cash_flow",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "incoming_poin",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "outgoing_poin",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "poin",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "tier",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "tier_derivation",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "operator_title",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "anaa_group",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					},
+					{
+						"target_field": "anaa_title",
+						"line_keys": [
+							{
+								"key": "ANUM"
+							},
+							{
+								"key": "ANUM"
+							}
+						],
+						"operator": "$eq",
+						"type": "condition",
+						"must_met": true,
+						"projection": {
+							"on_true": {
+								"key": "hard_coded",
+								"value": ""
+							}
+						}
+					}
+				],
+				"orphan_files_time": "6 hours"
+			};
+			lastConfig.file_types[i].customer_identification_fields = {
+				"incoming_sms": [
+					{
+						"target_key": "operator_path",
+						"src_key": "INCOMING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"transit_outgoing_call": [
+					{
+						"target_key": "operator_path",
+						"src_key": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_tier_cb": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"outgoing_sms": [
+					{
+						"target_key": "operator_path",
+						"src_key": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_scenario": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_component": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"transit_incoming_call": [
+					{
+						"target_key": "operator_path",
+						"src_key": "INCOMING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"outgoing_call": [
+					{
+						"target_key": "operator_path",
+						"src_key": "OUTGOING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_tier_pb_anaa": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"incoming_call": [
+					{
+						"target_key": "operator_path",
+						"src_key": "INCOMING_PATH",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_naa": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_tier_aba": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_product": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_tier_pb": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				],
+				"parameter_operator": [
+					{
+						"target_key": "sid",
+						"src_key": "REASON_FOR_CLEARDOWN",
+						"conditions": [
+							{
+								"field": "usaget",
+								"regex": "/.*/"
+							}
+						],
+						"clear_regex": "//"
+					}
+				]
+			};
+			lastConfig.file_types[i].rate_calculators = {
+				"retail": {
+					"incoming_sms": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"transit_outgoing_call": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"parameter_tier_cb": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "tier"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "operator",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.cash_flow",
+								"line_key": "cash_flow"
+							},
+							{
+								"type": "longestPrefix",
+								"rate_key": "params.prefix",
+								"line_key": "BNUM"
+							}
+						]
+					],
+					"outgoing_sms": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"parameter_scenario": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/T(I|O)/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "T"
+										},
+										"on_false": {
+											"key": "call_direction",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "anaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "bnaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "incoming_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "outgoing_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/T(I|O)/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "T"
+										},
+										"on_false": {
+											"key": "call_direction",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "condition_result",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "bnaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "incoming_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "outgoing_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/T(I|O)/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "T"
+										},
+										"on_false": {
+											"key": "call_direction",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "BNUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "incoming_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "outgoing_operator",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/T(I|O)/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "T"
+										},
+										"on_false": {
+											"key": "call_direction",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "condition_result",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "INCOMING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_product",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "OUTGOING_PATH"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": {
+											"key": "product",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						]
+					],
+					"parameter_component": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/I$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "anaa",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/O$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "bnaa",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/I$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "incoming_operator",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/O$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "outgoing_operator",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.scenario",
+								"line_key": "scenario"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/I$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "anaa",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/O$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "bnaa",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.scenario",
+								"line_key": "scenario"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.scenario",
+								"line_key": "scenario"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/I$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "incoming_operator",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/O$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "outgoing_operator",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.scenario",
+								"line_key": "scenario"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.incoming_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.outgoing_operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							}
+						]
+					],
+					"transit_incoming_call": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"outgoing_call": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"parameter_tier_pb_anaa": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "anaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "bnaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.poin",
+								"line_key": "poin"
+							}
+						]
+					],
+					"incoming_call": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "ANUM"
+										}
+									],
+									"operator": "$exists",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "hard_coded",
+											"regex": "",
+											"value": "*"
+										},
+										"on_false": []
+									}
+								}
+							},
+							{
+								"type": "match",
+								"rate_key": "params.product",
+								"line_key": "product"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.component",
+								"line_key": "component"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.direction",
+								"line_key": "call_direction"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.tier",
+								"line_key": "tier"
+							}
+						]
+					],
+					"parameter_naa": [
+						[
+							{
+								"type": "longestPrefix",
+								"rate_key": "params.prefix",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "anaa"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "ANUM",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "BNUM",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						]
+					],
+					"parameter_tier_aba": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.anaa",
+								"line_key": "anaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.bnaa",
+								"line_key": "bnaa"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							}
+						]
+					],
+					"parameter_product": [
+						[
+							{
+								"type": "longestPrefix",
+								"rate_key": "params.prefix",
+								"line_key": "BNUM"
+							}
+						]
+					],
+					"parameter_tier_pb": [
+						[
+							{
+								"type": "longestPrefix",
+								"rate_key": "params.prefix",
+								"line_key": "BNUM"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.operator",
+								"line_key": "operator"
+							},
+							{
+								"type": "match",
+								"rate_key": "params.poin",
+								"line_key": "poin"
+							}
+						]
+					],
+					"parameter_operator": [
+						[
+							{
+								"type": "match",
+								"rate_key": "params.path",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/^I$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "INCOMING_PATH",
+											"regex": "",
+											"value": "operator"
+										},
+										"on_false": {
+											"key": "condition_result",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.path",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "call_direction"
+										},
+										{
+											"key": "/^O$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": true,
+									"projection": {
+										"on_true": {
+											"key": "OUTGOING_PATH",
+											"regex": "",
+											"value": "operator"
+										},
+										"on_false": {
+											"key": "condition_result",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						],
+						[
+							{
+								"type": "match",
+								"rate_key": "params.path",
+								"line_key": "computed",
+								"computed": {
+									"line_keys": [
+										{
+											"key": "incoming_operator"
+										},
+										{
+											"key": "/^$/"
+										}
+									],
+									"operator": "$regex",
+									"type": "condition",
+									"must_met": false,
+									"projection": {
+										"on_true": {
+											"key": "INCOMING_PATH",
+											"regex": "",
+											"value": ""
+										},
+										"on_false": {
+											"key": "OUTGOING_PATH",
+											"regex": "",
+											"value": ""
+										}
+									}
+								}
+							}
+						]
+					]
+				}
+			};
+			lastConfig.file_types[i].pricing = {
+				"incoming_sms": [],
+				"transit_outgoing_call": [],
+				"parameter_tier_cb": [],
+				"outgoing_sms": [],
+				"parameter_scenario": [],
+				"parameter_component": [],
+				"transit_incoming_call": [],
+				"outgoing_call": [],
+				"parameter_tier_pb_anaa": [],
+				"incoming_call": [],
+				"parameter_naa": [],
+				"parameter_tier_aba": [],
+				"parameter_product": [],
+				"parameter_tier_pb": [],
+				"parameter_operator": []
+			};
+			lastConfig.file_types[i].unify = {
+				"unification_fields": {
+					"required": {
+						"fields": [
+							"urt",
+							"type",
+							"aid"
+						],
+						"match": []
+					},
+					"date_seperation": "Ymd",
+					"stamp": {
+						"value": [
+							"usaget",
+							"aid",
+							"sid",
+							"plan",
+							"arate_key",
+							"billrun",
+							"tax_data.taxes.0.key",
+							"tax_data.taxes.0.description",
+							"tax_data.taxes.0.tax",
+							"tax_data.taxes.0.type",
+							"tax_data.taxes.0.pass_to_customer",
+							"uf.EVENT_START_DATE",
+							"uf.USER_SUMMARISATION",
+							"cf.product",
+							"cf.operator",
+							"cf.call_direction",
+							"cf.incoming_operator",
+							"cf.outgoing_operator",
+							"cf.tier",
+							"cf.component",
+							"cf.scenario",
+							"cf.operator_title",
+							"cf.anaa_title",
+							"cf.anaa_group"
+						],
+						"field": []
+					},
+					"fields": [
+						{
+							"match": {
+								"type": "/^ICT/"
+							},
+							"update": [
+								{
+									"operation": "$setOnInsert",
+									"data": [
+										"arate",
+										"arate_key",
+										"usaget",
+										"urt",
+										"plan",
+										"connection_type",
+										"aid",
+										"sid",
+										"subscriber",
+										"foreign",
+										"billrun",
+										"tax_data",
+										"usagev",
+										"usagev_unit",
+										"aprice",
+										"final_charge",
+										"uf.EVENT_START_DATE",
+										"uf.USER_SUMMARISATION",
+										"cf.rate_type",
+										"cf.rate_price",
+										"cf.cash_flow",
+										"cf.product",
+										"cf.operator",
+										"cf.call_direction",
+										"cf.incoming_operator",
+										"cf.outgoing_operator",
+										"cf.product_group",
+										"cf.tier",
+										"cf.component",
+										"cf.scenario",
+										"cf.product_title",
+										"cf.operator_title",
+										"cf.anaa_title",
+										"cf.anaa_group"
+									]
+								},
+								{
+									"operation": "$set",
+									"data": [
+										"process_time"
+									]
+								},
+								{
+									"operation": "$inc",
+									"data": [
+										"usagev",
+										"aprice",
+										"final_charge",
+										"tax_data.total_amount",
+										"tax_data.taxes.0.amount"
+									]
+								}
+							]
+						}
+					]
+				}
+			};
+		}
+	}
+	lastConfig["rates"]["fields"] =
+			[
+				{
+					"field_name": "key",
+					"system": true,
+					"mandatory": true
+				},
+				{
+					"field_name": "from",
+					"system": true,
+					"mandatory": true,
+					"type": "date"
+				},
+				{
+					"field_name": "to",
+					"system": true,
+					"mandatory": true,
+					"type": "date"
+				},
+				{
+					"field_name": "description",
+					"system": true,
+					"mandatory": true
+				},
+				{
+					"field_name": "rates",
+					"system": true,
+					"mandatory": true
+				},
+				{
+					"select_list": true,
+					"display": true,
+					"editable": true,
+					"system": false,
+					"field_name": "tariff_category",
+					"default_value": "retail",
+					"show_in_list": true,
+					"title": "Tariff category",
+					"mandatory": true,
+					"changeable_props": [
+						"select_options"
+					],
+					"select_options": "retail"
+				},
+				{
+					"editable": true,
+					"display": true,
+					"title": "Prefix",
+					"field_name": "params.prefix",
+					"searchable": true,
+					"default_value": [],
+					"multiple": true
+				},
+				{
+					"system": true,
+					"display": true,
+					"editable": true,
+					"field_name": "invoice_label",
+					"default_value": "",
+					"show_in_list": true,
+					"title": "Invoice label"
+				},
+				{
+					"field_name": "params.operator",
+					"title": "Operator",
+					"editable": true,
+					"display": true,
+					"default_value": []
+				},
+				{
+					"field_name": "params.product",
+					"title": "Product",
+					"editable": true,
+					"display": true,
+					"default_value": []
+				},
+				{
+					"field_name": "params.path",
+					"title": "Path",
+					"editable": true,
+					"display": true,
+					"multiple": true
+				},
+				{
+					"field_name": "params.poin",
+					"title": "Point of interconnect",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.type",
+					"title": "Parameter type",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.direction",
+					"title": "Call Direction",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.scenario",
+					"title": "Rating Scenario",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.component",
+					"title": "Rating component",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.cash_flow",
+					"title": "Cash Flow",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.tier_derivation",
+					"title": "Tier Derivation",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.tier",
+					"title": "Tier",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.incoming_operator",
+					"title": "Incoming Operator",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.outgoing_operator",
+					"title": "Outgoing Operator",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.incoming_product",
+					"title": "Incoming Product",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.outgoing_product",
+					"title": "Outgoing Product",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.anaa",
+					"title": "Anum NAA",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.bnaa",
+					"title": "Bnum NAA",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.product_group",
+					"title": "Product Group",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.additional_charge",
+					"title": "Additional Charge",
+					"editable": true,
+					"description": "This field is used to record the price of calls with one-time charge"
+				},
+				{
+					"field_name": "params.settlement_operator",
+					"title": "Settlement Operator",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.virtual_operator",
+					"title": "Virtual Operator",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.user_summarisation",
+					"title": "User Summarisation",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "gl_account",
+					"title": "GL Account",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "object_id",
+					"title": "Accounting Object Id",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "gl_account_description",
+					"title": "GL Account Description",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "mtn_ind",
+					"title": "Mtn/Ind",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "prod_serv",
+					"title": "Prod/Serv",
+					"editable": true,
+					"display": true
+				},
+				{
+					"field_name": "params.naa",
+					"title": "Network Address Aggregation",
+					"editable": true,
+					"display": true,
+					"searchable": true
+				},
+				{
+					"field_name": "params.naa_parent",
+					"title": "Network Address Aggregation Parent",
+					"editable": true,
+					"display": true,
+					"searchable": true
+				}
+			];
+});
+
+//EPICIC-83: Unify "tier title" is directed to the wrong path
+//EPICIC-86: Add 'cf.anaa' to unified fields
+//EPICIC-87: Add 'cf.settlement_operator' to unified fields
+lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			const index = lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].indexOf("cf.tier_title");
+			if (index > -1) {
+				lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].splice(index, 1);
+			}
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
+		}
+	}
+});
+
+//EPICIC-66: user_summ/event_start_time position error in export generator
+lastConfig = runOnce(lastConfig, 'EPICIC-66', function () {
+	for (var i = 0; i < lastConfig.export_generators.length; i++) {
+		if (lastConfig.export_generators[i].name === "DATA_WAREHOUSE") {
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["name"] = "EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][0]["linked_entity"]["field_name"] = "uf.EVENT_START_TIME";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["name"] = "USER_SUMMARISATION";
+			lastConfig["export_generators"][i]["generator"]["data_structure"]["ICT"][1]["linked_entity"]["field_name"] = "uf.USER_SUMMARISATION";
+		}
+	}
+});
+
+//EPICIC-29 - cach db queries
+lastConfig = runOnce(lastConfig, 'EPICIC-29', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			var rateMappingObj = lastConfig["file_types"][i]["rate_calculators"]["retail"];
+			var newRateMapping = {};
+			var dbQueriesArray = ["parameter_operator", "parameter_scenario", "parameter_component", "incoming_call", "outgoing_call",
+				"transit_incoming_call", "transit_outgoing_call", "incoming_sms", "outgoing_sms", "parameter_tier_aba", "parameter_tier_pb_anaa"];
+			Object.keys(rateMappingObj).forEach(key => {
+				var prioritiesObj = {
+					priorities: []
+				};
+				for (var i = 0; i < rateMappingObj[key].length; i++) {
+					var filterObj = {
+						filters: []
+					};
+					filterObj.filters = rateMappingObj[key][i];
+					if (dbQueriesArray.includes(key)) {
+						filterObj["cache_db_queries"] = true;
+					}
+					prioritiesObj.priorities.push(filterObj);
+				}
+				newRateMapping[key] = prioritiesObj;
+			});
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = {};
+			lastConfig["file_types"][i]["rate_calculators"]["retail"] = newRateMapping;
+		}
+	}
+});
+
+//EPICIC-98: Add rate_price CF array
+lastConfig = runOnce(lastConfig, 'EPICIC-98', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["processor"]["calculated_fields"].push(
+					{
+							"target_field": "rate_price",
+							"line_keys": [
+								{
+									"key": "ANUM"
+								},
+								{
+									"key": "ANUM"
+								}
+							],
+							"operator": "$eq",
+							"type": "condition",
+							"must_met": true,
+							"projection": {
+								"on_true": {
+									"key": "hard_coded",
+									"value": ""
+								}
+							}
+						});
+		}
+	}
+});
+
+//EPICIC-104: Add "force_header" + "force_footer" to ic "exporter" configuration
+lastConfig = runOnce(lastConfig, 'EPICIC-104', function () {
+	for (var i = 0; i < lastConfig.export_generators.length; i++) {
+		lastConfig.export_generators[i]['generator']["force_header"] = true;
+		lastConfig.export_generators[i]['generator']["force_footer"] = true;
+	}
+});
+
+
 db.config.insert(lastConfig);
+
+//EPICIC-61 - set vat_code for inactive operators
+var inactiveCustomers = db.subscribers.distinct("aid", {plan: "TEST"});
+db.subscribers.updateMany({type: "account", aid: {$in: inactiveCustomers}}, {$set: {vat_code: "VATLOS"}});
+
+//EpicIC-56 - Set "billable" flag for active operators
+billableOperatorLabels = ["MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC"];
+db.subscribers.updateMany({type: "account", operator: {$in: billableOperatorLabels}}, {$set: {billable: true}});
 
 //Initial plans
 db.plans.save({
@@ -4891,7 +8944,7 @@ db.plans.save({
 	"recurrence" : {
 		"periodicity" : "month"
 	},
-	"upfront" : true,
+	"upfront" : false,
 	"connection_type" : "postpaid",
 	"rates" : [ ],
 	"tax" : [
