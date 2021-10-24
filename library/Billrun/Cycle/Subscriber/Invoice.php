@@ -150,7 +150,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$breakdowns['count'] += 1;
 				foreach($taxData as $tax ) {
 					if(empty($tax['description'])) {
-						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+                                                Billrun_Factory::log('Received tax with an empty description. Skipping...',Zend_log::DEBUG);
 						continue;
 					}
 					@$breakdowns['taxes'][$tax['description']] = $overridePreviouslyAggregatedResults ? @$breakdowns['taxes'][$tax['description']] + $tax['amount'] : $tax['amount'];

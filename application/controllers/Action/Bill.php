@@ -89,7 +89,7 @@ class BillAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['charge.not_before'] = array('$lt' => new MongoDate());
+				$query['charge.not_before'] = array('$lt' => new Mongodloid_Date());
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
@@ -104,9 +104,12 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
-
 		if (empty($aids)) {
-			$this->setError('Illegal aids arguments', $request->getPost());
+			$this->setError('Must supply at least one aid', $request->getPost());
+			return FALSE;
+		}
+		if (!$this->isLegalAccountIds($aids)){
+			$this->setError('Illegal account ids', $request->getPost());
 			return FALSE;
 		}
 		$balances = array();
@@ -129,7 +132,7 @@ class BillAction extends ApiAction {
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
                 if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
-                    Billrun_Utils_Mongo::convertQueryMongoDates($queryAsArray);               
+                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
                 }
 		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
@@ -165,12 +168,27 @@ class BillAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
-        protected function getAllCollectionDebts($request) {
-                $contractors= Billrun_Bill::getContractorsInCollection();
+	protected function getAllCollectionDebts($request) {
+		$contractors = Billrun_Bill::getContractorsInCollection();
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
-		}	
+		}
 		return $result;
-        }
+	}
+	
+	/**
+	 * Validate that aids are valid aids (numric type)
+	 * @param type $aids
+	 * @return boolean- return true if all aids are numric type, false otherwise
+	 */
+	protected function isLegalAccountIds($aids) {
+		$res = array_filter($aids, function($aid){
+			return !is_numeric($aid);
+		});
+		if(empty($res)){
+			return true;
+		}
+		return false;
+	}
 }

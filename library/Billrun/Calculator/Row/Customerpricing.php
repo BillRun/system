@@ -265,11 +265,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Found balance for subscriber " . $this->sid, Zend_Log::DEBUG);
 		}
 		$this->balance = $loadedBalance;
-		
-		if (!empty($currency = $this->getCurrency())) {
-			$this->balance['currency'] = $currency;
-		}
-		
 		if (isset($this->row['realtime']) && $this->row['realtime']) {
 			$this->row['balance_ref'] = $this->balance->createRef();
 		}
@@ -278,7 +273,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	/**
 	 * initial the minimum values allowed for finding a balance 
-	 *  @todo add currency conversion
 	 */
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
@@ -458,7 +452,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				$balanceType = key($groupVolumeLeft); // usagev or cost
 				$value = current($groupVolumeLeft);
 				if ($balanceType == 'cost') {
-					$cost = $this->getTotalCharge($rate, $usageType, $volume);
+					$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
 					$valueToCharge = $cost - $value;
 				} else {
 					$valueToCharge = $volume - $value;
@@ -520,7 +514,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			$charges = (float) $prepriced;
 		} else if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = $this->getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), $this->getServices(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
 			$charges = $valueToCharge;
 		}
@@ -686,9 +680,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				if ($balanceType != $keyRequired) {
 					if ($keyRequired == 'cost') {
-						$comparedValue = $this->getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
+						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan'], $services);
 					} else {
-						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);//TODO: move to rate class
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], $services, 0, 0, 0, null, $this->row['usagev']);
 					}
 				} else {
 					$comparedValue = $value;

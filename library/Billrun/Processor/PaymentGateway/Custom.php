@@ -33,7 +33,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->log = Billrun_Factory::db()->logCollection();
 		$this->informationArray['payments_file_type'] = !empty($options['type']) ? $options['type'] : null;
 		$this->informationArray['type'] = 'custom_payment_gateway';
-		$this->informationArray['creation_type'] = new MongoDate();
+		$this->informationArray['creation_type'] = new Mongodloid_Date();
 		$this->informationArray['fileType'] = 'received';
 		$this->informationArray['total_denied_amount'] = 0;
 		$this->informationArray['total_confirmed_amount'] = 0;
@@ -143,7 +143,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 }
 				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
-		$this->informationArray['process_time'] = new MongoDate(time());
+		$this->informationArray['process_time'] = new Mongodloid_Date(time());
                 $this->updateLogFile();
 	}
 
@@ -204,7 +204,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$bill->setPending(false);
 				$bill->updateConfirmation();
 				$bill->save();
-                                $this->informationArray['transactions']['confirmed']++;
+                $this->informationArray['transactions']['confirmed']++;
 				$billData = $bill->getRawData();
 				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
@@ -213,6 +213,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
 				}
 			} else if ($fileStatus == 'only_acceptance') {
+				$billData = $bill->getRawData();
 				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
 				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
 				$customFields = $this->getCustomPaymentGatewayFields();
@@ -222,8 +223,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$billToReject->markRejected();
+				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
                 $this->informationArray['transactions']['rejected']++;
-				$this->informationArray['process_time'] = new MongoDate(time());
+				$this->informationArray['process_time'] = new Mongodloid_Date(time());
 			}
 		}
 	}
@@ -287,6 +289,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query = array(
 			'generated_pg_file_log' => $fileStamp,
+			'confirmation_time' => array('$exists' => false)
 		);
 		$query = array_merge($query, $nonRejectedOrCanceled);
 		return $this->bills->query($query)->cursor();

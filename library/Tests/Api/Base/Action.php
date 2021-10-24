@@ -13,7 +13,7 @@
  * @subpackage      API
  * @since           5.1
  */
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 
 abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 
@@ -118,7 +118,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	
 	protected function translateSingleCase($key, $value) {
 		if(in_array($key, array("from", "to"))) {
-			return new MongoDate(strtotime($value));
+			return new Mongodloid_Date(strtotime($value));
 		}
 		return $value;
 	}

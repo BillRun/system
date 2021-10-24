@@ -76,12 +76,12 @@ class Cell
         return $this;
     }
 
-    public function detach()
+    public function detach(): void
     {
         $this->parent = null;
     }
 
-    public function attach(Cells $parent)
+    public function attach(Cells $parent): void
     {
         $this->parent = $parent;
     }
@@ -91,9 +91,6 @@ class Cell
      *
      * @param mixed $pValue
      * @param string $pDataType
-     * @param Worksheet $pSheet
-     *
-     * @throws Exception
      */
     public function __construct($pValue, $pDataType, Worksheet $pSheet)
     {
@@ -175,8 +172,6 @@ class Cell
      *
      * @param mixed $pValue Value
      *
-     * @throws Exception
-     *
      * @return $this
      */
     public function setValue($pValue)
@@ -193,8 +188,6 @@ class Cell
      *
      * @param mixed $pValue Value
      * @param string $pDataType Explicit data type, see DataType::TYPE_*
-     *
-     * @throws Exception
      *
      * @return Cell
      */
@@ -252,17 +245,17 @@ class Cell
      *
      * @param bool $resetLog Whether the calculation engine logger should be reset or not
      *
-     * @throws Exception
-     *
      * @return mixed
      */
     public function getCalculatedValue($resetLog = true)
     {
         if ($this->dataType == DataType::TYPE_FORMULA) {
             try {
+                $index = $this->getWorksheet()->getParent()->getActiveSheetIndex();
                 $result = Calculation::getInstance(
                     $this->getWorksheet()->getParent()
                 )->calculateCellValue($this, $resetLog);
+                $this->getWorksheet()->getParent()->setActiveSheetIndex($index);
                 //    We don't yet handle array returns
                 if (is_array($result)) {
                     while (is_array($result)) {
@@ -272,6 +265,8 @@ class Cell
             } catch (Exception $ex) {
                 if (($ex->getMessage() === 'Unable to access External Workbook') && ($this->calculatedValue !== null)) {
                     return $this->calculatedValue; // Fallback for calculations referencing external files.
+                } elseif (strpos($ex->getMessage(), 'undefined name') !== false) {
+                    return \PhpOffice\PhpSpreadsheet\Calculation\Functions::NAME();
                 }
 
                 throw new \PhpOffice\PhpSpreadsheet\Calculation\Exception(
@@ -362,8 +357,6 @@ class Cell
     /**
      *    Does this cell contain Data validation rules?
      *
-     * @throws Exception
-     *
      * @return bool
      */
     public function hasDataValidation()
@@ -377,8 +370,6 @@ class Cell
 
     /**
      * Get Data validation rules.
-     *
-     * @throws Exception
      *
      * @return DataValidation
      */
@@ -396,11 +387,9 @@ class Cell
      *
      * @param DataValidation $pDataValidation
      *
-     * @throws Exception
-     *
      * @return Cell
      */
-    public function setDataValidation(DataValidation $pDataValidation = null)
+    public function setDataValidation(?DataValidation $pDataValidation = null)
     {
         if (!isset($this->parent)) {
             throw new Exception('Cannot set data validation for cell that is not bound to a worksheet');
@@ -426,8 +415,6 @@ class Cell
     /**
      * Does this cell contain a Hyperlink?
      *
-     * @throws Exception
-     *
      * @return bool
      */
     public function hasHyperlink()
@@ -441,8 +428,6 @@ class Cell
 
     /**
      * Get Hyperlink.
-     *
-     * @throws Exception
      *
      * @return Hyperlink
      */
@@ -460,11 +445,9 @@ class Cell
      *
      * @param Hyperlink $pHyperlink
      *
-     * @throws Exception
-     *
      * @return Cell
      */
-    public function setHyperlink(Hyperlink $pHyperlink = null)
+    public function setHyperlink(?Hyperlink $pHyperlink = null)
     {
         if (!isset($this->parent)) {
             throw new Exception('Cannot set hyperlink for cell that is not bound to a worksheet');
@@ -552,8 +535,6 @@ class Cell
     /**
      * Re-bind parent.
      *
-     * @param Worksheet $parent
-     *
      * @return Cell
      */
     public function rebindParent(Worksheet $parent)
@@ -620,10 +601,8 @@ class Cell
 
     /**
      * Set value binder to use.
-     *
-     * @param IValueBinder $binder
      */
-    public static function setValueBinder(IValueBinder $binder)
+    public static function setValueBinder(IValueBinder $binder): void
     {
         self::$valueBinder = $binder;
     }

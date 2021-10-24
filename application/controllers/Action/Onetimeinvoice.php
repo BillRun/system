@@ -53,7 +53,7 @@ class OnetimeinvoiceAction extends ApiAction {
             $affectedSids[] = $cdr['sid'] ?: 0;
             $cdr['billrun'] = $oneTimeStamp;
 			$cdr = $this->parseCDR($cdr);
-			$cdr['onettime_invoice'] = $oneTimeStamp;
+			$cdr['onetime_invoice'] = $oneTimeStamp;
 			if(!$this->processCDR($cdr) ) {
                 return FALSE;
 			}
@@ -204,8 +204,8 @@ class OnetimeinvoiceAction extends ApiAction {
 		$ret = $this->validateCDRFields($credit_row);
 		$ret['source'] = 'credit';
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
-		$ret['process_time'] = new MongoDate();
-		$ret['urt'] = new MongoDate( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
+		$ret['process_time'] = new Mongodloid_Date();
+		$ret['urt'] = new Mongodloid_Date( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		$ret['usaget'] = $this->getCreditUsaget($ret,$rate);
 		if ($rate->isEmpty()) {

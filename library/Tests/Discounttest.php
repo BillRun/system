@@ -13,7 +13,7 @@
  */
 require_once( APPLICATION_PATH .'/library/Tests/discounttestData/discountData.php');
 require_once(APPLICATION_PATH .'/library/Tests/discounttestData/discountTestCases.php');
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Discounttest extends UnitTestCase {
@@ -34,7 +34,7 @@ class Tests_Discounttest extends UnitTestCase {
 		$this->discounts = (array) $this->discountData->Discount;
 		$this->conditions = (array) $this->discountData->conditions;
 		//list of indexs to run a subset of tests
-//		$this->subsetTests($this->Tests ,[]);
+		//->subsetTests($this->Tests ,[66]);
 	}
 
 	public function TestPerform() {
@@ -45,7 +45,7 @@ class Tests_Discounttest extends UnitTestCase {
 			$expectedEligibility = '<b>expected </b> </br>';
 
 			foreach ($row['expected'] as $Dname => $dates) {
-				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b>";
+				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
 					$expectedEligibility .= ' from ' . date("Y-m-d H:i:s", strtotime($date['from']));
 					$expectedEligibility .= ' to ' . date("Y-m-d H:i:s", strtotime($date['to'])) . '</br>';
@@ -58,8 +58,8 @@ class Tests_Discounttest extends UnitTestCase {
 
 			$this->message .= $expectedEligibility;
 
-			//convert dates of revisions  To MongoDates
-			$this->convertToMongoDates($row);
+			//convert dates of revisions  To MongodloidDates
+			$this->convertToMongodloidDates($row);
 			$discounts = $this->discountBuilder($row['test']['discounts']);
 			if (isset($row['SubscribersDiscount'])) {
 				$this->subscribersDiscount($row);
@@ -82,8 +82,8 @@ class Tests_Discounttest extends UnitTestCase {
 					Billrun_DiscountManager::setDiscounts($discounts, $row['test']['options']['stamp']);
 				}
 				$cycle = new Billrun_DataTypes_CycleTime($row['test']['options']['stamp']);
-				$from = new MongoDate($cycle->start());
-				$to = new MongoDate($cycle->end());
+				$from = new Mongodloid_Date($cycle->start());
+				$to = new Mongodloid_Date($cycle->end());
 				$row['test']['subsAccount'][0]['from'] = $from;
 				$row['test']['subsAccount'][0]['to'] = $to;
 				$dm = new Billrun_DiscountManager($row['test']['subsAccount'], $row['test']['subsRevisions'], $cycle);
@@ -171,14 +171,14 @@ class Tests_Discounttest extends UnitTestCase {
 						$this->message .= "$discountName worng 'from' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['from']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>from</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['from']) . $this->pass;
 					}
 					if ($dates['eligibility'][$i]['to']->sec != $returnEligibal[$i]['to']) {
 						$pass = false;
 						$this->message .= "$discountName worng 'to' eligibility expected : " . date("Y-m-d H:i:s", $dates['eligibility'][$i]['to']->sec) .
 							"result : " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->fail;
 					} else {
-						$this->message .= "$discountName  '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
+						$this->message .= "$discountName </br> '<b>to</b>' " . date("Y-m-d H:i:s", $returnEligibal[$i]['to']) . $this->pass;
 					}
 				}
 			} else {
@@ -280,16 +280,16 @@ class Tests_Discounttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function convertToMongoDates(&$row) {
+	public function convertToMongodloidDates(&$row) {
 		foreach ($row as $key => &$valus) {
 
 			if (is_array($valus) ) {
-				$this->convertToMongoDates($valus);
+				$this->convertToMongodloidDates($valus);
 			}
 			$valusList = ['from' ,'to','deactivation_date','plan_activation','service_activation','start' ,'end'];
 			foreach ($valusList as $field){
 				if(isset($valus[$field])){
-					$valus[$field] = new MongoDate(strtotime($valus[$field]));
+					$valus[$field] = new Mongodloid_Date(strtotime($valus[$field]));
 				}
 			}
 		}
@@ -354,7 +354,7 @@ class Tests_Discounttest extends UnitTestCase {
 
 	public function getParam($type, $values = null, $field = null, $op = '$eq') {
 		if ($field == 'plan_activation') {
-			$values = new MongoDate(strtotime($values));
+			$values = new Mongodloid_Date(strtotime($values));
 		}
 		switch ($type) {
 			case 'subscriber':

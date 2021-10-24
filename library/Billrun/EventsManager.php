@@ -39,7 +39,7 @@ class Billrun_EventsManager {
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
-
+	protected $eventsSettingsCache = [];
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -59,13 +59,18 @@ class Billrun_EventsManager {
 	}
 	
 	public function getEventsSettings($type, $activeOnly = true) {
-		$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
-		if (!$activeOnly) {
-			return $events;
+		$cacheKey = $type.$activeOnly;
+		if(empty($this->eventsSettingsCache[$cacheKey])) {
+			$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
+			if (!$activeOnly) {
+				$this->eventsSettingsCache[$cacheKey] = $events;
+			} else {
+				$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
+					return isset($event['active']) ? !empty($event['active']) : true;
+				});
+			}
 		}
-		return array_filter($events, function ($event) {
-			return Billrun_Util::getIn($event, 'active', true);
-		});
+		return $this->eventsSettingsCache[$cacheKey];
 	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
@@ -262,7 +267,7 @@ class Billrun_EventsManager {
 	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
-		$event['creation_time'] = new MongoDate();
+		$event['creation_time'] = new Mongodloid_Date();
 //		$event['value_before'] = $valueBefore;
 //		$event['value_after'] = $valueAfter;
 		foreach ($extraParams as $key => $value) {
@@ -343,7 +348,7 @@ class Billrun_EventsManager {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);
@@ -363,10 +368,10 @@ class Billrun_EventsManager {
 			'notify_time' => array('$exists' => false),
 			'$or' => array(
 				array('start_notify_time' => array('$exists' => false)),
-				array('start_notify_time' => array('$lte' => new MongoDate(strtotime('-' . $notifyOrphanTime))))
+				array('start_notify_time' => array('$lte' => new Mongodloid_Date(strtotime('-' . $notifyOrphanTime))))
 			)
 		);
-		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
+		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new Mongodloid_Date())), array('multiple' => true));
 	}
 	
 	
@@ -466,7 +471,7 @@ class Billrun_EventsManager {
 					$fraudEventDetails[] = "Account id: {$aid}, Subscriber ids: {$sids}, {$eventCodeEmailNotification['desc']}";
 				}
 				$subjectTranslations = [
-					'event_code' => $eventCode,	
+					'event_code' => $eventCode,
 				];
 				$bodyTranslations = [
 					'fraud_event_details' => implode(PHP_EOL, $fraudEventDetails),

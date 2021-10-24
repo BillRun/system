@@ -310,6 +310,22 @@ if(!lastConfig.email_templates) {
     }
   };
 }
+// BRCD-2364: Customer invoicing_day field, Should be a system field, not visible for editing by default.
+//The possible values are 1-28 - should be enforced using the existing "Select list" feature
+var invoicingDayField = {
+	"field_name": "invoicing_day",
+	"title": "Invoicing Day",
+	"mandatory": false,
+	"system": true,
+	"show_in_list": true,
+	"select_list": true,
+	"editable": false,
+	"display": false,
+	"select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+	"default_value":null
+};
+
+lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], invoicingDayField, 'account');
 
 // BRCD-1415 - add system field to account (invoice_shipping_method)
 var fields = lastConfig['subscribers']['account']['fields'];
@@ -317,6 +333,9 @@ var found = false;
 for (var field_key in fields) {
 	if (fields[field_key].field_name === "invoice_shipping_method") {
 		found = true;
+	}
+	if (fields[field_key].field_name === "invoicing_day") {
+		fields[field_key].default_value = null;
 	}
 }
 if(!found) {
@@ -379,6 +398,9 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 // BRCD-1552 collection
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
+}
+if (typeof lastConfig['collection']['settings'] === 'undefined') {
+	lastConfig['collection']['settings'] = {};
 }
 if (typeof lastConfig['collection']['min_debt'] !== 'undefined' && lastConfig['collection']['settings']['min_debt'] === 'undefined') {
     lastConfig['collection']['settings']['min_debt'] = lastConfig['collection']['min_debt'];
@@ -756,7 +778,6 @@ var currencyForeignField = {
 };
 lastConfig = addFieldToConfig(lastConfig, currencyForeignField, 'lines');
 
-db.config.insert(lastConfig);
 // BRCD-1717
 db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
@@ -794,6 +815,12 @@ db.createCollection('taxes');
 db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
 db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
 db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
+
+//Suggestions Collection
+db.createCollection('suggestions');
+db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1}, { unique: true , background: true});
+db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
+
 
 // BRCD-1936: Migrate old discount structure to new discount structure
 function isEmpty(obj) {
@@ -1127,6 +1154,16 @@ function getServiceGroups(service) {
 // ============================= BRCD-2556: END ==============================================================================
 });
 
+lastConfig = runOnce(lastConfig, 'BRCD-2791', function () {
+	db.queue.find({
+						calc_time: {$ne: false}
+			}).forEach(function(line){
+			if (typeof line['calc_time'] === "number") {
+				line['calc_time'] = new Date(line['calc_time'] * 1000);
+			}
+			db.queue.save(line);
+		});
+});
 
 // BRCD-2491 convert Import mappers to not use '.' as mongo key
 if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping !== 'undefined' && Array.isArray(lastConfig.import.mapping)) {
@@ -1183,7 +1220,13 @@ if (typeof lastConfig.pricing.max_currencies === 'undefined') {
 	lastConfig.pricing.max_currencies = 3;
 }
 
-
+// BRCD-2888 -adjusting config to the new invoice templates
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
+	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
+}
+if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)) {
+	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
+}
 // BRCD-2888 -adjusting config to the new invoice templates
 if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
@@ -1192,9 +1235,6 @@ if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.footer)
 	lastConfig.invoice_export.footer = "/footer/footer_tpl.phtml";
 }
 
-
-db.config.insert(lastConfig);
-
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
 db.archive.dropIndex('session_id_1_request_num_-1')
 db.archive.dropIndex('sid_1_call_reference_1')
@@ -1202,13 +1242,17 @@ db.archive.dropIndex('call_reference_1')
 if (db.serverStatus().ok == 0) {
 	print('Cannot shard archive collection - no permission')
 } else if (db.serverStatus().process == 'mongos') {
-	sh.shardCollection("billing.archive", {"stamp": 1});
+	var _dbName = db.getName();
+	sh.shardCollection(_dbName + ".archive", {"stamp": 1});
 	// BRCD-2099 - sharding rates, billrun and balances
-	sh.shardCollection("billing.rates", { "key" : 1 } );
-	sh.shardCollection("billing.billrun", { "aid" : 1, "billrun_key" : 1 } );
-	sh.shardCollection("billing.balances",{ "aid" : 1, "sid" : 1 }  );
+	sh.shardCollection(_dbName + ".rates", { "key" : 1 } );
+	sh.shardCollection(_dbName + ".billrun", { "aid" : 1, "billrun_key" : 1 } );
+	sh.shardCollection(_dbName + ".balances",{ "aid" : 1, "sid" : 1 }  );
+        // BRCD-2244 audit sharding
+	sh.shardCollection(_dbName + ".audit",  { "stamp" : 1 } );
+        // BRCD-2185 sharding queue as added support for sharded collection transaction
+	sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
 }
-
 /*** BRCD-2634 Fix limited cycle(s) service (addon) align to the cycle. ***/
 lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     // Find all services that are limited by cycles and align to the cycle
@@ -1238,6 +1282,9 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     );
 });
 
+db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
+db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.billrun.dropIndex('billrun_key_-1');
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
 	function(obj) {
@@ -1257,7 +1304,6 @@ db.billrun.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEa
 		db.billrun.save(obj);
 	}
 )
-
 //BRCD-2452 reformat paid_by and pays objects to array format
 var bills = db.bills.find({
 	$or: [
@@ -1332,3 +1378,17 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     }
 
 })
+// BRCD-2772 add webhooks plugin to the UI
+runOnce(lastConfig, 'BRCD-2772', function () {
+    _webhookPluginsSettings = {
+        "name": "webhooksPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    };
+    lastConfig['plugins'].push(_webhookPluginsSettings);
+});
+
+
+db.config.insert(lastConfig);
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });

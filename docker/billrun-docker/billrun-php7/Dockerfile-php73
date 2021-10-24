@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && pecl install mongodb \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \
-    && docker-php-ext-install pcntl
+    && docker-php-ext-install pcntl bcmath
 
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/

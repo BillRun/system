@@ -40,13 +40,17 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		if($fraction === null) {
 			return null;
 		}
-		
-		$charge = array(
-			'value'=> $price * $fraction, 
-			'start' => $this->activation, 
-			'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
-			'full_price' => floatval($price)
-			);
+		$charge = array_merge(
+			$this->getProrationData($this->price),
+			array(
+				'value'=> $price * $fraction, 
+				'start' => $this->activation, 
+				'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
+				'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
+				'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end()),
+				'full_price' => floatval($price)
+			)
+		);
 
 		if ($this->shouldAddOriginalCurrency()) {
 			$charge['original_currency'] = [
@@ -61,7 +65,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	protected function getPriceForcycle($cycle) {
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		return $this->getPriceByOffset($startOffset);
 	}
 	
@@ -82,6 +86,14 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		}
 		
 		return ['price' => 0];
+	}
+
+	protected function getProrationData($price) {
+			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
+			return ['start' => $this->activation,
+					'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
+					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
 	}
 	
 }

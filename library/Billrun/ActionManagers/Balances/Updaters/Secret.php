@@ -105,7 +105,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			'$set' => array(
 				'status' => 'Used',
 				'sid' => $subscriberId,
-				'activation_datetime' => new MongoDate(),
+				'activation_datetime' => new Mongodloid_Date(),
 			),
 		);
 		$options = array(

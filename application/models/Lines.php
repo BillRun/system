@@ -56,7 +56,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function update($data) {
-		$currentDate = new MongoDate();
+		$currentDate = new Mongodloid_Date();
 		if (isset($data['arate'])) {
 			$ratesColl = Billrun_Factory::db()->ratesCollection();
 			$rateEntity = $ratesColl->query('key', $data['arate'])
@@ -259,7 +259,7 @@ class LinesModel extends TableModel {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
 					// TODO: Shouldn't ->cursor()->crurrent() be validated?
 					$unrated_rate = $rates_coll->createRefByEntity($rates_coll->query("key", "UNRATED")->cursor()->current());
-					$month_ago = new MongoDate(strtotime("1 month ago"));
+					$month_ago = new Mongodloid_Date(strtotime("1 month ago"));
 					return array(
 						'$or' => array(
 							array('arate' => $unrated_rate), // customer rate is "UNRATED"
@@ -387,8 +387,8 @@ class LinesModel extends TableModel {
 		}
 
 		$query['urt'] = array(
-			'$lte' => new MongoDate($to_date),
-			'$gte' => new MongoDate($from_date),
+			'$lte' => new Mongodloid_Date($to_date),
+			'$gte' => new Mongodloid_Date($from_date),
 		);
 
 		$cursor = $this->collection->query($query)->cursor()->limit(100000)->sort(array('urt' => 1));

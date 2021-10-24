@@ -16,15 +16,24 @@ class Billrun_Rates_Util {
 	
 	protected static $currencyList;
 
+	protected static $ratesCache=[];
+
 	/**
 	 * Get a rate by reference
 	 * @param type $rate_ref
 	 * @return type
 	 */
-	public static function getRateByRef($rate_ref) {
+	public static function getRateByRef($rate_ref, $useCache = FALSE) {
+		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rate = $rates_coll->getRef($rate_ref);
-		return $rate;
+
+		if($useCache && !isset(static::$ratesCache[$refStr])) {
+			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
+		} else {
+			return $rates_coll->getRef($rate_ref);
+		}
+
+		return static::$ratesCache[$refStr];
 	}
 
 	/**
@@ -385,4 +394,52 @@ class Billrun_Rates_Util {
 		return $rate;
 	}
 
+	public static function getRateUsageType($rate){
+		return key($rate['rates']);
+	}
+	
+	public static function getRateTierInterval($rate, $tier = 1){
+		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
+		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['interval'];
+	}
+	
+	public static function getRateNumberOfTiers($rate){
+		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
+		return count($rate['rates'][$unitType]['BASE']['rate']);
+	}
+	
+	public static function getRateTierPrice($rate, $tier = 1) {
+		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
+		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['price'];
+	}
+	
+	public static function getRateTierTo($rate, $tier = 1) {
+		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
+		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['to'];
+	}
+	
+	/**
+	 * Check if rate include in the given entity (service/plan)
+	 * @param string $rate_key
+	 * @param mixed $entity
+	 * @return boolean return true if rate include in the given entity false otherwise
+	 */
+	public static function checkIfRateInclude($rate_key, $entity){
+            if(!isset($entity['include']['groups'])){
+                return false;
+            }
+            $groupKey = key($entity['include']['groups']);
+            $includeRates = $entity['include']['groups'][$groupKey]['rates'];
+            return in_array($rate_key, $includeRates);
+	}
+	
+	/**
+	 * Check if rate override in the given entity (service/plan)
+	 * @param string $rate_key
+	 * @param mixed $entity
+	 * @return boolean return true if rate override in the given entity false otherwise
+	 */
+	public static function checkIfRateOverride($rate_key, $entity){
+		return isset($entity['rates'][$rate_key]);
+	}
 }

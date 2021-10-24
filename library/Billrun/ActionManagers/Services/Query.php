@@ -122,7 +122,7 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 		}
 		
 		try {
-			$this->serviceQuery['_id'] = new MongoId($queryData['_id']);
+			$this->serviceQuery['_id'] = new Mongodloid_Id($queryData['_id']);
 		} catch (MongoException $ex) {
 			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));

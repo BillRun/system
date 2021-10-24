@@ -126,7 +126,7 @@ class Billrun_Validator {
 
 		if (isset($validationOptions["objectRef"]["_id"])) {
 			$MongoID = $validationOptions["objectRef"]["_id"];
-			$checkUniqueQuery = array_merge($checkUniqueQuery, array("_id" => array('$ne' => new MongoId((string) $MongoID))));
+			$checkUniqueQuery = array_merge($checkUniqueQuery, array("_id" => array('$ne' => new Mongodloid_Id((string) $MongoID))));
 		}
 
 		$cursor = $collection->find($checkUniqueQuery, array());
@@ -167,7 +167,7 @@ class Billrun_Validator {
 
 		if (isset($validationOptions["objectRef"]["_id"])) {
 			$MongoID = $validationOptions["objectRef"]["_id"];
-			$checkUniqueQuery = array_merge($checkUniqueQuery, array("_id" => array('$ne' => new MongoId((string) $MongoID))));
+			$checkUniqueQuery = array_merge($checkUniqueQuery, array("_id" => array('$ne' => new Mongodloid_Id((string) $MongoID))));
 		}
 
 
