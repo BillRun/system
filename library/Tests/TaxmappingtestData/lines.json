@@ -499,8 +499,775 @@
 					},
 					"out_group": 10,
 					"out_plan": 10
-				}
-
-
+				},
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4872",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_UP"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "900f025a36c8ce1e32eda0a8b24e9a69",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616be87027577055c727bd17",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_UP",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_UP",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616be87027577055c727bd17",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "up",
+                                                "rounding_decimals" : 0
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4873",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_UP_DECIMALS1"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "feaa63e389a04d9607dfa0645d3cef1d",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616bf6901c2308766075c3b2",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_UP_DECIMALS1",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_UP_DECIMALS1",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616bf6901c2308766075c3b2",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "up",
+						"rounding_decimals" : 1
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4874",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_UP_DECIMALS2"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "ae9020df9411a9bbf7f9d73968ff5e4b",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616bf6f63dc252542467e182",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_UP_DECIMALS2",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_UP_DECIMALS2",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616bf6f63dc252542467e182",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "up",
+						"rounding_decimals" : 2
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4875",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_DOWN"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "f70cf4bb941d16d1d91ea331d4373ab0",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616bf7893cc28928d15c0108",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_DOWN",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_DOWN",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616bf7893cc28928d15c0108",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "down",
+                                                "rounding_decimals" : 0
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4876",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_DOWN_DECIMALS1"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "ac3a827b3ad76df44605ff2466b591dc",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616bf790cd8cda7c626e5993",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_DOWN_DECIMALS1",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_DOWN_DECIMALS1",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616bf790cd8cda7c626e5993",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "down",
+						"rounding_decimals" : 1
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e4877",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_DOWN_DECIMALS2"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "5e6e0b9b481e5c03f61df07aeef56e8b",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616bf7967acbd706ba142a34",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_DOWN_DECIMALS2",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_DOWN_DECIMALS2",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616bf7967acbd706ba142a34",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "down",
+						"rounding_decimals" : 2
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                  {
+                                        "OBJID": "616c00c75204fd7bdc1e4878",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_NEAREST"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "45bd347b51b7235ef91fcac3652ed498",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616c00913dc252542467e184",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_NEAREST",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_NEAREST",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616c00913dc252542467e184",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "nearest",
+                                                "rounding_decimals" : 0
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                 {
+                                        "OBJID": "616c00c75204fd7bdc1e4879",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_NEAREST_DECIMALS1"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "69a4914a231ae416625a9fc832f09b10",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616c00973cc28928d15c010a",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_NEAREST_DECIMALS1",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_NEAREST_DECIMALS1",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616c00973cc28928d15c010a",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "nearest",
+						"rounding_decimals" : 1
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+                                {
+                                        "OBJID": "616c00c75204fd7bdc1e487a",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_NEAREST_DECIMALS2"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "598283049a9d8e7b4accadca5fa0c50b",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616c009dcd8cda7c626e5995",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_NEAREST_DECIMALS2",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_NEAREST_DECIMALS2",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616c009dcd8cda7c626e5995",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : "nearest",
+						"rounding_decimals" : 2
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                },
+ {
+                                        "OBJID": "616c00c75204fd7bdc1e487b",
+                                        "uf" : {
+                                                "sid" : "2",
+                                                "date" : "16:13:19.675  UTC Sun Oct 06 2020",
+                                                "usage" : "1",
+                                                "volume" : "1",
+                                                "rate" : "ROUNDING_EMPTY"
+                                        },
+                                        "urt" : "time*2020-10-11T00:00:00Z",
+                                        "eurt" : "time*2020-10-11T00:00:00Z",
+                                        "timezone" : 0,
+                                        "usaget" : "call",
+                                        "usagev_unit" : "seconds",
+                                        "usagev" : 1,
+                                        "connection_type" : "postpaid",
+                                        "stamp" : "598283049a9d8e7b4accadca5fa0c51b",
+                                        "type" : "a",
+                                        "source" : "a",
+                                        "file" : "cdr2.csv",
+                                        "log_stamp" : "8ce3cf2cf927da648dd1788f03bd750e",
+                                        "process_time" : "time*2021-10-17T10:53:53.815Z",
+                                        "row_number" : 1,
+                                        "realtime" : false,
+                                        "subscriber" : {
+                                                "aid" : 1,
+                                                "sid" : 2,
+                                                "plan" : "FREE_WITH_NOTHING",
+                                                "firstname" : "p",
+                                                "lastname" : "p",
+                                                "services" : [ ],
+                                                "services_data" : [ ]
+                                        },
+                                        "aid" : 1,
+                                        "sid" : 2,
+                                        "plan" : "FREE_WITH_NOTHING",
+                                        "firstname" : "p",
+                                        "lastname" : "p",
+                                        "services" : [ ],
+                                        "services_data" : [ ],
+                                        "plan_ref": {
+                                                "collection": "plans",
+                                                "ObjectId": "5a55ca8b6d5b99344e5226c3",
+                                                "isDbRef": true
+                                        },
+                                        "arate": {
+                                                "collection": "rates",
+                                                "ObjectId": "616c009dcd8cda7c626e5996",
+                                                "isDbRef": true
+                                        },
+                                        "arate_key" : "ROUNDING_EMPTY",
+                                        "rates" : [
+                                                {
+                                                        "tariff_category" : "retail",
+                                                        "key" : "ROUNDING_EMPTY",
+                                                        "add_to_retail" : false,
+                                                        "rate": {
+                                                                "collection": "rates",
+                                                                "ObjectId": "616c009dcd8cda7c626e5996",
+                                                                "isDbRef": true
+                                                        },
+                                                        "pricing" : {
+                                                                "out_group" : 1,
+                                                                "out_plan" : 1,
+                                                                "billrun" : "202111",
+                                                                "charge" : 1.5
+                                                        }
+                                                }
+                                        ],
+                                        "rounding_rules" : {
+                                                "rounding_type" : ""
+                                        },
+                                        "out_group" : 1,
+                                        "out_plan" : 1,
+                                        "aprice" : 1.5
+                                }
 			]
 }

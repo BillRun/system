@@ -97,8 +97,52 @@ class Tests_TaxMappingTest extends UnitTestCase {
 					'flat' => ['FALLBACK_TAX_PLAN' => ['tax_data' => ['total_amount' => 10, 'total_tax' => 0.1]]],
 					'services' => ['FALLBACK_TAX_SERVICE' => ['tax_data' => ['total_amount' => 2, 'total_tax' => 0.2]]],
 				]
-			)),		
-	];
+			)),	
+                //Test rounding rules
+                //rounding up (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '900f025a36c8ce1e32eda0a8b24e9a69'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding up with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'feaa63e389a04d9607dfa0645d3cef1d'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding up with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ae9020df9411a9bbf7f9d73968ff5e4b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'f70cf4bb941d16d1d91ea331d4373ab0'),
+			'expected' => array('final_charge' => 1, 'aprice' => 0.8547008547008548, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.1452991452991453,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding down with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => 'ac3a827b3ad76df44605ff2466b591dc'),
+			'expected' => array('final_charge' => 1.7, 'aprice' => 1.4529914529914532, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.24700854700854702,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding down with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '5e6e0b9b481e5c03f61df07aeef56e8b'),
+			'expected' => array('final_charge' => 1.75, 'aprice' => 1.4957264957264957, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2542735042735043,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest (without decimals)
+                array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '45bd347b51b7235ef91fcac3652ed498'),
+			'expected' => array('final_charge' => 2, 'aprice' => 1.7094017094017095, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.2905982905982906,  'total_amount_before_rounding' => 0.255])),
+	
+                //rounding nearest with 1 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '69a4914a231ae416625a9fc832f09b10'),
+			'expected' => array('final_charge' => 1.8, 'aprice' => 1.5384615384615388, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.26153846153846155,  'total_amount_before_rounding' => 0.255])),
+            
+                //rounding nearest with 2 decimal
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c50b'),
+			'expected' => array('final_charge' => 1.76, 'aprice' => 1.5042735042735043, 'before_rounding' => ['final_charge' => 1.755, 'aprice' => 1.5], 'tax_data' => ['total_amount' => 0.25572649572649575,  'total_amount_before_rounding' => 0.255])),
+                
+                //rounding empty
+                 array('functions' => ['checkRounding'], 'type' => 'cdr', 'row' => array('stamp' => '598283049a9d8e7b4accadca5fa0c51b'),
+			'expected' => array('final_charge' => 1.755, 'aprice' => 1.5, 'tax_data' => ['total_amount' => 0.255])),
+            
+            
+            
+            
+            ];
 	
 
 	public function __construct($label = false) {
@@ -315,6 +359,63 @@ class Tests_TaxMappingTest extends UnitTestCase {
 			}
 			
 				}
+		}
+		$this->message .= ' </p>';
+		return $passed;
+	}
+        
+        
+        protected function checkRounding($key, $returnRow, $row) {
+		$passed = true;
+		$epsilon = 0.000001;
+
+		if (isset($row['expected']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['final_charge'], $row['expected']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng final_charge {$returnRow['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "final_charge is :  {$returnRow['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['aprice'], $row['expected']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng aprice {$returnRow['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "aprice is :  {$returnRow['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['final_charge'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['final_charge'], $row['expected']['before_rounding']['final_charge'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding final_charge {$returnRow['before_rounding']['final_charge'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding final_charge is :  {$returnRow['before_rounding']['final_charge'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['before_rounding']['aprice'])) {
+			if (!Billrun_Util::isEqual($returnRow['before_rounding']['aprice'], $row['expected']['before_rounding']['aprice'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng before rounding aprice {$returnRow['before_rounding']['aprice'] } " . $this->fail;
+			} else {
+				$this->message .= "before rounding aprice is :  {$returnRow['before_rounding']['aprice'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount'], $row['expected']['tax_data']['total_amount'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount {$returnRow['tax_data']['total_amount'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount is :  {$returnRow['tax_data']['total_amount'] } " . $this->pass;
+			}
+		}
+                if (isset($row['expected']['tax_data']['total_amount_before_rounding'])) {
+			if (!Billrun_Util::isEqual($returnRow['tax_data']['total_amount_before_rounding'], $row['expected']['tax_data']['total_amount_before_rounding'], $epsilon)) {
+				$passed = false;
+				$this->message .= "worng tax total_amount_before_rounding {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->fail;
+			} else {
+				$this->message .= "tax total_amount_before_rounding is :  {$returnRow['tax_data']['total_amount_before_rounding'] } " . $this->pass;
+			}
 		}
 		$this->message .= ' </p>';
 		return $passed;
