@@ -72,8 +72,8 @@ class Billrun_ExchangeRate {
 			'base_currency' => $this->baseCurrency,
 			'target_currency' => $this->targetCurrency,
 			'rate' => $this->rate,
-			'from' => new MongoDate($this->time),
-			'to' => new MongoDate(strtotime('+100 years', $this->time)),
+			'from' => new Mongodloid_Date($this->time),
+			'to' => new Mongodloid_Date(strtotime('+100 years', $this->time)),
 		];
 
 		$ret = $this->collection->insert($entry);
@@ -101,16 +101,16 @@ class Billrun_ExchangeRate {
 			'base_currency' => $this->baseCurrency,
 			'target_currency' => $this->targetCurrency,
 			'to' => [
-				'$gt' => new MongoDate($this->time),
+				'$gt' => new Mongodloid_Date($this->time),
 			],
 			'from' => [
-				'$lt' => new MongoDate($this->time),
+				'$lt' => new Mongodloid_Date($this->time),
 			],
 		];
 		
 		$update = [
 			'$set' => [
-				'to' => new MongoDate($this->time),
+				'to' => new Mongodloid_Date($this->time),
 			],
 		];
 		
@@ -151,7 +151,7 @@ class Billrun_ExchangeRate {
 				'base_currency' => $this->baseCurrency,
 				'target_currency' => $this->targetCurrency,
 				'to' => [
-					'$gt' => new MongoDate($this->time),
+					'$gt' => new Mongodloid_Date($this->time),
 				],
 			];
 			
