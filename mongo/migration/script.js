@@ -1049,6 +1049,25 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	});
 	lastConfig.import.mapping = mapping;
 }
+
+// BRCD-3227 Add new custom 'rounding_rules' field to Products(Rates)
+lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
+    var fields = lastConfig['rates']['fields'];
+    var found = false;
+    for (var field_key in fields) {
+            if (fields[field_key].field_name === "rounding_rules") {
+                    found = true;
+            }
+    }
+    if(!found) {
+            fields.push({
+                    "system":true,
+                    "field_name":"rounding_rules",
+            });
+    }
+    lastConfig['rates']['fields'] = fields;
+});
+
 db.config.insert(lastConfig);
 
 db.archive.dropIndex('sid_1_session_id_1_request_num_-1')
