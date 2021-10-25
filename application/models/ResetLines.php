@@ -524,11 +524,12 @@ class ResetLinesModel {
 			'period' => array('$ne' => 'default')
 		);
 		
-		$balances = $balancesColl->query($queryBalances)->cursor();
+		
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
+				$balances = $balancesColl->query($queryBalances)->cursor();
 				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
 				if (empty($relevantBalances)) {
 					continue;
@@ -559,7 +560,6 @@ class ResetLinesModel {
 			'period' => 'default'
 		);
 
-		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			$current_account = array_filter($accounts, function($account) use($aid) {
@@ -568,6 +568,7 @@ class ResetLinesModel {
 			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
+					$balances = $balancesColl->query($queryBalances)->cursor();
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {

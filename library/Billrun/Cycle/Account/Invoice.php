@@ -222,6 +222,8 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
 		$invoiceData = $this->data->getRawData();
+		$accountLastMonthlyBillrun = Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key']);
+		$followingBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($accountLastMonthlyBillrun['billrun_key'] ?? null);
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,[
 			'BillrunKey' => $invoiceData['billrun_key'],
 			'Aid' => $invoiceData['aid'],
@@ -230,7 +232,7 @@ class Billrun_Cycle_Account_Invoice {
 			'NextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key']),
 			'PreviousBillrunKey' => Billrun_Billingcycle::getPreviousBillrunKey($invoiceData['billrun_key']),
 			'NextNextBillrunKey' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getFollowingBillrunKey($invoiceData['billrun_key'])),
-			'NextBillrunKeyOfLastMonthlyBillrun' => Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billrun::getAccountLastMonthlyBillrun($invoiceData['aid'], $invoiceData['billrun_key'])['billrun_key'])
+			'NextBillrunKeyOfLastMonthlyBillrun' => $followingBillrunKey,
 		]);
 		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig), $this->aggregationTranslations),JSON_OBJECT_AS_ARRAY);
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
