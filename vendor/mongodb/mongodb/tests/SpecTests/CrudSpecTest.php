@@ -2,8 +2,6 @@
 
 namespace MongoDB\Tests\SpecTests;
 
-use MongoDB\Client;
-use MongoDB\Driver\Exception\BulkWriteException;
 use stdClass;
 use function basename;
 use function file_get_contents;
@@ -16,9 +14,6 @@ use function glob;
  */
 class CrudSpecTest extends FunctionalTestCase
 {
-    /** @var array */
-    private static $incompleteTests = [];
-
     /**
      * Assert that the expected and actual command documents match.
      *
@@ -27,13 +22,6 @@ class CrudSpecTest extends FunctionalTestCase
      */
     public static function assertCommandMatches(stdClass $expected, stdClass $actual)
     {
-        foreach ($expected as $key => $value) {
-            if ($value === null) {
-                static::assertObjectNotHasAttribute($key, $actual);
-                unset($expected->{$key});
-            }
-        }
-
         static::assertDocumentsMatch($expected, $actual);
     }
 
@@ -49,10 +37,6 @@ class CrudSpecTest extends FunctionalTestCase
      */
     public function testCrud(stdClass $test, array $runOn = null, array $data, $databaseName = null, $collectionName = null)
     {
-        if (isset(self::$incompleteTests[$this->dataDescription()])) {
-            $this->markTestIncomplete(self::$incompleteTests[$this->dataDescription()]);
-        }
-
         if (isset($runOn)) {
             $this->checkServerRequirements($runOn);
         }
@@ -61,8 +45,8 @@ class CrudSpecTest extends FunctionalTestCase
             $this->markTestSkipped($test->skipReason);
         }
 
-        $databaseName = $databaseName ?? $this->getDatabaseName();
-        $collectionName = $collectionName ?? $this->getCollectionName();
+        $databaseName = isset($databaseName) ? $databaseName : $this->getDatabaseName();
+        $collectionName = isset($collectionName) ? $collectionName : $this->getCollectionName();
 
         $context = Context::fromCrud($test, $databaseName, $collectionName);
         $this->setContext($context);
@@ -75,7 +59,7 @@ class CrudSpecTest extends FunctionalTestCase
         }
 
         if (isset($test->expectations)) {
-            $commandExpectations = CommandExpectations::fromCrud((array) $test->expectations);
+            $commandExpectations = CommandExpectations::fromCrud($test->expectations);
             $commandExpectations->startMonitoring();
         }
 
@@ -100,10 +84,10 @@ class CrudSpecTest extends FunctionalTestCase
         foreach (glob(__DIR__ . '/crud/*.json') as $filename) {
             $json = $this->decodeJson(file_get_contents($filename));
             $group = basename($filename, '.json');
-            $runOn = $json->runOn ?? null;
-            $data = $json->data ?? [];
-            $databaseName = $json->database_name ?? null;
-            $collectionName = $json->collection_name ?? null;
+            $runOn = isset($json->runOn) ? $json->runOn : null;
+            $data = isset($json->data) ? $json->data : [];
+            $databaseName = isset($json->database_name) ? $json->database_name : null;
+            $collectionName = isset($json->collection_name) ? $json->collection_name : null;
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;
@@ -112,45 +96,5 @@ class CrudSpecTest extends FunctionalTestCase
         }
 
         return $testArgs;
-    }
-
-    /**
-     * Prose test 1: "errInfo" is propagated
-     */
-    public function testErrInfoIsPropagated()
-    {
-        $runOn = [(object) ['minServerVersion' => '4.0.0']];
-        $this->checkServerRequirements($runOn);
-
-        $errInfo = (object) [
-            'writeConcern' => (object) [
-                'w' => 2,
-                'wtimeout' => 0,
-                'provenance' => 'clientSupplied',
-            ],
-        ];
-
-        $this->configureFailPoint([
-            'configureFailPoint' => 'failCommand',
-            'mode' => ['times' => 1],
-            'data' => [
-                'failCommands' => ['insert'],
-                'writeConcernError' => [
-                    'code' => 100,
-                    'codeName' => 'UnsatisfiableWriteConcern',
-                    'errmsg' => 'Not enough data-bearing nodes',
-                    'errInfo' => $errInfo,
-                ],
-            ],
-        ]);
-
-        $client = new Client(static::getUri());
-
-        try {
-            $client->selectCollection($this->getDatabaseName(), $this->getCollectionName())->insertOne(['fail' => 1]);
-            $this->fail('Expected insert command to fail');
-        } catch (BulkWriteException $e) {
-            self::assertEquals($errInfo, $e->getWriteResult()->getWriteConcernError()->getInfo());
-        }
     }
 }

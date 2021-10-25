@@ -116,7 +116,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @deprecated since version 5.11
 	 */
 	protected function setUnifiedLineDefaults(&$line) {
-		$line['urt'] = new MongoDate(strtotime(date('Ymd 12:00:00', $line['urt']->sec)));
+		$line['urt'] = new Mongodloid_Date(strtotime(date('Ymd 12:00:00', $line['urt']->sec)));
 	}
 
 	/**

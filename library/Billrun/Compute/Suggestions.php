@@ -68,7 +68,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
 
     protected function findAllMatchingLines($retroactiveChanges) {
         $matchingLines = array();
-        $now = new MongoDate();
+        $now = new Mongodloid_Date();
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
@@ -166,7 +166,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'lastname' => $line['lastname'],
             'billrun_key' => $line['billrun'],
             'from' => $line['from'],
-            'to' => new MongoDate(strtotime('+1 sec', $line['to']->sec)),
+            'to' => new Mongodloid_Date(strtotime('+1 sec', $line['to']->sec)),
             'usagev' => $line['usagev'],
             'key' => $line['key'],
             'status' => 'open',
@@ -181,7 +181,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $suggestion['amount'] = abs($amount);
         $suggestion['type'] = $amount > 0 ? 'debit' : 'credit';
         $suggestion['stamp'] = $this->getSuggestionStamp($suggestion);
-        $suggestion['urt'] = new MongoDate();
+        $suggestion['urt'] = new Mongodloid_Date();
         return $suggestion;
     }
 
@@ -282,7 +282,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newTo = max($overlapSuggestion['to'], $suggestion['to']);
         if ($oldFrom !== $newFrom) {
             $fakeRetroactiveChange['new']['from'] = $oldFrom;
-            $fakeRetroactiveChange['new']['to'] = new MongoDate(strtotime('-1 sec', $newFrom->sec));
+            $fakeRetroactiveChange['new']['to'] = new Mongodloid_Date(strtotime('-1 sec', $newFrom->sec));
             $fakeRetroactiveChanges[] = $fakeRetroactiveChange;
         }
         if ($oldTo !== $newTo) {

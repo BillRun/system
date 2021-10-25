@@ -126,7 +126,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
-				'urt' => new MongoDate(),
+				'urt' => new Mongodloid_Date(),
 				'invoice_date' => $invoice['invoice_date'],
 				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
                                 'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
@@ -162,7 +162,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $data
 	 */
 	protected function updateBillrunONBilled($data) {
-		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new MongoDate())));
+		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1, 'confirmation_time' => new Mongodloid_Date())));
 	}
 	
 	/**
@@ -322,7 +322,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && $this->isConditionsMeet($invoice, $option['conditions'])) {
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 		}
 		return $invoice['due_date'];
@@ -335,10 +335,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		// go through all config options and try to match the relevant
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'confirm_date' && in_array($invoiceType, $option['invoice_type'])) {				
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $this->confirmDate));
 			}
 			if (in_array($invoiceType, $option['invoice_type']) && !empty($invoice[$option['anchor_field']])) {	
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $invoice[$option['anchor_field']]->sec));
 			}
 		}
 		
@@ -349,7 +349,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for invoice:' . $invoice['invoice_id'] . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.charge_not_before', '+0 seconds'), $this->confirmDate));
 	}
 	
 	protected function getForeignFieldsEntity () {

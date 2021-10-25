@@ -44,7 +44,7 @@ class Billrun_AuditTrail_Util {
 				'source' => 'audit',
 				'collection' => $collection,
 				'type' => $type,
-				'urt' => new MongoDate(),
+				'urt' => new Mongodloid_Date(),
 				'user' => $trackUser,
 				'old' => $old,
 				'new' => $new,

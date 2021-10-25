@@ -101,8 +101,8 @@ class ClearCallAction extends ApiAction {
 						'$nin' => array('release_call')
 					),
 					'urt' => array(
-						'$gte' => new MongoDate($startTime),
-						'$lte' => new MongoDate($endTime),
+						'$gte' => new Mongodloid_Date($startTime),
+						'$lte' => new Mongodloid_Date($endTime),
 					)
 				)
 			)

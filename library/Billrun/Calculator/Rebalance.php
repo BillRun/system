@@ -33,7 +33,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		$offset = Billrun_Config::getInstance()->getConfigValue('resetlines.offset', '1 hour');
 		$query = array(
 			'creation_date' => array(
-				'$lt' => new MongoDate(strtotime($offset . ' ago')),
+				'$lt' => new Mongodloid_Date(strtotime($offset . ' ago')),
 			),
 		);
 		$sort = array(

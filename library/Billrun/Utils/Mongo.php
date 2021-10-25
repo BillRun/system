@@ -23,7 +23,7 @@ class Billrun_Utils_Mongo {
 	/**
 	 * Get a mongo date object based on a period object.
 	 * @param period $period
-	 * @return \MongoDate or false on failure
+	 * @return \MongodloidDate or false on failure
 	 * @todo Create a period object.
 	 */
 	public static function getDateFromPeriod($period) {
@@ -32,18 +32,18 @@ class Billrun_Utils_Mongo {
 			return null;
 		}
 		
-		if ($period instanceof MongoDate) {
+		if ($period instanceof Mongodloid_Date) {
 			return $period;
 		}
 		if (isset($period['sec'])) {
-			return new MongoDate($period['sec']);
+			return new Mongodloid_Date($period['sec']);
 		}
 
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location
 		if ($duration == Billrun_Service::UNLIMITED_VALUE) {
-			return new MongoDate(strtotime(self::UNLIMITED_DATE));
+			return new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		}
 		if (isset($period['units'])) {
 			$unit = $period['units'];
@@ -52,7 +52,7 @@ class Billrun_Utils_Mongo {
 		} else {
 			$unit = 'months';
 		}
-		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
+		return new Mongodloid_Date(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
 	}
 	
 	/**
@@ -70,16 +70,16 @@ class Billrun_Utils_Mongo {
 		if ($onlyFuture) {
 			return array(
 				'to' => array(
-					'$gt' => new MongoDate($now, $microSeconds),
+					'$gt' => new Mongodloid_Date($now, $microSeconds),
 				),
 			);
 		}
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate($now, $microSeconds),
+				'$gt' => new Mongodloid_Date($now, $microSeconds),
 			),
 			'from' => array(
-				'$lte' => new MongoDate($now, $microSeconds),
+				'$lte' => new Mongodloid_Date($now, $microSeconds),
 			)
 		);
 	}
@@ -213,13 +213,13 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
-	 * convert all MongoDate objects in the data received into ISO dates
+	 * convert all MongodloidDate objects in the data received into ISO dates
 	 * 
 	 * @param mixed $data
 	 * @return mixed $data with ISO dates
 	 */
-	public static function convertMongoDatesToReadable($data, $format = false) {
-		if ($data instanceof MongoDate) {
+	public static function convertMongodloidDatesToReadable($data, $format = false) {
+		if ($data instanceof Mongodloid_Date) {
 			if ($format) {
 				return date($format, $data->sec);
 			}
@@ -229,7 +229,7 @@ class Billrun_Utils_Mongo {
 			return $data;
 		}
 		foreach ($data as $key => $value) {
-			$data[$key] = self::convertMongoDatesToReadable($value);
+			$data[$key] = self::convertMongodloidDatesToReadable($value);
 		}
 		return $data;
 	}
@@ -243,7 +243,7 @@ class Billrun_Utils_Mongo {
 	 * 
 	 * @return The record with translated time.
 	 */
-	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+	public static function convertRecordMongodloidDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($fields as $timeField) {
 			$value = Billrun_Util::getIn($record, $timeField, null);
 			if (isset($value->sec)) {
@@ -263,26 +263,26 @@ class Billrun_Utils_Mongo {
 	 * 
 	 * @return The record with translated time.
 	 */
-	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+	public static function recursiveConvertRecordMongodloidDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($record as $key => $subRecord) {
 			if (is_array($subRecord)) {
-				$record[$key] = self::recursiveConvertRecordMongoDatetimeFields($subRecord, $fields, $format);
+				$record[$key] = self::recursiveConvertRecordMongodloidDatetimeFields($subRecord, $fields, $format);
 			}
 		}
 
-		return self::convertRecordMongoDatetimeFields($record, $fields, $format);
+		return self::convertRecordMongodloidDatetimeFields($record, $fields, $format);
 	}
 	
 	/**
 	 * Convert the date values in a query to Mongo format
 	 * @param array $arr - Arr to translate its values.
 	 */
-	public static function convertQueryMongoDates(&$arr, $strDatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/') {
+	public static function convertQueryMongodloidDates(&$arr, $strDatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/') {
 		foreach ($arr as &$value) {
 			if (is_array($value)) {
-				self::convertQueryMongoDates($value, $strDatePattern);
+				self::convertQueryMongodloidDates($value, $strDatePattern);
 			} else if (preg_match($strDatePattern, $value)) {
-				$value = new MongoDate(strtotime($value));
+				$value = new Mongodloid_Date(strtotime($value));
 			}
 		}
 	}
@@ -301,19 +301,19 @@ class Billrun_Utils_Mongo {
 		if(empty($searchKeys)) {
 			return "Empty search keys";
 		}
-		if ($searchKeys['from'] instanceof MongoDate) {
+		if ($searchKeys['from'] instanceof Mongodloid_Date) {
 			$from_date = $searchKeys['from'];
 		} else {
-			$from_date = new MongoDate(strtotime($searchKeys['from']));
+			$from_date = new Mongodloid_Date(strtotime($searchKeys['from']));
 		}
 		if (!$from_date) {
 			return "date error 1";
 		}
 		unset($searchKeys['from']);
-		if ($searchKeys['to'] instanceof MongoDate) {
+		if ($searchKeys['to'] instanceof Mongodloid_Date) {
 			$to_date = $searchKeys['to'];
 		} else {
-			$to_date = new MongoDate(strtotime($searchKeys['to']));
+			$to_date = new Mongodloid_Date(strtotime($searchKeys['to']));
 		}
 		if (!$to_date) {
 			return "date error 2";
@@ -372,8 +372,8 @@ class Billrun_Utils_Mongo {
 	 * @return array The resulted query
 	 */
 	public static function getOverlappingWithRange($fromFieldName, $toFieldName, $from, $to) {
-		$fromTime = new MongoDate($from);
-		$toTime = new MongoDate($to);
+		$fromTime = new Mongodloid_Date($from);
+		$toTime = new Mongodloid_Date($to);
 		$res = [
 			'$or' => [
 				// Starts during range

@@ -104,7 +104,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		} else {
 			$var = $args;
 		}
-		$readable = Billrun_Utils_Mongo::convertMongoDatesToReadable($var);
+		$readable = Billrun_Utils_Mongo::convertMongodloidDatesToReadable($var);
 		$ret = $this->setOutputVar($readable);
 		$this->apiLogAction();
 		return $ret;
@@ -199,7 +199,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$saveData = array(
 			'source' => $this->sourceToLog(),
 			'type' => $request->action,
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'request' => $this->getRequest()->getRequest(),
 			'response' => $this->outputToLog(),
 			'request_php_input' => $php_input,

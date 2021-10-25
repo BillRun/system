@@ -112,7 +112,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
 		
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
-		$cover = [ 'start' => new MongoDate($this->billrunStartDate), 'end' => new MongoDate($this->billrunDate-1) ];
+		$cover = [ 'start' => new Mongodloid_Date($this->billrunStartDate), 'end' => new Mongodloid_Date($this->billrunDate-1) ];
 		if($eligible && !empty($this->discountData['prorated'])) {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
