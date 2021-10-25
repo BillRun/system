@@ -144,7 +144,7 @@ class Send_fileAction extends Action_Base {
 	public function updateDbLogRecord($file_log) {
 		$update = ['exported_time' => new MongoDate()];
 		$ret = Billrun_Factory::db()->logCollection()->update(array('stamp' => $file_log['stamp']), array('$set' => $update), array('w' => 1));
-		$success = !empty($ret['ok']) && empty($ret['updatedExisting']);
+		$success = !empty($ret['ok']) && $ret['updatedExisting'];
 		if (!$success) {
 			Billrun_Factory::log("Couldn't update log record : " . print_r($update, 1), Zend_Log::ERR);
 		}
