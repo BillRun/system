@@ -70,8 +70,10 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
 	protected function getProrationData($price) {
 			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
-			return ['start' => $this->activation > $this->cycle->start() ? $this->activation  :  $this->cycle->start(),
-					'end' => $this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
+			return ['start' => $this->activation,
+					'prorated_start_date' => new MongoDate($this->activation > $this->cycle->start() ? $this->activation  :  $this->cycle->start()),
+					'end' =>  $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
+					'prorated_end_date' => new MongoDate($this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end()),
 					'start_date' =>new MongoDate(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
 					'end_date' => new MongoDate($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
 	}

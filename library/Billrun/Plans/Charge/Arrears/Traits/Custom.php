@@ -56,9 +56,11 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		$proratedEnding =  $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE  ;
 		$frequency = $this->recurrenceConfig['frequency'];
 		return [	'start_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation ,true,false,false, $frequency)),
-					'start' => $this->proratedStart   && $this->activation > $this->cycle->start()? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start(),
+					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start(),
+					'prorated_start_date' => new MongoDate($this->proratedStart   && $this->activation > $this->cycle->start()? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start()),
 					'prorated_start' =>  $this->proratedStart ,
-					'end' => $endProration && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
+					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
+					'prorated_end_date' => new MongoDate ($endProration && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end()),
 					'end_date' => new MongoDate(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
 					'prorated_end' =>  $endProration
 				];
