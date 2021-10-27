@@ -302,7 +302,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				if (isset($cdrLine[$name])) {
 					if (is_array($cdrLine[$name])) {
 						foreach ($cdrLine[$name] as $vol) {
-							$data_volume_5g += $vol;
+							if(is_numeric($vol)) {
+								$data_volume_5g += $vol;
+							}
 						}
 					} else {
 						$data_volume_5g += $cdrLine[$name];
