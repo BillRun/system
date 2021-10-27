@@ -497,9 +497,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$dataArr = Asn_Base::getDataArray($data, true, true);
 		$valueArr = array();
 		foreach ($config as $key => $val) {
-			if(in_array($key, ['data_volume_uplink_5g', 'data_volume_downlink_5g'])){
-				echo '';
-			}
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
 			if ($tmpVal !== FALSE) {
 				$valueArr[preg_replace('/_\d$/','',$key)] = $tmpVal;
