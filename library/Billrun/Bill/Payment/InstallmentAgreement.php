@@ -95,6 +95,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$params['account'] = $account->loadAccountForQuery(['aid' => $this->data['aid']]);
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, $paymentsArr, $params);
 		$primaryInstallment = current($paymentResponse['payment']);
+		$primaryInstallment->setProcessTime();
 		$primaryInstallmentData = current($paymentResponse['payment_data']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
 		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
@@ -150,6 +151,8 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
 			$installmentObj->setUserFields($installmentObj->getRawData(), true);
+			$installmentObj->setUrt(strtotime($chargesArray[$key]['charge_not_before']));
+			$installmentObj->setProcessTime();
 			$account = Billrun_Factory::account();
 			$current_account = $account->loadAccountForQuery(['aid' => $installment['aid']]);
 			$foreignData = $this->getForeignFields(array('account' => $current_account));
@@ -200,6 +203,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	}
 	
 	protected function buildInstallment($index, $chargeNotBefore) {
+		$cnb_date = new MongoDate(strtotime($chargeNotBefore));
 		$installment['dir'] = 'tc';
 		$installment['method'] = $this->method;
 		$installment['aid'] = $this->data['aid'];
@@ -212,8 +216,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$installment['split_bill'] = true;
 		$installment['linked_bills'] = isset($this->data['pays']) ? $this->data['pays'] : $this->data['paid_by'];
 		$installment['invoices'] = $this->getInvoicesIdFromReceipt();
-		$installment['charge']['not_before'] = new MongoDate(strtotime($chargeNotBefore));
-		$installment['urt'] = new MongoDate(strtotime($chargeNotBefore));
+		$installment['charge']['not_before'] = $cnb_date;
 		return $installment;
 	}
 

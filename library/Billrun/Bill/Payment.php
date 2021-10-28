@@ -128,7 +128,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			$this->data['urt'] = isset($options['urt']) ? new MongoDate($options['urt']) : new MongoDate();
+			$this->data['urt'] = isset($options['urt']) ? new MongoDate(strtotime($options['urt'])) : new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];
@@ -1035,10 +1035,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	/**
 	 * Method to unfreeze deposit.
+	 * @param int - timestamp - to save the deposit's unfreeze date
 	 * 
 	 * @return true if the deposit got unfreezed.
 	 */
-	public function unfreezeDeposit() {
+	public function unfreezeDeposit($urt = null) {
 		if (!$this->isDeposit()) {
 			throw new Exception('Payment is not a deposit');
 		}
@@ -1050,7 +1051,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['amount'] = $depositAmount;
 		$this->data['due'] = -$depositAmount;
 		$this->data['left'] = $depositAmount;
-		$this->setUrt();
+		$this->setUrt($urt);
 		$this->save();
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($this->data['aid']);
 		return true;
