@@ -31,7 +31,6 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
         foreach ($indexes as $index) {
             $this->assertInstanceOf(IndexInfo::class, $index);
             $this->assertEquals(['_id' => 1], $index->getKey());
-            $this->assertSame($this->getNamespace(), $index->getNamespace());
         }
     }
 

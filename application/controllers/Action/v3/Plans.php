@@ -92,7 +92,7 @@ class V3_PlansAction extends ApiAction {
 			foreach ($resource as $item) {
 				$rawItem = $item->getRawData();
 				$rawItem['price'] = isset($rawItem['price']['0']['price']) ? $rawItem['price']['0']['price'] : 0;
-				$results[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
+				$results[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($rawItem);
 			}
 		}
 		if (isset($params['strip']) && !empty($params['strip'])) {
@@ -180,34 +180,34 @@ class V3_PlansAction extends ApiAction {
 		// TODO: This code appears multiple times in the project, 
 		// should be moved to a more general class.
 		if (!isset($retQuery['from'])) {
-			$retQuery['from']['$lte'] = new MongoDate();
+			$retQuery['from']['$lte'] = new Mongodloid_Date();
 		} else {
-			$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
+			$retQuery['from'] = $this->intToMongodloidDate($retQuery['from']);
 		}
 		if (!isset($retQuery['to'])) {
-			$retQuery['to']['$gte'] = new MongoDate();
+			$retQuery['to']['$gte'] = new Mongodloid_Date();
 		} else {
-			$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
+			$retQuery['to'] = $this->intToMongodloidDate($retQuery['to']);
 		}
 
 		return $retQuery;
 	}
 
 	/**
-	 * Change numeric references to MongoDate object in a given filed in an array.
-	 * @param MongoDate $arr 
+	 * Change numeric references to Mongodloid_Date object in a given filed in an array.
+	 * @param Mongodloid_Date $arr 
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	protected function intToMongoDate($arr) {
+	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

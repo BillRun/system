@@ -897,14 +897,14 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected function fixRow($row, $key) {
 
 		if (!array_key_exists('process_time', $row)) {
-			$row['process_time'] = new MongoDate(time() - 200);
+			$row['process_time'] = new Mongodloid_Date(time() - 200);
 		} else {
-			$row['process_time'] = new MongoDate(strtotime($row['urt']) - 200);
+			$row['process_time'] = new Mongodloid_Date(strtotime($row['urt']) - 200);
 		}
 		if (!array_key_exists('urt', $row)) {
-			$row['urt'] = new MongoDate(time() + $key);
+			$row['urt'] = new Mongodloid_Date(time() + $key);
 		} else {
-			$row['urt'] = new MongoDate(strtotime($row['urt']));
+			$row['urt'] = new Mongodloid_Date(strtotime($row['urt']));
 		}
 		if (!isset($row['aid'])) {
 			$row['aid'] = 1234;
@@ -925,13 +925,13 @@ class Tests_Updaterowt extends UnitTestCase {
 					$row['services_data'][$key]['service_id'] = $this->calcServiceId($row['aid'], $row['sid'], $service);
 				}
 				if (isset($service['from'])) {
-					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+					$row['services_data'][$key]['from'] = new Mongodloid_Date(strtotime($service['from']));
 				}
 				if (isset($service['to'])) {
-					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+					$row['services_data'][$key]['to'] = new Mongodloid_Date(strtotime($service['to']));
 				}
 				if (isset($service['creation_time'])) {
-					$row['services_data'][$key]['creation_time'] = new MongoDate(strtotime($service['creation_time']));
+					$row['services_data'][$key]['creation_time'] = new Mongodloid_Date(strtotime($service['creation_time']));
 				}
 			}
 		}
@@ -943,13 +943,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		foreach ($row['rates'] as $rate_key => $tariff_category) {
 			$rate = $this->ratesCol->setReadPreference('RP_PRIMARY')->query(array('key' => $rate_key))->cursor()->current();
 			$keys[] = array(
-				'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
+				'rate' => Mongodloid_Ref::create('rates', (new Mongodloid_Id((string) $rate['_id']))),
 				'tariff_category' => $tariff_category,
 			);
 		}
 		$row['rates'] = $keys;
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
-		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
+		$row['plan_ref'] = Mongodloid_Ref::create('plans', (new Mongodloid_Id((string) $plan['_id'])));
 		return $row;
 	}
 

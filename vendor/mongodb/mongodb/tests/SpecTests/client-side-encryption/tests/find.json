@@ -167,7 +167,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "keyvault"
+              "$db": "admin"
             },
             "command_name": "listCollections"
           }
@@ -197,7 +197,7 @@
                   }
                 ]
               },
-              "$db": "keyvault",
+              "$db": "admin",
               "readConcern": {
                 "level": "majority"
               }
@@ -309,7 +309,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "keyvault"
+              "$db": "admin"
             },
             "command_name": "listCollections"
           }
@@ -339,7 +339,7 @@
                   }
                 ]
               },
-              "$db": "keyvault",
+              "$db": "admin",
               "readConcern": {
                 "level": "majority"
               }

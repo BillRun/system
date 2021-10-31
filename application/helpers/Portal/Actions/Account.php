@@ -7,6 +7,7 @@
  */
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Invoices.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Bill.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/v3/Bills.php';
 
 /**
@@ -122,6 +123,23 @@ class Portal_Actions_Account extends Portal_Actions {
 		return $invoices;
 	}
 	
+        /**
+	 * get account debt
+	 *
+	 * @param  array $params - the api params
+	 * @return array total account debt 
+	 */
+	public function debt($params = []) {
+		$query = $params['query'] ?? [];
+		$query['aids'] = json_encode([$this->loggedInEntity['aid']]);
+                $only_debt = $query['only_debt'] ?? true;
+		
+		$billAction = new BillAction();
+		$debt = $billAction->getCollectionDebt($query, $only_debt);
+		
+		return $debt;
+	}
+        
 	/**
 	 * Format invoice details
 	 *

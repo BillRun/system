@@ -89,7 +89,7 @@ class BillAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['charge.not_before'] = array('$lt' => new MongoDate());
+				$query['charge.not_before'] = array('$lt' => new Mongodloid_Date());
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
@@ -132,7 +132,7 @@ class BillAction extends ApiAction {
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
                 if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
-                    Billrun_Utils_Mongo::convertQueryMongoDates($queryAsArray);               
+                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
                 }
 		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
@@ -144,16 +144,22 @@ class BillAction extends ApiAction {
 	 * otherwise return account with their debt or with their credit balance
 	 *
 	 */
-	protected function getCollectionDebt($request, $only_debt = true) {
-		$result = array();
-		$jsonAids = $request->get('aids', '[]');
-		$aids = json_decode($jsonAids, TRUE);
-		if (!is_array($aids) || json_last_error()) {
-			$this->setError('Illegal account ids', $request->getPost());
-			return FALSE;
+	public function getCollectionDebt($request, $only_debt = true) {
+		if ($request instanceof Yaf_Request_Abstract) {
+			$jsonAids = $request->get('aids', '[]');        
+                        $requestBody = $request->getPost();
+		} else {
+			$jsonAids = $request['aids'] ?? [];
+                        $requestBody = $request;
+			
 		}
+                $aids = json_decode($jsonAids, TRUE);
+                if (!is_array($aids) || json_last_error()) {
+                    $this->setError('Illegal account ids', $requestBody);
+                    return FALSE;
+                }
 		if (empty($aids)) {
-			$this->setError('Must supply at least one aid', $request->getPost());
+			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
 		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);

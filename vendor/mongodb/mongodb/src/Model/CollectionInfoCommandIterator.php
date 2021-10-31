@@ -18,7 +18,6 @@
 namespace MongoDB\Model;
 
 use IteratorIterator;
-use Traversable;
 
 /**
  * CollectionInfoIterator for listCollections command results.
@@ -33,19 +32,6 @@ use Traversable;
  */
 class CollectionInfoCommandIterator extends IteratorIterator implements CollectionInfoIterator
 {
-    /** @var string|null */
-    private $databaseName;
-
-    /**
-     * @param string|null $databaseName
-     */
-    public function __construct(Traversable $iterator, $databaseName = null)
-    {
-        parent::__construct($iterator);
-
-        $this->databaseName = $databaseName;
-    }
-
     /**
      * Return the current element as a CollectionInfo instance.
      *
@@ -55,12 +41,6 @@ class CollectionInfoCommandIterator extends IteratorIterator implements Collecti
      */
     public function current()
     {
-        $info = parent::current();
-
-        if ($this->databaseName !== null && isset($info['idIndex']) && ! isset($info['idIndex']['ns'])) {
-            $info['idIndex']['ns'] = $this->databaseName . '.' . $info['name'];
-        }
-
-        return new CollectionInfo($info);
+        return new CollectionInfo(parent::current());
     }
 }

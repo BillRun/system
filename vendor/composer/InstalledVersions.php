@@ -1,5 +1,15 @@
 <?php
 
+
+
+
+
+
+
+
+
+
+
 namespace Composer;
 
 use Composer\Semver\VersionParser;
@@ -19,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
+    'reference' => 'c0aa69b8a76802ef73a63a1ae30807048b82769c',
     'name' => '__root__',
   ),
   'versions' => 
@@ -31,16 +41,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'd8c1f2edd6018d2bbe9366178cbd4c8e4cdb5135',
-    ),
-    'alcaeus/mongo-php-adapter' => 
-    array (
-      'pretty_version' => '1.2.0',
-      'version' => '1.2.0.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'b828ebc06cd3c270997b13c97dadc94731b36354',
+      'reference' => 'c0aa69b8a76802ef73a63a1ae30807048b82769c',
     ),
     'bshaffer/oauth2-server-php' => 
     array (
@@ -51,23 +52,14 @@ private static $installed = array (
       ),
       'reference' => '5a0c8000d4763b276919e2106f54eddda6bc50fa',
     ),
-    'composer/package-versions-deprecated' => 
+    'ezyang/htmlpurifier' => 
     array (
-      'pretty_version' => '1.11.99.1',
-      'version' => '1.11.99.1',
+      'pretty_version' => 'v4.13.0',
+      'version' => '4.13.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => '7413f0b55a051e89485c5cb9f765fe24bb02a7b6',
-    ),
-    'jean85/pretty-package-versions' => 
-    array (
-      'pretty_version' => '1.5.1',
-      'version' => '1.5.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => 'a917488320c20057da87f67d0d40543dd9427f7a',
+      'reference' => '08e27c97e4c6ed02f37c5b2b20488046c8d90d75',
     ),
     'maennchen/zipstream-php' => 
     array (
@@ -89,21 +81,21 @@ private static $installed = array (
     ),
     'markbaker/matrix' => 
     array (
-      'pretty_version' => '2.0.0',
-      'version' => '2.0.0.0',
+      'pretty_version' => '2.1.1',
+      'version' => '2.1.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '9567d9c4c519fbe40de01dbd1e4469dbbb66f46a',
+      'reference' => '35a2d1a919a1de732402f694925168c53c17c838',
     ),
     'mongodb/mongodb' => 
     array (
-      'pretty_version' => '1.7.2',
-      'version' => '1.7.2.0',
+      'pretty_version' => '1.6.1',
+      'version' => '1.6.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '38b685191c047a57275d6ccd2ea5c50f23638485',
+      'reference' => '4bb040c620ab95c487d05d5ff50cbc92fa68e920',
     ),
     'myclabs/php-enum' => 
     array (
@@ -114,21 +106,14 @@ private static $installed = array (
       ),
       'reference' => 'd178027d1e679832db9f38248fcc7200647dc2b7',
     ),
-    'ocramius/package-versions' => 
-    array (
-      'replaced' => 
-      array (
-        0 => '1.11.99',
-      ),
-    ),
     'phpoffice/phpspreadsheet' => 
     array (
-      'pretty_version' => '1.15.0',
-      'version' => '1.15.0.0',
+      'pretty_version' => '1.16.0',
+      'version' => '1.16.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'a8e8068b31b8119e1daa5b1eb5715a3a8ea8305f',
+      'reference' => '76d4323b85129d0c368149c831a07a3e258b2b50',
     ),
     'psr/http-client' => 
     array (
@@ -177,12 +162,12 @@ private static $installed = array (
     ),
     'symfony/polyfill-mbstring' => 
     array (
-      'pretty_version' => 'v1.20.0',
-      'version' => '1.20.0.0',
+      'pretty_version' => 'v1.22.0',
+      'version' => '1.22.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => '39d483bdf39be819deabf04ec872eb0b2410b531',
+      'reference' => 'f377a3dd1fde44d37b9831d68dc8dea3ffd28e13',
     ),
   ),
 );

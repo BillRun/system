@@ -66,7 +66,7 @@ class ResetLinesAction extends ApiAction {
 					'billrun_key' => $billrun_key,
 					'conditions' => !empty($conditions) ? $conditions : array(),
 					'conditions_hash' => md5(serialize($conditions)),
-					'creation_date' => new MongoDate()
+					'creation_date' => new Mongodloid_Date()
 				);
 				$query = array(
 					'aid' => $aid,

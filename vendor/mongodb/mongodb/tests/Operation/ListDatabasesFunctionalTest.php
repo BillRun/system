@@ -19,39 +19,14 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
         $writeResult = $insertOne->execute($server);
         $this->assertEquals(1, $writeResult->getInsertedCount());
 
-        $databases = null;
-        (new CommandObserver())->observe(
-            function () use (&$databases, $server) {
-                $operation = new ListDatabases();
-
-                $databases = $operation->execute($server);
-            },
-            function (array $event) {
-                $this->assertObjectNotHasAttribute('authorizedDatabases', $event['started']->getCommand());
-            }
-        );
+        $operation = new ListDatabases();
+        $databases = $operation->execute($server);
 
         $this->assertInstanceOf(DatabaseInfoIterator::class, $databases);
 
         foreach ($databases as $database) {
             $this->assertInstanceOf(DatabaseInfo::class, $database);
         }
-    }
-
-    public function testAuthorizedDatabasesOption()
-    {
-        (new CommandObserver())->observe(
-            function () {
-                $operation = new ListDatabases(
-                    ['authorizedDatabases' => true]
-                );
-
-                $operation->execute($this->getPrimaryServer());
-            },
-            function (array $event) {
-                $this->assertObjectHasAttribute('authorizedDatabases', $event['started']->getCommand());
-            }
-        );
     }
 
     public function testFilterOption()

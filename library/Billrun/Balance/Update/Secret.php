@@ -87,7 +87,7 @@ class Billrun_Balance_Update_Secret extends Billrun_Balance_Update_Chargingplan 
 			'$set' => array(
 				'status' => 'Used',
 				'sid' => $this->subscriber['sid'],
-				'activation_datetime' => new MongoDate(),
+				'activation_datetime' => new Mongodloid_Date(),
 			),
 		);
 		$options = array(

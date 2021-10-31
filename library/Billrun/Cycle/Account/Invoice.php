@@ -137,18 +137,18 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * 
 	 * @param string $billrunDate
-	 * @return \MongoDate
+	 * @return Mongodloid_Date
 	 */
 	protected function generateDueDate($billrunDate) {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		$invoiceType = isset($this->data['attributes']['invoice_type']) ? $this->data['attributes']['invoice_type'] : null; 
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet(array('invoice_type' => $invoiceType), $option['conditions'])) { //TODO: transfer the entity instead of just array with invoice_type
-				 return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
+				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));										  // once BRCD-2351 is fixed
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
 	/**
@@ -419,12 +419,12 @@ class Billrun_Cycle_Account_Invoice {
 		$initData = $this->data->getRawData();
 		$invoicing_day = !empty($initData['invoicing_day']) ? $initData['invoicing_day'] : null;
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey(), $invoicing_day);
-		$initData['creation_time'] = new MongoDate(time());
+		$initData['creation_time'] = new Mongodloid_Date(time());
 		$isOneTimeInvoice = isset($initData['attributes']['invoice_type']) && $initData['attributes']['invoice_type'] == 'immediate' ? true : false;
 		$invoiceDate = $isOneTimeInvoice ? strtotime($initData['billrun_key']) : strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate);
-		$initData['invoice_date'] = new MongoDate($invoiceDate);
-		$initData['end_date'] = new MongoDate($billrunDate);
-		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
+		$initData['invoice_date'] = new Mongodloid_Date($invoiceDate);
+		$initData['end_date'] = new Mongodloid_Date($billrunDate);
+		$initData['start_date'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->getBillrunKey(), $invoicing_day));
 		$initData['due_date'] = $this->generateDueDate($billrunDate);
 		$chargeNotBefore = $this->generateChargeDate($initData);
 		if (!empty($chargeNotBefore)) {
@@ -458,7 +458,7 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$query = [
 			'aid'=>$this->aid,
-			'urt' => ['$gte' => new MongoDate($accountActivenessDate)],
+			'urt' => ['$gte' => new Mongodloid_Date($accountActivenessDate)],
 			'billrun'=>$this->key,
 			'usaget'=>['$nin'=>['flat']],
 		];
@@ -500,7 +500,7 @@ class Billrun_Cycle_Account_Invoice {
 			}
 			
 			if (!empty($initData[$option['anchor_field']]) && in_array($invoiceType, $option['invoice_type'])) {
-				return new MongoDate(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
+				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $initData[$option['anchor_field']]->sec));
 			}
 		}
 		
@@ -511,7 +511,7 @@ class Billrun_Cycle_Account_Invoice {
 		
 		// else - get config default value or temporerily use 'invoice_date' with offset
 		Billrun_Factory::log()->log('Failed to match charge date for aid:' . $this->getAid() . ', using default configuration', Zend_Log::NOTICE);
-		return new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
+		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $initData['invoice_date']));
 	}
 
 	/**

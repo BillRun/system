@@ -62,7 +62,7 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 	 * @param int $newValue - Reference parameter, updated inside with the value before.
 	 */
 	protected function getExpectedValueForIncrement($query, &$newValue) {
-		$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY', array());
 		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
 		if (!$balanceBefore->isEmpty()) {

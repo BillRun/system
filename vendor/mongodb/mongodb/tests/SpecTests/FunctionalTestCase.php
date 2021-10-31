@@ -106,7 +106,7 @@ class FunctionalTestCase extends BaseFunctionalTestCase
 
         $mi = new MultipleIterator(MultipleIterator::MIT_NEED_ANY);
         $mi->attachIterator(new ArrayIterator($expectedDocuments));
-        $mi->attachIterator(new IteratorIterator($outcomeCollection->find([], ['sort' => ['_id' => 1]])));
+        $mi->attachIterator(new IteratorIterator($outcomeCollection->find()));
 
         foreach ($mi as $documents) {
             list($expectedDocument, $actualDocument) = $documents;
@@ -137,9 +137,9 @@ class FunctionalTestCase extends BaseFunctionalTestCase
     protected function checkServerRequirements(array $runOn)
     {
         foreach ($runOn as $req) {
-            $minServerVersion = $req->minServerVersion ?? null;
-            $maxServerVersion = $req->maxServerVersion ?? null;
-            $topologies = $req->topology ?? null;
+            $minServerVersion = isset($req->minServerVersion) ? $req->minServerVersion : null;
+            $maxServerVersion = isset($req->maxServerVersion) ? $req->maxServerVersion : null;
+            $topologies = isset($req->topology) ? $req->topology : null;
 
             if ($this->isServerRequirementSatisifed($minServerVersion, $maxServerVersion, $topologies)) {
                 return;

@@ -458,8 +458,7 @@
             "errorLabelsOmit": [
               "TransientTransactionError",
               "UnknownTransactionCommitResult"
-            ],
-            "errorContains": "E11000"
+            ]
           }
         },
         {

@@ -159,7 +159,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @param array $update the update command
 	 * 
 	 * @return array update command results
-	 * @throws MongoResultException
 	 */
 	public function update($query, $update) {
 		$skipEvents = false;
@@ -243,7 +242,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (empty($arateGroups)) {
 			return $usagev;
 		}
-		
+
 		$usagev = 0;
 
 		if (!empty($pricingData['over_group'])) {
@@ -253,7 +252,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		foreach ($arateGroups as $arateGroup) {
-			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
+			if ($arateGroup['balance_ref']['$id'] instanceof Mongodloid_Id &&  $arateGroup['balance_ref']['$id']->__toString() === $this->getId()->__toString()) {
 				$usagev += $arateGroup['usagev'] ?? 0;
 			}
 		}

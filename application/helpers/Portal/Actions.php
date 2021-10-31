@@ -249,7 +249,7 @@ abstract class Portal_Actions {
 		}
 
         foreach ($entity as $field => $value) {
-            if ($value instanceof MongoDate) {
+            if ($value instanceof Mongodloid_Date) {
                 $entity[$field] = Billrun_Utils_Mongo::convertMongoDatesToReadable($value);
             }
         }

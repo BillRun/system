@@ -54,7 +54,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 				'name' => $this->billrunName,
 				'card_token' => $this->saveDetails['card_token'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time()),
+				'generate_token_time' => new Mongodloid_Date(time()),
 				'customer_id' => $this->saveDetails['customer_id'],
 			)
 		);
