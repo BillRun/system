@@ -57,8 +57,10 @@ trait Billrun_Plans_Charge_Arrears_Traits_Custom {
 		$frequency = $this->recurrenceConfig['frequency'];
 		return [	'start_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['start'],  $this->activation ,true,false,false, $frequency)),
 					'start' => $this->proratedStart ? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start(),
+					'prorated_start_date' => new Mongodloid_Date($this->proratedStart   && $this->activation > $this->cycle->start()? Billrun_Plan::monthDiffToDate($price['start'], $proratedActivation,true,false,false,$frequency) : $this->cycle->start()),
 					'prorated_start' =>  $this->proratedStart ,
 					'end' => $endProration ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end(),
+					'prorated_end_date' => new Mongodloid_Date($endProration && $this->cycle->end() > $this->deactivation ? Billrun_Plan::monthDiffToDate($price['end'], $proratedActivation, FALSE, $proratedEnding, $this->deactivation && $this->cycle->end() > $this->deactivation, $frequency) : $this->cycle->end()),
 					'end_date' => new Mongodloid_Date(Billrun_Plan::monthDiffToDate($price['end'],  $this->activation , FALSE, $this->deactivation ,$this->deactivation && $this->cycle->end() > $this->deactivation, $frequency)),
 					'prorated_end' =>  $endProration
 				];

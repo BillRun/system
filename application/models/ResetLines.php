@@ -91,7 +91,7 @@ class ResetLinesModel {
 	 * @param array $update_aids - Array of aid's to reset.
 	 * @return array Query to run in the collection for reset lines.
 	 */
-	protected function getResetLinesQuery($update_aids) {
+	public function getResetLinesQuery($update_aids) {
 		return array(
 			'$or' => array(
 				array(
@@ -636,7 +636,7 @@ class ResetLinesModel {
 			!empty($this->balances[$balanceId]['balance']['totals']);
 	}
 	
-	protected function buildConditionsQuery($updateAids) {
+	public function buildConditionsQuery($updateAids) {
 		if (empty($this->conditions)) {
 			return array();
 		}
