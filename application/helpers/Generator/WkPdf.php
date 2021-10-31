@@ -124,6 +124,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details', TRUE));
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
+		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
 	}
 
 	/**
@@ -396,6 +397,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function accountSpecificViewParams($billrunData) {
 		$this->view->assign('render_usage_details', $this->render_usage_details);
 		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+		$this->view->assign('render_detailed_quantitative_services', $this->render_detailed_quantitative_services);
 
 		if (isset($billrunData['attributes']['invoice_details']['usage_details'])) {
 			$this->view->assign('render_usage_details', $billrunData['attributes']['invoice_details']['usage_details']);
