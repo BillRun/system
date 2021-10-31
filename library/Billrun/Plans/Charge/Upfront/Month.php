@@ -62,8 +62,8 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction, 
 			'start' => $this->activation,
-			'prorated_start_date' => new MongoDate( $this->deactivation),
+			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
 			'end' => $this->deactivation,
-			'prorated_end_date' =>  new MongoDate( $this->cycle->end() ) );
+			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()));
 	}
 }
