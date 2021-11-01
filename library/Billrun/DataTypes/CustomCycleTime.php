@@ -12,7 +12,7 @@
  * @package  DataTypes
  * @since    5.2
  */
-class Billrun_DataTypes_CustomCycleTime extends Billrun_DataTypes_CycleTime{
+class Billrun_DataTypes_CustomCycleTime extends Billrun_DataTypes_CycleTime {
 
 	/**
 	 * Create a new instance of the cycle time class.

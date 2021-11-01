@@ -34,4 +34,9 @@ class Billrun_Plans_Charge_Upfront_Notprorated_Custom extends Billrun_Plans_Char
 
 		return null;
 	}
+
+	protected function getUpfrontCycle($regularCycle) {
+		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
+		return  new Billrun_DataTypes_CustomCycleTime($nextCycleKey, $this->recurrenceConfig, $regularCycle->invoicingDay(), $this->activation);
+	}
 }

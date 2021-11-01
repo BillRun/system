@@ -236,7 +236,7 @@ class Billrun_Cycle_Account_Invoice {
 		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
 		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
 			foreach ($aggregateConf['pipelines'] as $pipeline) {
-				 Billrun_Utils_Mongo::convertQueryMongoDates($pipeline);
+				 Billrun_Utils_Mongo::convertQueryMongodloidDates($pipeline);
 				if (empty($aggregateConf['use_db'])) {
 					$aggrResults = $aggregate->aggregate( $pipeline, [$invoiceData]);
 				} else {
