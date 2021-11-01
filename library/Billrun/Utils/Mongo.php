@@ -288,6 +288,15 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
+	 * legacy method to old MDB layer
+	 * 
+	 * @see convertQueryMongodloidDates
+	 */
+	public static function convertQueryMongoDates(&$arr, $strDatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/') {
+		self::convertQueryMongodloidDates($arr, $strDatePattern);
+	}
+
+	/**
 	 * Get an overlapping dates query
 	 * @param type $searchKeys - Array, must include the from and to fields.
 	 * @param type $new
