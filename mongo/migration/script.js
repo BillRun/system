@@ -1356,7 +1356,7 @@ db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sp
 lastConfig = runOnce(lastConfig, 'BRCD-2336', function () {
 
     db.prepaidincludes.dropIndexes();
-    db.prepaidincludes.ensureIndex({from : 1, to: 1, name : 1, external_id : 1}, {unique: true});
-    db.prepaidincludes.ensureIndex({external_id : 1}, {unique: false});
-    db.prepaidincludes.ensureIndex({name : 1}, {unique: false});
+    db.prepaidincludes.createIndex({from : 1, to: 1, name : 1, external_id : 1}, {unique: true});
+    db.prepaidincludes.createIndex({external_id : 1}, {unique: false});
+    db.prepaidincludes.createIndex({name : 1}, {unique: false});
 });
