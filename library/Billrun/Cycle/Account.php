@@ -166,25 +166,27 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				}
 				$fieldsEnded =  array_merge([$activeRev],$fieldsEnded);
 				$fieldsEnded = usort($fieldsEnded,function($a,$b){ return $a['from'] - $b['from']; });
-				//Create revision for all the terminated services/plans under the current "from" date
-				foreach($fieldsEnded as $endedField) {
-					//close the current revision if its "to" has changed and open a new one.
-					if($endedField['to'] < $activeRev['to'] ) {
-						$activeRev['to'] =  $endedField['to'];
-						$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
-						if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
-							$retRevisions[] = $saveRevision;
-						}
+				if (is_array($fieldsEnded) || is_object($fieldsEnded)) {
+					//Create revision for all the terminated services/plans under the current "from" date
+					foreach($fieldsEnded as $endedField) {
+						//close the current revision if its "to" has changed and open a new one.
+						if($endedField['to'] < $activeRev['to'] ) {
+							$activeRev['to'] =  $endedField['to'];
+							$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
+							if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
+								$retRevisions[] = $saveRevision;
+							}
 
-						$activeRev['from'] = $endedField['to'];
-						$activeRev['to'] = $revision['to'];
-						//should services/plans be removed from the revision?
-						foreach($subRevisionsFields as $fieldName) {
-							if(!empty($fieldsEnded) && !empty($activeRev[$fieldName])) {
-								$activeRev[$fieldName] = array_values(
-															array_udiff($activeRev[$fieldName],$fieldsEnded,function($a,$b) use ($saveRevision) {
-																		return $b['to'] > $saveRevision['to']->sec && $b['from'] <= $saveRevision['to']->sec ? 1 : strcmp(json_encode($a) ,json_encode($b));})
-														);
+							$activeRev['from'] = $endedField['to'];
+							$activeRev['to'] = $revision['to'];
+							//should services/plans be removed from the revision?
+							foreach($subRevisionsFields as $fieldName) {
+								if(!empty($fieldsEnded) && !empty($activeRev[$fieldName])) {
+									$activeRev[$fieldName] = array_values(
+																array_udiff($activeRev[$fieldName],$fieldsEnded,function($a,$b) use ($saveRevision) {
+																			return $b['to'] > $saveRevision['to']->sec && $b['from'] <= $saveRevision['to']->sec ? 1 : strcmp(json_encode($a) ,json_encode($b));})
+															);
+								}
 							}
 						}
 					}

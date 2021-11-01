@@ -34,6 +34,9 @@ class Billrun_Utils_Arrayquery_Query {
 	}
 
 	protected  static function translateQueryKeys($query,$separator = '.') {
+		if (!is_array($query) && !is_object($query)) {
+			return array();
+		}
 		$translatedQuery = array();
 		foreach($query as  $key => $value) {
 			$pos = strpos($key, $separator);
