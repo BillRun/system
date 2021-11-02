@@ -3385,6 +3385,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 											"sid",
 											"subscriber",
 											"foreign",
+                                                                                        "firstname",
+                                                                                        "lastname",
 											"billrun",
 											"tax_data",
 											"usagev",
@@ -8529,6 +8531,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-88', function () {
 										"sid",
 										"subscriber",
 										"foreign",
+                                                                                "firstname",
+                                                                                "lastname",                                                                                
 										"billrun",
 										"tax_data",
 										"usagev",
@@ -8834,6 +8838,16 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			}
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
+		}
+	}
+});
+
+//EPICIC-120: Customer first & last name not exist in unify line
+lastConfig = runOnce(lastConfig, 'EPICIC-120', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('firstname');
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('lastname');
 		}
 	}
 });
