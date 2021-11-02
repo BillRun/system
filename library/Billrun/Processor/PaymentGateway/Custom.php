@@ -94,16 +94,22 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
-        protected function formatLine($row,$dataStructure) {
-            foreach($dataStructure as $index => $paramObj){
-                if(isset($paramObj['decimals'])){
-                    $value = intval($row[$paramObj['name']]);
-                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
-                }
-            }
-            return $row;
-        }
-        
+	protected function formatLine($row, $dataStructure) {
+		foreach ($dataStructure as $index => $paramObj) {
+			if (isset($paramObj['decimals'])) {
+				$value = intval($row[$paramObj['name']]);
+				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
+			}
+			if (isset($paramObj['substring_regex'])) {
+				$row[$paramObj['name']] = preg_replace($paramObj['substring_regex'], '', $row[$paramObj['name']]);
+			}
+			if (isset($paramObj['multiply_by'])) {
+				$row[$paramObj['name']] = $row[$paramObj['name']] * $paramObj['multiply_by'];
+			}
+		}
+		return $row;
+	}
+
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));

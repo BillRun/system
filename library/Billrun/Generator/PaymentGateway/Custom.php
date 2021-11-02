@@ -115,8 +115,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     $this->logFile->updateLogFileField('warnings', $message);
                 }
             }
+			if (isset($dataField['multiply_by'])) {
+                $dataLine[$dataField['path']] = $dataLine[$dataField['path']] * $dataField['multiply_by'];
+            }
             if (isset($dataField['number_format'])) {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+            }
+			if (isset($dataField['substring_regex'])) {
+                $dataLine[$dataField['path']] = preg_replace($dataField['substring_regex'], '', $dataLine[$dataField['path']]);
             }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
