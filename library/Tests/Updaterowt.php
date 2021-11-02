@@ -978,7 +978,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	 */
 	public function calcBillrun($invoiceDay, $urt) {
 		$now = date('d');
-		if (time($urt) >= time($invoiceDay)) {
+		if ($urt >= $invoiceDay) {
 			return date('Ym', strtotime('+1 month'));
 		} else {
 			return date('Ym');
