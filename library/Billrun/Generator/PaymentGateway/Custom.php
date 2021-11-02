@@ -79,66 +79,66 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 
 	protected function getDataLine($params) {
-        $dataLine = array();
-        $this->transactionsTotalAmount += $params['amount'];
-        $dataStructure = $this->configByType['generator']['data_structure'];
+		$dataLine = array();
+		$this->transactionsTotalAmount += $params['amount'];
+		$dataStructure = $this->configByType['generator']['data_structure'];
 		$this->billSavedFields = array();
-        foreach ($dataStructure as $dataField) {
-            try{
-            if (!isset($dataField['path'])) {
-                $message = "Exporter " . $this->configByType['file_type'] . " data structure is missing a path";
-                Billrun_Factory::log($message, Zend_Log::ERR);
-                $this->logFile->updateLogFileField('warnings', $message);
-                continue;
-            }
-            if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
-                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $dataLine[$dataField['path']] = date($dateFormat, time());
-            }
-            if (isset($dataField['hard_coded_value'])) {
-                $dataLine[$dataField['path']] = $dataField['hard_coded_value'];
-            }
-            if (isset($dataField['linked_entity'])) {
-                $dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
-            }
-            if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
-                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
-            }
-            if (isset($dataField['type']) && $dataField['type'] == 'date') {
-                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $date = strtotime($dataLine[$dataField['path']]);
-                if ($date) {
-                    $dataLine[$dataField['path']] = date($dateFormat, $date);
-                } else {
-                    $message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
-                    Billrun_Factory::log($message, Zend_Log::NOTICE);
-                    $this->logFile->updateLogFileField('warnings', $message);
-                }
-            }
-            if (isset($dataField['number_format'])) {
-                $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
-            }
-            $attributes = $this->getLineAttributes($dataField);
-            if (!isset($dataLine[$dataField['path']])) {
-                $configObj = $dataField['name'];
-                $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
-                $this->logFile->updateLogFileField('errors', $message);
-                throw new Exception($message);
-            }
-			if (!empty($dataField['save_to_bill'])) {
-				$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
+		foreach ($dataStructure as $dataField) {
+			try {
+				if (!isset($dataField['path'])) {
+					$message = "Exporter " . $this->configByType['file_type'] . " data structure is missing a path";
+					Billrun_Factory::log($message, Zend_Log::ERR);
+					$this->logFile->updateLogFileField('warnings', $message);
+					continue;
+				}
+				if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
+					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+					$dataLine[$dataField['path']] = date($dateFormat, time());
+				}
+				if (isset($dataField['hard_coded_value'])) {
+					$dataLine[$dataField['path']] = $dataField['hard_coded_value'];
+				}
+				if (isset($dataField['linked_entity'])) {
+					$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
+				}
+				if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
+					$dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
+				}
+				if (isset($dataField['type']) && $dataField['type'] == 'date') {
+					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+					$date = strtotime($dataLine[$dataField['path']]);
+					if ($date) {
+						$dataLine[$dataField['path']] = date($dateFormat, $date);
+					} else {
+						$message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
+						Billrun_Factory::log($message, Zend_Log::NOTICE);
+						$this->logFile->updateLogFileField('warnings', $message);
+					}
+				}
+				if (isset($dataField['number_format'])) {
+					$dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+				}
+				$attributes = $this->getLineAttributes($dataField);
+				if (!isset($dataLine[$dataField['path']])) {
+					$configObj = $dataField['name'];
+					$message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+					$this->logFile->updateLogFileField('errors', $message);
+					throw new Exception($message);
+				}
+				if (!empty($dataField['save_to_bill'])) {
+					$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
+				}
+				$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+			} catch (Exception $ex) {
+				Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+				continue;
 			}
-			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
-            } catch(Exception $ex){
-                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-                continue;
-        }
-        }
-        if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
-            ksort($dataLine);
-        }
-        return $dataLine;
-    }
+		}
+		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
+			ksort($dataLine);
+		}
+		return $dataLine;
+	}
 
 	protected function getHeaderLine() {
         $headerStructure = $this->configByType['generator']['header_structure'];
