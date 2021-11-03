@@ -17,6 +17,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	protected $data = null;
 	protected $headers = null;
 	protected $separator = ",";
+	protected $row_separator = "line_break";	
 	protected $filename = null;
 	protected $file_path = null;
 	
@@ -51,6 +52,8 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 		if (isset($options['pad_length']) && is_array($options['pad_length'])) {
 			$this->pad_length = Billrun_Util::verify_array($options['pad_length'], 'int');
 		}
+		$row_separator = Billrun_Util::getIn($options, 'row_separator', 'line_break');
+		$this->row_separator = $row_separator == 'line_break' ? PHP_EOL : $row_separator;
 	}
 
 	/**
@@ -95,7 +98,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 				$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 			}
 
-			$file_contents .= trim($row_contents, $this->separator) . PHP_EOL;
+			$file_contents .= trim($row_contents, $this->separator) . $this->row_separator;
 			if ($counter == 50000) {
 				$this->writeToFile($file_contents);
 				$file_contents = '';
@@ -106,7 +109,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	}
 
 	protected function writeHeaders() {
-		$header_str = implode($this->headers, $this->separator) . PHP_EOL;
+		$header_str = implode($this->headers, $this->separator) . $this->row_separator;
 		$this->writeToFile($header_str);
 	}
 
