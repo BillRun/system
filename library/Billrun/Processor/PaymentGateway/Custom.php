@@ -96,6 +96,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
         
         protected function formatLine($row,$dataStructure) {
             foreach($dataStructure as $index => $paramObj){
+				if (isset($paramObj['value_mult'])) {
+					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+				}
                 if(isset($paramObj['decimals'])){
                     $value = intval($row[$paramObj['name']]);
                     $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
