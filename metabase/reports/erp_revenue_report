@@ -1,0 +1,81 @@
+[
+		{
+			$match: {
+			   $and: [ {$and : [ { $expr: {$gt:['$invoice_date', {
+                        $dateFromParts: {
+                            'year': {$year:{{from}}},
+                            'month': {$month:{{from}}},
+                            'day': { $dayOfMonth: {{from}} },
+                            'hour': {$hour:{{from}}},
+                            'minute': {$minute:{{from}}},
+                            'second': {$second:{{from}}},
+                            'millisecond': { $millisecond: {{from}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }]}}, {$expr:{$lte:['$invoice_date', {
+                        $dateFromParts: {
+                            'year': {$year: {{to}}},
+                            'month': {$month: {{to}}},
+                            'day': { $dayOfMonth:  {{to}} },
+                            'hour': {$hour: {{to}}},
+                            'minute': {$minute: {{to}}},
+                            'second': {$second: {{to}}},
+                            'millisecond': { $millisecond:  {{to}} },
+                            'timezone' : "Asia/Nicosia"
+                        }
+                    }
+                ]}}]}]}},
+{ $unwind : "$totals.grouping" },
+{ $match : { "totals.grouping.source": { $ne: "plan" } }},
+{$addFields: { 
+             cash_flow: {$cond: [ { $eq: [ "$totals.grouping.cf.cash_flow", "R" ] }, "REVENUE", "EXPENSE" ]}
+}},
+{$addFields: { 
+             MYKEY: { $concat: [
+                     {$ifNull:["$totals.grouping.cf.scenario",""]}, "_" ,
+                     {$ifNull:["$totals.grouping.cf.product",""]}, "_" ,
+                     {$ifNull:["$totals.grouping.cf.component",""]}, "_",
+                     {$ifNull:["$cash_flow",""]}, "_" ,
+                     {$ifNull:["$totals.grouping.uf.USER_SUMMARISATION",""]}, "_" ,
+                     {$ifNull:["$totals.grouping.cf.operator",""]},]}}},
+{$lookup: {
+             from: "epic_cy_erp_mapping",
+             let: { key: "$MYKEY"},
+             pipeline: [
+                     {$match:{"$expr":{"$eq": ["$key", "$$key"]}}},
+],
+             as: "res"}},
+
+{
+         $addFields: {
+            	res: {$arrayElemAt: ["$res" , 0 ]}
+
+         }
+ },
+
+ {$group:{_id:{res:"$res",invoice_date:"$invoice_date",INVOICE_NUMBER:"$invoice_id",IFS_CUST_CODE:"$attributes.ifs_operator_id",OBJECT_ID:"$res.object_id",
+MTN_IND:"$res.mtn_ind",PROD_SERV:"$res.prod_serv",TAX_CODE:"$attributes.vat_code",OBJ_REVENUE_ACCOUNT:"$res.gl_account"},
+GROSS_AMOUNT:{$sum:"$totals.grouping.after_taxes"}, NET_AMOUNT:{$sum:"$totals.grouping.before_taxes"},TAX_AMOUNT:{$sum:"$totals.grouping.taxes"} }},
+
+{$project:{_id : 0,
+INVOICE_NUMBER: "$_id.INVOICE_NUMBER",
+IFS_CUST_CODE:"$_id.IFS_CUST_CODE", 
+CURRENCY:"EUR",
+GROSS_AMOUNT:"$GROSS_AMOUNT",
+NET_AMOUNT:"$NET_AMOUNT",
+TAX_AMOUNT:"$TAX_AMOUNT",
+NOTE:{ $concat: [{ $dateToString: { format: "%d/%m/%Y", date: {{from}}, timezone: "Asia/Nicosia"} },"-",
+{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} }]},
+INVOICE_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
+DELIVERY_DATE:"",
+PYMNT_TERM_BASE_DATE:"",
+PAYMENT_TERM:"",
+PAYMENT_METHOD:"",
+OBJECT_ID:{'$ifNull':['$_id.OBJECT_ID', ""]},
+MTN_IND:{'$ifNull':['$_id.MTN_IND', ""]},
+PROD_SERV:{'$ifNull':['$_id.PROD_SERV', ""]},
+QUANTITY:"1",
+UNIT_PRICE:"$NET_AMOUNT",
+TAX_CODE:"$_id.TAX_CODE",
+OBJ_REVENUE_ACCOUNT:{'$ifNull':['$_id.OBJ_REVENUE_ACCOUNT', ""]} }}
+]
