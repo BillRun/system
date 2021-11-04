@@ -919,7 +919,7 @@ class Billrun_DiscountManager {
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
 					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
-					if (isset($subscriberService['creation_time'])) {
+					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
 			}
 					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
