@@ -16,6 +16,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	protected static $type = 'denials';
 	protected $tranIdentifierField;
 	protected $amountField;
+	protected $dateField;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -31,6 +32,14 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
 		$this->amountField = $processorDefinition['processor']['amount_field'];
+		if (isset($processorDefinition['processor']['date_field'])) {
+			$this->dateField = is_array($processorDefinition['processor']['date_field']) ? $processorDefinition['processor']['date_field'] : array(
+				'source' => 'data',
+				'field' => $processorDefinition['processor']['date_field']
+			);
+		} else {
+			$this->dateField = null;
+		}
 		return true;
 	}
 	

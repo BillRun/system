@@ -18,6 +18,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected static $type = 'transactions_response';
 	protected $amountField = null;
 	protected $tranIdentifierField = null;
+	protected $dateField;
 
 
 	public function __construct($options) {
@@ -73,6 +74,14 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		}
 		$this->amountField = $processorDefinition['processor']['amount_field'];
 		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
+		if (isset($processorDefinition['processor']['date_field'])) {
+			$this->dateField = is_array($processorDefinition['processor']['date_field']) ? $processorDefinition['processor']['date_field'] : array(
+				'source' => 'data',
+				'field' => $processorDefinition['processor']['date_field']
+			);
+		} else {
+			$this->dateField = null;
+		}
 		return true;
 	}
 
@@ -117,6 +126,9 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				$this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
+				if(!is_null($this->dateField)){
+					$rejection->setUrt();
+				}
 				$rejection->save();
 				$payment->markRejected();
 				$this->informationArray['transactions']['rejected']++;

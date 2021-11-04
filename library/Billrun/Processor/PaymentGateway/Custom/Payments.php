@@ -18,6 +18,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected $amountField;
 	protected $method = 'cash';
 	protected $dbNumericValuesFields = array('invoice_id');
+	protected $date_field;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -31,6 +32,14 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		
 		$this->identifierField = $processorDefinition['processor']['identifier_field'];
 		$this->amountField = isset($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : null;
+		if (isset($processorDefinition['processor']['date_field'])) {
+			$this->dateField = is_array($processorDefinition['processor']['date_field']) ? $processorDefinition['processor']['date_field'] : array(
+				'source' => 'data',
+				'field' => $processorDefinition['processor']['date_field']
+			);
+		} else {
+			$this->dateField = null;
+		}
 		return true;
 	}
 
