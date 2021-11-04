@@ -25,7 +25,7 @@ class ImportController extends BillapiController {
 		$this->output->status = 1;
 		try {
 			$results = $this->action->execute();
-                        $imported_entities = isset($results['imported_entities']) ? $results['imported_entities'] : $result;
+                        $imported_entities = isset($results['imported_entities']) ? $results['imported_entities'] : $results;
 			foreach ($imported_entities as $result) {
 				if($result !== true) {
 					$this->output->status = 2;
