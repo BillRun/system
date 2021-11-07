@@ -39,7 +39,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if (isset($options['backup_path'])) {
 			$this->localDir = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} elseif (isset($this->configByType['export']['export_directory'])) {
-		$this->localDir = $this->configByType['export']['export_directory'];
+			$this->localDir = $this->configByType['export']['export_directory'];
 		} else {
 			$this->localDir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', './backups/' . $this->getType()));
 		}
@@ -48,40 +48,39 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		$this->extraParamsDef = !empty($this->configByType['parameters']) ? $this->configByType['parameters'] : [];
 		$parametersString = "";
-		foreach ($this->extraParamsDef as $index => $param) { 
+		foreach ($this->extraParamsDef as $index => $param) {
 			$field_name = !empty($param['field_name']) ? $param['field_name'] : $param['name'];
 			if (!empty($options[$field_name])) {
 				if ($param['type'] === "string") {
 					$value = !empty($param['regex']) ? (preg_match($param['regex'], $options[$field_name]) ? $options[$field_name] : "") : $options[$field_name];
 					$parametersString .= $field_name . "=" . $options[$field_name] . ",";
-		}
+				}
 			}
 		}
 		$parametersString = trim($parametersString, ",");
 		$this->options = $options;
-                $className = $this->getGeneratorClassName();
-                $generatorOptions = $this->buildGeneratorOptions();
+		$className = $this->getGeneratorClassName();
+		$generatorOptions = $this->buildGeneratorOptions();
 		$this->createLogFile();
 		$extraFields = $this->getCustomPaymentGatewayFields();
 		$this->logFile->updateLogFileField(null, null, $extraFields);
-                try{
-                $this->fileGenerator = new $className($generatorOptions);
-                }catch(Exception $ex){
-                    $this->logFile->updateLogFileField('errors', $ex->getMessage());
+		try {
+			$this->fileGenerator = new $className($generatorOptions);
+		} catch (Exception $ex) {
+			$this->logFile->updateLogFileField('errors', $ex->getMessage());
 			$this->logFile->save();
-                    throw new Exception($ex->getMessage());
-                }
-                $this->initLogFile();
-				if (!empty($options['created_by'])) {
-					$this->logFile->updateLogFileField('created_by', $options['created_by']);
-				}
-		$this->logFile->updateLogFileField('file_status',Billrun_Util::getFieldVal(	$options['file_status'],
-		Billrun_Util::getFieldVal(	$this->configByType['file_status'], static::INITIAL_FILE_STATE)));
-                $this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
-                $this->logFile->updateLogFileField('type', 'custom_payment_gateway');
-                $this->logFile->updateLogFileField('payments_file_type', $options['type']);
+			throw new Exception($ex->getMessage());
+		}
+		$this->initLogFile();
+		if (!empty($options['created_by'])) {
+			$this->logFile->updateLogFileField('created_by', $options['created_by']);
+		}
+		$this->logFile->updateLogFileField('file_status', Billrun_Util::getFieldVal($options['file_status'], Billrun_Util::getFieldVal($this->configByType['file_status'], static::INITIAL_FILE_STATE)));
+		$this->logFile->updateLogFileField('payment_gateway', $options['payment_gateway']);
+		$this->logFile->updateLogFileField('type', 'custom_payment_gateway');
+		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
 		$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
-                $this->logFile->updateLogFileField('parameters_string', $parametersString);
+		$this->logFile->updateLogFileField('parameters_string', $parametersString);
 	}
 
 	public function load() {
