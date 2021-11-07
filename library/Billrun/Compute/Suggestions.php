@@ -69,14 +69,16 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function findAllMatchingLines($retroactiveChanges) {
         $matchingLines = array();
         $now = new MongoDate();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
+	$billrunLowerBoundTimestamp = strtotime($monthsLimit . " months ago");
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
-                        'urt' => array(
+                        'urt' => array(array(
                             '$gte' => $retroactiveChange['new']['from'],
                             '$lt' => $retroactiveChange['new']['to'] < $now ? $retroactiveChange['new']['to'] : $now
-                        ),
+                        ), array('$gte' => $billrunLowerBoundTimestamp)),
                         $this->getFieldNameOfLine() => $retroactiveChange['key'],
                         'in_queue' => array('$ne' => true)
                     ), $this->addFiltersToFindMatchingLines());
@@ -95,8 +97,27 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                         array(
                                             'aid' => '$aid',
                                             'sid' => '$sid',
-                                            'billrun' => '$billrun',
-                                            'key' => '$' . $this->getFieldNameOfLine()
+                                            'billrun' => array(//if billrun doen't exist get billrun key by the line urt. see Billrun_Billingcycle::getBillrunKeyByTimestamp 
+                                                '$ifNull' => array('$billrun', $this->getUrtRanges()
+//                                                    array(
+//                                                        '$cond' => array(
+//                                                            'if' => array( '$lt' => array(array('$dateToString' => array('format'=> 'd', 'date' => '$urt')), $dayofmonth)), 
+//                                                            'then' => array('$dateToString' =>  array('format'=> '%Y%m','date' => '$urt')),
+//                                                            'else' => array( //can be done ease in mongo version 5.0 (use $dateAdd)
+//                                                                '$cond' => array(
+//                                                                    'if' => array('$gt' => array(13, 12)),  
+//                                                                    'then' => array(array('$concat' => array(array('$add' => array(array('$year' => '$urt'), 1)), '01'))),
+//                                                                    'else' => array(array('$concat' => array(array('$dateToString' => array('format'=> 'Y', 'date' => '$urt')), array('$add'=> array(array('$dateToString' => array('format'=> 'm', 'date' => '$urt')), 1)))))
+//                                                                )
+//                                                            )
+//                                                        ),
+//                                                    )
+                                                )
+                                            ),
+                                            'billrun_in_line' => array(
+                                                '$ifNull' => array('$billrun', false),
+                                            ),
+                                            'key' => '$' . $this->getFieldNameOfLine(),
                                         ), $this->addGroupsIdsForMatchingLines()
                                 ),
                                 'firstname' => array(
@@ -137,6 +158,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'aid' => '$_id.aid',
                                 'sid' => '$_id.sid',
                                 'billrun' => '$_id.billrun',
+                                'billrun_in_line' => '$_id.billrun_in_line',
                                 'key' => '$_id.key',
                                 'firstname' => 1,
                                 'lastname' => 1,
@@ -155,6 +177,38 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
         return $matchingLines;
     }
+    
+    protected function getUrtRanges() {
+        $dayofmonth = Billrun_Factory::config()->getConfigChargingDay();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
+	$startUrt = strtotime($monthsLimit . " months ago");
+        $firstChargingDayUrt = strtotime(date('Y-m-'.$dayofmonth.' H:i:s', $startUrt));
+        $now = strtotime('now');
+        if($firstChargingDayUrt > $startUrt){
+            $initial_case = array(
+                'case' => array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt)
+            );
+        }else{
+            $firstChargingDayUrt = strtotime('+1 month', $firstChargingDayUrt);
+            $initial_case = array(
+                'case' => array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt)
+            );
+        }        
+        $cases[] = $initial_case;
+        for($urtStartRange = $firstChargingDayUrt; $urtStartRange <= $now; $urtStartRange = strtotime('+1 month', $urtStartRange)){
+            $urtEndRange = strtotime('+1 month', $urtStartRange);
+            $case = array(
+                'case' => array(array('$gte' => array('$urt', $urtStartRange)), array('$lt'=> array('$urt', $urtEndRange))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($urtStartRange)
+            );
+            $cases[] = $case;
+        }
+        return array('$switch' => array(
+                        'branches' => $cases
+            ));
+    }
 
     protected function buildSuggestion($line) {
         //params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
@@ -165,6 +219,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'firstname' => $line['firstname'],
             'lastname' => $line['lastname'],
             'billrun_key' => $line['billrun'],
+            'billrun_exists' => $line['billrun_in_line'] === false ? false: true,
             'from' => $line['from'],
             'to' => new MongoDate(strtotime('+1 sec', $line['to']->sec)),
             'usagev' => $line['usagev'],
@@ -241,6 +296,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'aid' => $suggestion['aid'],
             'sid' => $suggestion['sid'],
             'billrun_key' => $suggestion['billrun_key'],
+            'billrun_exists' => $suggestion['billrun_exists'],
             'key' => $suggestion['key'],
             'status' => 'open',
             'recalculation_type' => $suggestion['recalculation_type']
