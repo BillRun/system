@@ -68,6 +68,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
+		if (!is_null($this->date_field)) {
+			$this->addPaymentUrt($row, $paymentParams);
+		}
 		try {
 			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
@@ -99,4 +102,16 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	public function getType () {
 		return static::$type;
 	}
+	
+	public function addPaymentUrt($row, &$paymentParams) {
+		$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
+		if (!is_null($date)) {
+			$paymentParams['urt'] = $date;
+		} else {
+			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
+			$this->informationArray['warnings'][] = $message;
+			Billrun_Factory::log()->log($message, Zend_Log::WARN);
+		}
+	}
+
 }

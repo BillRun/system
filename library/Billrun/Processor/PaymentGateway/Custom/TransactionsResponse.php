@@ -30,7 +30,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
-                $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
+                $this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
 				if ($paymentResponse['stage'] == 'Rejected') {
 					$payment->updatePastRejectionsOnProcessingFiles();
 				}
@@ -108,29 +108,30 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	 * @param Payment payment- the current payment.
 	 * 
 	 */
-	protected function updatePaymentAccordingTheResponse($response, $payment) {
+	protected function updatePaymentAccordingTheResponse($response, $payment, $row) {
+		$urt = $this->getPaymentUrt($row);
 		if ($response['stage'] == "Completed") { // payment succeeded 
-                        if ($payment->isPendingPayment()){
-                            $payment->setPending(false);
-                            $payment->updateConfirmation();
-                            $payment->setPaymentStatus($response, $this->gatewayName);
-                            $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
-                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
-                        }else{
-                            Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
-                        }
+			if ($payment->isPendingPayment()) {
+				$payment->setUrt($urt);
+				$payment->setPending(false);
+				$payment->updateConfirmation();
+				$payment->setPaymentStatus($response, $this->gatewayName);
+				$this->informationArray['total_confirmed_amount'] += $payment->getAmount();
+				Billrun_Factory::log('Confirming transaction ' . $payment->getId(), Zend_Log::INFO);
+			} else {
+				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
+			}
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				$payment->setPending(false);
 				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
 				$this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
+				$rejection->setUrt($urt);
 				$rejection->setConfirmationStatus(false);
-				if(!is_null($this->dateField)){
-					$rejection->setUrt();
-				}
 				$rejection->save();
 				$payment->markRejected();
+				$payment->setUrt($urt);
 				$this->informationArray['transactions']['rejected']++;
 				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
@@ -159,6 +160,18 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	public function getType () {
 		return static::$type;
+	}
+	
+	public function getPaymentUrt($row){
+		$date = in_array($this->dateField['source'], ['header', 'trailer']) ?  $this->{$this->dateField['source'].'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
+		if(!is_null($date)){
+			return strtotime($date);
+		} else {
+			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
+			$this->informationArray['warnings'][] = $message;
+			Billrun_Factory::log()->log($message, Zend_Log::WARN);
+			return time();
+		}
 	}
 
 }
