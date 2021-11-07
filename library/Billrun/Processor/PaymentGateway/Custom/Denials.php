@@ -47,9 +47,9 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		$customFields = $this->getCustomPaymentGatewayFields();
 		$payment->setExtraFields($customFields, array_keys($customFields));
 		if (is_null($payment)) {
-                        $message = 'None matching payment for ' . $row['stamp'];
+			$message = 'None matching payment for ' . $row['stamp'];
 			Billrun_Factory::log($message, Zend_Log::ALERT);
-                        $this->informationArray['errors'][] = $message;
+			$this->informationArray['errors'][] = $message;
 			return;
 		}
 		$row['aid'] = $payment->getAid();
@@ -65,42 +65,41 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
-		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount(),  Billrun_Bill::precision)) {
-                        $message = "Amount sent is different than the amount of the payment with txid: " . $row[$this->tranIdentifierField] . ". denial process has failed for this payment.";
+		if (!Billrun_Util::isEqual(abs($row[$this->amountField]), $payment->getAmount(), Billrun_Bill::precision)) {
+			$message = "Amount sent is different than the amount of the payment with txid: " . $row[$this->tranIdentifierField] . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
-                        return;
-                }
+			return;
+		}
 		if ($payment->isDenied(abs($row[$this->amountField]))) {
-                        $message = "Payment " . $row[$this->tranIdentifierField] . " is already denied";
+			$message = "Payment " . $row[$this->tranIdentifierField] . " is already denied";
 			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
 			$this->informationArray['errors'][] = $message;
-                        return;
+			return;
 		}
 		if (!empty($this->amountField) && !empty($row[$this->amountField])) {
 			$row['amount'] = $row[$this->amountField];
-		}
-		else {
+		} else {
 			$row['amount'] = $payment->getAmount();
 		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
 		if (!empty($denial)) {
 			if (!is_null($payment)) {
-                                $message = "Denial was created successfully for payment: " . $row[$this->tranIdentifierField];
+				$message = "Denial was created successfully for payment: " . $row[$this->tranIdentifierField];
 				Billrun_Factory::log()->log($message, Zend_Log::INFO);
 				$this->informationArray['info'][] = $message;
 				$res = $payment->deny($denial);
-				$this->informationArray['transactions']['denied']++;
-				if(isset($res['status']) && !$res['status']){
+				$this->informationArray['transactions']['denied'] ++;
+				if (isset($res['status']) && !$res['status']) {
 					$this->informationArray['errors'][] = $res['massage'];
 				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::INFO);
 			}
-                        $this->informationArray['total_denied_amount']+=$payment->getAmount();
+			$this->informationArray['total_denied_amount'] += $payment->getAmount();
 		} else {
-                        $message = "Denial process was failed for payment: " . $row[$this->tranIdentifierField];
-                        $this->informationArray['warnings'][] = $message;
+			$message = "Denial process was failed for payment: " . $row[$this->tranIdentifierField];
+			$this->informationArray['warnings'][] = $message;
 			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
 		}
 	}
