@@ -11,6 +11,7 @@
  */
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
+	public $now;
     protected $configByType;
     protected $exportDefinitions;
     protected $generatorDefinitions;
@@ -41,6 +42,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->gatewayLogName = str_replace('_', '', ucwords($options['name'], '_'));
         $this->gatewayName = $options['name'];
         $this->bills = Billrun_Factory::db()->billsCollection();
+		$this->now = time();
     }
 
     public function generate() {
@@ -52,7 +54,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
-		$this->logFile->updateLogFileField('process_time', new MongoDate(time()));
+		$this->logFile->updateLogFileField('process_time', new MongoDate($this->now));
         $this->logFile->saveLogFileFields();
     }
 
@@ -93,7 +95,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
                 $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $dataLine[$dataField['path']] = date($dateFormat, time());
+                $dataLine[$dataField['path']] = date($dateFormat, $this->now);
             }
             if (isset($dataField['hard_coded_value'])) {
                 $dataLine[$dataField['path']] = $dataField['hard_coded_value'];
@@ -290,7 +292,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         switch ($paramObj['type']) {
             case 'date':
                 $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $dateValue = ($paramObj['value'] == 'now') ? $this->now : strtotime($paramObj['value']);
                 return date($dateFormat, $dateValue);
             case 'autoinc':
                 if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
@@ -302,7 +304,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $minValue = $paramObj['min_value'];
                 $maxValue = $paramObj['max_value'];
                 $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $dateValue = ($paramObj['value'] == 'now') ? $this->now : strtotime($paramObj['value']);
                 $date = date($dateGroup, $dateValue);
                 $action = 'transactions_request';
                 $fakeCollectionName = '$pgf' . $this->gatewayName . '_' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
@@ -345,7 +347,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
                 $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $line[$field['path']] = date($dateFormat, time());
+                $line[$field['path']] = date($dateFormat, $this->now);
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;

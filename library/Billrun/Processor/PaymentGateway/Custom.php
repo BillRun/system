@@ -11,6 +11,7 @@
  */
 class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater {
 	
+	public $now;
 	protected $configByType;
 	protected $bills;
 	protected $fileType;
@@ -42,6 +43,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->informationArray['transactions']['rejected'] = 0;
 		$this->informationArray['transactions']['denied'] = 0;
 		$this->informationArray['last_file'] = false;
+		$this->now = time();
 	}
 
 /**
@@ -143,7 +145,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
                 }
 				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
-		$this->informationArray['process_time'] = new MongoDate(time());
+		$this->informationArray['process_time'] = new MongoDate($this->now);
                 $this->updateLogFile();
 	}
 
@@ -225,7 +227,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$billToReject->markRejected();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
                 $this->informationArray['transactions']['rejected']++;
-				$this->informationArray['process_time'] = new MongoDate(time());
+				$this->informationArray['process_time'] = new MongoDate($this->now);
 			}
 		}
 	}
