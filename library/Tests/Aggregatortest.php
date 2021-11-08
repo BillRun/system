@@ -610,24 +610,32 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
              $passed = false;
              $this->message .= 'aid :' . $retun_aid . $this->fail;
          }
-         return $passed;
-     }
-	 public function checkInvoiceId($key, $returnBillrun, $row) {
-		 $passed = TRUE;
-         $invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
-         $retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
+		return $passed;
+	}
+
+	public function checkInvoiceId($key, $returnBillrun, $row) {
+		$passed = TRUE;
+		$invoice_id = $row['expected']['billrun']['invoice_id'] ? $row['expected']['billrun']['invoice_id'] : null;
+		$retun_invoice_id = $returnBillrun['invoice_id'] ? $returnBillrun['invoice_id'] : false;
          if (isset($invoice_id)) {
              
              if (!empty($retun_invoice_id) && $retun_invoice_id == $invoice_id) {
                  $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
              } else {
                  $passed = false;
-				 '<br> — invoice_id: ' . $invoice_id . 
-					$this->message .= 'invoice_id expected to be : ' . $invoice_id . ' result is ' . $retun_invoice_id . $this->fail;
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
              }
+         } else {
+			if (!empty($retun_invoice_id) && $retun_invoice_id == $this->LatestResults[0][0]['invoice_id'] + 1) {
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->pass;
+             } else {
+                 $passed = false;
+                 $this->message .= 'invoice_id :' . $retun_invoice_id . $this->fail;
              }
          }
 
+         return $passed;
+	}
 
      /**
       * check if all subscribers was calculeted
