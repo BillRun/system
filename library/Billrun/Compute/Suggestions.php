@@ -71,6 +71,9 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $now = new MongoDate();
         $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
 	$billrunLowerBoundTimestamp = new MongoDate(strtotime($monthsLimit . " months ago"));
+        if(!empty($retroactiveChanges)){
+            $this->buildUrtRanges();
+        }
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
@@ -164,11 +167,35 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         return $matchingLines;
     }
     
-    protected function getUrtRanges() {
+    protected function getUrtRanges() { 
+        return array('$switch' => array(
+                        'branches' => $this->cases
+            ));
+    }
+    
+    protected function getUrtRange($billrunKey){
+        foreach ($this->cases  as $case){
+            if($case['then'] === $billrunKey){
+                return $case['case'];
+            }
+        }
+    }
+
+    protected function getUrtRangeFrom($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][0]['$gte'][1];
+    }
+    
+    protected function getUrtRangeTo($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][1]['$lt'][1];
+    }
+
+    protected function buildUrtRanges() {
         $dayofmonth = Billrun_Factory::config()->getConfigChargingDay();
         $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
 	$startUrt = new MongoDate(strtotime($monthsLimit . " months ago"));
-        $firstChargingDayUrt = new MongoDate(strtotime(date('Y-m-'.$dayofmonth.' H:i:s', $startUrt->sec)));
+        $firstChargingDayUrt = new MongoDate(strtotime(date('Y-m-'.$dayofmonth.' 00:00:00', $startUrt->sec)));
         $now = new MongoDate();
         if($firstChargingDayUrt > $startUrt){
             $initial_case = array(
@@ -191,9 +218,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             );
             $cases[] = $case;
         }
-        return array('$switch' => array(
-                        'branches' => $cases
-            ));
+        $this->cases = $cases;
     }
 
     protected function buildSuggestion($line) {
@@ -214,6 +239,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'total_lines' => $line['total_lines'],
             'retroactive_changes_info' => $this->getRetroactiveChangesInfo($line['retroactive_changes_info'])
                 ), $this->addForeignFieldsForSuggestion($line));
+        if(!$suggestion['billrun_exists']){
+            $suggestion['urt_range']['from'] = $this->getUrtRangeFrom($suggestion['billrun_key']);
+            $suggestion['urt_range']['to'] = $this->getUrtRangeTo($suggestion['billrun_key']);     
+        }
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
         $suggestion['old_charge'] = $oldPrice;
@@ -300,10 +329,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
         $newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
         //TODO:: consider update instead of remove and insert
+        Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
         if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
             Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
         }
-        Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
     }
 
     protected function buildFakeRetroactiveChanges($overlapSuggestion, $suggestion) {

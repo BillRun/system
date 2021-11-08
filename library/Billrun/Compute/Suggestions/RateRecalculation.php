@@ -94,9 +94,9 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
                 Billrun_Rates_Util::checkIfRateOverride($rate_key, $planData)) {
             return false;
         }
-
+        $services = $line['services'] ?? [];
         //check if rate include/overrride in services -> return false
-        foreach ($line['services'] as $service) {
+        foreach ($services as $service) {
             $serviceData = Billrun_Service::getByNameAndTime($service, $line['from']);
             if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $serviceData) ||
                     Billrun_Rates_Util::checkIfRateOverride($rate_key, $serviceData)) {
