@@ -98,21 +98,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             'aid' => '$aid',
                                             'sid' => '$sid',
                                             'billrun' => array(//if billrun doen't exist get billrun key by the line urt. see Billrun_Billingcycle::getBillrunKeyByTimestamp 
-                                                '$ifNull' => array('$billrun', $this->getUrtRanges()
-//                                                    array(
-//                                                        '$cond' => array(
-//                                                            'if' => array( '$lt' => array(array('$dateToString' => array('format'=> 'd', 'date' => '$urt')), $dayofmonth)), 
-//                                                            'then' => array('$dateToString' =>  array('format'=> '%Y%m','date' => '$urt')),
-//                                                            'else' => array( //can be done ease in mongo version 5.0 (use $dateAdd)
-//                                                                '$cond' => array(
-//                                                                    'if' => array('$gt' => array(13, 12)),  
-//                                                                    'then' => array(array('$concat' => array(array('$add' => array(array('$year' => '$urt'), 1)), '01'))),
-//                                                                    'else' => array(array('$concat' => array(array('$dateToString' => array('format'=> 'Y', 'date' => '$urt')), array('$add'=> array(array('$dateToString' => array('format'=> 'm', 'date' => '$urt')), 1)))))
-//                                                                )
-//                                                            )
-//                                                        ),
-//                                                    )
-                                                )
+                                                '$ifNull' => array('$billrun', $this->getUrtRanges()) //can be done ease in mongo version 5.0 (use $dateAdd)
                                             ),
                                             'billrun_in_line' => array(
                                                 '$ifNull' => array('$billrun', false),
