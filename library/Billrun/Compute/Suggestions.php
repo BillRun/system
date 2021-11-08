@@ -70,15 +70,15 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $matchingLines = array();
         $now = new MongoDate();
         $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
-	$billrunLowerBoundTimestamp = strtotime($monthsLimit . " months ago");
+	$billrunLowerBoundTimestamp = new MongoDate(strtotime($monthsLimit . " months ago"));
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
-                        'urt' => array(array(
-                            '$gte' => $retroactiveChange['new']['from'],
+                        'urt' => array(
+                            '$gte' => $retroactiveChange['new']['from'] > $billrunLowerBoundTimestamp ? $retroactiveChange['new']['from'] : $billrunLowerBoundTimestamp,
                             '$lt' => $retroactiveChange['new']['to'] < $now ? $retroactiveChange['new']['to'] : $now
-                        ), array('$gte' => $billrunLowerBoundTimestamp)),
+                        ),
                         $this->getFieldNameOfLine() => $retroactiveChange['key'],
                         'in_queue' => array('$ne' => true)
                     ), $this->addFiltersToFindMatchingLines());
@@ -181,27 +181,27 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function getUrtRanges() {
         $dayofmonth = Billrun_Factory::config()->getConfigChargingDay();
         $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
-	$startUrt = strtotime($monthsLimit . " months ago");
-        $firstChargingDayUrt = strtotime(date('Y-m-'.$dayofmonth.' H:i:s', $startUrt));
-        $now = strtotime('now');
+	$startUrt = new MongoDate(strtotime($monthsLimit . " months ago"));
+        $firstChargingDayUrt = new MongoDate(strtotime(date('Y-m-'.$dayofmonth.' H:i:s', $startUrt->sec)));
+        $now = new MongoDate();
         if($firstChargingDayUrt > $startUrt){
             $initial_case = array(
-                'case' => array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt))),
-                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt)
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
             );
         }else{
-            $firstChargingDayUrt = strtotime('+1 month', $firstChargingDayUrt);
+            $firstChargingDayUrt = new MongoDate(strtotime('+1 month', $firstChargingDayUrt->sec));
             $initial_case = array(
-                'case' => array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt))),
-                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt)
+                'case' =>  array('$and'=> array(array('$gte' => array('$urt', $startUrt)),array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
             );
         }        
         $cases[] = $initial_case;
-        for($urtStartRange = $firstChargingDayUrt; $urtStartRange <= $now; $urtStartRange = strtotime('+1 month', $urtStartRange)){
-            $urtEndRange = strtotime('+1 month', $urtStartRange);
+        for($urtStartRange = $firstChargingDayUrt; $urtStartRange <= $now; $urtStartRange = new MongoDate(strtotime('+1 month', $urtStartRange->sec))){
+            $urtEndRange = new MongoDate(strtotime('+1 month', $urtStartRange->sec));
             $case = array(
-                'case' => array(array('$gte' => array('$urt', $urtStartRange)), array('$lt'=> array('$urt', $urtEndRange))),
-                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($urtStartRange)
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $urtStartRange)), array('$lt'=> array('$urt', $urtEndRange)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($urtStartRange->sec)
             );
             $cases[] = $case;
         }
