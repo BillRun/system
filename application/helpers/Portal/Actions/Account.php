@@ -166,8 +166,11 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @return void
 	 */
 	public function downloadInvoice($params = []) {
-		$invoiceParams = $params['invoice'];
-
+		$invoiceParams = $params['query'];
+                if (empty($invoiceParams)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
+		}
+		
 		if (empty($invoiceParams['invoice_id'])) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "invoice_id"');
 		}
