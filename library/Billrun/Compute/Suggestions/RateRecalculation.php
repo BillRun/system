@@ -54,7 +54,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
     }
 
     protected function recalculationPrice($line) {
-        $updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['from']->sec);
+        $updateRate = Billrun_Rates_Util::getRateByName($line['key'], $line['min_urt_line']->sec);
         $usageType = Billrun_Rates_Util::getRateUsageType($updateRate);
         $newPrice = Billrun_Rates_Util::getTotalCharge($updateRate, $usageType, $line['usagev']);
         //Doesn't contain more than one tier and if that tier's interval is 1
@@ -89,7 +89,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         $rate_key = $line['key'];
 
         //check if rate include/overrride in plan -> return false
-        $planData = Billrun_Plan::getByNameAndTime($line['plan'], $line['from']);
+        $planData = Billrun_Plan::getByNameAndTime($line['plan'], $line['min_urt_line']);
         if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $planData) ||
                 Billrun_Rates_Util::checkIfRateOverride($rate_key, $planData)) {
             return false;
@@ -97,7 +97,7 @@ class Billrun_Compute_Suggestions_RateRecalculation extends Billrun_Compute_Sugg
         $services = $line['services'] ?? [];
         //check if rate include/overrride in services -> return false
         foreach ($services as $service) {
-            $serviceData = Billrun_Service::getByNameAndTime($service, $line['from']);
+            $serviceData = Billrun_Service::getByNameAndTime($service, $line['min_urt_line']);
             if (Billrun_Rates_Util::checkIfRateInclude($rate_key, $serviceData) ||
                     Billrun_Rates_Util::checkIfRateOverride($rate_key, $serviceData)) {
                 return false;
