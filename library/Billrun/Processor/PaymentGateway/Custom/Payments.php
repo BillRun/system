@@ -68,7 +68,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
-		if (!is_null($this->date_field)) {
+		if (!is_null($this->dateField)) {
 			$this->addPaymentUrt($row, $paymentParams);
 		}
 		try {

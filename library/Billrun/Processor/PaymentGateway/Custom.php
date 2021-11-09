@@ -94,16 +94,25 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
-        protected function formatLine($row,$dataStructure) {
-            foreach($dataStructure as $index => $paramObj){
-                if(isset($paramObj['decimals'])){
-                    $value = intval($row[$paramObj['name']]);
-                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
-                }
-            }
-            return $row;
-        }
-        
+    protected function formatLine($row, $dataStructure) {
+		foreach ($dataStructure as $index => $paramObj) {
+			if (isset($paramObj['decimals'])) {
+				$value = intval($row[$paramObj['name']]);
+				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
+			}
+			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
+				if (!isset($paramObj['format'])) {
+					$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
+					Billrun_Factory::log($message, Zend_Log::WARN);
+					$this->informationArray['warnings'][] = $message;
+					$paramObj['format'] = Billrun_Base::base_datetimeformat;
+				}
+				$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+			}
+		}
+		return $row;
+	}
+
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));
