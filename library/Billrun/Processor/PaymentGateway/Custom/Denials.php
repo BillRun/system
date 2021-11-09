@@ -62,9 +62,11 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 			return;
 		}
 		if (!empty($this->amountField)) {
-			$amount_from_file = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[$this->amountField['field']] : $row[$this->amountField['field']];
+			//TODO : support multiple header/footer lines
+			$amount_from_file = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
-		$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+		//TODO : support multiple header/footer lines
+		$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 		if (!is_null($amount_from_file) && !Billrun_Util::isEqual(abs($amount_from_file), $payment->getAmount(), Billrun_Bill::precision)) {
 			$message = "Amount sent is different than the amount of the payment with txid: " . $txid_from_file . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);

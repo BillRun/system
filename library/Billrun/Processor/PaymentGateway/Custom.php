@@ -245,13 +245,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
 			if (isset($this->tranIdentifierField)) {
-				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+				//TODO : support multiple header/footer lines
+				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 				if (($txid_from_file === "") && (static::$type != 'payments')) {
 					$no_txid_counter++;
 					continue;
 				}
 			}
-			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+			//TODO : support multiple header/footer lines
+			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $txid_from_file . ' in file ' . $this->filePath, Zend_Log::ALERT);

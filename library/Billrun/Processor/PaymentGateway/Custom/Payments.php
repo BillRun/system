@@ -45,7 +45,8 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 
 	protected function updatePayments($row, $payment = null) {
 		if (!empty($this->identifierField)) {
-			$file_identifier_value = in_array($this->identifierField['source'], ['header', 'trailer']) ?  $this->{$this->identifierField['source'].'Rows'}[$this->identifierField['field']] : $row[$this->identifierField]['field'];
+			//TODO : support multiple header/footer lines
+			$file_identifier_value = in_array($this->identifierField['source'], ['header', 'trailer']) ?  $this->{$this->identifierField['source'].'Rows'}[0][$this->identifierField['field']] : $row[$this->identifierField]['field'];
 		}
 		$bill = $this->findBillByUniqueIdentifier($file_identifier_value);
 		if (count($bill) == 0) {
@@ -62,7 +63,8 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		}
 		$billData = $bill->current()->getRawData();
 		if (!empty($this->amountField)) {
-			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[$this->amountField['field']] : $row[$this->amountField]['field'];
+			//TODO : support multiple header/footer lines
+			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField]['field'];
 		}
 		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
 		$paymentParams['amount'] = $billAmount;
