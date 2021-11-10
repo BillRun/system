@@ -1990,5 +1990,29 @@ class Billrun_Util {
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+	
+	/**
+	 * Function that gets BillRun conditions array (field, op, value), and returns mongodb match query.
+	 * @param array $conditionsSettings - array of BillRun condition arrays
+	 * @return array $match - array of "$or" condition between the "$and" conditions
+	 */
+	public static function buildMatchQueryFromBillrunConditions($conditionsSettings = []) {
+		$match = [
+			'$or' => [],
+		];
+
+		foreach ($conditionsSettings as $conditionsSet) {
+			$conditionsSetMatch = ['$and' => []];
+			foreach ($conditionsSet as $conditionConfig) {
+				$condition = [
+					$conditionConfig['field'] => ['$' . $conditionConfig['op'] => $conditionConfig['value']],
+				];
+				$conditionsSetMatch['$and'][] = $condition;
+			}
+			$match['$or'][] = $conditionsSetMatch;
+		}
+
+		return $match;
+	}
 
 }

@@ -1102,16 +1102,13 @@ abstract class Billrun_Bill {
 	 * @return 
 	 */
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
+		$rejection_required = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$account = Billrun_Factory::account();
-		$accountQuery = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		$validGatewaysAids = array();
-		foreach ($currentAccounts as $activeAccount) {
-			if (!empty($activeAccount['payment_gateway']['active'])) {
-				$validGatewaysAids[] = $activeAccount['aid'];
-			}
-		}
+		//$account = Billrun_Factory::account();
+		//$accountQuery = self::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required);
+		//$currentAccounts = $account->loadAccountsForQuery($accountQuery);
+		//$rejection_required_aids = array_column($currentAccounts, 'aid');
+		$rejection_required_aids = self::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required);
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1123,7 +1120,7 @@ abstract class Billrun_Bill {
 		}
 		$project = array(
 			'$project' => array(
-				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
+				'rejection_required' => array('$cond' => array(array('$in' => array('$aid', $rejection_required_aids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
 				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
 				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
@@ -1135,7 +1132,7 @@ abstract class Billrun_Bill {
 		$addFields = array(
 			'$addFields' => array(
 				'total_debt_valid_cond' => array('$and' => array(array('$and' => array(
-								array('$eq' => array('$valid_gateway', true)),
+								array('$eq' => array('$rejection_required', true)),
 								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
 								array('$eq' => array('$valid_due_date', true)),
 								array('$eq' => array('$paid', false))))
@@ -1143,7 +1140,7 @@ abstract class Billrun_Bill {
 				),
 				'total_debt_invalid_cond' => array('$and' => array(
 						array('$and' => array(
-								array('$eq' => array('$valid_gateway', false)),
+								array('$eq' => array('$rejection_required', false)),
 								array('$eq' => array('$valid_due_date', true)))),
 						array('$eq' => array('$paid', false))
 					)
@@ -1365,4 +1362,31 @@ abstract class Billrun_Bill {
 			$paymentParams[$dir] = $newPaymentParam;
 		}
 	}
+	
+	protected static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_required) {
+		$account = Billrun_Factory::account();
+		$rejection_conditions = !empty($rejection_required) ? $rejection_required : [
+			array(
+				'field_name' => 'payment_gateway.active.name',
+				'op' => 'exists',
+				'value' => true
+			)			
+		];
+		$account_query =  !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		$currentAccounts = $account->loadAccountsForQuery($account_query);
+		$relevant_aids = [];
+		foreach($currentAccounts as $account){
+			foreach($rejection_conditions as $condition){
+				if(!Billrun_Util::isConditionMet($account, $condition)) {
+					continue 2;
+				}
+			}
+			$relevant_aids[] = intval($account['aid']);
+		}
+		return $relevant_aids;
+		//$rejection_query = Billrun_Util::buildMatchQueryFromBillrunConditions([$rejection_conditions]);
+		//$account_query =  !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+		//return array_merge($rejection_query, $account_query);
+	}
+
 }
