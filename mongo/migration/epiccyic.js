@@ -81,6 +81,672 @@ function runOnce(lastConfig, taskCode, callback) {
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 
+lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
+    //import mappers
+	if (typeof lastConfig.import === 'undefined') {
+		lastConfig['import'] = {};
+	}
+	lastConfig["import"]["mapping"] = [
+		{
+			"label": "One file loader - Rates create I calls",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "incoming_call"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "seconds"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__29"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates create O calls",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "outgoing_call"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "seconds"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__29"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates create TI calls",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "transit_incoming_call"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "seconds"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__29"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates create TO calls",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "transit_outgoing_call"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "seconds"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__29"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates create I SMS",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "incoming_sms"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "counter"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates create O SMS",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "rate"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "outgoing_sms"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "counter"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Rates update",
+			"map": [
+				{
+					"field": "price_from",
+					"value": "0"
+				},
+				{
+					"field": "params.additional_charge",
+					"value": "__csvindex__14"
+				},
+				{
+					"field": "effective_date",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "price_to",
+					"value": "UNLIMITED"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.direction",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "__csvindex__29"
+				}
+			],
+			"updater": {
+				"field": "key",
+				"value": "__csvindex__2"
+			},
+			"linker": [],
+			"multiFieldAction": []
+		},
+		{
+			"label": "One file loader - Tier create",
+			"map": [
+				{
+					"field": "params.type",
+					"value": "tier_cb"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "parameter_tier_cb"
+				},
+				{
+					"field": "from",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "counter"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.cash_flow",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "params.prefix",
+					"value": "__csvindex__9"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "0"
+				},
+				{
+					"field": "description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__2"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": [
+				{
+					"field": "params.prefix",
+					"value": "append"
+				}
+			]
+		},
+		{
+			"label": "One file loader - Tier update",
+			"map": [
+				{
+					"field": "effective_date",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.prefix",
+					"value": "__csvindex__9"
+				},
+				{
+					"field": "price_from",
+					"value": "0"
+				},
+				{
+					"field": "price_to",
+					"value": "UNLIMITED"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "params.cash_flow",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.tier",
+					"value": "__csvindex__8"
+				}
+			],
+			"updater": {
+				"field": "key",
+				"value": "__csvindex__2"
+			},
+			"linker": [],
+			"multiFieldAction": [
+				{
+					"field": "params.prefix",
+					"value": "append"
+				}
+			]
+		},
+		{
+			"label": "Missing ERP Mappings",
+			"map": [
+				{
+					"field": "price_from",
+					"value": "0"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__1"
+				},
+				{
+					"field": "mtn_ind",
+					"value": "__csvindex__9"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "erp_mapping"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "counter"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "params.user_summarisation",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "gl_account_description",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "price_to",
+					"value": "UNLIMITED"
+				},
+				{
+					"field": "params.cash_flow",
+					"value": "__csvindex__3"
+				},
+				{
+					"field": "gl_account",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__2"
+				},
+				{
+					"field": "params.scenario",
+					"value": "__csvindex__0"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "object_id",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "0"
+				},
+				{
+					"field": "prod_serv",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__11"
+				}
+			],
+			"updater": [],
+			"linker": [],
+			"multiFieldAction": []
+		}
+
+	];
+});
+
 lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 	//Add plugin
 	if (!lastConfig['plugins'].includes("epicCyIcPlugin")) {
@@ -3385,6 +4051,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
 											"sid",
 											"subscriber",
 											"foreign",
+                                                                                        "firstname",
+                                                                                        "lastname",
 											"billrun",
 											"tax_data",
 											"usagev",
@@ -8529,6 +9197,8 @@ lastConfig = runOnce(lastConfig, 'EPICIC-88', function () {
 										"sid",
 										"subscriber",
 										"foreign",
+                                                                                "firstname",
+                                                                                "lastname",                                                                                
 										"billrun",
 										"tax_data",
 										"usagev",
@@ -8834,6 +9504,16 @@ lastConfig = runOnce(lastConfig, 'EPICIC-83', function () {
 			}
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.anaa');
 			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('cf.settlement_operator');
+		}
+	}
+});
+
+//EPICIC-120: Customer first & last name not exist in unify line
+lastConfig = runOnce(lastConfig, 'EPICIC-120', function () {
+	for (var i = 0; i < lastConfig.file_types.length; i++) {
+		if (lastConfig.file_types[i].file_type === "ICT") {
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('firstname');
+			lastConfig["file_types"][i]["unify"]["unification_fields"]["fields"][0]["update"][0]["data"].push('lastname');
 		}
 	}
 });
