@@ -1104,11 +1104,7 @@ abstract class Billrun_Bill {
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
 		$rejection_required = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		//$account = Billrun_Factory::account();
-		//$accountQuery = self::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required);
-		//$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		//$rejection_required_aids = array_column($currentAccounts, 'aid');
-		$rejection_required_aids = self::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required);
+		$rejection_required_aids = self::getRejectionRequired($aids, $is_aids_query, $rejection_required);
 
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1363,7 +1359,14 @@ abstract class Billrun_Bill {
 		}
 	}
 	
-	protected static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_required) {
+	/**
+	 * Function that returns the relevant aids for collection.
+	 * @param array $aids
+	 * @param bollean $is_aids_query
+	 * @param array $rejection_required
+	 * @return array of aids
+	 */
+	protected static function getRejectionRequired($aids, $is_aids_query, $rejection_required) {
 		$account = Billrun_Factory::account();
 		$rejection_conditions = !empty($rejection_required) ? $rejection_required : [
 			array(
@@ -1384,9 +1387,6 @@ abstract class Billrun_Bill {
 			$relevant_aids[] = intval($account['aid']);
 		}
 		return $relevant_aids;
-		//$rejection_query = Billrun_Util::buildMatchQueryFromBillrunConditions([$rejection_conditions]);
-		//$account_query =  !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		//return array_merge($rejection_query, $account_query);
 	}
 
 }
