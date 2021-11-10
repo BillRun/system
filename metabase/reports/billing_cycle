@@ -43,8 +43,8 @@
         rate_price:"$cf.rate_price",
         prod: "$cf.product",
         tier:"$cf.tier",
-        taxes:"$tax_data.total_tax",
         }, 
+        taxes:{$sum:"$tax_data.total_amount"},
         duration: {$sum: "$usagev"},
         amount:{$sum: "$aprice"},
 
@@ -64,7 +64,7 @@
       AMOUNT_BEFOR_TAX:"$amount",
       CALL_COUNT_D:"$count",
       UNIT_COST_USED_G:"$_id.rate_price",
-      TAXES:"$_id.taxes",
+      TAXES:"$taxes",
       AMOUNT:{$sum:"$final_charge"}
     }
   }
