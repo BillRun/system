@@ -370,7 +370,7 @@ class Models_Entity {
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->fixEntityFields($this->before);
-			$this->trackChanges($this->update['_id']);
+			$this->trackChanges($this->update['_id'] ?? null);
 			return isset($status['ok']) && $status['ok'];
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
