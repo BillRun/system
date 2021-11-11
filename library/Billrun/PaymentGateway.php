@@ -681,7 +681,7 @@ abstract class Billrun_PaymentGateway {
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
 	 */
-	public function addAdditionalParameters() {
+	public function addAdditionalParameters($request) {
 		return array();
 	}
 	
