@@ -21,7 +21,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function __construct() {
 		parent::__construct();
-		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
+		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'] ?? null;
 	}
 
 	public function updateSessionTransactionId() {
