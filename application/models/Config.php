@@ -164,6 +164,8 @@ class ConfigModel {
 				}
 			}
 			return $plugins;
+		} else if ($category == 'payments') {
+			return $currentConfig['payments'] ?? [];
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
