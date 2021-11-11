@@ -195,6 +195,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         $options['file_type'] = $this->configByType['file_type'];
         $options['local_dir'] = $this->localDir;
+		$options['row_separator'] = Billrun_Util::getIn($this->configByType['generator'], 'row_separator', 'line_break');
         return $options;
     }
 
