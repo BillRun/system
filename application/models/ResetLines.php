@@ -92,21 +92,7 @@ class ResetLinesModel {
 	 * @return array Query to run in the collection for reset lines.
 	 */
 	protected function getResetLinesQuery($update_aids) {
-		return array(
-			'$or' => array(
-				array(
-					'billrun' => $this->billrun_key
-				),
-				array(
-					'billrun' => array(
-						'$exists' => FALSE,
-					),
-					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
-					)
-				),
-			),
+            $query =  array(
 			'aid' => array(
 				'$in' => $update_aids,
 			),
@@ -117,6 +103,43 @@ class ResetLinesModel {
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
+            //TODO:: need to check support to multi day cycle
+            $invoicing_day = null;
+//		if (Billrun_Factory::config()->isMultiDayCycle()) {
+//			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
+//			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+//		}
+            if($this->billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {// billrun already closed
+                    $query = array_merge(
+				array(
+					'billrun' => array(
+						'$exists' => FALSE,
+					),
+					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoicing_day)),
+						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoicing_day)),
+					)
+				),$query);
+            } else {
+                    $query = array_merge(array(
+                            '$or' => array(
+				array(
+					'billrun' => $this->billrun_key
+				),
+				array(
+					'billrun' => array(
+						'$exists' => FALSE,
+					),
+					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoicing_day)),
+						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoicing_day)),
+					)
+				),
+			),
+                    ), $query); 
+            }
+            
+            return $query;
 	}
 
 	/**
