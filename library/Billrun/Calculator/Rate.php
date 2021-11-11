@@ -245,9 +245,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get the associate rate object for a given CDR line.
 	 * @param $row the CDR line to get the for.
 	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @param $type CDR type
+	 * @param $tariffCategory rate category
+	 * @param $filters array of filters used to find the rate
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	protected function getLineRate($row) {
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
 		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
 			$this->setRowDataForQuery($row);
 			$rate = $this->getRateByParams($row);
@@ -256,7 +259,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $rate;
 	}
-
+	
 	/**
 	 * Set data used in inner function to find the rate of the line
 	 * 

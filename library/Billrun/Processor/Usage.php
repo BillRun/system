@@ -214,20 +214,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
         
         /**
-         * According to the configuration get computed fields (cf)
-         * @param Array     $uf - all the user-defined fields in the input processor
-         * @param string    $type - Input processor name
-         * @return Array    computed fields (cf)
-         */
-        protected function getCalculatedFields($uf, $type) {
-                $row = array();
-		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
-                foreach ($configurations as $calculatedConf){ 
-                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
-                    $targetFieldName = $calculatedConf['target_field'];
-                    Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
-                }
-                return $row;
+	 * According to the configuration get computed fields (cf)
+	 * @param Array     $uf - all the user-defined fields in the input processor
+	 * @param string    $type - Input processor name
+	 * @return Array    computed fields (cf)
+	 */
+	protected function getCalculatedFields($uf, $type) {
+		$row = array();
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()->getFileTypeSettings($type, true), 'processor.calculated_fields');
+		if (empty($configurations)) {
+			return $row;
+		}
+		foreach ($configurations as $calculatedConf) {
+			$filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+			$targetFieldName = $calculatedConf['target_field'];
+			Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
+		}
+		return $row;
 	}
 
 //	protected function buildHeader($line) {
