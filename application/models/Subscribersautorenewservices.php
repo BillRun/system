@@ -144,14 +144,14 @@ class SubscribersautorenewservicesModel extends TabledateModel {
 	public function update($params) {
 		$params['remain'] = Billrun_Utils_Autorenew::countMonths(strtotime($params['from']), strtotime($params['to']));
 		if (is_string($params['next_renew_date'])) {
-			$params['next_renew_date'] = new MongoDate(strtotime($params['next_renew_date']));
+			$params['next_renew_date'] = new Mongodloid_Date(strtotime($params['next_renew_date']));
 		} else if (is_array($params['next_renew_date'])) {
-			$params['next_renew_date'] = new MongoDate($params['next_renew_date']['sec']);
+			$params['next_renew_date'] = new Mongodloid_Date($params['next_renew_date']['sec']);
 		}
 		if (is_string($params['last_renew_date'])) {
-			$params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
+			$params['last_renew_date'] = new Mongodloid_Date(strtotime($params['last_renew_date']));
 		} else if (is_array($params['last_renew_date'])) {
-			$params['last_renew_date'] = new MongoDate($params['last_renew_date']['sec']);
+			$params['last_renew_date'] = new Mongodloid_Date($params['last_renew_date']['sec']);
 		}
 		return parent::update($params);
 	}

@@ -2,6 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheet\Calculation;
 
+use DateTimeInterface;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
@@ -26,15 +27,15 @@ class TextData
     {
         $character = Functions::flattenSingleValue($character);
 
-        if ((!is_numeric($character)) || ($character < 0)) {
+        if (!is_numeric($character)) {
+            return Functions::VALUE();
+        }
+        $character = (int) $character;
+        if ($character < 1 || $character > 255) {
             return Functions::VALUE();
         }
 
-        if (function_exists('iconv')) {
-            return iconv('UCS-4LE', 'UTF-8', pack('V', $character));
-        }
-
-        return mb_convert_encoding('&#' . (int) $character . ';', 'UTF-8', 'HTML-ENTITIES');
+        return iconv('UCS-4LE', 'UTF-8', pack('V', $character));
     }
 
     /**
@@ -52,7 +53,7 @@ class TextData
             return ($stringValue) ? Calculation::getTRUE() : Calculation::getFALSE();
         }
 
-        if (self::$invalidChars == null) {
+        if (self::$invalidChars === null) {
             self::$invalidChars = range(chr(0), chr(31));
         }
 
@@ -84,12 +85,21 @@ class TextData
         return null;
     }
 
+    private static function convertBooleanValue($value)
+    {
+        if (Functions::getCompatibilityMode() == Functions::COMPATIBILITY_OPENOFFICE) {
+            return (int) $value;
+        }
+
+        return ($value) ? Calculation::getTRUE() : Calculation::getFALSE();
+    }
+
     /**
      * ASCIICODE.
      *
      * @param string $characters Value
      *
-     * @return int
+     * @return int|string A string if arguments are invalid
      */
     public static function ASCIICODE($characters)
     {
@@ -98,11 +108,7 @@ class TextData
         }
         $characters = Functions::flattenSingleValue($characters);
         if (is_bool($characters)) {
-            if (Functions::getCompatibilityMode() == Functions::COMPATIBILITY_OPENOFFICE) {
-                $characters = (int) $characters;
-            } else {
-                $characters = ($characters) ? Calculation::getTRUE() : Calculation::getFALSE();
-            }
+            $characters = self::convertBooleanValue($characters);
         }
 
         $character = $characters;
@@ -126,11 +132,7 @@ class TextData
         $aArgs = Functions::flattenArray($args);
         foreach ($aArgs as $arg) {
             if (is_bool($arg)) {
-                if (Functions::getCompatibilityMode() == Functions::COMPATIBILITY_OPENOFFICE) {
-                    $arg = (int) $arg;
-                } else {
-                    $arg = ($arg) ? Calculation::getTRUE() : Calculation::getFALSE();
-                }
+                $arg = self::convertBooleanValue($arg);
             }
             $returnValue .= $arg;
         }
@@ -158,7 +160,7 @@ class TextData
 
         // Validate parameters
         if (!is_numeric($value) || !is_numeric($decimals)) {
-            return Functions::NAN();
+            return Functions::VALUE();
         }
         $decimals = floor($decimals);
 
@@ -166,12 +168,13 @@ class TextData
         if ($decimals > 0) {
             $mask .= '.' . str_repeat('0', $decimals);
         } else {
-            $round = pow(10, abs($decimals));
+            $round = 10 ** abs($decimals);
             if ($value < 0) {
                 $round = 0 - $round;
             }
             $value = MathTrig::MROUND($value, $round);
         }
+        $mask = "$mask;($mask)";
 
         return NumberFormat::toFormattedString($value, $mask);
     }
@@ -197,7 +200,7 @@ class TextData
             }
 
             if (($offset > 0) && (StringHelper::countCharacters($haystack) > $offset)) {
-                if (StringHelper::countCharacters($needle) == 0) {
+                if (StringHelper::countCharacters($needle) === 0) {
                     return $offset;
                 }
 
@@ -232,7 +235,7 @@ class TextData
             }
 
             if (($offset > 0) && (StringHelper::countCharacters($haystack) > $offset)) {
-                if (StringHelper::countCharacters($needle) == 0) {
+                if (StringHelper::countCharacters($needle) === 0) {
                     return $offset;
                 }
 
@@ -263,16 +266,21 @@ class TextData
 
         // Validate parameters
         if (!is_numeric($value) || !is_numeric($decimals)) {
-            return Functions::NAN();
+            return Functions::VALUE();
         }
-        $decimals = floor($decimals);
+        $decimals = (int) floor($decimals);
 
         $valueResult = round($value, $decimals);
         if ($decimals < 0) {
             $decimals = 0;
         }
         if (!$no_commas) {
-            $valueResult = number_format($valueResult, $decimals);
+            $valueResult = number_format(
+                $valueResult,
+                $decimals,
+                StringHelper::getDecimalSeparator(),
+                StringHelper::getThousandsSeparator()
+            );
         }
 
         return (string) $valueResult;
@@ -537,7 +545,7 @@ class TextData
      *
      * @param mixed $value Value to check
      *
-     * @return bool
+     * @return DateTimeInterface|float|int|string A string if arguments are invalid
      */
     public static function VALUE($value = '')
     {
@@ -617,7 +625,7 @@ class TextData
             $percentageAdjustment = strlen($value) - strlen($percentageString);
             if ($percentageAdjustment) {
                 $value = (float) $percentageString;
-                $value /= pow(10, $percentageAdjustment * 2);
+                $value /= 10 ** ($percentageAdjustment * 2);
             }
         }
 
@@ -659,11 +667,7 @@ class TextData
             if ($ignoreEmpty && trim($arg) == '') {
                 unset($aArgs[$key]);
             } elseif (is_bool($arg)) {
-                if (Functions::getCompatibilityMode() == Functions::COMPATIBILITY_OPENOFFICE) {
-                    $arg = (int) $arg;
-                } else {
-                    $arg = ($arg) ? Calculation::getTRUE() : Calculation::getFALSE();
-                }
+                $arg = self::convertBooleanValue($arg);
             }
         }
 

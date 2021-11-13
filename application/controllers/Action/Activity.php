@@ -24,7 +24,7 @@ class ActivityAction extends ApiAction {
 		$sid = (int) $request->get('sid', 0);
 
 		if (empty($sid)) {
-			return $this->setError('Subscriber not exists', $request);
+			return $this->setError('Subscriber does not exist', $request);
 		}
 
 		$include_incoming = (int) $request->get('include_incoming', 0);

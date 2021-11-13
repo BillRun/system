@@ -1,0 +1,210 @@
+{
+	"collection": "servicesCollection",
+	"data":
+			[
+				{
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "NONTAX_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "NONTAX_SERVICE",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "no"
+						}
+					],
+					"vatable": true
+				},
+				{
+					"OBJID": "5ce501ba7cbf797d96b503b1",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "USE_GLOBAL_TAX_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "USE_GLOBAL_TAX_SERVICE",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"vatable": true
+				},
+				{
+					"OBJID": "5ce501ba7cbf797d96b503b2",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "OVERRIDE_GLOBAL_TAX_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "OVERRIDE_GLOBAL_TAX_SERVICE",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "override",
+							"custom_tax": "B"
+						}
+					],
+					"vatable": true
+				},
+				{
+					"OBJID": "5ce501ba7cbf797d96b503b3",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "FALLBACK_TAX_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "FALLBACK_TAX_SERVICE",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "custom",
+							"custom_logic": "fallback",
+							"custom_tax": "B"
+						}
+					],
+					"vatable": true
+				},
+				{
+					"OBJID": "5ce501ba7cbf797d96b503b4",
+					"from": "time*2017-11-01T00:00:00Z",
+					"name": "DEFAULT_TAX_SERVICE",
+					"price": [
+						{
+							"from": 0,
+							"to": "UNLIMITED",
+							"price": "10"
+						}
+					],
+					"description": "DEFAULT_TAX_SERVICE",
+					"include": {
+						"groups": {
+							"CALL": {
+								"account_shared": false,
+								"account_pool": false,
+								"rates": [
+									"CALL"
+								],
+								"value": 100,
+								"usage_types": {
+									"call": {
+										"unit": "seconds"
+									}
+								}
+							}
+						}
+					},
+					"prorated": true,
+					"to": "time*2167-01-10T08:14:52Z",
+					"creation_time": "time*2017-11-01T00:00:00Z",
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "default"
+						}
+					],
+					"vatable": true
+				}
+
+			]
+}

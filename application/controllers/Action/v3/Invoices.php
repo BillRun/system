@@ -90,10 +90,10 @@ class V3_accountInvoicesAction extends ApiAction {
 	
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db(array("name"=> "billrun"))->billrunCollection();
-		Billrun_Plan::initPlans();
+		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
-			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);
+			$q['creation_date'] = $this->intToMongodloidDate($q['creation_date']);
 		}
 		$invoices = $billrunColl->query($q)->cursor()->setRawReturn(true);
 		if($sort) {
@@ -113,15 +113,15 @@ class V3_accountInvoicesAction extends ApiAction {
 		return $retValue;
 	}
 	
-	protected function intToMongoDate($arr) {
+	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

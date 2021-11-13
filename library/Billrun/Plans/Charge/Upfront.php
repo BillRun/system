@@ -39,18 +39,17 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		if($fraction === null) {
 			return null;
 		}
-		return array(
+
+		return array_merge($this->getProrationData($this->price),array(
 			'value'=> $price * $fraction, 
-			'start' => $this->activation, 
-			'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
 			'full_price' => floatval($price)
-			);
+			));
 	}
 
 	protected function getPriceForcycle($cycle) {
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		return $this->getPriceByOffset($startOffset);
 	}
 	
@@ -67,6 +66,22 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		}
 		
 		return 0;
+	}
+
+	protected function getProrationData($price) {
+			$startOffset = Billrun_Utils_Time::getMonthsDiff( date(Billrun_Base::base_dateformat, $this->activation), date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->end() )) );
+			$nextCycle = $this->getUpfrontCycle($this->cycle);
+			return ['start' => $this->activation,
+					'prorated_start_date' => new Mongodloid_Date($this->activation > $this->cycle->start() ? $this->activation  :  $nextCycle->start()),
+					'end' =>  $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end(),
+					'prorated_end_date' => new Mongodloid_Date($this->deactivation && $this->deactivation < $this->cycle->end() ? $this->deactivation : $nextCycle->end()),
+					'start_date' =>new Mongodloid_Date(Billrun_Plan::monthDiffToDate($startOffset,  $this->activation )),
+					'end_date' => new Mongodloid_Date($this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end())];
+	}
+
+	protected function getUpfrontCycle($regularCycle) {
+		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
+		return new Billrun_DataTypes_CycleTime($nextCycleKey);
 	}
 	
 }

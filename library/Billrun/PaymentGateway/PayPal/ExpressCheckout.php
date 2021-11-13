@@ -105,7 +105,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['billing_agreement_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new Mongodloid_Date(time())
 			)
 		);
 	}
@@ -251,4 +251,11 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
 
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+	
+	public function getSecretFields() {
+		return array('password');
+	}
 }

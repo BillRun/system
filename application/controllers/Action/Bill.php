@@ -33,6 +33,12 @@ class BillAction extends ApiAction {
 				case 'collection_debt' :
 					$response = $this->getCollectionDebt($request);
 					break;
+				case 'all_collection_debts' :
+					$response = $this->getAllCollectionDebts($request);
+					break;
+				case 'get_balance' :
+					$response = $this->getCollectionDebt($request, false);
+					break;
 				case 'search_invoice' :
 				default :
 					$response = $this->getBalanceFor($request);
@@ -83,7 +89,7 @@ class BillAction extends ApiAction {
 			$pastOnly = filter_var($request->get('past_only', FALSE), FILTER_VALIDATE_BOOLEAN);
 			$query = array('aid' => $aid);
 			if ($pastOnly) {
-				$query['due_date'] = array('$lt' => new MongoDate());
+				$query['charge.not_before'] = array('$lt' => new Mongodloid_Date());
 			}
 			$ret['unpaid_invoices'] = Billrun_Bill_Invoice::getUnpaidInvoices($query);
 		}
@@ -98,9 +104,12 @@ class BillAction extends ApiAction {
 	 */
 	protected function getBalances($request) {
 		$aids = explode(',', $request->get('aids'));
-
 		if (empty($aids)) {
-			$this->setError('Illegal aids arguments', $request->getPost());
+			$this->setError('Must supply at least one aid', $request->getPost());
+			return FALSE;
+		}
+		if (!$this->isLegalAccountIds($aids)){
+			$this->setError('Illegal account ids', $request->getPost());
 			return FALSE;
 		}
 		$balances = array();
@@ -122,10 +131,20 @@ class BillAction extends ApiAction {
 		}
 
 		Billrun_Factory::log('queryBillsInvoices query  : ' . print_r($query, 1));
-		return Billrun_Bill_Invoice::getInvoices(json_decode($query, JSON_OBJECT_AS_ARRAY));
+                if (is_array($queryAsArray = json_decode($query, JSON_OBJECT_AS_ARRAY))){
+                    Billrun_Utils_Mongo::convertQueryMongodloidDates($queryAsArray);               
+                }
+		return Billrun_Bill_Invoice::getInvoices($queryAsArray);
 	}
 
-	protected function getCollectionDebt($request) {
+	/**
+	 * 
+	 * @param type $request
+	 * @param type $only_debt - if true return only accounts with their debt, 
+	 * otherwise return account with their debt or with their credit balance
+	 *
+	 */
+	protected function getCollectionDebt($request, $only_debt = true) {
 		$result = array();
 		$jsonAids = $request->get('aids', '[]');
 		$aids = json_decode($jsonAids, TRUE);
@@ -137,7 +156,7 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		$contractors= Billrun_Bill::getContractorsInCollection($aids);
+		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
@@ -149,4 +168,27 @@ class BillAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
+	protected function getAllCollectionDebts($request) {
+		$contractors = Billrun_Bill::getContractorsInCollection();
+		$result = array();
+		foreach ($contractors as $contractor) {
+			$result[$contractor['aid']] = current($contractor);
+		}
+		return $result;
+	}
+	
+	/**
+	 * Validate that aids are valid aids (numric type)
+	 * @param type $aids
+	 * @return boolean- return true if all aids are numric type, false otherwise
+	 */
+	protected function isLegalAccountIds($aids) {
+		$res = array_filter($aids, function($aid){
+			return !is_numeric($aid);
+		});
+		if(empty($res)){
+			return true;
+		}
+		return false;
+	}
 }

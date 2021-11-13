@@ -30,6 +30,7 @@ class Billrun_LogFile {
 	}
 
 	public function setFileName($filename, $immediate = false) {
+		Billrun_Factory::log("Setting file name in the log object.", Zend_Log::DEBUG);
 		if ($immediate) {
 			$this->data->set('file_name', $filename);
 		} else {
@@ -38,7 +39,7 @@ class Billrun_LogFile {
 	}
 
 	/**
-	 * Save the billrun to the db
+	 * Save the log to the db
 	 * @param type $param
 	 * @return type
 	 */
@@ -48,7 +49,7 @@ class Billrun_LogFile {
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
-				Billrun_Factory::log()->log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
+				Billrun_Factory::log()->log('Error saving log document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
 			}
 		}
 		return false;
@@ -58,20 +59,27 @@ class Billrun_LogFile {
 		if (is_null($time)) {
 			$time = time();
 		}
-		$this->data['start_process_time'] = new MongoDate($time);
+		$this->data['start_process_time'] = new Mongodloid_Date($time);
 	}
 
 	public function setProcessTime($time = null) {
 		if (is_null($time)) {
 			$time = time();
 		}
-		$this->data['process_time'] = new MongoDate($time);
+		$this->data['process_time'] = new Mongodloid_Date($time);
 	}
 	
 	public function setStamp() {
+		Billrun_Factory::log("Setting log object's stamp.", Zend_Log::DEBUG);
 		$newLog['key'] = $this->data['key'];
 		$newLog['source'] = $this->data['source'];
 		$newLog['start_process_time'] = $this->data['start_process_time'];
+		$message = "Log file stamp was build from : key - " . $newLog['key'] . ", source - " . $newLog['source'] . ", start process time - " . $newLog['start_process_time'];
+		if (!empty($this->data['rand'])) {
+			$newLog['rand'] = $this->data['rand'];
+			$message .= ', and random number - ' . $newLog['rand'];
+		}
+		Billrun_Factory::log($message, Zend_Log::DEBUG);
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
 	

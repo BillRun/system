@@ -60,6 +60,13 @@
 							"input_uom": "seconds"
 						},
 						{
+							"usage_type": "gr",
+							"label": "gr",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
 							"usage_type": "call_to_gaza",
 							"label": "call_to_gaza",
 							"property_type": "time",
@@ -1879,6 +1886,10 @@
 														"on_true": {
 															"key": "rate",
 															"regex": "/123/"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1949,6 +1960,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -1976,6 +1991,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2003,6 +2022,10 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},	"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2064,6 +2087,11 @@
 													"projection": {
 														"on_true": {
 															"key": "rate"
+														},
+															"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
 														}
 													}
 												}
@@ -2392,11 +2420,6 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
 													}
 												}
@@ -2423,12 +2446,8 @@
 															"key": "rate",
 															"regex": "",
 															"value": ""
-														},
-														"on_false": {
-															"key": "condition_result",
-															"regex": "",
-															"value": ""
 														}
+														
 													}
 												}
 											}
@@ -2746,18 +2765,13 @@
 					],
 					"taxation": {
 						"tax_type": "usage",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"default": {
+							"key": "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
 							}
 						}
 					},
@@ -3010,7 +3024,11 @@
 						"closed_cycle_changes": false
 					},
 					"plays": [
-						{ "name": "Default", "enabled": true, "default": true }
+						{
+							"name": "Default",
+							"enabled": true,
+							"default": true
+						}
 					],
 					"lines": {
 						"fields": [

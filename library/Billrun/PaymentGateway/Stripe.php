@@ -60,7 +60,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new Mongodloid_Date(time())
 			)
 		);
 	}
@@ -235,5 +235,13 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
+	}
+
+	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
+		return false;
+	}
+
+	public function getSecretFields() {
+		return array('secret_key');
 	}
 }

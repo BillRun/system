@@ -77,10 +77,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// Single the type to be charging.
 		$planQuery = array(
 			'to' => array(
-				'$gt' => new MongoDate()
+				'$gt' => new Mongodloid_Date()
 			),
 			'from' => array(
-				'$lte' => new MongoDate()
+				'$lte' => new Mongodloid_Date()
 			)
 		);
 
@@ -121,7 +121,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
-		$nowTime = new MongoDate();
+		$nowTime = new Mongodloid_Date();
 		$plansQuery = array("name" => $planName,
 			"to" => array('$gt', $nowTime),
 			"from" => array('$lte', $nowTime));
@@ -219,7 +219,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// Get subscriber query.
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 
-		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference('RP_PRIMARY', array());
 		
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
@@ -256,7 +256,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Get a mongo date object based on charging plan record.
 	 * @param type $chargingPlan
-	 * @return \MongoDate
+	 * @return Mongodloid_Date
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
 		if (!isset($chargingPlan['period'])) {
@@ -379,11 +379,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $query
 	 * @param array $defaultBalance
-	 * @param MongoDate $toTime
+	 * @param Mongodloid_Date $toTime
 	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY', array());
 
 		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$balance = $this->storeBalanceBeforeUpdate($balanceQuery, $balancesColl);

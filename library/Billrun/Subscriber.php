@@ -65,14 +65,24 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var string
 	 */
 	protected $nextPlanActivation = null;
-
+	
+	protected static $allowedQueryKeys = ['time', 'id', 'EXTRAS'];
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if (isset($options['availableFields'])) {
-			$this->availableFields = $options['availableFields'];
+		if (isset($options['fields'])) {
+                    foreach ($options['fields'] as $field){
+			if (isset($field['field_name'])) {
+                            array_push($this->availableFields, $field['field_name']);
+                        }
+                    }
 		}
 		if (isset($options['extra_data'])) {
-			$this->customerExtraData = $options['extra_data'];
+                     foreach ($options['extra_data'] as $extra_field){
+			if (isset($extra_field['field_name'])) {
+                            array_push($this->customerExtraData, $extra_field['field_name']);
+                        }
+                    }
 		}
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
@@ -152,6 +162,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
+	
+	protected function setData($data) {
+		$this->data = $data;
+	}
 
 	/**
 	 * Return true if the subscriber has no data.
@@ -159,13 +173,89 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function isEmpty() {
 		return empty($this->data);
 	}
+	
+	/**
+	 * 
+	 * @param array $queries
+	 * @return array of mongodloid entities containing subscriber data
+	 */
+	protected function load($queries = []) {
+		$subs = $this->getSubscriberDetails($queries);
+		return $subs;
+	}
 
 	/**
-	 * method to load subsbscriber details
-	 * 
-	 * @param array $params load by those params 
+	 * @param array $queries to load one subscriber per query
+	 * @return array of subscriber instances
 	 */
-	abstract public function load($params);
+	public function loadSubscriberForQueries($queries, $extraData = []) {
+		$query = [];
+		// build a single big query, using the passed params for each subquery
+		foreach($queries as $subQuery) {
+			$limit = !empty($subQuery['limit']) ? $subQuery['limit'] : false;
+			unset($subQuery['limit']);
+			$query[] = $this->buildQuery($subQuery, $limit);
+		}
+		$results = $this->load($query);
+		if (!$results) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		return $results;
+	}
+
+	/**
+	 * @param $query array of params to load by
+	 * @return mongodloid entity - a single subscriber that match that query
+	 */
+	public function loadSubscriberForQuery($query) {
+		$query['limit'] = 1;
+		$result = $this->loadSubscriberForQueries([$query]);
+		if(empty($result)) {
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
+			return false;
+		}
+		$firstRecord = reset($result);
+		$this->data = $firstRecord->getRawData();
+		return $firstRecord;
+	}
+	
+	/**
+	 * 
+	 * @param type $billrun_key
+	 * @param type $retEntity
+	 * @return \Billrun_DataTypes_Subscriberservice
+	 */
+	public function getServices($billrun_key, $retEntity = false) {
+		if(!isset($this->data['services'])) {
+			return array();
+		}
+		
+		$servicesEnitityList = array();
+		$services = $this->data['services'];
+		$servicesColl = Billrun_Factory::db()->servicesCollection();
+		
+		foreach ($services as $service) {
+			if(!isset($service['name'])) {
+				continue;
+			}
+			
+			$serviceQuery = array('name' => $service['name']);
+			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
+			if($serviceEntity->isEmpty()) {
+				continue;
+			}
+			
+			$serviceData = array_merge($service, $serviceEntity->getRawData());
+			
+			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
+			if(!$serviceValue->isValid()) {
+				continue;
+			}
+			$servicesEnitityList[] = $serviceValue;
+		}
+		return $servicesEnitityList;
+	}
 
 	/**
 	 * method to save subsbscriber details
@@ -196,18 +286,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
-	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
-	/**
-	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
-	 */
-	abstract public function getListFromFile($file_path, $time);
-
-	abstract public function getSubscribersByParams($params, $availableFields);
-
+	abstract protected function getSubscriberDetails($query);
+	
 	abstract public function getCredits($billrun_key, $retEntity = false);
-
-	abstract public function getServices($billrun_key, $retEntity = false);
 
 	/**
 	 * Returns field names to be saved when creating billrun
@@ -240,7 +322,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getCurrentPlans() {
 		return $this->plans;
 	}
-
+	
 	/**
 	 * 
 	 * @return Billrun_Plan
@@ -249,8 +331,39 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return $this->nextPlan;
 	}
 
-	
 	public function getSubscriberData() {
 		return $this->data;
+	}
+	
+	protected function getPaymentDetails($details) {
+		if (!empty($token = $details['card_token'])) {
+			return Billrun_Util::getTokenToDisplay($token);
+		}
+		return '';
+	}
+	
+	protected function buildQuery($params, $limit = false) {
+		// validate that params are legal by configuration
+		$customFields = array_map(function ($customField) {
+			return $customField['field_name'];
+		}, Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array()));
+		$fields = array_merge($customFields, array('from', 'to'));
+		$fields = array_combine($fields, $fields);
+		
+		$query = [];
+		if (!isset($params['time'])) {
+			$query['time'] = date(Billrun_Base::base_datetimeformat);
+		}
+		
+		foreach ($params as $key => $value) {
+			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
+				return false;
+			}
+			$query[$key] = $value;
+		}
+		if($limit){
+			$query['limit'] = $limit;
+		}
+		return $query;
 	}
 }

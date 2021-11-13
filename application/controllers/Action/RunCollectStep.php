@@ -22,7 +22,7 @@ class  Run_collect_stepAction extends ApiAction {
 		if(!RUNNING_FROM_CLI) {
 			$this->allowed();
 		}
-		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute run collection steps api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		try {

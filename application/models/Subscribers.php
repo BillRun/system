@@ -30,7 +30,7 @@ class SubscribersModel extends TabledateModel {
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->subscribers;
 		parent::__construct($params);
-		$this->subscribers_coll = Billrun_Factory::db()->subscribersCollection();
+		$this->subscribers_coll = Billrun_Factory::subscriber();
 		$this->search_key = "sid";
 	}
 
@@ -157,7 +157,8 @@ class SubscribersModel extends TabledateModel {
 	}
 
 	public function getBySid($sid) {
-		$entity = $this->subscribers_coll->query(array('sid' => intval($sid)))->cursor()->sort(array('_id' => -1))->limit(1)->current();
+		$this->subscribers_coll->loadSubscriberForQuery(array('sid' => intval($sid)));
+		$entity = $this->subscribers_coll->getData();
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
 		if ($entity['from'] && isset($entity['from']->sec))

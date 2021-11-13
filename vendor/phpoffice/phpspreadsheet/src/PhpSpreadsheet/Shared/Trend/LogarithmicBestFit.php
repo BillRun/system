@@ -58,7 +58,7 @@ class LogarithmicBestFit extends BestFit
      * @param float[] $xValues The set of X-values for this regression
      * @param bool $const
      */
-    private function logarithmicRegression($yValues, $xValues, $const)
+    private function logarithmicRegression($yValues, $xValues, $const): void
     {
         foreach ($xValues as &$value) {
             if ($value < 0.0) {
@@ -81,7 +81,9 @@ class LogarithmicBestFit extends BestFit
      */
     public function __construct($yValues, $xValues = [], $const = true)
     {
-        if (parent::__construct($yValues, $xValues) !== false) {
+        parent::__construct($yValues, $xValues);
+
+        if (!$this->error) {
             $this->logarithmicRegression($yValues, $xValues, $const);
         }
     }

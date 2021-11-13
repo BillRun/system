@@ -164,16 +164,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			'interval' => $interval);
 
 		if (isset($jsonUpdateData['to']['sec'])) {
-			$to = new MongoDate($jsonUpdateData['to']['sec']);
+			$to = new Mongodloid_Date($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
-			$to = $set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+			$to = $set['to'] = new Mongodloid_Date(strtotime($jsonUpdateData['to']));
 		} else {
 			$to = $jsonUpdateData['to'];
 		}
 
 		$toExtended = strtotime("23:59:59", $to->sec);
 		
-		$jsonUpdateData['to'] = $set['to'] = new MongoDate($toExtended);
+		$jsonUpdateData['to'] = $set['to'] = new Mongodloid_Date($toExtended);
 		
 		$this->populateOperation($jsonUpdateData, $set);
 
@@ -186,14 +186,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$set['eom'] = 0;
 		}
 
-		$set['creation_time'] = new MongoDate();
+		$set['creation_time'] = new Mongodloid_Date();
 
 		// TODO: Is it possible that we will receive a date here with hours minutes and seconds?
 		// if so we will have to strip them somehow.
 		if (isset($this->query['from']['sec'])) {
-			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
+			$this->query['from'] = $set['from'] = new Mongodloid_Date($this->query['from']['sec']);
 		} else if (is_string($this->query['from'])) {
-			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
+			$this->query['from'] = $set['from'] = new Mongodloid_Date(strtotime($this->query['from']));
 		} else {
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
@@ -208,7 +208,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		// Check if the from is in the past.
 		if ($from >= strtotime("tomorrow midnight")) {
-			$set['next_renew_date'] = new MongoDate(strtotime("00:00:00", $from));
+			$set['next_renew_date'] = new Mongodloid_Date(strtotime("00:00:00", $from));
 			$jsonUpdateData['migrated'] = false;
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
