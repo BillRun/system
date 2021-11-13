@@ -10,7 +10,6 @@ use MongoDB\Driver\Exception\RuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Tests\TestCase;
 use stdClass;
-use Throwable;
 use function get_class;
 use function is_array;
 use function is_string;
@@ -92,11 +91,6 @@ final class ErrorExpectation
         return $o;
     }
 
-    public static function fromReadWriteConcern(stdClass $operation)
-    {
-        return self::fromGenericOperation($operation);
-    }
-
     public static function fromRetryableReads(stdClass $operation)
     {
         $o = new self();
@@ -138,7 +132,7 @@ final class ErrorExpectation
      * @param TestCase       $test   Test instance for performing assertions
      * @param Exception|null $actual Exception (if any) from the actual outcome
      */
-    public function assert(TestCase $test, Throwable $actual = null)
+    public function assert(TestCase $test, Exception $actual = null)
     {
         if (! $this->isExpected) {
             if ($actual !== null) {
@@ -182,7 +176,7 @@ final class ErrorExpectation
      * @param TestCase       $test   Test instance for performing assertions
      * @param Exception|null $actual Exception (if any) from the actual outcome
      */
-    private function assertCodeName(TestCase $test, Throwable $actual = null)
+    private function assertCodeName(TestCase $test, Exception $actual = null)
     {
         /* BulkWriteException does not expose codeName for server errors. Work
          * around this be comparing the error code against a map.
@@ -220,7 +214,7 @@ final class ErrorExpectation
             $o->isExpected = $operation->error;
         }
 
-        $result = $operation->result ?? null;
+        $result = isset($operation->result) ? $operation->result : null;
 
         if (isset($result->errorContains)) {
             $o->messageContains = $result->errorContains;

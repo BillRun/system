@@ -33,14 +33,14 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		$offset = Billrun_Config::getInstance()->getConfigValue('resetlines.offset', '1 hour');
 		$query = array(
 			'creation_date' => array(
-				'$lt' => new MongoDate(strtotime($offset . ' ago')),
+				'$lt' => new Mongodloid_Date(strtotime($offset . ' ago')),
 			),
 		);
 		$sort = array(
 			'creation_date' => 1,
 		);
 		$results = $rebalance_queue->find($query)->sort($sort)->limit($limit);
-
+		
 		$billruns = array();
 		$all_aids = array();
 		$conditions = array();
@@ -56,6 +56,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			$conditionsByBillrunKey = !empty($conditions[$billrun_key]) ? $conditions[$billrun_key] : array();
 			$model = new ResetLinesModel($aids, $billrun_key, $conditionsByBillrunKey);
 			try {
+				Billrun_Factory::dispatcher()->trigger('beforeResetLines', array($billrun_key, $aids, $model));
 				$ret = $model->reset();
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;

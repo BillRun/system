@@ -60,7 +60,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new Mongodloid_Date(time())
 			)
 		);
 	}

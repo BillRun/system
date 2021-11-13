@@ -17,9 +17,9 @@
 
 namespace MongoDB\GridFS;
 
+use Exception;
 use MongoDB\BSON\UTCDateTime;
 use stdClass;
-use Throwable;
 use function explode;
 use function get_class;
 use function in_array;
@@ -57,14 +57,6 @@ class StreamWrapper
     /** @var ReadableStream|WritableStream|null */
     private $stream;
 
-    public function __destruct()
-    {
-        /* This destructor is a workaround for PHP trying to use the stream well
-         * after all objects have been destructed. This can cause autoloading
-         * issues and possibly segmentation faults during PHP shutdown. */
-        $this->stream = null;
-    }
-
     /**
      * Return the stream's file document.
      *
@@ -96,10 +88,6 @@ class StreamWrapper
      */
     public function stream_close()
     {
-        if (! $this->stream) {
-            return;
-        }
-
         $this->stream->close();
     }
 
@@ -162,7 +150,7 @@ class StreamWrapper
 
         try {
             return $this->stream->readBytes($length);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             trigger_error(sprintf('%s: %s', get_class($e), $e->getMessage()), E_USER_WARNING);
 
             return false;
@@ -259,7 +247,7 @@ class StreamWrapper
 
         try {
             return $this->stream->writeBytes($data);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             trigger_error(sprintf('%s: %s', get_class($e), $e->getMessage()), E_USER_WARNING);
 
             return false;

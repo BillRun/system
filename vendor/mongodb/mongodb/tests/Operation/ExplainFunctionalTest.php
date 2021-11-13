@@ -3,7 +3,6 @@
 namespace MongoDB\Tests\Operation;
 
 use MongoDB\Driver\BulkWrite;
-use MongoDB\Operation\Aggregate;
 use MongoDB\Operation\Count;
 use MongoDB\Operation\CreateCollection;
 use MongoDB\Operation\Delete;
@@ -388,43 +387,6 @@ class ExplainFunctionalTest extends FunctionalTestCase
         $this->assertExplainResult($result, $executionStatsExpected, $allPlansExecutionExpected);
     }
 
-    public function testAggregate()
-    {
-        if (version_compare($this->getServerVersion(), '4.0.0', '<')) {
-            $this->markTestSkipped('Explaining aggregate command requires server version >= 4.0');
-        }
-
-        $this->createFixtures(3);
-
-        $pipeline = [['$group' => ['_id' => null]]];
-        $operation = new Aggregate($this->getDatabaseName(), $this->getCollectionName(), $pipeline);
-
-        $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => Explain::VERBOSITY_QUERY, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
-        $result = $explainOperation->execute($this->getPrimaryServer());
-
-        $this->assertExplainResult($result, false, false, true);
-    }
-
-    /**
-     * @dataProvider provideVerbosityInformation
-     */
-    public function testAggregateOptimizedToQuery($verbosity, $executionStatsExpected, $allPlansExecutionExpected)
-    {
-        if (version_compare($this->getServerVersion(), '4.2.0', '<')) {
-            $this->markTestSkipped('MongoDB < 4.2 does not optimize simple aggregation pipelines');
-        }
-
-        $this->createFixtures(3);
-
-        $pipeline = [['$match' => ['_id' => ['$ne' => 2]]]];
-        $operation = new Aggregate($this->getDatabaseName(), $this->getCollectionName(), $pipeline);
-
-        $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
-        $result = $explainOperation->execute($this->getPrimaryServer());
-
-        $this->assertExplainResult($result, $executionStatsExpected, $allPlansExecutionExpected);
-    }
-
     public function provideVerbosityInformation()
     {
         return [
@@ -434,14 +396,9 @@ class ExplainFunctionalTest extends FunctionalTestCase
         ];
     }
 
-    private function assertExplainResult($result, $executionStatsExpected, $allPlansExecutionExpected, $stagesExpected = false)
+    private function assertExplainResult($result, $executionStatsExpected, $allPlansExecutionExpected)
     {
-        if ($stagesExpected) {
-            $this->assertArrayHasKey('stages', $result);
-        } else {
-            $this->assertArrayHasKey('queryPlanner', $result);
-        }
-
+        $this->assertArrayHasKey('queryPlanner', $result);
         if ($executionStatsExpected) {
             $this->assertArrayHasKey('executionStats', $result);
             if ($allPlansExecutionExpected) {

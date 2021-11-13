@@ -319,7 +319,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', new MongoDate());
+			$resource->set('process_time', new Mongodloid_Date());
 			return $log->save($resource);
 		} else {
 			// backward compatibility
@@ -462,7 +462,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			),
 			'$or' => array(
 				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
+				array('start_process_time' => array('$lt' => new Mongodloid_Date($adoptThreshold))),
 			),
 			'received_time' => array(
 				'$exists' => true,
@@ -470,7 +470,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		);
 		$update = array(
 			'$set' => array(
-				'start_process_time' => new MongoDate(time()),
+				'start_process_time' => new Mongodloid_Date(time()),
 				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
@@ -506,7 +506,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -552,7 +552,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -624,7 +624,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$queueRow = $dataRow;
 			$queueRow['calc_name'] = false;
 			$queueRow['calc_time'] = false;
-			$queueRow['in_queue_since'] = new MongoDate();
+			$queueRow['in_queue_since'] = new Mongodloid_Date();
 			$this->setQueueRow($queueRow);
 		}
 	}

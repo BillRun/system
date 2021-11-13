@@ -20,16 +20,6 @@ namespace MongoDB\Exception;
 class UnsupportedException extends RuntimeException
 {
     /**
-     * Thrown when a command's allowDiskUse option is not supported by a server.
-     *
-     * @return self
-     */
-    public static function allowDiskUseNotSupported()
-    {
-        return new static('The "allowDiskUse" option is not supported by the server executing this operation');
-    }
-
-    /**
      * Thrown when array filters are not supported by a server.
      *
      * @return self
@@ -47,17 +37,6 @@ class UnsupportedException extends RuntimeException
     public static function collationNotSupported()
     {
         return new static('Collations are not supported by the server executing this operation');
-    }
-
-    /**
-     * Thrown when the commitQuorum option for createIndexes is not supported
-     * by a server.
-     *
-     * @return self
-     */
-    public static function commitQuorumNotSupported()
-    {
-        return new static('The "commitQuorum" option is not supported by the server executing this operation');
     }
 
     /**

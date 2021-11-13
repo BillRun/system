@@ -38,9 +38,8 @@ class DropCollectionFunctionalTest extends FunctionalTestCase
         $this->assertEquals(1, $writeResult->getInsertedCount());
 
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
-        $commandResult = $operation->execute($server);
+        $operation->execute($server);
 
-        $this->assertCommandSucceeded($commandResult);
         $this->assertCollectionDoesNotExist($this->getCollectionName());
     }
 
@@ -52,11 +51,7 @@ class DropCollectionFunctionalTest extends FunctionalTestCase
         $this->assertCollectionDoesNotExist($this->getCollectionName());
 
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
-        $commandResult = $operation->execute($this->getPrimaryServer());
-
-        /* Avoid inspecting the result document as mongos returns {ok:1.0},
-         * which is inconsistent from the expected mongod response of {ok:0}. */
-        $this->assertIsObject($commandResult);
+        $operation->execute($this->getPrimaryServer());
     }
 
     public function testSessionOption()

@@ -61,7 +61,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$saveData = array(
 			'source' => 'pelephonePlugin',
 			'type' => 'sendRequest',
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'request' => $requestBody,
 			'response' => array(),
 			'server_host' => Billrun_Util::getHostName(),
@@ -106,13 +106,13 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
 					'in_data_slowness' => true,
-					'data_slowness_enter' => new MongoDate()
+					'data_slowness_enter' => new Mongodloid_Date()
 					)
 				);
 			} else {
 				$updateQuery = array(
 					'$unset' => array('in_data_slowness' => 1),
-					'$set' => array('data_slowness_exit' => new MongoDate()),
+					'$set' => array('data_slowness_exit' => new Mongodloid_Date()),
 				);
 			}
 			$subscribersColl->update($findQuery, $updateQuery);
