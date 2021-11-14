@@ -119,7 +119,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
             }
 			if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
-				$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpg_generator_' . $this->getFilename());
+				$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
 			}
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
