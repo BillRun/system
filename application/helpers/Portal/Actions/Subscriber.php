@@ -102,15 +102,33 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		if ($subscriber === false ) {
 			return false;
 		}
-		
-		$includeUsages = $params['include_usages'] ?? true;
-		if ($includeUsages) {
-			$subscriber['usages'] = $this->getAggregatedUsages($subscriber);
-		}
+                $this->addServicesDetails($subscriber, $params);
+
 		
 		unset($subscriber['_id']);
 		return $subscriber;
 	}
+        
+        
+        /**
+	 * add to subscriber services details
+	 *
+	 * @param  array $subscriber
+	 * @param  array $params
+	 * @return array subscribers services
+	 */
+        protected function addServicesDetails(&$subscriber, $params) {
+            $services = $subscriber['services'] ?? [];
+            foreach ($services as $index => $service) {
+                $service = new Billrun_Service(['name' => $subscriber['services'][$index]['name'], 'time'=> strtotime($subscriber['services'][$index]['from'])]);
+		$subscriber['services'][$index]['include'] =  $service->get('include');
+                $includeUsages = $params['include_usages'] ?? true;
+		if ($includeUsages) {
+//			$subscriber['services'][$index]['used'] = 
+//                      $subscriber['services'][$index]['left'] = 
+		}
+            }
+        }
 	
 	/**
 	 * get subscriber aggregated usages
