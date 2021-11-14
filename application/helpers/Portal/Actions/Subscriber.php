@@ -111,11 +111,10 @@ class Portal_Actions_Subscriber extends Portal_Actions {
         
         
         /**
-	 * add to subscriber services details
+	 * add to subscriber services details ()
 	 *
 	 * @param  array $subscriber
 	 * @param  array $params
-	 * @return array subscribers services
 	 */
         protected function addServicesDetails(&$subscriber, $params) {
             $services = $subscriber['services'] ?? [];
