@@ -94,16 +94,24 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
-        protected function formatLine($row,$dataStructure) {
-            foreach($dataStructure as $index => $paramObj){
-                if(isset($paramObj['decimals'])){
-                    $value = intval($row[$paramObj['name']]);
-                    $row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
-                }
-            }
-            return $row;
-        }
-        
+	protected function formatLine($row, $dataStructure) {
+		foreach ($dataStructure as $index => $paramObj) {
+			if (isset($paramObj['decimals'])) {
+				$value = intval($row[$paramObj['name']]);
+				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
+			}
+			if (isset($paramObj['substring'])) {
+				if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
+					$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+					$this->logFile->updateLogFileField('errors', $message);
+					throw new Exception($message);
+				}
+				$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+			}
+		}
+		return $row;
+	}
+
 	protected function getBillRunLine($rawLine) {
 		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));
