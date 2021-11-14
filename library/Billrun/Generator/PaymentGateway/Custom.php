@@ -79,69 +79,72 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	}
 
 	protected function getDataLine($params) {
-		$dataLine = array();
-		$this->transactionsTotalAmount += $params['amount'];
-		$dataStructure = $this->configByType['generator']['data_structure'];
+        $dataLine = array();
+        $this->transactionsTotalAmount += $params['amount'];
+        $dataStructure = $this->configByType['generator']['data_structure'];
 		$this->billSavedFields = array();
-		foreach ($dataStructure as $dataField) {
-			try {
-				if (!isset($dataField['path'])) {
-					$message = "Exporter " . $this->configByType['file_type'] . " data structure is missing a path";
-					Billrun_Factory::log($message, Zend_Log::ERR);
-					$this->logFile->updateLogFileField('warnings', $message);
-					continue;
-				}
-				if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
-					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-					$dataLine[$dataField['path']] = date($dateFormat, time());
-				}
-				if (isset($dataField['hard_coded_value'])) {
-					$dataLine[$dataField['path']] = $dataField['hard_coded_value'];
-				}
-				if (isset($dataField['linked_entity'])) {
-					$dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
-				}
-				if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
-					$dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
-				}
-				if (isset($dataField['type']) && $dataField['type'] == 'date') {
-					$dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-					$date = strtotime($dataLine[$dataField['path']]);
-					if ($date) {
-						$dataLine[$dataField['path']] = date($dateFormat, $date);
-					} else {
-						$message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
-						Billrun_Factory::log($message, Zend_Log::NOTICE);
-						$this->logFile->updateLogFileField('warnings', $message);
-					}
-				}
+        foreach ($dataStructure as $dataField) {
+            try{
+            if (!isset($dataField['path'])) {
+                $message = "Exporter " . $this->configByType['file_type'] . " data structure is missing a path";
+                Billrun_Factory::log($message, Zend_Log::ERR);
+                $this->logFile->updateLogFileField('warnings', $message);
+                continue;
+            }
+            if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
+                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+                $dataLine[$dataField['path']] = date($dateFormat, time());
+            }
+            if (isset($dataField['hard_coded_value'])) {
+                $dataLine[$dataField['path']] = $dataField['hard_coded_value'];
+            }
+            if (isset($dataField['linked_entity'])) {
+                $dataLine[$dataField['path']] = $this->getLinkedEntityData($dataField['linked_entity']['entity'], $params, $dataField['linked_entity']['field_name']);
+            }
+            if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
+                $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
+            }
+            if (isset($dataField['type']) && $dataField['type'] == 'date') {
+                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
+                $date = strtotime($dataLine[$dataField['path']]);
+                if ($date) {
+                    $dataLine[$dataField['path']] = date($dateFormat, $date);
+                } else {
+                    $message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
+                    Billrun_Factory::log($message, Zend_Log::NOTICE);
+                    $this->logFile->updateLogFileField('warnings', $message);
+                }
+            }
 				if (isset($dataField['value_mult'])) {
 					$dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
 				}
-				if (isset($dataField['number_format'])) {
-					$dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
-				}
-				$attributes = $this->getLineAttributes($dataField);
-				if (!isset($dataLine[$dataField['path']])) {
-					$configObj = $dataField['name'];
-					$message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
-					$this->logFile->updateLogFileField('errors', $message);
-					throw new Exception($message);
-				}
-				if (!empty($dataField['save_to_bill'])) {
-					$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
-				}
-				$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
-			} catch (Exception $ex) {
-				Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-				continue;
+            if (isset($dataField['number_format'])) {
+                $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+            }
+			if (isset($dataField['substring'])) {
+				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
 			}
-		}
-		if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
-			ksort($dataLine);
-		}
-		return $dataLine;
-	}
+            $attributes = $this->getLineAttributes($dataField);
+            if (!isset($dataLine[$dataField['path']])) {
+                $configObj = $dataField['name'];
+                $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+                $this->logFile->updateLogFileField('errors', $message);
+                throw new Exception($message);
+            }
+			if (!empty($dataField['save_to_bill'])) {
+				$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
+			}
+			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+            } catch(Exception $ex){
+                Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+                continue;
+        }
+        }
+        if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
+            ksort($dataLine);
+        }
+        return $dataLine;
+    }
 
 	protected function getHeaderLine() {
         $headerStructure = $this->configByType['generator']['header_structure'];
@@ -195,6 +198,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         $options['file_type'] = $this->configByType['file_type'];
         $options['local_dir'] = $this->localDir;
+		$options['row_separator'] = Billrun_Util::getIn($this->configByType['generator'], 'row_separator', 'line_break');
         return $options;
     }
 
@@ -370,6 +374,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     Billrun_Factory::log($message, Zend_Log::ERR);
                 }
             }
+			if (isset($field['substring'])) {
+				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
+			}
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
@@ -440,4 +447,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
         }
     }
+	
+	protected function getSubstring($field_config, $field_data) {
+		if (!isset($field_config['substring']['offset']) || !isset($field_config['substring']['length'])) {
+			$message = "Field name " . $field_config['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+			$this->logFile->updateLogFileField('errors', $message);
+			throw new Exception($message);
+		}
+		return substr($field_data, $field_config['substring']['offset'], $field_config['substring']['length']);
+	}
+
 }
