@@ -124,7 +124,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
         }
         
         /**
-	 * add to subscriber services details (service include + service used + service left)
+	 * add services details to subscriber
 	 *
 	 * @param  array $subscriber
 	 * @param  array $params
@@ -138,6 +138,12 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             }
         }
 	
+        /**
+         * add service details to subscriber
+         * @param array $subscriberServices - the services we will add the details
+         * @param array $subscriber
+         * @param array $params
+         */
         protected  function addServiceDetails(&$subscriberServices, $subscriber, $params) {
             foreach ($subscriberServices as &$subscriberService) {
                 $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
