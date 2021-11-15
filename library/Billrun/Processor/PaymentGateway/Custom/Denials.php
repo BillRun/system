@@ -23,19 +23,12 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['transaction_identifier_field']) || empty($processorDefinition['processor']['amount_field'])) {
-                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
+			$message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
 			$this->informationArray['errors'][] = $message;
-                        return false;
+			return false;
 		}
-		$this->tranIdentifierField = is_array($processorDefinition['processor']['transaction_identifier_field']) ? $processorDefinition['processor']['transaction_identifier_field'] : array (
-			'source' => 'data',
-			'field' => $processorDefinition['processor']['transaction_identifier_field']
-		);
-		$this->amountField = is_array($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : array (
-			'source' => 'data',
-			'field' => $processorDefinition['processor']['amount_field']
-		);
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
 		return true;
 	}
 	

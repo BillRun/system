@@ -71,14 +71,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			$this->informationArray['errors'][] = $message;
 			return false;
 		}
-		$this->amountField = is_array($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : array (
-			'source' => 'data',
-			'field' => $processorDefinition['processor']['amount_field']
-		);
-		$this->tranIdentifierField = is_array($processorDefinition['processor']['transaction_identifier_field']) ? $processorDefinition['processor']['transaction_identifier_field'] : array (
-			'source' => 'data',
-			'field' => $processorDefinition['processor']['transaction_identifier_field']
-		);
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
 		return true;
 	}
 

@@ -28,18 +28,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
-		if (isset($processorDefinition['processor']['amount_field'])) {
-			$this->amountField = is_array($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : array(
-				'source' => 'data',
-				'field' => $processorDefinition['processor']['amount_field']
-			);
-		} else {
-			$this->amountField = null;
-		}
-		$this->identifierField = is_array($processorDefinition['processor']['identifier_field']) ? $processorDefinition['processor']['identifier_field'] : array(
-			'source' => 'data',
-			'field' => $processorDefinition['processor']['identifier_field']
-		);
+		parent::initProcessorFields(['identifier_field' => 'identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
 		return true;
 	}
 

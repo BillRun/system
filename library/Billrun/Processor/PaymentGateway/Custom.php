@@ -94,6 +94,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return true;
 	}
         
+	public function initProcessorFields($processor_fields, $processor) {
+		$var_names = Billrun_Util::parseBillrunConventionToCamelCase($processor_fields);
+		foreach ($var_names as $var_name => $config_name) {
+			if (isset($processor['processor'][$config_name])) {
+				$this->{$var_name} = is_array($processor['processor'][$config_name]) ? $processor['processor'][$config_name] : array(
+					'source' => 'data',
+					'field' => $processor['processor'][$config_name]
+				);
+			} else {
+				$this->{$var_name} = null;
+			}
+		}
+	}
+
 	protected function formatLine($row, $dataStructure) {
 		foreach ($dataStructure as $index => $paramObj) {
 			if (isset($paramObj['decimals'])) {
