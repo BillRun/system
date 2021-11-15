@@ -129,63 +129,77 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 * @param  array $subscriber
 	 * @param  array $params
 	 */
-        protected function addServicesDetails(&$subscriber, $params) {
+        protected function addServicesDetails(&$subscriber, $params) {      
             if(isset($subscriber['services'])){
-                $this->addServiceDetails($subscriber['services'], $subscriber, $params);
+                foreach ($subscriber['services'] as &$subscriberService) {
+                    $this->addServiceDetails($subscriberService, $params);
+                   
+                }
             }
             if(isset($subscriber['include']['services'])){
-                $this->addServiceDetails($subscriber['include']['services'], $subscriber, $params);
+                foreach ($subscriber['include']['services'] as &$subscriberService) {
+                    $this->addServiceDetails($subscriberService, $params);
+                 
+                }
             }
+        }
+        
+        /**
+         * 
+         * @param type $service
+         * @param type $params
+         */
+        protected function addServiceUsages(&$service) {
+               $usages = [];
+                $balances = $this->getBalances();
+                foreach ($balances as $balance){
+                    if(isset($balance['balance']['groups'][$service['name']])){
+                        $service['usages'][$service['name']]['used'] = $balance['balance']['groups'][$service['name']]['usagev'] ?? 0;
+                        $service['usages'][$service['name']]['total'] = $balance['balance']['groups'][$service['name']]['total'];
+                        break;
+                    }
+                }
+                return $usages;
         }
 	
         /**
          * add service details to subscriber
          * @param array $subscriberServices - the services we will add the details
-         * @param array $subscriber
          * @param array $params
          */
-        protected  function addServiceDetails(&$subscriberServices, $subscriber, $params) {
-            foreach ($subscriberServices as &$subscriberService) {
-                $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
-                $subscriberService['description'] = $service->get('description');
-		$include = $service->get('include');
-                if(isset($include)){
-                    $subscriberService['include'] = $include;
-                }
-                $includeUsages = $params['include_usages'] ?? true;
-		if ($includeUsages) {
-                    $balance = $this->getBalance($subscriber);
-                    if(!empty($balance)){
-                        $subscriberService['used'] = $balance['balance']['groups'][$service->get('name')]['usagev'] ?? 0;
-                        $subscriberService['total'] = $balance['balance']['groups'][$service->get('name')]['total'];
-                    }
-		}
-            }
+        protected  function addServiceDetails(&$subscriberService, $params) {
+            $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
+            $subscriberService['description'] = $service->get('description');
+            $include = $service->get('include');
+            if(isset($include)){
+                $subscriberService['include'] = $include;
+            } 
+            $includeUsages = $params['include_usages'] ?? true;
+            if ($includeUsages) {
+                $this->addServiceUsages($subscriberService);
+            }           
         }
 	
 	/**
-	 * get subscriber active balance
+	 * get subscriber active balances
 	 *
-	 * @param  mixed $subscriber
 	 * @return array
 	 */
-	protected function getBalance($subscriber) {
+	protected function getBalances() {
 		$time = date(DATE_ISO8601);
 		$query = [
-			'aid' => $subscriber['aid'],
-			'sid' => $subscriber['sid'],
+			'aid' => $this->loggedInEntity['aid'],
+			'sid' => $this->loggedInEntity['sid'],
 			'from' => [
 				'$lte' => $time,
 			],
 			'to' => [
 				'$gt' => $time,
 			],
-		];
-                
-                $sort = array('priority' => 1);;
-		$params = $this->getBillApiParams('balances', 'get', $query, [], $sort);
+		];              
+		$params = $this->getBillApiParams('balances', 'get', $query);
 		$balances = $this->runBillApi($params);
-		return $balances ? $balances[0] : [];
+		return $balances ?? [];
 	}
 	
 	
