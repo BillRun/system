@@ -255,17 +255,68 @@ class Portal_Actions_Account extends Portal_Actions {
 	public function charges($params = []) {
 		$query = $params['query'] ?? [];
 		$query['aid'] = $this->loggedInEntity['aid'];
-                if (empty($query['from'])) {
-			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "from"');
+		if (empty($params['type'])) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "type"');
+		}
+		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
+		$bills = $this->runBillApi($billapiParams);
+                
+                foreach ($bills as $index => &$bill) {
+                    if(!$this->isBillRelevant($bill, $params)){
+                        unset($bills[$index]);
+                        continue;
+                    }
+                    $bill = $this->getChargesDetails($bill);
+		}
+		
+		return $bills;
+	}
+        
+        /**
+	 * Check if bill is relevnt by params
+	 *
+	 * @param  array $bill
+	 * @return array
+	 */
+	protected function isBillRelevant($bill, $params) {    
+            switch ($params['type']){
+                case 'successful charges':
+                    if($bill['type'] === 'rec'){
+                        
+                    }
+                    
+                    break;
+                case 'all charges':
+                     if($bill['type'] === 'rec' ){
+                        
+                    }
+                    break;
+                case 'successfull charges and invoices':
+                    break;
+                case 'all charges and invoices':
+                    break;
+                default :
+                    throw new Portal_Exception('unsupport_parameter_value', '', 'Unsupport parameter value: "type" : ' . $params['type']);
+            }
+	}
+        
+        /**
+	 * Format charges details
+	 *
+	 * @param  array $bill
+	 * @return array
+	 */
+	protected function getChargesDetails($bill) {
+		$bill = parent::getDetails($bill);
+		$fieldsToHide = [
+			'_id',
+		];
+		
+		foreach($fieldsToHide as $fieldToHide) {
+			unset($bill[$fieldToHide]);
 		}
 
-		if (empty($query['to'])) {
-			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "to"');
-		}
-                $paymentHistoryAction = new V3_paymentHistoryAction();
-		$charges = $paymentHistoryAction->searchPayments($query);
-		
-		return $charges;
+		return $bill;
 	}
 
 	/**
