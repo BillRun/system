@@ -109,7 +109,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	}
         
          /**
-	 * add to subscriber services details (service include + service used + service left)
+	 * add plan details to subscriber
 	 *
 	 * @param  array $subscriber
 	 * @param  array $params
