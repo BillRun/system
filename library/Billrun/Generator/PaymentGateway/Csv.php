@@ -126,13 +126,15 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected function writeTrailers() {
 		$fileContents = '';
 		$counter = 0;
-		foreach ($this->trailers as $entity) {
+		foreach ($this->trailers as $index => $entity) {
 			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$fileContents .= $this->getRowContent($entity);
-			$fileContents .= $this->row_separator;
+			$fileContents .= $this->getRowContent($entity);			
+			if ($index !== count($this->trailers) - 1) {
+				$fileContents .= $this->row_separator;
+			}
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
 				$fileContents = '';
