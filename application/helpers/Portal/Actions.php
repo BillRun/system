@@ -213,7 +213,7 @@ abstract class Portal_Actions {
 	 * @param  mixed $update
 	 * @return void
 	 */
-	protected function getBillApiParams($module, $action, $query = [], $update = []) {
+	protected function getBillApiParams($module, $action, $query = [], $update = [], $sort = []) {
         Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/modules/billapi/{$module}.ini");
 		
@@ -232,6 +232,9 @@ abstract class Portal_Actions {
 
 		if (!empty($update)) {
 			$ret['request']['update'] = json_encode($update);
+		}
+                if (!empty($sort)) {
+			$ret['request']['sort'] = json_encode($sort);
 		}
 
 		return $ret;
