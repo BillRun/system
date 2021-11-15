@@ -235,6 +235,15 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
+	 * legacy method to old MDB layer
+	 * 
+	 * @see convertMongodloidDatesToReadable
+	 */
+	public static function convertMongoDatesToReadable($data, $format = false) {
+		return self::convertMongodloidDatesToReadable($data, $format);
+	}
+	
+	/**
 	 * Change the times of a mongo record
 	 * 
 	 * @param array $row - Record to change the times of.
@@ -252,6 +261,15 @@ class Billrun_Utils_Mongo {
 		}
 
 		return $record;
+	}
+	
+	/**
+	 * legacy method to old MDB layer
+	 * 
+	 * @see convertRecordMongodloidDatetimeFields
+	 */
+	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		return self::convertRecordMongodloidDatetimeFields($record, $fields, $format);
 	}
 
 	/**
@@ -274,6 +292,15 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
+	 * legacy method to old MDB layer
+	 * 
+	 * @see recursiveConvertRecordMongodloidDatetimeFields
+	 */
+	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		return self::recursiveConvertRecordMongodloidDatetimeFields($record, $fields, $format);
+	}
+	
+	/**
 	 * Convert the date values in a query to Mongo format
 	 * @param array $arr - Arr to translate its values.
 	 */
@@ -287,6 +314,15 @@ class Billrun_Utils_Mongo {
 		}
 	}
 	
+	/**
+	 * legacy method to old MDB layer
+	 * 
+	 * @see convertQueryMongodloidDates
+	 */
+	public static function convertQueryMongoDates(&$arr, $strDatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/') {
+		self::convertQueryMongodloidDates($arr, $strDatePattern);
+	}
+
 	/**
 	 * Get an overlapping dates query
 	 * @param type $searchKeys - Array, must include the from and to fields.
