@@ -24,26 +24,33 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	}
 	
 	protected function mapProcessorFields($processorDefinition) {
-		if (empty($processorDefinition['processor']['identifier_field'])) {
+		$identifier = $processorDefinition['processor']['identifier_field'];
+		if (empty($identifier) ||
+			(is_array($identifier) && array_keys($identifier) !== ['source', 'field', 'file_field'])) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
 		
-		$this->identifierField = $processorDefinition['processor']['identifier_field'];
+		$this->identifierField = is_array($identifier) ? $identifier : [
+			'source' => 'data',
+			'field' => 'invoice_id',
+			'file_field' => $identifier
+		];
 		$this->amountField = isset($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : null;
 		return true;
 	}
 
 	protected function updatePayments($row, $payment = null) {
-		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
+		$identifier_val = $this->getIdentifierValue($row);
+		$bill = $this->findBillsByIdentifier($identifier_val);
 		if (count($bill) == 0) {
-			$message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
+			$message = "Didn't find bill with " . $identifier_val . " value in " . $this->identifierField['file_field'] . " field in " . $this->identifierField['source'] . " segment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
-		if (count($bill) > 1) {
-			$message = $this->identifierField . " field isn't unique";
+		if (count($bill) > 1 && $this->identifierField['field'] == 'invoice_id') {
+			$message = $this->identifierField['field'] . " field isn't unique";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
@@ -53,7 +60,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
-		if ($this->linkToInvoice) {
+		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
 			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
 			$amount = $billAmount;
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
@@ -62,7 +69,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		try {
 			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
-			$message = "Payment process was failed for payment: " . $e->getMessage();
+			$message = "Payment process was failed for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage();
 			Billrun_Factory::log()->log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
@@ -70,21 +77,42 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		if (isset($ret['payment'])) {
 			$customFields = $this->getCustomPaymentGatewayFields();
 			foreach ($ret['payment'] as $index => $returned_payment) {
+				$payment_data = $returned_payment->getRawData();
+				foreach ($payment_data['pays'] as $value) {
+					if (is_array($value)) {
+						$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " from invoice : " . $value['id'];
+						Billrun_Factory::log()->log($message, Zend_Log::INFO);
+						$this->informationArray['info'][] = $message;
+					}
+				}
+				if (!Billrun_Util::isEqual($payment_data['left'], 0, Billrun_Bill::precision)) {
+					$message = "Payment " . $payment_data['txid'] . " left amount is " . $payment_data['left'] . " after processing the received transaction.";
+					Billrun_Factory::log()->log($message, Zend_Log::INFO);
+					$this->informationArray['info'][] = $message;
+				}
 				$returned_payment->setExtraFields($customFields, array_keys($customFields));
 			}
 		}
-        $this->informationArray['transactions']['confirmed']++;
+		$this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
-        $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);
+        $message = "Payment was created successfully for " . $this->identifierField['field'] . ': ' . $identifier_val;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->informationArray['info'][] = $message;
 	}
 
-	protected function findBillByUniqueIdentifier($id) {
+	protected function findBillsByIdentifier($val) {
 //		if (in_array($this->identifierField , $this->dbNumericValuesFields) && Billrun_Util::IsIntegerValue($id)) {
 //			$id = intval($id);
 //		}
-		return $this->bills->query(array('type' => 'inv', 'invoice_id' => intval($id)))->cursor();
+		$query = array('type' => 'inv', $this->identifierField['field'] => intval($val));
+		if ($this->identifierField['field'] == 'aid') {
+			$query['left_to_pay'] = array('$gt' => 0);
+		}
+		return $this->bills->query($query)->cursor();
+	}
+	
+	public function getIdentifierValue($row){
+		return in_array($this->identifierField['source'], ['header', 'trailer']) ?  $this->{$this->identifierField['source'].'Rows'}[0][$this->identifierField['file_field']] : $row[$this->identifierField['file_field']];
 	}
 	
 	public function getType () {
