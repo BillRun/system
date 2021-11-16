@@ -145,21 +145,32 @@ class Portal_Actions_Subscriber extends Portal_Actions {
         }
         
         /**
-         * 
+         * Add service groups usages 
          * @param type $service
-         * @param type $params
          */
-        protected function addServiceUsages(&$service) {
-               $usages = [];
+        protected function addServiceGroupsUsages(&$service) {
                 $balances = $this->getBalances();
-                foreach ($balances as $balance){
-                    if(isset($balance['balance']['groups'][$service['name']])){
-                        $service['usages'][$service['name']]['used'] = $balance['balance']['groups'][$service['name']]['usagev'] ?? 0;
-                        $service['usages'][$service['name']]['total'] = $balance['balance']['groups'][$service['name']]['total'];
-                        break;
-                    }
-                }
-                return $usages;
+                if(isset($service['include']['groups'])){
+                    foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup)
+                        foreach ($balances as $balance){
+                            if(isset($balance['balance']['groups'][$serviceGroupName])){
+                                $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
+                                $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
+                                break;
+                            }
+                        }
+                        if(!isset($serviceGroup['usage']['total'])){
+                            $serviceGroup['usage']['used'] = 0;
+                        }
+                        if(!isset($serviceGroup['usage']['used'])){
+                            if(isset($serviceGroup['value'])){
+                                $serviceGroup['usage']['used'] = $serviceGroup['value'];
+                            }else{
+                                //TODO:: support Monetary based (cost)
+                                $serviceGroup['usage']['display'] = false;
+                            }
+                        }
+                }         
         }
 	
         /**
@@ -176,7 +187,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             } 
             $includeUsages = $params['include_usages'] ?? true;
             if ($includeUsages) {
-                $this->addServiceUsages($subscriberService);
+                $this->addServiceGroupsUsages($subscriberService);
             }           
         }
 	
