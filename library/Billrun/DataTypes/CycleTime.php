@@ -72,8 +72,18 @@ class Billrun_DataTypes_CycleTime {
 		return $this->end;
 	}
 	
+	/**
+	 * Get the cycle billrun key.
+	 */
+
 	public function key() {
 		return $this->key;
+	}
+	/**
+	 * Get the cycle invoicing day  if it is configured
+	 */
+	public function invoicingDay() {
+		return $this->invoicing_day;
 	}
 	
 	/**

@@ -238,9 +238,8 @@ abstract class Billrun_Bill {
 			$relative_date = new MongoDate(strtotime($date));
 			$query['$or'] = array(
 				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'balance_effective_date' => array('$exists' => false), 'urt' => array('$exists' => false))
+				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
@@ -1267,11 +1266,11 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
-	 * Function that sets balance effective date, in every payment's bill.
-	 * @param int $date - unix timestamp to set as the balance effective date.
+	 * Function that sets urt date, in every payment's bill.
+	 * @param int $date - unix timestamp to set as the urt date.
 	 */
-	public function setBalanceEffectiveDate ($date = null) {
-		$this->data['balance_effective_date'] = new MongoDate(!empty($date)? $date : time());
+	public function setUrt($date = null) {
+		$this->data['urt'] = new MongoDate(!empty($date)? $date : time());
 	}
 	
 	/**

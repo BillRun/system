@@ -491,7 +491,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function updateConfirmation() {
 		$this->data['waiting_for_confirmation'] = false;
 		$this->data['confirmation_time'] = new MongoDate();
-		$this->setBalanceEffectiveDate();
+		$this->setUrt();
 		$this->save();
 	}
 
