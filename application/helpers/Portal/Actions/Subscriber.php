@@ -159,14 +159,15 @@ class Portal_Actions_Subscriber extends Portal_Actions {
                                 break;
                             }
                         }
-                        if(!isset($serviceGroup['usage']['total'])){
+                        if(!isset($serviceGroup['usage']['used'])){
                             $serviceGroup['usage']['used'] = 0;
                         }
-                        if(!isset($serviceGroup['usage']['used'])){
+                        if(!isset($serviceGroup['usage']['total'])){
                             if(isset($serviceGroup['value'])){
-                                $serviceGroup['usage']['used'] = $serviceGroup['value'];
+                                $serviceGroup['usage']['total'] = $serviceGroup['value'];
                             }else{
                                 //TODO:: support Monetary based (cost)
+                                unset($serviceGroup['usage']['used']);
                                 $serviceGroup['usage']['display'] = false;
                             }
                         }
