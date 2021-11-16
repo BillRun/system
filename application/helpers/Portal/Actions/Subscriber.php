@@ -115,7 +115,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 * @param  array $params
 	 */
         protected function addPlanDetails(&$subscriber, $params) {
-            $plan = new Billrun_Plan(['name' => $subscriber['plan']]);
+            $plan = new Billrun_Plan(['name' => $subscriber['plan'], 'time'=> time()]);
             $subscriber['plan_description'] =  $plan->get('description');
             $servicesIncludeInPlan = $plan->get('include')['services'] ?? [];
             foreach ($servicesIncludeInPlan as $index => $serviceIncludeInPlan){
@@ -180,7 +180,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
          * @param array $params
          */
         protected  function addServiceDetails(&$subscriberService, $params) {
-            $service = new Billrun_Service(['name' => $subscriberService['name']]);
+            $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
             $subscriberService['description'] = $service->get('description');
             $include = $service->get('include');
             if(isset($include)){
