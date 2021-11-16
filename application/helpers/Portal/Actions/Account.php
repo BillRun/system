@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/v3/Bills.php';
  * @since    5.14
  */
 class Portal_Actions_Account extends Portal_Actions {
-        
+        use Billrun_Traits_ConditionsCheck;
     /**
      * get account by given query
 	 * using BillApi
@@ -255,14 +255,16 @@ class Portal_Actions_Account extends Portal_Actions {
 	public function charges($params = []) {
 		$query = $params['query'] ?? [];
 		$query['aid'] = $this->loggedInEntity['aid'];
-		if (empty($params['type'])) {
+                $type = $query['type'];
+		if (empty($type)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "type"');
 		}
+                unset($query['type']);
 		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
 		$bills = $this->runBillApi($billapiParams);
-                
+                $conditions = $this->convertQueryToConditions($this->buildBillQuery($type));
                 foreach ($bills as $index => &$bill) {
-                    if(!$this->isBillRelevant($bill, $params)){
+                    if(!$this->isConditionsMeet($bill, $conditions)){
                         unset($bills[$index]);
                         continue;
                     }
@@ -278,26 +280,50 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @param  array $bill
 	 * @return array
 	 */
-	protected function isBillRelevant($bill, $params) {    
-            switch ($params['type']){
+	protected function buildBillQuery($type) {
+            $nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+            $notPandingBiils = array(
+                    'pending' => array('$ne' => true)
+            );
+            switch ($type){
                 case 'successful charges':
-                    if($bill['type'] === 'rec'){
-                        
-                    }
-                    
-                    break;
+                    return array_merge($nonRejectedOrCanceled, $notPandingBiils, array('type' =>  'rec'));
                 case 'all charges':
-                     if($bill['type'] === 'rec' ){
-                        
-                    }
-                    break;
+                    return array('type' =>  'rec');                 
                 case 'successfull charges and invoices':
-                    break;
+                    return array_merge($nonRejectedOrCanceled, $notPandingBiils);
                 case 'all charges and invoices':
-                    break;
+                    return array();
                 default :
-                    throw new Portal_Exception('unsupport_parameter_value', '', 'Unsupport parameter value: "type" : ' . $params['type']);
+                    throw new Portal_Exception('unsupport_parameter_value', '', 'Unsupport parameter value: "type" : ' . $type);
             }
+	}
+        
+        /**
+	 * Convert query to conditions
+	 * 
+	 * @param array $query
+	 * @return array
+	 */
+	protected function convertQueryToConditions($query) {//TODO:: convert more complecteds query to conditins and insert to Billrun_Traits_ConditionsCheck
+            $conditions = [];
+            $index = 0;
+            foreach ($query as $fieldname => $value){ 
+                if(is_array($value)){
+                    foreach ($value as $op => $val){//can by more then 
+                        $conditions[$index]['field'] =  $fieldname;
+                        $conditions[$index]['op'] =  $op;
+                        $conditions[$index]['value'] =  $val;
+                        $index++;
+                    }
+                }else{
+                    $conditions[$index]['op'] =  '$eq';
+                    $conditions[$index]['value'] =  $value;
+                    $index++;
+                }
+                
+            }
+            return $conditions;
 	}
         
         /**
