@@ -8,6 +8,7 @@
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Invoices.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Bill.php';
+
 /**
  * Customer Portal account actions
  * 
@@ -15,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Bill.php';
  * @since    5.14
  */
 class Portal_Actions_Account extends Portal_Actions {
-        
+        use Billrun_Traits_ConditionsCheck;
     /**
      * get account by given query
 	 * using BillApi
@@ -242,6 +243,106 @@ class Portal_Actions_Account extends Portal_Actions {
 		return array_column(array_filter($customFields, function($customField) {
 			return !empty($customField['system']) || !empty($customField['show_in_list']) || !empty($customField['unique']);
 		}), 'field_name');
+	}
+        
+        /**
+	 * get account charges
+	 *
+	 * @param  array $params - the api params
+	 * @return array the account charges
+	 */
+	public function charges($params = []) {
+		$query = $params['query'] ?? [];
+		$query['aid'] = $this->loggedInEntity['aid'];
+                $type = $query['type'];
+		if (empty($type)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "type"');
+		}
+                unset($query['type']);
+		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
+		$bills = $this->runBillApi($billapiParams);
+                $conditions = $this->convertQueryToConditions($this->buildBillQuery($type));
+                $billsResult = [];
+                foreach ($bills as $index => &$bill) {
+                    if(!$this->isConditionsMeet($bill, $conditions)){
+                        continue;
+                    }
+                    $billsResult[] = $this->getChargesDetails($bill);
+		}
+		
+		return $billsResult;
+	}
+        
+        /**
+	 * Build a query by the type
+	 *
+	 * @param  string $type
+	 * @return array
+	 */
+	protected function buildBillQuery($type) {
+            $nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
+            $notPandingBiils = array(
+                    'pending' => array('$ne' => true)
+            );
+            switch ($type){
+                case 'successful charges':
+                    return array_merge($nonRejectedOrCanceled, $notPandingBiils, array('type' =>  'rec'));
+                case 'all charges':
+                    return array('type' => 'rec');                 
+                case 'successfull charges and invoices':
+                    return array_merge($nonRejectedOrCanceled, $notPandingBiils);
+                case 'all charges and invoices':
+                    return array();
+                default :
+                    throw new Portal_Exception('unsupport_parameter_value', '', 'Unsupport parameter value: "type" : ' . $type);
+            }
+	}
+        
+        /**
+	 * Convert query to conditions
+	 * 
+	 * @param array $query
+	 * @return array
+	 */
+	protected function convertQueryToConditions($query) {//TODO:: convert more complicated query to conditions and insert to Billrun_Traits_ConditionsCheck
+            $conditions = [];
+            $index = 0;
+            foreach ($query as $fieldname => $value){ 
+                if(is_array($value)){
+                    foreach ($value as $op => $val){//can by more then 
+                        $conditions[$index]['field'] =  $fieldname;
+                        $conditions[$index]['op'] =  $op;
+                        $conditions[$index]['value'] =  $val;
+                        $index++;
+                    }
+                }else{
+                    $conditions[$index]['field'] =  $fieldname;
+                    $conditions[$index]['op'] =  '$eq';
+                    $conditions[$index]['value'] =  $value;
+                    $index++;
+                }
+                
+            }
+            return $conditions;
+	}
+        
+        /**
+	 * Format charges details
+	 *
+	 * @param  array $bill
+	 * @return array
+	 */
+	protected function getChargesDetails($bill) {
+		$bill = parent::getDetails($bill);
+		$fieldsToHide = [
+			'_id',
+		];
+		
+		foreach($fieldsToHide as $fieldToHide) {
+			unset($bill[$fieldToHide]);
+		}
+
+		return $bill;
 	}
 
 	/**

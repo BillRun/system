@@ -58,6 +58,10 @@ class Portal_Exception extends Exception {
             'code' => 4700,
             'desc' => 'No invoice was found',
         ],
+        'unsupport_parameter_value' => [
+            'code' => 4502,
+            'desc' => 'Unsupport parameter value',
+        ],
     ];
 
     public function __construct($error = '', $code = '', $desc = '') {
