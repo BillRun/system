@@ -292,10 +292,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 	public function &getRates() {
 		if(empty($this->ratesCache)) {
+			Billrun_Factory::log("Preparing rates cache", Zend_Log::DEBUG);
 			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
 			$res = $this->aggregatePipelines($pipelines,$coll);
 			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
+			Billrun_Factory::log("Finished preparing rates cache", Zend_Log::DEBUG);
 		}
 		return $this->ratesCache;
 	}
