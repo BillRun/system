@@ -8,7 +8,6 @@
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Invoices.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Bill.php';
-require_once APPLICATION_PATH . '/application/controllers/Action/v3/Bills.php';
 
 /**
  * Customer Portal account actions
