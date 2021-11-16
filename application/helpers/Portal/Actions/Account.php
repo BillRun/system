@@ -263,21 +263,21 @@ class Portal_Actions_Account extends Portal_Actions {
 		$billapiParams = $this->getBillApiParams('bills', 'get', $query);
 		$bills = $this->runBillApi($billapiParams);
                 $conditions = $this->convertQueryToConditions($this->buildBillQuery($type));
+                $billsResult = [];
                 foreach ($bills as $index => &$bill) {
                     if(!$this->isConditionsMeet($bill, $conditions)){
-                        unset($bills[$index]);
                         continue;
                     }
-                    $bill = $this->getChargesDetails($bill);
+                    $billsResult[] = $this->getChargesDetails($bill);
 		}
 		
-		return $bills;
+		return $billsResult;
 	}
         
         /**
-	 * Check if bill is relevnt by params
+	 * Build a query by the type
 	 *
-	 * @param  array $bill
+	 * @param  string $type
 	 * @return array
 	 */
 	protected function buildBillQuery($type) {
@@ -289,7 +289,7 @@ class Portal_Actions_Account extends Portal_Actions {
                 case 'successful charges':
                     return array_merge($nonRejectedOrCanceled, $notPandingBiils, array('type' =>  'rec'));
                 case 'all charges':
-                    return array('type' =>  'rec');                 
+                    return array('type' => 'rec');                 
                 case 'successfull charges and invoices':
                     return array_merge($nonRejectedOrCanceled, $notPandingBiils);
                 case 'all charges and invoices':
@@ -305,7 +305,7 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @param array $query
 	 * @return array
 	 */
-	protected function convertQueryToConditions($query) {//TODO:: convert more complecteds query to conditins and insert to Billrun_Traits_ConditionsCheck
+	protected function convertQueryToConditions($query) {//TODO:: convert more complicated query to conditions and insert to Billrun_Traits_ConditionsCheck
             $conditions = [];
             $index = 0;
             foreach ($query as $fieldname => $value){ 
@@ -317,6 +317,7 @@ class Portal_Actions_Account extends Portal_Actions {
                         $index++;
                     }
                 }else{
+                    $conditions[$index]['field'] =  $fieldname;
                     $conditions[$index]['op'] =  '$eq';
                     $conditions[$index]['value'] =  $value;
                     $index++;
