@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2017-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@
 namespace MongoDB;
 
 use IteratorAggregate;
+use ReturnTypeWillChange;
 use stdClass;
 use Traversable;
+
 use function call_user_func;
 
 /**
@@ -55,8 +57,8 @@ class MapReduceResult implements IteratorAggregate
     public function __construct(callable $getIterator, stdClass $result)
     {
         $this->getIterator = $getIterator;
-        $this->executionTimeMS = (integer) $result->timeMillis;
-        $this->counts = (array) $result->counts;
+        $this->executionTimeMS = isset($result->timeMillis) ? (integer) $result->timeMillis : 0;
+        $this->counts = isset($result->counts) ? (array) $result->counts : [];
         $this->timing = isset($result->timing) ? (array) $result->timing : [];
     }
 
@@ -86,6 +88,7 @@ class MapReduceResult implements IteratorAggregate
      * @see http://php.net/iteratoraggregate.getiterator
      * @return Traversable
      */
+    #[ReturnTypeWillChange]
     public function getIterator()
     {
         return call_user_func($this->getIterator);
