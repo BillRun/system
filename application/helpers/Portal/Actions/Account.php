@@ -286,12 +286,16 @@ class Portal_Actions_Account extends Portal_Actions {
             );
             switch ($type){
                 case 'successful charges':
+                case 'SUCCESSFUL_CHARGES':
                     return array_merge($nonRejectedOrCanceled, $notPandingBiils, array('type' =>  'rec'));
                 case 'all charges':
+                case 'ALL_CHARGES':
                     return array('type' => 'rec');                 
                 case 'successfull charges and invoices':
+                case 'SUCCESSFUL_CHARGES_AND_INVOICES':
                     return array_merge($nonRejectedOrCanceled, $notPandingBiils);
                 case 'all charges and invoices':
+                case 'ALL_CHARGES_AND_INVOICES':
                     return array();
                 default :
                     throw new Portal_Exception('unsupport_parameter_value', '', 'Unsupport parameter value: "type" : ' . $type);
