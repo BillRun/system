@@ -115,13 +115,16 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     $this->logFile->updateLogFileField('warnings', $message);
                 }
             }
+				if (isset($dataField['value_mult'])) {
+					$dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
+				}
             if (isset($dataField['number_format'])) {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
             }
 			if (isset($dataField['substring'])) {
 				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
 			}
-			$attributes = $this->getLineAttributes($dataField);
+            $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
