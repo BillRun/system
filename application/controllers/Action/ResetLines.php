@@ -40,10 +40,6 @@ class ResetLinesAction extends ApiAction {
 		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
 		}
-//		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {
-//			$message = "Billrun "  . $billrun_key . (!is_null($invoicing_day) ? " with invoicing day {$invoicing_day}, " : " ") . "already closed";
-//			return $this->setError($message, $request);
-//		}
 		
 		// Warning: will convert half numeric strings / floats to integers
 		$aids = $this->getRequestAids($request);
