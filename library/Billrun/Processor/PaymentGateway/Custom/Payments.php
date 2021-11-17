@@ -28,28 +28,34 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
-		
-		$this->identifierField = $processorDefinition['processor']['identifier_field'];
-		$this->amountField = isset($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : null;
+		parent::initProcessorFields(['identifier_field' => 'identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
 		return true;
 	}
 
 	protected function updatePayments($row, $payment = null) {
-		$bill = $this->findBillByUniqueIdentifier($row[$this->identifierField]);
+		if (!empty($this->identifierField)) {
+			//TODO : support multiple header/footer lines
+			$file_identifier_value = in_array($this->identifierField['source'], ['header', 'trailer']) ?  $this->{$this->identifierField['source'].'Rows'}[0][$this->identifierField['field']] : $row[$this->identifierField]['field'];
+		}
+		$bill = $this->findBillByUniqueIdentifier($file_identifier_value);
 		if (count($bill) == 0) {
-			$message = "Didn't find bill with " . intval($row[$this->identifierField]) . " value in " . $this->identifierField . " field";
+			$message = "Didn't find bill with " . intval($file_identifier_value) . " value in " . $this->identifierField['field'] . " field";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
 		if (count($bill) > 1) {
-			$message = $this->identifierField . " field isn't unique";
+			$message = $this->identifierField['field'] . " field isn't unique";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
 		$billData = $bill->current()->getRawData();
-		$billAmount = !empty($this->amountField) ? $row[$this->amountField] : $billData['amount'];
+		if (!empty($this->amountField)) {
+			//TODO : support multiple header/footer lines
+			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField]['field'];
+		}
+		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
@@ -75,7 +81,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		}
         $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
-        $message = "Payment was created successfully for " . $this->identifierField . ' ' . intval($row[$this->identifierField]);
+        $message = "Payment was created successfully for " . $this->identifierField['field'] . ' ' . intval($file_identifier_value);
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->informationArray['info'][] = $message;
 	}

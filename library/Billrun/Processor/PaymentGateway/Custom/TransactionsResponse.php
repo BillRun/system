@@ -66,13 +66,12 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['amount_field']) ||
 			empty($processorDefinition['processor']['transaction_identifier_field'])) {
-                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
+			$message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
-                        $this->informationArray['errors'][] = $message;
+			$this->informationArray['errors'][] = $message;
 			return false;
 		}
-		$this->amountField = $processorDefinition['processor']['amount_field'];
-		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
 		return true;
 	}
 
