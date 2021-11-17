@@ -124,7 +124,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($dataField['substring'])) {
 				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
 			}
-            $attributes = $this->getLineAttributes($dataField);
+				if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
+					$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
+				}
+			$attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
@@ -300,25 +303,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
                 return date($dateFormat, $dateValue);
             case 'autoinc':
-                if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
-                    $message = "Missing filename params definitions for file type " . $this->configByType['file_type'];
-                    Billrun_Factory::log($message, Zend_Log::ERR);
-                    $this->logFile->updateLogFileField('errors', $message);
-                    return;
-                }
-                $minValue = $paramObj['min_value'];
-                $maxValue = $paramObj['max_value'];
-                $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
-                $date = date($dateGroup, $dateValue);
-                $action = 'transactions_request';
-                $fakeCollectionName = '$pgf' . $this->gatewayName . '_' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
-                $seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
-                if ($seq > $maxValue) {
-                    $message = "Sequence exceeded max value when generating file for file type " . $this->configByType['file_type'];
-                    $this->logFile->updateLogFileField('errors', $message);
-                    throw new Exception($message);
-                }
+				$seq = $this->getAutoincValue($paramObj, 'transactions_request');
                 if (isset($paramObj['padding'])) {
                     $this->padSequence($seq, $paramObj);
                 }
@@ -453,6 +438,28 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			throw new Exception($message);
 		}
 		return substr($field_data, $field_config['substring']['offset'], $field_config['substring']['length']);
+	}
+
+	protected function getAutoincValue($params, $action = 'transactions_request') {
+		if (!isset($params['min_value']) || !isset($params['max_value'])) {
+			$message = "Missing min/max values in " . $params['name'] . " params definitions for file type " . $this->configByType['file_type'];
+			Billrun_Factory::log($message, Zend_Log::ERR);
+			$this->logFile->updateLogFileField('errors', $message);
+			return false;
+		}
+		$minValue = $params['min_value'];
+		$maxValue = $params['max_value'];
+		$dateGroup = isset($params['date_group']) ? $params['date_group'] : Billrun_Base::base_datetimeformat;
+		$dateValue = ($params['value'] == 'now') ? time() : strtotime($params['value']);
+		$date = date($dateGroup, $dateValue);
+		$fakeCollectionName = '$pgf' . $this->gatewayName . '_' . $action . '_' . $this->configByType['file_type'] . '_' . $date;
+		$seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+		if ($seq > $maxValue) {
+			$message = "Sequence exceeded max value when generating file for file type " . $this->configByType['file_type'];
+			$this->logFile->updateLogFileField('errors', $message);
+			return false;
+		}
+		return $seq;
 	}
 
 }
