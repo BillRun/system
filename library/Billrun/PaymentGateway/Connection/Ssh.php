@@ -116,12 +116,12 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 						}
 					}
 				}
+				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file));
 				// Check limit
 				$this->limit = 1;	
 				if ($count >= $this->limit) {
 					break;
 				}
-				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file));
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("SSH: Fail when downloading. with exception : " . $e, Zend_Log::DEBUG);

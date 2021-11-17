@@ -143,6 +143,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 					$file->delete();
 				}
 			}
+			Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file->name));
 			if ($count >= $this->limit) {
 				break;
 			}
