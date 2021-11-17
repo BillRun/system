@@ -374,20 +374,18 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     Billrun_Factory::log($message, Zend_Log::ERR);
                 }
             }
+			if (isset($field['number_format'])) {
+                $line[$field['path']] = $this->setNumberFormat($field, $line);
+            }
 			if (isset($field['substring'])) {
 				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
 			}
-            if (!isset($line[$field['path']])) {
+			$attributes = $this->getLineAttributes($field);
+			if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
                 $this->logFile->updateLogFileField('errors', $message);
                 throw new Exception($message);
-            }
-            
-            $attributes = $this->getLineAttributes($field);
-            
-            if (isset($field['number_format'])) {
-                $line[$field['path']] = $this->setNumberFormat($field, $line);
             }
             $line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
         }
