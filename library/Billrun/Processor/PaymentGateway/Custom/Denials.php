@@ -75,7 +75,7 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		}
 		$row['amount'] = !is_null($amount_from_file) ? $amount_from_file : $payment->getAmount();
 		if(!is_null($this->dateField)){
-			$this->addDenialUrt($row);
+			$row['urt'] = $this->getPaymentUrt($row);
 		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
 		if (!empty($denial)) {
@@ -108,15 +108,5 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	public function getType () {
 		return static::$type;
 	}
-	
-	protected function addDenialUrt(&$row) {
-		$date = in_array($this->dateField['source'], ['header', 'trailer']) ?  $this->{$this->dateField['source'].'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
-		if(!is_null($date)){
-			$row['urt'] = $date;
-		} else {
-			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
-			$this->informationArray['warnings'][] = $message;
-			Billrun_Factory::log()->log($message, Zend_Log::WARN);
-		}
-	}
+
 }

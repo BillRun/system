@@ -100,7 +100,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	 * 
 	 */
 	protected function updatePaymentAccordingTheResponse($response, $payment, $row) {
-		$urt = $this->getPaymentUrt($row);
+		$urt = strtotime($this->getPaymentUrt($row));
 		if ($response['stage'] == "Completed") { // payment succeeded 
                         if ($payment->isPendingPayment()){
 				$payment->setUrt($urt);
@@ -151,18 +151,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	public function getType () {
 		return static::$type;
-	}
-	
-	public function getPaymentUrt($row){
-		$date = in_array($this->dateField['source'], ['header', 'trailer']) ?  $this->{$this->dateField['source'].'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
-		if(!is_null($date)){
-			return strtotime($date);
-		} else {
-			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
-			$this->informationArray['warnings'][] = $message;
-			Billrun_Factory::log()->log($message, Zend_Log::WARN);
-			return time();
-		}
 	}
 
 }
