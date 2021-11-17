@@ -291,7 +291,7 @@ class Portal_Actions_Account extends Portal_Actions {
                 case 'all charges':
                 case 'ALL_CHARGES':
                     return array('type' => 'rec');                 
-                case 'successfull charges and invoices':
+                case 'successful charges and invoices':
                 case 'SUCCESSFUL_CHARGES_AND_INVOICES':
                     return array_merge($nonRejectedOrCanceled, $notPandingBiils);
                 case 'all charges and invoices':
