@@ -72,16 +72,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                         $this->informationArray['errors'][] = $message;
 			return false;
 		}
-		$this->amountField = $processorDefinition['processor']['amount_field'];
-		$this->tranIdentifierField = $processorDefinition['processor']['transaction_identifier_field'];
-		if (isset($processorDefinition['processor']['date_field'])) {
-			$this->dateField = is_array($processorDefinition['processor']['date_field']) ? $processorDefinition['processor']['date_field'] : array(
-				'source' => 'data',
-				'field' => $processorDefinition['processor']['date_field']
-			);
-		} else {
-			$this->dateField = null;
-		}
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
 
@@ -111,16 +102,16 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function updatePaymentAccordingTheResponse($response, $payment, $row) {
 		$urt = $this->getPaymentUrt($row);
 		if ($response['stage'] == "Completed") { // payment succeeded 
-			if ($payment->isPendingPayment()) {
+                        if ($payment->isPendingPayment()){
 				$payment->setUrt($urt);
-				$payment->setPending(false);
-				$payment->updateConfirmation();
-				$payment->setPaymentStatus($response, $this->gatewayName);
-				$this->informationArray['total_confirmed_amount'] += $payment->getAmount();
-				Billrun_Factory::log('Confirming transaction ' . $payment->getId(), Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
-			}
+                            $payment->setPending(false);
+                            $payment->updateConfirmation();
+                            $payment->setPaymentStatus($response, $this->gatewayName);
+                            $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
+                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
+                        }else{
+                            Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
+                        }
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				$payment->setPending(false);

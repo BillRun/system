@@ -118,7 +118,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['number_format'])) {
                 $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
             }
-            $attributes = $this->getLineAttributes($dataField);
+			if (isset($dataField['substring'])) {
+				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
+			}
+			$attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
@@ -192,6 +195,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         $options['file_type'] = $this->configByType['file_type'];
         $options['local_dir'] = $this->localDir;
+		$options['row_separator'] = Billrun_Util::getIn($this->configByType['generator'], 'row_separator', 'line_break');
         return $options;
     }
 
@@ -367,17 +371,18 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     Billrun_Factory::log($message, Zend_Log::ERR);
                 }
             }
-            if (!isset($line[$field['path']])) {
+			if (isset($field['number_format'])) {
+                $line[$field['path']] = $this->setNumberFormat($field, $line);
+            }
+			if (isset($field['substring'])) {
+				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
+			}
+			$attributes = $this->getLineAttributes($field);
+			if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
                 $this->logFile->updateLogFileField('errors', $message);
                 throw new Exception($message);
-            }
-            
-            $attributes = $this->getLineAttributes($field);
-            
-            if (isset($field['number_format'])) {
-                $line[$field['path']] = $this->setNumberFormat($field, $line);
             }
             $line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
         }
@@ -437,4 +442,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
         }
     }
+	
+	protected function getSubstring($field_config, $field_data) {
+		if (!isset($field_config['substring']['offset']) || !isset($field_config['substring']['length'])) {
+			$message = "Field name " . $field_config['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
+			$this->logFile->updateLogFileField('errors', $message);
+			throw new Exception($message);
+		}
+		return substr($field_data, $field_config['substring']['offset'], $field_config['substring']['length']);
+	}
+
 }
