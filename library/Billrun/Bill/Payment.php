@@ -128,7 +128,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				$this->data['bills_merged'] = $options['bills_merged'];
 			}
 
-			$this->data['urt'] = new MongoDate();
+			$this->data['urt'] = isset($options['urt']) ? new MongoDate(strtotime($options['urt'])) : new MongoDate();
 			foreach ($this->optionalFields as $optionalField) {
 				if (isset($options[$optionalField])) {
 					$this->data[$optionalField] = $options[$optionalField];

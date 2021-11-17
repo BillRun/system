@@ -117,6 +117,15 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$value = intval($row[$paramObj['name']]);
 				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
 			}
+			if (isset($paramObj['type']) && $paramObj['type'] == "date") {
+				if (!isset($paramObj['format'])) {
+					$message = $paramObj['name'] . ' field was defined as date field, but without date format. Default BillRun format was taken';
+					Billrun_Factory::log($message, Zend_Log::WARN);
+					$this->informationArray['warnings'][] = $message;
+					$paramObj['format'] = Billrun_Base::base_datetimeformat;
+				}
+				$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+			}
 			if (isset($paramObj['substring'])) {
 				if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
 					$message = "Field name " . $paramObj['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
@@ -271,14 +280,14 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		foreach ($data['data'] as $row) {
                     if(isset($this->tranIdentifierField)){
 				//TODO : support multiple header/footer lines
-				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 				if (($txid_from_file === "") && (static::$type != 'payments')) {
                             $no_txid_counter++;
                             continue;
                         }
                     }
 			//TODO : support multiple header/footer lines
-			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $txid_from_file . ' in file ' . $this->filePath, Zend_Log::ALERT);
@@ -361,10 +370,23 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $savedFields;
 	}
 	
-	public function getCustomPaymentGatewayFields () {
+	public function getCustomPaymentGatewayFields() {
 		return [
-				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-				'cpg_type' => [!empty($type = $this->getType()) ? $type : ""], 
-				'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""] ];
-        }
+			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+			'cpg_type' => [!empty($type = $this->getType()) ? $type : ""],
+			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""]];
+	}
+
+	public function getPaymentUrt($row) {
+		$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
+		if (!is_null($date)) {
+			return $date;
+		} else {
+			$message = "Couldn't find date field: " . $this->dateField['field'] . " in the relevant " . $this->dateField['source'] . " row. Current time was taken..";
+			$this->informationArray['warnings'][] = $message;
+			Billrun_Factory::log()->log($message, Zend_Log::WARN);
+			return date(Billrun_Base::base_datetimeformat, time());
+		}
+	}
+
 }

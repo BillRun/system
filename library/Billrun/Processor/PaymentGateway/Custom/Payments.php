@@ -18,6 +18,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected $amountField;
 	protected $method = 'cash';
 	protected $dbNumericValuesFields = array('invoice_id');
+	protected $date_field;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -28,7 +29,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
-		parent::initProcessorFields(['identifier_field' => 'identifier_field' , 'amount_field' => 'amount_field'], $processorDefinition);
+		parent::initProcessorFields(['identifier_field' => 'identifier_field' , 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
 
@@ -65,6 +66,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
+		if (!is_null($this->dateField)) {
+			$paymentParams['urt'] = $this->getPaymentUrt($row);
+		}
 		try {
 			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
@@ -96,4 +100,5 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	public function getType () {
 		return static::$type;
 	}
+
 }
