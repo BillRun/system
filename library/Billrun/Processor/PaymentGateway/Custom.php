@@ -378,12 +378,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 
 	public function getPaymentUrt($row) {
-		$date = null;
-		if (!empty($this->dateField)) {
-			$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
-		} else {
-			$message = "No date field was configured. Current time was taken..";
-		}
+		$date = in_array($this->dateField['source'], ['header', 'trailer']) ? $this->{$this->dateField['source'] . 'Rows'}[$this->dateField['field']] : $row[$this->dateField['field']];
 		if (!empty($date)) {
 			return $date;
 		} else {

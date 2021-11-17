@@ -100,7 +100,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	 * 
 	 */
 	protected function updatePaymentAccordingTheResponse($response, $payment, $row) {
-		$urt = strtotime($this->getPaymentUrt($row));
+		$urt = !is_null($this->dateField) ? strtotime($this->getPaymentUrt($row)) : time();
 		if ($response['stage'] == "Completed") { // payment succeeded 
                         if ($payment->isPendingPayment()){
 				$payment->setUrt($urt);
