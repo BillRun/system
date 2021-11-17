@@ -110,6 +110,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function formatLine($row, $dataStructure) {
 		foreach ($dataStructure as $index => $paramObj) {
+				if (isset($paramObj['value_mult'])) {
+					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+				}
 			if (isset($paramObj['decimals'])) {
 				$value = intval($row[$paramObj['name']]);
 				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
@@ -272,17 +275,17 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	}
 	
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-		$no_txid_counter = 0;
+                $no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
-			if (isset($this->tranIdentifierField)) {
+                    if(isset($this->tranIdentifierField)){
 				//TODO : support multiple header/footer lines
 				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 				if (($txid_from_file === "") && (static::$type != 'payments')) {
-					$no_txid_counter++;
-					continue;
-				}
-			}
+                            $no_txid_counter++;
+                            continue;
+                        }
+                    }
 			//TODO : support multiple header/footer lines
 			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
@@ -293,11 +296,11 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-		if ($no_txid_counter > 0) {
+                if($no_txid_counter > 0){
 			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-		}
+                }
 	}
-
+	
 	protected function updateLogCollection($fileCorrelation) {
 		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
 		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
