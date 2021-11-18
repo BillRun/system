@@ -1266,16 +1266,8 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
-	 * Function that sets urt date, in every payment's bill.
-	 * @param int $date - unix timestamp to set as the urt date.
-	 */
-	public function setUrt($date = null) {
-		$this->data['urt'] = new MongoDate(!empty($date)? $date : time());
-	}
-	
-	/**
 	 * Function that sets payment urt
-	 * @param int $date - unix timestamp to set as the urt.
+	 * @param int $date - unix timestamp
 	 */
 	public function setUrt($date = null) {
 		$this->data['urt'] = new MongoDate(!empty($date) ? $date : time());
