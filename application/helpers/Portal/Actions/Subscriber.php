@@ -152,25 +152,25 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             $balances = $this->getBalances();
             if(isset($service['include']['groups'])){
                 foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
-                        foreach ($balances as $balance){
-                            if(isset($balance['balance']['groups'][$serviceGroupName])){
-                                $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
-                                $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
-                                break;
-                            }
+                    foreach ($balances as $balance){
+                        if(isset($balance['balance']['groups'][$serviceGroupName])){
+                            $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
+                            $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
+                            break;
                         }
-                        if(!isset($serviceGroup['usage']['used'])){
-                            $serviceGroup['usage']['used'] = 0;
+                    }
+                    if(!isset($serviceGroup['usage']['used'])){
+                        $serviceGroup['usage']['used'] = 0;
+                    }
+                    if(!isset($serviceGroup['usage']['total'])){
+                        if(isset($serviceGroup['value'])){
+                            $serviceGroup['usage']['total'] = $serviceGroup['value'];
+                        }else{
+                            //TODO:: support Monetary based (cost)
+                            unset($serviceGroup['usage']['used']);
+                            $serviceGroup['usage']['display'] = false;
                         }
-                        if(!isset($serviceGroup['usage']['total'])){
-                            if(isset($serviceGroup['value'])){
-                                $serviceGroup['usage']['total'] = $serviceGroup['value'];
-                            }else{
-                                //TODO:: support Monetary based (cost)
-                                unset($serviceGroup['usage']['used']);
-                                $serviceGroup['usage']['display'] = false;
-                            }
-                        }
+                    }
                 }
             }
         }
