@@ -211,5 +211,6 @@
 	},
 	"plays": [
 		{ "name": "Default", "enabled": true, "default": true }
-	]
+	],
+        "payments" :{}
 }
