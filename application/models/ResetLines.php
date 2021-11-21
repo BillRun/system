@@ -103,7 +103,7 @@ class ResetLinesModel {
             //add support to multi day cycle
             $aidsByInvoiceDay = [];
             foreach ($update_aids as $aid){
-                $invoicing_day = null;
+                $invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
                 if (Billrun_Factory::config()->isMultiDayCycle()) {
                         $account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
                         $invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
