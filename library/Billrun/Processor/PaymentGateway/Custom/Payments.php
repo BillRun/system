@@ -18,6 +18,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected $amountField;
 	protected $method = 'cash';
 	protected $dbNumericValuesFields = array('invoice_id');
+	protected $date_field;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -36,7 +37,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			'field' => 'invoice_id',
 			'file_field' => $identifier
 		];
-		$this->amountField = isset($processorDefinition['processor']['amount_field']) ? $processorDefinition['processor']['amount_field'] : null;
+		parent::initProcessorFields(['amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
 
@@ -56,7 +57,11 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			return;
 		}
 		$billData = $bill->current()->getRawData();
-		$billAmount = !empty($this->amountField) ? $row[$this->amountField] : $billData['amount'];
+		if (!empty($this->amountField)) {
+			//TODO : support multiple header/footer lines
+			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField]['field'];
+		}
+		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
@@ -65,6 +70,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$amount = $billAmount;
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
+		}
+		if (!is_null($this->dateField)) {
+			$paymentParams['urt'] = $this->getPaymentUrt($row);
 		}
 		try {
 			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
@@ -93,7 +101,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 				$returned_payment->setExtraFields($customFields, array_keys($customFields));
 			}
 		}
-		$this->informationArray['transactions']['confirmed']++;
+        $this->informationArray['transactions']['confirmed']++;
         $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
         $message = "Payment was created successfully for " . $this->identifierField['field'] . ': ' . $identifier_val;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
@@ -118,4 +126,5 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	public function getType () {
 		return static::$type;
 	}
+
 }
