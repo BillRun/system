@@ -149,9 +149,9 @@ class Portal_Actions_Subscriber extends Portal_Actions {
          * @param type $service
          */
         protected function addServiceGroupsUsages(&$service) {
-                $balances = $this->getBalances();
-                if(isset($service['include']['groups'])){
-                    foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup)
+            $balances = $this->getBalances();
+            if(isset($service['include']['groups'])){
+                foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
                         foreach ($balances as $balance){
                             if(isset($balance['balance']['groups'][$serviceGroupName])){
                                 $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
@@ -171,7 +171,8 @@ class Portal_Actions_Subscriber extends Portal_Actions {
                                 $serviceGroup['usage']['display'] = false;
                             }
                         }
-                }         
+                }
+            }
         }
 	
         /**
