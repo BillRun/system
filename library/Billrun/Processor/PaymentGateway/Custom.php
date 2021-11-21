@@ -61,7 +61,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
 			return false;
 		}
-		$this->linkToInvoice = isset($currentProcessor['processor']['link_to_invoice']) ? $currentProcessor['processor']['link_to_invoice'] : $this->linkToInvoice;
+		$this->linkToInvoice = $this->getLinkToInvoiceValue($currentProcessor['processor']);
 		$headerStructure = isset($currentProcessor['parser']['header_structure']) ? $currentProcessor['parser']['header_structure'] : array();
 		$dataStructure = isset($currentProcessor['parser']['data_structure']) ? $currentProcessor['parser']['data_structure'] : array();
 		$parser = $this->getParser();
@@ -273,21 +273,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$logData = $fileLog->getRawData();
 		return $logData['stamp'];
 	}
-	
+
 	protected function updatePaymentsByRows($data, $currentProcessor) {
-                $no_txid_counter = 0;
+		$no_txid_counter = 0;
 		$billSavedFieldsNames = $this->getBillSavedFieldsNames($currentProcessor['parser']);
 		foreach ($data['data'] as $row) {
-                    if(isset($this->tranIdentifierField)){
+			$txid_from_file = "";
+			if (isset($this->tranIdentifierField)) {
 				//TODO : support multiple header/footer lines
 				$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 				if (($txid_from_file === "") && (static::$type != 'payments')) {
-                            $no_txid_counter++;
-                            continue;
-                        }
-                    }
-			//TODO : support multiple header/footer lines
-			$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+					$no_txid_counter++;
+					continue;
+				}
+			}
 			$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			if (is_null($bill) && static::$type != 'payments') {
 				Billrun_Factory::log('Unknown transaction ' . $txid_from_file . ' in file ' . $this->filePath, Zend_Log::ALERT);
@@ -296,11 +295,11 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
-                if($no_txid_counter > 0){
+		if ($no_txid_counter > 0) {
 			Billrun_Factory::log()->log('In ' . $no_txid_counter . ' lines, ' . $txid_from_file . ' field is empty. No update was made for these lines.', Zend_Log::ALERT);
-                }
+		}
 	}
-	
+
 	protected function updateLogCollection($fileCorrelation) {
 		$source = isset($fileCorrelation['source']) ? $fileCorrelation['source'] : null;
 		$correlationField = isset($fileCorrelation['field']) ? $fileCorrelation['field'] : null;
@@ -386,6 +385,12 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->informationArray['warnings'][] = $message;
 			Billrun_Factory::log()->log($message, Zend_Log::WARN);
 			return date(Billrun_Base::base_datetimeformat, time());
+		}
+	}
+	
+	public function getLinkToInvoiceValue($processor) {
+		if(isset($processor['identifier_field']) && is_array($processor['identifier_field'])){
+			$this->linkToInvoice = (($processor['identifier_field']['field'] === 'invoice_id') && (isset($processor['identifier_field']['link_to_invoice']))) ? $processor['identifier_field']['link_to_invoice'] : $this->linkToInvoice;
 		}
 	}
 
