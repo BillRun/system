@@ -110,23 +110,20 @@ class ResetLinesModel {
                 }
                 $aidsByInvoiceDay[$invoicing_day][] = $aid;
             }
-            foreach ($aidsByInvoiceDay as $invoiceDay => $aids){
+            foreach ($aidsByInvoiceDay as $invoiceDay => $aids){      
                 if($this->billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {// billrun already closed
-                        $query['$or'][] = 
-                                    array(
-                                            'aid' => array('$in' => $aids),
-                                            'billrun' => array(
-                                                    '$exists' => FALSE,
-                                            ),
-                                            'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-                                                    '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
-                                                    '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
-                                            )
-                                    );
+                        $cond = array(                                          
+                                        'billrun' => array(
+                                                '$exists' => FALSE,
+                                        ),
+                                        'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+                                                '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+                                                '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
+                                        )
+                                );
                                    
                 } else {
-                        $query['$or'][] =  array(
-                            'aid' => array('$in' => $aids),
+                        $cond =  array(                            
                             '$or' => array(
                                 array(
                                         'billrun' => $this->billrun_key
@@ -143,6 +140,10 @@ class ResetLinesModel {
                             )
                         );
                 }
+                $query['$or'][] = array_merge(
+                                    array(
+                                        'aid' => array('$in' => $aids),
+                                    ), $cond);
             }
             return $query;
 	}
