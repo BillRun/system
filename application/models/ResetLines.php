@@ -120,8 +120,7 @@ class ResetLinesModel {
                                                 '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
                                                 '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
                                         )
-                                );
-                                   
+                                );                
                 } else {
                         $cond =  array(                            
                             '$or' => array(
