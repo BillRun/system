@@ -193,15 +193,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			$line = $this->getDataLine($params);
-			$this->data[] = $line;
+			if (!empty($line)) {
+				$this->data[] = $line;
+			}
 		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->logFile->updateLogFileField('info', $message);
-		$this->headers[0] = $this->getHeaderLine();
-		$this->trailers[0] = $this->getTrailerLine();
+		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
+		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
 	}
 
 	/**
