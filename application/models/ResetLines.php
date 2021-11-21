@@ -116,7 +116,7 @@ class ResetLinesModel {
                                         'billrun' => array(
                                                 '$exists' => FALSE,
                                         ),
-                                        'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+                                        'urt' => array(
                                                 '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
                                                 '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
                                         )
@@ -131,7 +131,7 @@ class ResetLinesModel {
                                         'billrun' => array(
                                                 '$exists' => FALSE,
                                         ),
-                                        'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+                                        'urt' => array(
                                                 '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
                                                 '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
                                         )
