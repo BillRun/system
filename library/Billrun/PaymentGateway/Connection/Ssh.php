@@ -221,7 +221,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate()
+			'received_time' => new Mongodloid_Date()
 		);
 
 		$update = array(

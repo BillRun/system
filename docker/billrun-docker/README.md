@@ -17,19 +17,19 @@ This Readme describe how to use docker and docker-compose  in order to start Bil
 1. Build the image
 
     ```bash
-    docker-compose  -f docker-compose-php73.yml  build
+    docker-compose -f docker-compose-php74.yml build
     ```
 
 1. Start the docker-compose stack
 
     ```bash
-    docker-compose  -f docker-compose-php73.yml  up
+    docker-compose -f docker-compose-php74.yml up
     ```
 
 ## Stop the docker compose stack
 
-1. Stop the stack and delete docker created volumes
+Stop the stack and delete docker created volumes
 
     ```bash
-    docker-compose  -f docker-compose-php73.yml  down -v
+    docker-compose -f docker-compose-php74.yml down -v
     ```

@@ -42,7 +42,7 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 			$this->data['amount'] = floatval($options['amount']);
 			$this->data['due'] = floatval($options['due']);
 			$this->data['due_before_vat'] = floatval($options['due_before_vat']);
-			$this->data['urt'] = new MongoDate();
+			$this->data['urt'] = new Mongodloid_Date();
 			$this->data['invoice_id'] = intval($options['invoice_id']);
 
 			foreach ($this->optionalFields as $optionalField) {

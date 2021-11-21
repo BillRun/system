@@ -112,7 +112,7 @@ final class Context
         $autoEncryptionOptions = [];
 
         if (isset($clientOptions['autoEncryptOpts'])) {
-            $autoEncryptionOptions = (array) $clientOptions['autoEncryptOpts'] + ['keyVaultNamespace' => 'keyvault.datakeys'];
+            $autoEncryptionOptions = (array) $clientOptions['autoEncryptOpts'] + ['keyVaultNamespace' => 'admin.datakeys'];
             unset($clientOptions['autoEncryptOpts']);
 
             if (isset($autoEncryptionOptions['kmsProviders']->aws)) {
@@ -166,21 +166,6 @@ final class Context
         return $o;
     }
 
-    public static function fromReadWriteConcern(stdClass $test, $databaseName, $collectionName)
-    {
-        $o = new self($databaseName, $collectionName);
-
-        if (isset($test->outcome->collection->name)) {
-            $o->outcomeCollectionName = $test->outcome->collection->name;
-        }
-
-        $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
-
-        $o->client = new Client(FunctionalTestCase::getUri(), $clientOptions);
-
-        return $o;
-    }
-
     public static function fromRetryableReads(stdClass $test, $databaseName, $collectionName, $bucketName)
     {
         $o = new self($databaseName, $collectionName);
@@ -199,6 +184,9 @@ final class Context
         $o = new self($databaseName, $collectionName);
 
         $clientOptions = isset($test->clientOptions) ? (array) $test->clientOptions : [];
+
+        // TODO: Remove this once retryWrites=true by default (see: PHPC-1324)
+        $clientOptions['retryWrites'] = true;
 
         if (isset($test->outcome->collection->name)) {
             $o->outcomeCollectionName = $test->outcome->collection->name;
@@ -268,13 +256,12 @@ final class Context
         return $this->useEncryptedClient && $this->encryptedClient ? $this->encryptedClient : $this->client;
     }
 
-    public function getCollection(array $collectionOptions = [], array $databaseOptions = [])
+    public function getCollection(array $collectionOptions = [])
     {
         return $this->selectCollection(
             $this->databaseName,
             $this->collectionName,
-            $collectionOptions,
-            $databaseOptions
+            $this->prepareOptions($collectionOptions)
         );
     }
 
@@ -328,17 +315,13 @@ final class Context
                 throw new LogicException('Unsupported writeConcern args: ' . implode(',', array_keys($diff)));
             }
 
-            if (! empty($writeConcern)) {
-                $w = $writeConcern['w'];
-                $wtimeout = $writeConcern['wtimeout'] ?? 0;
-                $j = $writeConcern['j'] ?? null;
+            $w = $writeConcern['w'];
+            $wtimeout = isset($writeConcern['wtimeout']) ? $writeConcern['wtimeout'] : 0;
+            $j = isset($writeConcern['j']) ? $writeConcern['j'] : null;
 
-                $options['writeConcern'] = isset($j)
-                    ? new WriteConcern($w, $wtimeout, $j)
-                    : new WriteConcern($w, $wtimeout);
-            } else {
-                unset($options['writeConcern']);
-            }
+            $options['writeConcern'] = isset($j)
+                ? new WriteConcern($w, $wtimeout, $j)
+                : new WriteConcern($w, $wtimeout);
         }
 
         return $options;
@@ -400,11 +383,13 @@ final class Context
         }
     }
 
-    public function selectCollection($databaseName, $collectionName, array $collectionOptions = [], array $databaseOptions = [])
+    public function selectCollection($databaseName, $collectionName, array $collectionOptions = [])
     {
-        return $this
-            ->selectDatabase($databaseName, $databaseOptions)
-            ->selectCollection($collectionName, $this->prepareOptions($collectionOptions));
+        return $this->getClient()->selectCollection(
+            $databaseName,
+            $collectionName,
+            $this->prepareOptions($collectionOptions)
+        );
     }
 
     public function selectDatabase($databaseName, array $databaseOptions = [])

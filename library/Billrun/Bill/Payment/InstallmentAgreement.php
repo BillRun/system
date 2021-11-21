@@ -52,13 +52,13 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$this->attachDueDateToCycleEnd = !empty($options['cycle_attached_date']) ? $options['cycle_attached_date'] : $this->attachDueDateToCycleEnd;
 			$firstDueDate = strtotime($options['first_due_date']);
 			if ($firstDueDate) {
-				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new MongoDate($firstDueDate);
+				$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new Mongodloid_Date($firstDueDate);
 			} else {
 				if (!empty($options['first_due_date'])) {
 					$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = $options['first_due_date'];
 				} else {
 					$this->attachDueDateToCycleEnd = true;
-					$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new MongoDate(Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp()) - 1);
+					$this->firstDueDate = $this->data['payment_agreement.first_due_date'] = new Mongodloid_Date(Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp()) - 1);
 				}
 			}
 		} else if (!empty($options['installments_agreement']) && !empty($options['amount'])) {
@@ -146,7 +146,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			if (!empty($installmentPayment['note'])) {
 				$installment['note'] = $installmentPayment['note'];
 			}
-			$installment['due_date'] = new MongoDate(strtotime($installmentPayment['due_date']));
+			$installment['due_date'] = new Mongodloid_Date(strtotime($installmentPayment['due_date']));
 			$installment['uf'] = $installmentPayment['uf'];
 			$installment['forced_uf'] = !empty($this->forced_uf) ? $this->forced_uf : [];
 			$installmentObj = new self($installment);
@@ -175,7 +175,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$dueDates[$key] = $row['due_date'];
 		}
 		array_multisort($dueDates, SORT_ASC, $this->installments);
-		$this->firstDueDate = new MongoDate(strtotime($this->installments[0]['due_date']));
+		$this->firstDueDate = new Mongodloid_Date(strtotime($this->installments[0]['due_date']));
 	}
 	
 	protected function generateAgreementId() {

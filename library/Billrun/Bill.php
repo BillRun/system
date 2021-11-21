@@ -235,7 +235,7 @@ abstract class Billrun_Bill {
 	public static function getTotalDueForAccount($aid, $date = null, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		if (!empty($date)) {
-			$relative_date = new MongoDate(strtotime($date));
+			$relative_date = new Mongodloid_Date(strtotime($date));
 			$query['$or'] = array(
 				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
 				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
@@ -929,7 +929,7 @@ abstract class Billrun_Bill {
 		}
 		$match['$match']['$or'] = array(
 				array('charge.not_before' => array('$exists' => false)),
-				array('charge.not_before' => array('$lt' => new MongoDate())),
+				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
 		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
@@ -1071,9 +1071,9 @@ abstract class Billrun_Bill {
 		$query['method'] = 'installment_agreement';
 		$query['type'] = $type;
 		$query['aid'] = $aid;
-		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
-		$query['due_date'] = array('$gte' => new MongoDate($startBillrun->start()), '$lt' => new MongoDate($endBillrun->start()));
+		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+		$query['due_date'] = array('$gte' => new Mongodloid_Date($startBillrun->start()), '$lt' => new Mongodloid_Date($endBillrun->start()));
 		return self::getBills($query);
 	}
 	
@@ -1125,7 +1125,7 @@ abstract class Billrun_Bill {
 				'valid_gateway' => array('$cond' => array(array('$in' => array('$aid', $validGatewaysAids)), true, false)),
 				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
 				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
-				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new MongoDate())))), true, false)),
+				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new Mongodloid_Date())))), true, false)),
 				'aid' => 1,
 				'left_to_pay' => 1,
 				'left' => 1
@@ -1232,8 +1232,8 @@ abstract class Billrun_Bill {
 		$startUrt = new Billrun_DataTypes_CycleTime($urtStartBillrunKey);
 		$endUrt = new Billrun_DataTypes_CycleTime($urtEndBillrunKey);
 		$query['aid'] = $aid;
-		$query['urt'] = array('$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-                              '$lte' => new MongoDate(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['method'] = array('$ne' => 'installment_agreement');
 		$query['type'] = 'rec';
 		if (!empty($method)) {
@@ -1270,7 +1270,7 @@ abstract class Billrun_Bill {
 	 * @param int $date - unix timestamp
 	 */
 	public function setUrt($date = null) {
-		$this->data['urt'] = new MongoDate(!empty($date) ? $date : time());
+		$this->data['urt'] = new Mongodloid_Date(!empty($date)? $date : time());
 	}
 
 	/**

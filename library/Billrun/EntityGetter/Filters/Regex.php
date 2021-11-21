@@ -17,7 +17,7 @@ class Billrun_EntityGetter_Filters_Regex extends Billrun_EntityGetter_Filters_Ba
 	protected function updateMatchQuery(&$match, $row) {
 		$match = array_merge($match, 
 			array(
-				$this->params['entity_key'] => array('$regex' => new MongoRegex('/' . $this->getRowFieldValue($row, $this->params['line_key']) . '/i'))
+				$this->params['entity_key'] => array('$regex' => new Mongodloid_Regex('/' . $this->getRowFieldValue($row, $this->params['line_key']) . '/i'))
 			)
 		);
 	}
