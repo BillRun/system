@@ -107,13 +107,19 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected function writeHeaders() {
 		$fileContents = '';
 		$counter = 0;
-		foreach ($this->headers as $entity) {
+		foreach ($this->headers as $index => $entity) {
 			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
 			$fileContents .= $this->getRowContent($entity);
-			$fileContents .= $this->row_separator;
+			if (($index !== count($this->headers) - 1)) {
+				$fileContents .= $this->row_separator;
+			} else {
+				if (count($this->data) !== 0 || count($this->trailers) !== 0) {
+					$fileContents .= $this->row_separator;
+				}
+			}
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
 				$fileContents = '';
