@@ -59,7 +59,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$billData = $bill->current()->getRawData();
 		if (!empty($this->amountField)) {
 			//TODO : support multiple header/footer lines
-			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField]['field'];
+			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
 		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
 		$paymentParams['amount'] = $billAmount;
