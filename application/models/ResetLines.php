@@ -189,12 +189,21 @@ class ResetLinesModel {
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
                 $former_exporter = $this->buildFormerExporterForLine($line);
+                $split_line = $line['split_line']?? false;
+                if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
+                    $allow = true;
+                    Billrun_Factory::dispatcher()->trigger('beforeDuplicatedLineUnableToRecalculatedAfterRebalance', array($line, $allow));
+                    if($allow){
+                        $this->splitLinesStamp[] = $line['stamp'];
+                        return;
+                    }
+                }
 		if (!empty($line['rebalance'])) {
 			$queue_line['rebalance'] = $line['rebalance'];
 		}
 		$queue_line['rebalance'][] = $rebalanceTime;
 		$this->buildQueueLine($queue_line, $line, $advancedProperties);
-		$queue_lines[] = $queue_line;
+                $queue_lines[] = $queue_line;
 	}
         
         
@@ -375,6 +384,13 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                if(!empty($this->splitLinesStamp)){
+                    $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
+                    $ret = $lines_coll->update($split_lines_stamps_query, array('$set' => array('to_delete' => true)), array('multiple' => true)); // err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            return FALSE;
+                    }
+                }
 
 		return true;
 	}
