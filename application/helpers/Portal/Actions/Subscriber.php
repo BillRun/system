@@ -102,124 +102,119 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		if ($subscriber === false ) {
 			return false;
 		}
-		
-		$includeUsages = $params['include_usages'] ?? true;
-		if ($includeUsages) {
-			$subscriber['usages'] = $this->getAggregatedUsages($subscriber);
-		}
-		
+                $this->addPlanDetails($subscriber, $params);
+                $this->addServicesDetails($subscriber, $params);
 		unset($subscriber['_id']);
 		return $subscriber;
 	}
-	
-	/**
-	 * get subscriber aggregated usages
+        
+         /**
+	 * add plan details to subscriber
 	 *
-	 * @param  mixed $subscriber
-	 * @return array
+	 * @param  array $subscriber
+	 * @param  array $params
 	 */
-	protected function getAggregatedUsages($subscriber) {
-		$endOfCycle = date(DATE_ISO8601, (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp()));
-		$totals = $this->getTotalUsages($subscriber);
-		$used = [];
-		$balances = $this->getBalances($subscriber);
-
-		foreach ($balances as $balance) {
-            foreach ($balance['balance']['totals'] as $usageType => $values) {
-				$balanceValidity = isset($balance['to']) ? $balance['to'] : $endOfCycle;
-				if (!isset($used[$usageType])) {
-					$used[$usageType] = [
-						'usage' => 0,
-						'validity' => $balanceValidity,
-					];
-				}
-
-				$used[$usageType]['usage'] += $values['usagev'] ?? 0;
-				$used[$usageType]['validity'] = min($used[$usageType]['validity'], $balanceValidity);
+        protected function addPlanDetails(&$subscriber, $params) {
+            $plan = new Billrun_Plan(['name' => $subscriber['plan'], 'time'=> time()]);
+            $subscriber['plan_description'] =  $plan->get('description');
+            $servicesIncludeInPlan = $plan->get('include')['services'] ?? [];
+            foreach ($servicesIncludeInPlan as $index => $serviceIncludeInPlan){
+                 $subscriber['include']['services'][$index]['name'] = $serviceIncludeInPlan;
             }
         }
-		
-		$ret = [];
-		foreach ($totals as $usageType => $total) {
-			$ret[$usageType] = [
-				'used' => $used[$usageType]['usage'] ?? 0,
-				'total' => $total,
-				'validity' => $used[$usageType]['validity'] ?? $endOfCycle,
-			];
-		}
-
-		return $ret;
-	}
+        
+        /**
+	 * add services details to subscriber
+	 *
+	 * @param  array $subscriber
+	 * @param  array $params
+	 */
+        protected function addServicesDetails(&$subscriber, $params) {      
+            if(isset($subscriber['services'])){
+                foreach ($subscriber['services'] as &$subscriberService) {
+                    $this->addServiceDetails($subscriberService, $params);
+                   
+                }
+            }
+            if(isset($subscriber['include']['services'])){
+                foreach ($subscriber['include']['services'] as &$subscriberService) {
+                    $this->addServiceDetails($subscriberService, $params);
+                 
+                }
+            }
+        }
+        
+        /**
+         * Add service groups usages 
+         * @param type $service
+         */
+        protected function addServiceGroupsUsages(&$service) {
+            $balances = $this->getBalances();
+            if(isset($service['include']['groups'])){
+                foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
+                    foreach ($balances as $balance){
+                        if(isset($balance['balance']['groups'][$serviceGroupName])){
+                            $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
+                            $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
+                            break;
+                        }
+                    }
+                    if(!isset($serviceGroup['usage']['used'])){
+                        $serviceGroup['usage']['used'] = 0;
+                    }
+                    if(!isset($serviceGroup['usage']['total'])){
+                        if(isset($serviceGroup['value'])){
+                            $serviceGroup['usage']['total'] = $serviceGroup['value'];
+                        }else{
+                            //TODO:: support Monetary based (cost)
+                            unset($serviceGroup['usage']['used']);
+                            $serviceGroup['usage']['display'] = false;
+                        }
+                    }
+                }
+            }
+        }
+	
+        /**
+         * add service details to subscriber
+         * @param array $subscriberServices - the services we will add the details
+         * @param array $params
+         */
+        protected  function addServiceDetails(&$subscriberService, $params) {
+            $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
+            $subscriberService['description'] = $service->get('description');
+            $include = $service->get('include');
+            if(isset($include)){
+                $subscriberService['include'] = $include;
+            } 
+            $includeUsages = $params['include_usages'] ?? true;
+            if ($includeUsages) {
+                $this->addServiceGroupsUsages($subscriberService);
+            }           
+        }
 	
 	/**
 	 * get subscriber active balances
 	 *
-	 * @param  mixed $subscriber
 	 * @return array
 	 */
-	protected function getBalances($subscriber) {
+	protected function getBalances() {
 		$time = date(DATE_ISO8601);
 		$query = [
-			'aid' => $subscriber['aid'],
-			'sid' => $subscriber['sid'],
+			'aid' => $this->loggedInEntity['aid'],
+			'sid' => $this->loggedInEntity['sid'],
 			'from' => [
 				'$lte' => $time,
 			],
 			'to' => [
 				'$gt' => $time,
 			],
-		];
-
+		];              
 		$params = $this->getBillApiParams('balances', 'get', $query);
 		$balances = $this->runBillApi($params);
 		return $balances ?? [];
 	}
 	
-	/**
-	 * get subscriber's total usages
-	 * takes into account plan included services and subscriber's related services
-	 *
-	 * @param  mixed $subscriber
-	 * @return array
-	 */
-	protected function getTotalUsages($subscriber) {
-		$totals = [];
-		$services = $subscriber['services'] ?? [];
-		$plan = new Billrun_Plan(['name' => $subscriber['plan'], 'time' => time()]);
-		if ($plan) {
-			$cycleStart = (int) Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getBillrunKeyByTimestamp());
-			foreach ($plan->get('include')['services'] ?? [] as $includedService) {
-				$services[] = [
-					'name' => $includedService,
-					'from' => $cycleStart,
-				];
-			}
-		}
-
-		foreach ($services as $serviceData) {
-			$service = new Billrun_Service(['name' => $serviceData['name'], 'time' => time()]);
-			if (!$service) {
-				Billrun_Factory::log("Cannot get service ${$serviceData['name']} for subscriber {$subscriber['sid']}", Billrun_Log::ERR);
-				continue;
-			}
-
-			if ($service->isExhausted(Billrun_Utils_Time::getTime($serviceData['from']))) {
-				continue;
-			}
-			
-			foreach ($service->get('include')['groups'] ?? [] as $group) {
-				foreach (array_keys($group['usage_types'] ?? []) as $usageType) {
-					if (!isset($totals[$usageType])) {
-						$totals[$usageType] = 0;
-					}
-					
-					$totals[$usageType] += $group['value'] ?? 0;
-				}
-			}
-		}
-
-		return $totals;
-	}
 	
 	/**
 	 * get subscriber usages (lines) 
