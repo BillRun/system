@@ -192,7 +192,7 @@ class ResetLinesModel {
                 $split_line = $line['split_line']?? false;
                 if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
                     $allow = true;
-                    Billrun_Factory::dispatcher()->trigger('beforeDuplicatedLineUnableToRecalculatedAfterRebalance', array($line, $allow));
+                    Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, $allow));
                     if($allow){
                         $this->splitLinesStamp[] = $line['stamp'];
                         return;
