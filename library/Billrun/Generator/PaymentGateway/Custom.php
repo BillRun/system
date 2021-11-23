@@ -23,8 +23,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $logFile;
     protected $fileName;
     protected $transactionsTotalAmount = 0;
+	protected $file_transactions_counter = 0;
     protected $gatewayLogName;
     protected $fileGenerator;
+	protected $billSavedFields = array();
+	protected $mandatory_fields_per_entity = [];
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {
@@ -49,13 +52,37 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
+		$this->logFile->updateLogFileField('process_time', new Mongodloid_Date(time()));
         $this->logFile->saveLogFileFields();
     }
 
-    protected function getDataLine($params) {
+	protected function setFileMandatoryFields() {
+		$dataStructure = $this->configByType['generator']['data_structure'];
+		foreach($dataStructure as $dataField) {
+			if (isset($dataField['linked_entity'])) {
+				$this->mandatory_fields_per_entity[$dataField['linked_entity']['entity']][] = $dataField['linked_entity']['field_name'];
+            }
+		}
+	}
+	
+	protected function validateMandatoryFieldsExistence($entity, $entity_type = 'account') {
+		$entity = $entity->getRawData();
+		foreach($entity as $field_name => $field_value) {
+			if(!in_array($field_name, $this->mandatory_fields_per_entity[$entity_type])) {
+				continue;
+			}
+			if(empty($field_value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected function getDataLine($params) {
         $dataLine = array();
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
+		$this->billSavedFields = array();
         foreach ($dataStructure as $dataField) {
             try{
             if (!isset($dataField['path'])) {
@@ -98,7 +125,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $this->logFile->updateLogFileField('errors', $message);
                 throw new Exception($message);
             }
-            $dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
+			if (!empty($dataField['save_to_bill'])) {
+				$this->billSavedFields[$dataField['name']] = $dataLine[$dataField['path']];
+			}
+			$dataLine[$dataField['path']] = $this->prepareLineForGenerate($dataLine[$dataField['path']], $dataField, $attributes);
             } catch(Exception $ex){
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
@@ -110,7 +140,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $dataLine;
     }
 
-    protected function getHeaderLine() {
+	protected function getHeaderLine() {
         $headerStructure = $this->configByType['generator']['header_structure'];
         return $this->buildLineFromStructure($headerStructure);
     }
@@ -127,14 +157,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                     throw new Exception('Missing account id');
                 }
                 $account = Billrun_Factory::account();
-                $account->load(array('aid' => $params['aid']));
+                $account->loadAccountForQuery(array('aid' => $params['aid']));
                 $accountData = $account->getCustomerData();
-                if (!isset($accountData[$field])) {
-                    $message = "Field name $field does not exists under entity " . $entity;
+                if (is_null(Billrun_Util::getIn($accountData, $field))) {
+                    $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);
                     $this->logFile->updateLogFileField('errors', $message);
                 }
-                return $accountData[$field];
+                return Billrun_Util::getIn($accountData, $field);
 
             case 'payment_request':
                 if (!isset($params[$field])) {
@@ -245,8 +275,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $exportDetails = $this->configByType['export'];
         $connection = Billrun_Factory::paymentGatewayConnection($exportDetails);
         $fileName = $this->getFilename();
-        $connection->export($fileName);
-    }
+		$res = $connection->export($fileName);
+		if (!$res) {
+			Billrun_Factory::log()->log('Failed moving file ' . $fileName, Zend_Log::ALERT);
+		}
+	}
 
     protected function getTranslationValue($paramObj) {
         if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
@@ -308,7 +341,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 continue;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_num') {
-                $line[$field['path']] = count($this->customers);
+                $line[$field['path']] = $this->file_transactions_counter;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
                 $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
@@ -354,14 +387,26 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $line;
     }
 
-    protected function initLogFile() {
+	/**
+	 * Function to create the cpg log file
+	 */
+	protected function createLogFile() {
         $logOptions = $this->chargeOptions;
-        $logOptions['source'] = $this->gatewayLogName . str_replace('_', '', ucwords(static::$type, '_'));
+		$logOptions['source'] = "custom_payment_files";
+		Billrun_Factory::log("Creating log file object", Zend_Log::DEBUG);
         $this->logFile = new Billrun_LogFile_CustomPaymentGateway($logOptions);
+		$this->logFile->save();
+	}
+	
+	/**
+	 * Function to initialize the created log file, only if it was created successfully.
+	 */
+	protected function initLogFile() {
         $this->logFile->setSequenceNumber();
         $this->logFile->setFileName($this->getFilename());
-        $this->logFile->setStamp();
         $this->generatedLogFileStamp = $this->logFile->getStamp();
+		Billrun_Factory::log("Generated log file stamp that was saved: " . $this->generatedLogFileStamp, Zend_Log::DEBUG);
+		Billrun_Factory::log("Saving initialized log object to db", Zend_Log::DEBUG);
         $this->logFile->save();
     }
     

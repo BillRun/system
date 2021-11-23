@@ -1,0 +1,54 @@
+{
+	"collection": "servicesCollection",
+	"data":
+			[
+		{
+	"OBJID":"5ddf8c3267356146081d3352",
+	"from" :"time*2018-11-29T00:00:00Z",
+	"name" : "SERVICE_A",
+	"price" : [
+				{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : 100
+				}
+			],
+	"description" : "service a",
+	"prorated" : true,
+	"vatable" : true,
+	"tax" : [
+				{
+			"type" : "vat",
+			"taxation" : "global"
+				}
+			],
+	"to" :"time*2168-11-28T08:58:26Z",
+	"creation_time" :"time*2018-11-29T00:00:00Z"
+		},
+		{
+	"OBJID":"5ddf8c45b4220a565139e282",
+	"from" :"time*2018-11-29T00:00:00Z",
+	"name" : "SERVICE_B",
+	"price" : [
+				{
+			"from" : 0,
+			"to" : "UNLIMITED",
+			"price" : 200
+				}
+			],
+	"description" : "service b",
+	"prorated" : true,
+	"vatable" : true,
+	"tax" : [
+				{
+			"type" : "vat",
+			"taxation" : "global"
+				}
+			],
+	 "to" :"time*2168-11-28T08:58:45Z",
+	"creation_time" :"time*2019-11-29T00:00:00Z"
+		}
+
+	]
+	
+}

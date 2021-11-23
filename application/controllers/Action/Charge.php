@@ -29,11 +29,11 @@ class ChargeAction extends Action_Base {
 			'size' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
 
-		$extraParams = $this->_controller->getParameters();
+		$extraParams = $this->getController()->getParameters();
 		if (!empty($extraParams)) {
 			$options = array_merge($extraParams, $options);
 		}
@@ -41,18 +41,24 @@ class ChargeAction extends Action_Base {
 		Billrun_Bill_Payment::checkPendingStatus($options);
 		if (!isset($options['pending'])) {
 			$this->getController()->addOutput("Starting to charge unpaid payments...");
-			$this->aids = isset($options['aids']) ? Billrun_Util::verify_array($options['aids'], 'int') : array();
-			if (!$this->lock()) {
-				Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
-				return;
-			}
-			Billrun_Bill_Payment::makePayment($options);
-			if (!$this->release()) {
-				Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
-				return;
-			}
+			$this->charge($options);
 		}
 		$this->getController()->addOutput("Charging Done");
+	}
+	
+	public function charge($options) {
+		$this->aids = isset($options['aids']) ? Billrun_Util::verify_array($options['aids'], 'int') : array();
+		if (!$this->lock()) {
+			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
+			return false;
+		}
+		$response = Billrun_Bill_Payment::makePayment($options);
+		if (!$this->release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return false;
+		}
+		
+		return $response;
 	}
 
 	protected function getConflictingQuery() {

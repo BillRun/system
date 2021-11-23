@@ -21,7 +21,7 @@ class Api_Translator_DbidModel extends Api_Translator_TypeModel {
 	 */
 	public function internalTranslateField($data) {
 		try {
-			return new MongoId($data);
+			return new Mongodloid_Id($data);
 		} catch (MongoException $ex) {
 			return false;
 		}

@@ -96,13 +96,13 @@ trait Billrun_Traits_FileActions {
 		$query = array(
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
-			'fetching_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
+			'fetching_time' => array('$lt' => new Mongodloid_Date(time() - $orphan_window)),
 			'received_time' => array('$exists' => false)
 		);
 
 		$update = array(
 			'$set' => array(
-				'fetching_time' => new MongoDate(time()),
+				'fetching_time' => new Mongodloid_Date(time()),
 				'fetching_host' => Billrun_Util::getHostName(),
 			),
 			'$setOnInsert' => $logData
@@ -111,14 +111,17 @@ trait Billrun_Traits_FileActions {
 		try {
 			$result = $log->update($query, $update, array('upsert' => true));
 		} catch (Exception $e) {
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
+			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
+				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock a file the was already locked: " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
 			} else {
 				throw $e;
 			}
 			return FALSE;
 		}
-		return $result['ok'] == 1 && $result['updatedExisting'] === false;
+		
+		$isNew = $result['updatedExisting'] === false;
+		$hasUpdated = $result['nModified'] > 0;
+		return $result['ok'] == 1 && ($isNew || $hasUpdated);
 	}
 
 	/**

@@ -109,7 +109,7 @@ class Mongodloid_Query implements IteratorAggregate {
 					)
 			));
 		}
-		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exists and hasn\'t been trapped in call');
+		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exist and hasn\'t been trapped in call');
 	}
 
 	public function count() {
@@ -122,7 +122,10 @@ class Mongodloid_Query implements IteratorAggregate {
 	 */
 	public function cursor() {
 		// 2nd argument due to new mongodb driver (PHP7+)
-		return new Mongodloid_Cursor($this->_collection->find($this->_params, $this->_project)/*, $this->_collection->getWriteConcern('wtimeout')*/);
+		$cursor = $this->_collection->find($this->_params, $this->_project)/*, $this->_collection->getWriteConcern('wtimeout')*/;
+		$cursor->setRawReturn(false);
+		return $cursor;
+		
 	}
 
 	public function query($key, $value = null) {

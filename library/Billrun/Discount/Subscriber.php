@@ -14,14 +14,16 @@
  */
 class Billrun_Discount_Subscriber extends Billrun_Discount {
 
+	protected static $cache;
 
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
         $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
 		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$all' => array('*' => '*.name') ));
+		$cache = $this->initCache();
     }
 
-    /**
+	/**
      * Check a single discount if an account is eligible to get it.
      * (TODO change this hard coded logic to something more flexible)
      * @param type $accountInvoice the account data to check the discount against	 
@@ -43,9 +45,32 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
+	public static function getByNameAndTime($name, $time) {
+		if (isset(static::$cache['by_key'][$name])) {
+			foreach (static::$cache['by_key'][$name] as $revision) {
+				if ($revision['from'] <= $time && (!isset($revision['to']) || is_null($revision['to']) || $revision['to'] >= $time)) {
+					return $revision;
+				}
+			}
+		}
+		$discountsColl = Billrun_Factory::db()->getCollection('discounts');
+		$query = array_merge(['key' => $name], Billrun_Utils_Mongo::getDateBoundQuery($time->sec));
+		$results = $discountsColl->query($query)->cursor()->current();
+		if($results) {
+			static::$cache['by_key'][$results['key']][] = $results->getRawData();
+			return $results;
+		}
+		return false;
+	}
 
     //==================================== Protected ==========================================
 
+	protected function initCache() {
+		if (empty(static::$cache)) {
+			$this->cache = ['by_key' => []];
+		}
+	}
+	
 	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$totals ) {
 		$retPrice= $simpleDiscountPrice;
 		$pricingData = [];
@@ -87,7 +112,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
 		
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
-		$cover = [ 'start' => new MongoDate($this->billrunStartDate), 'end' => new MongoDate($this->billrunDate-1) ];
+		$cover = [ 'start' => new Mongodloid_Date($this->billrunStartDate), 'end' => new Mongodloid_Date($this->billrunDate-1) ];
 		if($eligible && !empty($this->discountData['prorated'])) {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
@@ -111,7 +136,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			}
         }
         $startDate = $cover['start'];
-        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
+        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Utils_Time::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 

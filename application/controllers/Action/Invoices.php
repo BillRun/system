@@ -91,10 +91,10 @@ class AccountInvoicesAction extends ApiAction {
 			}
 		}
 		$invoiceId = $invoice['invoice_id'];
-		
-		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
-		$pdf = $files_path . $billrun_key . '/pdf/' . $file_name;
+		$invoiceData = $invoice->getRawData();
+
+		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
+		$pdf = $invoiceData['invoice_file'];
 
 		if( $request->get('detailed') ) {
 			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
@@ -102,6 +102,7 @@ class AccountInvoicesAction extends ApiAction {
 			$generator->generate();
 		}
 		if (!file_exists($pdf)){
+                        Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
 			$cont = file_get_contents($pdf);
@@ -125,12 +126,15 @@ class AccountInvoicesAction extends ApiAction {
 			'aid' => $params['aid'],
 			'stamp' => $params['billrun_key'],
 		);
+		if (!empty($params['invoicing_day'])) {
+			$options['invoicing_day'] = $params['invoicing_day'];
+		}
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->load();
 		$pdfPath = $generator->generate();
 		$cont = file_get_contents($pdfPath);
 		if ($cont) {
-			header('Content-disposition: inline; filename="'.$file_name.'"');
+			header('Content-disposition: inline; filename="'. basename($pdfPath).'"');
 			header('Cache-Control: public, must-revalidate, max-age=0');
 			header('Pragma: public');
 			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
@@ -147,10 +151,10 @@ class AccountInvoicesAction extends ApiAction {
 	
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		Billrun_Plan::initPlans();
+		Billrun_Plan::getCacheItems();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {
-			$q['creation_date'] = $this->intToMongoDate($q['creation_date']);
+			$q['creation_date'] = $this->intToMongodloidDate($q['creation_date']);
 		}
 		$invoices = $billrunColl->query($q)->cursor()->setRawReturn(true);
 		if($sort) {
@@ -172,15 +176,15 @@ class AccountInvoicesAction extends ApiAction {
 		return $retValue;
 	}
 	
-	protected function intToMongoDate($arr) {
+	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

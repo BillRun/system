@@ -86,7 +86,7 @@ class AuthAction extends ApiAction  {
 					$additionalParams = array(
 						'ip' => $ip,
 					);
-					Billrun_AuditTrail_Util::trackChanges('login', 'login_' . $username, 'Login', null, null, $additionalParams);
+					Billrun_AuditTrail_Util::trackChanges('login', 'login_' . $username, 'login', null, null, $additionalParams);
 
 					$userData = array(
 						'user' => Billrun_Factory::user()->getUsername(),

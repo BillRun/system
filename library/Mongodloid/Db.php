@@ -10,8 +10,9 @@ class Mongodloid_Db {
 	protected $_db;
 	protected $_connection;
 	protected $_collections = array();
+	const VERSION = '1.6.12';
 
-	public function __construct(MongoDb $db, Mongodloid_Connection $connection) {
+	public function __construct(MongoDB\Database $db, Mongodloid_Connection $connection) {
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
@@ -24,7 +25,7 @@ class Mongodloid_Db {
 	}
 
 	public function getName() {
-		return (string) $this->_db;
+		return (string) $this->_db->getDatabaseName();
 	}
 
 	public function command(array $command, array $options = array()) {
@@ -40,7 +41,7 @@ class Mongodloid_Db {
 	 * @return mixed the whole stats or just one item of it
 	 */
 	public function stats(array $stats = array('dbStats' => 1), $item = null) {
-		$ret = $this->_db->command($stats);
+		$ret = Mongodloid_Result::getResult(iterator_to_array($this->_db->command($stats))[0]);
 
 		if (is_null($item)) {
 			return $ret;
@@ -104,7 +105,7 @@ class Mongodloid_Db {
 	 * @return string version
 	 */
 	public function getClientVersion() {
-		return MongoClient::VERSION;
+		return Mongodloid_Db::VERSION;
 	}
 
 	/**
@@ -113,7 +114,7 @@ class Mongodloid_Db {
 	 * @return string version
 	 */
 	public function getServerVersion() {
-		$mongodb_info = $this->_db->command(array('buildinfo' => true));
+		$mongodb_info = Mongodloid_Result::getResult(iterator_to_array($this->_db->command(array('buildinfo' => true)))[0]);
 		return $mongodb_info['version'];
 	}
 	
@@ -129,4 +130,45 @@ class Mongodloid_Db {
 		ini_set('mongo.native_long', $status);
 	}
 
+	/**
+	 * method to start session and retrieve it
+	 * 
+	 * @return MongoDB\Driver\Session
+	 */
+	public function startSession() {
+		if ($this->isStandalone()) {
+			return false;
+		}
+		return $this->_connection->startSession();
+	}
+
+	/**
+	 * method to get the mongo servers
+	 *
+	 * @return MongoDB\Driver\Session
+	 */
+	public function getServers() {
+		return $this->_connection->getServers();
+	}
+	
+	/**
+	 * method to check if the db server is standalone (not mongos and not replica-set)
+	 * 
+	 * @return boolean true if standalone else false
+	 */
+	public function isStandalone() {
+		$servers = $this->getServers();
+		return $servers[0]->getType() === MongoDB\Driver\Server::TYPE_STANDALONE;
+	}
+	
+	/**
+     * Fetches toolkit for dealing with files stored in this database
+     *
+     * @param string $prefix The prefix for the files and chunks collections.
+     * @return Mongodloid_GridFS Returns a new gridfs object for this database.
+     */
+    public function getGridFS($prefix = "fs")
+    {
+        return new Mongodloid_GridFS($this, $prefix);
+    }
 }

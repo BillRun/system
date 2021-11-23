@@ -234,6 +234,18 @@
 						"account": {
 							"fields": [
 								{
+									"field_name": "invoicing_day",
+									"title": "Invoicing Day",
+									"mandatory": false,
+									"system": true,
+									"show_in_list": true,
+									"select_list": true,
+									"editable": false,
+									"display": false,
+									"select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+									"default_value": null
+								},
+								{
 									"field_name": "aid",
 									"generated": true,
 									"system": true,
@@ -874,19 +886,14 @@
 						}
 					],
 					"taxation": {
-						"tax_type": "vat",
-						"CSI": {
-							"taxation_mapping": [],
-							"provider": "",
-							"auth_code": "",
-							"apply_optional_charges": true
+						"tax_type": "usage",
+						"default": {
+							"key": "DEFAULT_VAT"
 						},
-						"vat": {
-							"v": 0.17,
-							"t": "Float",
-							"range": {
-								"max": 1,
-								"min": 0
+						"mapping": {
+							"vat": {
+								"priorities": [],
+								"default_fallback": true
 							}
 						}
 					},
@@ -1139,7 +1146,43 @@
 										"format": "Y-m-d H:i:s"
 									}
 								}
+							},
+							{
+								"field_name": "foreign.discount.description",
+								"title": "discount's description",
+								"foreign": {
+									"entity": "discount",
+									"field": "description"
+								},
+								"conditions": []
+							},
+							{
+								"field_name": "foreign.activation_date",
+								"foreign": {
+									"entity": "service",
+									"field": "start",
+									"translate": {
+										"type": "unixTimeToString",
+										"format": "Y-m-d H:i:s"
+									}
+								}
+							},
+							{
+								"field_name": "foreign.plan.name",
+								"title": "plan_name",
+								"foreign": {
+									"entity": "plan",
+									"field": "name"
+								}
+							}, {
+								"field_name": "foreign.service.name",
+								"title": "Service name",
+								"foreign": {
+									"entity": "service",
+									"field": "name"
+								}
 							}
+
 						]
 					}
 				}

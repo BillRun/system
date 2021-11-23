@@ -36,6 +36,14 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		}
 		$row['aid'] = !is_null($payment) ? $payment->getAid() : $addonData;
 		if (!is_null($payment)) {
+			if ($payment->isRejection() || $payment->isRejected()) {
+				Billrun_Factory::log("Payment " . $payment->getId() . " is already rejected and can't been denied", Zend_Log::ALERT);
+				return;
+			}
+			if ($payment->isPendingPayment()) {
+				Billrun_Factory::log("Payment " . $payment->getId() . " is already pending and can't been denied", Zend_Log::ALERT);
+				return;
+			}
 			if (abs($row['amount']) != $payment->getAmount()) {
 				Billrun_Factory::log("Amount isn't equal to payment for payment with txid: " . $row['transaction_id'], Zend_Log::ALERT);
 				return;
@@ -55,12 +63,6 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 			if (!is_null($payment)) {
 				Billrun_Factory::log()->log("Denial was created successfully for payment: " . $newRow['transaction_id'], Zend_Log::NOTICE);
 				$payment->deny($denial);
-				$paymentSaved = $payment->save();
-				if (!$paymentSaved) {
-					Billrun_Factory::log()->log("Denied flagging failed for rec " . $newRow['transaction_id'], Zend_Log::ALERT);
-				} else {
-					$payment->updatePastRejectionsOnProcessingFiles();
-				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::NOTICE);
 			}

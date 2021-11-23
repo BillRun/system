@@ -14,13 +14,13 @@
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	use Billrun_Traits_EntityGetter;
-	
+	use Billrun_Traits_ForeignFields;
 	protected static $taxes = [];
 
 	/**
 	 * @see Billrun_Calculator_Tax::updateRowTaxInforamtion
 	 */
-	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
+	public function updateRowTaxInforamtion($line, $subscriber, $account, $params = []) {
 		$taxData = $this->getRowTaxData($line);
 		if ($taxData === false) {
 			return false;
@@ -51,6 +51,20 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		if ($taxes === false) {
 			return false;
+		}
+		
+		$params = [
+			'skip_categories' => array_keys($taxes),
+		];
+		
+		$globalTaxes = $this->getMatchingEntitiesByCategories($line, $params);
+		
+		if ($globalTaxes !== false) {
+			$taxes = array_merge($taxes, $globalTaxes);
+		}
+		
+		if (empty($taxes)) {
+			return is_array($taxes) ? [] : false;
 		}
 
 		return array_filter($taxes, function($taxData) {
@@ -106,7 +120,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 * 
 	 * @param array $line
 	 */
-	protected function getRowTaxData($line) {
+	protected function getRowTaxData(&$line) {
 		if (isset($line['tax_data'])) {
 			return $line['tax_data'];
 		}
@@ -118,30 +132,48 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		
 		$totalTax = 0;
 		$totalAmount = 0;
+		$totalEmbeddedAmount = 0;
 		$taxesData = [];
 
 		foreach ($taxes as $taxCategory => $tax) {
+			$isTaxEmbedded = isset($tax['embed_tax']) ? $tax['embed_tax'] : false;
 			$taxFactor = $tax['rate'];
 			$taxAmount = $line['aprice'] * $taxFactor;
-			$taxesData[] = [
+			$foreignTaxData = $this->getForeignFields(array('tax' => $tax));
+			$taxData = array_merge([
 				'tax' => $taxFactor,
-				'amount' => $taxAmount,
+				'amount' => !$isTaxEmbedded ? $taxAmount : 0,
 				'description' => $tax['description'] ?: 'VAT',
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
-			];
-			$totalAmount += $taxAmount;
-			$totalTax += $taxFactor;
-		}
+			], $foreignTaxData);
 
-		return [
+			if ($isTaxEmbedded) {
+				$taxData['embedded_amount'] = $taxAmount;
+				$line['aprice'] += $taxAmount;
+				$totalEmbeddedAmount += $taxAmount;
+			} else {
+				$totalAmount += $taxAmount;
+				$totalTax += $taxFactor;
+			}
+			
+			$taxesData[] = $taxData;
+		}
+		
+		$ret = [
 			'total_amount' => $totalAmount,
 			'total_tax' => $totalTax,
 			'taxes' => $taxesData,
 		];
+		
+		if ($totalEmbeddedAmount > 0) {
+			$ret['total_embedded_amount'] = $totalEmbeddedAmount;
+		}
+
+		return $ret;
 	}
-	
+
 	/**
 	 * Converts tax data of a given line to taxes array that can be used in "getRowTaxData"
 	 * 
@@ -158,6 +190,14 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				'rate' => $data['tax'],
 				'description' => $data['description'] ?: 'VAT',
 			];
+
+			$foreignFields = Billrun_Utils_ForeignFields::getForeignFields('tax');
+			foreach ($foreignFields as $foreignField) {
+				$fieldName = Billrun_Util::getIn($foreignField, 'foreign.field', '');
+				if (!empty($data[$fieldName])) {
+					$taxes[$category][$fieldName] = $data[$fieldName];
+				}
+			}
 		}
 		
 		return $taxes;
@@ -390,7 +430,6 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	}
 	
 	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
-		$time = isset($row['urt']) ? $row['urt']->sec : time();
 		$taxHintData = $this->getLineTaxHint($row, $category);
 		
 		if (empty($taxHintData)) {

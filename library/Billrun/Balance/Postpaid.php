@@ -71,6 +71,9 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$from = $start_period = $this->row['service_start_date'];
 			$period = $this->row['balance_period'];
 			$to = strtotime((string) $this->row['balance_period'], $from);
+		} else if ($this->isAddonBalance()) {
+			$service_id = $this->row['service_id'];
+			$service_name = $this->row['service_name'];
 		} else {
 			$service_id = 0;
 			$service_name = null;
@@ -106,6 +109,14 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	}
 
 	/**
+	 * method to check if balance is an add-on balance
+	 * @return boolean true if this is an add-on balance, else false
+	 */
+	protected function isAddonBalance() {
+		return !empty($this->row['add_on']);
+	}
+
+	/**
 	 * Create a new balance  for a subscriber  in a given billrun
 	 * @param type $account_id the account ID  of the subscriber.
 	 * @param type $subscriber_id the subscriber ID.
@@ -116,15 +127,15 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
 	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
-		$converted_start_period = is_numeric($start_period) ? new MongoDate($start_period) : $start_period;
+		$converted_start_period = is_numeric($start_period) ? new Mongodloid_Date($start_period) : $start_period;
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
 			'from' => array(
-				'$lte' => new MongoDate($urt),
+				'$lte' => new Mongodloid_Date($urt),
 			),
 			'to' => array(
-				'$gte' => new MongoDate($urt),
+				'$gte' => new Mongodloid_Date($urt),
 			),
 //			'start_period' => $start_period,
 			'start_period' => $converted_start_period,
@@ -169,8 +180,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$connectionType = $plan->get('connection_type');
 		$planDescription = $plan->get('description');
 		$ret = array(
-			'from' => new MongoDate($from),
-			'to' => new MongoDate($to),
+			'from' => new Mongodloid_Date($from),
+			'to' => new Mongodloid_Date($to),
 			'aid' => $aid,
 			'sid' => $sid,
 			'current_plan' => $planRef,
@@ -204,8 +215,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		if ($this->get('sid') != 0 && !$this->isExtendedBalance()) {
-			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
+		if ($this->get('sid') != 0 && !$this->isExtendedBalance() && !$this->isAddonBalance()) {
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $this->getTotalUsagevToUpdate($pricingData, $volume);
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
@@ -273,11 +284,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return string
 	 */
 	public function getBalanceTotalsKey($pricingData) {
-		if (isset($pricingData['in_plan']) || isset($pricingData['over_plan']) ||
-			isset($pricingData['in_group']) || isset($pricingData['over_group'])) {
-			return $this->row['usaget'];
-		}
-		return 'out_plan_' . $this->row['usaget'];
+		return $this->row['usaget'];
 	}
 	
 	/**

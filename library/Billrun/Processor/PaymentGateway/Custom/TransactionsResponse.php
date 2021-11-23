@@ -25,6 +25,8 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	}
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
+		$customFields = $this->getCustomPaymentGatewayFields();
+		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment);
@@ -110,20 +112,20 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                         }
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
-                                $payment->setPending(false);
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::INFO);
-                                $this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
+				$payment->setPending(false);
+				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
+				$this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
 				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
-                                $this->informationArray['transactions']['rejected']++;
-                                $this->informationArray['total_rejected_amount']+=$payment->getAmount();
+				$this->informationArray['transactions']['rejected']++;
+				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
-                                $message = 'Transaction ' . $payment->getId() . ' already rejected';
+				$message = 'Transaction ' . $payment->getId() . ' already rejected';
 				Billrun_Factory::log($message, Zend_Log::NOTICE);
-                                $this->informationArray['info'][] = $message;
+				$this->informationArray['info'][] = $message;
 			}
 		}
 	}
@@ -141,6 +143,10 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				throw new Exception('Unknown file status');
 				break;
 		}
+	}
+	
+	public function getType () {
+		return static::$type;
 	}
 
 }

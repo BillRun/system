@@ -1,0 +1,165 @@
+language: php
+dist: xenial
+
+addons:
+  apt:
+    packages:
+      - gdb
+      - libcurl3
+      - libgssapi-krb5-2
+      - libkrb5-dbg
+      - libldap-2.4-2
+      - libpcap0.8
+      - libsasl2-2
+      - snmp
+      - openssl
+
+cache:
+  directories:
+    - ${HOME}/.cache/pip
+    - ${HOME}/.composer/cache/files
+    - ${HOME}/php-ext
+
+env:
+  global:
+    - DRIVER_VERSION=1.7.0
+    - SERVER_DISTRO=enterprise-ubuntu1604
+    - SERVER_VERSION=4.2.0
+    - DEPLOYMENT=STANDALONE
+    - COMPOSER_OPTIONS=
+
+jobs:
+  include:
+
+    - stage: Smoke Testing
+      php: "7.3"
+      env:
+        - CHECKS=phpunit
+    - stage: Smoke Testing
+      php: "7.1"
+      before_install: []
+      before_script:
+        - .travis/install-extension.sh
+        - composer require --no-update doctrine/coding-standard=^6.0
+        - composer install --no-interaction --no-progress --no-suggest ${COMPOSER_OPTIONS}
+      script: vendor/bin/phpcs
+      after_script: []
+      after_failure: []
+      env:
+        - CHECKS=phpcs
+
+    # Test remaining supported PHP versions
+    - stage: Test
+      php: "5.6"
+    - stage: Test
+      php: "7.0"
+    - stage: Test
+      php: "7.1"
+    - stage: Test
+      php: "7.2"
+    - stage: Test
+      php: "7.4"
+
+    # Test against lowest supported dependencies
+    - stage: Test
+      php: "5.6"
+      env:
+        - COMPOSER_OPTIONS=--prefer-lowest
+
+      # Test older standalone server versions (3.0-4.0)
+    - stage: Test
+      php: "7.0"
+      dist: trusty
+      env:
+        - SERVER_DISTRO=enterprise-ubuntu1404
+        - SERVER_VERSION=3.0.15
+        - DEPLOYMENT=STANDALONE_OLD
+    - stage: Test
+      php: "7.0"
+      env:
+        - SERVER_VERSION=3.2.22
+        - DEPLOYMENT=STANDALONE_OLD
+    - stage: Test
+      php: "7.0"
+      env:
+        - SERVER_VERSION=3.4.21
+        - DEPLOYMENT=STANDALONE_OLD
+    - stage: Test
+      php: "7.0"
+      env:
+        - SERVER_VERSION=3.6.13
+    - stage: Test
+      php: "7.3"
+      env:
+        - SERVER_VERSION=4.0.12
+
+    # Test other server configurations
+    - stage: Test
+      php: "7.3"
+      env:
+        - DEPLOYMENT=STANDALONE_AUTH
+    - stage: Test
+      php: "7.3"
+      env:
+        - DEPLOYMENT=STANDALONE_SSL
+    - stage: Test
+      php: "7.3"
+      env:
+        - SERVER_VERSION=3.6.13
+        - DEPLOYMENT=REPLICASET
+    - stage: Test
+      php: "7.3"
+      env:
+        - DEPLOYMENT=REPLICASET
+    - stage: Test
+      php: "7.3"
+      env:
+        - DEPLOYMENT=SHARDED_CLUSTER
+    - stage: Test
+      php: "7.3"
+      env:
+        - DEPLOYMENT=SHARDED_CLUSTER_RS
+
+    # Test next patch release for driver
+    - stage: Test
+      php: "7.3"
+      env:
+        - DRIVER_BRANCH="v1.7"
+
+    # Test next minor release for driver
+    - stage: Test
+      php: "7.3"
+      env:
+        - DRIVER_BRANCH="master"
+
+before_install:
+  - pip install "mongo-orchestration>=0.6.7,<1.0" --user `whoami`
+  - export SERVER_FILENAME=mongodb-linux-x86_64-${SERVER_DISTRO}-${SERVER_VERSION}
+  - wget -qO- https://downloads.mongodb.com/linux/${SERVER_FILENAME}.tgz | tar xz
+  - export PATH=${PWD}/${SERVER_FILENAME}/bin:${PATH}
+  - mongod --version
+  - mongo-orchestration --version
+  - export MO_PATH=`python -c 'import mongo_orchestration; from os import path; print(path.dirname(mongo_orchestration.__file__));'`
+
+before_script:
+  - mongo-orchestration start
+  - .travis/setup_mo.sh
+  - .travis/install-extension.sh
+  - php --ri mongodb
+  - composer update --no-interaction --no-progress --no-suggest --prefer-dist --prefer-stable ${COMPOSER_OPTIONS}
+  - ulimit -c
+  - ulimit -c unlimited -S
+
+script:
+  - export MONGODB_URI=`cat /tmp/uri.txt`
+  - echo $MONGODB_URI
+  - vendor/bin/phpunit -v
+
+before_cache:
+  - rm -f ${HOME}/.cache/pip/log/debug.log
+
+after_failure:
+  - find . -name 'core*' -exec ${TRAVIS_BUILD_DIR}/.travis/debug-core.sh {} \;
+
+after_script:
+  - mongo-orchestration stop

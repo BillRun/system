@@ -24,4 +24,22 @@ abstract class Billrun_CollectionSteps extends Billrun_Base {
 	abstract public function createCollectionSteps($aid);
 
 	abstract public function removeCollectionSteps($aid);
+	
+	abstract protected function triggerStep($step);
+	
+	/**
+	 * method to run the setup in the lower layer
+	 * 
+	 * @param array $step collection step details
+	 * 
+	 * @return mixed array response details if success, else false
+	 */
+	protected function runStep($step) {
+		Billrun_Factory::dispatcher()->trigger('beforeCollectionStepRun', [$step]);
+		$ret = $this->triggerStep($step);
+		Billrun_Factory::dispatcher()->trigger('afterCollectionStepRun', [$step, &$ret]);
+		return $ret;
+	}
+
+
 }

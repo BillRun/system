@@ -50,6 +50,12 @@ class Billrun_Config {
 	protected $productionValues = array('prod', 'product', 'production');
 
 	/**
+	 * Keeps track of already loaded configuration files
+	 * @var array 
+	 */
+	protected $loadedFiles = [];
+
+	/**
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
@@ -77,36 +83,41 @@ class Billrun_Config {
 	}
 	
 	public function addConfig($path) {
-		if (file_exists($path)) {
-			if(preg_match('/\.json$/',$path)) {
-					$addedConf = json_decode(file_get_contents($path),TRUE);
-					
-			} else {
+		if (!array_key_exists($path, $this->loadedFiles)) {
+			if (file_exists($path)) {
+				if (preg_match('/\.json$/', $path)) {
+					$addedConf = json_decode(file_get_contents($path), TRUE);
+				} else {
 					$addedConf = (new Yaf_Config_Ini($path))->toArray();
-			}
-			if(is_array($addedConf)) {
-				$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+				}
+				if (is_array($addedConf)) {
+					$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+					$this->loadedFiles[$path] = true;
+				} else {
+					error_log("Couldn't load Configuration File {$path} !!");
+				}
 			} else {
-				error_log("Couldn't load Configuration File {$path} !!");
+				error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 			}
-			
-		} else {
-			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
 	}
 
 	/**
 	 * Merge to  configuration into one overiding  the  less important config  with  a newer config
-	 * @param type $lessImportentConf the configuration array to merge into and override
+	 * @param type $lessImportantConf the configuration array to merge into and override
 	 * @param type $moreImportantConf the  configuration array to merge from.
 	 * @return type array containing the  overriden values.
 	 */
-	public static function mergeConfigs($lessImportentConf, $moreImportantConf) {
+	public static function mergeConfigs($lessImportantConf, $moreImportantConf) {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
+		}
+		$NewlessImportantConf = null;
+		if (is_array($moreImportantConf) && !is_array($lessImportantConf)) {
+			$NewlessImportantConf = [];
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -114,21 +125,25 @@ class Billrun_Config {
 				continue;
 			}
 
-			// If the key exists in the less importent config array then we have
+			// If the key exists in the less important config array then we have
 			// another level of config values to process.
-			if(isset($lessImportentConf[$key])) {
-				$confValue = self::mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			if(isset($lessImportantConf[$key])) {
+				$confValue = self::mergeConfigs($lessImportantConf[$key], $moreImportantConf[$key]);
 			} else {
 				$confValue = $moreImportantConf[$key];
 			}
-			$lessImportentConf[$key] = $confValue;
+			if (is_array($NewlessImportantConf)) {
+				$NewlessImportantConf[$key] = $confValue;
+			} else {
+				$lessImportantConf[$key] = $confValue;
+			}
 		}
 
-		return $lessImportentConf;
+		return !empty($NewlessImportantConf) ? $NewlessImportantConf : $lessImportantConf;
 	}
 
 	/**
-	 * magic method for backward compatability (Yaf_Config style)
+	 * magic method for backward compatibility (Yaf_Config style)
 	 * 
 	 * @param string $key the key in the config container (Yaf_Config)
 	 * 
@@ -206,7 +221,7 @@ class Billrun_Config {
 			}
 		} catch (MongoException $e) {
 			// TODO: Exception should be thrown and handled by the error controller.
-			error_log('cannot load database config');
+			error_log('MongoException - cannot load database config. Message: ' . $e->getMessage() . '. Trace: ' . $e->getTraceAsString());
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
@@ -347,7 +362,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof Mongodloid_Date) {
 			return false;
 		}
 		
@@ -497,13 +512,29 @@ class Billrun_Config {
 
 		return $fileTypes;
 	}
-	
+
 	/**
 	 * method to get monthly invoice's display config
 	 * @return invoice display options if was configured, else returns null.
 	 */
 	public function getInvoiceDisplayConfig() {		
 		return $this->getConfigValue('invoice_export.invoice_display_options', null);
+	}
+
+	/**
+	 * method to check the cycle's mode
+	 * @return boolean true if it's multi day cycle mode, false otherwise.
+	 */
+	public function isMultiDayCycle() {
+		return $this->getConfigValue('billrun.multi_day_cycle', false);
+	}
+	
+	/**
+	 * 
+	 * @return returns the default charging/invoicing day from the config.
+	 */
+	public function getConfigChargingDay() {
+		return !is_null($this->getConfigValue('billrun.invoicing_day', null)) ? $this->getConfigValue('billrun.invoicing_day', 1) : $this->getConfigValue('billrun.charging_day', 1);
 	}
 
 }
