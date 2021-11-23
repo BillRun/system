@@ -191,9 +191,9 @@ class ResetLinesModel {
                 $former_exporter = $this->buildFormerExporterForLine($line);
                 $split_line = $line['split_line']?? false;
                 if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
-                    $allow = true;
-                    Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, &$allow));
-                    if($allow){
+                    $addToQueue = false;
+                    Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, &$addToQueue));
+                    if(!$addToQueue){
                         $this->splitLinesStamp[] = $line['stamp'];
                         return;
                     }
