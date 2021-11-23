@@ -11,6 +11,7 @@
  */
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
+	public $now;
     protected $configByType;
     protected $exportDefinitions;
     protected $generatorDefinitions;
@@ -41,6 +42,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->gatewayLogName = str_replace('_', '', ucwords($options['name'], '_'));
         $this->gatewayName = $options['name'];
         $this->bills = Billrun_Factory::db()->billsCollection();
+		$this->now = time();
     }
 
     public function generate() {
@@ -52,7 +54,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
-		$this->logFile->updateLogFileField('process_time', new MongoDate(time()));
+		$this->logFile->updateLogFileField('process_time', new MongoDate($this->now));
         $this->logFile->saveLogFileFields();
     }
 
@@ -93,7 +95,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
                 $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $dataLine[$dataField['path']] = date($dateFormat, time());
+                $dataLine[$dataField['path']] = date($dateFormat, $this->now);
             }
             if (isset($dataField['hard_coded_value'])) {
                 $dataLine[$dataField['path']] = $dataField['hard_coded_value'];
@@ -127,7 +129,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
 					$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
 				}
-			$attributes = $this->getLineAttributes($dataField);
+            $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
@@ -300,7 +302,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         switch ($paramObj['type']) {
             case 'date':
                 $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $dateValue = ($paramObj['value'] == 'now') ? $this->now : strtotime($paramObj['value']);
                 return date($dateFormat, $dateValue);
             case 'autoinc':
 				$seq = $this->getAutoincValue($paramObj, 'transactions_request');
@@ -337,7 +339,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
                 $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $line[$field['path']] = date($dateFormat, time());
+                $line[$field['path']] = date($dateFormat, $this->now);
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;
@@ -366,7 +368,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
 			}
 			$attributes = $this->getLineAttributes($field);
-			if (!isset($line[$field['path']])) {
+            if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
                 $this->logFile->updateLogFileField('errors', $message);
