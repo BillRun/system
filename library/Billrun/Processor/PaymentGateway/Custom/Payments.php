@@ -27,7 +27,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected function mapProcessorFields($processorDefinition) {
 		$identifier = $processorDefinition['processor']['identifier_field'];
 		if (empty($identifier) ||
-			(is_array($identifier) && array_keys($identifier) !== ['source', 'field', 'file_field'])) {
+			(is_array($identifier) && (array_intersect(['source', 'field', 'file_field'], array_keys($identifier)) !== ['source', 'field', 'file_field']))) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
