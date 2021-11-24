@@ -56,6 +56,15 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'display' => true,
 					'nullable' => false,
 				],
+				[
+					'type' => 'json',
+					'field_name' => 'allow_categorys',
+					'title' => 'Permitted settings values',
+					'mandatpry' => true,
+					'editable' => true,
+					'display' => true,
+					'nullable' => false,
+				],
 			];
 	}
 	

@@ -151,7 +151,7 @@ class PortalController extends Yaf_Controller_Abstract {
 			'query' => $this->query,
 			'update' => $this->update,
 		]);
-
+                
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'account']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
@@ -181,6 +181,20 @@ class PortalController extends Yaf_Controller_Abstract {
 	public function registrationAction() {
 		$params = $this->requestBody;
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'registration']));
+		$res = $module->run($this->action, $params);
+		$this->setResponse($res);
+	}
+        
+        /**
+	 * Settings entry point
+	 *
+	 * @return void
+	 */
+	public function settingsAction() {
+		$params = array(
+                    'categorys' => json_decode($this->request->getRequest()['categorys'], false) ?? []
+                );
+		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'settings']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
