@@ -495,7 +495,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 						if (isset($usageInGroup['data'])) {
 							$this->writer->writeElement('DATA_USAGE', $this->bytesToKB($balanceUsages['data']['usagev']));
-							$this->writer->writeElement('DATA_CAPACITY', empty($usageInGroup['limits']['vf']) ?  $this->bytesToKB($usageInGroup['data']) : 6291456 );   // TODO When possible change to this to only use the in group usage
+							$this->writer->writeElement('DATA_CAPACITY', empty($usageInGroup['limits']['vf']) ?  $this->bytesToKB($usageInGroup['data']) : ($usageInGroup['data'] === 'UNLIMITED' ? 6291456 : $usageInGroup['data']));   // TODO When possible change to this to only use the in group usage
 							$this->writer->writeElement('DATA_CAPACITY_ACCUMULATIVE',  empty($usageInGroup['limits']['vf']) ?  "TRUE" : "FALSE");
 						}
 						if (isset($usageInGroup['mms'])) {
@@ -578,7 +578,7 @@ class Generator_Golanxml extends Billrun_Generator {
 							$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
 							$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
 							$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
-							$this->writer->writeElement('DATA_CAPACITY', (($group_name == 'VF') || isset($group['limits']['vf'],$group['limits']['days'])) ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
+							$this->writer->writeElement('DATA_CAPACITY', (($group_name == 'VF' && ($group['data'] === 'UNLIMITED')) || isset($group['limits']['vf'],$group['limits']['days'])) ? 6291456 : $group['data']); // Hard coded 6GB for vf data abroad
 							if(isset($group['limits']['vf'],$group['limits']['days'])) {
 								$this->writer->writeElement('VF_DAYS_USAGE', isset($subscriber_group_usage_VF_DAYS) ? $subscriber_group_usage_VF_DAYS : 0 );
 								$this->writer->writeElement('VF_DAYS_CAPACITY', $group['limits']['days']);
