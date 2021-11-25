@@ -192,7 +192,7 @@ class PortalController extends Yaf_Controller_Abstract {
 	 */
 	public function settingsAction() {
 		$params = array(
-                    'categorys' => json_decode($this->request->getRequest()['categorys'], false) ?? []
+                    'categories' => json_decode($this->request->getRequest()['categories'], false) ?? []
                 );
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'settings']));
 		$res = $module->run($this->action, $params);

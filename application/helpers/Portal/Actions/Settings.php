@@ -10,15 +10,15 @@ class Portal_Actions_Settings extends Portal_Actions {
    
     
     public function get($params = []) {
-        $categorys = $params['categorys'] ?? [];
+        $categories = $params['categories'] ?? [];
 
-        if (empty($categorys)) {
-                throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "categorys"');
+        if (empty($categories)) {
+                throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "categories"');
         }
-        $allow_categorys = $this->params['allow_categorys'] ?? [];
-        foreach ($categorys as $category){
+        $allow_categories = $this->params['allow_categories'] ?? [];
+        foreach ($categories as $category){
             //check if category allow
-            if(in_array($category, $allow_categorys)){         
+            if(in_array($category, $allow_categories)){         
                 $res[$category] = Billrun_Factory::config()->getConfigValue($category);
             }else{
                 throw new Portal_Exception('permission_denied', '', 'Permission denied to get category : ' . $category);
