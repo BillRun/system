@@ -300,7 +300,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			foreach ($updateCollectionStateChanged['in_collection'] as $aid => $item) {
 				$params = array('aid' => $aid, 'time' => date('c'));
 				if ($this->loadAccountForQuery($params)) {
-					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
+					$new_values = array('in_collection' => true, 'in_collection_from' => new Mongodloid_Date());
 					$collectionSteps->createCollectionSteps($aid);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;

@@ -36,10 +36,22 @@ class IndexInputTest extends TestCase
         return $this->wrapValuesForDataProvider([true, [], new stdClass()]);
     }
 
+    public function testConstructorShouldRequireNamespace()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new IndexInput(['key' => ['x' => 1]]);
+    }
+
+    public function testConstructorShouldRequireNamespaceToBeString()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new IndexInput(['key' => ['x' => 1], 'ns' => 1]);
+    }
+
     public function testConstructorShouldRequireNameToBeString()
     {
         $this->expectException(InvalidArgumentException::class);
-        new IndexInput(['key' => ['x' => 1], 'name' => 1]);
+        new IndexInput(['key' => ['x' => 1], 'ns' => 'foo.bar', 'name' => 1]);
     }
 
     /**
@@ -47,7 +59,7 @@ class IndexInputTest extends TestCase
      */
     public function testNameGeneration($expectedName, array $key)
     {
-        $this->assertSame($expectedName, (string) new IndexInput(['key' => $key]));
+        $this->assertSame($expectedName, (string) new IndexInput(['key' => $key, 'ns' => 'foo.bar']));
     }
 
     public function provideExpectedNameAndKey()
@@ -65,16 +77,16 @@ class IndexInputTest extends TestCase
     {
         $expected = [
             'key' => ['x' => 1],
-            'unique' => true,
+            'ns' => 'foo.bar',
             'name' => 'x_1',
         ];
 
         $indexInput = new IndexInput([
             'key' => ['x' => 1],
-            'unique' => true,
+            'ns' => 'foo.bar',
         ]);
 
         $this->assertInstanceOf(Serializable::class, $indexInput);
-        $this->assertSame($expected, $indexInput->bsonSerialize());
+        $this->assertEquals($expected, $indexInput->bsonSerialize());
     }
 }

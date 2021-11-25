@@ -304,9 +304,6 @@
             "commitTransaction"
           ],
           "errorCode": 10107,
-          "errorLabels": [
-            "RetryableWriteError"
-          ],
           "closeConnection": false
         }
       },

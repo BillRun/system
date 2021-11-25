@@ -51,7 +51,11 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
 							 'service' => array('rate'=> 'description','line' => 'name'));
 		
-		if(in_array($line['type'],array_keys($typeMapping))) {			
+		if (isset($rate['invoice_description'])) {
+			return $rate['invoice_description'];
+		}
+		
+		if(in_array($line['type'],array_keys($typeMapping))) {
 			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
 								$rate[$typeMapping[$line['type']]['rate']] :
 								ucfirst(strtolower(preg_replace('/_/', ' ',$line[$typeMapping[$line['type']]['line']])));
@@ -130,7 +134,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = MongoDBRef::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
+			$rate = Mongodloid_Ref::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
 			$rate = $rate->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ? 
@@ -138,7 +142,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
 			$rate = $flatRate->getData();
 		}
-		return $rate;			
+		return $rate;
 	}
 	
 	protected function getLineAggregationKey($line,$rate,$name) {
@@ -203,7 +207,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getPlanDescription($subscriberiptionData) {
 		if(!empty($subscriberiptionData['plan'])) {
 			$plan = Billrun_Factory::plan(array('name'=>$subscriberiptionData['plan'],'time'=>$this->data['end_date']->sec));
-			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new MongoDate())->sec), $plan->get('invoice_description'));
+			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new Mongodloid_Date())->sec), $plan->get('invoice_description'));
 		}
 		return "";
 	}
@@ -262,7 +266,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$query['time'] = date(Billrun_Base::base_datetimeformat, $this->data['invoice_date']->sec);
 		$query['sid'] = $sid;
 		$subData = Billrun_Factory::subscriber()->loadSubscriberForQuery($query);
-		$msgs = !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
+		$msgs = !empty($subData) && !$subData->isEmpty() && !empty($subData['invoice_messages']) ? $subData['invoice_messages'] : [];
 		$retMsgs = [];
 		foreach($msgs as $msg) {
 			$entryTime = strtotime(is_array($msg['entry_time']) ? $msg['entry_time']['sec'] : $msg['entry_time']);
@@ -355,5 +359,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				}
 			}
 		}
+	}
+
+
+	/**
+	 * TODO implement
+	 */
+	public function  getFormatedDate($date,$formatType = '' ) {
+		return date('Y-m-d' ,$date);
 	}
 }

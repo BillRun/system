@@ -138,6 +138,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
 		$attachment->encoding = Zend_Mime::ENCODING_BASE64;
 		$attachment->filename = $data['billrun_key'] . '_' . $data['aid'] . '_' . $data['invoice_id'] . ".pdf";
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceReadyGetAttachment',[&$attachment, $data ,$this]);
 		return $attachment;
 	}
 	
@@ -177,7 +178,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$query = $this->getRelatedBillrunQuery($data);
 		$update = array(
 			'$set' => array(
-				'email_sent' => new MongoDate(),
+				'email_sent' => new Mongodloid_Date(),
 			),
 		);
 		Billrun_Factory::db()->billrunCollection()->update($query, $update);

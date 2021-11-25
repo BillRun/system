@@ -229,7 +229,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => new MongoDate(),
+			'received_time' => new Mongodloid_Date(),
 			'pg_file_type' => $this->fileType
 		);
 

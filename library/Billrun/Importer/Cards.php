@@ -36,7 +36,7 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	}
 
 	protected function getFrom($rowData) {
-		$from = new MongoDate();
+		$from = new Mongodloid_Date();
 		return $from;
 	}
 
@@ -51,13 +51,13 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	}
 
 	protected function getTo($rowData) {
-		$to = new MongoDate(strtotime($rowData[$this->fieldsColumns['to']]));
+		$to = new Mongodloid_Date(strtotime($rowData[$this->fieldsColumns['to']]));
 		return $to;
 	}
 
 	protected function getCreationTime($rowData) {
 		$currentTime = date('m/d/Y h:i:s a', time());
-		$creationTime = new MongoDate(strtotime($currentTime));
+		$creationTime = new Mongodloid_Date(strtotime($currentTime));
 		return $creationTime;
 	}
 

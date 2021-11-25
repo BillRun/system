@@ -875,7 +875,7 @@
                 "failCommands": [
                   "commitTransaction"
                 ],
-                "errorCode": 51
+                "errorCode": 50
               }
             }
           }
@@ -887,7 +887,7 @@
             "errorLabelsOmit": [
               "TransientTransactionError"
             ],
-            "errorCode": 51
+            "errorCode": 50
           }
         },
         {

@@ -63,7 +63,7 @@ abstract class Billrun_Balance_Update_Abstract {
 			$this->subscriber = $accountEntity->loadAccountForQuery($query);
 		}
 		
-		if ($this->subscriber->isEmpty()) {
+		if (empty($this->subscriber) || $this->subscriber->isEmpty()) {
 			throw new Billrun_Exceptions_Api(0, array(), get_class() . 'Error loading entity');
 		}
 		$this->entity = $this->subscriber->getRawData();
