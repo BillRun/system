@@ -593,10 +593,20 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$options = array('collect' => true, 'payment_gateway' => TRUE, 'payment_data' => $paymentData);
 		$options['pretend_bills'] = !empty($chargeOptions['bills']);
 
-		$query['aid'] = array(
-			'$in' => $customersAids
-		);
-		$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		$accounts = [];
+		if (!empty($customersAids)) {
+			$query['aid'] = array(
+				'$in' => $customersAids
+			);
+			$accounts = Billrun_Factory::account()->loadAccountsForQuery($query);
+		}
+		if (!empty($accounts)) {
+			foreach ($accounts as $account) {
+				$accounts_in_array[$account['aid']] = $account;
+			}
+		} else {
+			Billrun_Factory::log("Didn't find relevant accocunts to charge..", Zend_Log::DEBUG);
+		}
 		if(!empty($accounts)){
 			foreach ($accounts as $account) {
 				$accounts_in_array[$account['aid']] = $account;
