@@ -56,6 +56,18 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'display' => true,
 					'nullable' => false,
 				],
+                                [
+					'type' => 'integer',
+					'field_name' => 'usages_months_limit',
+					'title' => 'Display only usages from (Months ago)', //need to be only for usages?? 
+					'mandatpry' => true,
+					'editable' => true,
+					'display' => true,
+					'nullable' => false,
+                                        
+                                        //todo:: need to allow only positive number (FE task)
+                                        //'min' => 0
+				],
 			];
 	}
 	

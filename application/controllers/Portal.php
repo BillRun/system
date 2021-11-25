@@ -74,6 +74,20 @@ class PortalController extends Yaf_Controller_Abstract {
 	 * @var array
 	 */
 	protected $tokenData = [];
+        
+         /**
+	 * holds request's page - the index of the page use for pagination
+	 *
+	 * @var array
+	 */
+	protected $page;
+        
+        /**
+	 * holds request's size -the size of the page retrieved
+	 *
+	 * @var array
+	 */
+	protected $size;
 
 	public function init() {
 		$this->settings = Billrun_Factory::config()->getPluginSettings('portal');
@@ -85,6 +99,8 @@ class PortalController extends Yaf_Controller_Abstract {
 		$this->requestBody = json_decode(file_get_contents('php://input'), JSON_OBJECT_AS_ARRAY) ?? [];
 		$this->update = $this->requestBody['update'] ?? [];
 		$this->query = json_decode($this->request->getRequest()['query'], JSON_OBJECT_AS_ARRAY) ?? [];
+                $this->page = $this->request->getRequest()['page'] ?? -1;
+                $this->size = $this->request->getRequest()['size'] ?? -1;
 		$this->response = $this->getResponse();
 		$requestParams = $this->request->getParams();
 		$this->action = !empty($requestParams) ? array_keys($requestParams)[0] :
@@ -150,8 +166,10 @@ class PortalController extends Yaf_Controller_Abstract {
 		$params = array_merge($this->requestBody, [
 			'query' => $this->query,
 			'update' => $this->update,
+                        'page' => $this ->page,
+                        'size' => $this ->size
 		]);
-
+               
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'account']));
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
@@ -166,6 +184,8 @@ class PortalController extends Yaf_Controller_Abstract {
 		$params = array_merge($this->requestBody, [
 			'query' => $this->query,
 			'update' => $this->update,
+                        'page' => $this ->page,
+                        'size' => $this ->size
 		]);
 
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'subscriber']));
