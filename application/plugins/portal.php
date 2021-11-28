@@ -64,7 +64,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'editable' => true,
 					'display' => true,
 					'nullable' => false,
-                                        
+                                                                          
                                         //todo:: need to allow only positive number (FE task)
                                         //'min' => 0
 				],

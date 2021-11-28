@@ -153,6 +153,9 @@ class PortalController extends Yaf_Controller_Abstract {
 		if (!empty($params['details'])) {
 			$ret['details'] = $params['details'];
 		}
+                if (!empty($params['total_pages'])) {
+			$ret['total_pages'] = $params['total_pages'];
+		}
 		
 		$this->response->setBody(json_encode($ret));
 	}
@@ -165,9 +168,7 @@ class PortalController extends Yaf_Controller_Abstract {
 	public function accountAction() {
 		$params = array_merge($this->requestBody, [
 			'query' => $this->query,
-			'update' => $this->update,
-                        'page' => $this ->page,
-                        'size' => $this ->size
+			'update' => $this->update
 		]);
                
 		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'account']));

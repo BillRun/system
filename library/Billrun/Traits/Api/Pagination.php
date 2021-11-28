@@ -11,13 +11,13 @@
  */
 trait Billrun_Traits_Api_Pagination {
     
-    protected $pageSize;
+    private $pageSize;
     
-    protected $pageNumber;
+    private $pageNumber;
     
-    protected $totalPages;
+    private $totalPages;
     
-    protected $pagination = true;
+    private $pagination = false;
 
 
 
@@ -30,13 +30,14 @@ trait Billrun_Traits_Api_Pagination {
         $this->pageNumber = $page;
     }
     
-    protected function setPaginationParams($page = -1, $size = -1){
+    private function setPaginationParams($page, $size){
         $this->checkIfValid($page, $size);
         $this->setPageNumber($page);
         $this->setPageSize($size);
     }
     
-    protected function fillterEntitiesByPagination($entities){       
+    protected function fillterEntitiesByPagination($entities, $page = -1, $size = -1){ 
+        $this->setPaginationParams($page, $size);
         if(!$this->pagination){//for no pagination
             return $entities;
         }
@@ -66,6 +67,7 @@ trait Billrun_Traits_Api_Pagination {
         if(!is_integer(intval($size)) || intval($size) <= 0 ){
             throw new Exception('Unsupport parameter value: "size" : ' . $size);
         }
+        $this->pagination = true;
     }
     
 }
