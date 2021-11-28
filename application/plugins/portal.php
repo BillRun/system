@@ -16,7 +16,16 @@
  * @since    5.14
  */
 class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
-	/**
+	
+        const ALLOW_CATEGORIES_AVAILABLE_LIST = [
+            "usage_types",
+            "pricing.currency",
+            "subscribers.account.fields",
+            "subscribers.subscriber.fields",
+            "billrun.charging_day"
+        ];
+        
+        /**
 	 * plugin name
 	 *
 	 * @var string
@@ -57,10 +66,11 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'nullable' => false,
 				],
 				[
-					'type' => 'json',
+					'type' => 'select',
 					'field_name' => 'allow_categories',
 					'title' => 'Permitted settings values',
-					'mandatpry' => true,
+                                        'select_options' => implode(',', self::ALLOW_CATEGORIES_AVAILABLE_LIST),
+					'select_list' => true,
 					'editable' => true,
 					'display' => true,
 					'nullable' => false,

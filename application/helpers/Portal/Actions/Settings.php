@@ -7,7 +7,6 @@
  */
 
 class Portal_Actions_Settings extends Portal_Actions {
-   
     
     public function get($params = []) {
         $categories = $params['categories'] ?? [];
