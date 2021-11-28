@@ -244,7 +244,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
                 $query['urt'] = array('$gt' =>  new Mongodloid_Date(strtotime($usages_months_limit . " months ago")));              
 		$sort = array('urt'=> -1);
 		$billapiParams = $this->getBillApiParams('lines', 'get', $query, [], $sort);            
-		return $this->fillterEntitiesByPagination($this->runBillApi($billapiParams), $page, $size);
+		return $this->filterEntitiesByPagination($this->runBillApi($billapiParams), $page, $size);
 	}
 
 	/**
