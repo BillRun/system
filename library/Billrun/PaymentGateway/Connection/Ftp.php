@@ -134,6 +134,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 				$fileData['backed_to'] = $backedTo;
 				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
 			}
+			Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file->name, $fileData));
 			if ($this->logDB($fileData)) {
 				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
@@ -143,7 +144,6 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 					$file->delete();
 				}
 			}
-			Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file->name, $fileData));
 			if ($count >= $this->limit) {
 				break;
 			}

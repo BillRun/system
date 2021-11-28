@@ -104,6 +104,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 					$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths);
 					$fileData['backed_to'] = $backedTo;
 				}
+				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file, &$fileData));
 				// Log to DB
 				if ($this->logDB($fileData)) {
 					$ret[] = $fileData['path'];
@@ -116,7 +117,6 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 						}
 					}
 				}
-				Billrun_Factory::dispatcher()->trigger('afterFileReceived', array($this, $file, $fileData));
 				// Check limit
 				$this->limit = 1;	
 				if ($count >= $this->limit) {
