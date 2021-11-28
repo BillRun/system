@@ -15,25 +15,25 @@ trait Billrun_Traits_Api_Pagination {
      * The requested page size
      * @var int
      */
-    private $pageSize;
+    protected $pageSize;
     
     /**
      * The requested page number 
      * @var int
      */
-    private $pageNumber;
+    protected $pageNumber;
     
     /**
      * Get total pages for the entities 
      * @var int
      */
-    private $totalPages;
+    protected $totalPages;
     
     /**
      * Flag if pagination needed for request
      * @var boolean
      */
-    private $pagination = false;
+    protected $pagination = false;
 
     /**
      * Set page size
