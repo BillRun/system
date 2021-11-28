@@ -18,7 +18,6 @@ require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Settings.ph
  * @since    5.14
  */
 abstract class Portal_Actions {
-
     const DATETIME_FORMAT = 'Y-m-d H:i:s';
     const LOGIN_LEVEL_ACCOUNT = 'account';
     const LOGIN_LEVEL_SUBSCRIBER = 'subscriber';
@@ -74,8 +73,7 @@ abstract class Portal_Actions {
             if (!$this->actionExists($action)) {
 				$this->log("Invalid action {$action}. Params: " . print_R($params, 1), Billrun_Log::ERR);
 				throw new Portal_Exception('permission_denied');
-			}
-			
+			}                
 			$ret = call_user_func([$this, $action], $params);
 			$this->log("Got response: " . print_R($ret, 1), Billrun_Log::DEBUG);
 			return $this->response(1, 1000, $ret);
@@ -120,6 +118,7 @@ abstract class Portal_Actions {
         if (!empty($details)) {
             $ret['details'] = $details;
         }
+        $ret = $this->addToResponse($ret);
 
         return $ret;
     }
@@ -259,5 +258,16 @@ abstract class Portal_Actions {
         }
 
         return $entity;
+    }
+
+    /**
+     * add fields to response
+     *
+     * @param  array response
+     * @return array the updated response
+     */
+    protected function addToResponse($response) {
+
+        return $response;
     }
 }

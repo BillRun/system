@@ -13,7 +13,7 @@
  * @since    5.14
  */
 class Portal_Actions_Subscriber extends Portal_Actions {
-        
+    use Billrun_Traits_Api_Pagination;
     /**
      * get subscriber by given query
 	 * using BillApi
@@ -224,6 +224,8 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 */
 	public function usages($params = []) {
 		$query = $params['query'] ?? [];
+                $page = $params['page'] ?? -1;
+                $size = $params['size'] ?? -1;
 
 		if ($this->loginLevel !== self::LOGIN_LEVEL_SUBSCRIBER && empty($query) || empty($query['sid'])) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "query"');
@@ -235,9 +237,15 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 		} else if ($this->loginLevel === self::LOGIN_LEVEL_ACCOUNT) {		
 			$query['aid'] = $this->loggedInEntity['aid'];
 		}
-		
-		$billapiParams = $this->getBillApiParams('lines', 'get', $query);
-		return $this->runBillApi($billapiParams);
+                $usages_months_limit = isset($this->params['usages_months_limit']) && 
+                        is_integer($this->params['usages_months_limit']) && 
+                        intval($this->params['usages_months_limit']) > 0
+                        ?  $this->params['usages_months_limit'] : 24;
+              
+                $query['urt'] = array('$gt' =>  new Mongodloid_Date(strtotime($usages_months_limit . " months ago")));              
+		$sort = array('urt'=> -1);
+		$billapiParams = $this->getBillApiParams('lines', 'get', $query, [], $sort);            
+		return $this->filterEntitiesByPagination($this->runBillApi($billapiParams), $page, $size);
 	}
 
 	/**
@@ -254,5 +262,18 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 
 		return in_array($this->loginLevel, [self::LOGIN_LEVEL_ACCOUNT, self::LOGIN_LEVEL_SUBSCRIBER]);
 	}
+        
+    /**
+     * add fields to response
+     *
+     * @param  array response
+     * @return array the updated response
+     */
+    protected function addToResponse($response) {
+        if($this->paginationRequest()){
+           $response['total_pages'] = $this->getTotalPages(); 
+        }
+        return $response;
+    }
 
 }

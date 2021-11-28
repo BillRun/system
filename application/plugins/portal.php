@@ -66,16 +66,28 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'nullable' => false,
 				],
 				[
+					'type' => 'integer',
+					'field_name' => 'usages_months_limit',
+					'title' => 'Display only usages from (Months ago)', //need to be only for usages?? 
+					'mandatpry' => true,
+					'editable' => true,
+					'display' => true,
+					'nullable' => false,
+					'default_value' => 24                             
+					//todo:: need to allow only positive number (FE task)
+					//'min' => 0
+				],
+				[
 					'type' => 'string',
 					'field_name' => 'allow_categories',
 					'title' => 'Permitted settings values',
-                                        'select_options' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
+					'select_options' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
 					'select_list' => true,
 					'editable' => true,
 					'display' => true,
-                                        'nullable' => false,
-                                        "multiple" => true,
-                                        'default_value' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
+					'nullable' => false,
+					"multiple" => true,
+					'default_value' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
 				],
 			];
 	}
