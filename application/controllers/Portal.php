@@ -205,6 +205,20 @@ class PortalController extends Yaf_Controller_Abstract {
 		$res = $module->run($this->action, $params);
 		$this->setResponse($res);
 	}
+        
+        /**
+	 * Settings entry point
+	 *
+	 * @return void
+	 */
+	public function settingsAction() {
+		$params = array(
+                    'categories' => json_decode($this->request->getRequest()['categories'], false) ?? []
+                );
+		$module = Portal_Actions::getInstance(array_merge($this->getDefaultParams(), ['type' => 'settings']));
+		$res = $module->run($this->action, $params);
+		$this->setResponse($res);
+	}
 
 	/**
 	 * set the user performing the action
