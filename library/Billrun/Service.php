@@ -705,7 +705,7 @@ class Billrun_Service {
 	}
 	
 	/**
-	 * 
+	 * Returns service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
 	 * @return Service maximum quantity - int
@@ -721,7 +721,7 @@ class Billrun_Service {
 	}
 
 	/**
-	 * 
+	 * Calculates service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
 	 * @return Service data after calculating it's maximum quantity for this aid
