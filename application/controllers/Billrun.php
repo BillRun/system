@@ -153,13 +153,19 @@ class BillrunController extends ApiController {
 		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
 			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices))){
+		if(!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)){
+			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
+		}
+		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
 			if (is_null($invoices)) {
 				$success = self::processConfirmCycle($billrunKey, [], [$invoicingDay]);
 			} else {
 				$success = self::processConfirmCycle($billrunKey, $invoicesId, $invoicingDay);
 			}
+		} else {
+			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
 		}
+
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
