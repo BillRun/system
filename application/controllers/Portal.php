@@ -78,14 +78,14 @@ class PortalController extends Yaf_Controller_Abstract {
          /**
 	 * holds request's page - the index of the page use for pagination
 	 *
-	 * @var array
+	 * @var int
 	 */
 	protected $page;
         
         /**
 	 * holds request's size -the size of the page retrieved
 	 *
-	 * @var array
+	 * @var int
 	 */
 	protected $size;
 
