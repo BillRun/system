@@ -9,6 +9,7 @@
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Registration.php';
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Account.php';
 require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Subscriber.php';
+require_once APPLICATION_PATH . '/application/helpers/Portal/Actions/Settings.php';
 
 /**
  * Customer Portal actions
