@@ -16,7 +16,16 @@
  * @since    5.14
  */
 class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
-	/**
+	
+        const ALLOW_CATEGORIES_WHITE_LIST = [
+            "usage_types",
+            "pricing.currency",
+            "subscribers.account.fields",
+            "subscribers.subscriber.fields",
+            "billrun.charging_day"
+        ];
+        
+        /**
 	 * plugin name
 	 *
 	 * @var string
@@ -55,6 +64,18 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'editable' => true,
 					'display' => true,
 					'nullable' => false,
+				],
+				[
+					'type' => 'string',
+					'field_name' => 'allow_categories',
+					'title' => 'Permitted settings values',
+                                        'select_options' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
+					'select_list' => true,
+					'editable' => true,
+					'display' => true,
+                                        'nullable' => false,
+                                        "multiple" => true,
+                                        'default_value' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
 				],
 			];
 	}
