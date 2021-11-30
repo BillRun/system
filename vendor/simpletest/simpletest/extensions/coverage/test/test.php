@@ -1,17 +1,14 @@
 <?php
-
-require_once __DIR__ . '/../../../autorun.php';
+// $Id: $
+require_once(dirname(__FILE__) . '/../../../autorun.php');
 
 class CoverageUnitTests extends TestSuite
 {
-    public function __construct()
+    public function CoverageUnitTests()
     {
-        parent::__construct('Coverage Unit Tests');
-
-        $path  = __DIR__ . '/*_test.php';
-        $files = glob($path);
-
-        foreach ($files as $test) {
+        $this->TestSuite('Coverage Unit tests');
+        $path = dirname(__FILE__) . '/*_test.php';
+        foreach (glob($path) as $test) {
             $this->addFile($test);
         }
     }

@@ -80,5 +80,9 @@ The output would then resemble::
 See Also
 --------
 
+- :phpmethod:`MongoDB\\Client::listDatabaseNames()`
 - :manual:`listDatabases </reference/command/listDatabases>` command reference
   in the MongoDB manual
+- `Enumerating Databases
+  <https://github.com/mongodb/specifications/blob/master/source/enumerate-databases.rst>`_
+  specification

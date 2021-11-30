@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-2017 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,13 @@ class DeleteOne implements Executable, Explainable
      *    This is not supported for server versions < 3.4 and will result in an
      *    exception at execution time if used.
      *
+     *  * hint (string|document): The index to use. Specify either the index
+     *    name as a string or the index key pattern as a document. If specified,
+     *    then the query system will only consider plans using the hinted index.
+     *
+     *    This is not supported for server versions < 4.4 and will result in an
+     *    exception at execution time if used.
+     *
      *  * session (MongoDB\Driver\Session): Client session.
      *
      *    Sessions are not supported for server versions < 3.6.
@@ -76,6 +83,13 @@ class DeleteOne implements Executable, Explainable
         return $this->delete->execute($server);
     }
 
+    /**
+     * Returns the command document for this operation.
+     *
+     * @see Explainable::getCommandDocument()
+     * @param Server $server
+     * @return array
+     */
     public function getCommandDocument(Server $server)
     {
         return $this->delete->getCommandDocument($server);
