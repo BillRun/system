@@ -713,11 +713,11 @@ class Billrun_Service {
 	public function getServiceMaximumQuantityByAid($aid, $time) {
 		$index = $aid . $time;
 		if (isset(self::$serviceMaximumQuantityByAid[$index])) {
-			return self::$serviceMaximumQuantityByAid[$index];
+			return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 		}
 		$quantity = $this->calculateServiceMaximumQuantity($aid, $time);
 		self::$serviceMaximumQuantityByAid[$index] = $quantity;
-		return self::$serviceMaximumQuantityByAid[$index];
+		return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 	}
 
 	/**
