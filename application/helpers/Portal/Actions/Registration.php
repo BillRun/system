@@ -17,9 +17,11 @@ class Portal_Actions_Registration extends Portal_Actions {
 	const VALIDITY_TIME = [
 		'default' => '24 hours',
 		'email_verification' => '1 hour',
+                'reset_password' => '1 hour' //1 hour is ok?? 
 	];
 
 	const TOKEN_TYPE_EMAIL_VERIFICATION = 'email_verification';
+        const TOKEN_TYPE_RESET_PASSWORD = 'reset_password';
         
     /**
      * send authentication email with 1-time token
@@ -33,14 +35,49 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}
 		
-		$subject = $this->getAuthenticationEmailSubject();
+		$subject = $this->getEmailSubject('email_authentication');
 		$bodyParams = [
 			'token' => $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION),
 			'name' => $params['name'] ?? 'Guest',
 		];
-		$body = $this->getAuthenticationEmailBody($bodyParams);
+                $replaces = array_merge([
+			'[[name]]' => $params['name'] ?? '',
+			'[[email_authentication_link]]' => 'http://billrun/callback?token=' . $bodyParams['token'] ?? '',//todo:: change to the real url
+		], $this->BuildReplacesforCompanyInfo());
+		$body = $this->getEmailBody($bodyParams, 'email_authentication', $replaces);
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendAuthenticationEmail - failed to send Email to {$email}", Billrun_Log::ERR);
+			throw new Portal_Exception('send_email_failed');
+		}
+	}
+        
+    /**
+     * send email to reset password with 1-time token
+     *
+     * @param  array $params
+     * @return void
+     */
+    public function sendResetPasswordEmail($params = []) {
+		$email = $params['email'] ?? '';
+		if (empty($email)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
+		}
+		
+		$subject = $this->getEmailSubject('reset_password');
+		$bodyParams = [
+			'token' => $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD),
+			'name' => $params['name'] ?? 'Guest',
+		];
+                $replaces = array_merge([
+			'[[name]]' => $params['name'] ?? '',
+			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $bodyParams['token'] ?? '',//todo:: change to the real url
+                        '[[link_expire]]' => $this->getValidity('reset_password'),
+                        
+		], $this->BuildReplacesforCompanyInfo());
+		$body = $this->getEmailBody($bodyParams, 'reset_password', $replaces);
+                
+		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
+			$this->log("Portal_Actions_Registration::sendResetPasswordEmail - failed to send Email to {$email}", Billrun_Log::ERR);
 			throw new Portal_Exception('send_email_failed');
 		}
 	}
@@ -73,30 +110,26 @@ class Portal_Actions_Registration extends Portal_Actions {
 
 		Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($params['id'] ?? $email, $password);
 	}
-	
-	/**
-	 * get the subject of the Email send for authentication
+        
+        /**
+	 * get the subject email
 	 *
+         * @param  string $path - the path of the requested email body
 	 * @return string
 	 */
-	protected function getAuthenticationEmailSubject() {
-		return Billrun_Factory::config()->getConfigValue('email_templates.email_authentication.subject', '');
+	protected function getEmailSubject($path) {
+		return Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.subject' , '');
 	}
-		
-	/**
-	 * get the body of the Email send for authentication
+        
+        /**
+	 * get the body of the Email
 	 *
-	 * @param  array $params
+         * @param  string $path - the path of the requested email body
 	 * @return string
 	 */
-	protected function getAuthenticationEmailBody($params = []) {
-		$body = Billrun_Factory::config()->getConfigValue('email_templates.email_authentication.content', '');
-		$replaces = [
-			'[[name]]' => $params['name'] ?? '',
-			'[[token]]' => $params['token'] ?? '',
-			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
-			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
-		];
+	protected function getEmailBody($params = [], $path, $replaces) {
+		$body = Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.content', '');
+		
 		return str_replace(array_keys($replaces), array_values($replaces), $body);
 	}
 	
@@ -225,5 +258,17 @@ class Portal_Actions_Registration extends Portal_Actions {
     protected function authorize($action, &$params = []) {
 		return true;
 	}
+        
+        
+    protected function BuildReplacesforCompanyInfo(){
+        return [
+            '[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
+            '[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
+            '[[company_address]]' => Billrun_Factory::config()->getConfigValue('tenant.address', ''),
+            '[[company_phone]]' => Billrun_Factory::config()->getConfigValue('tenant.phone', ''),
+            '[[company_website]]' => Billrun_Factory::config()->getConfigValue('tenant.website', ''),  
+            //maybe need to add Activity time for salt template?? 
+        ];
+    } 
 
 }
