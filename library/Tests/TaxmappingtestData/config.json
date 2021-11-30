@@ -1623,7 +1623,7 @@
 						},
 						"email_authentication" :{
 							"subject": "BillRun Customer Portal - Email Address Verification",
-							"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\n[[email_authentication_link]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
 						},
                                                 "reset_password": {
                                                         "subject": "BillRun Customer Portal - Reset Password",
