@@ -4,8 +4,61 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5d8cc6b28b51451f83ed4e85eb8f4f5",
+    "content-hash": "fd7da60a22dbe3b2897222a35986ccef",
     "packages": [
+        {
+            "name": "alexandr-mironov/php-smpp",
+            "version": "1.3.0.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alexandr-mironov/php-smpp.git",
+                "reference": "4899dcd5807973f3ab662bb269a981c8084c11a8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alexandr-mironov/php-smpp/zipball/4899dcd5807973f3ab662bb269a981c8084c11a8",
+                "reference": "4899dcd5807973f3ab662bb269a981c8084c11a8",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "ext-sockets": "*",
+                "php": ">=5.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "smpp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL"
+            ],
+            "authors": [
+                {
+                    "name": "Alexandr Mironov",
+                    "email": "alexandr-mironov@hypro-y.com"
+                },
+                {
+                    "name": "Hans Duedal",
+                    "email": "hd@oc.dk",
+                    "homepage": "http://oc.dk"
+                }
+            ],
+            "description": "PHP SMPP client lib, fork of onlinecity/php-smpp",
+            "homepage": "https://github.com/alexandr-mironov/php-smpp",
+            "keywords": [
+                "gsm",
+                "smpp",
+                "sms",
+                "texting"
+            ],
+            "support": {
+                "source": "https://github.com/alexandr-mironov/php-smpp/tree/1.3.0.7"
+            },
+            "time": "2020-10-29T07:26:04+00:00"
+        },
         {
             "name": "bshaffer/oauth2-server-php",
             "version": "v1.11.1",

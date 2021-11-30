@@ -7,13 +7,17 @@ namespace Composer\Autoload;
 class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
 {
     public static $files = array (
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        's' => 
+        array (
+            'smpp\\' => 5,
+        ),
         'Z' => 
         array (
             'ZipStream\\' => 10,
@@ -47,6 +51,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     );
 
     public static $prefixDirsPsr4 = array (
+        'smpp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alexandr-mironov/php-smpp/src',
+        ),
         'ZipStream\\' => 
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
