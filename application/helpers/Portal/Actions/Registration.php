@@ -17,7 +17,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 	const VALIDITY_TIME = [
 		'default' => '24 hours',
 		'email_verification' => '1 hour',
-                'reset_password' => '1 hour' //1 hour is ok?? 
+                'reset_password' => '1 hour' //1 hour is ok??
 	];
 
 	const TOKEN_TYPE_EMAIL_VERIFICATION = 'email_verification';
@@ -36,15 +36,12 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 		
 		$subject = $this->getEmailSubject('email_authentication');
-		$bodyParams = [
-			'token' => $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION),
-			'name' => $params['name'] ?? 'Guest',
-		];
+                $token = $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION);		
                 $replaces = array_merge([
-			'[[name]]' => $params['name'] ?? '',
-			'[[email_authentication_link]]' => 'http://billrun/callback?token=' . $bodyParams['token'] ?? '',//todo:: change to the real url
+			'[[name]]' => $params['name'] ??  'Guest',
+			'[[email_authentication_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url
 		], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody($bodyParams, 'email_authentication', $replaces);
+		$body = $this->getEmailBody('email_authentication', $replaces);
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendAuthenticationEmail - failed to send Email to {$email}", Billrun_Log::ERR);
 			throw new Portal_Exception('send_email_failed');
@@ -63,21 +60,54 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}
 		
-		$subject = $this->getEmailSubject('reset_password');
-		$bodyParams = [
-			'token' => $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD),
-			'name' => $params['name'] ?? 'Guest',
-		];
+		$subject = $this->getEmailSubject('reset_password');	
+                $token = $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD);
                 $replaces = array_merge([
-			'[[name]]' => $params['name'] ?? '',
-			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $bodyParams['token'] ?? '',//todo:: change to the real url
+			'[[name]]' => $params['name'] ??  'Guest',
+			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
-		$body = $this->getEmailBody($bodyParams, 'reset_password', $replaces);
+		$body = $this->getEmailBody('reset_password', $replaces);
                 
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
 			$this->log("Portal_Actions_Registration::sendResetPasswordEmail - failed to send Email to {$email}", Billrun_Log::ERR);
+			throw new Portal_Exception('send_email_failed');
+		}
+	}
+        
+        
+    /**
+     * send welcome email to account
+     *
+     * @param  array $params
+     * @return void
+     */
+    public function sendWelcomeEmail($params = []) {
+		$email = $params['email'] ?? '';
+		if (empty($email)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
+		}
+                $username = $params['username'] ?? '';
+                if (empty($username)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
+		}
+		$password = $params['password'] ?? '';
+		if (empty($password)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
+		}
+		$subject = $this->getEmailSubject('welcome_account');
+                $replaces = array_merge([
+			'[[name]]' => $params['name'] ??  'Guest',
+                        '[[username]]' => $username,
+                        '[[password]]' => $password,
+                        '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
+                        '[[link]]' =>  Billrun_Factory::config()->getConfigValue('tenant.website', '') //todo::verify this is right
+                ], $this->BuildReplacesforCompanyInfo());
+		$body = $this->getEmailBody('welcome_account', $replaces);
+                
+		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
+			$this->log("Portal_Actions_Registration::sendWelcomeEmail - failed to send Email to {$email}", Billrun_Log::ERR);
 			throw new Portal_Exception('send_email_failed');
 		}
 	}
@@ -127,7 +157,7 @@ class Portal_Actions_Registration extends Portal_Actions {
          * @param  string $path - the path of the requested email body
 	 * @return string
 	 */
-	protected function getEmailBody($params = [], $path, $replaces) {
+	protected function getEmailBody($path, $replaces) {
 		$body = Billrun_Factory::config()->getConfigValue('email_templates.' . $path . '.content', '');
 		
 		return str_replace(array_keys($replaces), array_values($replaces), $body);
