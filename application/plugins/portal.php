@@ -22,7 +22,8 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
             "pricing.currency",
             "subscribers.account.fields",
             "subscribers.subscriber.fields",
-            "billrun.charging_day"
+            "billrun.charging_day",
+            "billrun.timezone"
         ];
         
         /**
