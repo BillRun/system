@@ -18,6 +18,11 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         array (
             'smpp\\' => 5,
         ),
+        'c' => 
+        array (
+            'chillerlan\\Settings\\' => 20,
+            'chillerlan\\QRCode\\' => 18,
+        ),
         'Z' => 
         array (
             'ZipStream\\' => 10,
@@ -54,6 +59,14 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
         'smpp\\' => 
         array (
             0 => __DIR__ . '/..' . '/alexandr-mironov/php-smpp/src',
+        ),
+        'chillerlan\\Settings\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/chillerlan/php-settings-container/src',
+        ),
+        'chillerlan\\QRCode\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/chillerlan/php-qrcode/src',
         ),
         'ZipStream\\' => 
         array (
