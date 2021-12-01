@@ -4,7 +4,8 @@
       "minServerVersion": "4.1.8",
       "topology": [
         "sharded"
-      ]
+      ],
+      "serverless": "forbid"
     }
   ],
   "database_name": "transaction-tests",
@@ -181,7 +182,10 @@
                 ],
                 "writeConcernError": {
                   "code": 91,
-                  "errmsg": "Replication is being shut down"
+                  "errmsg": "Replication is being shut down",
+                  "errorLabels": [
+                    "RetryableWriteError"
+                  ]
                 }
               }
             }
@@ -303,7 +307,8 @@
               "data": {
                 "failCommands": [
                   "commitTransaction",
-                  "isMaster"
+                  "isMaster",
+                  "hello"
                 ],
                 "closeConnection": true
               }

@@ -10,13 +10,13 @@ use stdClass;
 
 class IndexInputTest extends TestCase
 {
-    public function testConstructorShouldRequireKey()
+    public function testConstructorShouldRequireKey(): void
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput([]);
     }
 
-    public function testConstructorShouldRequireKeyToBeArrayOrObject()
+    public function testConstructorShouldRequireKeyToBeArrayOrObject(): void
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput(['key' => 'foo']);
@@ -25,7 +25,7 @@ class IndexInputTest extends TestCase
     /**
      * @dataProvider provideInvalidFieldOrderValues
      */
-    public function testConstructorShouldRequireKeyFieldOrderToBeNumericOrString($order)
+    public function testConstructorShouldRequireKeyFieldOrderToBeNumericOrString($order): void
     {
         $this->expectException(InvalidArgumentException::class);
         new IndexInput(['key' => ['x' => $order]]);
@@ -36,30 +36,18 @@ class IndexInputTest extends TestCase
         return $this->wrapValuesForDataProvider([true, [], new stdClass()]);
     }
 
-    public function testConstructorShouldRequireNamespace()
+    public function testConstructorShouldRequireNameToBeString(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new IndexInput(['key' => ['x' => 1]]);
-    }
-
-    public function testConstructorShouldRequireNamespaceToBeString()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new IndexInput(['key' => ['x' => 1], 'ns' => 1]);
-    }
-
-    public function testConstructorShouldRequireNameToBeString()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        new IndexInput(['key' => ['x' => 1], 'ns' => 'foo.bar', 'name' => 1]);
+        new IndexInput(['key' => ['x' => 1], 'name' => 1]);
     }
 
     /**
      * @dataProvider provideExpectedNameAndKey
      */
-    public function testNameGeneration($expectedName, array $key)
+    public function testNameGeneration($expectedName, array $key): void
     {
-        $this->assertSame($expectedName, (string) new IndexInput(['key' => $key, 'ns' => 'foo.bar']));
+        $this->assertSame($expectedName, (string) new IndexInput(['key' => $key]));
     }
 
     public function provideExpectedNameAndKey()
@@ -73,20 +61,20 @@ class IndexInputTest extends TestCase
         ];
     }
 
-    public function testBsonSerialization()
+    public function testBsonSerialization(): void
     {
         $expected = [
             'key' => ['x' => 1],
-            'ns' => 'foo.bar',
+            'unique' => true,
             'name' => 'x_1',
         ];
 
         $indexInput = new IndexInput([
             'key' => ['x' => 1],
-            'ns' => 'foo.bar',
+            'unique' => true,
         ]);
 
         $this->assertInstanceOf(Serializable::class, $indexInput);
-        $this->assertEquals($expected, $indexInput->bsonSerialize());
+        $this->assertSame($expected, $indexInput->bsonSerialize());
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2016-2017 MongoDB, Inc.
+ * Copyright 2016-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,12 @@ use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
 use MongoDB\GridFS\Exception\CorruptFileException;
 use MongoDB\GridFS\Exception\FileNotFoundException;
+use MongoDB\GridFS\Exception\StreamException;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Operation\Find;
 use stdClass;
+
 use function array_intersect_key;
 use function fopen;
 use function get_resource_type;
@@ -180,10 +182,10 @@ class Bucket
         $this->bucketName = $options['bucketName'];
         $this->chunkSizeBytes = $options['chunkSizeBytes'];
         $this->disableMD5 = $options['disableMD5'];
-        $this->readConcern = isset($options['readConcern']) ? $options['readConcern'] : $this->manager->getReadConcern();
-        $this->readPreference = isset($options['readPreference']) ? $options['readPreference'] : $this->manager->getReadPreference();
-        $this->typeMap = isset($options['typeMap']) ? $options['typeMap'] : self::$defaultTypeMap;
-        $this->writeConcern = isset($options['writeConcern']) ? $options['writeConcern'] : $this->manager->getWriteConcern();
+        $this->readConcern = $options['readConcern'] ?? $this->manager->getReadConcern();
+        $this->readPreference = $options['readPreference'] ?? $this->manager->getReadPreference();
+        $this->typeMap = $options['typeMap'] ?? self::$defaultTypeMap;
+        $this->writeConcern = $options['writeConcern'] ?? $this->manager->getWriteConcern();
 
         $collectionOptions = array_intersect_key($options, ['readConcern' => 1, 'readPreference' => 1, 'typeMap' => 1, 'writeConcern' => 1]);
 
@@ -238,6 +240,7 @@ class Bucket
      * @param resource $destination Writable Stream
      * @throws FileNotFoundException if no file could be selected
      * @throws InvalidArgumentException if $destination is not a stream
+     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function downloadToStream($id, $destination)
@@ -246,7 +249,10 @@ class Bucket
             throw InvalidArgumentException::invalidType('$destination', $destination, 'resource');
         }
 
-        stream_copy_to_stream($this->openDownloadStream($id), $destination);
+        $source = $this->openDownloadStream($id);
+        if (@stream_copy_to_stream($source, $destination) === false) {
+            throw StreamException::downloadFromIdFailed($id, $source, $destination);
+        }
     }
 
     /**
@@ -273,6 +279,7 @@ class Bucket
      * @param array    $options     Download options
      * @throws FileNotFoundException if no file could be selected
      * @throws InvalidArgumentException if $destination is not a stream
+     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function downloadToStreamByName($filename, $destination, array $options = [])
@@ -281,7 +288,10 @@ class Bucket
             throw InvalidArgumentException::invalidType('$destination', $destination, 'resource');
         }
 
-        stream_copy_to_stream($this->openDownloadStreamByName($filename, $options), $destination);
+        $source = $this->openDownloadStreamByName($filename, $options);
+        if (@stream_copy_to_stream($source, $destination) === false) {
+            throw StreamException::downloadFromFilenameFailed($filename, $source, $destination);
+        }
     }
 
     /**
@@ -607,6 +617,7 @@ class Bucket
      * @param array    $options  Stream options
      * @return mixed ID of the newly created GridFS file
      * @throws InvalidArgumentException if $source is not a GridFS stream
+     * @throws StreamException if the file could not be uploaded
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function uploadFromStream($filename, $source, array $options = [])
@@ -616,7 +627,12 @@ class Bucket
         }
 
         $destination = $this->openUploadStream($filename, $options);
-        stream_copy_to_stream($source, $destination);
+
+        if (@stream_copy_to_stream($source, $destination) === false) {
+            $destinationUri = $this->createPathForFile($this->getRawFileDocumentForStream($destination));
+
+            throw StreamException::uploadFailed($filename, $source, $destinationUri);
+        }
 
         return $this->getFileIdForStream($destination);
     }
@@ -688,7 +704,7 @@ class Bucket
         $metadata = stream_get_meta_data($stream);
 
         if (! isset($metadata['wrapper_data']) || ! $metadata['wrapper_data'] instanceof StreamWrapper) {
-            throw InvalidArgumentException::invalidType('$stream wrapper data', isset($metadata['wrapper_data']) ? $metadata['wrapper_data'] : null, StreamWrapper::class);
+            throw InvalidArgumentException::invalidType('$stream wrapper data', $metadata['wrapper_data'] ?? null, StreamWrapper::class);
         }
 
         return $metadata['wrapper_data']->getFile();

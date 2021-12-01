@@ -269,7 +269,7 @@ class Billrun_Factory {
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
+			self::$smser[$stamp] = Billrun_Sms_Abstract::getInstance($options);
 		}
 
 		return self::$smser[$stamp];

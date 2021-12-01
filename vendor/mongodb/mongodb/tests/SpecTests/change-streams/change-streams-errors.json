@@ -14,7 +14,7 @@
       "changeStreamPipeline": [],
       "changeStreamOptions": {},
       "operations": [],
-      "expectations": [],
+      "expectations": null,
       "result": {
         "error": {
           "code": 40573
@@ -54,9 +54,7 @@
               "cursor": {},
               "pipeline": [
                 {
-                  "$changeStream": {
-                    "fullDocument": "default"
-                  }
+                  "$changeStream": {}
                 },
                 {
                   "$unsupported": "foo"
@@ -80,7 +78,8 @@
       "target": "collection",
       "topology": [
         "replicaset",
-        "sharded"
+        "sharded",
+        "load-balanced"
       ],
       "changeStreamPipeline": [
         {
@@ -104,10 +103,49 @@
       ],
       "result": {
         "error": {
-          "code": 280,
-          "errorLabels": [
-            "NonResumableChangeStreamError"
-          ]
+          "code": 280
+        }
+      }
+    },
+    {
+      "description": "change stream errors on ElectionInProgress",
+      "minServerVersion": "4.2",
+      "failPoint": {
+        "configureFailPoint": "failCommand",
+        "mode": {
+          "times": 1
+        },
+        "data": {
+          "failCommands": [
+            "getMore"
+          ],
+          "errorCode": 216,
+          "closeConnection": false
+        }
+      },
+      "target": "collection",
+      "topology": [
+        "replicaset",
+        "sharded",
+        "load-balanced"
+      ],
+      "changeStreamPipeline": [],
+      "changeStreamOptions": {},
+      "operations": [
+        {
+          "database": "change-stream-tests",
+          "collection": "test",
+          "name": "insertOne",
+          "arguments": {
+            "document": {
+              "z": 3
+            }
+          }
+        }
+      ],
+      "result": {
+        "error": {
+          "code": 216
         }
       }
     }
