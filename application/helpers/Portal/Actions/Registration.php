@@ -15,7 +15,7 @@
 class Portal_Actions_Registration extends Portal_Actions {
 
 	const VALIDITY_TIME = [
-		'default' => '24 hours'
+		'DEFAULT' => '24 hours'
 	];
 
 	const TOKEN_TYPE_EMAIL_VERIFICATION = 'email_verification';
