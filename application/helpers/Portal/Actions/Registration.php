@@ -15,11 +15,12 @@
 class Portal_Actions_Registration extends Portal_Actions {
 
 	const VALIDITY_TIME = [
-		'default' => '24 hours'
+		'DEFAULT' => '24 hours'
 	];
 
 	const TOKEN_TYPE_EMAIL_VERIFICATION = 'email_verification';
         const TOKEN_TYPE_RESET_PASSWORD = 'reset_password';
+        const TOKEN_TYPE_WELCOME_ACCOUNT = 'welcome_account';
         
     /**
      * send authentication email with 1-time token
@@ -53,16 +54,19 @@ class Portal_Actions_Registration extends Portal_Actions {
      * @return void
      */
     public function sendResetPasswordEmail($params = []) {
-		$email = $params['email'] ?? '';
+		$username = $params['username'] ?? '';
+                if (empty($username)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
+		}
+                $email =  $this->getEmailByAuthenticationField($username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
-		}
-		
+		}		
 		$subject = $this->getEmailSubject('reset_password');	
                 $token = $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD);
                 $replaces = array_merge([
 			'[[name]]' => $params['name'] ??  'Guest',
-			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url
+			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url(forgot password)
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
@@ -82,25 +86,22 @@ class Portal_Actions_Registration extends Portal_Actions {
      * @return void
      */
     public function sendWelcomeEmail($params = []) {
-		$email = $params['email'] ?? '';
-		if (empty($email)) {
-			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
-		}
                 $username = $params['username'] ?? '';
                 if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
 		}
-		$password = $params['password'] ?? '';
-		if (empty($password)) {
-			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
-		}
+                $email = $this->getEmailByAuthenticationField($username) ?? '';//TODO:: get email from username
+		if (empty($email)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
+		}		
 		$subject = $this->getEmailSubject('welcome_account');
+                $params['email'] = $email;
+                $token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT);              
                 $replaces = array_merge([
-			'[[name]]' => $params['name'] ??  'Guest',
                         '[[username]]' => $username,
-                        '[[password]]' => $password,
+//                        '[[password]]' => $password,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
-                        '[[link]]' =>  Billrun_Factory::config()->getConfigValue('tenant.website', '') //todo::verify this is right
+                        '[[link]]' =>  Billrun_Factory::config()->getConfigValue('tenant.website', '') //add token to link  (SIGN UP LINK)
                 ], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('welcome_account', $replaces);
                 
@@ -109,7 +110,10 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('send_email_failed');
 		}
 	}
-	
+	//forgot password
+        
+        //TODO : SIGN UP -- VALIDATE TOKEN WITH USERNAME 
+        
 	/**
 	 * sign the user in the system to allow him authenticate using OAuth2
 	 *
@@ -176,7 +180,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 
 		$tokenFields = [
-			'id',
+			$this->params['authentication_field'],
 			'email',
 		];
         $params = [
@@ -299,4 +303,15 @@ class Portal_Actions_Registration extends Portal_Actions {
         ];
     } 
 
+    protected function getEmailByAuthenticationField($username) {
+        $query = [
+          $this->params['authentication_field'] => $username
+        ];
+        $billapiParams = $this->getBillApiParams('accounts', 'uniqueget', $query);
+	$res = current($this->runBillApi($billapiParams));
+        if(empty($res)){
+            throw new Portal_Exception('no_account', '', 'No account found');
+        }
+        return $res['email'];
+    }
 }
