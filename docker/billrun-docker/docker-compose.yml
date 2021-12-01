@@ -25,6 +25,8 @@ services:
         environment:
         - "APPLICATION_ENV=container"
         - "XDEBUG_CONFIG=remote_host=10.103.0.1 remote_port=9090 remote_enable=1 xdebug.idekey=${XDEBUG_CONFIG:-netbeans-xdebug}"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ${PWD}/../..:/billrun
     mongodb:

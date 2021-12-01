@@ -1,13 +1,21 @@
 <?php
+/**
+ *  base include file for SimpleTest
+ *  @package    SimpleTest
+ *  @subpackage UnitTester
+ */
 
-require_once __DIR__ . '/invoker.php';
+/**#@+*/
+require_once dirname(__FILE__) . '/invoker.php';
+/**#@-*/
 
 /**
- * Can receive test events and display them.
- * Display is achieved by making display methods available
- * and visiting the incoming event.
- *
- * @abstract
+ *    Can receive test events and display them. Display
+ *    is achieved by making display methods available
+ *    and visiting the incoming event.
+ *    @package SimpleTest
+ *    @subpackage UnitTester
+ *    @abstract
  */
 class SimpleScorer
 {
@@ -17,21 +25,23 @@ class SimpleScorer
     private $is_dry_run;
 
     /**
-     * Starts the test run with no results.
+     *    Starts the test run with no results.
+     *    @access public
      */
     public function __construct()
     {
-        $this->passes     = 0;
-        $this->fails      = 0;
+        $this->passes = 0;
+        $this->fails = 0;
         $this->exceptions = 0;
         $this->is_dry_run = false;
     }
 
     /**
-     * Signals that the next evaluation will be a dry run.
-     * That is, the structure events will be recorded, but no tests will be run.
-     *
-     * @param bool $is_dry        Dry run if true.
+     *    Signals that the next evaluation will be a dry
+     *    run. That is, the structure events will be
+     *    recorded, but no tests will be run.
+     *    @param boolean $is_dry        Dry run if true.
+     *    @access public
      */
     public function makeDry($is_dry = true)
     {
@@ -39,10 +49,10 @@ class SimpleScorer
     }
 
     /**
-     * The reporter has a veto on what should be run.
-     *
-     * @param string $test_case_name  name of test case.
-     * @param string $method          Name of test method.
+     *    The reporter has a veto on what should be run.
+     *    @param string $test_case_name  name of test case.
+     *    @param string $method          Name of test method.
+     *    @access public
      */
     public function shouldInvoke($test_case_name, $method)
     {
@@ -50,11 +60,11 @@ class SimpleScorer
     }
 
     /**
-     * Can wrap the invoker in preperation for running a test.
-     *
-     * @param SimpleInvoker $invoker   Individual test runner.
-     *
-     * @return SimpleInvoker           Wrapped test runner.
+     *    Can wrap the invoker in preperation for running
+     *    a test.
+     *    @param SimpleInvoker $invoker   Individual test runner.
+     *    @return SimpleInvoker           Wrapped test runner.
+     *    @access public
      */
     public function createInvoker($invoker)
     {
@@ -62,80 +72,79 @@ class SimpleScorer
     }
 
     /**
-     * Accessor for current status.
-     * Will be false if there have been any failures or exceptions.
-     * Used for command line tools.
-     *
-     * @return bool        True if no failures.
+     *    Accessor for current status. Will be false
+     *    if there have been any failures or exceptions.
+     *    Used for command line tools.
+     *    @return boolean        True if no failures.
+     *    @access public
      */
     public function getStatus()
     {
         if ($this->exceptions + $this->fails > 0) {
             return false;
         }
-
         return true;
     }
 
     /**
-     * Paints the start of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
-     * @param int $size         Number of test cases starting.
+     *    Paints the start of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @param integer $size         Number of test cases starting.
+     *    @access public
      */
     public function paintGroupStart($test_name, $size)
     {
     }
 
     /**
-     * Paints the end of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintGroupEnd($test_name)
     {
     }
 
     /**
-     * Paints the start of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseStart($test_name)
     {
     }
 
     /**
-     * Paints the end of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseEnd($test_name)
     {
     }
 
     /**
-     * Paints the start of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodStart($test_name)
     {
     }
 
     /**
-     * Paints the end of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodEnd($test_name)
     {
     }
 
     /**
-     * Increments the pass count.
-     *
-     * @param string $message        Message is ignored.
+     *    Increments the pass count.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintPass($message)
     {
@@ -143,9 +152,9 @@ class SimpleScorer
     }
 
     /**
-     * Increments the fail count.
-     *
-     * @param string $message        Message is ignored.
+     *    Increments the fail count.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintFail($message)
     {
@@ -153,9 +162,10 @@ class SimpleScorer
     }
 
     /**
-     * Deals with PHP 4 throwing an error.
-     *
-     * @param string $message    Text of error formatted by the test case.
+     *    Deals with PHP 4 throwing an error.
+     *    @param string $message    Text of error formatted by
+     *                              the test case.
+     *    @access public
      */
     public function paintError($message)
     {
@@ -163,9 +173,9 @@ class SimpleScorer
     }
 
     /**
-     * Deals with PHP 5 throwing an exception.
-     *
-     * @param Exception $exception    The actual exception thrown.
+     *    Deals with PHP 5 throwing an exception.
+     *    @param Exception $exception    The actual exception thrown.
+     *    @access public
      */
     public function paintException($exception)
     {
@@ -173,18 +183,18 @@ class SimpleScorer
     }
 
     /**
-     * Prints the message for skipping tests.
-     *
-     * @param string $message    Text of skip condition.
+     *    Prints the message for skipping tests.
+     *    @param string $message    Text of skip condition.
+     *    @access public
      */
     public function paintSkip($message)
     {
     }
 
     /**
-     * Accessor for the number of passes so far.
-     *
-     * @return int       Number of passes.
+     *    Accessor for the number of passes so far.
+     *    @return integer       Number of passes.
+     *    @access public
      */
     public function getPassCount()
     {
@@ -192,9 +202,9 @@ class SimpleScorer
     }
 
     /**
-     * Accessor for the number of fails so far.
-     *
-     * @return int       Number of fails.
+     *    Accessor for the number of fails so far.
+     *    @return integer       Number of fails.
+     *    @access public
      */
     public function getFailCount()
     {
@@ -202,9 +212,10 @@ class SimpleScorer
     }
 
     /**
-     * Accessor for the number of untrapped errors so far.
-     *
-     * @return int       Number of exceptions.
+     *    Accessor for the number of untrapped errors
+     *    so far.
+     *    @return integer       Number of exceptions.
+     *    @access public
      */
     public function getExceptionCount()
     {
@@ -212,28 +223,29 @@ class SimpleScorer
     }
 
     /**
-     * Paints a simple supplementary message.
-     *
-     * @param string $message        Text to display.
+     *    Paints a simple supplementary message.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintMessage($message)
     {
     }
 
     /**
-     * Paints a formatted ASCII message such as a privateiable dump.
-     *
-     * @param string $message        Text to display.
+     *    Paints a formatted ASCII message such as a
+     *    privateiable dump.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintFormattedMessage($message)
     {
     }
 
     /**
-     * By default just ignores user generated events.
-     *
-     * @param string $type        Event type as text.
-     * @param mixed $payload      Message or object.
+     *    By default just ignores user generated events.
+     *    @param string $type        Event type as text.
+     *    @param mixed $payload      Message or object.
+     *    @access public
      */
     public function paintSignal($type, $payload)
     {
@@ -241,9 +253,12 @@ class SimpleScorer
 }
 
 /**
- * Recipient of generated test messages that can display page footers and headers.
- * Also keeps track of the test nesting.
- * This is the main base class on which to build the finished test (page based) displays.
+ *    Recipient of generated test messages that can display
+ *    page footers and headers. Also keeps track of the
+ *    test nesting. This is the main base class on which
+ *    to build the finished test (page based) displays.
+ *    @package SimpleTest
+ *    @subpackage UnitTester
  */
 class SimpleReporter extends SimpleScorer
 {
@@ -252,20 +267,21 @@ class SimpleReporter extends SimpleScorer
     private $progress;
 
     /**
-     * Starts the display with no results in.
+     *    Starts the display with no results in.
+     *    @access public
      */
     public function __construct()
     {
         parent::__construct();
         $this->test_stack = array();
-        $this->size       = null;
-        $this->progress   = 0;
+        $this->size = null;
+        $this->progress = 0;
     }
 
     /**
-     * Gets the formatter for small generic data items.
-     *
-     * @return SimpleDumper          Formatter.
+     *    Gets the formatter for small generic data items.
+     *    @return SimpleDumper          Formatter.
+     *    @access public
      */
     public function getDumper()
     {
@@ -273,12 +289,13 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the start of a group test.
-     * Will also paint the page header and footer if this is the first test.
-     * Will stash the size if the first start.
-     *
-     * @param string $test_name   Name of test that is starting.
-     * @param int $size       Number of test cases starting.
+     *    Paints the start of a group test. Will also paint
+     *    the page header and footer if this is the
+     *    first test. Will stash the size if the first
+     *    start.
+     *    @param string $test_name   Name of test that is starting.
+     *    @param integer $size       Number of test cases starting.
+     *    @access public
      */
     public function paintGroupStart($test_name, $size)
     {
@@ -292,11 +309,11 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the end of a group test.
-     * Will paint the page footer if the stack of tests has unwound.
-     *
-     * @param string $test_name   Name of test that is ending.
-     * @param int $progress   Number of test cases ending.
+     *    Paints the end of a group test. Will paint the page
+     *    footer if the stack of tests has unwound.
+     *    @param string $test_name   Name of test that is ending.
+     *    @param integer $progress   Number of test cases ending.
+     *    @access public
      */
     public function paintGroupEnd($test_name)
     {
@@ -307,11 +324,12 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the start of a test case.
-     * Will also paint the page header and footer if this is the first test.
-     * Will stash the size if the first start.
-     *
-     * @param string $test_name   Name of test that is starting.
+     *    Paints the start of a test case. Will also paint
+     *    the page header and footer if this is the
+     *    first test. Will stash the size if the first
+     *    start.
+     *    @param string $test_name   Name of test that is starting.
+     *    @access public
      */
     public function paintCaseStart($test_name)
     {
@@ -325,10 +343,10 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the end of a test case.
-     * Will paint the page footer if the stack of tests has unwound.
-     *
-     * @param string $test_name   Name of test that is ending.
+     *    Paints the end of a test case. Will paint the page
+     *    footer if the stack of tests has unwound.
+     *    @param string $test_name   Name of test that is ending.
+     *    @access public
      */
     public function paintCaseEnd($test_name)
     {
@@ -340,9 +358,9 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the start of a test method.
-     *
-     * @param string $test_name   Name of test that is starting.
+     *    Paints the start of a test method.
+     *    @param string $test_name   Name of test that is starting.
+     *    @access public
      */
     public function paintMethodStart($test_name)
     {
@@ -350,10 +368,10 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the end of a test method.
-     * Will paint the page footer if the stack of tests has unwound.
-     *
-     * @param string $test_name   Name of test that is ending.
+     *    Paints the end of a test method. Will paint the page
+     *    footer if the stack of tests has unwound.
+     *    @param string $test_name   Name of test that is ending.
+     *    @access public
      */
     public function paintMethodEnd($test_name)
     {
@@ -361,32 +379,32 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Paints the test document header.
-     *
-     * @param string $test_name     First test top level to start.
-     *
-     * @abstract
+     *    Paints the test document header.
+     *    @param string $test_name     First test top level
+     *                                 to start.
+     *    @access public
+     *    @abstract
      */
     public function paintHeader($test_name)
     {
     }
 
     /**
-     * Paints the test document footer.
-     *
-     * @param string $test_name        The top level test.
-     *
-     * @abstract
+     *    Paints the test document footer.
+     *    @param string $test_name        The top level test.
+     *    @access public
+     *    @abstract
      */
     public function paintFooter($test_name)
     {
     }
 
     /**
-     * Accessor for internal test stack.
-     * For subclasses that need to see the whole test history for display purposes.
-     *
-     * @return array     List of methods in nesting order.
+     *    Accessor for internal test stack. For
+     *    subclasses that need to see the whole test
+     *    history for display purposes.
+     *    @return array     List of methods in nesting order.
+     *    @access public
      */
     public function getTestList()
     {
@@ -394,10 +412,11 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Accessor for total test size in number of test cases.
-     * Null until the first test is started.
-     *
-     * @return int   Total number of cases at start.
+     *    Accessor for total test size in number
+     *    of test cases. Null until the first
+     *    test is started.
+     *    @return integer   Total number of cases at start.
+     *    @access public
      */
     public function getTestCaseCount()
     {
@@ -405,9 +424,10 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Accessor for the number of test cases completed so far.
-     *
-     * @return int   Number of ended cases.
+     *    Accessor for the number of test cases
+     *    completed so far.
+     *    @return integer   Number of ended cases.
+     *    @access public
      */
     public function getTestCaseProgress()
     {
@@ -415,27 +435,28 @@ class SimpleReporter extends SimpleScorer
     }
 
     /**
-     * Static check for running in the comand line.
-     *
-     * @return bool        True if CLI.
+     *    Static check for running in the comand line.
+     *    @return boolean        True if CLI.
+     *    @access public
      */
     public static function inCli()
     {
-        return PHP_SAPI === 'cli';
+        return php_sapi_name() == 'cli';
     }
 }
 
 /**
- * For modifying the behaviour of the visual reporters.
+ *    For modifying the behaviour of the visual reporters.
+ *    @package SimpleTest
+ *    @subpackage UnitTester
  */
 class SimpleReporterDecorator
 {
     protected $reporter;
 
     /**
-     * Mediates between the reporter and the test case.
-     *
-     * @param SimpleScorer $reporter       Reporter to receive events.
+     *    Mediates between the reporter and the test case.
+     *    @param SimpleScorer $reporter       Reporter to receive events.
      */
     public function __construct($reporter)
     {
@@ -443,10 +464,11 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Signals that the next evaluation will be a dry run.
-     * That is, the structure events will be recorded, but no tests will be run.
-     *
-     * @param bool $is_dry        Dry run if true.
+     *    Signals that the next evaluation will be a dry
+     *    run. That is, the structure events will be
+     *    recorded, but no tests will be run.
+     *    @param boolean $is_dry        Dry run if true.
+     *    @access public
      */
     public function makeDry($is_dry = true)
     {
@@ -454,11 +476,11 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Accessor for current status.
-     * Will be false if there have been any failures or exceptions.
-     * Used for command line tools.
-     *
-     * @return bool        True if no failures.
+     *    Accessor for current status. Will be false
+     *    if there have been any failures or exceptions.
+     *    Used for command line tools.
+     *    @return boolean        True if no failures.
+     *    @access public
      */
     public function getStatus()
     {
@@ -466,9 +488,10 @@ class SimpleReporterDecorator
     }
 
     /**
-     * The nesting of the test cases so far. Not all reporters have this facility.
-     *
-     * @return array        Test list if accessible.
+     *    The nesting of the test cases so far. Not
+     *    all reporters have this facility.
+     *    @return array        Test list if accessible.
+     *    @access public
      */
     public function getTestList()
     {
@@ -480,12 +503,11 @@ class SimpleReporterDecorator
     }
 
     /**
-     * The reporter has a veto on what should be run.
-     *
-     * @param string $test_case_name  Name of test case.
-     * @param string $method          Name of test method.
-     *
-     * @return bool                True if test should be run.
+     *    The reporter has a veto on what should be run.
+     *    @param string $test_case_name  Name of test case.
+     *    @param string $method          Name of test method.
+     *    @return boolean                True if test should be run.
+     *    @access public
      */
     public function shouldInvoke($test_case_name, $method)
     {
@@ -493,11 +515,11 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Can wrap the invoker in preparation for running a test.
-     *
-     * @param SimpleInvoker $invoker   Individual test runner.
-     *
-     * @return SimpleInvoker           Wrapped test runner.
+     *    Can wrap the invoker in preparation for running
+     *    a test.
+     *    @param SimpleInvoker $invoker   Individual test runner.
+     *    @return SimpleInvoker           Wrapped test runner.
+     *    @access public
      */
     public function createInvoker($invoker)
     {
@@ -505,9 +527,10 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Gets the formatter for privateiables and other small generic data items.
-     *
-     * @return SimpleDumper          Formatter.
+     *    Gets the formatter for privateiables and other small
+     *    generic data items.
+     *    @return SimpleDumper          Formatter.
+     *    @access public
      */
     public function getDumper()
     {
@@ -515,10 +538,10 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the start of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
-     * @param int $size         Number of test cases starting.
+     *    Paints the start of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @param integer $size         Number of test cases starting.
+     *    @access public
      */
     public function paintGroupStart($test_name, $size)
     {
@@ -526,9 +549,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the end of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintGroupEnd($test_name)
     {
@@ -536,9 +559,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the start of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseStart($test_name)
     {
@@ -546,9 +569,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the end of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseEnd($test_name)
     {
@@ -556,9 +579,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the start of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodStart($test_name)
     {
@@ -566,9 +589,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Paints the end of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodEnd($test_name)
     {
@@ -576,9 +599,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Message is ignored.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintPass($message)
     {
@@ -586,9 +609,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Message is ignored.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintFail($message)
     {
@@ -596,9 +619,10 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message    Text of error formatted by the test case.
+     *    Chains to the wrapped reporter.
+     *    @param string $message    Text of error formatted by
+     *                              the test case.
+     *    @access public
      */
     public function paintError($message)
     {
@@ -606,9 +630,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param Exception $exception        Exception to show.
+     *    Chains to the wrapped reporter.
+     *    @param Exception $exception        Exception to show.
+     *    @access public
      */
     public function paintException($exception)
     {
@@ -616,9 +640,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Prints the message for skipping tests.
-     *
-     * @param string $message    Text of skip condition.
+     *    Prints the message for skipping tests.
+     *    @param string $message    Text of skip condition.
+     *    @access public
      */
     public function paintSkip($message)
     {
@@ -626,9 +650,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Text to display.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintMessage($message)
     {
@@ -636,9 +660,9 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Text to display.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintFormattedMessage($message)
     {
@@ -646,12 +670,13 @@ class SimpleReporterDecorator
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $type        Event type as text.
-     * @param mixed $payload      Message or object.
-     *
-     * @return bool     Should return false, if this type of signal should fail the test suite.
+     *    Chains to the wrapped reporter.
+     *    @param string $type        Event type as text.
+     *    @param mixed $payload      Message or object.
+     *    @return boolean            Should return false if this
+     *                               type of signal should fail the
+     *                               test suite.
+     *    @access public
      */
     public function paintSignal($type, $payload)
     {
@@ -660,16 +685,19 @@ class SimpleReporterDecorator
 }
 
 /**
- * For sending messages to multiple reporters at the same time.
+ *    For sending messages to multiple reporters at
+ *    the same time.
+ *    @package SimpleTest
+ *    @subpackage UnitTester
  */
 class MultipleReporter
 {
     private $reporters = array();
 
     /**
-     * Adds a reporter to the subscriber list.
-     *
-     * @param SimpleScorer $reporter     Reporter to receive events.
+     *    Adds a reporter to the subscriber list.
+     *    @param SimpleScorer $reporter     Reporter to receive events.
+     *    @access public
      */
     public function attachReporter($reporter)
     {
@@ -677,268 +705,250 @@ class MultipleReporter
     }
 
     /**
-     * Signals that the next evaluation will be a dry run.
-     * That is, the structure events will be recorded, but no tests will be run.
-     *
-     * @param bool $is_dry        Dry run if true.
+     *    Signals that the next evaluation will be a dry
+     *    run. That is, the structure events will be
+     *    recorded, but no tests will be run.
+     *    @param boolean $is_dry        Dry run if true.
+     *    @access public
      */
     public function makeDry($is_dry = true)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->makeDry($is_dry);
         }
     }
 
     /**
-     * Accessor for current status.
-     * Will be false if there have been any failures or exceptions.
-     * If any reporter reports a failure, the whole suite fails.
-     *
-     * @return bool        True if no failures.
+     *    Accessor for current status. Will be false
+     *    if there have been any failures or exceptions.
+     *    If any reporter reports a failure, the whole
+     *    suite fails.
+     *    @return boolean        True if no failures.
+     *    @access public
      */
     public function getStatus()
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             if (! $this->reporters[$i]->getStatus()) {
                 return false;
             }
         }
-
         return true;
     }
 
     /**
-     * The reporter has a veto on what should be run.
-     * It requires all reporters to want to run the method.
-     *
-     * @param string $test_case_name  name of test case.
-     * @param string $method          Name of test method.
+     *    The reporter has a veto on what should be run.
+     *    It requires all reporters to want to run the method.
+     *    @param string $test_case_name  name of test case.
+     *    @param string $method          Name of test method.
+     *    @access public
      */
     public function shouldInvoke($test_case_name, $method)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             if (! $this->reporters[$i]->shouldInvoke($test_case_name, $method)) {
                 return false;
             }
         }
-
         return true;
     }
 
     /**
-     * Every reporter gets a chance to wrap the invoker.
-     *
-     * @param SimpleInvoker $invoker   Individual test runner.
-     *
-     * @return SimpleInvoker           Wrapped test runner.
+     *    Every reporter gets a chance to wrap the invoker.
+     *    @param SimpleInvoker $invoker   Individual test runner.
+     *    @return SimpleInvoker           Wrapped test runner.
+     *    @access public
      */
     public function createInvoker($invoker)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $invoker = $this->reporters[$i]->createInvoker($invoker);
         }
-
         return $invoker;
     }
 
     /**
-     * Paints the start of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
-     * @param int $size         Number of test cases starting.
+     *    Gets the formatter for privateiables and other small
+     *    generic data items.
+     *    @return SimpleDumper          Formatter.
+     *    @access public
+     */
+    public function getDumper()
+    {
+        return new SimpleDumper();
+    }
+
+    /**
+     *    Paints the start of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @param integer $size         Number of test cases starting.
+     *    @access public
      */
     public function paintGroupStart($test_name, $size)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintGroupStart($test_name, $size);
         }
     }
 
     /**
-     * Paints the end of a group test.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a group test.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintGroupEnd($test_name)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintGroupEnd($test_name);
         }
     }
 
     /**
-     * Paints the start of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseStart($test_name)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintCaseStart($test_name);
         }
     }
 
     /**
-     * Paints the end of a test case.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test case.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintCaseEnd($test_name)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintCaseEnd($test_name);
         }
     }
 
     /**
-     * Paints the start of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the start of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodStart($test_name)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintMethodStart($test_name);
         }
     }
 
     /**
-     * Paints the end of a test method.
-     *
-     * @param string $test_name     Name of test or other label.
+     *    Paints the end of a test method.
+     *    @param string $test_name     Name of test or other label.
+     *    @access public
      */
     public function paintMethodEnd($test_name)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintMethodEnd($test_name);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Message is ignored.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintPass($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintPass($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Message is ignored.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Message is ignored.
+     *    @access public
      */
     public function paintFail($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintFail($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message    Text of error formatted by the test case.
+     *    Chains to the wrapped reporter.
+     *    @param string $message    Text of error formatted by
+     *                              the test case.
+     *    @access public
      */
     public function paintError($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintError($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param Exception $exception    Exception to display.
+     *    Chains to the wrapped reporter.
+     *    @param Exception $exception    Exception to display.
+     *    @access public
      */
     public function paintException($exception)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintException($exception);
         }
     }
 
     /**
-     * Prints the message for skipping tests.
-     *
-     * @param string $message    Text of skip condition.
+     *    Prints the message for skipping tests.
+     *    @param string $message    Text of skip condition.
+     *    @access public
      */
     public function paintSkip($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintSkip($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Text to display.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintMessage($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintMessage($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $message        Text to display.
+     *    Chains to the wrapped reporter.
+     *    @param string $message        Text to display.
+     *    @access public
      */
     public function paintFormattedMessage($message)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintFormattedMessage($message);
         }
     }
 
     /**
-     * Chains to the wrapped reporter.
-     *
-     * @param string $type        Event type as text.
-     * @param mixed $payload      Message or object.
-     *
-     * @return bool            Should return false if this type of signal should fail the test
-     * suite.
+     *    Chains to the wrapped reporter.
+     *    @param string $type        Event type as text.
+     *    @param mixed $payload      Message or object.
+     *    @return boolean            Should return false if this
+     *                               type of signal should fail the
+     *                               test suite.
+     *    @access public
      */
     public function paintSignal($type, $payload)
     {
-        $numberOfReporters = count($this->reporters);
-        for ($i = 0; $i < $numberOfReporters; $i++) {
+        for ($i = 0; $i < count($this->reporters); $i++) {
             $this->reporters[$i]->paintSignal($type, $payload);
         }
-    }
-
-    /**
-     * Gets the formatter for privateiables and other small generic data items.
-     *
-     * @return SimpleDumper          Formatter.
-     */
-    public function getDumper()
-    {
-        return new SimpleDumper();
     }
 }

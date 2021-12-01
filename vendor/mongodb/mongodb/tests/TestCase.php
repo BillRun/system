@@ -8,11 +8,11 @@ use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
-use MongoDB\Tests\Compat\PolyfillAssertTrait;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use ReflectionClass;
 use stdClass;
 use Traversable;
+
 use function array_map;
 use function array_merge;
 use function array_values;
@@ -21,24 +21,24 @@ use function getenv;
 use function hash;
 use function is_array;
 use function is_object;
+use function is_string;
 use function iterator_to_array;
 use function MongoDB\BSON\fromPHP;
 use function MongoDB\BSON\toJSON;
 use function restore_error_handler;
 use function set_error_handler;
 use function sprintf;
+
 use const E_USER_DEPRECATED;
 
 abstract class TestCase extends BaseTestCase
 {
-    use PolyfillAssertTrait;
-
     /**
      * Return the connection URI.
      *
      * @return string
      */
-    public static function getUri()
+    public static function getUri(): string
     {
         return getenv('MONGODB_URI') ?: 'mongodb://127.0.0.1:27017';
     }
@@ -52,7 +52,7 @@ abstract class TestCase extends BaseTestCase
      * @param array|object $expectedDocument
      * @param array|object $actualDocument
      */
-    public function assertMatchesDocument($expectedDocument, $actualDocument)
+    public function assertMatchesDocument($expectedDocument, $actualDocument): void
     {
         $normalizedExpectedDocument = $this->normalizeBSON($expectedDocument);
         $normalizedActualDocument = $this->normalizeBSON($actualDocument);
@@ -86,7 +86,7 @@ abstract class TestCase extends BaseTestCase
      * @param array|object $expectedDocument
      * @param array|object $actualDocument
      */
-    public function assertSameDocument($expectedDocument, $actualDocument)
+    public function assertSameDocument($expectedDocument, $actualDocument): void
     {
         $this->assertEquals(
             toJSON(fromPHP($this->normalizeBSON($expectedDocument))),
@@ -94,7 +94,7 @@ abstract class TestCase extends BaseTestCase
         );
     }
 
-    public function assertSameDocuments(array $expectedDocuments, $actualDocuments)
+    public function assertSameDocuments(array $expectedDocuments, $actualDocuments): void
     {
         if ($actualDocuments instanceof Traversable) {
             $actualDocuments = iterator_to_array($actualDocuments);
@@ -114,6 +114,16 @@ abstract class TestCase extends BaseTestCase
         );
     }
 
+    /**
+     * Compatibility method as PHPUnit 9 no longer includes this method.
+     */
+    public function dataDescription(): string
+    {
+        $dataName = $this->dataName();
+
+        return is_string($dataName) ? $dataName : '';
+    }
+
     public function provideInvalidArrayValues()
     {
         return $this->wrapValuesForDataProvider($this->getInvalidArrayValues());
@@ -124,11 +134,11 @@ abstract class TestCase extends BaseTestCase
         return $this->wrapValuesForDataProvider($this->getInvalidDocumentValues());
     }
 
-    protected function assertDeprecated(callable $execution)
+    protected function assertDeprecated(callable $execution): void
     {
         $errors = [];
 
-        set_error_handler(function ($errno, $errstr) use (&$errors) {
+        set_error_handler(function ($errno, $errstr) use (&$errors): void {
             $errors[] = $errstr;
         }, E_USER_DEPRECATED);
 
@@ -146,7 +156,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return string
      */
-    protected function getCollectionName()
+    protected function getCollectionName(): string
     {
         $class = new ReflectionClass($this);
 
@@ -158,7 +168,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return string
      */
-    protected function getDatabaseName()
+    protected function getDatabaseName(): string
     {
         return getenv('MONGODB_DATABASE') ?: 'phplib_test';
     }
@@ -170,7 +180,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidArrayValues($includeNull = false)
+    protected function getInvalidArrayValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true, new stdClass()], $includeNull ? [null] : []);
     }
@@ -182,7 +192,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidBooleanValues($includeNull = false)
+    protected function getInvalidBooleanValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', [], new stdClass()], $includeNull ? [null] : []);
     }
@@ -194,7 +204,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidDocumentValues($includeNull = false)
+    protected function getInvalidDocumentValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true], $includeNull ? [null] : []);
     }
@@ -206,7 +216,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidIntegerValues($includeNull = false)
+    protected function getInvalidIntegerValues(bool $includeNull = false): array
     {
         return array_merge([3.14, 'foo', true, [], new stdClass()], $includeNull ? [null] : []);
     }
@@ -218,7 +228,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidReadConcernValues($includeNull = false)
+    protected function getInvalidReadConcernValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true, [], new stdClass(), new ReadPreference(ReadPreference::RP_PRIMARY), new WriteConcern(1)], $includeNull ? [null] : []);
     }
@@ -230,7 +240,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidReadPreferenceValues($includeNull = false)
+    protected function getInvalidReadPreferenceValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true, [], new stdClass(), new ReadConcern(), new WriteConcern(1)], $includeNull ? [null] : []);
     }
@@ -242,7 +252,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidSessionValues($includeNull = false)
+    protected function getInvalidSessionValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true, [], new stdClass(), new ReadConcern(), new ReadPreference(ReadPreference::RP_PRIMARY), new WriteConcern(1)], $includeNull ? [null] : []);
     }
@@ -254,7 +264,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidStringValues($includeNull = false)
+    protected function getInvalidStringValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, true, [], new stdClass()], $includeNull ? [null] : []);
     }
@@ -266,7 +276,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return array
      */
-    protected function getInvalidWriteConcernValues($includeNull = false)
+    protected function getInvalidWriteConcernValues(bool $includeNull = false): array
     {
         return array_merge([123, 3.14, 'foo', true, [], new stdClass(), new ReadConcern(), new ReadPreference(ReadPreference::RP_PRIMARY)], $includeNull ? [null] : []);
     }
@@ -276,7 +286,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @return string
      */
-    protected function getNamespace()
+    protected function getNamespace(): string
     {
          return sprintf('%s.%s', $this->getDatabaseName(), $this->getCollectionName());
     }
@@ -287,7 +297,7 @@ abstract class TestCase extends BaseTestCase
      * @param array $values List of values
      * @return array
      */
-    protected function wrapValuesForDataProvider(array $values)
+    protected function wrapValuesForDataProvider(array $values): array
     {
         return array_map(function ($value) {
             return [$value];

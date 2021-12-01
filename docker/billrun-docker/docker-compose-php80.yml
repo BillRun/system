@@ -25,6 +25,8 @@ services:
         environment:
         - "APPLICATION_ENV=container"
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9091 mode=develop"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
     mongodb:

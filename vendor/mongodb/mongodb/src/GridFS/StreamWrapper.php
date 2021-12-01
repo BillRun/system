@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2016-2017 MongoDB, Inc.
+ * Copyright 2016-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 
 namespace MongoDB\GridFS;
 
-use Exception;
 use MongoDB\BSON\UTCDateTime;
 use stdClass;
+use Throwable;
+
 use function explode;
 use function get_class;
 use function in_array;
@@ -30,6 +31,7 @@ use function stream_get_wrappers;
 use function stream_wrapper_register;
 use function stream_wrapper_unregister;
 use function trigger_error;
+
 use const E_USER_WARNING;
 use const SEEK_CUR;
 use const SEEK_END;
@@ -56,6 +58,14 @@ class StreamWrapper
 
     /** @var ReadableStream|WritableStream|null */
     private $stream;
+
+    public function __destruct()
+    {
+        /* This destructor is a workaround for PHP trying to use the stream well
+         * after all objects have been destructed. This can cause autoloading
+         * issues and possibly segmentation faults during PHP shutdown. */
+        $this->stream = null;
+    }
 
     /**
      * Return the stream's file document.
@@ -88,6 +98,10 @@ class StreamWrapper
      */
     public function stream_close()
     {
+        if (! $this->stream) {
+            return;
+        }
+
         $this->stream->close();
     }
 
@@ -150,7 +164,7 @@ class StreamWrapper
 
         try {
             return $this->stream->readBytes($length);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             trigger_error(sprintf('%s: %s', get_class($e), $e->getMessage()), E_USER_WARNING);
 
             return false;
@@ -247,7 +261,7 @@ class StreamWrapper
 
         try {
             return $this->stream->writeBytes($data);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             trigger_error(sprintf('%s: %s', get_class($e), $e->getMessage()), E_USER_WARNING);
 
             return false;

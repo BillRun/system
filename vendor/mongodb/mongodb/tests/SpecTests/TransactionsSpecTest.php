@@ -4,14 +4,12 @@ namespace MongoDB\Tests\SpecTests;
 
 use MongoDB\BSON\Int64;
 use MongoDB\BSON\Timestamp;
-use MongoDB\Client;
 use MongoDB\Driver\Command;
 use MongoDB\Driver\Exception\ServerException;
-use MongoDB\Driver\Manager;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Server;
 use stdClass;
-use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
+
 use function array_unique;
 use function basename;
 use function count;
@@ -27,9 +25,7 @@ use function glob;
  */
 class TransactionsSpecTest extends FunctionalTestCase
 {
-    use SetUpTearDownTrait;
-
-    const INTERRUPTED = 11601;
+    public const INTERRUPTED = 11601;
 
     /**
      * In addition to the useMultipleMongoses tests, these should all pass
@@ -43,7 +39,7 @@ class TransactionsSpecTest extends FunctionalTestCase
         'transactions/pin-mongos: unpin after transient error within a transaction and commit' => 'isMaster failpoints cannot be disabled',
     ];
 
-    private function doSetUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -52,7 +48,7 @@ class TransactionsSpecTest extends FunctionalTestCase
         $this->skipIfTransactionsAreNotSupported();
     }
 
-    private function doTearDown()
+    public function tearDown(): void
     {
         if ($this->hasFailed()) {
             static::killAllSessions();
@@ -69,7 +65,7 @@ class TransactionsSpecTest extends FunctionalTestCase
      * @param stdClass $expected Expected command document
      * @param stdClass $actual   Actual command document
      */
-    public static function assertCommandMatches(stdClass $expected, stdClass $actual)
+    public static function assertCommandMatches(stdClass $expected, stdClass $actual): void
     {
         if (isset($expected->getMore) && $expected->getMore === 42) {
             static::assertObjectHasAttribute('getMore', $actual);
@@ -115,26 +111,48 @@ class TransactionsSpecTest extends FunctionalTestCase
     }
 
     /**
+     * @dataProvider provideTransactionsTests
+     * @group serverless
+     */
+    public function testTransactions(stdClass $test, ?array $runOn = null, array $data, ?string $databaseName = null, ?string $collectionName = null): void
+    {
+        $this->runTransactionTest($test, $runOn, $data, $databaseName, $collectionName);
+    }
+
+    public function provideTransactionsTests(): array
+    {
+        return $this->provideTests('transactions');
+    }
+
+    /**
+     * @dataProvider provideTransactionsConvenientApiTests
+     */
+    public function testTransactionsConvenientApi(stdClass $test, ?array $runOn = null, array $data, ?string $databaseName = null, ?string $collectionName = null): void
+    {
+        $this->runTransactionTest($test, $runOn, $data, $databaseName, $collectionName);
+    }
+
+    public function provideTransactionsConvenientApiTests(): array
+    {
+        return $this->provideTests('transactions-convenient-api');
+    }
+
+    /**
      * Execute an individual test case from the specification.
      *
-     * @dataProvider provideTests
      * @param stdClass $test           Individual "tests[]" document
      * @param array    $runOn          Top-level "runOn" array with server requirements
      * @param array    $data           Top-level "data" array to initialize collection
      * @param string   $databaseName   Name of database under test
      * @param string   $collectionName Name of collection under test
      */
-    public function testTransactions(stdClass $test, array $runOn = null, array $data, $databaseName = null, $collectionName = null)
+    private function runTransactionTest(stdClass $test, ?array $runOn = null, array $data, ?string $databaseName = null, ?string $collectionName = null): void
     {
         if (isset(self::$incompleteTests[$this->dataDescription()])) {
             $this->markTestIncomplete(self::$incompleteTests[$this->dataDescription()]);
         }
 
-        if (isset($test->skipReason)) {
-            $this->markTestSkipped($test->skipReason);
-        }
-
-        $useMultipleMongoses = isset($test->useMultipleMongoses) && $test->useMultipleMongoses && $this->isShardedCluster();
+        $useMultipleMongoses = isset($test->useMultipleMongoses) && $test->useMultipleMongoses && $this->isMongos();
 
         if (isset($runOn)) {
             $this->checkServerRequirements($runOn);
@@ -144,8 +162,8 @@ class TransactionsSpecTest extends FunctionalTestCase
             $this->markTestSkipped($test->skipReason);
         }
 
-        $databaseName = isset($databaseName) ? $databaseName : $this->getDatabaseName();
-        $collectionName = isset($collectionName) ? $collectionName : $this->getCollectionName();
+        $databaseName = $databaseName ?? $this->getDatabaseName();
+        $collectionName = $collectionName ?? $this->getCollectionName();
 
         $context = Context::fromTransactions($test, $databaseName, $collectionName, $useMultipleMongoses);
         $this->setContext($context);
@@ -181,17 +199,19 @@ class TransactionsSpecTest extends FunctionalTestCase
         }
     }
 
-    public function provideTests()
+    private function provideTests(string $dir): array
     {
         $testArgs = [];
 
-        foreach (glob(__DIR__ . '/transactions*/*.json') as $filename) {
+        foreach (glob(__DIR__ . '/' . $dir . '/*.json') as $filename) {
             $json = $this->decodeJson(file_get_contents($filename));
             $group = basename(dirname($filename)) . '/' . basename($filename, '.json');
-            $runOn = isset($json->runOn) ? $json->runOn : null;
-            $data = isset($json->data) ? $json->data : [];
-            $databaseName = isset($json->database_name) ? $json->database_name : null;
-            $collectionName = isset($json->collection_name) ? $json->collection_name : null;
+            $runOn = $json->runOn ?? null;
+            $data = $json->data ?? [];
+            // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
+            $databaseName = $json->database_name ?? null;
+            $collectionName = $json->collection_name ?? null;
+            // phpcs:enable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;
@@ -207,13 +227,15 @@ class TransactionsSpecTest extends FunctionalTestCase
      * ClientSession unpins the session and normal server selection is performed
      * for the next operation.
      */
-    public function testStartingNewTransactionOnPinnedSessionUnpinsSession()
+    public function testStartingNewTransactionOnPinnedSessionUnpinsSession(): void
     {
-        if (! $this->isShardedClusterUsingReplicasets()) {
-            $this->markTestSkipped('Mongos pinning tests can only run on sharded clusters using replica sets');
+        $this->skipIfTransactionsAreNotSupported();
+
+        if (! $this->isMongos()) {
+            $this->markTestSkipped('Pinning tests require mongos');
         }
 
-        $client = new Client($this->getUri(true));
+        $client = self::createTestClient($this->getUri(true));
 
         $session = $client->startSession();
         $collection = $client->selectCollection($this->getDatabaseName(), $this->getCollectionName());
@@ -245,13 +267,15 @@ class TransactionsSpecTest extends FunctionalTestCase
      * ClientSession unpins the session and normal server selection is
      * performed.
      */
-    public function testRunningNonTransactionOperationOnPinnedSessionUnpinsSession()
+    public function testRunningNonTransactionOperationOnPinnedSessionUnpinsSession(): void
     {
-        if (! $this->isShardedClusterUsingReplicasets()) {
-            $this->markTestSkipped('Mongos pinning tests can only run on sharded clusters using replica sets');
+        $this->skipIfTransactionsAreNotSupported();
+
+        if (! $this->isMongos()) {
+            $this->markTestSkipped('Pinning tests require mongos');
         }
 
-        $client = new Client($this->getUri(true));
+        $client = self::createTestClient($this->getUri(true));
 
         $session = $client->startSession();
         $collection = $client->selectCollection($this->getDatabaseName(), $this->getCollectionName());
@@ -279,7 +303,7 @@ class TransactionsSpecTest extends FunctionalTestCase
     /**
      * Create the collection, since it cannot be created within a transaction.
      */
-    protected function createTestCollection()
+    protected function createTestCollection(): void
     {
         $context = $this->getContext();
 
@@ -294,9 +318,14 @@ class TransactionsSpecTest extends FunctionalTestCase
      * previously failed test. For sharded clusters, this command will be run
      * on all mongos nodes.
      */
-    private static function killAllSessions()
+    private static function killAllSessions(): void
     {
-        $manager = new Manager(static::getUri());
+        // killAllSessions is not supported on serverless, see CLOUDP-84298
+        if (static::isServerless()) {
+            return;
+        }
+
+        $manager = static::createTestManager();
         $primary = $manager->selectServer(new ReadPreference('primary'));
 
         $servers = $primary->getType() === Server::TYPE_MONGOS
@@ -309,6 +338,7 @@ class TransactionsSpecTest extends FunctionalTestCase
                 if (! isset($server->getInfo()['logicalSessionTimeoutMinutes'])) {
                     continue;
                 }
+
                 $server->executeCommand('admin', new Command(['killAllSessions' => []]));
             } catch (ServerException $e) {
                 // Interrupted error is safe to ignore (see: SERVER-38335)
@@ -325,7 +355,7 @@ class TransactionsSpecTest extends FunctionalTestCase
      * @param array $operations
      * @see https://github.com/mongodb/specifications/tree/master/source/transactions/tests#why-do-tests-that-run-distinct-sometimes-fail-with-staledbversionts.
      */
-    private function preventStaleDbVersionError(array $operations)
+    private function preventStaleDbVersionError(array $operations): void
     {
         if (! $this->isShardedCluster()) {
             return;

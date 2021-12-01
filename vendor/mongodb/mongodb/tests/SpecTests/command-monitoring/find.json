@@ -89,21 +89,19 @@
           "skip": {
             "$numberLong": "2"
           },
-          "modifiers": {
-            "$comment": "test",
-            "$hint": {
-              "_id": 1
-            },
-            "$max": {
-              "_id": 6
-            },
-            "$maxTimeMS": 6000,
-            "$min": {
-              "_id": 0
-            },
-            "$returnKey": false,
-            "$showDiskLoc": false
-          }
+          "comment": "test",
+          "hint": {
+            "_id": 1
+          },
+          "max": {
+            "_id": 6
+          },
+          "maxTimeMS": 6000,
+          "min": {
+            "_id": 0
+          },
+          "returnKey": false,
+          "showRecordId": false
         }
       },
       "expectations": [
@@ -413,8 +411,9 @@
       ]
     },
     {
-      "description": "A successful find event with a getmore and the server kills the cursor",
+      "description": "A successful find event with a getmore and the server kills the cursor (<= 4.4)",
       "ignore_if_server_version_less_than": "3.1",
+      "ignore_if_server_version_greater_than": "4.4",
       "ignore_if_topology_type": [
         "sharded"
       ],

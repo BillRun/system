@@ -1620,6 +1620,11 @@
 						"fraud_notification": {
 							"subject": "Event [[event_code]] was triggered",
 							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+						},
+						"email_authentication" :{
+							"subject": "BillRun Customer Portal - Email Address Verification",
+							"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\nhttp://billrun/callback?token=[[token]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"html_translation": ["name", "token", "verification_link", "company_email", "company_name"]
 						}
 					},
 					"taxes": {

@@ -144,16 +144,22 @@ class BillAction extends ApiAction {
 	 * otherwise return account with their debt or with their credit balance
 	 *
 	 */
-	protected function getCollectionDebt($request, $only_debt = true) {
-		$result = array();
-		$jsonAids = $request->get('aids', '[]');
-		$aids = json_decode($jsonAids, TRUE);
-		if (!is_array($aids) || json_last_error()) {
-			$this->setError('Illegal account ids', $request->getPost());
-			return FALSE;
+	public function getCollectionDebt($request, $only_debt = true) {
+		if ($request instanceof Yaf_Request_Abstract) {
+			$jsonAids = $request->get('aids', '[]');        
+                        $requestBody = $request->getPost();
+		} else {
+			$jsonAids = $request['aids'] ?? [];
+                        $requestBody = $request;
+			
 		}
+                $aids = json_decode($jsonAids, TRUE);
+                if (!is_array($aids) || json_last_error()) {
+                    $this->setError('Illegal account ids', $requestBody);
+                    return FALSE;
+                }
 		if (empty($aids)) {
-			$this->setError('Must supply at least one aid', $request->getPost());
+			$this->setError('Must supply at least one aid', $requestBody);
 			return FALSE;
 		}
 		$contractors= Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
