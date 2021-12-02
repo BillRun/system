@@ -267,7 +267,7 @@ class Billrun_EventsManager {
 	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
-		$event['creation_time'] = new MongoDate();
+		$event['creation_time'] = new Mongodloid_Date();
 //		$event['value_before'] = $valueBefore;
 //		$event['value_after'] = $valueAfter;
 		foreach ($extraParams as $key => $value) {
@@ -348,7 +348,7 @@ class Billrun_EventsManager {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);
@@ -368,10 +368,10 @@ class Billrun_EventsManager {
 			'notify_time' => array('$exists' => false),
 			'$or' => array(
 				array('start_notify_time' => array('$exists' => false)),
-				array('start_notify_time' => array('$lte' => new MongoDate(strtotime('-' . $notifyOrphanTime))))
+				array('start_notify_time' => array('$lte' => new Mongodloid_Date(strtotime('-' . $notifyOrphanTime))))
 			)
 		);
-		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
+		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new Mongodloid_Date())), array('multiple' => true));
 	}
 	
 	

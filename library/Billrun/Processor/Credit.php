@@ -27,9 +27,9 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		foreach ($this->data['data'] as $rowKey => &$row) {
 			$row['type'] = 'credit';
 			if (isset($row['credit_time'])) {
-				$row['urt'] = new MongoDate($row['credit_time']);
+				$row['urt'] = new Mongodloid_Date($row['credit_time']);
 			} else {
-				$row['urt'] = new MongoDate();
+				$row['urt'] = new Mongodloid_Date();
 			}
 			$row['account_level'] = $this->isAccountLevelLine($row);
 		}

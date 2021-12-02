@@ -275,7 +275,11 @@ class Billrun_Utils_Time {
 	 * @param mixed $value
 	 */
 	public static function getTime($value) {
-		if ($value instanceof MongoDate) {
+		if ($value instanceof Mongodloid_Date) {
+			return $value->sec;
+		}
+		
+		if ($value instanceof Mongodloid_Date) {
 			return $value->sec;
 		}
 		

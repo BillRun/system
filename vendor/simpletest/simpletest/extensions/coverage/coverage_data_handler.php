@@ -1,10 +1,20 @@
 <?php
+/**
+ * @package        SimpleTest
+ * @subpackage     Extensions
+ */
+/**
+ * @todo	which db abstraction layer is this?
+ */
+require_once 'DB/sqlite.php';
 
 /**
  * Persists code coverage data into SQLite database and aggregate data for convienent
  * interpretation in report generator.  Be sure to not to keep an instance longer
  * than you have, otherwise you risk overwriting database edits from another process
  * also trying to make updates.
+ * @package        SimpleTest
+ * @subpackage     Extensions
  */
 class CoverageDataHandler
 {
@@ -13,23 +23,23 @@ class CoverageDataHandler
     public function __construct($filename)
     {
         $this->filename = $filename;
-        $this->db       = new SQLite3($filename);
+        $this->db = new SQLiteDatabase($filename);
         if (empty($this->db)) {
-            throw new Exception('Could not create SQLite DB ' . $filename);
+            throw new Exception("Could not create sqlite db ". $filename);
         }
     }
 
     public function createSchema()
     {
-        $this->db->query('CREATE TABLE untouched (filename text)');
-        $this->db->query('CREATE TABLE coverage (name text, coverage text)');
+        $this->db->queryExec("create table untouched (filename text)");
+        $this->db->queryExec("create table coverage (name text, coverage text)");
     }
 
-    public function getFilenames()
+    public function &getFilenames()
     {
         $filenames = array();
-        $cursor    = $this->db->query('SELECT DISTINCT name FROM coverage');
-        while ($row = $cursor->fetchArray()) {
+        $cursor = $this->db->unbufferedQuery("select distinct name from coverage");
+        while ($row = $cursor->fetch()) {
             $filenames[] = $row[0];
         }
 
@@ -39,11 +49,11 @@ class CoverageDataHandler
     public function write($coverage)
     {
         foreach ($coverage as $file => $lines) {
-            $coverageStr      = serialize($lines);
+            $coverageStr = serialize($lines);
             $relativeFilename = self::ltrim(getcwd() . '/', $file);
-            $sql              = "INSERT INTO coverage (name, coverage) VALUES ('$relativeFilename', '$coverageStr')";
+            $sql = "insert into coverage (name, coverage) values ('$relativeFilename', '$coverageStr')";
             # if this fails, check you have write permission
-            $this->db->query($sql);
+            $this->db->queryExec($sql);
         }
     }
 
@@ -53,17 +63,18 @@ class CoverageDataHandler
         foreach ($coverage as $file => $garbage) {
             $coverage[$file] = $this->readFile($file);
         }
-
         return $coverage;
     }
 
-    public function readFile($file)
+    public function &readFile($file)
     {
+        $sql = "select coverage from coverage where name = '$file'";
         $aggregate = array();
-        $sql       = "SELECT coverage FROM coverage WHERE name = '$file'";
-        $result    = $this->db->query($sql);
-        while ($row = $result->fetchArray()) {
+        $result = $this->db->query($sql);
+        while ($result->valid()) {
+            $row = $result->current();
             $this->aggregateCoverage($aggregate, unserialize($row[0]));
+            $result->next();
         }
 
         return $aggregate;
@@ -91,7 +102,6 @@ class CoverageDataHandler
                     case -1: return $code1;
                 }
         }
-
         return $code1 + $code2;
     }
 
@@ -100,23 +110,24 @@ class CoverageDataHandler
         if (stripos($pristine, $cruft) === 0) {
             return substr($pristine, strlen($cruft));
         }
-
         return $pristine;
     }
 
     public function writeUntouchedFile($file)
     {
-        $relativeFile = self::ltrim('./', $file);
-        $sql          = "INSERT INTO untouched values ('$relativeFile')";
-        $this->db->query($sql);
+        $relativeFile = CoverageDataHandler::ltrim('./', $file);
+        $sql = "insert into untouched values ('$relativeFile')";
+        $this->db->queryExec($sql);
     }
 
-    public function readUntouchedFiles()
+    public function &readUntouchedFiles()
     {
         $untouched = array();
-        $result    = $this->db->query('SELECT filename FROM untouched ORDER BY filename');
-        while ($row = $result->fetchArray()) {
+        $result = $this->db->query("select filename from untouched order by filename");
+        while ($result->valid()) {
+            $row = $result->current();
             $untouched[] = $row[0];
+            $result->next();
         }
 
         return $untouched;

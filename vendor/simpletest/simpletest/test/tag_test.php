@@ -1,8 +1,8 @@
 <?php
-
-require_once __DIR__ . '/../autorun.php';
-require_once __DIR__ . '/../tag.php';
-require_once __DIR__ . '/../encoding.php';
+// $Id$
+require_once(dirname(__FILE__) . '/../autorun.php');
+require_once(dirname(__FILE__) . '/../tag.php');
+require_once(dirname(__FILE__) . '/../encoding.php');
 Mock::generate('SimpleMultipartEncoding');
 
 class TestOfTag extends UnitTestCase
@@ -16,7 +16,7 @@ class TestOfTag extends UnitTestCase
         $this->assertIdentical($tag->getAttribute('c'), false);
         $this->assertIdentical($tag->getContent(), '');
     }
-
+    
     public function testTitleContent()
     {
         $tag = new SimpleTitleTag(array());
@@ -25,7 +25,7 @@ class TestOfTag extends UnitTestCase
         $tag->addContent('World');
         $this->assertEqual($tag->getText(), 'HelloWorld');
     }
-
+    
     public function testMessyTitleContent()
     {
         $tag = new SimpleTitleTag(array());
@@ -34,27 +34,27 @@ class TestOfTag extends UnitTestCase
         $tag->addContent('<em>World</em>');
         $this->assertEqual($tag->getText(), 'HelloWorld');
     }
-
+    
     public function testTagWithNoEnd()
     {
         $tag = new SimpleTextTag(array());
         $this->assertFalse($tag->expectEndTag());
     }
-
+    
     public function testAnchorHref()
     {
         $tag = new SimpleAnchorTag(array('href' => 'http://here/'));
         $this->assertEqual($tag->getHref(), 'http://here/');
-
+        
         $tag = new SimpleAnchorTag(array('href' => ''));
         $this->assertIdentical($tag->getAttribute('href'), '');
         $this->assertIdentical($tag->getHref(), '');
-
+        
         $tag = new SimpleAnchorTag(array());
         $this->assertIdentical($tag->getAttribute('href'), false);
         $this->assertIdentical($tag->getHref(), '');
     }
-
+    
     public function testIsIdMatchesIdAttribute()
     {
         $tag = new SimpleAnchorTag(array('href' => 'http://here/', 'id' => 7));
@@ -71,21 +71,21 @@ class TestOfWidget extends UnitTestCase
         $this->assertIdentical($tag->getDefault(), '');
         $this->assertIdentical($tag->getValue(), '');
     }
-
+    
     public function testSettingOfExternalLabel()
     {
         $tag = new SimpleTextTag(array('type' => 'text'));
         $tag->setLabel('it');
         $this->assertTrue($tag->isLabel('it'));
     }
-
+    
     public function testTextDefault()
     {
         $tag = new SimpleTextTag(array('value' => 'aaa'));
         $this->assertEqual($tag->getDefault(), 'aaa');
         $this->assertEqual($tag->getValue(), 'aaa');
     }
-
+    
     public function testSettingTextValue()
     {
         $tag = new SimpleTextTag(array('value' => 'aaa'));
@@ -94,61 +94,14 @@ class TestOfWidget extends UnitTestCase
         $tag->resetValue();
         $this->assertEqual($tag->getValue(), 'aaa');
     }
-
-    public function testDateDefault()
-    {
-        $tag = new SimpleDateTag(array('value' => '2019-09-06'));
-        $this->assertEqual($tag->getDefault(), '2019-09-06');
-        $this->assertEqual($tag->getValue(), '2019-09-06');
-    }
-
-    public function testSettingDateValue()
-    {
-        $tag = new SimpleDateTag(array('value' => '2019-09-06'));
-        $this->assertTrue($tag->setValue('2011-11-11'));
-        $this->assertEqual($tag->getValue(), '2011-11-11');
-        $tag->resetValue();
-        $this->assertEqual($tag->getValue(), '2019-09-06');
-    }
-
-    public function testTimeDefault()
-    {
-        $tag = new SimpleTimeTag(array('value' => '10:33:42'));
-        $this->assertEqual($tag->getDefault(), '10:33:42');
-        $this->assertEqual($tag->getValue(), '10:33:42');
-    }
-
-    public function testSettingTimeValue()
-    {
-        $tag = new SimpleTimeTag(array('value' => '10:33'));
-        $tag->setValue('11:11');
-        $this->assertEqual($tag->getValue(), '11:11');
-        $tag->resetValue();
-        $this->assertEqual($tag->getValue(), '10:33');
-    }
-
-    public function testTimeStepAttribute()
-    {
-        $tag = new SimpleTimeTag(array());
-        $this->assertFalse($tag->setValue('10:33:42'));
-        $this->assertTrue($tag->setValue('10:33'));
-        $this->assertTrue($tag->setValue('10:33:00'));
-        $this->assertEqual($tag->getValue(), '10:33');
-
-        $tag = new SimpleTimeTag(array('step' => '5'));
-        $this->assertEqual($tag->getAttribute('step'), '5');
-        $this->assertFalse($tag->setValue('10:33:42'));
-        $this->assertTrue($tag->setValue('10:33:45'));
-        $this->assertEqual($tag->getValue(), '10:33:45');
-    }
-
+    
     public function testFailToSetHiddenValue()
     {
         $tag = new SimpleTextTag(array('value' => 'aaa', 'type' => 'hidden'));
         $this->assertFalse($tag->setValue('bbb'));
         $this->assertEqual($tag->getValue(), 'aaa');
     }
-
+    
     public function testSubmitDefaults()
     {
         $tag = new SimpleSubmitTag(array('type' => 'submit'));
@@ -157,12 +110,12 @@ class TestOfWidget extends UnitTestCase
         $this->assertFalse($tag->setValue('Cannot set this'));
         $this->assertEqual($tag->getValue(), 'Submit');
         $this->assertEqual($tag->getLabel(), 'Submit');
-
+        
         $encoding = new MockSimpleMultipartEncoding();
         $encoding->expectNever('add');
         $tag->write($encoding);
     }
-
+    
     public function testPopulatedSubmit()
     {
         $tag = new SimpleSubmitTag(
@@ -170,32 +123,32 @@ class TestOfWidget extends UnitTestCase
         $this->assertEqual($tag->getName(), 's');
         $this->assertEqual($tag->getValue(), 'Ok!');
         $this->assertEqual($tag->getLabel(), 'Ok!');
-
+        
         $encoding = new MockSimpleMultipartEncoding();
         $encoding->expectOnce('add', array('s', 'Ok!'));
         $tag->write($encoding);
     }
-
+    
     public function testImageSubmit()
     {
         $tag = new SimpleImageSubmitTag(
                 array('type' => 'image', 'name' => 's', 'alt' => 'Label'));
         $this->assertEqual($tag->getName(), 's');
         $this->assertEqual($tag->getLabel(), 'Label');
-
+        
         $encoding = new MockSimpleMultipartEncoding();
         $encoding->expectAt(0, 'add', array('s.x', 20));
         $encoding->expectAt(1, 'add', array('s.y', 30));
         $tag->write($encoding, 20, 30);
     }
-
+    
     public function testImageSubmitTitlePreferredOverAltForLabel()
     {
         $tag = new SimpleImageSubmitTag(
                 array('type' => 'image', 'name' => 's', 'alt' => 'Label', 'title' => 'Title'));
         $this->assertEqual($tag->getLabel(), 'Title');
     }
-
+    
     public function testButton()
     {
         $tag = new SimpleButtonTag(
@@ -220,7 +173,7 @@ class TestOfTextArea extends UnitTestCase
         $this->assertEqual($tag->getName(), 'a');
         $this->assertEqual($tag->getDefault(), 'Some text');
     }
-
+    
     public function testWrapping()
     {
         $tag = new SimpleTextAreaTag(array('cols' => '10', 'wrap' => 'physical'));
@@ -233,7 +186,7 @@ class TestOfTextArea extends UnitTestCase
                 $tag->getValue(),
                 "New long\r\ntext\r\nwith two\r\nlines");
     }
-
+    
     public function testWrappingRemovesLeadingcariageReturn()
     {
         $tag = new SimpleTextAreaTag(array('cols' => '20', 'wrap' => 'physical'));
@@ -242,7 +195,7 @@ class TestOfTextArea extends UnitTestCase
         $tag->setValue("\nNew stuff\n");
         $this->assertEqual($tag->getValue(), "New stuff\r\n");
     }
-
+    
     public function testBreaksAreNewlineAndCarriageReturn()
     {
         $tag = new SimpleTextAreaTag(array('cols' => '10'));
@@ -269,38 +222,38 @@ class TestOfSelection extends UnitTestCase
         $tag = new SimpleSelectionTag(array('name' => 'a'));
         $this->assertIdentical($tag->getValue(), '');
     }
-
+    
     public function testSingle()
     {
-        $tag    = new SimpleSelectionTag(array('name' => 'a'));
+        $tag = new SimpleSelectionTag(array('name' => 'a'));
         $option = new SimpleOptionTag(array());
         $option->addContent('AAA');
         $tag->addTag($option);
         $this->assertEqual($tag->getValue(), 'AAA');
     }
-
+    
     public function testSingleDefault()
     {
-        $tag    = new SimpleSelectionTag(array('name' => 'a'));
+        $tag = new SimpleSelectionTag(array('name' => 'a'));
         $option = new SimpleOptionTag(array('selected' => ''));
         $option->addContent('AAA');
         $tag->addTag($option);
         $this->assertEqual($tag->getValue(), 'AAA');
     }
-
+    
     public function testSingleMappedDefault()
     {
-        $tag    = new SimpleSelectionTag(array('name' => 'a'));
+        $tag = new SimpleSelectionTag(array('name' => 'a'));
         $option = new SimpleOptionTag(array('selected' => '', 'value' => 'aaa'));
         $option->addContent('AAA');
         $tag->addTag($option);
         $this->assertEqual($tag->getValue(), 'aaa');
     }
-
+    
     public function testStartsWithDefault()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('selected' => ''));
@@ -311,11 +264,11 @@ class TestOfSelection extends UnitTestCase
         $tag->addTag($c);
         $this->assertEqual($tag->getValue(), 'BBB');
     }
-
+    
     public function testSettingOption()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('selected' => ''));
@@ -326,11 +279,11 @@ class TestOfSelection extends UnitTestCase
         $tag->setValue('AAA');
         $this->assertEqual($tag->getValue(), 'AAA');
     }
-
+    
     public function testSettingMappedOption()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array('value' => 'aaa'));
+        $a = new SimpleOptionTag(array('value' => 'aaa'));
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('value' => 'bbb', 'selected' => ''));
@@ -344,11 +297,11 @@ class TestOfSelection extends UnitTestCase
         $tag->setValue('ccc');
         $this->assertEqual($tag->getValue(), 'ccc');
     }
-
+    
     public function testSelectionDespiteSpuriousWhitespace()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $a->addContent(' AAA ');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('selected' => ''));
@@ -361,11 +314,11 @@ class TestOfSelection extends UnitTestCase
         $tag->setValue('AAA');
         $this->assertEqual($tag->getValue(), ' AAA ');
     }
-
+    
     public function testFailToSetIllegalOption()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('selected' => ''));
@@ -377,11 +330,11 @@ class TestOfSelection extends UnitTestCase
         $this->assertFalse($tag->setValue('Not present'));
         $this->assertEqual($tag->getValue(), 'BBB');
     }
-
+    
     public function testNastyOptionValuesThatLookLikeFalse()
     {
         $tag = new SimpleSelectionTag(array('name' => 'a'));
-        $a   = new SimpleOptionTag(array('value' => '1'));
+        $a = new SimpleOptionTag(array('value' => '1'));
         $a->addContent('One');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('value' => '0'));
@@ -391,11 +344,11 @@ class TestOfSelection extends UnitTestCase
         $tag->setValue('Zero');
         $this->assertIdentical($tag->getValue(), '0');
     }
-
+    
     public function testBlankOption()
     {
         $tag = new SimpleSelectionTag(array('name' => 'A'));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $tag->addTag($a);
         $b = new SimpleOptionTag(array());
         $b->addContent('b');
@@ -406,11 +359,11 @@ class TestOfSelection extends UnitTestCase
         $tag->setValue('');
         $this->assertIdentical($tag->getValue(), '');
     }
-
+    
     public function testMultipleDefaultWithNoSelections()
     {
         $tag = new MultipleSelectionTag(array('name' => 'a', 'multiple' => ''));
-        $a   = new SimpleOptionTag(array());
+        $a = new SimpleOptionTag(array());
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array());
@@ -419,11 +372,11 @@ class TestOfSelection extends UnitTestCase
         $this->assertIdentical($tag->getDefault(), array());
         $this->assertIdentical($tag->getValue(), array());
     }
-
+    
     public function testMultipleDefaultWithSelections()
     {
         $tag = new MultipleSelectionTag(array('name' => 'a', 'multiple' => ''));
-        $a   = new SimpleOptionTag(array('selected' => ''));
+        $a = new SimpleOptionTag(array('selected' => ''));
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array('selected' => ''));
@@ -432,11 +385,11 @@ class TestOfSelection extends UnitTestCase
         $this->assertIdentical($tag->getDefault(), array('AAA', 'BBB'));
         $this->assertIdentical($tag->getValue(), array('AAA', 'BBB'));
     }
-
+    
     public function testSettingMultiple()
     {
         $tag = new MultipleSelectionTag(array('name' => 'a', 'multiple' => ''));
-        $a   = new SimpleOptionTag(array('selected' => ''));
+        $a = new SimpleOptionTag(array('selected' => ''));
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array());
@@ -451,11 +404,11 @@ class TestOfSelection extends UnitTestCase
         $this->assertTrue($tag->setValue(array()));
         $this->assertIdentical($tag->getValue(), array());
     }
-
+    
     public function testFailToSetIllegalOptionsInMultiple()
     {
         $tag = new MultipleSelectionTag(array('name' => 'a', 'multiple' => ''));
-        $a   = new SimpleOptionTag(array('selected' => ''));
+        $a = new SimpleOptionTag(array('selected' => ''));
         $a->addContent('AAA');
         $tag->addTag($a);
         $b = new SimpleOptionTag(array());
@@ -476,7 +429,7 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertIdentical($group->getValue(), false);
         $this->assertFalse($group->setValue('a'));
     }
-
+    
     public function testReadingSingleButtonGroup()
     {
         $group = new SimpleRadioGroup();
@@ -485,7 +438,7 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertIdentical($group->getDefault(), 'A');
         $this->assertIdentical($group->getValue(), 'A');
     }
-
+    
     public function testReadingMultipleButtonGroup()
     {
         $group = new SimpleRadioGroup();
@@ -496,7 +449,7 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertIdentical($group->getDefault(), 'B');
         $this->assertIdentical($group->getValue(), 'B');
     }
-
+    
     public function testFailToSetUnlistedValue()
     {
         $group = new SimpleRadioGroup();
@@ -504,7 +457,7 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertFalse($group->setValue('a'));
         $this->assertIdentical($group->getValue(), false);
     }
-
+    
     public function testSettingNewValueClearsTheOldOne()
     {
         $group = new SimpleRadioGroup();
@@ -515,7 +468,7 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertTrue($group->setValue('A'));
         $this->assertIdentical($group->getValue(), 'A');
     }
-
+    
     public function testIsIdMatchesAnyWidgetInSet()
     {
         $group = new SimpleRadioGroup();
@@ -527,10 +480,10 @@ class TestOfRadioGroup extends UnitTestCase
         $this->assertTrue($group->isId('i1'));
         $this->assertTrue($group->isId('i2'));
     }
-
+    
     public function testIsLabelMatchesAnyWidgetInSet()
     {
-        $group   = new SimpleRadioGroup();
+        $group = new SimpleRadioGroup();
         $button1 = new SimpleRadioButtonTag(array('value' => 'A'));
         $button1->setLabel('one');
         $group->addWidget($button1);
@@ -554,7 +507,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertIdentical($group->getDefault(), 'B');
         $this->assertIdentical($group->getValue(), 'B');
     }
-
+    
     public function testReadingMultipleUncheckedItems()
     {
         $group = new SimpleCheckboxGroup();
@@ -563,7 +516,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertIdentical($group->getDefault(), false);
         $this->assertIdentical($group->getValue(), false);
     }
-
+    
     public function testReadingMultipleCheckedItems()
     {
         $group = new SimpleCheckboxGroup();
@@ -574,7 +527,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertIdentical($group->getDefault(), array('A', 'B'));
         $this->assertIdentical($group->getValue(), array('A', 'B'));
     }
-
+    
     public function testSettingSingleValue()
     {
         $group = new SimpleCheckboxGroup();
@@ -585,7 +538,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertTrue($group->setValue('B'));
         $this->assertIdentical($group->getValue(), 'B');
     }
-
+    
     public function testSettingMultipleValues()
     {
         $group = new SimpleCheckboxGroup();
@@ -594,7 +547,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertTrue($group->setValue(array('A', 'B')));
         $this->assertIdentical($group->getValue(), array('A', 'B'));
     }
-
+    
     public function testSettingNoValue()
     {
         $group = new SimpleCheckboxGroup();
@@ -603,7 +556,7 @@ class TestOfTagGroup extends UnitTestCase
         $this->assertTrue($group->setValue(false));
         $this->assertIdentical($group->getValue(), false);
     }
-
+    
     public function testIsIdMatchesAnyIdInSet()
     {
         $group = new SimpleCheckboxGroup();
@@ -620,10 +573,10 @@ class TestOfUploadWidget extends UnitTestCase
     public function testValueIsFilePath()
     {
         $upload = new SimpleUploadTag(array('name' => 'a'));
-        $upload->setValue(__DIR__ . '/support/upload_sample.txt');
-        $this->assertEqual($upload->getValue(), __DIR__ . '/support/upload_sample.txt');
+        $upload->setValue(dirname(__FILE__) . '/support/upload_sample.txt');
+        $this->assertEqual($upload->getValue(), dirname(__FILE__) . '/support/upload_sample.txt');
     }
-
+    
     public function testSubmitsFileContents()
     {
         $encoding = new MockSimpleMultipartEncoding();
@@ -632,7 +585,7 @@ class TestOfUploadWidget extends UnitTestCase
                 'Sample for testing file upload',
                 'upload_sample.txt'));
         $upload = new SimpleUploadTag(array('name' => 'a'));
-        $upload->setValue(__DIR__ . '/support/upload_sample.txt');
+        $upload->setValue(dirname(__FILE__) . '/support/upload_sample.txt');
         $upload->write($encoding);
     }
 }
@@ -644,7 +597,7 @@ class TestOfLabelTag extends UnitTestCase
         $label = new SimpleLabelTag(array());
         $this->assertTrue($label->expectEndTag());
     }
-
+    
     public function testContentIsTextOnly()
     {
         $label = new SimpleLabelTag(array());

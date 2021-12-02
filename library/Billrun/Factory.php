@@ -269,7 +269,7 @@ class Billrun_Factory {
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
+			self::$smser[$stamp] = Billrun_Sms_Abstract::getInstance($options);
 		}
 
 		return self::$smser[$stamp];
@@ -590,9 +590,10 @@ class Billrun_Factory {
 				}
 			}
 			OAuth2\Autoloader::register();
-			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb()->getDb());
+			$storage = new Billrun_OAuth2_Storage_MongoDB(Billrun_Factory::db()->getDb());
 			self::$oauth2[$stamp] = new OAuth2\Server($storage, $params);
 			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\ClientCredentials($storage));
+			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\UserCredentials($storage));
 			// Future compatibility
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage));
 //			self::$oauth2[$stamp]->addGrantType(new OAuth2\GrantType\JwtBearer($storage));

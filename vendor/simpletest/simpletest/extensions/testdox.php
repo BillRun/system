@@ -1,9 +1,15 @@
 <?php
-
-require_once __DIR__ . '/../reporter.php';
-
 /**
  *	Extension for a TestDox reporter
+ *	@package	SimpleTest
+ *	@subpackage	Extensions
+ *	@version	$Id$
+ */
+
+/**
+ * 	TestDox reporter 
+ *	@package	SimpleTest
+ *	@subpackage	Extensions
  */
 class TestDoxReporter extends SimpleReporter
 {
@@ -47,6 +53,6 @@ class TestDoxReporter extends SimpleReporter
 
     public function paintFail($message)
     {
-        echo ' [FAILED]';
+        echo " [FAILED]";
     }
 }

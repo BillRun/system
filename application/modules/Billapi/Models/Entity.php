@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Verification.php';
+
 /**
  * Billapi model for operations on BillRun entities
  *
@@ -211,7 +213,7 @@ class Models_Entity {
 		$this->is_import = isset($params['request']['is_import']) ? boolval($params['request']['is_import']) : false;
 
 		//transalte all date fields
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		Billrun_Utils_Mongo::convertQueryMongodloidDates($this->update);
 	}
 
 	/**
@@ -359,10 +361,10 @@ class Models_Entity {
 		$this->action = 'create';
 		unset($this->update['_id']);
 		if (empty($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+			$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		}
 		if (empty($this->update['creation_time'])) {
 			$this->update['creation_time'] = $this->update['from'];
@@ -533,7 +535,7 @@ class Models_Entity {
 	public function closeandnew() {
 		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
-			$this->update['from'] = new MongoDate();
+			$this->update['from'] = new Mongodloid_Date();
 		}
 		if (!is_null($this->before)) {
 			$prevEntity = $this->before->getRawData();
@@ -577,7 +579,7 @@ class Models_Entity {
 	protected function getCloseAndNewPreUpdateCommand() {
 		return array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec)
+				'to' => new Mongodloid_Date($this->update['from']->sec)
 			)
 		);
 	}
@@ -746,7 +748,7 @@ class Models_Entity {
 
 		if (!isset($this->update['to'])) {
 			$this->update = array(
-				'to' => new MongoDate()
+				'to' => new Mongodloid_Date()
 			);
 		}
 
@@ -806,7 +808,7 @@ class Models_Entity {
 		$prevEntity = $this->before->getRawData();
 		$this->update = array_merge($prevEntity, $this->update);
 		unset($this->update['_id']);
-		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		$this->update['to'] = new Mongodloid_Date(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
 		$this->fixEntityFields($this->before);
@@ -827,7 +829,7 @@ class Models_Entity {
 		}
 		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				$edge => new MongoDate()
+				$edge => new Mongodloid_Date()
 			);
 		}
 
@@ -884,7 +886,7 @@ class Models_Entity {
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
-			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
+			$this->setUpdate(array($otherEdge => new Mongodloid_Date($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
 			return $this->update();
 		}
@@ -952,7 +954,7 @@ class Models_Entity {
 
 		$records = array_values(iterator_to_array($res));
 		foreach ($records as &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongodloidDatetimeFields($record);
 		}
 		return $records;
 	}
@@ -1127,7 +1129,7 @@ class Models_Entity {
 	 * @return array the entity loaded
 	 */
 	protected function loadById($id, $readPrimary = false) {
-		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
+		$fetchQuery = array('_id' => ($id instanceof Mongodloid_Id) ? $id : new Mongodloid_Id($id));
 		$cursor = $this->collection->query($fetchQuery)->cursor();
 		if ($readPrimary) {
 			$cursor->setReadPreference('RP_PRIMARY');

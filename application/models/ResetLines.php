@@ -102,8 +102,8 @@ class ResetLinesModel {
 						'$exists' => FALSE,
 					),
 					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
+						'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->billrun_key)),
+						'$lt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($this->billrun_key)),
 					)
 				),
 			),
@@ -114,7 +114,7 @@ class ResetLinesModel {
 				'$nin' => array('credit', 'flat', 'service'),
 			),
 			'process_time' => array(
-				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+				'$lt' => new Mongodloid_Date(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
 	}
@@ -136,7 +136,7 @@ class ResetLinesModel {
 			$query = $basicQuery;
 		}
 		$lines = $lines_coll->query($query);
-		$rebalanceTime = new MongoDate();
+		$rebalanceTime = new Mongodloid_Date();
 		$stamps = array();
 		$queue_lines = array();
 		$former_exporter = array();
@@ -523,11 +523,13 @@ class ResetLinesModel {
 			'aid' => array('$in' => $aids),
 			'period' => array('$ne' => 'default')
 		);
-		$balances = $balancesColl->query($queryBalances)->cursor();
+		
+		
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
+				$balances = $balancesColl->query($queryBalances)->cursor();
 				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
 				if (empty($relevantBalances)) {
 					continue;
@@ -538,7 +540,7 @@ class ResetLinesModel {
 					}
 					$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
 					$query = array(
-						'_id' => new MongoId($balanceId),
+						'_id' => new Mongodloid_Id($balanceId),
 					);
 					Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 					$balancesColl->update($query, $updateData);
@@ -558,7 +560,6 @@ class ResetLinesModel {
 			'period' => 'default'
 		);
 
-		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			$current_account = array_filter($accounts, function($account) use($aid) {
@@ -567,6 +568,7 @@ class ResetLinesModel {
 			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
+					$balances = $balancesColl->query($queryBalances)->cursor();
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {

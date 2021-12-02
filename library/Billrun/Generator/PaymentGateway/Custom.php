@@ -54,7 +54,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->fileGenerator->setTrailerRows($this->trailers);
         $this->fileGenerator->generate();
         $this->logFile->updateLogFileField('transactions', $this->fileGenerator->getTransactionsCounter());
-		$this->logFile->updateLogFileField('process_time', new MongoDate($this->now));
+		$this->logFile->updateLogFileField('process_time', new Mongodloid_Date($this->now));
         $this->logFile->saveLogFileFields();
     }
 
