@@ -89,10 +89,15 @@ class Billrun_Parser_Xml {
             Billrun_Factory::log('Billrun_Parser_Xml: Couldn\'t open ' . $filename . ' file. No process was made.', Zend_Log::ALERT);
             return;
         }
-
+		
         $GivenXml->registerXPathNamespace($this->name_space_prefix, $this->name_space);
-        $xmlAsString = file_get_contents($filename);
-
+		if(!empty($this->name_space) && empty($this->name_space_prefix)) {
+			$xmlAsString = file_get_contents($filename);
+			$xmlAsString = str_replace(' xmlns="' . $this->name_space . '"', "", $xmlAsString);
+			unset($GivenXml);
+			$GivenXml = simplexml_load_string($xmlAsString);
+		}
+		
         $fixedTag = $commonPathAsArray[(count($commonPathAsArray) - 1)];
         $parentNode = $GivenXml;
         $this->getParentNode($parentNode);
