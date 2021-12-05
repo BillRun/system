@@ -53,6 +53,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	protected $settings = array();
 
 	public function init() {
+		Billrun_Utils_Security::openCrossDomain();
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
 		$this->params['options'] = json_decode($request->get('options', '{}'), JSON_OBJECT_AS_ARRAY);

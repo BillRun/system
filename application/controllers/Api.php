@@ -24,7 +24,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected $output;
 	
 	protected $start_time = 0;
-		
+	
+	protected $cors = true;
+	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
@@ -39,14 +41,9 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->setActions();
 		$this->setOutputMethod();
 		
-		//TODO add security configuration
-		if( isset($_SERVER['HTTP_ORIGIN']) ) {
-			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
-			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
-			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
-			header('Access-Control-Allow-Credentials: true');
+		if ($this->cors) {
+			Billrun_Utils_Security::openCrossDomain();
 		}
-		
 	}
 	
 	/**

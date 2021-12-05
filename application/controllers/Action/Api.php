@@ -14,12 +14,17 @@
  */
 abstract class ApiAction extends Action_Base {
 
+	protected $cors = true;
+
 	/**
 	 * initialize API action (run on constructor)
 	 */
 	public function init() {
 		// this will extend session timeout
 		Billrun_Util::setHttpSessionTimeout();
+		if ($this->cors) {
+			Billrun_Utils_Security::openCrossDomain();
+		}
 	}
 
 	/**
