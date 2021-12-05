@@ -80,7 +80,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
                                 [
 					'type' => 'boolean',
 					'field_name' => 'send_welcome_email',
-					'title' => 'Send My Account Welcome Email Notification',                                       
+					'title' => 'Send Account Welcome Email Notification',                                       
 					'editable' => true,
 					'display' => true,
                                         'nullable' => false,

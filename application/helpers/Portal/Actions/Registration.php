@@ -41,8 +41,8 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $token = $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION);	
                 $subject = $this->getEmailSubject('email_authentication');
                 $replaces = array_merge([
-			'[[name]]' => $params['name'] ??  'Guest',
-			'[[email_authentication_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url
+			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
+			'[[email_authentication_link]]' => Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token,
 		], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('email_authentication', $replaces);
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
@@ -71,7 +71,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $subject = $this->getEmailSubject('reset_password');
                 $replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
-			'[[reset_password_link]]' => Billrun_Util::getCompanyWebsite() . '/forgotPassword?token=' . $token ?? '',//todo:: change to the real url(forgot password)
+			'[[reset_password_link]]' => Billrun_Util::getCompanyWebsite() . '/forgotPassword?token=' . $token,
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
@@ -106,7 +106,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                         '[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
                         '[[username]]' => $username,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
-                        '[[link]]' =>  Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token ?? '' //add token to link  (SIGN UP LINK)
+                        '[[link]]' =>  Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token,
                 ], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('welcome_account', $replaces);
                 
