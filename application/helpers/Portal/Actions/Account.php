@@ -203,7 +203,6 @@ class Portal_Actions_Account extends Portal_Actions {
 		if ($account === false ) {
 			return false;
 		}
-		$this->addPlanDetails($account, $params);
 		$account['subscribers'] = $this->getSubscribers($account);
                 foreach ($account['subscribers'] as &$subscriber){
                     $this->addPlanDetails($subscriber);
