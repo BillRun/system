@@ -76,7 +76,7 @@ trait Billrun_Traits_Api_Pagination {
         }
         $this->totalPages = ceil(count($entities) / $this->pageSize);
         $offset = ($this->pageNumber - 1) * $this->pageSize;
-        return array_slice($entities, $offset, $this->pageSize);
+        return array_slice($entities, $offset, $this->pageSize, true);
     }
     
     /**
