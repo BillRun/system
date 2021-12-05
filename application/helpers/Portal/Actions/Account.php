@@ -211,17 +211,6 @@ class Portal_Actions_Account extends Portal_Actions {
 		unset($account['_id'], $account['payment_gateway']);
 		return $account;
 	}
-        
-         /**
-	 * add plan details to account
-	 *
-	 * @param  array $account
-	 * @param  array $params
-	 */
-        protected function addPlanDetails(&$account, $params) {
-            $plan = new Billrun_Plan(['name' => $account['plan'], 'time'=> time()]);
-            $account['plan_description'] =  $plan->get('description');
-        }
 	
 	/**
 	 * get the subscribers related to the account
