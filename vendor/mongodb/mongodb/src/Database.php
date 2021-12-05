@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-2017 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 namespace MongoDB;
 
+use Iterator;
 use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Manager;
@@ -35,10 +36,13 @@ use MongoDB\Operation\CreateCollection;
 use MongoDB\Operation\DatabaseCommand;
 use MongoDB\Operation\DropCollection;
 use MongoDB\Operation\DropDatabase;
+use MongoDB\Operation\ListCollectionNames;
 use MongoDB\Operation\ListCollections;
 use MongoDB\Operation\ModifyCollection;
+use MongoDB\Operation\RenameCollection;
 use MongoDB\Operation\Watch;
 use Traversable;
+
 use function is_array;
 use function strlen;
 
@@ -59,6 +63,9 @@ class Database
 
     /** @var integer */
     private static $wireVersionForReadConcernWithWriteStage = 8;
+
+    /** @var integer */
+    private static $wireVersionForSecondarySupportsWriteStage = 13;
 
     /** @var string */
     private $databaseName;
@@ -129,10 +136,10 @@ class Database
 
         $this->manager = $manager;
         $this->databaseName = (string) $databaseName;
-        $this->readConcern = isset($options['readConcern']) ? $options['readConcern'] : $this->manager->getReadConcern();
-        $this->readPreference = isset($options['readPreference']) ? $options['readPreference'] : $this->manager->getReadPreference();
-        $this->typeMap = isset($options['typeMap']) ? $options['typeMap'] : self::$defaultTypeMap;
-        $this->writeConcern = isset($options['writeConcern']) ? $options['writeConcern'] : $this->manager->getWriteConcern();
+        $this->readConcern = $options['readConcern'] ?? $this->manager->getReadConcern();
+        $this->readPreference = $options['readPreference'] ?? $this->manager->getReadPreference();
+        $this->typeMap = $options['typeMap'] ?? self::$defaultTypeMap;
+        $this->writeConcern = $options['writeConcern'] ?? $this->manager->getWriteConcern();
     }
 
     /**
@@ -202,18 +209,29 @@ class Database
             $options['readPreference'] = $this->readPreference;
         }
 
-        if ($hasWriteStage) {
-            $options['readPreference'] = new ReadPreference(ReadPreference::RP_PRIMARY);
-        }
-
         $server = select_server($this->manager, $options);
+
+        /* If a write stage is being used with a read preference (explicit or
+         * inherited), check that the wire version supports it. If not, force a
+         * primary read preference and select a new server if necessary. */
+        if (
+            $hasWriteStage && isset($options['readPreference']) &&
+            ! server_supports_feature($server, self::$wireVersionForSecondarySupportsWriteStage)
+        ) {
+            $options['readPreference'] = new ReadPreference(ReadPreference::RP_PRIMARY);
+
+            if ($server->isSecondary()) {
+                $server = select_server($this->manager, $options);
+            }
+        }
 
         /* MongoDB 4.2 and later supports a read concern when an $out stage is
          * being used, but earlier versions do not.
          *
          * A read concern is also not compatible with transactions.
          */
-        if (! isset($options['readConcern']) &&
+        if (
+            ! isset($options['readConcern']) &&
             server_supports_feature($server, self::$wireVersionForReadConcern) &&
             ! is_in_transaction($options) &&
             ( ! $hasWriteStage || server_supports_feature($server, self::$wireVersionForReadConcernWithWriteStage))
@@ -225,10 +243,12 @@ class Database
             $options['typeMap'] = $this->typeMap;
         }
 
-        if ($hasWriteStage &&
+        if (
+            $hasWriteStage &&
             ! isset($options['writeConcern']) &&
             server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) &&
-            ! is_in_transaction($options)) {
+            ! is_in_transaction($options)
+        ) {
             $options['writeConcern'] = $this->writeConcern;
         }
 
@@ -405,6 +425,21 @@ class Database
     }
 
     /**
+     * Returns the names of all collections in this database
+     *
+     * @see ListCollectionNames::__construct() for supported options
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function listCollectionNames(array $options = []): Iterator
+    {
+        $operation = new ListCollectionNames($this->databaseName, $options);
+        $server = select_server($this->manager, $options);
+
+        return $operation->execute($server);
+    }
+
+    /**
      * Returns information for all collections in this database.
      *
      * @see ListCollections::__construct() for supported options
@@ -445,6 +480,40 @@ class Database
         }
 
         $operation = new ModifyCollection($this->databaseName, $collectionName, $collectionOptions, $options);
+
+        return $operation->execute($server);
+    }
+
+    /**
+     * Rename a collection within this database.
+     *
+     * @see RenameCollection::__construct() for supported options
+     * @param string  $fromCollectionName Collection name
+     * @param string  $toCollectionName   New name of the collection
+     * @param ?string $toDatabaseName     New database name of the collection. Defaults to the original database.
+     * @param array   $options            Additional options
+     * @return array|object Command result document
+     * @throws UnsupportedException if options are unsupported on the selected server
+     * @throws InvalidArgumentException for parameter/option parsing errors
+     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
+     */
+    public function renameCollection(string $fromCollectionName, string $toCollectionName, ?string $toDatabaseName = null, array $options = [])
+    {
+        if (! isset($toDatabaseName)) {
+            $toDatabaseName = $this->databaseName;
+        }
+
+        if (! isset($options['typeMap'])) {
+            $options['typeMap'] = $this->typeMap;
+        }
+
+        $server = select_server($this->manager, $options);
+
+        if (! isset($options['writeConcern']) && server_supports_feature($server, self::$wireVersionForWritableCommandWriteConcern) && ! is_in_transaction($options)) {
+            $options['writeConcern'] = $this->writeConcern;
+        }
+
+        $operation = new RenameCollection($this->databaseName, $fromCollectionName, $toDatabaseName, $toCollectionName, $options);
 
         return $operation->execute($server);
     }

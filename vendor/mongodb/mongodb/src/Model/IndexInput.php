@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-2017 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ namespace MongoDB\Model;
 
 use MongoDB\BSON\Serializable;
 use MongoDB\Exception\InvalidArgumentException;
+
 use function is_array;
 use function is_float;
 use function is_int;
@@ -60,14 +61,6 @@ class IndexInput implements Serializable
             if (! is_int($order) && ! is_float($order) && ! is_string($order)) {
                 throw InvalidArgumentException::invalidType(sprintf('order value for "%s" field within "key" option', $fieldName), $order, 'numeric or string');
             }
-        }
-
-        if (! isset($index['ns'])) {
-            throw new InvalidArgumentException('Required "ns" option is missing from index specification');
-        }
-
-        if (! is_string($index['ns'])) {
-            throw InvalidArgumentException::invalidType('"ns" option', $index['ns'], 'string');
         }
 
         if (! isset($index['name'])) {

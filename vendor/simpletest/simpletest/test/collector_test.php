@@ -1,7 +1,7 @@
 <?php
-
-require_once __DIR__ . '/../autorun.php';
-require_once __DIR__ . '/../collector.php';
+// $Id$
+require_once(dirname(__FILE__) . '/../autorun.php');
+require_once(dirname(__FILE__) . '/../collector.php');
 SimpleTest::ignore('MockTestSuite');
 Mock::generate('TestSuite');
 
@@ -9,12 +9,12 @@ class PathEqualExpectation extends EqualExpectation
 {
     public function __construct($value, $message = '%s')
     {
-        parent::__construct(str_replace('\\', '/', $value), $message);
+        parent::__construct(str_replace("\\", '/', $value), $message);
     }
 
     public function test($compare)
     {
-        return parent::test(str_replace('\\', '/', $compare));
+        return parent::test(str_replace("\\", '/', $compare));
     }
 }
 
@@ -28,7 +28,7 @@ class TestOfCollector extends UnitTestCase
                 'addFile',
                 array(new PatternExpectation('/collectable\\.(1|2)$/')));
         $collector = new SimpleCollector();
-        $collector->collect($suite, __DIR__ . '/support/collector/');
+        $collector->collect($suite, dirname(__FILE__) . '/support/collector/');
     }
 }
 
@@ -42,15 +42,15 @@ class TestOfPatternCollector extends UnitTestCase
                 'addFile',
                 array(new PatternExpectation('/collectable\\.(1|2)$/')));
         $collector = new SimplePatternCollector('/.*/');
-        $collector->collect($suite, __DIR__ . '/support/collector/');
+        $collector->collect($suite, dirname(__FILE__) . '/support/collector/');
     }
 
     public function testOnlyMatchedFilesAreAddedToGroup()
     {
         $suite = new MockTestSuite();
         $suite->expectOnce('addFile', array(new PathEqualExpectation(
-                __DIR__ . '/support/collector/collectable.1')));
+                dirname(__FILE__) . '/support/collector/collectable.1')));
         $collector = new SimplePatternCollector('/1$/');
-        $collector->collect($suite, __DIR__ . '/support/collector/');
+        $collector->collect($suite, dirname(__FILE__) . '/support/collector/');
     }
 }
