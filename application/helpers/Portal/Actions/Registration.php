@@ -29,13 +29,17 @@ class Portal_Actions_Registration extends Portal_Actions {
      * @return void
      */
     public function sendAuthenticationEmail($params = []) {
-		$email = $params['email'] ?? '';
+		$username = $params['username'] ?? '';
+                if (empty($username)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
+		}
+                $email =  $this->getEmailByAuthenticationField($username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
-		}
-		
-		$subject = $this->getEmailSubject('email_authentication');
-                $token = $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION);		
+		}				
+                $params['email'] = $email;
+                $token = $this->generateToken($params, self::TOKEN_TYPE_EMAIL_VERIFICATION);	
+                $subject = $this->getEmailSubject('email_authentication');
                 $replaces = array_merge([
 			'[[name]]' => $params['name'] ??  'Guest',
 			'[[email_authentication_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url
@@ -62,11 +66,12 @@ class Portal_Actions_Registration extends Portal_Actions {
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}		
-		$subject = $this->getEmailSubject('reset_password');	
+                $params['email'] = $email;
                 $token = $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD);
+                $subject = $this->getEmailSubject('reset_password');
                 $replaces = array_merge([
 			'[[name]]' => $params['name'] ??  'Guest',
-			'[[reset_password_link]]' => 'http://billrun/callback?token=' . $token ?? '',//todo:: change to the real url(forgot password)
+			'[[reset_password_link]]' => Billrun_Util::getCompanyWebsite() . '/forgotPassword?token=' . $token ?? '',//todo:: change to the real url(forgot password)
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
@@ -90,18 +95,17 @@ class Portal_Actions_Registration extends Portal_Actions {
                 if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
 		}
-                $email = $this->getEmailByAuthenticationField($username) ?? '';//TODO:: get email from username
+                $email = $this->getEmailByAuthenticationField($username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}		
-		$subject = $this->getEmailSubject('welcome_account');
                 $params['email'] = $email;
-                $token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT);              
+                $token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT); 
+                $subject = $this->getEmailSubject('welcome_account');
                 $replaces = array_merge([
                         '[[username]]' => $username,
-//                        '[[password]]' => $password,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
-                        '[[link]]' =>  Billrun_Factory::config()->getConfigValue('tenant.website', '') //add token to link  (SIGN UP LINK)
+                        '[[link]]' =>  Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token ?? '' //add token to link  (SIGN UP LINK)
                 ], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('welcome_account', $replaces);
                 
@@ -110,9 +114,45 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('send_email_failed');
 		}
 	}
-	//forgot password
+          
+        /**
+         * set user password in the system after forgot password
+         * @param array $params
+         */
+        public function forgotPassword($params = []) {
+            $this->signUp($params,  self::TOKEN_TYPE_RESET_PASSWORD);
+        }
         
-        //TODO : SIGN UP -- VALIDATE TOKEN WITH USERNAME 
+        /**
+	 * sign up the user in the system to allow him authenticate using OAuth2
+	 *
+	 * @param  array $params
+         * @parm string $tokenType 
+	 */
+	public function signUp($params = [], $tokenType = self::TOKEN_TYPE_WELCOME_ACCOUNT) {
+		$token = $params['token'] ?? '';
+		if (empty($token)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "token"');
+		}
+                $username = $params['username'] ?? '';
+                if (empty($username)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
+		}
+                $password = $params['password'] ?? '';
+		if (empty($password)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
+		}
+                $email = $this->getEmailByAuthenticationField($username) ?? '';
+		if (empty($email)) {
+			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
+		}
+                $params['email'] = $email;
+		if (!$this->validateToken($token, $params, $tokenType)) {
+			throw new Portal_Exception('authentication_failed');
+		}
+
+		Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($username, $password);
+	}
         
 	/**
 	 * sign the user in the system to allow him authenticate using OAuth2
@@ -294,11 +334,11 @@ class Portal_Actions_Registration extends Portal_Actions {
         
     protected function BuildReplacesforCompanyInfo(){
         return [
-            '[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
-            '[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
-            '[[company_address]]' => Billrun_Factory::config()->getConfigValue('tenant.address', ''),
-            '[[company_phone]]' => Billrun_Factory::config()->getConfigValue('tenant.phone', ''),
-            '[[company_website]]' => Billrun_Factory::config()->getConfigValue('tenant.website', ''),  
+            '[[company_email]]' => Billrun_Util::getCompanyEmail(),
+            '[[company_name]]' => Billrun_Util::getCompanyName(),
+            '[[company_address]]' => Billrun_Util::getCompanyAddress(),
+            '[[company_phone]]' => Billrun_Util::getCompanyPhone(),
+            '[[company_website]]' => Billrun_Util::getCompanyWebsite()  
             //maybe need to add Activity time for salt template?? 
         ];
     } 

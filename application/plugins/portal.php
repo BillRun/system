@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
+ require_once APPLICATION_PATH . '/application/helpers/Portal/Actions.php';
  require_once APPLICATION_PATH . '/application/helpers/Portal/Exception.php';
 
 /**
@@ -38,7 +38,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $config;
-	
+        	
 	/**
 	 * setup plugin input
 	 * 
@@ -77,6 +77,15 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
                                         "multiple" => true,
                                         'default_value' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
 				],
+                                [
+					'type' => 'boolean',
+					'field_name' => 'send_welcome_email',
+					'title' => 'Send My Account Welcome Email Notification',                                       
+					'editable' => true,
+					'display' => true,
+                                        'nullable' => false,
+                                        'default_value' => false,
+				],
 			];
 	}
 	
@@ -102,5 +111,22 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return $ret;
 	}
+        
+        public function afterBillApi($collection, $action, $request, &$output) {
+		if ($collection != 'accounts' || $action != 'create') {
+			return;
+		}
+		
+		if ($this->options['send_welcome_email']) {
+                    $entity = $output->entity;
+                    $params = ['username' => $entity[$this->options['authentication_field']]];
+//                    $oauth = Billrun_Factory::oauth2();
+//                    $oauthRequest = OAuth2\Request::createFromGlobals();
+//                    $tokenData = $oauth->getAccessTokenData($oauthRequest);;
+                    $module = Portal_Actions::getInstance(array_merge($this->options, ['token_data' => $tokenData], ['type' => 'registration']));
+                    $res = $module->run('sendWelcomeEmail', $params);
+                    
+		}
+        }
 
 }
