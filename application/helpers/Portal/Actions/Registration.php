@@ -33,7 +33,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
 		}
-                $email =  $this->getEmailByAuthenticationField($username) ?? '';
+                $email = $this->getFieldByAuthenticationField('email', $username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}				
@@ -62,7 +62,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
 		}
-                $email =  $this->getEmailByAuthenticationField($username) ?? '';
+                $email =  $this->getFieldByAuthenticationField('email', $username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}		
@@ -70,7 +70,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $token = $this->generateToken($params, self::TOKEN_TYPE_RESET_PASSWORD);
                 $subject = $this->getEmailSubject('reset_password');
                 $replaces = array_merge([
-			'[[name]]' => $params['name'] ??  'Guest',
+			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
 			'[[reset_password_link]]' => Billrun_Util::getCompanyWebsite() . '/forgotPassword?token=' . $token ?? '',//todo:: change to the real url(forgot password)
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
@@ -94,8 +94,8 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $username = $params['username'] ?? '';
                 if (empty($username)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "username"');
-		}
-                $email = $this->getEmailByAuthenticationField($username) ?? '';
+		}                
+                $email = $this->getFieldByAuthenticationField('email', $username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}		
@@ -103,6 +103,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $token = $this->generateToken($params, self::TOKEN_TYPE_WELCOME_ACCOUNT); 
                 $subject = $this->getEmailSubject('welcome_account');
                 $replaces = array_merge([
+                        '[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
                         '[[username]]' => $username,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
                         '[[link]]' =>  Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token ?? '' //add token to link  (SIGN UP LINK)
@@ -142,7 +143,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 		if (empty($password)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
-                $email = $this->getEmailByAuthenticationField($username) ?? '';
+                $email = $this->getFieldByAuthenticationField('email', $username) ?? '';
 		if (empty($email)) {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}
@@ -343,7 +344,7 @@ class Portal_Actions_Registration extends Portal_Actions {
         ];
     } 
 
-    protected function getEmailByAuthenticationField($username) {
+    protected function getFieldByAuthenticationField($field, $username) {
         $query = [
           $this->params['authentication_field'] => $username
         ];
@@ -352,6 +353,6 @@ class Portal_Actions_Registration extends Portal_Actions {
         if(empty($res)){
             throw new Portal_Exception('no_account', '', 'No account found');
         }
-        return $res['email'];
+        return $res[$field];
     }
 }
