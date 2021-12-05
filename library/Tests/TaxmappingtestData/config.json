@@ -1631,7 +1631,7 @@
                                                 },
                                                 "welcome_account": {
                                                     "subject": "BillRun Customer Portal - Welcome Account",
-                                                    "content": "<pre>\nHello [[name]],\n\na new online account has been created for you.\nFor access please use the following link www.7acht.li/myaccount.\nThese are your personal login details:\nUsername: [[username]]\nPassword: [[password]]\nFrom [[access_from]], you can access various information on your online account, including the current consumption overview and invoices, as well as update your personal data.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+                                                    "content": "<pre>\nHello [[name]],\n\na new online account has been created for you.\nFor access please use the following link [[link]].\nAfter sign up, you can access various information on your online account, including the current consumption overview and invoices, as well as update your personal data.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
                                                 }
 					},
 					"taxes": {
