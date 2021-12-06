@@ -612,10 +612,9 @@ class Mongodloid_Collection {
 	 * @return mixed If the w parameter is set to acknowledge the write, returns an associative array with the status of the inserts ("ok") and any error that may have occurred ("err"). Otherwise, returns TRUE if the batch insert was successfully sent, FALSE otherwise
 	 * @see https://docs.mongodb.com/php-library/current/reference/method/MongoDBCollection-insertMany/#phpmethod.MongoDB\Collection::insertMany
 	 */
-	public function batchInsert(array &$a, array $options = array()) {
+	public function batchInsert(array $a, array $options = array()) {
 		$documents = [];
-		foreach ($a as &$doc) {
-			$this->ensureDocumentHasMongoId($a);
+		foreach ($a as $doc) {
 			if ($doc instanceof Mongodloid_Entity) {
 				$doc = $doc->getRawData();
 			}
