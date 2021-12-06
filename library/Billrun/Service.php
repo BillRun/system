@@ -705,28 +705,23 @@ class Billrun_Service {
 	}
 	
 	/**
-	 * 
+	 * Returns service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
-	 * @return Service maximum quantity
+	 * @return Service maximum quantity - int
 	 */
-	public function getServiceMaximumQuantityByAid($aid, $time = 'now') {
-		$entity_time = ($time === 'now') ? time() : $time;
-		if(isset(self::$serviceMaximumQuantityByAid[$aid])) {
-			foreach (self::$serviceMaximumQuantityByAid[$aid] as $service_quantity_data) {
-				if ($service_quantity_data['from'] <= $time && (!isset($service_quantity_data['to']) || is_null($service_quantity_data['to']) || $service_quantity_data['to'] >= $time)) {
-					return $service_quantity_data['quantity'];
-				}
-			}
-		} else {
-			$service_data = $this->calculateServiceMaximumQuantity($aid, $entity_time);
-			self::$serviceMaximumQuantityByAid[$aid][] = $service_data;
-			return $service_data['quantity'];
+	public function getServiceMaximumQuantityByAid($aid, $time) {
+		$index = $aid . $time;
+		if (isset(self::$serviceMaximumQuantityByAid[$index])) {
+			return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 		}
+		$quantity = $this->calculateServiceMaximumQuantity($aid, $time);
+		self::$serviceMaximumQuantityByAid[$index] = $quantity;
+		return self::$serviceMaximumQuantityByAid[$index]['quantity'];
 	}
-	
+
 	/**
-	 * 
+	 * Calculates service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
 	 * @param timestamp $time
 	 * @return Service data after calculating it's maximum quantity for this aid

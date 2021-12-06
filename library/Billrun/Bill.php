@@ -407,7 +407,7 @@ abstract class Billrun_Bill {
 		return isset($this->data['total_paid']) ? $this->data['total_paid'] : 0;
 	}
 
-	protected function recalculatePaymentFields($billId = null, $status = null) {
+	protected function recalculatePaymentFields($billId = null, $status = null, $billType = null) {
 		if ($this->getBillMethod() == 'denial') {
 			return $this;
 		}
@@ -422,7 +422,7 @@ abstract class Billrun_Bill {
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
 			} else {
-				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
+				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 			}
 		} else if ($this->getDue() < 0){
 			$amount = 0;
@@ -431,9 +431,10 @@ abstract class Billrun_Bill {
 			}
 			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
-
+	
 	/**
 	 * 
 	 * @param int $id
@@ -465,8 +466,12 @@ abstract class Billrun_Bill {
 			if ($status == 'Rejected') {
 				$this->addToRejectedPayments($billId, $billType);
 			}
-			$this->updatePaidBy($paidBy, $billId, $status);
+			$this->updatePaidBy($paidBy, $billId, $status, $billType);
+			if ($bill->isPendingPayment()) {
+				$this->setPendingLinkedBills($billType, $billId);
+			}
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
@@ -476,7 +481,11 @@ abstract class Billrun_Bill {
 		if ($index > -1) {
 			unset($paidBy[$index]);
 			$this->updatePaidBy(array_values($paidBy));
+			if ($billType == 'rec') {
+				$this->removeFromWaitingPayments($id, $billType);
+			}
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 	
@@ -487,13 +496,14 @@ abstract class Billrun_Bill {
 			unset($pays[$index]);
 			$this->updatePays(array_values($pays));
 		}
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
-	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
+	protected function updatePaidBy($paidBy, $billId = null, $status = null, $billType = null) {
 		if ($this->getDue() > 0 || $this->isRejection() || $this->isCancellation()) {
 			$this->data['paid_by'] = $paidBy;
-			$this->recalculatePaymentFields($billId, $status);
+			$this->recalculatePaymentFields($billId, $status, $billType);
 		}
 	}
 	
@@ -517,6 +527,7 @@ abstract class Billrun_Bill {
 		}
 		$this->data->setRawData($paymentRawData);
 		$this->updateLeft();
+		$this->setPendingCoveringAmount();
 		return $this;
 	}
 
@@ -849,21 +860,21 @@ abstract class Billrun_Bill {
 		}
 	}
 
-	protected function calcPaidStatus($billId = null, $status = null) {
+	protected function calcPaidStatus($billId = null, $status = null, $billType = null) {
 		if (is_null($billId) || is_null($status)){
 			return;
 		}
 		switch ($status) {
 			case 'Rejected':
 				$result = '0';
-				$this->removeFromWaitingPayments($billId);
+				$this->removeFromWaitingPayments($billId, $billType);
 				break;
 
 			case 'Completed':
 				$pending = $this->data['waiting_payments'];
 				if (count($pending)) {
-					$this->removeFromWaitingPayments($billId);
-					$result = '2';
+					$this->removeFromWaitingPayments($billId, $billType);
+					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
 				}
 				else {
 					$result = $this->isPaid() ? '1' : '0'; 
@@ -887,9 +898,57 @@ abstract class Billrun_Bill {
 		}
 		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
 		array_push($waiting_payments, $billId);
-		$this->data['waiting_payments'] = $waiting_payments;
+		$this->data['waiting_payments'] = array_unique($waiting_payments);
 	}
 	
+	protected function setPendingLinkedBills($billType, $billId) {
+		$paidBy = $this->getPaidByBills();
+		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
+		if ($index > -1) {
+			$paidBy[$index]['pending'] = true;
+			$this->data['paid_by'] = array_values($paidBy);
+		} else {
+			$pays = $this->getPaidBills();
+			$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
+			if ($index > -1) {
+				$pays[$index]['pending'] = true;
+				$this->data['pays'] = array_values($pays);
+			}
+		}
+	}
+
+	protected function unsetPendingLinkedBills($billType, $billId) {
+		$paidBy = $this->getPaidByBills();
+		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
+		if ($index > -1) {
+			unset($paidBy[$index]['pending']);
+			$this->data['paid_by'] = array_values($paidBy);
+		} else {
+			$pays = $this->getPaidBills();
+			$index = Billrun_Bill::findRelatedBill($pays, $billType, $billId);
+			if ($index > -1) {
+				unset($pays[$index]['pending']);
+				$this->data['pays'] = array_values($pays);
+			}
+		}
+	}
+	
+	/**
+	 * This method assumes paid_by / pays field are already updated with the correct pending status
+	 */
+	protected function setPendingCoveringAmount() {
+		$this->data['pending_covering_amount'] = 0;
+		foreach (array('pays', 'paid_by') as $key) {
+			if (isset($this->data[$key])) {
+				$this->data['pending_covering_amount'] += array_sum(array_column(array_filter($this->data[$key], array($this, 'isPendingLink')), 'amount'));
+			}
+		}
+	}
+
+	protected function isPendingLink($link) {
+		return !empty($link['pending']);
+	}
+
 	protected function addToRejectedPayments($billId, $billType) {
 		if ($billType == 'inv') {
 			return;
@@ -899,18 +958,21 @@ abstract class Billrun_Bill {
 		$this->data['past_rejections'] = $rejectedPayments;
 	}
 
-	protected function removeFromWaitingPayments($billId) {
-		$pending = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
-		$key = array_search($billId, $pending);
-		if($key !== false) {
-			unset($pending[$key]);
+	protected function removeFromWaitingPayments($billId, $billType) {
+		if ($billType == 'rec') {
+			$pending = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
+			$key = array_search($billId, $pending);
+			if ($key !== false) {
+				unset($pending[$key]);
+			}
+			$this->data['waiting_payments'] = $pending;
+			$this->unsetPendingLinkedBills($billType, $billId);
 		}
-		$this->data['waiting_payments'] = $pending;
 	}
 
-	public function updatePendingBillToConfirmed($billId, $status) {
+	public function updatePendingBillToConfirmed($billId, $status, $billType) {
 		$paidBy = $this->getPaidByBills();
-		$this->updatePaidBy($paidBy, $billId, $status);
+		$this->updatePaidBy($paidBy, $billId, $status, $billType);
 		return $this;
 	}
 	
