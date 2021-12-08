@@ -231,7 +231,7 @@ class Models_Action_Import extends Models_Action {
 				}
 			}
 		}
-                Billrun_Factory::dispatcher()->trigger('afterRunManualMappingQuery', array(&$output, $this->request['collection'], $this->update));
+		Billrun_Factory::dispatcher()->trigger('afterRunManualMappingQuery', array(&$output, $this->request['collection'], $this->update));
 		return $output;
 	}
 
