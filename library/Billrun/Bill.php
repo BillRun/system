@@ -1326,14 +1326,6 @@ abstract class Billrun_Bill {
 		$this->setRawData($paymentData);
 		$this->save();
 	}
-	
-	/**
-	 * Function that sets payment urt
-	 * @param int $date - unix timestamp
-	 */
-	public function setUrt($date = null) {
-		$this->data['urt'] = new Mongodloid_Date(!empty($date)? $date : time());
-	}
 
 	/**
 	 * Function that sets payment process time
