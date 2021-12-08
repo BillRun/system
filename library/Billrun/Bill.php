@@ -1328,11 +1328,27 @@ abstract class Billrun_Bill {
 	}
 	
 	/**
-	 * Function that sets urt date, in every payment's bill.
-	 * @param int $date - unix timestamp to set as the urt date.
+	 * Function that sets payment urt
+	 * @param int $date - unix timestamp
 	 */
 	public function setUrt($date = null) {
 		$this->data['urt'] = new Mongodloid_Date(!empty($date)? $date : time());
+	}
+
+	/**
+	 * Function that sets payment process time
+	 * @param int $date - unix timestamp to set as the process time.
+	 */
+	public function setProcessTime ($date = null) {
+		$this->data['process_time'] = new MongoDate(!empty($date)? $date : time());
+	}
+	
+	/**
+	 * Function that sets deposit's freeze date
+	 * @param int $date - unix timestamp
+	 */
+	public function setDepositFreezeDate ($date = null) {
+		$this->data['freeze_date'] = new MongoDate(!empty($date)? $date : time());
 	}
 	
 	/**
