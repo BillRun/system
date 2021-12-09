@@ -410,14 +410,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $accounts;
 	}
 
-	protected function afterLoad($data) {
+	protected function afterLoad(&$data) {
 		if (!$this->recreateInvoices && $this->isCycle){
 			$this->handleInvoices($data);
 		}
 
 		Billrun_Factory::log("Account entities loaded: " . count($data), Zend_Log::INFO);
 
-		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => $data));
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this, 'data' => &$data));
 
 		if ($this->bulkAccountPreload) {
 			$this->clearForAccountPreload($data);
