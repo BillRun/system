@@ -129,7 +129,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			if (isset($accountsInArray[$customer['aid']])) {
 				$account = $accountsInArray[$customer['aid']];
 				$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, 'account');
-				if ($mandatory_fields_res !== true) {
+				if (!empty($mandatory_fields_res)) {
 					$message = implode(",", $mandatory_fields_res) . " fields are missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
 					Billrun_Factory::log($message, Zend_Log::ALERT);
 					$this->logFile->updateLogFileField('errors', $message);
@@ -361,7 +361,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 			$res_params['txid'] = $currentPayment->getId();
 			$mandatory_fields_res = $this->validateMandatoryFieldsExistence($currentPayment, 'payment_request');
-			if ($mandatory_fields_res !== true) {
+			if (!empty($mandatory_fields_res)) {
 				$message = implode(",", $mandatory_fields_res) . " fields are missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was creadted anyway..";
 				Billrun_Factory::log($message, Zend_Log::WARN);
 				$this->logFile->updateLogFileField('warnings', $message);

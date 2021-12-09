@@ -79,7 +79,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 				}
 			}
 		}
-		return !empty($missing_fields) ? $missing_fields : true;
+		return $missing_fields;
 	}
 
 	protected function getDataLine($params) {
