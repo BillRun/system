@@ -1,7 +1,9 @@
 [
-		{
-			$match: {
-			   $and: [ {$and : [ { $expr: {$gt:['$urt', {
+  {
+    $match: {
+      $and: [ {
+        $and : [ {
+          $expr: {$gte:['$urt', {
                         $dateFromParts: {
                             'year': {$year:{{from}}},
                             'month': {$month:{{from}}},
@@ -12,7 +14,8 @@
                             'millisecond': { $millisecond: {{from}} },
                             'timezone' : "Asia/Nicosia"
                         }
-                    }]}}, {$expr:{$lte:['$urt', {
+                    }]}}, {
+            $expr: {$lt:['$urt', {
                         $dateFromParts: {
                             'year': {$year: {{to}}},
                             'month': {$month: {{to}}},
@@ -25,16 +28,44 @@
                         }
                     }
                 ]}}]}]}},
-                
-                {$group:{"_id":{IFS_CUST_CODE:"$foreign.account.ifs_operator_id",AID:"$aid",rate_price:"$cf.rate_price",prod: "$cf.product",tier:"$cf.tier"}, "duration": {$sum: "$usagev"},count:{$sum:1}, "final_charge":{$sum: "$final_charge"}}},
-{$project:{_id:0,
-IFS_CUST_CODE:"$_id.IFS_CUST_CODE",
-AID:"$_id.AID",
-TIER_DESCRIPTION:"$_id.tier",
-PRODUCT:"$_id.prod",
-DURATION_MINUTES:"$duration",
-CALL_COUNT:"$count",
-UNIT_COST_USED:"$_id.rate_price",
-AMOUNT:{$sum:"$final_charge"}}}
-]
+  {$match:{
+     'in_queue':{ 
+       $ne : true
+       }
+      }
+  },
+  {
+    $group:{
+      "_id":{
+        cash_flow:"$cf.cash_flow",
+        IFS_CUST_CODE:"$foreign.account.ifs_operator_id",
+        AID:"$aid",
+        rate_price:"$cf.rate_price",
+        prod: "$cf.product",
+        tier:"$cf.tier",
+        }, 
+        taxes:{$sum:"$tax_data.total_amount"},
+        duration: {$sum: "$usagev"},
+        amount:{$sum: "$aprice"},
 
+        count:{$sum:1}, 
+        final_charge:{$sum: "$final_charge"}
+    }
+  },
+  {
+    $project:{
+      _id:0,
+      CASH_FLOW:{$cond: [ { $eq: [ "$_id.cash_flow", "R" ] }, "REVENUE", "EXPENSE" ]},
+      IFS_CUST_CODE:"$_id.IFS_CUST_CODE",
+      AID:"$_id.AID",
+      TIER_DESCRIPTION:"$_id.tier",
+      PRODUCT:"$_id.prod",
+      DURATION:"$duration",
+      AMOUNT_BEFOR_TAX:"$amount",
+      CALL_COUNT_D:"$count",
+      UNIT_COST_USED_G:"$_id.rate_price",
+      TAXES:"$taxes",
+      AMOUNT:{$sum:"$final_charge"}
+    }
+  }
+]

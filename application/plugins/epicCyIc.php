@@ -131,6 +131,30 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rates_array[1]["price"] = 0;
 		return $rates_array;
 	}
+        
+        public function beforeLineMediation($calculator, $type, &$row) {
+            if ($type === 'ICT') {
+                if ($row["EVENT_START_DATE"] == "" || $row["EVENT_START_TIME"] == "") {
+                    $row["originalDate"] = $row["EVENT_START_DATE"];
+                    $row["EVENT_START_DATE"] = "19700101";
+                    $row["originalTime"] = $row["EVENT_START_TIME"];
+                    $row["EVENT_START_TIME"] = "020000";
+                    $row["dateOrTimeWasEmpty"] = true;
+                }
+            }
+	}
+        
+        public function afterLineMediation($calculator, $type, &$row) {
+            if ($type === 'ICT') {
+                if ($row["uf"]["dateOrTimeWasEmpty"]) {
+                    $row["uf"]["EVENT_START_DATE"] = $row["uf"]["originalDate"];
+                    $row["uf"]["EVENT_START_TIME"] = $row["uf"]["originalTime"];
+                    unset($row["uf"]["originalDate"]);
+                    unset($row["uf"]["originalTime"]);
+                    unset($row["uf"]["dateOrTimeWasEmpty"]);
+                }
+            }
+	}
 
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
@@ -252,9 +276,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$row = new Mongodloid_Entity($row);
 		}
 		$current = $row->getRawData();
+		Billrun_Factory::log('Start rate mapping for stamp - ' . $current["stamp"] . ", RECORD_SEQUENCE_NUMBER - " . $current["uf"]["RECORD_SEQUENCE_NUMBER"]);
 		$type = $current['type'];
 		$current["cf"]["call_direction"] = $this->determineCallDirection($current["usaget"]);
 		$current["cf"]["event_direction"] = substr($current["cf"]["call_direction"], 0, 1);
+		Billrun_Factory::log('The call direction is - ' . $current["cf"]["call_direction"]);
 		$row->setRawData($current);
 		$setOperator = $this->setOperator($row, $current, $type, $calculator);
 		if(!$setOperator) {
@@ -268,25 +294,36 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$product_entity) {
 			return [$current];
 		}
+		Billrun_Factory::log('Product found - ' . $product_entity["key"]);
+		Billrun_Factory::log('The product is - ' . $product_entity["params"]["product"]);
+		Billrun_Factory::log('The product group is - ' . $product_entity["params"]["product_group"]);
 		$current["cf"]["product"] = $product_entity["params"]["product"];
 		$current["cf"]["product_group"] = $product_entity["params"]["product_group"];
 		$current["cf"]["product_title"] = $product_entity["description"];
+		$current["cf"]["anaa"] = "";
 		$row->setRawData($current);
 
-		$anaa_entity = $this->getParameterProduct($type, "parameter_anaa", $row, $calculator);
+		$anaa_entity = $this->getParameterProduct($type, "parameter_naa", $row, $calculator);
 		if (!$anaa_entity) {
 			return [$current];
 		}
-		$current["cf"]["anaa"] = $anaa_entity["params"]["anaa"];
+		Billrun_Factory::log('ANUM naa found - ' . $anaa_entity["key"]);
+		Billrun_Factory::log('The ANUM naa parent is - ' . $anaa_entity["params"]["naa_parent"]);
+		Billrun_Factory::log('The ANUM naa group is - ' . $anaa_entity["params"]["naa"]);
+		$current["cf"]["anaa"] = $anaa_entity["params"]["naa_parent"];
+		$current["cf"]["anaa_group"] = $anaa_entity["params"]["naa"];
+		$current["cf"]["anaa_title"] = $anaa_entity["description"];
 		$row->setRawData($current);
 
 		$sms_activity_types = ["incoming_sms", "outgoing_sms"];
 		if (!in_array($current["usaget"], $sms_activity_types)) {
-			$bnaa_entity = $this->getParameterProduct($type, "parameter_bnaa", $row, $calculator);
+			$bnaa_entity = $this->getParameterProduct($type, "parameter_naa", $row, $calculator);
 			if (!$bnaa_entity) {
 				return [$current];
 			}
-			$current["cf"]["bnaa"] = $bnaa_entity["params"]["bnaa"];
+				Billrun_Factory::log('BNUM naa found - ' . $bnaa_entity["key"]);
+				Billrun_Factory::log('The BNUM naa group is - ' . $bnaa_entity["params"]["naa"]);
+			$current["cf"]["bnaa"] = $bnaa_entity["params"]["naa"];
 			$row->setRawData($current);
 		}
 
@@ -294,6 +331,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$scenario_entity) {
 			return [$current];
 		}
+		Billrun_Factory::log('Scenario found - ' . $scenario_entity["key"]);
+		Billrun_Factory::log('The scenario is - ' . $scenario_entity["params"]["scenario"]);
 		$current["cf"]["scenario"] = $scenario_entity["params"]["scenario"];
 		$row->setRawData($current);
 		if ($scenario_entity["params"]["anaa"] != "*") {
@@ -306,6 +345,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$newRows = [];
 		foreach ($component_entities as $key => $component_entity) {
+			Billrun_Factory::log('Component found - ' . $component_entity["key"]);
+			Billrun_Factory::log('The Component is - ' . $component_entity["params"]["component"]);
+			Billrun_Factory::log('The tier derivation is - ' . $component_entity["params"]["tier_derivation"]);
+			Billrun_Factory::log('The cash flow is - ' . $component_entity["params"]["cash_flow"]);
 			$newRow = new Mongodloid_Entity($row->getRawData());
 			$newCurrent = $current;
 			$component_entity = $component_entity->getRawData();
@@ -321,6 +364,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			switch ($newCurrent["cf"]["tier_derivation"]) {
 				case "N":
+					Billrun_Factory::log('The tier is specified directly - ' . $component_entity["params"]["tier"]);
 					$newCurrent["cf"]["tier"] = $component_entity["params"]["tier"];
 					break;
 				case "CB":
@@ -330,6 +374,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if (!$tier_entity) {
 						break;
 					}
+					Billrun_Factory::log('Tier found - ' . $tier_entity["key"]);
+					Billrun_Factory::log('The tier is - ' . $tier_entity["params"]["tier"]);
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					$newRow->setRawData($newCurrent);
 					$tier_entity_star_operator = $this->getParameterProduct($type, "parameter_tier_cb", $newRow, $calculator);
@@ -337,6 +383,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 						$operatorPrefix = $this->findLongestPrefix($newCurrent["uf"]["BNUM"], $tier_entity["params"]["prefix"]);
 						$starPrefix = $this->findLongestPrefix($newCurrent["uf"]["BNUM"], $tier_entity_star_operator["params"]["prefix"]);
 						if (strlen($starPrefix) > strlen($operatorPrefix)) {
+							Billrun_Factory::log('There is a longer prefix for a general tier and is - ' . $tier_entity_star_operator["params"]["tier"]);
 							$newCurrent["cf"]["tier"] = $tier_entity_star_operator["params"]["tier"];
 						}
 					}
@@ -346,6 +393,8 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if (!$tier_entity) {
 						break;
 					}
+					Billrun_Factory::log('Tier found - ' . $tier_entity["key"]);
+					Billrun_Factory::log('The tier is - ' . $tier_entity["params"]["tier"]);
 					$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					break;
 				case "PB":
@@ -354,12 +403,16 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 						if (!$tier_entity) {
 							break;
 						}
+						Billrun_Factory::log('Tier found - ' . $tier_entity["key"]);
+						Billrun_Factory::log('The tier is - ' . $tier_entity["params"]["tier"]);
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					} else {
 						$tier_entity = $this->getParameterProduct($type, "parameter_tier_pb", $newRow, $calculator);
 						if (!$tier_entity) {
 							break;
 						}
+						Billrun_Factory::log('Tier found - ' . $tier_entity["key"]);
+						Billrun_Factory::log('The tier is - ' . $tier_entity["params"]["tier"]);
 						$newCurrent["cf"]["tier"] = $tier_entity["params"]["tier"];
 					}
 					break;
@@ -484,10 +537,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if(!$operator_entity) {
 				return false;
 			}
+			Billrun_Factory::log('Incoming operator found - ' . $operator_entity["key"]);
+			Billrun_Factory::log('The operator is - ' . $operator_entity["params"]["operator"]);
 			$current["cf"]["incoming_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["incoming_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TO") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 			$row->setRawData($current);
@@ -497,10 +553,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if(!$operator_entity) {
 				return false;
 			}
+			Billrun_Factory::log('outgoing operator found - ' . $operator_entity["key"]);
+			Billrun_Factory::log('The operator is - ' . $operator_entity["params"]["operator"]);
 			$current["cf"]["outgoing_operator"] = $operator_entity["params"]["operator"];
 			$current["cf"]["outgoing_poin"] = $operator_entity["params"]["poin"];
 			if ($current["cf"]["call_direction"] != "TI") {
 				$current["cf"]["operator"] = $operator_entity["params"]["operator"];
+				$current["cf"]["operator_title"] = $operator_entity["description"];
 				$current["cf"]["poin"] = $operator_entity["params"]["poin"];
 			}
 		}
