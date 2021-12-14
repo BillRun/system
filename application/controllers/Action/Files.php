@@ -15,14 +15,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       5.3
  */
 class FilesAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	/**
 	 * The instance of the Grid FS collection.
 	 * @var Mongodloid_GridFS
 	 */
 	protected $collection;
-	
+
 	/**
 	 * Decode the 64 base input.
 	 * @param string $name - The name of the value.
@@ -32,13 +33,13 @@ class FilesAction extends ApiAction {
 	 */
 	protected function decodeValue($name, $request, $default = array()) {
 		$rawValue = $request->get($name);
-		if(!$rawValue) {
+		if (!$rawValue) {
 			return $default;
 		}
 		$data = json_decode($rawValue, true);
 		return $data;
 	}
-	
+
 	/**
 	 * The logic to be executed when this API plugin is called.
 	 */
@@ -55,12 +56,12 @@ class FilesAction extends ApiAction {
 			$this->setError('Illegal data', $request->getPost());
 			return TRUE;
 		}
-		
+
 		$metadata = $this->decodeValue('metadata', $request);
 		if (!$metadata) {
 			$metadata = array();
 		}
-		
+
 		$success = true;
 		$output = array();
 		if ($action === 'save') {
@@ -75,11 +76,11 @@ class FilesAction extends ApiAction {
 				'status' => $success ? 1 : 0,
 				'desc' => $success,
 				'input' => $request->getPost(),
-				'details' => is_bool($output)? array() : $output,
+				'details' => is_bool($output) ? array() : $output,
 		)));
 		return TRUE;
 	}
-	
+
 	/**
 	 * Execute the save logic, raises an exception if the filename was not provided.
 	 * @param array $query
@@ -88,14 +89,14 @@ class FilesAction extends ApiAction {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function executeSave(array $query, array $metadata) {
-		if(!isset($query['filename'])) {
+		if (!isset($query['filename'])) {
 			$invalidField = new Billrun_DataTypes_InvalidField('filename');
 			throw new Billrun_Exceptions_InvalidFields($invalidField);
 		}
 		$filename = $query['filename'];
 		return $this->create($filename, $metadata);
 	}
-	
+
 	/**
 	 * Constuct the internal collection instance 
 	 * @param string $dbName - Database name
@@ -106,12 +107,12 @@ class FilesAction extends ApiAction {
 		$this->collection = $_db->getGridFS();
 
 		// If the collection was not found
-		if(!$this->collection) {
+		if (!$this->collection) {
 			// TODO: Replace error codes with constants
 			throw new Exception("Invalid collection request!", 17);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param string $fileName - The name of the file to create (Taken from the
@@ -128,13 +129,13 @@ class FilesAction extends ApiAction {
 			throw new Exception("GridFS error!", 409, $e);
 		}
 
-		if($mongoID) {
+		if ($mongoID) {
 			return "Record created with ID . $mongoID";
 		}
-		
+
 		return "Record was not created.";
 	}
-	
+
 	/**
 	 * 
 	 * @param array $query
@@ -143,25 +144,25 @@ class FilesAction extends ApiAction {
 	 */
 	public function retrieve(array $query) {
 		$gfsFile = $this->collection->findOne($query);
-		if(!$gfsFile) {
+		if (!$gfsFile) {
 			Billrun_Factory::log("FSBytes is null.");
 			return null;
 		}
-		
+
 		$this->validateFileSignature($gfsFile);
 		$this->validateFilePermissions($gfsFile);
-		
+
 		// Return the bytes array
 		$bytes = base64_encode($gfsFile->getBytes());
-		if($bytes === false) {
+		if ($bytes === false) {
 			// TODO: Add an exception to be thrown here.
 			Billrun_Factory::log("Invalid file", Zend_Log::WARN);
 			return null;
 		}
-		
+
 		return $bytes;
 	}
-	
+
 	/**
 	 * Validate the file integrity
 	 * Currently the signature is MD5 (Calculated internaly by the mongo).
@@ -170,22 +171,22 @@ class FilesAction extends ApiAction {
 	protected function validateFileSignature(Mongodloid_GridFSFile $gfsFile) {
 		// Check signature.
 		$fileData = $gfsFile->{'file'};
-		
-		if(!isset($fileData['md5'])) {
+
+		if (!isset($fileData['md5'])) {
 			$md5Field = new Billrun_DataTypes_InvalidField('md5');
 			throw new Billrun_Exceptions_InvalidFields(array($md5Field));
 		}
-		
+
 		// Validate the signature
 		$md5 = $fileData['md5'];
 		$calculated = md5($gfsFile->getBytes());
-		if(!hash_equals($calculated, $md5)) {
+		if (!hash_equals($calculated, $md5)) {
 			// Throw an invalid field exception on the md5
-			$md5Field = new Billrun_DataTypes_InvalidField('md5',-1);
+			$md5Field = new Billrun_DataTypes_InvalidField('md5', -1);
 			throw new Billrun_Exceptions_InvalidFields(array($md5Field));
 		}
 	}
-	
+
 	/**
 	 * Validate the file permissions
 	 * TODO: What do we do if a file has no permissions?
@@ -194,14 +195,14 @@ class FilesAction extends ApiAction {
 	protected function validateFilePermissions(Mongodloid_GridFSFile $gfsFile) {
 		// Check permissions.
 		$fileData = $gfsFile->{'file'};
-		
+
 		// TODO: What if the file doesn't have permissions? Is that an error?
-		if(isset($fileData['permission'])) {
+		if (isset($fileData['permission'])) {
 			$this->permissionLevel = $fileData['permission'];
 			$this->allowed();
 		}
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}

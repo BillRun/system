@@ -14,6 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class RecreateInvoicesAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
@@ -42,7 +43,7 @@ class RecreateInvoicesAction extends ApiAction {
 			'page' => 0,
 			'recreate_invoices' => true,
 		);
-		
+
 		$customerOptions = array(
 			'type' => 'customer',
 			'aggregator' => $customer_aggregator_options,

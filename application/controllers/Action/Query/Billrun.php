@@ -15,7 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Query.php';
  * @since    2.8
  */
 class QuerybillrunAction extends QueryAction {
+
 	protected $type = 'querybillrun';
+
 	/**
 	 * The function to run before execute.
 	 */

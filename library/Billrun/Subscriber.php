@@ -65,24 +65,23 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var string
 	 */
 	protected $nextPlanActivation = null;
-	
 	protected static $allowedQueryKeys = ['time', 'id', 'EXTRAS'];
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['fields'])) {
-                    foreach ($options['fields'] as $field){
-			if (isset($field['field_name'])) {
-                            array_push($this->availableFields, $field['field_name']);
-                        }
-                    }
+			foreach ($options['fields'] as $field) {
+				if (isset($field['field_name'])) {
+					array_push($this->availableFields, $field['field_name']);
+				}
+			}
 		}
 		if (isset($options['extra_data'])) {
-                     foreach ($options['extra_data'] as $extra_field){
-			if (isset($extra_field['field_name'])) {
-                            array_push($this->customerExtraData, $extra_field['field_name']);
-                        }
-                    }
+			foreach ($options['extra_data'] as $extra_field) {
+				if (isset($extra_field['field_name'])) {
+					array_push($this->customerExtraData, $extra_field['field_name']);
+				}
+			}
 		}
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
@@ -108,23 +107,23 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			$this->plans = array();
 			return;
 		}
-		
+
 		$plans = array();
 		$planOptions = array('deactivation' => array());
 		foreach ($dataOptions['plans'] as &$planArr) {
 			foreach ($planArr['active_dates'] as $activeRange) {
 				$planOptions['name'] = $planArr['name'];
-				$planOptions['time'] =  strtotime($activeRange['from']);
-				$planOptions['activation'] =  $activeRange['plan_activation'];
-				if(isset($activeRange['plan_deactivation'])) {
-					$planOptions['deactivation'] =  $activeRange['plan_deactivation'];
+				$planOptions['time'] = strtotime($activeRange['from']);
+				$planOptions['activation'] = $activeRange['plan_activation'];
+				if (isset($activeRange['plan_deactivation'])) {
+					$planOptions['deactivation'] = $activeRange['plan_deactivation'];
 				}
 				$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan($planOptions)));
 			}
 		}
 		$this->plans = $plans;
 	}
-	
+
 	/**
 	 * method to load subsbscriber details
 	 */
@@ -158,11 +157,11 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		return null;
 	}
-	
+
 	public function getData() {
 		return $this->data;
 	}
-	
+
 	protected function setData($data) {
 		$this->data = $data;
 	}
@@ -173,7 +172,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function isEmpty() {
 		return empty($this->data);
 	}
-	
+
 	/**
 	 * 
 	 * @param array $queries
@@ -191,7 +190,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function loadSubscriberForQueries($queries, $extraData = []) {
 		$query = [];
 		// build a single big query, using the passed params for each subquery
-		foreach($queries as $subQuery) {
+		foreach ($queries as $subQuery) {
 			$limit = !empty($subQuery['limit']) ? $subQuery['limit'] : false;
 			unset($subQuery['limit']);
 			$query[] = $this->buildQuery($subQuery, $limit);
@@ -211,7 +210,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function loadSubscriberForQuery($query) {
 		$query['limit'] = 1;
 		$result = $this->loadSubscriberForQueries([$query]);
-		if(empty($result)) {
+		if (empty($result)) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($query, 1), Zend_Log::NOTICE);
 			return false;
 		}
@@ -219,7 +218,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		$this->data = $firstRecord->getRawData();
 		return $firstRecord;
 	}
-	
+
 	/**
 	 * 
 	 * @param type $billrun_key
@@ -227,29 +226,29 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return \Billrun_DataTypes_Subscriberservice
 	 */
 	public function getServices($billrun_key, $retEntity = false) {
-		if(!isset($this->data['services'])) {
+		if (!isset($this->data['services'])) {
 			return array();
 		}
-		
+
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		
+
 		foreach ($services as $service) {
-			if(!isset($service['name'])) {
+			if (!isset($service['name'])) {
 				continue;
 			}
-			
+
 			$serviceQuery = array('name' => $service['name']);
 			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
-			if($serviceEntity->isEmpty()) {
+			if ($serviceEntity->isEmpty()) {
 				continue;
 			}
-			
+
 			$serviceData = array_merge($service, $serviceEntity->getRawData());
-			
+
 			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
-			if(!$serviceValue->isValid()) {
+			if (!$serviceValue->isValid()) {
 				continue;
 			}
 			$servicesEnitityList[] = $serviceValue;
@@ -286,9 +285,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
-
 	abstract protected function getSubscriberDetails($query);
-	
+
 	abstract public function getCredits($billrun_key, $retEntity = false);
 
 	/**
@@ -322,7 +320,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getCurrentPlans() {
 		return $this->plans;
 	}
-	
+
 	/**
 	 * 
 	 * @return Billrun_Plan
@@ -334,14 +332,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getSubscriberData() {
 		return $this->data;
 	}
-	
+
 	protected function getPaymentDetails($details) {
 		if (!empty($token = $details['card_token'])) {
 			return Billrun_Util::getTokenToDisplay($token);
 		}
 		return '';
 	}
-	
+
 	protected function buildQuery($params, $limit = false) {
 		// validate that params are legal by configuration
 		$customFields = array_map(function ($customField) {
@@ -349,21 +347,22 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}, Billrun_Factory::config()->getConfigValue('subscribers.subscriber.fields', array()));
 		$fields = array_merge($customFields, array('from', 'to'));
 		$fields = array_combine($fields, $fields);
-		
+
 		$query = [];
 		if (!isset($params['time'])) {
 			$query['time'] = date(Billrun_Base::base_datetimeformat);
 		}
-		
+
 		foreach ($params as $key => $value) {
 			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
 				return false;
 			}
 			$query[$key] = $value;
 		}
-		if($limit){
+		if ($limit) {
 			$query['limit'] = $limit;
 		}
 		return $query;
 	}
+
 }

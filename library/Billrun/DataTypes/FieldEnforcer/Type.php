@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-	
+
 /**
  * This class represents a field enforcer rule which enforces the input type.
  *
@@ -16,7 +16,7 @@
 class Billrun_DataTypes_FieldEnforcer_Type extends Billrun_DataTypes_FieldEnforcer_Rule {
 
 	const TYPE_INDEX = 'type';
-	
+
 	/**
 	 * Field type validator
 	 * @var Billrun_TypeValidator_Base
@@ -30,12 +30,12 @@ class Billrun_DataTypes_FieldEnforcer_Type extends Billrun_DataTypes_FieldEnforc
 	public function __construct(array $config) {
 		parent::__construct($config);
 		$typeName = Billrun_Util::getFieldVal($config[self::TYPE_INDEX], null);
-		if($typeName) {
+		if ($typeName) {
 			// Try to create a type validator.
 			$this->type = Billrun_TypeValidator_Manager::getValidator($typeName);
 		}
 	}
-	
+
 	/**
 	 * Enforce the rule.
 	 * Return true if enforce is successful or invalid field if invalid.
@@ -44,26 +44,27 @@ class Billrun_DataTypes_FieldEnforcer_Type extends Billrun_DataTypes_FieldEnforc
 	 */
 	public function enforce(array $data) {
 		$parentResult = parent::enforce($data);
-			
-		if($parentResult !== true) {
+
+		if ($parentResult !== true) {
 			return $parentResult;
 		}
-		
-		if(!$this->type) {
+
+		if (!$this->type) {
 			// TODO: Decide which error code will be "invalid type".
 			return new Billrun_DataTypes_InvalidField($this->fieldName);
 		}
-		
+
 		// Check if exists.
-		if(!isset($data[$this->fieldName])) {
+		if (!isset($data[$this->fieldName])) {
 			// This is not an error!
 			return true;
 		}
-		
-		if(!$this->type->validate($data[$this->fieldName])) {
+
+		if (!$this->type->validate($data[$this->fieldName])) {
 			return new Billrun_DataTypes_InvalidField($this->fieldName, 2);
 		}
-		
+
 		return true;
 	}
+
 }

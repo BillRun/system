@@ -26,7 +26,7 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 	 */
 	public function execute() {
 		$service = $this->collection->query($this->serviceQuery)->cursor()->current();
-		
+
 		// Check if the return data is invalid.
 		if ($service && !$service->isEmpty()) {
 			$returnData = $service->getRawData();
@@ -38,7 +38,7 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 		$outputResult = array(
 			'status' => 1,
 			'desc' => "Success querying service",
-			'details' => $returnData 
+			'details' => $returnData
 		);
 		return $outputResult;
 	}
@@ -76,15 +76,15 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 			// Create an exception.
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
-		
+
 		// If the query is empty.
 		if (empty($this->serviceQuery)) {
 			$this->reportError(22, Zend_Log::NOTICE);
 		}
-		
+
 		// Set the mongo ID
 		$this->setMongoID($jsonData);
-		
+
 		return true;
 	}
 
@@ -110,26 +110,27 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		return $invalidFields;
 	}
-		
+
 	/**
 	 * TODO: Use the translators instead.
 	 */
 	protected function setMongoID($queryData) {
 		// Get the mongo ID.
-		if(!isset($queryData['_id'])) {
+		if (!isset($queryData['_id'])) {
 			$invalidField = new Billrun_DataTypes_InvalidField('_id');
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
-		
+
 		try {
 			$this->serviceQuery['_id'] = new Mongodloid_Id($queryData['_id']);
 		} catch (MongoException $ex) {
-			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
+			$invalidField = new Billrun_DataTypes_InvalidField('_id', 2);
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
 	}
-	
+
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue('services.query_fields', array());
 	}
+
 }

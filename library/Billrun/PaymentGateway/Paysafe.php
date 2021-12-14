@@ -70,15 +70,15 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		$userpwd = $params['Username'] . ":" . $params['Password'];
 		$encodedAuth = base64_encode($userpwd);
 		if (function_exists("curl_init")) {
-			$result = Billrun_Util::sendRequest($this->EndpointUrl, [] , Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, [], Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
 		}
 		$arrResponse = json_decode($result, true);
 		if (isset($arrResponse['error']['message'])) {
 			$message = $arrResponse['error']['message'];
 		}
-		if (empty($arrResponse)||(!empty($message) && 
-			($message == "The authentication credentials are invalid." || 
-			$message == "The credentials provided with the request do not have permission to access the data requested."))) {
+		if (empty($arrResponse) || (!empty($message) &&
+				($message == "The authentication credentials are invalid." ||
+				$message == "The credentials provided with the request do not have permission to access the data requested."))) {
 			return false;
 		} else {
 			return true;
@@ -254,8 +254,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	protected function isTransactionDetailsNeeded() {
 		return false;
 	}
-	
-	private function setEndpointUrl($params){
+
+	private function setEndpointUrl($params) {
 		$version = !empty($params['Version']) ? $params['Version'] : $this->version;
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
@@ -263,8 +263,8 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
 		}
 	}
-	
-	private function setRedirectHostUrl($credentials){
+
+	private function setRedirectHostUrl($credentials) {
 		$version = !empty($credentials['Version']) ? $credentials['Version'] : $this->version;
 		if (Billrun_Factory::config()->isProd()) {
 			$this->redirectHostUrl = "https://api.netbanx.com/hosted/" . $version . "/orders";
@@ -276,4 +276,5 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	public function getSecretFields() {
 		return array('Password');
 	}
+
 }

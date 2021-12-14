@@ -15,16 +15,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class ReportsAction extends ApiAction {
-	
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	static $DESCRIPTION_LIMIT = 8;
-	
 	protected $request = null;
 	protected $status = true;
 	protected $desc = 'success';
 	protected $response = array();
-	
+
 	public function execute() {
 		$this->allowed();
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
@@ -32,14 +31,14 @@ class ReportsAction extends ApiAction {
 		if (!method_exists($this, $action)) {
 			return $this->setError('Reports controller - cannot find action: ' . $action);
 		}
-		
+
 		$this->{$action}();
 		return $this->response();
 	}
-	
+
 	protected function getRevenue($fromCycle, $toCycle) {
 		$this->response = array();
-		
+
 		$match = array(
 			'billrun_key' => array(
 				'$gte' => $fromCycle,
@@ -47,34 +46,34 @@ class ReportsAction extends ApiAction {
 			),
 			'type' => 'inv',
 		);
-		
+
 		$group = array(
 			'_id' => '$billrun_key',
 			'due' => array('$sum' => '$due'),
 		);
-		
+
 		$project = array(
 			'billrun_key' => '$_id',
 			'due' => '$due',
 		);
-		
+
 		$sort = array(
 			'billrun_key' => 1,
 		);
-		
+
 		$bills = Billrun_Factory::db()->billsCollection()->aggregate(
-			array('$match' => $match),
-			array('$group' => $group),
-			array('$project' => $project),
-			array('$sort' => $sort)
+				array('$match' => $match),
+				array('$group' => $group),
+				array('$project' => $project),
+				array('$sort' => $sort)
 		);
-		
+
 		$data = array();
-		
+
 		foreach ($bills as $bill) {
 			$data[$bill['billrun_key']] = $bill['due'];
 		}
-		
+
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$this->response[] = array(
 				'billrun_key' => $cycle,
@@ -83,17 +82,16 @@ class ReportsAction extends ApiAction {
 		}
 	}
 
-
 	public function totalRevenue() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
 		$this->getRevenue($fromCycle, $toCycle);
 	}
-	
+
 	protected function getDebt($fromCycle, $toCycle) {
 		$this->response = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
-			
+
 			$match = array(
 				'urt' => array(
 					'$lt' => new Mongodloid_Date($startTime),
@@ -106,22 +104,22 @@ class ReportsAction extends ApiAction {
 			);
 
 			$res = Billrun_Factory::db()->billsCollection()->aggregate(
-				array('$match' => $match),
-				array('$group' => $group)
-			)->current();
-			
+							array('$match' => $match),
+							array('$group' => $group)
+					)->current();
+
 			$this->response[] = array(
 				'billrun_key' => $cycle,
 				'due' => isset($res['due']) ? $res['due'] : 0,
 			);
 		}
 	}
-	
+
 	public function outstandingDebt() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
 		$this->getDebt($fromCycle, $toCycle);
 	}
-	
+
 	public function totalNumOfCustomers() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
 		$this->response = array();
@@ -135,12 +133,12 @@ class ReportsAction extends ApiAction {
 			);
 		}
 	}
-	
+
 	public function customerStateDistribution() {
 		$date = '-1 month';
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($date);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($date);
-		
+
 		$churnQuery = array(
 			'deactivation_date' => array(
 				'$gte' => new Mongodloid_Date($startTime),
@@ -148,7 +146,7 @@ class ReportsAction extends ApiAction {
 			),
 		);
 		$churnSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $churnQuery);
-		
+
 		$newQuery = array(
 			'creation_time' => array(
 				'$gte' => new Mongodloid_Date($startTime),
@@ -157,25 +155,25 @@ class ReportsAction extends ApiAction {
 			'sid' => array('$nin' => $churnSubscribers),
 		);
 		$newSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $newQuery);
-		
+
 		$existingQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$existingQuery['sid'] = array('$nin' => array_merge($churnSubscribers, $newSubscribers));
 		$existingSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $existingQuery);
-		
+
 		$this->response = array(
 			array('state' => 'existing', 'customers_num' => count($existingSubscribers)),
 			array('state' => 'new', 'customers_num' => count($newSubscribers)),
 			array('state' => 'churn', 'customers_num' => count($churnSubscribers)),
 		);
 	}
-	
+
 	public function revenueOverTime() {
 		$toCycle = Billrun_Billingcycle::getLastConfirmedBillingCycle();
 		$currentYear = date('Y', Billrun_Billingcycle::getStartTime($toCycle));
 		$fromCycle = ($currentYear - 1) . '01';
 		$this->getRevenue($fromCycle, $toCycle);
 	}
-	
+
 	public function planByCustomers() {
 		$current = $this->planByCustomersQuery();
 		$lastMonth = $this->planByCustomersQuery(strtotime("-1 month"));
@@ -187,7 +185,7 @@ class ReportsAction extends ApiAction {
 			);
 		}
 	}
-	
+
 	public function planByCustomersQuery($time = null) {
 		$plans = array();
 
@@ -195,46 +193,46 @@ class ReportsAction extends ApiAction {
 		$match['type'] = 'subscriber';
 
 		$group = array(
-			'_id' => '$plan', 
+			'_id' => '$plan',
 			'count' => array('$sum' => 1)
 		);
-		
+
 		$project = array(
 			'_id' => 0,
 			'plan' => '$_id',
 			'amount' => '$count'
 		);
-		
+
 		$sort = array(
 			'amount' => -1
 		);
-		
+
 		$revenues = Billrun_Factory::db()->subscribersCollection()->aggregate(
-			array('$match' => $match),
-			array('$group' => $group),
-			array('$project' => $project),
-			array('$sort' => $sort)
+				array('$match' => $match),
+				array('$group' => $group),
+				array('$project' => $project),
+				array('$sort' => $sort)
 		);
-		
+
 		foreach ($revenues as $revenue) {
 			$plans[$revenue['plan']] = $revenue['amount'];
 		}
 		return $plans;
 	}
-	
+
 	public function revenueByPlan() {
 		$this->response = array();
 		$billrunKey = Billrun_Billingcycle::getLastConfirmedBillingCycle();
 		$prevBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($billrunKey);
-		
+
 		$match = array(
 			'billrun_key' => array('$in' => array($billrunKey, $prevBillrunKey)),
 //			'type' => 'inv',
 			'billed' => 1,
 		);
-		
+
 		$unwind = '$subs';
-		
+
 		$group = array(
 			'_id' => array(
 				'plan' => '$subs.plan',
@@ -242,32 +240,32 @@ class ReportsAction extends ApiAction {
 			),
 			'amount' => array('$sum' => '$subs.totals.after_vat'),
 		);
-		
+
 		$project = array(
 			'plan' => '$_id.plan',
 			'billrun_key' => '$_id.billrun_key',
 			'amount' => '$amount',
 		);
-		
+
 		$sort = array(
 			'billrun_key' => -1,
 			'amount' => -1,
 		);
-		
+
 		$revenues = Billrun_Factory::db()->billrunCollection()->aggregate(
-			array('$match' => $match),
-			array('$unwind' => $unwind),
-			array('$group' => $group),
-			array('$project' => $project),
-			array('$sort' => $sort)
+				array('$match' => $match),
+				array('$unwind' => $unwind),
+				array('$group' => $group),
+				array('$project' => $project),
+				array('$sort' => $sort)
 		);
-		
+
 		$sortedRevenues = array();
-		
+
 		$othersAmount = 0;
 		$othersPrevAmount = 0;
-		
-		foreach($revenues as $revenue) {
+
+		foreach ($revenues as $revenue) {
 			if ($revenue['billrun_key'] === $billrunKey) {
 				if (count($sortedRevenues) < self::$DESCRIPTION_LIMIT) {
 					$sortedRevenues[$revenue['plan']] = array('amount' => $revenue['amount']);
@@ -282,12 +280,12 @@ class ReportsAction extends ApiAction {
 				}
 			}
 		}
-		
+
 		$sortedRevenues['others'] = array(
 			'amount' => $othersAmount,
 			'prev' => $othersPrevAmount,
 		);
-		
+
 		foreach ($sortedRevenues as $plan => $revenue) {
 			$this->response[] = array(
 				'plan' => $plan,
@@ -296,7 +294,7 @@ class ReportsAction extends ApiAction {
 			);
 		}
 	}
-	
+
 	public function agingDebt() {
 		$from = strtotime('12 months ago');
 		$fromCycle = Billrun_Billingcycle::getBillrunKeyByTimestamp($from);
@@ -305,7 +303,7 @@ class ReportsAction extends ApiAction {
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			$endTime = Billrun_Billingcycle::getEndTime($cycle);
-			
+
 			$match = array(
 				'invoice_date' => array(
 					'$lte' => new Mongodloid_Date($endTime),
@@ -319,29 +317,29 @@ class ReportsAction extends ApiAction {
 			);
 
 			$res = Billrun_Factory::db()->billsCollection()->aggregate(
-				array('$match' => $match),
-				array('$group' => $group)
-			)->current();
-			
+							array('$match' => $match),
+							array('$group' => $group)
+					)->current();
+
 			$this->response[] = array(
 				'billrun_key' => $cycle,
 				'left_to_pay' => isset($res['left_to_pay']) ? $res['left_to_pay'] : 0,
 			);
 		}
 	}
-	
+
 	public function debtOverTime() {
 		$toCycle = Billrun_Billingcycle::getLastConfirmedBillingCycle();
 		$currentYear = date('Y', Billrun_Billingcycle::getStartTime($toCycle));
 		$fromCycle = ($currentYear - 1) . '01';
 		$this->getDebt($fromCycle, $toCycle);
 	}
-	
+
 	protected function getCyclesRange() {
 		$from = strtotime('12 months ago');
 		return array(Billrun_Billingcycle::getOldestBillrunKey($from), Billrun_Billingcycle::getLastConfirmedBillingCycle());
 	}
-	
+
 	protected function response() {
 		$this->getController()->setOutput(array(
 			array(

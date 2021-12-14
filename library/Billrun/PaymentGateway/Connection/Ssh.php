@@ -12,7 +12,7 @@
  * @since    5.10
  */
 class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Connection {
-	
+
 	protected static $type = 'ssh';
 	protected $port = '22';
 	protected $checkReceivedSize = true;
@@ -20,7 +20,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$hostAndPort = $this->host . ':'. $this->port;
+		$hostAndPort = $this->host . ':' . $this->port;
 		$auth = array(
 			'password' => $this->password,
 		);
@@ -35,13 +35,13 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		}
 		$ret = array();
 		$path = isset($this->remoteDir) ? $this->remoteDir : '/';
-		Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->connection->getHost() , Zend_Log::INFO);
+		Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->connection->getHost(), Zend_Log::INFO);
 		$connected = $this->connection->connect($this->username);
-		 if (!$connected){
-			 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
-			 return $ret;
-		 }
-		Billrun_Factory::log()->log("Success: Connected to: " . $this->connection->getHost() , Zend_Log::INFO);
+		if (!$connected) {
+			Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
+			return $ret;
+		}
+		Billrun_Factory::log()->log("Success: Connected to: " . $this->connection->getHost(), Zend_Log::INFO);
 		$this->connection->changeDir($path);
 		try {
 			Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
@@ -112,13 +112,13 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 					// Delete from remote
 					if (isset($config['delete_received']) && $config['delete_received']) {
 						Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-						if(!$this->deleteRemote($path . '/' . $file)) {
+						if (!$this->deleteRemote($path . '/' . $file)) {
 							Billrun_Factory::log()->log("SSH: Failed to delete file: " . $file, Zend_Log::WARN);
 						}
 					}
 				}
 				// Check limit
-				$this->limit = 1;	
+				$this->limit = 1;
 				if ($count >= $this->limit) {
 					break;
 				}
@@ -130,13 +130,13 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 		return $ret;
 	}
-	
+
 	/**
 	 * copy the file to the location defined
 	 * @since 5.0
 	 */
-	public function export($fileName){
-		if (!empty($this->connection)){
+	public function export($fileName) {
+		if (!empty($this->connection)) {
 			$local = $this->localDir . '/' . $fileName;
 			$remote = $this->remoteDir . '/' . $fileName;
 			if (!$this->connection->connected()) {
@@ -159,8 +159,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 				Billrun_Factory::log()->log("Already connected to ssh server, starting to export...", Zend_Log::DEBUG);
 			}
 			return $this->connection->put($local, $remote);
-		}
-		else {
+		} else {
 			if ($this->move_exported) {
 				$source = $this->localDir . '/' . $fileName;
 				$dest = $this->remoteDir . '/' . $fileName;
@@ -168,7 +167,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 			}
 		}
 	}
-	
+
 	/**
 	 * delete file from remote host
 	 * @param String $file_path
@@ -194,7 +193,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Verify that the file is a valid file. 
 	 * @return boolean false if the file name should not be received true if it should.
@@ -202,7 +201,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	protected function isFileValid($filename) {
 		return preg_match($this->filenameRegex, $filename);
 	}
-	
+
 	/**
 	 * gets a file timestamp
 	 * @param String $file_path
@@ -213,7 +212,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-		
+
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
@@ -242,4 +241,5 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 
 		return $result['n'] == 1 && $result['ok'] == 1;
 	}
+
 }

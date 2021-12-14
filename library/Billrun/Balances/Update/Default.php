@@ -22,17 +22,18 @@ class Billrun_Balances_Update_Default extends Billrun_Balances_Update_Inc {
 	 * @return Billrun_Balances_Update_Operation | boolean - A reconfigured operation 
 	 * instance or this if cannot reconfigure, false on error.
 	 */
-	public function reconfigure($record, $verbose=false) {
+	public function reconfigure($record, $verbose = false) {
 		$options = array();
 		$options['zero'] = $this->ignoreOveruse;
 		$options['recurring'] = $this->recurring;
-		
+
 		$result = Billrun_Balances_Util::getOperation($record, $options);
-		
-		if($verbose) {
+
+		if ($verbose) {
 			return array("changed" => true, "instance" => $result);
 		}
-		
+
 		return $result;
 	}
+
 }

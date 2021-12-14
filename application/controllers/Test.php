@@ -13,8 +13,8 @@
  * @since    4.4
  */
 class TestController extends Yaf_Controller_Abstract {
-	
-	use Billrun_Traits_Api_UserPermissions;	
+
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function init() {
 		$this->allowed();
@@ -26,7 +26,7 @@ class TestController extends Yaf_Controller_Abstract {
 		Billrun_Test::getInstance($action);
 		$this->getRequest()->action = 'index';
 	}
- 
+
 	/**
 	 * Empty index action to avoid exceptions
 	 * @return none
@@ -35,20 +35,19 @@ class TestController extends Yaf_Controller_Abstract {
 		return;
 	}
 
-
 	protected function getTestAction($request) {
 		// Get the URI of the request.
 		$uri = $request->getRequestUri();
-		
+
 		// Explode the URI to get all the inputs
 		$params = $this->escapeUri($uri);
-		
+
 		// Build the action.
 		$action = $this->buildAction($params);
-		
+
 		return $action;
 	}
-	
+
 	/**
 	 * Returns an escaped array of paths built from the uri
 	 * @param string $uri - Request URI.
@@ -57,21 +56,21 @@ class TestController extends Yaf_Controller_Abstract {
 	protected function escapeUri($uri) {
 		// Explode the URI to get all the inputs
 		$params = explode('/', $uri);
-		
+
 		// The first parameter is empty, the second parameter is 'test'.
 		$escapeIndex = 0;
-		if(empty($params[$escapeIndex])) {
+		if (empty($params[$escapeIndex])) {
 			unset($params[$escapeIndex]);
 			$escapeIndex++;
 		}
-		
-		if($params[$escapeIndex] === 'test') {
+
+		if ($params[$escapeIndex] === 'test') {
 			unset($params[$escapeIndex]);
 		}
-		
+
 		return $params;
 	}
-	
+
 	/**
 	 * Build action from the escaped URI params.
 	 * @param array $params - Escaped URI params.
@@ -79,12 +78,15 @@ class TestController extends Yaf_Controller_Abstract {
 	 */
 	protected function buildAction($params) {
 		// Ucase all the input URIs
-		$translated = array_map(function($s){return ucfirst(strtolower($s));}, $params);
-		
+		$translated = array_map(function ($s) {
+			return ucfirst(strtolower($s));
+		}, $params);
+
 		return implode("/", $translated);
 	}
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }

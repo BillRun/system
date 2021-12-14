@@ -227,8 +227,8 @@ class ImportPricesListAction extends ApiAction {
 	 */
 	protected function setUsageTypeData($ratesModel, $usageType, $usageTypeRate, $ratesToSet) {
 		if (!isset($ratesToSet[$usageType]) &&
-			(!isset($usageTypeRate['category']) ||
-			!$usageTypeRate['category'])) {
+				(!isset($usageTypeRate['category']) ||
+				!$usageTypeRate['category'])) {
 			return false;
 		}
 		$ratesToSet[$usageType]['unit'] = $ratesModel->getUnit($usageType);
@@ -287,7 +287,6 @@ class ImportPricesListAction extends ApiAction {
 		}
 
 		$itemUsageType['rules'][$item['rule']] = $item;
-
 
 		if (isset($itemUsageType['category'])) {
 			if ($itemUsageType['category'] != $item['category']) {

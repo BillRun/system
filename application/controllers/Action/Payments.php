@@ -14,15 +14,16 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class PaymentsAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
 		try {
 			switch ($request->get('action')) {
 				case 'query' :
-						$payments = $this->queryPayments($request->get('query'));	
+					$payments = $this->queryPayments($request->get('query'));
 					break;
 				case 'search' :
 				default :
@@ -68,20 +69,20 @@ class PaymentsAction extends ApiAction {
 		$amount = $amount === FALSE ? NULL : $amount;
 		return Billrun_Bill_Payment::getPayments($aid, $dirs, $methods, $to, $from, $amount);
 	}
-	
+
 	protected function queryPayments($query) {
-		if(empty($query) ) { return FALSE;	}
-		if(is_string($query)) {
-			$query = json_decode($query,true);
+		if (empty($query)) {
+			return FALSE;
 		}
-		
+		if (is_string($query)) {
+			$query = json_decode($query, true);
+		}
+
 		if (is_array($query['urt'])) {
 			$query['urt'] = Billrun_Util::intToMongodloidDate($query['urt']);
 		}
-		
+
 		return Billrun_Bill_Payment::queryPayments($query);
-		
-		
 	}
 
 	protected function getPermissionLevel() {

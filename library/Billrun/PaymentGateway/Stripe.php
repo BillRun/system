@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 require_once(APPLICATION_PATH . '/library/stripe-php/init.php');
 
 /**
@@ -70,9 +69,9 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		$this->setApiKey($credentials['secret_key']);
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 		$result = \Stripe\Charge::create(array(
-				"amount" => $gatewayDetails['amount'],
-				"currency" => $gatewayDetails['currency'],
-				"customer" => $gatewayDetails['customer_id'],
+					"amount" => $gatewayDetails['amount'],
+					"currency" => $gatewayDetails['currency'],
+					"customer" => $gatewayDetails['customer_id'],
 		));
 		$status = $this->payResponse($result);
 
@@ -90,12 +89,12 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	public function authenticateCredentials($params) {
 		$this->validatingSecretKey($params['secret_key']);
 		$this->validatingPublishableKey($params['publishable_key']);
-		
+
 		return true;
 	}
 
 	public function verifyPending($txId) {
-
+		
 	}
 
 	public function hasPendingStatus() {
@@ -172,14 +171,14 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		$this->setApiKey($credentials['secret_key']);
 		try {
 			$customer = \Stripe\Customer::create(array(
-					'card' => $additionalParams['token'],
-					'email' => $additionalParams['email']
-					)
+						'card' => $additionalParams['token'],
+						'email' => $additionalParams['email']
+							)
 			);
-		} catch(Exception $e) {
+		} catch (Exception $e) {
 			throw new Exception('Error creating customer!');
 		}
-		
+
 		return $customer;
 	}
 
@@ -197,7 +196,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected function setApiKey($secretKey) {
 		\Stripe\Stripe::setApiKey($secretKey);
 	}
-	
+
 	protected function validatingPublishableKey($publishableKey) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, "https://api.stripe.com/v1/tokens");
@@ -215,7 +214,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 			}
 		}
 	}
-	
+
 	protected function validatingSecretKey($secretKey) {
 		$this->setApiKey($secretKey);
 		\Stripe\Balance::retrieve(); // calling function from Stripe API to check if connection succeeded
@@ -224,15 +223,15 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	public function handleOkPageData($txId) {
 		return true;
 	}
-	
+
 	protected function validateStructureForCharge($structure) {
 		return !empty($structure['customer_id']) && !empty($structure['token']);
 	}
-	
+
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
-	
+
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
@@ -244,4 +243,5 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	public function getSecretFields() {
 		return array('secret_key');
 	}
+
 }

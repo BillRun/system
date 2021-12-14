@@ -49,7 +49,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 				return;
 			}
 			if ($payment->isAmountDeniable(abs($row['amount']))) {
-				Billrun_Factory::log()->log("Payment " . $row['transaction_id'] .  " has already been denied", Zend_Log::ALERT);
+				Billrun_Factory::log()->log("Payment " . $row['transaction_id'] . " has already been denied", Zend_Log::ALERT);
 				return;
 			}
 		} else { // in this case there's aid identifier
@@ -82,19 +82,19 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		unset($newRow['vendor_fields']['inquiry_desc']);
 		return $newRow;
 	}
-	
+
 	protected function filterData($data) {
 		foreach ($data['data'] as &$row) {
-			$row = array_map(function($fieldName) {
+			$row = array_map(function ($fieldName) {
 				return trim($fieldName);
 			}, $row);
 		}
-		
+
 		return array_filter($data['data'], function ($denial) {
-			return $denial['status'] != 1; 			
+			return $denial['status'] != 1;
 		});
 	}
-	
+
 	protected function afterUpdateData() {
 		if (empty($this->unmatchedRows)) {
 			return;
@@ -104,8 +104,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Denials extends Billrun_Proce
 		$filePath = Billrun_Util::getBillRunSharedFolderPath($fileName);
 		$folderPath = Billrun_Util::getBillRunSharedFolderPath($folderName);
 		if (!file_exists($folderPath)) {
-			 mkdir($folderPath, 0777, true);
-		}	
+			mkdir($folderPath, 0777, true);
+		}
 		Billrun_Factory::log('Writing unmatched denials rows to file ' . $filePath, Zend_Log::DEBUG);
 		foreach ($this->unmatchedRows as $key => $row) {
 			if ($key == 0) { // write header

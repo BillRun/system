@@ -13,6 +13,7 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
+
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -42,12 +43,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->initConfig();
 		$this->initBaseUrl();
 		$this->initHtmlHeaders();
-			}
-	
+	}
+
 	protected function initSession() {
 		Billrun_Util::setHttpSessionTimeout();
 	}
-		
+
 	protected function initCommit() {
 		if (!Billrun_Factory::config()->isProd() || !($this->commit = Billrun_Git_Util::getGitLastCommit())) {
 			$this->commit = md5(time());
@@ -59,7 +60,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
-	
+
 	protected function initBaseUrl() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 	}
@@ -139,7 +140,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . '?' . $this->commit . '"></script>' . PHP_EOL;
+			$ret .= '<script src="' . $jsPath . '?' . $this->commit . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -147,7 +148,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchCssFiles() {
 		$ret = '';
 		foreach ($this->cssPaths as $cssPath) {
-			$ret.='<link rel="stylesheet" href="' . $cssPath . '?' . $this->commit . '">' . PHP_EOL;
+			$ret .= '<link rel="stylesheet" href="' . $cssPath . '?' . $this->commit . '">' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -342,10 +343,10 @@ class AdminController extends Yaf_Controller_Abstract {
 				}
 			}
 			$ret = array(
-				'authorized_write' => AdminController::authorized('write'), 
-				'entity' => isset($entity) ? $entity : array(), 
-				'plan_rates' => isset($plan_rates) ? $plan_rates : array(), 
-				'ppincludes' => isset($ppincludes) ? $ppincludes : array(), 
+				'authorized_write' => AdminController::authorized('write'),
+				'entity' => isset($entity) ? $entity : array(),
+				'plan_rates' => isset($plan_rates) ? $plan_rates : array(),
+				'ppincludes' => isset($ppincludes) ? $ppincludes : array(),
 				'default_max_currency' => isset($default_max_currency) ? $default_max_currency : array(),
 			);
 			$response->setBody(json_encode($ret));
@@ -401,18 +402,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($data['cap_name']);
 		unset($data['service']);
 		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
-			->cursor()->setReadPreference('RP_PRIMARY')
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
+				->cursor()->setReadPreference('RP_PRIMARY')
+				->sort(array('_id' => -1))
+				->limit(1)
+				->current()
+				->getRawData();
 		unset($allCaps['_id']);
 		$allCaps['realtimeevent']['data']['slowness']['bandwidth_cap'][$cap_name] = $data;
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
-	
+
 	public function saveServiceProviderAction() {
 		if (!$this->allowed('admin'))
 			return false;
@@ -440,7 +441,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), $query);
 		if (!empty($id = $data['_id'])) {
-			$query['_id'] =  array('$ne' => new Mongodloid_Id($id));
+			$query['_id'] = array('$ne' => new Mongodloid_Id($id));
 		}
 		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
 		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
@@ -453,18 +454,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $this->getRequest()->get('cap_name');
 		$configColl = Billrun_Factory::db()->configCollection();
 		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
-			->cursor()->setReadPreference('RP_PRIMARY')
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
+				->cursor()->setReadPreference('RP_PRIMARY')
+				->sort(array('_id' => -1))
+				->limit(1)
+				->current()
+				->getRawData();
 		unset($allCaps['_id']);
 		unset($allCaps["realtimeevent"]["data"]["slowness"]['bandwidth_cap'][$cap_name]);
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
-	
+
 	public function removeServiceProviderAction() {
 		if (!$this->allowed('admin'))
 			return false;
@@ -784,13 +785,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		die(json_encode(null));
 	}
 
-	protected function responseNoPermissionsError($message="No permissions!") {
+	protected function responseNoPermissionsError($message = "No permissions!") {
 		$complete = array();
 		$complete['data'] = array("message" => $message);
 		$complete['status'] = 0;
 		return $this->responseError($complete);
 	}
-	
+
 	/**
 	 * save controller
 	 * @return boolean
@@ -868,7 +869,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
 				$this->forward("Api", "Cards", $this->getRequest());
 			} else {
-			$saveStatus = $model->update($params);
+				$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
 			$model->closeAndNew($params);
@@ -1053,6 +1054,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function permissionAction() {
 		
 	}
+
 	public function loginAction() {
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
@@ -1162,15 +1164,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			$page = $action;
 		} else {
 			$page = null;
-			}
+		}
 		if (self::authorized($permission, $page)) {
 			return true;
 		}
 
 		if (Billrun_Factory::user()) {
-				$this->forward('error');
-				return false;
-			}
+			$this->forward('error');
+			return false;
+		}
 
 		$this->forward('permission', array('ret_action' => $action));
 		return false;
@@ -1337,14 +1339,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
-	
+
 	/**
 	 * config controller of admin
 	 */
 	public function operationsAction() {
 		if (!$this->allowed('operations'))
 			return false;
-		
+
 		$this->getView()->component = $this->renderView('operations');
 	}
 
@@ -1460,8 +1462,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
-		if($tpl == 'permission') {
-			return $this->renderView("permission", $parameters);			
+		if ($tpl == 'permission') {
+			return $this->renderView("permission", $parameters);
 		}
 		$tpl = 'index';
 		//check with active menu we are on
@@ -1485,7 +1487,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
-		
+
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -1596,7 +1598,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function applyFilters($table, $session = false) {
 		$model = $this->model;
 		if (!$session) {
-		$session = $this->getSession($table);
+			$session = $this->getSession($table);
 		}
 		$filter_fields = $model->getFilterFields();
 		$query = array();
@@ -1609,9 +1611,9 @@ class AdminController extends Yaf_Controller_Abstract {
 				$model->setFilteredPlans($value);
 			}
 			if ((!empty($value) || $value === 0 || $value === "0") &&
-				is_array($filter_field) && isset($filter_field['db_key']) &&
-				$filter_field['db_key'] != 'nofilter' &&
-				($filter = $model->applyFilter($filter_field, $value))) {
+					is_array($filter_field) && isset($filter_field['db_key']) &&
+					$filter_field['db_key'] != 'nofilter' &&
+					($filter = $model->applyFilter($filter_field, $value))) {
 				$query['$and'][] = $filter;
 			}
 		}
@@ -1644,8 +1646,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			} else if ($table === "lines") {
 				$sort = array('urt' => -1);
 			} else {
-			$sort = array();
-		}
+				$sort = array();
+			}
 		}
 		return $sort;
 	}
@@ -1661,9 +1663,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			// TODO: make refactoring of the advanced options for each page (lines, balances, etc)
 			return array(
 				$keys = array(array(
-					'type' => 'number',
-					'display' => 'usage',
-				)
+				'type' => 'number',
+				'display' => 'usage',
+			)
 			));
 		} else if ($this->model instanceof EventsModel) {
 			return array(
@@ -1671,7 +1673,7 @@ class AdminController extends Yaf_Controller_Abstract {
 					'type' => 'text',
 				)
 			);
-			}
+		}
 
 		// If model is unidentified return false;
 		return false;
@@ -1691,23 +1693,23 @@ class AdminController extends Yaf_Controller_Abstract {
 			case 'dbref':
 				$returnValue = $inputValue;
 				break;
-				case 'number':
+			case 'number':
 				$returnValue = floatval($inputValue);
-					break;
-				case 'date':
+				break;
+			case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
 					$returnValue = new Mongodloid_Date((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
-					} else {
+				} else {
 					return false;
-					}
+				}
 				break;
-				default:
-					break;
-			}
+			default:
+				break;
+		}
 
 		return $returnValue;
-			}
+	}
 
 	/**
 	 * Translate the value by the case option.
@@ -1752,7 +1754,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($translator != null) {
 			// TODO: decoupling to config of fields
 			return $translator->translate($value);
-			}
+		}
 
 		// If no translator found return the input parameters.
 		return array($operator => $value);
@@ -1768,14 +1770,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$collection = Billrun_Factory::db()->{$advancedOptionsKey['collection'] . "Collection"}();
 		$pre_query = null;
 		$pre_query[$advancedOptionsKey['collection_key']][$inputOperator] = $inputValue;
-				$cursor = $collection->query($pre_query);
+		$cursor = $collection->query($pre_query);
 		$value = array();
-				foreach ($cursor as $entity) {
+		foreach ($cursor as $entity) {
 			$value[] = $collection->createRefByEntity($entity);
-				}
+		}
 
 		return array('$in' => $value);
-			}
+	}
 
 	/**
 	 * Set the naual filter for a key to the query.
@@ -1865,7 +1867,6 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$rates = $this->model->getRates($query);
 
-
 		$showprefix = $_GET['show_prefix'];
 		$show_prefix = $showprefix == 'true' ? true : false;
 		$header = $this->model->getPricesListFileHeader($show_prefix);
@@ -1875,7 +1876,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			foreach ($rules as $rule) {
 				$imploded_text = '';
 				foreach ($header as $title) {
-					$imploded_text.=$rule[$title] . ',';
+					$imploded_text .= $rule[$title] . ',';
 				}
 				$data_output[] = substr($imploded_text, 0, strlen($imploded_text) - 1);
 			}
@@ -1958,7 +1959,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$resp->setBody(json_encode(array("message" => $message)));
 		}
-		
+
 		//$resp->response();
 		return false;
 	}
@@ -1979,7 +1980,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		//$resp->response();
 		return false;
 	}
-	
+
 	public function getRatesWithSamePrefixAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -2001,7 +2002,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getRatesWithSameMccAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -2023,7 +2024,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getRatesWithSameMscAction() {
 		if (!$this->allowed('read'))
 			return false;

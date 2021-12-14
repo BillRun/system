@@ -40,7 +40,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	public function __construct($options) {
 		// If it is not set, the default is used.
 		$this->updateOperation = $options['operation'];
-		
+
 		// TODO: This will change, it's only here while this logic is executed
 		// in the backend instead of the front end.
 		$this->baseCode = 1200;
@@ -101,7 +101,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// TODO: Use the plans DB/API proxy.
 		$record = $collection->query($queryToUse)->cursor()->current();
 		if (!$record || $record->isEmpty()) {
-			$errorCode =  11;
+			$errorCode = 11;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -151,7 +151,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$maxRecord = $plansColl->query($maxQuery)->cursor()->current();
 
 		if ($maxRecord->isEmpty()) {
-			$errorCode =  23;
+			$errorCode = 23;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($plan));
 			return false;
 		}
@@ -172,13 +172,13 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function normalizeBalance($query, $plan, $wallet) {
 		$forceMaxValue = true;
-		
+
 		// Check if the value to set is negative, if so we force minimum value.
 		if ($wallet->getValue() >= 0) {
 			$forceMaxValue = false;
 		}
 
-		if(!$forceMaxValue) {
+		if (!$forceMaxValue) {
 			$maxValue = 0;
 		} else {
 			$maxValue = $this->getBalanceMaxValue($plan, $wallet->getPPID());
@@ -196,16 +196,16 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$updateQueryValue = array($wallet->getFieldName() => $maxValue);
-		
-		if($forceMaxValue) {
-			$updateQuery = array('$max' => $updateQueryValue);			
+
+		if ($forceMaxValue) {
+			$updateQuery = array('$max' => $updateQueryValue);
 		} else {
 			$updateQuery = array('$min' => $updateQueryValue);
 		}
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
-		
-		if($forceMaxValue) {
+
+		if ($forceMaxValue) {
 			$updateResult['min'] = 1;
 		}
 		return $updateResult;
@@ -220,10 +220,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 
 		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference('RP_PRIMARY', array());
-		
+
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
-			$errorCode =  12;
+			$errorCode = 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriberId));
 			return false;
 		}
@@ -277,7 +277,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 
 		// Check that the service provider is trusted.
 		if (!$this->validateServiceProvider($planServiceProvider)) {
-			$errorCode =  20;
+			$errorCode = 20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -287,7 +287,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 
 		// Check if mismatching serivce providers.
 		if ($planServiceProvider != $subscriberServiceProvider) {
-			$errorCode =  13;
+			$errorCode = 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -302,7 +302,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	public function getBeforeUpdate() {
 		return $this->balanceBefore;
 	}
-	
+
 	/**
 	 * Get the balance record that is being updated
 	 * @param Billrun_DataTypes_Wallet $wallet - The wallet for the balance record currently being updated.
@@ -310,12 +310,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function getRecordInProccess($wallet) {
 		$id = $wallet->getPPID();
-		if(!isset($this->balanceBefore[$id])) {
+		if (!isset($this->balanceBefore[$id])) {
 			return null;
 		}
 		return $this->balanceBefore[$id];
 	}
-	
+
 	/**
 	 * Set the 'To' field to the update query
 	 * @param array $update - The update query to set the to for
@@ -323,11 +323,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @param type $wallet - Wallet to handle.
 	 */
 	protected function setToForUpdate(&$update, $to, $wallet) {
-		if(Billrun_Util::multiKeyExists($update, 'to')) {
+		if (Billrun_Util::multiKeyExists($update, 'to')) {
 			// to already set let's ignore
 			return;
 		}
-		
+
 		// Check if the value before is 0 and if so take the input values to update.
 		$balanceRecord = $this->getRecordInProccess($wallet);
 		$this->updateOperation->setToForUpdate($update, $to, $balanceRecord);
@@ -345,23 +345,23 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function handleUnlimitedBalance($planName, $wallet, $query) {
 		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
-		
+
 		$handleResult = $this->updateOperation->handleUnlimitedBalance($max, $wallet, $query);
-		if(isset($handleResult['onError'])) {
+		if (isset($handleResult['onError'])) {
 			$this->reportError($handleResult['onError']);
 			return false;
 		}
-		
-		if(isset($handleResult['block']) && $handleResult['block']) {
+
+		if (isset($handleResult['block']) && $handleResult['block']) {
 			// [Balances Error 1225]
-			$errorCode =  25;
+			$errorCode = 25;
 			$this->reportError($errorCode);
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Store the balance value before updating.
 	 * @param array $query - Query to get the balance before update.
@@ -373,7 +373,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
 		return $balance;
 	}
-	
+
 	/**
 	 * Update a single balance.
 	 * @param Billrun_DataTypes_Wallet $wallet
@@ -392,7 +392,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$update = $this->updateOperation->getUpdateBalanceQuery($balanceQuery, $wallet, $defaultBalance, $isExisting);
 
 		$this->setToForUpdate($update, $toTime, $wallet);
-		
+
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -400,4 +400,5 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 
 		return $this->updateOperation->update($balancesColl, $balanceQuery, $update, $options);
 	}
+
 }

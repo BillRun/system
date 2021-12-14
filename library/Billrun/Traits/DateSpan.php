@@ -17,42 +17,43 @@ trait Billrun_Traits_DateSpan {
 	 * @var int
 	 */
 	protected $activation = null;
-	
+
 	/**
 	 * Epoch value representing the deactivation of the service.
 	 * @var int
 	 */
 	protected $deactivation = null;
-	
+
 	/**
 	 * Check if the service is valid.
 	 * @return true if valid.
 	 */
 	public function isValid() {
-		if(!$this->activation && $this->deactivation) {
+		if (!$this->activation && $this->deactivation) {
 			Billrun_Factory::log("Deactivation cannot exist without activation");
 			return false;
 		}
-		
-		if($this->deactivation && $this->activation && ($this->deactivation < $this->activation)) {
-			Billrun_Factory::log("Invalid date values, activation: " . print_r($this->activation) . " deactivation: " . $this->deactivation);			
+
+		if ($this->deactivation && $this->activation && ($this->deactivation < $this->activation)) {
+			Billrun_Factory::log("Invalid date values, activation: " . print_r($this->activation) . " deactivation: " . $this->deactivation);
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set the span dates with data
 	 * @param array $data
 	 */
 	protected function setSpan($data) {
-		if(isset($data['start'])) {
+		if (isset($data['start'])) {
 			$this->activation = $data['start'];
 		}
-		
-		if(isset($data['end'])) {
+
+		if (isset($data['end'])) {
 			$this->deactivation = $data['end'];
 		}
 	}
+
 }

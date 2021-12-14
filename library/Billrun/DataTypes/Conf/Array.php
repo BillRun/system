@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
@@ -9,13 +10,14 @@
  * Wrapper class for a complex arra value object
  */
 class Billrun_DataTypes_Conf_Array extends Billrun_DataTypes_Conf_Base {
+
 	protected $array = array();
-	
+
 	public function __construct(&$obj) {
 		$this->val = &$obj['v'];
 		$this->array = &$obj['array'];
 	}
-	
+
 	public function validate() {
 		if (is_null($this->val)) {
 			return false;
@@ -27,7 +29,7 @@ class Billrun_DataTypes_Conf_Array extends Billrun_DataTypes_Conf_Base {
 		$this->val = null;
 		return true;
 	}
-	
+
 	public function value() {
 		return array_values($this->array);
 	}

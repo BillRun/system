@@ -13,8 +13,8 @@
  * @package  DataTypes
  * @since    5.2
  */
-class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_CachedDataTable {
-	
+class Billrun_DataTypes_CachedChargingTimeTable extends Billrun_DataTypes_CachedDataTable {
+
 	/**
 	 * String representation of the time base.
 	 * This member is used to differentiate charging start and charging end.
@@ -26,7 +26,7 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 * @var string
 	 */
 	protected $timeBase = null;
-	
+
 	/**
 	 * Create a new instance of a charging time table.
 	 * @param string $timeBase - Time base to set to the current table, empty
@@ -36,7 +36,7 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	public function __construct($timeBase = null) {
 		$this->handleTimeBase($timeBase);
 	}
-	
+
 	/**
 	 * Handle the input time base.
 	 * @param string $timeBase - Input time base from the constructor
@@ -44,31 +44,31 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 */
 	protected function handleTimeBase($timeBase) {
 		// If empty, do nothing
-		if(!$timeBase) {
+		if (!$timeBase) {
 			return;
 		}
-		
+
 		// Validate the input data.
-		if(!is_string($timeBase) || (strtotime($timeBase) === false)) {
+		if (!is_string($timeBase) || (strtotime($timeBase) === false)) {
 			throw new InvalidArgumentException(__CLASS__ . ':' . __FUNCTION__ . ':' . __LINE__ . ' ' . ' Received invalid time base value.');
 		}
-		
+
 		$this->timeBase = $timeBase;
 	}
-	
+
 	/**
 	 * Get a charging time table value
 	 * @param string $key - Billrun key to get time by.
 	 */
 	protected function onGet($key, $invoicing_day = null) {
 		$datetime = !is_null($invoicing_day) ? $this->getDatetime($key, $invoicing_day) : $this->getDatetime($key);
-		
+
 		$time = strtotime($datetime);
-		
+
 		// If the timebase is not empty, apply it.
-		if($this->timeBase &&   strlen($key) !== 14) {
+		if ($this->timeBase && strlen($key) !== 14) {
 			$time = strtotime($this->timeBase, $time);
-		} 
+		}
 		return $time;
 	}
 
@@ -80,19 +80,21 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	 */
 	protected function getDatetime($billrunKey, $invoicingDay = null) {
 		$config = Billrun_Factory::config();
-		if(($config->isMultiDayCycle()) && (!is_null($invoicingDay))) {
+		if (($config->isMultiDayCycle()) && (!is_null($invoicingDay))) {
 			$dayofmonth = $invoicingDay;
-		}else {
+		} else {
 			$dayofmonth = $config->getConfigChargingDay();
 		}
 		return strlen($billrunKey) == 14 ? $billrunKey : $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
-	
+
 	/**
 	 * There is no logic to be executed in this function.
 	 * @param type $key
 	 * @param type $data
 	 */
-	protected function onSet($key, $data) {}
+	protected function onSet($key, $data) {
+		
+	}
 
 }

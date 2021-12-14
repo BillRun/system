@@ -13,6 +13,7 @@
  * @since    4.5
  */
 abstract class Billrun_Balances_Update_Operation {
+
 	/**
 	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
 	 * exceeds the maximum allowance (balance is above zero), will reset the balance (to zero) and only then increment it.
@@ -26,7 +27,7 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @var boolean indication
 	 */
 	protected $recurring = false;
-	
+
 	/**
 	 * Return an indication for is the 
 	 * @return type
@@ -34,13 +35,13 @@ abstract class Billrun_Balances_Update_Operation {
 	public function isRecurring() {
 		return $this->recurring;
 	}
-	
+
 	/**
 	 * Create a new instance of the operation class.
 	 * @param array $options - Holding:
 	 * 						   zero - If requested to update by incrementing but the existing 
 	 * 								  value is larger than zero than zeroise the value.
-	 *						   recurring - Indicating if this is a recurring update by true.
+	 * 						   recurring - Indicating if this is a recurring update by true.
 	 */
 	public function __construct($options) {
 		// If it is not set, the default is used.
@@ -53,20 +54,20 @@ abstract class Billrun_Balances_Update_Operation {
 			$this->recurring = $options['recurring'];
 		}
 	}
-	
+
 	/**
 	 * Is an increment operation.
 	 * @return boolean true if is increment.
 	 */
 	public abstract function isIncrement();
-	
+
 	/**
 	 * Get the mongo operation to execute.
 	 * @param mixed $valueToSet - Value to set.
 	 * @return string - $inc or $set
 	 */
 	protected abstract function getMongoOperation($valueToSet);
-	
+
 	/**
 	 * Set the 'To' field to the update query
 	 * @param array $update - The update query to set the to for
@@ -76,7 +77,7 @@ abstract class Billrun_Balances_Update_Operation {
 	public function setToForUpdate(&$update, $to, $balanceRecord) {
 		// Check if the value before is 0 and if so take the input values to update.
 		$valueBefore = abs(Billrun_Balances_Util::getBalanceValue($balanceRecord));
-		if($valueBefore > 0) {
+		if ($valueBefore > 0) {
 			// TODO: Move the $max functionality to a trait
 			$update['$max']['to'] = $to;
 		} else {
@@ -84,7 +85,7 @@ abstract class Billrun_Balances_Update_Operation {
 			$update['$set']['to'] = $to;
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param array $query - Query for getting tha balance.
@@ -100,11 +101,11 @@ abstract class Billrun_Balances_Update_Operation {
 		if (!$isExisting) {
 			return $this->getSetOnInsert($wallet, $defaultBalance);
 		}
-		
+
 		$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
 		return $this->getSetQuery($wallet);
 	}
-	
+
 	/**
 	 * Handle zeroing the record if the charging value is positive.
 	 * @param type $query
@@ -124,7 +125,7 @@ abstract class Billrun_Balances_Update_Operation {
 		$originalBeforeZeroing = $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
 //		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * Return the part of the query for setOnInsert
 	 * @param Billrun_DataTypes_Wallet $wallet
@@ -144,19 +145,19 @@ abstract class Billrun_Balances_Update_Operation {
 
 		$balanceRecord = array_merge($defaultBalance, $partialBalance);
 		// If the wallet is shared, set the sid
-		if($wallet->isShared()) {
+		if ($wallet->isShared()) {
 			$balanceRecord['sid'] = 0;
 		}
 		// If the wallet is unlimited, set the 'to' field to unlimited.
-		if($wallet->getUnlimited()) {
+		if ($wallet->getUnlimited()) {
 			$balanceRecord['to'] = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
-		
+
 		return array(
 			'$setOnInsert' => $balanceRecord,
 		);
 	}
-	
+
 	/**
 	 * Get the set part of the query.
 	 * @param Billrun_DataTypes_Wallet $wallet - The wallet in use.
@@ -166,7 +167,7 @@ abstract class Billrun_Balances_Update_Operation {
 		$valueToUseInQuery = $wallet->getValue();
 		$queryType = $this->getMongoOperation($valueToUseInQuery);
 		$valueUpdateQuery[$queryType]
-			[$wallet->getFieldName()] = $valueToUseInQuery;
+				[$wallet->getFieldName()] = $valueToUseInQuery;
 
 		// The TO time is always set.
 		$valueUpdateQuery['$set']['pp_includes_name'] = $wallet->getPPName();
@@ -174,10 +175,10 @@ abstract class Billrun_Balances_Update_Operation {
 		$valueUpdateQuery['$set']['priority'] = $wallet->getPriority();
 
 		// If the wallet is shared, set the sid to 0
-		if($wallet->isShared()) {
+		if ($wallet->isShared()) {
 			$valueUpdateQuery['$set']['sid'] = 0;
 		}
-		
+
 		// Check if recurring.
 		if ($this->recurring) {
 			$valueUpdateQuery['$set']['recurring'] = 1;
@@ -185,7 +186,7 @@ abstract class Billrun_Balances_Update_Operation {
 
 		return $valueUpdateQuery;
 	}
-	
+
 	/**
 	 * Update the database.
 	 * @param type $coll
@@ -197,7 +198,7 @@ abstract class Billrun_Balances_Update_Operation {
 	public function update($coll, $query, $update, $options) {
 		return $coll->findAndModify($query, $update, array(), $options, true);
 	}
-	
+
 	/**
 	 * Reconfigure the updater operation with a record
 	 * @param array $record - Record to use for reconfiguring the operation.
@@ -206,14 +207,14 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @return Billrun_Balances_Update_Operation | boolean - A reconfigured operation 
 	 * instance or this if cannot reconfigure, false on error.
 	 */
-	public function reconfigure($record, $verbose=false) {
-		if($verbose) {
+	public function reconfigure($record, $verbose = false) {
+		if ($verbose) {
 			return array("changed" => false, "instance" => $this);
 		}
-		
+
 		return $this;
 	}
-	
+
 	/**
 	 * Handle the core balance
 	 * 

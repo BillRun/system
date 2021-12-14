@@ -35,8 +35,8 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	protected function getLineUsageType($row) {
 		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
 	}
-	
-		/**
+
+	/**
 	 * method to run over all the files received which did not have been processed
 	 */
 	public function processLines() {

@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class RemoveAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	/**

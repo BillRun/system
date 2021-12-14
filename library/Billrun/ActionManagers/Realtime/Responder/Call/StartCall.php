@@ -30,7 +30,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_StartCall extends Billrun_A
 
 	protected function getReservationTime() {
 		if (isset($this->row['granted_return_code']) &&
-			$this->row['granted_return_code'] !== Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', '')) {
+				$this->row['granted_return_code'] !== Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', '')) {
 			return 0;
 		}
 		return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180) * 10;

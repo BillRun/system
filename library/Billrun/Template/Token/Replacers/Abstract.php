@@ -23,7 +23,7 @@ abstract class Billrun_Template_Token_Replacers_Abstract {
 		$this->setAvailableTokens();
 		$this->setCategory();
 	}
-	
+
 	/**
 	 * Set class class data to replace
 	 */
@@ -53,5 +53,4 @@ abstract class Billrun_Template_Token_Replacers_Abstract {
 	 * Set class category name
 	 */
 	abstract protected function setCategory();
-
 }

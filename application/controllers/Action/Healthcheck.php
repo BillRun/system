@@ -30,7 +30,7 @@ class HealthcheckAction extends RealtimeeventAction {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
 				Billrun_Factory::db()->linesCollection()
-					->query()->cursor()->limit(1)->current();
+						->query()->cursor()->limit(1)->current();
 				$this->event['msg'] = 'success';
 				$this->event['status'] = 1;
 			} else {
@@ -42,15 +42,16 @@ class HealthcheckAction extends RealtimeeventAction {
 			$this->event['msg'] = 'failed';
 			$this->event['status'] = 0;
 		}
-		
+
 		$this->respond($this->event);
 	}
-	
+
 	protected function getRequestData($key) {
 		return $this->_request->getParam($key);
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }

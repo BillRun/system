@@ -13,4 +13,6 @@
  * @package  Billapi
  * @since    5.3
  */
-class Billrun_Balance_Update_Prepaidgroup extends Billrun_Balance_Update_Chargingplan {}
+class Billrun_Balance_Update_Prepaidgroup extends Billrun_Balance_Update_Chargingplan {
+	
+}

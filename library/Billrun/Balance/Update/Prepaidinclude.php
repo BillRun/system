@@ -61,7 +61,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	 * @var array
 	 */
 	protected $normalizeValue = 0;
-	
+
 	/**
 	 * expiration date
 	 * @var Mongodloid_Date
@@ -94,8 +94,9 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		} else {
 			$this->setTo();
 		}
-		
-		$this->chargingLimit = $this->getChargingLimit();;
+
+		$this->chargingLimit = $this->getChargingLimit();
+		;
 	}
 
 	public function getBefore() {
@@ -119,7 +120,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			$this->to = new Mongodloid_Date(strtotime('tomorrow +1 month') - 1);
 		}
 	}
-	
+
 	/**
 	 * method to get the limit of the charging
 	 * 
@@ -135,12 +136,12 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 		return (-1) * PHP_INT_MAX;
 	}
-	
+
 	protected function init() {
 		$this->query = array(
 			'pp_includes_external_id' => $this->data['external_id'],
 		);
-		
+
 		$this->query['aid'] = $this->subscriber['aid'];
 		if (!$this->sharedBalance) {
 			$this->query['sid'] = $this->subscriber['sid'];
@@ -173,13 +174,14 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
 			return false;
 		}
-		
+
 		if (($balanceValue + $this->chargingValue) > 0) {
 			return false;
 		}
-		
+
 		return true;
 	}
+
 	/**
 	 * 
 	 * @param type $ppQuery
@@ -214,17 +216,17 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 				'pp_includes_name' => isset($this->data['name']) ? $this->data['name'] : $this->data['pp_includes_name'],
 			),
 		);
-		
+
 		if (isset($this->subscriber['service_provider'])) {
 			$update['$setOnInsert']['service_provider'] = $this->subscriber['service_provider'];
 		}
 
-		$field =  $this->getChargingField();
+		$field = $this->getChargingField();
 
 		switch ($this->operation) :
 			case 'new':
 				$this->query['rand'] = rand(0, 1000000); // this will make the FAM to always insert
-				// do not break here, need to set value
+			// do not break here, need to set value
 			case 'set':
 				$update['$set'] = array(
 					$field => $this->chargingValue,
@@ -260,7 +262,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($this->query, $update, null, $findAndModify);
 		$this->handleMaxBalanceAfterUpdate();
 	}
-	
+
 	/**
 	 * method to handle maximum charging limit of balance
 	 * @return type
@@ -295,7 +297,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			Billrun_Factory::log("Cannot handle max balance after update. " . $ex->getCode() . ": " . $ex->getMessage());
 		}
 	}
-	
+
 	/**
 	 * get the balance key in the balance document
 	 * 
@@ -311,10 +313,10 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			default:
 				$key = 'balance.cost';
 		endswitch;
-		
+
 		return $key;
 	}
-	
+
 	/**
 	 * get the balance value for the this charge
 	 * 
@@ -326,7 +328,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			case 'cost':
 			case 'usagev':
 				return isset($balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']]) ?
-					$balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']] : 0;
+						$balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']] : 0;
 				break;
 			case 'total_cost':
 			default:
@@ -363,7 +365,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			'balance_after' => $this->getBalanceAfter(),
 			'balance_normalized' => $this->normalizeValue,
 		);
-	
+
 		$chargingValue = $row['balance_after'] - $row['balance_before'];
 		if ($this->data['charging_by'] == 'usagev') {
 			$row['usagev'] = $chargingValue;
@@ -407,8 +409,8 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		$before = $this->before instanceof Mongodloid_Entity ? $this->before->getRawData() : $this->before;
 		$after = $this->after instanceof Mongodloid_Entity ? $this->after->getRawData() : $this->after;
 
-		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . (isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0), 
-			'balances', $before, $after);
+		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . (isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0),
+						'balances', $before, $after);
 	}
 
 }

@@ -8,7 +8,6 @@
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
-
 /**
  * Description of Provide  csv exporting API to raw data in the DB.
  * This is API used in V3 and is here for backward compatibility
@@ -16,8 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @author eran
  */
 class V3_exportAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$this->allowed();
 
@@ -25,19 +25,19 @@ class V3_exportAction extends ApiAction {
 
 		$options = array(
 			'collection' => $collectionName,
-			'sort' => json_decode($this->getRequest()->get("sort"),JSON_OBJECT_AS_ARRAY),
+			'sort' => json_decode($this->getRequest()->get("sort"), JSON_OBJECT_AS_ARRAY),
 		);
 
 		// init model
 		$this->initModel($collectionName, $options);
 
 		$skip = 1;
-		$size =  Billrun_Factory::config()->getConfigValue('api.export.max_export_lines',100000);
-		$query = $this->processQuery(json_decode($this->getRequest()->get("query"),JSON_OBJECT_AS_ARRAY));
+		$size = Billrun_Factory::config()->getConfigValue('api.export.max_export_lines', 100000);
+		$query = $this->processQuery(json_decode($this->getRequest()->get("query"), JSON_OBJECT_AS_ARRAY));
 		$params = array_merge($this->getTableViewParams($query, $skip, $size));
 		$this->model->exportCsvFile($params);
 	}
-	
+
 	/**
 	 * method to render table view
 	 * 
@@ -69,11 +69,11 @@ class V3_exportAction extends ApiAction {
 
 		return $params;
 	}
-	
+
 	public function initModel($collection_name, $options = array()) {
-	
-		$options['page'] =  1;
-		$options['size'] =  Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100);
+
+		$options['page'] = 1;
+		$options['size'] = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100);
 
 		if (is_null($this->model)) {
 			$model_name = ucfirst($collection_name) . "Model";
@@ -85,7 +85,7 @@ class V3_exportAction extends ApiAction {
 		}
 		return $this->model;
 	}
-	
+
 	/**
 	 * process a compund http parameter (an array)
 	 * @param type $param the parameter that was passed by the http;
@@ -104,7 +104,7 @@ class V3_exportAction extends ApiAction {
 		}
 		return $retParam;
 	}
-	
+
 	/**
 	 * Process the query and prepere it for usage by the Rates model
 	 * @param type $query the query that was recevied from the http request.
@@ -115,15 +115,15 @@ class V3_exportAction extends ApiAction {
 
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
-				if (isset($retQuery['from'])) {
-					$retQuery['from'] = $this->intToMongodloidDate($retQuery['from']);
-				}
-				if (isset($retQuery['to'])) {
-					$retQuery['to'] = $this->intToMongodloidDate($retQuery['to']);
-				}
-				if (isset($retQuery['urt'])) {
-					$retQuery['urt'] = $this->intToMongodloidDate($retQuery['urt']);
-				}
+			if (isset($retQuery['from'])) {
+				$retQuery['from'] = $this->intToMongodloidDate($retQuery['from']);
+			}
+			if (isset($retQuery['to'])) {
+				$retQuery['to'] = $this->intToMongodloidDate($retQuery['to']);
+			}
+			if (isset($retQuery['urt'])) {
+				$retQuery['urt'] = $this->intToMongodloidDate($retQuery['urt']);
+			}
 		}
 
 		return $retQuery;
@@ -140,19 +140,20 @@ class V3_exportAction extends ApiAction {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
 					$arr[$key] = new Mongodloid_Date((int) $value);
-				} else if(is_string($value)) {
-					$arr[$key] = new Mongodloid_Date( strtotime($value) );
+				} else if (is_string($value)) {
+					$arr[$key] = new Mongodloid_Date(strtotime($value));
 				}
 			}
 		} else if (is_numeric($arr)) {
 			$arr = new Mongodloid_Date((int) $arr);
-		} else if(is_string($value)) {
-				$arr = new Mongodloid_Date((int) $arr);
+		} else if (is_string($value)) {
+			$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }

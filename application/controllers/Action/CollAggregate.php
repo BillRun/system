@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class AggregateAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	/**
@@ -23,7 +24,7 @@ class AggregateAction extends ApiAction {
 	 */
 	public function execute() {
 		$this->allowed();
-		
+
 		try {
 			Billrun_Factory::log()->log("Executed aggregate api", Zend_Log::INFO);
 			$request = $this->getRequest()->getRequest(); // supports GET / POST requests
@@ -36,9 +37,9 @@ class AggregateAction extends ApiAction {
 			}
 			$pipelines = $this->convertToMongoIds($pipelines);
 			Billrun_Utils_Mongo::convertQueryMongodloidDates($pipelines);
-			if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
-					return key($pipeline);
-				}, $pipelines), $config['permitted_pipelines'])) {
+			if ($notPermittedPipelines = array_diff(array_map(function ($pipeline) {
+						return key($pipeline);
+					}, $pipelines), $config['permitted_pipelines'])) {
 				$this->setError('Illegal pipelines(s): ' . implode(', ', $notPermittedPipelines), $request);
 				return true;
 			}
@@ -50,16 +51,16 @@ class AggregateAction extends ApiAction {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
 				return TRUE;
 			}
-			$lookups = array_filter($pipelines, function($pipeline) {
+			$lookups = array_filter($pipelines, function ($pipeline) {
 				return key($pipeline) == '$lookup';
 			});
-			
+
 			if (!empty($lookups)) {
-				$lookupError = array_filter($lookups, function($lookup) use ($config) {
+				$lookupError = array_filter($lookups, function ($lookup) use ($config) {
 					$collectionName = Billrun_Util::getFieldVal($lookup['$lookup']['from'], false);
 					return (!in_array($collectionName, Billrun_Util::getFieldVal($config['permitted_collections'], array())));
 				});
-				
+
 				if (!empty($lookupError)) {
 					$this->setError('Illegal collection name in lookup pipeline', $request);
 					return TRUE;
@@ -67,29 +68,29 @@ class AggregateAction extends ApiAction {
 			}
 
 			$collection = $request['collection'];
-			
+
 			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
-			
+
 			// Set timeout of 1 minute
 			// marked-out due to new mongodb driver (PHP7+)
 //			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
 //			$cursor->timeout($timeout);
 			$entities = iterator_to_array($cursor);
-				$entities = array_map(function($ele) {
-					return $ele->getRawData();
-				}, $entities);
+			$entities = array_map(function ($ele) {
+				return $ele->getRawData();
+			}, $entities);
 
-				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-				$ret = array(
-					array(
-						'status' => 1,
-						'desc' => 'success',
-						'input' => $request,
-						'details' => $entities,
-					)
-				);
+			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+			$ret = array(
+				array(
+					'status' => 1,
+					'desc' => 'success',
+					'input' => $request,
+					'details' => $entities,
+				)
+			);
 
-				$this->getController()->setOutput($ret);
+			$this->getController()->setOutput($ret);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
@@ -131,7 +132,7 @@ class AggregateAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
-	
+
 	protected function render($tpl, array $parameters = null) {
 		$request = $this->getRequest()->getRequest();
 		if (isset($request['response_type']) && $request['response_type'] === 'csv') {
@@ -146,10 +147,11 @@ class AggregateAction extends ApiAction {
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
 		$this->getController()->setOutputVar('delimiter', $delimiter);
-		$resp = $this -> getResponse();
+		$resp = $this->getResponse();
 		$resp->setHeader("Cache-Control", "max-age=0");
-		$resp->setHeader("Content-type",  "application/csv");
+		$resp->setHeader("Content-type", "application/csv");
 		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');
 		return $this->getView()->render('api/aggregatecsv.phtml', $parameters);
 	}
+
 }

@@ -21,9 +21,8 @@ abstract class Billrun_Sender extends Billrun_Base {
 	 * @var string
 	 */
 	static protected $type = 'sender';
-	
 	protected $options = array();
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->options = $options;

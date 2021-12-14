@@ -11,14 +11,14 @@
  *
  */
 class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
-	
 	/*
 	 * see Billrun_EmailSender_Base::shouldNotify
 	 */
+
 	public function shouldNotify() {
 		return Billrun_Factory::config()->getConfigValue('billrun.email_after_confirmation', false);
 	}
-	
+
 	/**
 	 * see Billrun_EmailSender_Base::getEmailAddress
 	 */
@@ -39,7 +39,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	protected function getEmailSubject($data) {
 		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
 	}
-	
+
 	/**
 	 * see Billrun_EmailSender_Base::translateMessage
 	 */
@@ -61,7 +61,6 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 //			$this->logo = "<img src='data:image/png;base64, " . $logoContent . "' alt='' style='width:100px;object-fit:contain;'>";
 //		}
 //		$replaces['[[company_logo]]'] = $this->logo;
-		
 		// handle subscriber fields
 		$subscriberFields = array();
 		preg_match_all('/\[\[customer_(.*?)\]\]/s', $msg, $subscriberFields);
@@ -69,7 +68,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			$subscriberField = $subscriberFields[1][$index];
 			$replaces[$placeHolder] = $data['attributes'][$subscriberField];
 		}
-		
+
 		return str_replace(array_keys($replaces), array_values($replaces), $msg);
 	}
 
@@ -108,23 +107,22 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		}
 		return parent::validateData($data);
 	}
-	
-	
+
 	protected function isShippingMethodMatch($data) {
 		$shippingMethod = Billrun_Util::getIn($data, array('attributes', 'invoice_shipping_method'), 'email');
 		return $shippingMethod == 'email';
 	}
-	
+
 	protected function isAlreadySent($data) {
 		$query = $this->getRelatedBillrunQuery($data);
 		$query['email_sent'] = array('$exists' => 1);
 		return !Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
-	
+
 	protected function isForceSend() {
 		return isset($this->params['force_send']) && $this->params['force_send'];
 	}
-	
+
 	/**
 	 * see Billrun_EmailSender_Base::getAttachments
 	 */
@@ -138,29 +136,29 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
 		$attachment->encoding = Zend_Mime::ENCODING_BASE64;
 		$attachment->filename = $data['billrun_key'] . '_' . $data['aid'] . '_' . $data['invoice_id'] . ".pdf";
-		Billrun_Factory::dispatcher()->trigger('afterInvoiceReadyGetAttachment',[&$attachment, $data ,$this]);
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceReadyGetAttachment', [&$attachment, $data, $this]);
 		return $attachment;
 	}
-	
+
 	protected function getInvoicePDF($data) {
 		$pdf = $data['invoice_file'];
-		if(!file_exists($pdf)) {
+		if (!file_exists($pdf)) {
 			$aid = $data['aid'];
 			$billrunKey = $data['billrun_key'];
-			$dataId = $data['invoice_id'];	
-			$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+			$dataId = $data['invoice_id'];
+			$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export', 'files/invoices/'));
 			$fileName = $billrunKey . '_' . $aid . '_' . $dataId . ".pdf";
 			$pdf = $filesPath . $billrunKey . '/pdf/' . $fileName;
 		}
 		$cont = file_get_contents($pdf);
 		return $cont;
 	}
-	
+
 	protected function afterSend($data, $callback = false) {
 		$this->updateBillrunOnEmailSent($data);
 		parent::afterSend($data, $callback);
 	}
-	
+
 	protected function getRelatedBillrunQuery($data) {
 		return array(
 			'invoice_id' => $data['invoice_id'],
@@ -168,7 +166,6 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'aid' => $data['aid']
 		);
 	}
-
 
 	/**
 	 * update the billrun once the email was sent (if necessary).

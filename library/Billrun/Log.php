@@ -44,7 +44,7 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-		
+
 		$this->updateStamp();
 
 		if (isset($_SERVER['REQUEST_URI']) && stripos($_SERVER['REQUEST_URI'], 'realtime') === FALSE && ($user = Billrun_Factory::user()) !== FALSE) {
@@ -73,10 +73,10 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function logCrash($e, $priority = Billrun_Log::CRIT) {
 		$log = print_R($_SERVER, TRUE) . PHP_EOL .
-			print_R('Exception type : ' . get_class($e) . PHP_EOL .
-				'Error code : ' . $e->getCode() . PHP_EOL .
-				'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' .
-				gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE);
+				print_R('Exception type : ' . get_class($e) . PHP_EOL .
+						'Error code : ' . $e->getCode() . PHP_EOL .
+						'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' .
+						gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE);
 		$this->log('Crashed When running... exception details are as follow : ' . PHP_EOL . $log, $priority);
 	}
 
@@ -152,10 +152,10 @@ class Billrun_Log extends Zend_Log {
 			'message' => $message,
 			'priority' => $priority,
 			'priorityName' => $this->_priorities[$priority]
-			), $this->_extras
+				), $this->_extras
 		);
 	}
-	
+
 	public function updateStamp() {
 		if ($pid = getmypid()) {
 			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . Billrun_Util::getHostName() . ':p' . $pid;
@@ -164,5 +164,5 @@ class Billrun_Log extends Zend_Log {
 			$this->stamp = Billrun_Factory::config()->getTenant() . ':' . substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 		}
 	}
-	
+
 }

@@ -77,7 +77,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$oneCard = array();
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
-					$errorCode =  1;
+					$errorCode = 1;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 					return false;
 				}
@@ -86,14 +86,14 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 
 			// Initial status validity check (Initial status should be "Idle")
 			if ($initialStatus && !in_array($oneCard['status'], $initialStatus)) {
-				$errorCode =  3;
+				$errorCode = 3;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
 				return false;
 			}
 
 			// service provider validity check
 			if (!$this->validateServiceProvider($oneCard['service_provider'])) {
-				$errorCode =  4;
+				$errorCode = 4;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']));
 				return false;
 			}
@@ -147,7 +147,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			if (!$this->secretExists()) {
 				$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			} else {
-				$errorCode =  5;
+				$errorCode = 5;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			}
 		} catch (\MongoException $e) {

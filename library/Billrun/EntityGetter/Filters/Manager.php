@@ -13,7 +13,7 @@
  * @since 5.10
  */
 class Billrun_EntityGetter_Filters_Manager {
-	
+
 	public static function getFilterHandler($filter) {
 		$className = 'Billrun_EntityGetter_Filters_' . ucfirst($filter['type']);
 		if (!class_exists($className)) {
@@ -21,4 +21,5 @@ class Billrun_EntityGetter_Filters_Manager {
 		}
 		return new $className($filter);
 	}
+
 }

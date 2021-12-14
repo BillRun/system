@@ -1,12 +1,13 @@
 <?php
 
 trait Billrun_Cycle_Aggregation_Common {
+
 	use Billrun_Traits_ForeignFields;
 
 	protected $exclusionQuery = [];
 	protected $passthroughFields = [];
 	protected $subsPassthroughFields = [];
-	protected $generalOptions=[];
+	protected $generalOptions = [];
 
 	public function __construct($options = array()) {
 		$this->exclusionQuery = Billrun_Util::getFieldVal($options['exclusion_query'], $this->exclusionQuery);
@@ -27,20 +28,20 @@ trait Billrun_Cycle_Aggregation_Common {
 			'$match' => array(
 				'from' => array(
 					'$lt' => $mongoCycle->end()
-					),
+				),
 				'to' => array(
 					'$gt' => $mongoCycle->start()
-					)
 				)
-			);
+			)
+		);
 	}
 
 	// TODO: Move this function to a "collection aggregator class"
 	public function getPlansProjectPipeline() {
 		$foreignFieldsProject = [];
 		$planForeignFields = $this->getForeignFieldsConfOfEntity("plan");
-		foreach ($planForeignFields as $value){
-			if(isset($value['foreign']['field'])){
+		foreach ($planForeignFields as $value) {
+			if (isset($value['foreign']['field'])) {
 				$foreignFieldsProject[$value['foreign']['field']] = 1;
 			}
 		}
@@ -61,7 +62,7 @@ trait Billrun_Cycle_Aggregation_Common {
 				'plan_deactivation' => 1,
 				'include' => 1,
 				'tax' => 1,
-			), $foreignFieldsProject)
+					), $foreignFieldsProject)
 		);
 	}
 
@@ -74,8 +75,8 @@ trait Billrun_Cycle_Aggregation_Common {
 		$match = array(
 			'$match' => array(
 				'$or' => array(
-					array_merge( // Account records
-						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
+					array_merge(// Account records
+							array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
 					),
 					array(// Subscriber records
 						'type' => 'subscriber',
@@ -98,7 +99,7 @@ trait Billrun_Cycle_Aggregation_Common {
 			)
 		);
 		$confirmedAids = $this->getConfirmedAids($mongoCycle);
-		if($confirmedAids) {
+		if ($confirmedAids) {
 			$match['$match']['$and'][] = array(
 				'aid' => array(
 					'$nin' => $confirmedAids,
@@ -116,10 +117,10 @@ trait Billrun_Cycle_Aggregation_Common {
 	 *
 	 */
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
-		$cursor = $collection->aggregateWithOptions($pipelines,['allowDiskUse'=> true]);
+		$cursor = $collection->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
-			(isset($results['success']) && ($results['success'] === FALSE))) {
+				(isset($results['success']) && ($results['success'] === FALSE))) {
 			return array();
 		}
 		return $results;

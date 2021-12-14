@@ -11,7 +11,7 @@
  *
  * @since 5.6
  */
-class Billrun_Events_Notifier{
+class Billrun_Events_Notifier {
 
 	/**
 	 * execute a notification event based on an event received
@@ -28,7 +28,7 @@ class Billrun_Events_Notifier{
 		}
 		return $notifier->notify();
 	}
-	
+
 	/**
 	 * Assistance function to get the notifier object based on the event
 	 * 
@@ -39,7 +39,7 @@ class Billrun_Events_Notifier{
 		if (!class_exists($notifierClassName)) {
 			return false;
 		}
-		
+
 		return (new $notifierClassName($event, $params));
 	}
 
@@ -54,4 +54,5 @@ class Billrun_Events_Notifier{
 	protected static function getNotifierClassName($event, $params = array()) {
 		return 'Billrun_Events_Notifiers_Http';
 	}
+
 }

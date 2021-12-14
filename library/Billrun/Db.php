@@ -41,7 +41,7 @@ class Billrun_Db extends Mongodloid_Db {
 		];
 		$this->_db = $this->_db->withOptions($options);
 	}
-	
+
 	/**
 	 * Get the current MongoDB\Database
 	 * @return MongoDB\Database
@@ -142,15 +142,15 @@ class Billrun_Db extends Mongodloid_Db {
 		}
 		return $arr;
 	}
-	
+
 	public function getByDBRef($dbRef) {
-		if(Mongodloid_Ref::isRef($dbRef)) {
+		if (Mongodloid_Ref::isRef($dbRef)) {
 			$coll = $this->getCollection($dbRef['$ref']);
-			if($coll) {
+			if ($coll) {
 				return $coll->getRef($dbRef);
 			}
 		}
-		
+
 		return FALSE;
 	}
 

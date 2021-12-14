@@ -15,7 +15,6 @@
 class Billrun_Processor_Credit extends Billrun_Processor {
 
 	static protected $type = 'credit';
-	
 	protected $queueCalculators = null;
 
 	/**
@@ -63,16 +62,17 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		$this->afterProcessorStore();
 		return count($this->data['data']);
 	}
-	
+
 	public function afterProcessorStore() {
 		if ($this->queueCalculators) {
 			$this->queueCalculators->release();
-		}	
+		}
 	}
 
 	protected function processLines() {
+		
 	}
-	
+
 	protected function isAccountLevelLine($row) {
 		return !empty($row['aid']) && $row['sid'] == '0';
 	}

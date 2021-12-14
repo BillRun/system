@@ -10,14 +10,15 @@
  * Abstract wrapper class for a complex object
  */
 abstract class Billrun_DataTypes_Conf_Base {
+
 	/**
 	 * Wrapper value
 	 * @var mixed
 	 */
 	protected $val = null;
-	
+
 	public abstract function validate();
-	
+
 	/**
 	 * Get the value of the complex object
 	 * @return mixed
@@ -25,4 +26,5 @@ abstract class Billrun_DataTypes_Conf_Base {
 	public function value() {
 		return $this->val;
 	}
+
 }

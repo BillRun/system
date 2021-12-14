@@ -6,7 +6,7 @@
 class Billrun_PaymentManager {
 
 	use Billrun_Traits_ForeignFields;
-	
+
 	protected static $instance;
 
 	public function __construct($params = []) {
@@ -242,7 +242,7 @@ class Billrun_PaymentManager {
 		foreach ($prePayments as $prePayment) {
 			$payment = $prePayment->getPayment();
 			if ($payment) {
-				$payments[] = ['payments' => $payment , 'payment_data' => $prePayment->getData()];
+				$payments[] = ['payments' => $payment, 'payment_data' => $prePayment->getData()];
 			}
 		}
 
@@ -397,7 +397,7 @@ class Billrun_PaymentManager {
 				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
 			} else {
 				$gatewayAmount = 0;
-				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
+				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0', Zend_Log::WARN);
 			}
 
 			if (!empty($pgResponse)) {
@@ -420,18 +420,18 @@ class Billrun_PaymentManager {
 		throw new Exception($errorMessage);
 	}
 
-	protected function setUserFields (&$prePayment) {
+	protected function setUserFields(&$prePayment) {
 		$payment = $prePayment->getPayment();
 		$payment->setUserFields($prePayment->getData(), true);
 	}
 
-
-	protected function setPaymentForeignFields (&$payment, $account) {
-		$foreignData = $this->getForeignFields(array('account' => $account ));
+	protected function setPaymentForeignFields(&$payment, $account) {
+		$foreignData = $this->getForeignFields(array('account' => $account));
 		$payment->getPayment()->setForeignFields($foreignData);
 	}
-	
-	protected function getForeignFieldsEntity () {
+
+	protected function getForeignFieldsEntity() {
 		return 'bills';
 	}
+
 }

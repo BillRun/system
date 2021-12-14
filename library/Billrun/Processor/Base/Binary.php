@@ -92,7 +92,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			foreach ($requiredFields as $field) {
 				if (isset($rawRow[$field])) {
 					$row[$field] = $rawRow[$field];
-}
+				}
 			}
 		} else {
 			return $rawRow;

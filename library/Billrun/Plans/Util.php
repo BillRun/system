@@ -29,20 +29,20 @@ class Billrun_Plans_Util {
 	 */
 	public static function hasPriceWithinDates($planOrServiceConfig, $activation, $start, $end) {
 		$formatActivation = date(Billrun_Base::base_dateformat, $activation);
-		$formatStart = date(Billrun_Base::base_dateformat,  $start);
+		$formatStart = date(Billrun_Base::base_dateformat, $start);
 		$formatEnd = date(Billrun_Base::base_dateformat, $end);
 
 		$startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		$endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
-		if(isset($planOrServiceConfig['price']))
-		foreach($planOrServiceConfig['price'] as $price) {
-			if ($price['to'] == 'UNLIMITED') {
-				$price['to'] = PHP_INT_MAX;
+		if (isset($planOrServiceConfig['price']))
+			foreach ($planOrServiceConfig['price'] as $price) {
+				if ($price['to'] == 'UNLIMITED') {
+					$price['to'] = PHP_INT_MAX;
+				}
+				if ($price['from'] <= $endOffset && $startOffset <= $price['to']) {
+					return TRUE;
+				}
 			}
-			if($price['from']  <= $endOffset &&  $startOffset <= $price['to'] ) {
-				return TRUE;
-			}
-		}
 
 		return FALSE;
 	}
@@ -51,16 +51,14 @@ class Billrun_Plans_Util {
 	 * check if a given balance_period of a service is within  given date range
 	 */
 	public static function balancePeriodWithInDates($planOrServiceConfig, $activation, $start, $end) {
-		if(empty($planOrServiceConfig['balance_period'])) {
+		if (empty($planOrServiceConfig['balance_period'])) {
 			return TRUE;
 		}
 
-		$periodEnd = strtotime($planOrServiceConfig['balance_period'],$activation);
+		$periodEnd = strtotime($planOrServiceConfig['balance_period'], $activation);
 
 		return $start < $periodEnd && $activation < $end;
-
 	}
-
 
 	/**
 	 * Check if the plan exists in the DB

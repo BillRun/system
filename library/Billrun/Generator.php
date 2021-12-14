@@ -38,24 +38,24 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var boolean 
 	 */
 	protected $auto_create_dir = true;
-	
+
 	/**
 	 * for SSH connection
 	 */
 	protected $ssh = null;
-	
+
 	/**
 	 * the directory where to send(copy) the file
 	 * @var string
 	 */
-	protected $export_dir; 
-	
+	protected $export_dir;
+
 	/**
 	 * the name of the file to transfer
 	 * @var string
 	 */
 	protected $filename;
-	
+
 	/**
 	 * whether to move the exported
 	 * @var boolean
@@ -63,15 +63,17 @@ abstract class Billrun_Generator extends Billrun_Base {
 	protected $move_exported;
 
 	/**
-         * file name config - in case of customized file name.
-         * @var array
-         */
-        protected $file_name_config;
-/**
+	 * file name config - in case of customized file name.
+	 * @var array
+	 */
+	protected $file_name_config;
+
+	/**
 	 * invoice file location paths, according to conditions on billrun object.
 	 * @var array
 	 */
-        protected $export_paths = [];
+	protected $export_paths = [];
+
 	/**
 	 * constructor
 	 * 
@@ -125,30 +127,30 @@ abstract class Billrun_Generator extends Billrun_Base {
 			}
 			$this->defineSshConnection($user, $password, $server);
 		}
-                if (isset($options['file_name']) && !empty($options['file_name'])){
-                        $this->file_name_config = $options['file_name'];
-                }
-                if(!empty($options['export_paths'])){
-                    foreach($options['export_paths'] as $pathIndex => $data){
-                        if(!empty($options['export_paths'][$pathIndex]['conditions'])){
-                            foreach ($options['export_paths'][$pathIndex]['conditions'] as $index => $condition){
-                                $this->export_paths[$options['export_paths'][$pathIndex]['path']][] = $condition;
-                            }
-                        }
-                    }
+		if (isset($options['file_name']) && !empty($options['file_name'])) {
+			$this->file_name_config = $options['file_name'];
 		}
-		
+		if (!empty($options['export_paths'])) {
+			foreach ($options['export_paths'] as $pathIndex => $data) {
+				if (!empty($options['export_paths'][$pathIndex]['conditions'])) {
+					foreach ($options['export_paths'][$pathIndex]['conditions'] as $index => $condition) {
+						$this->export_paths[$options['export_paths'][$pathIndex]['path']][] = $condition;
+					}
+				}
+			}
+		}
+
 		if (isset($options['export']['dir'])) {
 			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath($options['export']['dir']);
 		} else {
 			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export.dir'));
 		}
-		
-		if(!empty($options['page'])) {
+
+		if (!empty($options['page'])) {
 			$this->page = intval($options['page']);
 		}
-		
-		if(!empty($options['size'])) {
+
+		if (!empty($options['size'])) {
 			$this->limit = intval($options['size']);
 		}
 	}
@@ -156,7 +158,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	public function getExportDirectory() {
 		return $this->export_directory;
 	}
-	
+
 	/**
 	 * load the container the need to be generate
 	 */
@@ -166,58 +168,59 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * execute the generate action
 	 */
 	abstract public function generate();
-	
+
 	/**
 	 * connecting to server by SSH Protocol
 	 */
 	protected function defineSshConnection($user, $password, $server) {
-		
+
 		$port = 22;
 		$auth = array(
 			'password' => $password,
-		);			
+		);
 		$hostAndPort = $server;
-		$hostAndPort .= ':'.$port;
-				
+		$hostAndPort .= ':' . $port;
+
 		$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
-		$this->ssh->connect($user);					
+		$this->ssh->connect($user);
 	}
-	
-	
+
 	/**
 	 * copy the file to the location defined
 	 * @since 5.0
 	 */
-	public function move(){
-		if (!is_null($this->ssh)){
+	public function move() {
+		if (!is_null($this->ssh)) {
 			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // instead of test 2&3 put the name of the generated file.
-		}
-		else{
+		} else {
 			if ($this->move_exported) {
 				copy($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // change to function rename instead of copy
 			}
 		}
 	}
-	
+
 	/*
-	* if folder doesnt exists add it and change permission to write to it 
-	*/
+	 * if folder doesnt exists add it and change permission to write to it 
+	 */
+
 	public function addFolder($path) {
 		if (!file_exists($path)) {
 			$old_umask = umask(0);
-			mkdir($path, octdec(Billrun_Factory::config()->getConfigValue(static::$type.'.new_folder_permissions','0775')), true);
+			mkdir($path, octdec(Billrun_Factory::config()->getConfigValue(static::$type . '.new_folder_permissions', '0775')), true);
 			umask($old_umask);
 		}
 	}
-	
+
 	public function shouldFileBeMoved() {
 		return true;
 	}
-	
-        public function getExportPaths() {
-            return $this->export_paths;
-        }
-public function getFileNameConfig(){
-            return $this->file_name_config;
-        }
+
+	public function getExportPaths() {
+		return $this->export_paths;
+	}
+
+	public function getFileNameConfig() {
+		return $this->file_name_config;
+	}
+
 }

@@ -24,8 +24,7 @@ class Billrun_Discount_Account extends Billrun_Discount {
 		$this->billrunDate = $billrunDate = static::getBillrunDate($billrun);
 		$this->billrunStartDate = $billrunStartDate = Billrun_Util::getStartTime($billrun->getBillrunKey());
 		$addedData = array('aid' => $billrun->getAid());
-		$eligible = $this->discountData['from']->sec < $billrunDate && $billrunDate < $this->discountData['to']->sec ; 
-
+		$eligible = $this->discountData['from']->sec < $billrunDate && $billrunDate < $this->discountData['to']->sec;
 
 		return $eligible ? array(array_merge(array('modifier' => $multiplier, 'start' => $switch_date, 'end' => $end_date), $addedData)) : FALSE;
 	}
@@ -33,9 +32,7 @@ class Billrun_Discount_Account extends Billrun_Discount {
 	public function checkTermination($account, $billrun) {
 		return array();
 	}
-	
-	
-	
+
 	protected function getOptionalCDRFields() {
 		return array();
 	}
@@ -48,7 +45,7 @@ class Billrun_Discount_Account extends Billrun_Discount {
 	public function getInvoiceTotals($billrunObj, $cdr) {
 		return $billrunObj->getTotals();
 	}
-	
+
 	public function getEntityId($cdr) {
 		return 'aid' . $cdr['aid'];
 	}

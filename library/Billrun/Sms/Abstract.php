@@ -14,32 +14,30 @@
  * 
  */
 abstract class Billrun_Sms_Abstract {
-	
-	protected $to;
-	
-	protected $body = '';
 
+	protected $to;
+	protected $body = '';
 
 	private function __construct($params) {
 		$this->init($params);
 	}
-	
+
 	public function getTo() {
 		return $this->to;
 	}
-	
+
 	public function setTo($to) {
 		$this->to = $to;
 	}
-	
+
 	public function getBody() {
 		return $this->Body;
 	}
-	
+
 	public function setBody($body) {
 		$this->body = $body;
 	}
-	
+
 	/**
 	 * magic method to setup class parameters on initiation
 	 * @param array $params parameters
@@ -53,23 +51,21 @@ abstract class Billrun_Sms_Abstract {
 		}
 	}
 
-
 	public static function getInstance($params) {
 		if (!isset($params['type'])) {
 			$params['type'] = 'smpp';
 		}
-		
+
 		$className = 'Billrun_Sms_' . ucfirst($params['type']);
 		if (!class_exists($className)) {
 			Billrun_Factory::log("SMS Class type is not exists. Type: " . $params['type']);
 			return false;
 		}
-		
+
 		unset($params['type']);
-		
+
 		return new $className($params);
 	}
-	
-	abstract public function send();
 
+	abstract public function send();
 }

@@ -13,17 +13,17 @@
 trait Billrun_Traits_Api_UserPermissions {
 
 	protected $permissionLevel = null;
-	
+
 	protected abstract function getPermissionLevel();
-	
+
 	private function permissionValue() {
-		if($this->permissionLevel === null) {
+		if ($this->permissionLevel === null) {
 			return $this->getPermissionLevel();
 		}
-		
+
 		return $this->permissionLevel;
 	}
-	
+
 	/**
 	 * Function used to get the data to validate
 	 * @todo: This is just because the allowed function used to be without any
@@ -33,7 +33,7 @@ trait Billrun_Traits_Api_UserPermissions {
 	protected function getData() {
 		return $this->getRequest()->getRequest();
 	}
-	
+
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
 	 *
@@ -43,23 +43,23 @@ trait Billrun_Traits_Api_UserPermissions {
 	 *
 	 */
 	protected function allowed(array $input = array()) {
-		if(!$input) {
+		if (!$input) {
 			$input = $this->getData();
 		}
-		
+
 		// Try to validate using the new cryptological protected method
-		if(Billrun_Utils_Security::validateData($input)) {
+		if (Billrun_Utils_Security::validateData($input)) {
 			return;
 		}
-		
+
 		// TODO: This should be removed after all api access uses the signature technique
-		if($this->authorizeUser($this->permissionValue())) {
+		if ($this->authorizeUser($this->permissionValue())) {
 			return;
 		}
-		
+
 		throw new Billrun_Exceptions_NoPermission();
 	}
-	
+
 	/**
 	 * method to check if user is authorize to resource
 	 *
@@ -81,4 +81,5 @@ trait Billrun_Traits_Api_UserPermissions {
 
 		return $user->allowed($permission);
 	}
+
 }

@@ -22,7 +22,7 @@ class Billrun_Cards_Handler {
 			'status' => array('$in' => array("Active", "Idle")), // TODO: What should be in this array? It shouldn't be hard coded.
 			'to' => array('$lt' => new Mongodloid_Date()),
 		);
-		
+
 		return $query;
 	}
 

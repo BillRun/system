@@ -41,15 +41,15 @@ class CreatetenantAction extends ApiAction {
 			Billrun_Factory::log('Create Tenant - tenant already exists', Zend_Log::INFO);
 			return false;
 		}
-		
+
 		if (!$this->createUserInBillrun() ||
-			!$this->generateDbUsernameAndPassword() ||
-			!$this->createConfigFile() ||
-			!$this->createDB() ||
-			!$this->createUserInTenantBillrun() ||
-			!$this->createDbConfig('create_tenant.db_base_config', $this->db->configCollection()) ||
-			!$this->createDbConfig('create_tenant.db_taxes_config', $this->db->taxesCollection()) ||
-			!$this->createTenantFolders()) {
+				!$this->generateDbUsernameAndPassword() ||
+				!$this->createConfigFile() ||
+				!$this->createDB() ||
+				!$this->createUserInTenantBillrun() ||
+				!$this->createDbConfig('create_tenant.db_base_config', $this->db->configCollection()) ||
+				!$this->createDbConfig('create_tenant.db_taxes_config', $this->db->taxesCollection()) ||
+				!$this->createTenantFolders()) {
 			Billrun_Factory::log('Create Tenant - error: ' . $this->desc, Zend_Log::INFO);
 			$this->status = false;
 		}
@@ -202,7 +202,7 @@ class CreatetenantAction extends ApiAction {
 			$this->desc = 'Cannot parse basic DB config. Content: "' . $baseDbConfigJson . '"';
 			return false;
 		}
-		
+
 		if ($configPathKey == 'create_tenant.db_base_config') {
 			$this->addDbConfigData($dbConfig);
 		} else {
@@ -212,7 +212,7 @@ class CreatetenantAction extends ApiAction {
 				}
 			}
 		}
-		
+
 		if (!$collection->insert($dbConfig)) {
 			$this->desc = 'Cannot save config to DB ' . $configPathKey;
 			return false;

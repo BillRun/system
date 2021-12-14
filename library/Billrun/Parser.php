@@ -32,7 +32,6 @@ abstract class Billrun_Parser extends Billrun_Base {
 	 * @var string the return type of the parser (object or array)
 	 */
 	protected $return = 'array';
-	
 	protected $headerRows = array();
 	protected $dataRows = array();
 	protected $trailerRows = array();
@@ -70,16 +69,17 @@ abstract class Billrun_Parser extends Billrun_Base {
 	 * general function to parse
 	 */
 	abstract public function parse($fp);
-	
+
 	public function getHeaderRows() {
 		return $this->headerRows;
 	}
-	
+
 	public function getDataRows() {
 		return $this->dataRows;
 	}
-	
+
 	public function getTrailerRows() {
 		return $this->trailerRows;
 	}
+
 }

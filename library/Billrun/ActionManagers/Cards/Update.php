@@ -91,7 +91,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				$updateStatus = $this->update['status'];
 				// Check requested status in the permissible statuses available array
 				if (!in_array($updateStatus, $availableStatuses)) {
-					$errorCode =  37;
+					$errorCode = 37;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
 					return false;
 				}
@@ -101,7 +101,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 					$queryStatus = $this->query['status'];
 					$this->validateQuery['status'] = ['$ne' => $queryStatus];
 					if (!in_array($queryStatus, $allowFromStatus[$updateStatus])) {
-						$errorCode =  38;
+						$errorCode = 38;
 						$this->reportError($errorCode, Zend_Log::NOTICE, array($queryStatus, $updateStatus));
 						return false;
 					}
@@ -109,7 +109,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				} else if ($allowFromStatus[$updateStatus]) {
 					$this->validateQuery['status']['$nin'] = $allowFromStatus[$updateStatus];
 				} else {
-					$errorCode =  39;
+					$errorCode = 39;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
 					return false;
 				}
@@ -117,7 +117,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				if (isset($this->query['serial_number'])) {
 					if (is_array($this->query['serial_number'])) {
 						if (isset($this->query['serial_number']['$gte']) xor isset($this->query['serial_number']['$lte'])) {
-							$errorCode =  40;
+							$errorCode = 40;
 							$this->reportError($errorCode, Zend_Log::NOTICE);
 							return false;
 						}
@@ -126,7 +126,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				// Check if there are impermissible statuses for the requested new status in query from the DB 
 				$count = $this->collection->query($this->validateQuery)->cursor()->count();
 				if ($count) {
-					$errorCode =  41;
+					$errorCode = 41;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($count, implode(', ', array_diff($availableStatuses, $allowFromStatus[$updateStatus])), $updateStatus));
 					return false;
 				}
@@ -148,7 +148,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode =  30;
+			$errorCode = 30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -156,7 +156,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!isset($jsonQueryData['batch_number']) || !isset($jsonQueryData['serial_number'])) {
-			$errorCode =  31;
+			$errorCode = 31;
 			$missingQueryFields = implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
@@ -189,7 +189,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$errorCode =  32;
+			$errorCode = 32;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -202,7 +202,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 
 		// service provider validity check
 		if (!$this->validateServiceProvider($this->update['service_provider'])) {
-			$errorCode =  36;
+			$errorCode = 36;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->update['service_provider']));
 			return false;
 		}
@@ -226,15 +226,15 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$found = $updateResult['n'];
 		} catch (\MongoException $e) {
 			$exception = $e;
-			$errorCode =  33;
+			$errorCode = 33;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$count) {
 			if ($found) {
-				$errorCode =  35;
+				$errorCode = 35;
 			} else {
-				$errorCode =  34;
+				$errorCode = 34;
 			}
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}

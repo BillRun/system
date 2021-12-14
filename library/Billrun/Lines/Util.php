@@ -25,14 +25,14 @@ class Billrun_Lines_Util {
 		if (!is_array($stamps)) {
 			$stamps = [$stamps];
 		}
-		
+
 		$query['stamp'] = [
 			'$in' => array_values($stamps),
 		];
 
 		return self::removeLines($query);
 	}
-	
+
 	/**
 	 * Removes lines by given query
 	 * 
@@ -44,7 +44,7 @@ class Billrun_Lines_Util {
 		if (empty($query)) {
 			return false;
 		}
-		
+
 		$futureOnlyQuery = [
 			'$or' => [
 				[
@@ -69,8 +69,9 @@ class Billrun_Lines_Util {
 		} else {
 			$query = array_merge($query, $futureOnlyQuery);
 		}
-		
+
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		return $linesColl->remove($query);
 	}
+
 }

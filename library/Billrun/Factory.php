@@ -62,28 +62,28 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Subscriber
 	 */
 	protected static $subscriber = null;
-	
+
 	/**
 	 * Account instance
 	 * 
 	 * @var Billrun_Billrun Account
 	 */
 	protected static $account = null;
-	
+
 	/**
 	 * Collection Steps instance
 	 * 
 	 * @var Billrun_Billrun Collection Steps
 	 */
 	protected static $collectionSteps = null;
-	
+
 	/**
 	 * Collection Steps instance
 	 * 
 	 * @var Billrun_Billrun Collection Steps
 	 */
 	protected static $templateTokens = null;
-	
+
 	/**
 	 * Balance instance
 	 * 
@@ -111,6 +111,7 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Service
 	 */
 	protected static $service = array();
+
 	/**
 	 * Smser instance
 	 * 
@@ -131,14 +132,14 @@ class Billrun_Factory {
 	 * @var Zend_Auth
 	 */
 	protected static $auth = null;
-	
+
 	/**
 	 * Oauth container for oauth2
 	 * 
 	 * @var Oauth2\Server
 	 */
 	protected static $oauth2 = array();
-	
+
 	/**
 	 * Collection instance
 	 * 
@@ -313,7 +314,7 @@ class Billrun_Factory {
 
 		return self::$subscriber;
 	}
-	
+
 	/**
 	 * method to retrieve the account instance
 	 * 
@@ -330,7 +331,7 @@ class Billrun_Factory {
 
 		return self::$account;
 	}
-	
+
 	/**
 	 * method to retrieve the account instance
 	 * 
@@ -344,7 +345,7 @@ class Billrun_Factory {
 
 		return self::$collectionSteps;
 	}
-	
+
 	/**
 	 * method to retrieve the Template Tokens instance
 	 * 
@@ -357,7 +358,7 @@ class Billrun_Factory {
 
 		return self::$templateTokens;
 	}
-	
+
 	/**
 	 * method to retrieve a balance instance
 	 * 
@@ -449,7 +450,7 @@ class Billrun_Factory {
 		$stamp = Billrun_Util::generateArrayStamp($username);
 		if (!isset(self::$users[$stamp])) {
 			$read = Billrun_Factory::auth()->getStorage()->read();
-			if(!isset($read['current_user'])) {
+			if (!isset($read['current_user'])) {
 				return FALSE;
 			}
 			$entity = new Mongodloid_Entity($read['current_user']);
@@ -507,11 +508,11 @@ class Billrun_Factory {
 		}
 		return $gateway;
 	}
-	
+
 	public static function remoteClient($param) {
 		return new SoapClient($param);
 	}
-	
+
 	/**
 	 * 
 	 * @param array $params
@@ -520,7 +521,7 @@ class Billrun_Factory {
 	public static function eventsManager($params = array()) {
 		return Billrun_EventsManager::getInstance($params);
 	}
-	
+
 	/**
 	 * 
 	 * @param array $params
@@ -529,7 +530,7 @@ class Billrun_Factory {
 	public static function fraudManager($params = array()) {
 		return Billrun_FraudManager::getInstance($params);
 	}
-	
+
 	/**
 	 * 
 	 * @param array $params
@@ -538,19 +539,19 @@ class Billrun_Factory {
 	public static function emailSenderManager($params = array()) {
 		return Billrun_EmailSenderManager::getInstance($params);
 	}
-	
-	public static function clearInstance($instanceName, array $options = array(),$clearAll = FALSE) {
+
+	public static function clearInstance($instanceName, array $options = array(), $clearAll = FALSE) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
-		
-		if($clearAll) {
-			self::${$instanceName} = is_array(self::${$instanceName})  ? array() : null;
+
+		if ($clearAll) {
+			self::${$instanceName} = is_array(self::${$instanceName}) ? array() : null;
 		}
 		if (!isset(self::${$instanceName}[$stamp])) {
 			return;
 		}
 		unset(self::${$instanceName}[$stamp]);
 	}
-	
+
 	/**
 	 * method to retrieve the account instance
 	 * 
@@ -563,7 +564,7 @@ class Billrun_Factory {
 
 		return self::$collection;
 	}
-	
+
 	/**
 	 * method to retrieve a payment gateway by name
 	 * 
@@ -572,7 +573,7 @@ class Billrun_Factory {
 	public static function paymentGatewayConnection($connectionDetails) {
 		return Billrun_PaymentGateway_Connection::getInstance($connectionDetails);
 	}
-	
+
 	/**
 	 * method to receive the oauth2 authenticator instance
 	 * 
@@ -602,6 +603,5 @@ class Billrun_Factory {
 		}
 		return self::$oauth2[$stamp];
 	}
-
 
 }

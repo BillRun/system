@@ -12,17 +12,17 @@
  * @author eran
  */
 class Billrun_Cycle_Onetime_AggregatePipeline {
-	
+
 	protected $exclusionQuery = array();
 	protected $passthroughFields = array();
 	protected $subsPassthroughFields = array();
-	
+
 	public function __construct($options = array()) {
 		$this->exclusionQuery = Billrun_Util::getFieldVal($options['exclusion_query'], $this->exclusionQuery);
 		$this->passthroughFields = Billrun_Util::getFieldVal($options['passthrough_fields'], $this->passthroughFields);
 		$this->subsPassthroughFields = Billrun_Util::getFieldVal($options['subs_passthrough_fields'], $this->subsPassthroughFields);
 	}
-	
+
 	/**
 	 * 
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle
@@ -31,9 +31,9 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 	// TODO: Move this function to a "collection aggregator class"
 	public function getCycleDateMatchPipeline($cycle) {
 		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
-		return  array('$match' => Billrun_Utils_Mongo::getOverlappingWithRange('from','to',$mongoCycle->start(),$mongoCycle->end()));
+		return array('$match' => Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start(), $mongoCycle->end()));
 	}
-	
+
 	// TODO: Move this function to a "collection aggregator class"
 	public function getPlansProjectPipeline() {
 		return array(
@@ -52,7 +52,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 			)
 		);
 	}
-	
+
 	/**
 	 * Aggregate mongo with a query
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
@@ -71,12 +71,12 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
-			'$group' => array_merge($addedPassthroughFields['group'],array(
+			'$group' => array_merge($addedPassthroughFields['group'], array(
 				'_id' => array(
 					'aid' => '$aid',
 				),
 				'sub_plans' => array(
-					'$push' => array_merge($addedPassthroughFields['sub_push'],array(
+					'$push' => array_merge($addedPassthroughFields['sub_push'], array(
 						'type' => '$type',
 						'sid' => '$sid',
 						//'plan' => '$plan',
@@ -123,7 +123,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 				),
 			)),
 		);
-		
+
 		$pipelines[] = $this->getSortPipeline();
 
 		$pipelines[] = array(
@@ -135,12 +135,12 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 				'passthrough' => $addedPassthroughFields['project'],
 			)
 		);
-		
+
 		return $pipelines;
 	}
-	
+
 	//--------------------------------------------------------------
-	
+
 	protected function getAddedPassthroughValuesQuery() {
 		$group = array();
 		$group2 = array();
@@ -151,20 +151,21 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 			$group2[$accountField] = array('$first' => '$' . $accountField);
 			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
 		}
-		
+
 		foreach ($this->subsPassthroughFields as $subscriberField) {
 			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
-			$sub_push[$srcField] =  '$' . $srcField;
+			$sub_push[$srcField] = '$' . $srcField;
 			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;;
+			$project[$srcField] = '$' . $srcField;
+			;
 		}
 		if (!$project) {
 			$project = 1;
 		}
-		return array('group' => $group, 'project' => $project, 'second_group' => $group2,'sub_push' => $sub_push );
+		return array('group' => $group, 'project' => $project, 'second_group' => $group2, 'sub_push' => $sub_push);
 	}
-	
-		/**
+
+	/**
 	 * 
 	 * @param Billrun_DataTypes_MongoCycleTime $mongoCycle
 	 * @return type
@@ -173,8 +174,8 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 		$match = array(
 			'$match' => array(
 				'$or' => array(
-					array_merge( // Account records
-						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
+					array_merge(// Account records
+							array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
 					),
 					array(// Subscriber records
 						'type' => 'subscriber',
@@ -213,7 +214,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 
 		return $match;
 	}
-	
+
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
@@ -225,4 +226,5 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 			),
 		);
 	}
+
 }

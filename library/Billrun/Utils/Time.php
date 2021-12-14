@@ -18,7 +18,7 @@ class Billrun_Utils_Time {
 	const MILLISEC_IN_HOUR = 3600000;
 	const MILLISEC_IN_SECOND = 1000;
 	const UNLIMITED_DATE = "30 December 2099";
-	
+
 	/**
 	 * Get the number of milliseconds according to selected resolution.
 	 * @param type $seconds - How many seconds to calculate.
@@ -117,7 +117,7 @@ class Billrun_Utils_Time {
 	public static function monthsToMilli($months) {
 		return static::monthsToSeconds($months) * self::MILLISEC_IN_SECOND;
 	}
-	
+
 	/**
 	 * Merge overlapping intervals
 	 * 
@@ -125,7 +125,7 @@ class Billrun_Utils_Time {
 	 * @return array of intervals (objects with from and to) sorted by from field
 	 */
 	public static function mergeTimeIntervals($intervals, $fromField = 'from', $toField = 'to') {
- 		if (empty($intervals)) {
+		if (empty($intervals)) {
 			return [];
 		}
 
@@ -151,11 +151,11 @@ class Billrun_Utils_Time {
 				array_unshift($intervalsStack, $top);
 			}
 		}
-		
+
 		self::sortTimeIntervals($intervalsStack);
 		return $intervalsStack;
 	}
-	
+
 	/**
 	 * Get intersection of intervals
 	 * Will return only intervals that overlaps all intervals
@@ -165,28 +165,28 @@ class Billrun_Utils_Time {
 	 * @return array of intervals (objects with from and to) sorted by from field
 	 */
 	public static function getIntervalsIntersections($intervals1, $intervals2, $fromField = 'from', $toField = 'to') {
- 		if (empty($intervals1) || empty($intervals2)) {
+		if (empty($intervals1) || empty($intervals2)) {
 			return [];
 		}
 
 		$ret = [];
-		
+
 		foreach ($intervals1 as $interval1) {
 			foreach ($intervals2 as $interval2) {
 				if ($interval1[$toField] <= $interval2[$fromField] || $interval1[$fromField] >= $interval2[$toField]) { // no intersection
 					continue;
 				}
-				
+
 				$ret[] = [
 					$fromField => max($interval1[$fromField], $interval2[$fromField]),
 					$toField => min($interval1[$toField], $interval2[$toField]),
 				];
 			}
 		}
-		
+
 		return self::mergeTimeIntervals($ret, $fromField, $toField);
 	}
-	
+
 	/**
 	 * returns intervals from $interval1 that are not in $intervals2
 	 * 
@@ -197,14 +197,14 @@ class Billrun_Utils_Time {
 		if (empty($intervals1)) {
 			return [];
 		}
-		
+
 		if (empty($intervals2)) {
 			return $intervals1;
 		}
-		
+
 		$froms = [];
 		$tos = [];
-		
+
 		foreach ($intervals1 as $interval1) {
 			$overlaps = false;
 			foreach ($intervals2 as $interval2) {
@@ -230,31 +230,31 @@ class Billrun_Utils_Time {
 					$overlaps = true;
 				}
 			}
-			
+
 			if (!$overlaps) {
 				$froms[] = $interval1[$fromField];
 				$tos[] = $interval1[$toField];
 			}
 		}
-		
+
 		$ret = [];
 		$froms = array_unique($froms);
 		$tos = array_unique($tos);
 		sort($froms);
 		sort($tos);
-		
+
 		foreach ($froms as $i => $from) {
 			$to = $tos[$i];
 			if ($from == $to) {
 				continue;
 			}
-			
+
 			$ret[] = [
 				$fromField => $from,
 				$toField => $to,
 			];
 		}
-		
+
 		return self::mergeTimeIntervals($ret, $fromField, $toField);
 	}
 
@@ -268,7 +268,7 @@ class Billrun_Utils_Time {
 			return $item1[$fromField] >= $item2[$fromField];
 		});
 	}
-	
+
 	/**
 	 * get time in unixtimestamp
 	 * 
@@ -278,18 +278,18 @@ class Billrun_Utils_Time {
 		if ($value instanceof Mongodloid_Date) {
 			return $value->sec;
 		}
-		
+
 		if ($value instanceof Mongodloid_Date) {
 			return $value->sec;
 		}
-		
+
 		if (is_string($value)) {
 			return strtotime($value);
 		}
-		
+
 		return $value;
 	}
-	
+
 	/**
 	 * Get number of days different between 2 dates
 	 * 
@@ -304,15 +304,15 @@ class Billrun_Utils_Time {
 		} else {
 			$datediff = $date2 - $date1;
 		}
-		
-		
+
+
 		$days = $datediff / (60 * 60 * 24);
-		switch ($roundingType){
+		switch ($roundingType) {
 			case 'floor':
 				return floor($days);
 			case 'round':
 				return round($days);
-			case 'ceil': 
+			case 'ceil':
 			default:
 				return ceil($days);
 		}
@@ -328,7 +328,7 @@ class Billrun_Utils_Time {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
 
-		return (($minDate->diff($maxDate)->days+1) / $daySpan) * ($from > $to ? -1 : 1);
+		return (($minDate->diff($maxDate)->days + 1) / $daySpan) * ($from > $to ? -1 : 1);
 	}
 
 	/**
@@ -338,8 +338,8 @@ class Billrun_Utils_Time {
 	 * @return type
 	 */
 	public static function getDaysSpanDiffUnix($from, $to, $daySpan) {
-		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
-		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+		$formatedFrom = date(Billrun_Base::base_dateformat, $from);
+		$formatedTo = date(Billrun_Base::base_dateformat, $to);
 
 		return static::getDaysSpanDiff($formatedFrom, $formatedTo, $daySpan);
 	}
@@ -357,8 +357,7 @@ class Billrun_Utils_Time {
 		return $minDate->diff($maxDate)->days;
 	}
 
-
-		/**
+	/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
 	 * @param type $from
 	 * @param type $to
@@ -382,7 +381,6 @@ class Billrun_Utils_Time {
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
 
-
 	/**
 	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
 	 * @param type $from
@@ -390,9 +388,10 @@ class Billrun_Utils_Time {
 	 * @return type
 	 */
 	public static function getMonthsDiffUnix($from, $to) {
-		$formatedFrom = date(Billrun_Base::base_dateformat,$from);
-		$formatedTo = date(Billrun_Base::base_dateformat,$to);
+		$formatedFrom = date(Billrun_Base::base_dateformat, $from);
+		$formatedTo = date(Billrun_Base::base_dateformat, $to);
 
-		return static::getMonthsDiff($formatedFrom,$formatedTo);
+		return static::getMonthsDiff($formatedFrom, $formatedTo);
 	}
+
 }

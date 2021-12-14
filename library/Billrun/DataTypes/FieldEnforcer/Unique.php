@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-	
+
 /**
  * This class represents a field enforcer rule which enforces the uniquness of input data.
  *
@@ -23,9 +23,8 @@ class Billrun_DataTypes_FieldEnforcer_Unique extends Billrun_DataTypes_FieldEnfo
 	 * @var Mongodloid_Collection
 	 */
 	protected $collection;
-	
 	protected $baseQuery;
-	
+
 	/**
 	 * Create a new instance of the field enforcer class.
 	 * @param array $config - Array of configurations.
@@ -35,7 +34,7 @@ class Billrun_DataTypes_FieldEnforcer_Unique extends Billrun_DataTypes_FieldEnfo
 		$this->collection = Billrun_Util::getFieldVal($config[self::COLLECTION_INDEX], null);
 		$this->baseQuery = Billrun_Util::getFieldVal($config[self::BASEQUERY_INDEX], array());
 	}
-	
+
 	/**
 	 * Enforce the rule.
 	 * Return true if enforce is successful or invalid field if invalid.
@@ -44,30 +43,31 @@ class Billrun_DataTypes_FieldEnforcer_Unique extends Billrun_DataTypes_FieldEnfo
 	 */
 	public function enforce(array $data) {
 		$parentResult = parent::enforce($data);
-			
-		if($parentResult !== true) {
+
+		if ($parentResult !== true) {
 			return $parentResult;
 		}
-		
+
 		// Check if exists.
-		if(!isset($data[$this->fieldName])) {
+		if (!isset($data[$this->fieldName])) {
 			// This is not an error!
 			return true;
 		}
-		
-		if(!$this->collection) {
-			return new Billrun_DataTypes_InvalidField($this->fieldName,4);
+
+		if (!$this->collection) {
+			return new Billrun_DataTypes_InvalidField($this->fieldName, 4);
 		}
-		
+
 		// Query the collection.
 		// TODO: Should this check be date bound?
 		$query = $this->baseQuery;
 		$query[$this->fieldName] = $data[$this->fieldName];
 		$count = $this->collection->query($query)->cursor()->count();
-		if($count > 0) {
-			return new Billrun_DataTypes_InvalidField($this->fieldName,5);			
+		if ($count > 0) {
+			return new Billrun_DataTypes_InvalidField($this->fieldName, 5);
 		}
-		
+
 		return true;
 	}
+
 }

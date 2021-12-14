@@ -24,7 +24,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 	public function __construct() {
 		$this->baseCode = 1300;
 	}
-	
+
 	/**
 	 * Update the collection by an entity.
 	 * @param array $entity - Entity to update the mongo with.

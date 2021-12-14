@@ -86,14 +86,14 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return bool
 	 */
 	public function connect($username) {
-            Billrun_Factory::log()->log("Connecting to SSH server: " . $this->host, Zend_Log::INFO);
-            $connected  = $this->getConnection()->login($username, $this->getAuthForLogin());
-            if (!$connected) {
-                    Billrun_Factory::log()->log("Cannot connect to SSH server: " . $this->host, Zend_Log::WARN);
-                    return false;
-            }
-            Billrun_Factory::log()->log("Connected to SSH server: " . $this->host, Zend_Log::INFO);
-            return true;
+		Billrun_Factory::log()->log("Connecting to SSH server: " . $this->host, Zend_Log::INFO);
+		$connected = $this->getConnection()->login($username, $this->getAuthForLogin());
+		if (!$connected) {
+			Billrun_Factory::log()->log("Cannot connect to SSH server: " . $this->host, Zend_Log::WARN);
+			return false;
+		}
+		Billrun_Factory::log()->log("Connected to SSH server: " . $this->host, Zend_Log::INFO);
+		return true;
 	}
 
 	/**
@@ -189,7 +189,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 			if ($check_is_numeric && !is_numeric($folder)) {
 				continue;
 			}
-			if (is_dir($folder) && ($folder != '.') && ($folder != '..') ) {
+			if (is_dir($folder) && ($folder != '.') && ($folder != '..')) {
 				$_files = $this->getConnection()->nlist($dir . $folder, $recursive);
 				// Only adds files (not folders or hidden)
 				foreach ($_files as $file) {
@@ -202,12 +202,10 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 					$files[] = $folder;
 				}
 			}
-			
 		}
 
 		return $files;
 	}
-	
 
 	/**
 	 * Get files' timestamp
@@ -388,7 +386,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 		}
 		return $this->connection = new phpseclib\Net\SFTP($this->host, $this->port);
 	}
-	
+
 	/**
 	 * Rename a remote file.
 	 * 
@@ -397,7 +395,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function renameFile($oldname, $newname) {
 		return $this->getConnection()->rename($oldname, $newname);
 	}
-	
+
 	/**
 	 * Change working directory.
 	 * 
@@ -406,8 +404,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function changeDir($newPath) {
 		return $this->getConnection()->chdir($newPath);
 	}
-	
-        
+
 	/**
 	 * Verify that the path is a file. 
 	 * @return boolean true if the path is a file false otherwise.
@@ -415,7 +412,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function isFile($path) {
 		return $this->getConnection()->is_file($path);
 	}
-	
+
 	/**
 	 * Create directory. 
 	 * @return bool
@@ -423,4 +420,5 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function mkdir($path, $permissions = 0777, $recursive = 1) {
 		return $this->getConnection()->mkdir($path, $permissions = 0777, $recursive = 1);
 	}
+
 }

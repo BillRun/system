@@ -13,13 +13,13 @@
  * @since    5.1
  */
 class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Services_Action {
-	
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
 	protected $query = array();
-	
+
 	/**
 	 * Get the array of fields to be inserted in the create record from the user input.
 	 * @return array - Array of fields to be inserted.
@@ -27,7 +27,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	protected function getCreateFields() {
 		return Billrun_Factory::config()->getConfigValue('services.create_fields', array());
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -41,7 +41,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 				$details = $entity->getRawData();
 			}
 		} catch (\MongoException $e) {
-			$errorCode =  1;
+			$errorCode = 1;
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
@@ -87,10 +87,10 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 			// Create an exception.
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -101,12 +101,12 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 		$invalidFields = array();
 
 		$fields = Billrun_Factory::config()->getConfigValue('services.fields');
-		
+
 		// Get only the values to be set in the update record.
 		foreach ($fields as $field) {
 			$fieldName = $field['field_name'];
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
-				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {				
+					(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
 				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			} else if (isset($queryData[$fieldName])) {
 				$type = (isset($field['type'])) ? ($field['type']) : (null);
@@ -116,19 +116,19 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 
 		return $invalidFields;
 	}
-	
+
 	/**
 	 * TODO: Use the translators when it is merged
 	 * @param array $field
 	 */
 	protected function setField($data, $fieldName, $type) {
-		if(!$type) {
+		if (!$type) {
 			$this->query[$fieldName] = $data;
 			return;
 		}
-		
+
 		// Translate by type.
-		if($type == 'date') {
+		if ($type == 'date') {
 			$date = strtotime($data);
 			$newData = new Mongodloid_Date($date);
 			$this->setField($newData, $fieldName, null);
@@ -136,7 +136,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 			throw new Exception("Invalid field type");
 		}
 	}
-	
+
 	/**
 	 * Check if the subscriber to create already exists.
 	 * @return boolean - true if the subscriber exists.
@@ -154,4 +154,5 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 
 		return false;
 	}
+
 }

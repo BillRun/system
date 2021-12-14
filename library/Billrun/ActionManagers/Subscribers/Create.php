@@ -17,7 +17,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	use Billrun_ActionManagers_Subscribers_Servicehandler;
 	use Billrun_Traits_FieldValidator;
-	
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -59,7 +59,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$query['type'] = $this->type;
 		return $query;
 	}
-	
+
 	/**
 	 * Check if the subscriber to create already exists.
 	 * @return boolean - true if the subscriber exists.
@@ -69,7 +69,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$subscriberQuery = $this->getSubscriberQuery();
 
 		$subscribers = $this->collection->query($subscriberQuery);
-		
+
 		// TODO: Use the subscriber class.
 		if ($subscribers->count() > 0) {
 			$errorCode = 0;
@@ -92,7 +92,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 				$this->collection->save($entity, 1);
 			}
 		} catch (\MongoException $e) {
-			$errorCode =  1;
+			$errorCode = 1;
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
@@ -117,7 +117,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -130,20 +130,20 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('subscriber');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode =  2;
+			$errorCode = 2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// Validate the fields.
 		$this->enforce($this->fields, $jsonData);
-		
+
 		$invalidFields = $this->setQueryFields($jsonData);
 
 		// If there were errors.
 		if (!empty($invalidFields)) {
 			// Create an exception.
-			Billrun_Factory::log("Invalid fields: " . print_r($invalidFields,1));
+			Billrun_Factory::log("Invalid fields: " . print_r($invalidFields, 1));
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
@@ -184,25 +184,25 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		foreach ($this->fields as $field) {
 			$fieldName = $field['field_name'];
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
-				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
+					(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
 				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 				continue;
 			} else if (!isset($queryData[$fieldName])) {
 				continue;
 			}
-			
+
 			// TODO: Create some sort of polymorphic behaviour to correctly handle
 			// the updating fields.
-			if($fieldName === 'services') {
+			if ($fieldName === 'services') {
 				$toSet = $this->getSubscriberServices($queryData['services'], new Mongodloid_Date(), new Mongodloid_Date(strtotime('+100 years')));
 			} else {
 				$toSet = $queryData[$fieldName];
 			}
-			
-			if(empty($toSet)) {
+
+			if (empty($toSet)) {
 				continue;
 			}
-			
+
 			$this->query[$fieldName] = $toSet;
 		}
 
@@ -212,19 +212,19 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function validate() {
 		// Validate the input.
 		if (($this->type === 'subscriber') && (!$this->isAccountExists($this->query['aid']))) {
-				return false;
+			return false;
 		}
-		
+
 		return $this->baseValidate();
 	}
 
 	protected function isAccountExists($aid) {
 		$query = array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery(), 
-			array("type" => "account", "aid" => $aid)
+				Billrun_Utils_Mongo::getDateBoundQuery(),
+				array("type" => "account", "aid" => $aid)
 		);
 		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {
-			$errorCode =  8;
+			$errorCode = 8;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($aid));
 			return false;
 		}

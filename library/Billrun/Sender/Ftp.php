@@ -49,7 +49,7 @@ class Billrun_Sender_Ftp extends Billrun_Sender {
 				$ret = false;
 			}
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterFTPSendFiles', array($this));
 		return $ret;
 	}

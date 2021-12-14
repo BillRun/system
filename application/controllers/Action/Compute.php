@@ -14,22 +14,22 @@
  */
 class ComputeAction extends Action_Base {
 
-    /**
-     * method to execute the compute suggestion process
-     * it's called automatically by the cli main controller
-     */
-    public function execute() {
+	/**
+	 * method to execute the compute suggestion process
+	 * it's called automatically by the cli main controller
+	 */
+	public function execute() {
 
-        $possibleOptions = array('type' => false);
+		$possibleOptions = array('type' => false);
 
-        if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
-            return;
-        }
-        $extraParams = $this->getController()->getParameters();
-        if (!empty($extraParams)) {
-            $options = array_merge($extraParams, $options);
-        }
-        Billrun_Compute::run($options);
-    }
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
+			return;
+		}
+		$extraParams = $this->getController()->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
+		Billrun_Compute::run($options);
+	}
 
 }

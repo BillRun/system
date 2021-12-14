@@ -16,18 +16,18 @@ class Billrun_Utils_Security {
 	 * The name of the timestamp field in the input request.
 	 */
 	const TIMESTAMP_FIELD = '_t_';
-	
+
 	/**
 	 * The name of the signature field in the input request.
 	 */
 	const SIGNATURE_FIELD = '_sig_';
-	
+
 	/**
 	 * Calculate the 'signature' using the hmac method and add it to the data
 	 * under a new field name '_sig_',
 	 * This function also adds a timestamp under the field 't'.
 	 * @param array $data - Data to sign
- 	 * @param array $key - Key to sign with
+	 * @param array $key - Key to sign with
 	 * @return array Output data with signature.
 	 */
 	public static function addSignature(array $data, $key) {
@@ -37,7 +37,7 @@ class Billrun_Utils_Security {
 		$data[self::SIGNATURE_FIELD] = $signature;
 		return $data;
 	}
-	
+
 	/**
 	 * Validates the input data.
 	 * 
@@ -52,15 +52,15 @@ class Billrun_Utils_Security {
 			return true;
 		}
 		// Validate the signature and the timestamp.
-		if(!isset($request[self::SIGNATURE_FIELD], $request[self::TIMESTAMP_FIELD])) {
+		if (!isset($request[self::SIGNATURE_FIELD], $request[self::TIMESTAMP_FIELD])) {
 			return false;
 		}
-		
+
 		$signature = $request[self::SIGNATURE_FIELD];
 
 		// Get the secret
 		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
-		if(!is_array(current($secrets))) {  //for backward compatibility 
+		if (!is_array(current($secrets))) {  //for backward compatibility 
 			$secrets = array($secrets);
 		}
 		$today = time();
@@ -85,7 +85,7 @@ class Billrun_Utils_Security {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * oauth2 authentication including validation
 	 * 
@@ -104,13 +104,13 @@ class Billrun_Utils_Security {
 		}
 		if ($oauth->verifyResourceRequest($oauthRequest, null, 'global')) {
 			return true;
-		} 
+		}
 		if ($throwException) {
 			throw new Billrun_Exceptions_Auth(40001, array(), 'Invalid Token');
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Sign data with a secret
 	 * @param array $data
@@ -121,29 +121,29 @@ class Billrun_Utils_Security {
 		$stringData = json_encode($data);
 		return hash_hmac("sha512", $stringData, $secret);
 	}
-	
+
 	/**
 	 * Validate a secret's type and crc
 	 * @param array $secret - Input secret value to validate.
 	 * @return boolean - True if the secret is valid.
 	 */
 	protected static function validateSecret($secret) {
-		if(empty($secret['key']) || !is_string($secret['key'])) {
+		if (empty($secret['key']) || !is_string($secret['key'])) {
 			return false;
 		}
 		$crc = $secret['crc'];
 		$calculatedCrc = hash("crc32b", $secret['key']);
-		
+
 		// Validate checksum
 		return hash_equals($crc, $calculatedCrc);
 	}
-	
+
 	public static function generateSecretKey() {
 		$key = bin2hex(openssl_random_pseudo_bytes(16));
 		$crc = hash("crc32b", $key);
 		return array('key' => $key, 'crc' => $crc);
 	}
-	
+
 	public static function getValidSharedKey() {
 		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
 		if (!is_array(current($secrets))) {  //for backward compatibility 

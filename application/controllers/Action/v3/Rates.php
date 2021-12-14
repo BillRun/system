@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class V3_ratesAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
@@ -25,7 +26,7 @@ class V3_ratesAction extends ApiAction {
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('_id', 'key', 'rates', 'provider', 'model', 'inventory_id', 'brand', 'ax_code', 'invoice_labels', 'zone_grouping','vti_name','type');
+		$filter = !empty($strip) ? $strip : array('_id', 'key', 'rates', 'provider', 'model', 'inventory_id', 'brand', 'ax_code', 'invoice_labels', 'zone_grouping', 'vti_name', 'type');
 		$sort = @json_decode($request->get('sort', '{"from" : 1}'), JSON_OBJECT_AS_ARRAY);
 
 		$cacheParams = array(

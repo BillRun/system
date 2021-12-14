@@ -21,5 +21,4 @@ abstract class Billrun_TypeValidator_Base {
 	 * @return boolean
 	 */
 	abstract public function validate($value, $params = array());
-	
 }

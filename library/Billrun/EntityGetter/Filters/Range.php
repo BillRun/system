@@ -20,14 +20,13 @@ class Billrun_EntityGetter_Filters_Range extends Billrun_EntityGetter_Filters_Ma
 			$filter = array(
 				$this->params['entity_key'] => array(
 					'$elemMatch' => array(
-						'from' => array('$lte' => $comparedValue), 
-						'to'   => array('$gte' => $comparedValue),
+						'from' => array('$lte' => $comparedValue),
+						'to' => array('$gte' => $comparedValue),
 					),
 				),
 			);
 			$match = array_merge($match, $filter);
 		}
 	}
-
 
 }

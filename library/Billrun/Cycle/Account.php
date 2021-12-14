@@ -13,19 +13,18 @@
  * @since    5.2
  */
 class Billrun_Cycle_Account extends Billrun_Cycle_Common {
-	
+
 	/**
 	 * 
 	 * @var Billrun_Cycle_Account_Invoice
 	 */
 	protected $invoice;
-	
+
 	/**
 	 * Hold all the discounts that are  applied to the account.
 	 * @var array
 	 */
-	protected $discounts= array();
-
+	protected $discounts = array();
 
 	/**
 	 * Aggregate the data, store the results in the billrun container.
@@ -33,19 +32,19 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	public function aggregate($data = array()) {
 		Billrun_Factory::log("Subscriber records to aggregate: " . count($this->records));
-		
+
 		$results = parent::aggregate();
-		
+
 		Billrun_Factory::log("Account aggregated " . count($results) . ' subscriber records.');
-		
+
 		return $results;
 	}
-	
+
 	/**
 	 * Write the invoice to the Billrun collection
 	 * @param int $min_id minimum invoice id to start from
 	 */
-	public function writeInvoice($min_id, $flatLines,  $isFake = FALSE, $customCollName = FALSE) {
+	public function writeInvoice($min_id, $flatLines, $isFake = FALSE, $customCollName = FALSE) {
 		foreach ($this->records as $subscriber) {
 			$subInvoice = $subscriber->getInvoice();
 			$this->invoice->addSubscriber($subInvoice);
@@ -54,7 +53,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->applyDiscounts($flatLines);
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
-	
+
 	public function addConfigurableData() {
 		$this->invoice->addConfigurableData();
 	}
@@ -70,21 +69,21 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	public function applyDiscounts($flatLines) {
 		Billrun_Factory::log('Applying discounts.', Zend_Log::DEBUG);
 
-		$subscribersRevisions= [];
+		$subscribersRevisions = [];
 		//Assuming this->records are sorted by 'from' field
-		$accountRevs =[];
+		$accountRevs = [];
 		foreach ($this->revisions as $revSid => $subscriberRevArr) {
 			$subRevisions = [];
 			foreach ($subscriberRevArr as $subscriberRev) {
-				if($subscriberRev['sid'] == 0) {
+				if ($subscriberRev['sid'] == 0) {
 					//No need to expand  account revisions (no dated sub-fields )
 					$accountRevs[] = $subscriberRev;
 					continue;
 				}
-				$subRevisions = array_merge( $subRevisions,
-							$this->expandSubRevisions($subscriberRev,$this->cycleAggregator->getCycle()->start(),$this->cycleAggregator->getCycle()->end()) );
+				$subRevisions = array_merge($subRevisions,
+						$this->expandSubRevisions($subscriberRev, $this->cycleAggregator->getCycle()->start(), $this->cycleAggregator->getCycle()->end()));
 			}
-			if(!empty($subRevisions)) {
+			if (!empty($subRevisions)) {
 				$subscribersRevisions[$revSid] = $subRevisions;
 			}
 		}
@@ -97,114 +96,124 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 
 	//---------------------------------- Protected ------------------------------------
+
 	/**
 	 * Break revision to sub-revisions  based on changes in dated fields such as services / plans
 	 */
 	protected function expandSubRevisions($revision, $minFrom, $maxTo) {
 		$retRevisions = [];
 		$cutDates = [];
-		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan','plan_activation','plan_deactivation']);
-		$revision['from'] = max($minFrom,$revision['from']);
-		$revision['to'] = min($maxTo,$revision['to']);
-		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
+		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy', ['plan', 'plan_activation', 'plan_deactivation']);
+		$revision['from'] = max($minFrom, $revision['from']);
+		$revision['to'] = min($maxTo, $revision['to']);
+		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields', ['services', 'plans']);
 		$mongoServices = $this->cycleAggregator->getServices();
 
 		//Retrive all the relevent change dates
-		foreach($subRevisionsFields as $fieldName) {
-			if(empty($revision[$fieldName])) { continue; }
-			foreach($revision[$fieldName] as $subRev) {
-					 if($subRev['from']->sec > $revision['to'] || $subRev['to']->sec < $revision['from'] ||
-						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev, $revision['from'],$revision['to']) ) { // TODO fix hard coding
-						continue;
-					 }
-					 $customFieldCut = $subRev['to']->sec;
-					 if(!empty($subRev['name']) && !empty($mongoServices[$subRev['name']])) {
-							$creationTime = !empty($subRev['creation_time']) ? $subRev['creation_time']->sec : $subRev['from'];
-							if(is_array($mongoServices[$subRev['name']]['price'])) {
-								foreach($mongoServices[$subRev['name']]['price'] as $price) {
-									if ($price['to'] == 'UNLIMITED') {
-										$customFieldCut = $subRev['to']->sec;
-										break ;
-									}
-									$customFieldCut = Billrun_Plan::monthDiffToDate($price['to'],$creationTime,true,false,true);
-								}
+		foreach ($subRevisionsFields as $fieldName) {
+			if (empty($revision[$fieldName])) {
+				continue;
+			}
+			foreach ($revision[$fieldName] as $subRev) {
+				if ($subRev['from']->sec > $revision['to'] || $subRev['to']->sec < $revision['from'] ||
+						$fieldName == 'services' && $this->isServiceTerminatedDueToConfig($subRev, $revision['from'], $revision['to'])) { // TODO fix hard coding
+					continue;
+				}
+				$customFieldCut = $subRev['to']->sec;
+				if (!empty($subRev['name']) && !empty($mongoServices[$subRev['name']])) {
+					$creationTime = !empty($subRev['creation_time']) ? $subRev['creation_time']->sec : $subRev['from'];
+					if (is_array($mongoServices[$subRev['name']]['price'])) {
+						foreach ($mongoServices[$subRev['name']]['price'] as $price) {
+							if ($price['to'] == 'UNLIMITED') {
+								$customFieldCut = $subRev['to']->sec;
+								break;
 							}
+							$customFieldCut = Billrun_Plan::monthDiffToDate($price['to'], $creationTime, true, false, true);
 						}
-					 $subRev['from'] = max($subRev['from']->sec,$revision['from']);
-					 $subRev['to'] = min($subRev['to']->sec,$revision['to'],$customFieldCut);
+					}
+				}
+				$subRev['from'] = max($subRev['from']->sec, $revision['from']);
+				$subRev['to'] = min($subRev['to']->sec, $revision['to'], $customFieldCut);
 
-					 $cutDates[$subRev['from']][$subRev['to']][$fieldName][] = $subRev;
+				$cutDates[$subRev['from']][$subRev['to']][$fieldName][] = $subRev;
 			}
 			unset($revision[$fieldName]);
 		}
 
 
-		if(empty($cutDates)) {
+		if (empty($cutDates)) {
 			// No changes? no problem! just adjust the current revison and return it
 			$retRevisions[] = $this->cleanRevisionStructure($revision, $subRevisionsFields);
-		} else  {
+		} else {
 			$fieldsEnded = [];
 			$fieldsAdded = [];
 			// Sort the changes by "from" dates
-			uksort($cutDates,function($a,$b){ return $a - $b; });
+			uksort($cutDates, function ($a, $b) {
+				return $a - $b;
+			});
 			$activeRev = $revision;
 
-			foreach($cutDates as $from => $fromCuts) {
+			foreach ($cutDates as $from => $fromCuts) {
 				// Sort the from dates changes by their erliest "to" date
-				uksort($fromCuts,function($a,$b){ return $a - $b; });
+				uksort($fromCuts, function ($a, $b) {
+					return $a - $b;
+				});
 				//Get all the ended services plan under the current "from" date
-				foreach($fromCuts as $to => $toCuts) {
-					foreach($toCuts as $fieldName => $fieldCuts) {
-						foreach($fieldCuts as  $fieldCut) {
+				foreach ($fromCuts as $to => $toCuts) {
+					foreach ($toCuts as $fieldName => $fieldCuts) {
+						foreach ($fieldCuts as $fieldCut) {
 							//should we break the revision?
-							if($activeRev['from'] < $fieldCut['from'] ) {
-								$revClosed = json_decode(json_encode($activeRev),JSON_OBJECT_AS_ARRAY);
-								$revClosed['to'] = min($fieldCut['from'],$activeRev['to']);
+							if ($activeRev['from'] < $fieldCut['from']) {
+								$revClosed = json_decode(json_encode($activeRev), JSON_OBJECT_AS_ARRAY);
+								$revClosed['to'] = min($fieldCut['from'], $activeRev['to']);
 								$fieldsEnded[] = $revClosed;
 							}
 							//copy fields to the root of the revision if need
-							foreach($subRevCopyFields as $subRevField) {
-								if( empty($activeRev[$subRevField]) && !empty($fieldCut[$subRevField]) ) {
+							foreach ($subRevCopyFields as $subRevField) {
+								if (empty($activeRev[$subRevField]) && !empty($fieldCut[$subRevField])) {
 									$activeRev[$subRevField] = $fieldCut[$subRevField];
 								}
 							}
-							if($activeRev['to'] > $fieldCut['to']) {
+							if ($activeRev['to'] > $fieldCut['to']) {
 								$fieldsEnded[] = [
-								'from' => $fieldCut['from'],
-								'to' => $fieldCut['to'],
-								$fieldName => [$fieldCut]];
+									'from' => $fieldCut['from'],
+									'to' => $fieldCut['to'],
+									$fieldName => [$fieldCut]];
 							}
 							//add the service/plan to the revision (was deleted when the changes were recoreded)
 							$activeRev[$fieldName][] = $fieldCut;
-
 						}
 					}
 				}
 			}
-			$revCuts =  array_merge($fieldsEnded,[$activeRev]);
-			usort($revCuts,function($a,$b){ return $a['to'] - $b['to']; });
-				$fieldsEnded = usort($fieldsEnded,function($a,$b){ return $a['from'] - $b['from']; });
-				if (is_array($fieldsEnded) || is_object($fieldsEnded)) {
+			$revCuts = array_merge($fieldsEnded, [$activeRev]);
+			usort($revCuts, function ($a, $b) {
+				return $a['to'] - $b['to'];
+			});
+			$fieldsEnded = usort($fieldsEnded, function ($a, $b) {
+				return $a['from'] - $b['from'];
+			});
+			if (is_array($fieldsEnded) || is_object($fieldsEnded)) {
 				//Create revision for all the terminated services/plans under the current "from" date
-			foreach($revCuts as $endedField) {
+				foreach ($revCuts as $endedField) {
 					//close the current revision if its "to" has changed and open a new one.
-					if($endedField['to'] < $activeRev['to'] ) {
-						$activeRev['to'] =  $endedField['to'];
-						$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
-						if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
+					if ($endedField['to'] < $activeRev['to']) {
+						$activeRev['to'] = $endedField['to'];
+						$saveRevision = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
+						if ($saveRevision['from']->sec != $saveRevision['to']->sec) {
 							$retRevisions[] = $saveRevision;
 						}
 
 						$activeRev['from'] = $endedField['to'];
 						$activeRev['to'] = $revision['to'];
 						//should services/plans be removed from the revision?
-					$activeRev = $this->clearInactiveEntries($activeRev, $subRevisionsFields,$endedField);
-				}
+						$activeRev = $this->clearInactiveEntries($activeRev, $subRevisionsFields, $endedField);
+					}
 				}
 				//close the current revision and open a new revision if the last one had altered the 'to' date to be before the  end of the cycle
-				if($activeRev['to'] < $revision['to']) {
-					$saveRevision  = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
-					if( $saveRevision['from']->sec != $saveRevision['to']->sec ) {
+				if ($activeRev['to'] < $revision['to']) {
+					$saveRevision = $this->cleanRevisionStructure($activeRev, $subRevisionsFields, $endedField);
+					if ($saveRevision['from']->sec != $saveRevision['to']->sec) {
 						$retRevisions[] = $saveRevision;
 					}
 					$activeRev['from'] = $activeRev['to'];
@@ -214,46 +223,52 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			//Save the last revision
 			$retRevisions[] = $this->cleanRevisionStructure($activeRev, $subRevisionsFields);
 		}
-		usort($retRevisions,function($a,$b){ return $a['from']->sec - $b['from']->sec; });
+		usort($retRevisions, function ($a, $b) {
+			return $a['from']->sec - $b['from']->sec;
+		});
 		return $retRevisions;
 	}
 
 	/**
 	 * Check is a service is not active in a given date span regardless of the service from/to fields.
 	 * @returns FALSE if the  service is active
-	 *			TRUE  if the service is terminated
+	 * 			TRUE  if the service is terminated
 	 */
-	protected function isServiceTerminatedDueToConfig($subRev,$minFrom,$maxTo) {
+	protected function isServiceTerminatedDueToConfig($subRev, $minFrom, $maxTo) {
 		$mongoServices = $this->cycleAggregator->getServices();
-		if( isset($mongoServices[$subRev['name']]) ) {
-			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']]  :  [$mongoServices[$subRev['name']]];
-			foreach($servicesArr as $service) {
+		if (isset($mongoServices[$subRev['name']])) {
+			$servicesArr = is_array($mongoServices[$subRev['name']]) ? $mongoServices[$subRev['name']] : [$mongoServices[$subRev['name']]];
+			foreach ($servicesArr as $service) {
 				$creationTime = min((!empty($subRev['creation_time']) ? $subRev['creation_time'] : new MongoDate()), $subRev['from']);
-				if( $maxTo >= $service['from']->sec && $maxTo < $service['to']->sec ) {
-					if(Billrun_Plans_Util::hasPriceWithinDates($service,$creationTime->sec,$minFrom,$maxTo) &&
-					   Billrun_Plans_Util::balancePeriodWithInDates($service,$creationTime->sec,$minFrom,$maxTo) ) {
+				if ($maxTo >= $service['from']->sec && $maxTo < $service['to']->sec) {
+					if (Billrun_Plans_Util::hasPriceWithinDates($service, $creationTime->sec, $minFrom, $maxTo) &&
+							Billrun_Plans_Util::balancePeriodWithInDates($service, $creationTime->sec, $minFrom, $maxTo)) {
 						return FALSE;
 					}
 				}
-			 }
+			}
 		}
 
 		return TRUE;
 	}
 
-
-	protected function clearInactiveEntries($activeRev,$subRevisionsFields,$endedField) {
-		foreach($subRevisionsFields as $fieldName) {
-			if(!empty($endedField[$fieldName]) && !empty($activeRev[$fieldName])) {
-				$activeRev[$fieldName] =array_values (
-						array_map(function($m1) { return unserialize($m1);},
-						array_unique(
-							array_map(function($m2) { return  serialize($m2);},
-								array_filter(array_merge($activeRev[$fieldName],$endedField[$fieldName]),function($b) use ($activeRev) {
-									return (!empty($b) && $b['to'] > $activeRev['from'] && $b['from'] <= $activeRev['from']);})
-							)
+	protected function clearInactiveEntries($activeRev, $subRevisionsFields, $endedField) {
+		foreach ($subRevisionsFields as $fieldName) {
+			if (!empty($endedField[$fieldName]) && !empty($activeRev[$fieldName])) {
+				$activeRev[$fieldName] = array_values(
+						array_map(function ($m1) {
+							return unserialize($m1);
+						},
+								array_unique(
+										array_map(function ($m2) {
+											return serialize($m2);
+										},
+												array_filter(array_merge($activeRev[$fieldName], $endedField[$fieldName]), function ($b) use ($activeRev) {
+													return (!empty($b) && $b['to'] > $activeRev['from'] && $b['from'] <= $activeRev['from']);
+												})
+										)
+								)
 						)
-					)
 				);
 			}
 		}
@@ -263,25 +278,26 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	/**
 	 * Clean uneeded fields and copy fields to thier needed place to finalize the revision.
 	 */
-	 protected function cleanRevisionStructure($saveRevision,$subRevisionsFields, $endedField = null) {
+	protected function cleanRevisionStructure($saveRevision, $subRevisionsFields, $endedField = null) {
 		$endedField = empty($endedField) ? $saveRevision : $endedField;
 		$saveRevision = $this->clearInactiveEntries($saveRevision, $subRevisionsFields, $endedField);
 		$saveRevision['to'] = new Mongodloid_Date($endedField['to']);
 		$saveRevision['from'] = new Mongodloid_Date($saveRevision['from']);
-		foreach(Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan']) as $subRevField) {
-			if( isset($saveRevision[$subRevField]) && !empty($endedField[$subRevField]) ) {
+		foreach (Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy', ['plan']) as $subRevField) {
+			if (isset($saveRevision[$subRevField]) && !empty($endedField[$subRevField])) {
 				$saveRevision[$subRevField] = $endedField[$subRevField];
 			}
 		}
-		foreach($subRevisionsFields as $fieldName) {
-			if(empty($saveRevision[$fieldName])) { continue; }
-			foreach($saveRevision[$fieldName] as &$subRev) {
-				unset($subRev['from'],$subRev['to']);
+		foreach ($subRevisionsFields as $fieldName) {
+			if (empty($saveRevision[$fieldName])) {
+				continue;
+			}
+			foreach ($saveRevision[$fieldName] as &$subRev) {
+				unset($subRev['from'], $subRev['to']);
 			}
 		}
 		return $saveRevision;
-	 }
-
+	}
 
 	/**
 	 * Validate the input
@@ -291,7 +307,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['subscribers']) && is_array($input['subscribers']) &&
-			   isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Account_Invoice');
+				isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Account_Invoice');
 	}
 
 	/**
@@ -329,26 +345,26 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $invoiceData Invoice
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
-	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0 ) {
+	protected function constructSubscriber($sorted, $invoiceData, $subsCount = 0) {
 
 		$data = [
-			'rates' => $this->cycleAggregator->getRates(null,end($sorted)),
-			'discounts' => $this->cycleAggregator->getDiscounts(null,end($sorted)),
-                        'charges' => $this->cycleAggregator->getCharges(),
+			'rates' => $this->cycleAggregator->getRates(null, end($sorted)),
+			'discounts' => $this->cycleAggregator->getDiscounts(null, end($sorted)),
+			'charges' => $this->cycleAggregator->getCharges(),
 		];
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($data, $invoiceData);
 
 		$invoice->setShouldKeepLinesinMemory($this->invoice->shouldKeepLinesinMemory($subsCount));
-		$invoice->setShouldAggregateUsage( $subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate',500) );
+		$invoice->setShouldAggregateUsage($subsCount < Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_to_aggregate', 500));
 		$subConstratorData['history'] = $sorted;
 		$subConstratorData['subscriber_info'] = end($sorted);
 		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
 		$subConstratorData['subscriber_info']['line_stump'] = $this->getLineStump(end($sorted), $this->cycleAggregator->getCycle());
-		$cycleSub =  new Billrun_Cycle_Subscriber($subConstratorData, $this->cycleAggregator);
+		$cycleSub = new Billrun_Cycle_Subscriber($subConstratorData, $this->cycleAggregator);
 
 		return $cycleSub;
 	}
-	
+
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
 		$flatEntry = array(
 			'aid' => intval($subscriber['aid']),
@@ -359,15 +375,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'usaget' => 'flat',
 			'urt' => new Mongodloid_Date($cycle->end()),
 		);
-		
+
 		return $flatEntry;
 	}
 
 	//--------------------------------------------------
-	
+
 	public function save() {
 		$this->invoice->save();
 	}
-		
-	
+
 }

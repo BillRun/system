@@ -20,6 +20,7 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/Models/Entity.php'
  * @since    2.6
  */
 class V3_PlansAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
@@ -101,7 +102,7 @@ class V3_PlansAction extends ApiAction {
 		$this->enrichPlansResponse($results);
 		return $results;
 	}
-	
+
 	protected function enrichPlansResponse(&$results) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/services.ini');
 		foreach ($results as &$plan) {
@@ -123,7 +124,7 @@ class V3_PlansAction extends ApiAction {
 			$plan['not_billable_options'] = $nonBillableOptions;
 		}
 	}
-	
+
 	protected function getPlanServices($plan) {
 		$servicesNames = array_merge(Billrun_Util::getIn($plan, 'optional.services', []), Billrun_Util::getIn($plan, 'include.services', []));
 		if (empty($servicesNames)) {
@@ -132,7 +133,7 @@ class V3_PlansAction extends ApiAction {
 		$collection = 'services';
 		$action = 'uniqueget';
 		$query = [
-			'name' => [ '$regex' => "^" . implode('$|^', $servicesNames) . "$" ],
+			'name' => ['$regex' => "^" . implode('$|^', $servicesNames) . "$"],
 		];
 		$params = [
 			'request' => [
@@ -146,7 +147,7 @@ class V3_PlansAction extends ApiAction {
 		$action = new Models_Action_Uniqueget($params);
 		return $action->execute();
 	}
-	
+
 	protected function getActionConfig($collection, $action) {
 		$configVar = 'billapi.' . $collection . '.' . $action;
 		if (!isset($this->configs[$configVar])) {

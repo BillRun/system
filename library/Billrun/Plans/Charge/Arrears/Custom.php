@@ -13,5 +13,6 @@
  * @since    5.2
  */
 class Billrun_Plans_Charge_Arrears_Custom extends Billrun_Plans_Charge_Arrears_Month {
+
 	use Billrun_Plans_Charge_Arrears_Traits_Custom;
 }

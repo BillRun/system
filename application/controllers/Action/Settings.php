@@ -46,7 +46,7 @@ class SettingsAction extends ApiAction {
 		} else if ($category === 'ROOT') {
 			$category = "";
 		}
-		
+
 		$action = $request->get('action');
 		$this->enforcePermissions($data, $category, $action);
 		$success = true;
@@ -66,23 +66,23 @@ class SettingsAction extends ApiAction {
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}
-		
+
 		$status = $success ? (empty($warnings) ? 1 : 2) : 0;
 
-		$this->getController()->setOutput(array( array(
+		$this->getController()->setOutput(array(array(
 				'status' => $status,
 				'desc' => $success ? 'success' : 'error',
 				'input' => $request->getPost(),
 				'details' => is_bool($output) ? array() : $output,
 				'warnings' => $warnings,
-			)));
+		)));
 		return TRUE;
 	}
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN; // this can be override by enforcePermissions method
 	}
-	
+
 	/**
 	 * method to enforce permissions, if applied by configuration
 	 * 
@@ -91,7 +91,7 @@ class SettingsAction extends ApiAction {
 	 */
 	protected function enforcePermissions($data, $category, $action) {
 		$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-		
+
 		if (empty($action)) {
 			$action = 'get';
 		} else if ($action == 'set' || $action == 'unset') {
@@ -105,5 +105,5 @@ class SettingsAction extends ApiAction {
 		}
 		$this->allowed();
 	}
-	
+
 }

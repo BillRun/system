@@ -41,10 +41,10 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 			'type' => 'nsn',
 			Billrun_Calculator_Wholesale_NationalRoamingPricing::MAIN_DB_FIELD => array('$exists' => true),
 			'urt' => array('$gt' => $timehorizons['start'], '$lt' => $timehorizons['end'],),
-			/* '$or' => array( 							
-			  array('record_type' => "12","out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),
-			  array('record_type' =>"11",	"in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  ),),
-			  ), */
+				/* '$or' => array( 							
+				  array('record_type' => "12","out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),
+				  array('record_type' =>"11",	"in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  ),),
+				  ), */
 		));
 
 		return $results;

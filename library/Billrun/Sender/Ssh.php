@@ -22,7 +22,6 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 	static protected $type = 'ssh';
 	protected $port = '22';
 
-
 	/**
 	 * see parent::send()
 	 */
@@ -30,7 +29,7 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 		Billrun_Factory::dispatcher()->trigger('beforeSSHSendFiles', array($this));
 		$files = is_array($filePath) ? $filePath : array($filePath);
 		$connectionSettings = $this->options;
-		$hostAndPort = $connectionSettings['host'] . ':'. $this->port;
+		$hostAndPort = $connectionSettings['host'] . ':' . $this->port;
 		$auth = array('password' => $connectionSettings['password']);
 		$ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 		$connected = $ssh->connect($connectionSettings['user']);
@@ -50,12 +49,12 @@ class Billrun_Sender_Ssh extends Billrun_Sender {
 			}
 			$fileName = basename($file);
 			$remoteFilePath = $remoteDirectory . $fileName;
-			if (!$ssh->put($file, $remoteFilePath)){
+			if (!$ssh->put($file, $remoteFilePath)) {
 				Billrun_Factory::log()->log("Cannot put file in SSH server. file: " . $file . ", directory: " . $remoteDirectory, Zend_Log::ERR);
 				$ret = false;
 			}
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterSSHSendFiles', array($this));
 		return $ret;
 	}

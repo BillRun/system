@@ -13,16 +13,16 @@
  * @since version 5
  */
 class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
-	
+
 	public $data = [];
 	protected $aid = null;
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->data = $options['data'] ? json_decode($options['data'], true) : [];
 		$this->aid = $options['aid'] ?: null;
 	}
-	
+
 	/**
 	 * see parent::loadRawData
 	 */
@@ -34,7 +34,7 @@ class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
 			'data' => $translatedData,
 		];
 	}
-	
+
 	/**
 	 * Translates the data received to customer aggregator requirements
 	 * 
@@ -44,12 +44,13 @@ class Billrun_Aggregator_Customernondb extends Billrun_Aggregator_Customer {
 	protected function translateCustomerData($data) {
 		return $data;
 	}
-	
+
 	public function getData() {
 		return $this->data;
 	}
-	
+
 	public function getAid() {
 		return $this->aid;
 	}
+
 }

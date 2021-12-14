@@ -12,7 +12,7 @@
  * @since    5.10
  */
 abstract class Billrun_PaymentGateway_Connection {
-	
+
 	use Billrun_Traits_FileActions;
 
 	protected $host;
@@ -29,8 +29,8 @@ abstract class Billrun_PaymentGateway_Connection {
 	protected $localDir;
 
 	public function __construct($options) {
-		if (!isset($options['connection_type']) || !isset($options['host'])  || !isset($options['user']) ||
-			!isset($options['password'])) {
+		if (!isset($options['connection_type']) || !isset($options['host']) || !isset($options['user']) ||
+				!isset($options['password'])) {
 			throw new Exception('Missing connection details');
 		}
 		$this->host = $options['host'];
@@ -64,8 +64,7 @@ abstract class Billrun_PaymentGateway_Connection {
 		}
 		return isset($connection) ? $connection : NULL;
 	}
-	
-	
+
 	/**
 	 * Get the type name of the current object.
 	 * @return string conatining the current.
@@ -88,27 +87,29 @@ abstract class Billrun_PaymentGateway_Connection {
 		}
 		$gateway = $options['payment_gateway'];
 		$pgReceivers = array();
-		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
+		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function ($paymentGateway) use ($gateway) {
 			return ($paymentGateway['name'] === $gateway) && !empty($paymentGateway['custom']);
 		});
 		if ($paymentGatewaySettings) {
 			$paymentGatewaySettings = current($paymentGatewaySettings);
 		}
-		
+
 		$transactionsResponses = !empty($paymentGatewaySettings[$type]) ? $paymentGatewaySettings[$type] : array();
 		foreach ($transactionsResponses as $key => $gatewaySettings) {
 			if (!empty($gatewaySettings['receiver'])) {
 				$pgReceivers[$gatewaySettings['file_type']] = $gatewaySettings['receiver'];
 			}
 		}
-		
+
 		return $pgReceivers;
 	}
 
 	abstract public function export($fileName);
+
 	abstract public function receive();
-	
+
 	public function getWorkspace() {
 		return $this->workspace;
 	}
+
 }

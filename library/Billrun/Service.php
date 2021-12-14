@@ -14,7 +14,7 @@
  * @since    5.2
  */
 class Billrun_Service {
-	
+
 	const UNLIMITED_VALUE = 'UNLIMITED';
 
 	/**
@@ -34,14 +34,14 @@ class Billrun_Service {
 	 * @var mixed int or UNLIMITED_VALUE constant
 	 */
 	protected $cyclesCount;
-	
+
 	/**
 	 * local cache to store all entities (services/plans), so on run-time they will be fetched from memory instead of from DB
 	 * 
 	 * @var array
 	 */
 	protected static $entities = [];
-	
+
 	/**
 	 * This holds the used services quantity for the included product groups calculations.
 	 */
@@ -66,14 +66,14 @@ class Billrun_Service {
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
 		}
-		
+
 		if (isset($params['service_start_date'])) {
 			$this->data['service_start_date'] = $params['service_start_date'];
 		}
-		
+
 		$this->data['plan_included'] = isset($params['plan_included']) ? $params['plan_included'] : false;
 	}
-	
+
 	/**
 	 * initialize internal variables
 	 */
@@ -96,7 +96,7 @@ class Billrun_Service {
 		} else {
 			$queryTime = new Mongodloid_Date($time);
 		}
-		
+
 		switch ($loadByField) {
 			case 'name':
 				$this->data = self::getEntityByNameAndTime($param, $queryTime);
@@ -150,14 +150,14 @@ class Billrun_Service {
 	public function getName() {
 		return $this->get('name');
 	}
-	
+
 	public function getData($raw = false) {
 		if ($raw) {
 			return $this->data->getRawData();
 		}
 		return $this->data;
 	}
-	
+
 	public static function getByNameAndTime($name, $time) {
 		$items = self::getCacheItems();
 		if (isset($items['by_name'][$name])) {
@@ -169,14 +169,14 @@ class Billrun_Service {
 		}
 		return false;
 	}
-	
+
 	public static function getCacheItems() {
 		if (empty(static::$cache)) {
 			self::initCacheItems();
 		}
 		return static::$cache;
 	}
-	
+
 	public static function initCacheItems() {
 		$coll = Billrun_Factory::db()->{static::$cacheType . 'Collection'}();
 		$items = $coll->query()->cursor();
@@ -204,11 +204,11 @@ class Billrun_Service {
 		if ($serviceStartDate instanceof Mongodloid_Date) {
 			$serviceStartDate = $serviceStartDate->sec;
 		}
-		
+
 		if (is_null($rowTime)) {
 			$rowTime = time();
 		}
-		
+
 		if (($customPeriod = $this->get("balance_period")) && $customPeriod !== "default") {
 			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
 			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
@@ -222,11 +222,11 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat,$serviceStartDate));
+		$serviceCycleStartDate = Billrun_Billingcycle::getBillrunStartTimeByDate(date(Billrun_Base::base_datetimeformat, $serviceStartDate));
 		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceCycleStartDate, $rowTime);
 		return $cyclesSpent > $serviceAvailableCycles;
 	}
-	
+
 	/**
 	 * method to receive all group rates of the current plan
 	 * @param array $rate the rate to check
@@ -246,7 +246,7 @@ class Billrun_Service {
 		if ($groups) {
 			return $groups;
 		}
-		
+
 		//backward compatibility
 		if (isset($rate['rates'][$usageType]['groups'])) {
 			$groups = $rate['rates'][$usageType]['groups'];
@@ -333,9 +333,7 @@ class Billrun_Service {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
-			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
-				&& !isset($this->data['include']['groups'][$staticGroup]['usage_types'][$usageType]) 
-				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
+			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) && !isset($this->data['include']['groups'][$staticGroup]['usage_types'][$usageType]) && !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
 				return array('usagev' => 0);
 			}
 
@@ -347,16 +345,15 @@ class Billrun_Service {
 					return array('usagev' => 0);
 				}
 			}
-			
+
 			$groupSelected = $staticGroup;
 		}
-		
-		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
-			&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
+
+		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) && !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
 			}
-			
+
 			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity, $serviceMaximumQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
@@ -416,8 +413,7 @@ class Billrun_Service {
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
-			if ((!isset($this->data['include']['groups'][$groupSelected][$usageType]) || !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType]))
-				&& !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
+			if ((!isset($this->data['include']['groups'][$groupSelected][$usageType]) || !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) && !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				continue;
 			}
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
@@ -428,8 +424,7 @@ class Billrun_Service {
 					$this->unsetGroup($this->getEntityGroup());
 				}
 			}
-		}
-		while ($groupSelected === FALSE && $limit--);
+		} while ($groupSelected === FALSE && $limit--);
 		$this->strongestGroup = $groupSelected;
 		return $this->strongestGroup;
 	}
@@ -468,7 +463,7 @@ class Billrun_Service {
 		}
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
-	
+
 	public function isGroupQuantityAffected($group = null) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
@@ -500,7 +495,7 @@ class Billrun_Service {
 		}
 		return $groupValue;
 	}
-	
+
 	/**
 	 * method to get group includes value
 	 * 
@@ -519,9 +514,9 @@ class Billrun_Service {
 			return $this->data['include']['groups'][$group][$usaget];
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
-		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
+		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX : $value;
 	}
-	
+
 	/**
 	 * method to calculate how much usage there is in pool sharing usage/cost
 	 * @param int $aid the account
@@ -548,28 +543,28 @@ class Billrun_Service {
 		} else {
 			return 0;
 		}
-		
+
 		$aggregateMatch = array(
 			'$match' => $query,
 		);
-		
+
 		$unwindServices = array('$unwind' => '$services');
-		
+
 		$aggregateServices = array(
 			'$match' => array(
 				'services.name' => $this->data['name']
 			)
 		);
-		
+
 		if ($isPlan || ($isService && !$quantityAffected)) {
 			$aggregateGroup = array(
 				'$group' => array(
 					'_id' => null,
 					's' => array(
 						'$sum' => 1
-						)
 					)
-				);				
+				)
+			);
 		} else if ($isService && $quantityAffected) {
 			$aggregateGroup = array(
 				'$group' => array(
@@ -584,27 +579,27 @@ class Billrun_Service {
 				)
 			);
 		}
-		
+
 		$aggreagateArray = array($aggregateMatch);
-		
+
 		if ($isPlan) {
 			array_push($aggreagateArray, $aggregateGroup);
 		} else if ($this instanceof Billrun_Service) {
 			array_push($aggreagateArray, $unwindServices, $aggregateServices, $aggregateGroup);
-		} 
-				
+		}
+
 		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggreagateArray)->current();
 		if (!isset($results['s'])) {
 			return 0;
 		}
 		return $results['s'];
 	}
-	
+
 	public function getPlays() {
 		$plays = $this->get('play');
 		return empty($plays) ? [] : $plays;
 	}
-	
+
 	/**
 	 * gets the DB collection of the entity (servicesCollection/plansCollection/etc...)
 	 * 
@@ -613,7 +608,7 @@ class Billrun_Service {
 	public static function getCollection() {
 		return Billrun_Factory::db()->getCollection(str_replace("billrun_", "", strtolower(get_called_class())) . 's');
 	}
-	
+
 	/**
 	 * loads all entities (Services/Plans/etc...) to a static local variable
 	 * these entities will be later use to fetch from the memory instead of from the DB
@@ -679,7 +674,7 @@ class Billrun_Service {
 		}
 		return new Mongodloid_Entity(array(), self::getCollection());
 	}
-	
+
 	/**
 	 * method to receive the number of cycles to charge
 	 * @return mixed true is service is infinite (unlimited)
@@ -703,7 +698,7 @@ class Billrun_Service {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Returns service\'s maximum quantity between all account\'s subscribers, in a specific time.
 	 * @param type $aid
@@ -731,21 +726,21 @@ class Billrun_Service {
 		$query = array(
 			'aid' => $aid,
 			'time' => date(Billrun_Base::base_datetimeformat, $time)
-		);		
-		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);		
+		);
+		$results = Billrun_Factory::subscriber()->loadSubscriberForQueries([$query]);
 		$maximum_quantity = 0;
 		$from = $to = $time;
 		if (!empty($results)) {
 			foreach ($results as $index => $sub) {
 				if (isset($sub['services']) && in_array($current_service_name, array_column($sub['services'], 'name'))) {
-					$relevant_service = current(array_filter($sub['services'], function($service) use ($current_service_name) {
-							return $service['name'] === $current_service_name;
-						}));
+					$relevant_service = current(array_filter($sub['services'], function ($service) use ($current_service_name) {
+								return $service['name'] === $current_service_name;
+							}));
 					if (isset($relevant_service['quantity'])) {
 						if ($maximum_quantity < $relevant_service['quantity']) {
 							$maximum_quantity = $relevant_service['quantity'];
 							$from = $sub['from']->sec;
-							$to = 	$sub['to']->sec;
+							$to = $sub['to']->sec;
 						}
 					}
 				}

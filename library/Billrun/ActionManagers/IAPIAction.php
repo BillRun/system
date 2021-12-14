@@ -13,6 +13,7 @@
  * @since    5.1
  */
 interface Billrun_ActionManagers_IAPIAction {
+
 	/**
 	 * Parse a request to build the action logic.
 	 * 

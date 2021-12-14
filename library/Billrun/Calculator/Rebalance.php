@@ -15,7 +15,7 @@
 class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
 	static protected $type = 'rebalance';
-	
+
 	/**
 	 * see parent: isQueueCalc
 	 */
@@ -40,7 +40,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 			'creation_date' => 1,
 		);
 		$results = $rebalance_queue->find($query)->sort($sort)->limit($limit);
-		
+
 		$billruns = array();
 		$all_aids = array();
 		$conditions = array();
@@ -94,7 +94,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 	public function removeFromQueue() {
 		
 	}
-	
+
 	public function prepareData($lines) {
 		
 	}

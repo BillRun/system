@@ -15,8 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       5.1
  */
 class ServicesAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action

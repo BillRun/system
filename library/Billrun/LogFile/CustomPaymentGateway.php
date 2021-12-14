@@ -50,9 +50,9 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			$this->data['creation_time'] = new Mongodloid_Date();
 			$this->data['stamp'] = $stamp;
 			$this->data['source'] = $this->source;
-                        $this->data['errors'] = [];
-                        $this->data['warnings'] = [];
-                        $this->data['info'] = [];
+			$this->data['errors'] = [];
+			$this->data['warnings'] = [];
+			$this->data['info'] = [];
 			$this->data['rand'] = Billrun_Util::generateRandomNum();
 			$this->setStamp();
 			$this->save();
@@ -81,33 +81,34 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		}
 		return NULL;
 	}
-        
+
 	/**
 	 * Function to add field/fields to the log file
 	 * @param string $field_name - comes with "$value" - value's field name
 	 * @param string $value - comes with "$field_name" - field's value
 	 * @param array $fields - array of field_name => value - will come without "$field_name"/"$value"
 	 */
-    public function updateLogFileField($field_name = null, $value = null, $fields = []) {
+	public function updateLogFileField($field_name = null, $value = null, $fields = []) {
 		if (!empty($field_name) && isset($value) && empty($fields)) {
 			$fields = array($field_name => $value);
 		}
-		foreach($fields as $field_name => $value) {
-            if(in_array($field_name, ['errors', 'warnings', 'info'])){
-                $array = $this->data[$field_name];
-                array_push($array, $value);
-                $this->data[$field_name] = $array;
-            }else{
-                $this->data[$field_name] = $value;
-            }
-            }
-        }
-        
+		foreach ($fields as $field_name => $value) {
+			if (in_array($field_name, ['errors', 'warnings', 'info'])) {
+				$array = $this->data[$field_name];
+				array_push($array, $value);
+				$this->data[$field_name] = $array;
+			} else {
+				$this->data[$field_name] = $value;
+			}
+		}
+	}
+
 	public function getLogFileFieldValue($field_name, $defaultValue = null) {
 		return isset($this->data[$field_name]) ? $this->data[$field_name] : $defaultValue;
-        }
-        
-        public function saveLogFileFields(){
-            $this->data->save();
-        }
+	}
+
+	public function saveLogFileFields() {
+		$this->data->save();
+	}
+
 }

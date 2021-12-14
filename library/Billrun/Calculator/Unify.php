@@ -70,8 +70,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				}
 			}
 		}
-		
-		return $updateFields;	
+
+		return $updateFields;
 	}
 
 	/**
@@ -95,7 +95,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			Billrun_Factory::log('Cannot get unification fields. options: ' . print_r($options, 1));
 			return array();
 		}
-		
+
 		return array($type => $unificationFields);
 	}
 
@@ -110,7 +110,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
 	}
 
-	
 	/**
 	 * Sets unified line urt to 12pm
 	 * @deprecated since version 5.11
@@ -133,7 +132,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
 
 		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
-			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
+				(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
 		}
@@ -143,7 +142,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			foreach ($fields as $field) {
 				$val = Billrun_Util::getIn($newRow, $field, null);
 				if ($key == '$inc' && !is_null($val)) {
-					$updatedVal  = Billrun_Util::getIn($updatedRow, $field, 0) + (($val && is_numeric($val)) ? $val : 0);
+					$updatedVal = Billrun_Util::getIn($updatedRow, $field, 0) + (($val && is_numeric($val)) ? $val : 0);
 					Billrun_Util::setIn($updatedRow, $field, $updatedVal);
 				} else if ($key == '$set' && !is_null($val)) {
 					Billrun_Util::setIn($updatedRow, $field, $val);
@@ -167,7 +166,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return $fields;
 	}
-	
+
 	/**
 	 * convert operations from new configuration structure to old structure
 	 * 
@@ -179,15 +178,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		foreach ($updateConfig as $conf) {
 			$confData = $conf['data'];
-			if(isset($conf['custom_value'][$usaget]['data'])){
+			if (isset($conf['custom_value'][$usaget]['data'])) {
 				$uf = $conf['custom_value'][$usaget]['data'];
 				$confData = array_merge($confData, $uf);
 			}
-			if(isset($conf['calculated_fields'][$usaget]['data'])){
+			if (isset($conf['calculated_fields'][$usaget]['data'])) {
 				$cf = $conf['calculated_fields'][$usaget]['data'];
 				$confData = array_merge($confData, $cf);
 			}
-			
+
 			if (!isset($ret[$conf['operation']])) {
 				$ret[$conf['operation']] = $confData;
 			} else {
@@ -245,10 +244,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			foreach ($this->mergedUpdateFields[$row['type']] as $operations) {
 				$fkey = $operations['operation'];
 				$fields = $operations['data'];
-				if(isset($operations['custom_value'][$row['usaget']]['data'])){
+				if (isset($operations['custom_value'][$row['usaget']]['data'])) {
 					$fields = array_merge($fields, $operations['custom_value'][$row['usaget']]['data']);
 				}
-				if(isset($operations['calculated_fields'][$row['usaget']]['data'])){
+				if (isset($operations['calculated_fields'][$row['usaget']]['data'])) {
 					$fields = array_merge($fields, $operations['calculated_fields'][$row['usaget']]['data']);
 				}
 				foreach ($fields as $field) {
@@ -328,7 +327,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$serialize_array = array();
 		$arategroupsCount = isset($newRow['arategroups']) ? count($newRow['arategroups']) : 0;
 		foreach ($typeData['stamp']['value'] as $type => $field) {
-			if($type === 'custom_value'  || $type === 'calculated_fields' ){
+			if ($type === 'custom_value' || $type === 'calculated_fields') {
 				continue;
 			}
 			$newVal = Billrun_Util::getIn($newRow, $field, null);
@@ -436,7 +435,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$update = array('$push' => array('tx' => array('$each' => $lineStamps)));
 		return $update;
 	}
-	
+
 	/**
 	 * Release lock for given lines in a unified line in the DB.
 	 * @param type $unifiedStamp the unified line stamp to release the single line on.
@@ -487,11 +486,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function getArchiveLines() {
 		return $this->archivedLines;
 	}
-	
+
 	public function prepareData($lines) {
 		
 	}
-	
+
 	protected function setMinUrt($newRow, &$existingRow) {
 		$newVal = Billrun_Util::getIn($newRow, 'urt', null);
 		$existingVal = Billrun_Util::getIn($existingRow, 'urt', null);
@@ -499,7 +498,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			Billrun_Util::setIn($existingRow, 'urt', $newVal);
 		}
 	}
-	
+
 	/**
 	 * Limit the size of arategroups and taxes arrays in line
 	 * @param array $line the line to unify.
@@ -513,7 +512,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return true;
 	}
-	
+
 	protected function enrichOptionsWithUserFields($options) {
 		$configByType = array();
 		$fileTypes = Billrun_Factory::config()->getFileTypesSettings(true);
@@ -562,7 +561,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$ret = $this->linesCollection->update($query, $update);
 		return (!$ret || !$ret['ok'] || $ret['nModified'] == 0) ? false : true;
 	}
-	
+
 	protected function handleUpdatingFailure($query, $update, $key, $row) {
 		$updateFailedLines = array();
 		$incUpdate = $update;
@@ -586,8 +585,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return $updateFailedLines;
 	}
-	
-	public static function getUnifyLines($rowStamp){
+
+	public static function getUnifyLines($rowStamp) {
 		return Billrun_Factory::db()->archiveCollection()->query(array('u_s' => $rowStamp));
 	}
+
 }

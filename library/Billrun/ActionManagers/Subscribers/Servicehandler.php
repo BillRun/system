@@ -10,7 +10,7 @@
  * Trait for the subscriber update and create to handle the input subscriber services.
  */
 trait Billrun_ActionManagers_Subscribers_Servicehandler {
-	
+
 	/**
 	 * Set the subscriber services to the update/create record.
 	 * @param type $services
@@ -21,25 +21,26 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 			// let's check if this is json
 			$services = @json_decode($services, JSON_OBJECT_AS_ARRAY);
 		}
-		if(empty($services) || !is_array($services)) {
+		if (empty($services) || !is_array($services)) {
 			return array();
 		}
-		
+
 		$proccessedServices = array();
 		foreach ($services as $current) {
 			// Check that it has the name
-			if(!isset($current['name'])) {
+			if (!isset($current['name'])) {
 				$proccessedServices[] = $current;
 				continue;
 //				Billrun_Factory::log("Invalid service: " . print_r($current,1));
 //				continue;
-			} 
-			$proccessedServices[] = array(  'name' => $current['name'],
-											'from' => max(@$current['from'],$fromLimit),
-											'to' => !empty($current['to']) && $current['to'] <= $toLimit ? $current['to'] : $toLimit,
-										);
+			}
+			$proccessedServices[] = array('name' => $current['name'],
+				'from' => max(@$current['from'], $fromLimit),
+				'to' => !empty($current['to']) && $current['to'] <= $toLimit ? $current['to'] : $toLimit,
+			);
 		}
-		
+
 		return $proccessedServices;
 	}
+
 }

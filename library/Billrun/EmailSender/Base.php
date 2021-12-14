@@ -11,15 +11,15 @@
  *
  */
 abstract class Billrun_EmailSender_Base {
-	
+
 	protected $type = '';
 	protected $params = array();
-	
+
 	public function __construct($params = array()) {
 		$this->params = $params;
 		$this->type = $this->params['email_type'];
 	}
-	
+
 	/**
 	 * sends all relevant emails
 	 * @param $callback - function to be called after email is successfully sent
@@ -30,13 +30,13 @@ abstract class Billrun_EmailSender_Base {
 			Billrun_Factory::log('sendEmail - emails should not be sent');
 			return false;
 		}
-                $invoicesCursor = $this->getData();
+		$invoicesCursor = $this->getData();
 		foreach ($invoicesCursor as $data) {
 			$this->sendEmail($data->getRawData(), $callback);
 		}
 		Billrun_Factory::log('sendEmail - done sending email for type ' . $this->type);
 	}
-	
+
 	/**
 	 * whether or not emails should be sent
 	 * 
@@ -45,12 +45,13 @@ abstract class Billrun_EmailSender_Base {
 	public function shouldNotify() {
 		return true;
 	}
-	
+
 	/*
 	 * whether or not specific email should be sent
 	 * 
 	 * @return boolean
 	 */
+
 	public function shouldSendEmail($data) {
 		return true;
 	}
@@ -61,7 +62,7 @@ abstract class Billrun_EmailSender_Base {
 	 * @return cursor to the emails to send
 	 */
 	public abstract function getData();
-	
+
 	/**
 	 * validates data to send by email
 	 * 
@@ -71,7 +72,7 @@ abstract class Billrun_EmailSender_Base {
 	public function validateData($data) {
 		return !empty($data);
 	}
-	
+
 	/**
 	 * gets email attachments
 	 * 
@@ -81,22 +82,22 @@ abstract class Billrun_EmailSender_Base {
 	public function getAttachment($data) {
 		return array();
 	}
-	
+
 	/**
 	 * gets the email address/s to send the email to
 	 */
 	protected abstract function getEmailAddress($data);
-	
+
 	/**
 	 * gets email content (HTML body) to send
 	 */
 	protected abstract function getEmailBody($data);
-	
+
 	/**
 	 * gets email subject
 	 */
 	protected abstract function getEmailSubject($data);
-	
+
 	/**
 	 * translate email message
 	 * 
@@ -107,13 +108,12 @@ abstract class Billrun_EmailSender_Base {
 	public function translateMessage($msg, $data = array()) {
 		return $msg;
 	}
-	
+
 	protected function afterSend($data, $callback = false) {
 		if ($callback) {
 			call_user_func($callback, array($data));
 		}
 	}
-
 
 	/**
 	 * send 1 email
@@ -127,7 +127,7 @@ abstract class Billrun_EmailSender_Base {
 			return false;
 		}
 		$attachment = $this->getAttachment($data);
-		if($attachment === FALSE) {
+		if ($attachment === FALSE) {
 			Billrun_Factory::log('sendEmail - error sending email, No attachment data found.  Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			return false;
 		}
@@ -136,17 +136,17 @@ abstract class Billrun_EmailSender_Base {
 		$emails = is_array($email) ? $email : array($email);
 		$msg = $this->translateMessage($this->getEmailBody($data), $data);
 		$subject = $this->translateMessage($this->getEmailSubject($data), $data);
-		$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
+		$encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 		try {
 			if (!Billrun_Util::sendMail($encodedSubject, $msg, $emails, $attachments, true)) {
 				Billrun_Factory::log('sendEmail - error sending email. Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			}
 			$this->afterSend($data, $callback);
-			
 		} catch (Exception $ex) {
 			Billrun_Factory::log('sendEmail - error sending email. Error: "' . $ex->getMessage() . '". Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			return false;
 		}
 		return true;
 	}
+
 }

@@ -18,14 +18,14 @@ class Billrun_ModelValidator_Manager {
 	 * @param type $data to validate
 	 * @param type $validatorOptions - 
 	 * @return array of: 
-	 *					"validate" - true/false
-	 *					"errorMsg" - error message
+	 * 					"validate" - true/false
+	 * 					"errorMsg" - error message
 	 */
 	public static function validate($data, $type, $validatorOptions = array()) {
 		$validator = self::getValidator($validatorOptions);
 		return $validator->validate($data, $type);
 	}
-	
+
 	/**
 	 * Assistance function to get the validator object based on model name
 	 * 

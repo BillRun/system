@@ -48,7 +48,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode =  10;
+			$errorCode = 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -56,7 +56,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (empty($jsonQueryData['batch_number'])) {
-			$errorCode =  11;
+			$errorCode = 11;
 			$missingQueryFields = implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
@@ -95,12 +95,12 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			$deleteResult = $this->removeCreated($bulkOptions);
 			$count = $deleteResult['n'];
 		} catch (\MongoException $e) {
-			$errorCode =  12;
+			$errorCode = 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$count) {
-			$errorCode =  13;
+			$errorCode = 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 

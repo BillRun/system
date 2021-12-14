@@ -10,7 +10,7 @@
  * Input processor for payment gateways files
  */
 class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater {
-	
+
 	public $now;
 	protected $configByType;
 	protected $bills;
@@ -21,14 +21,12 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected $trailerRows;
 	protected $correlatedValue;
 	protected $linkToInvoice = true;
-        protected $informationArray = [];
-        
-        
+	protected $informationArray = [];
 	protected $billSavedFields = array();
-	
+
 	public function __construct($options) {
 		$this->configByType = !empty($options[$options['type']]) ? $options[$options['type']] : array();
-		$this->gatewayName = $options['name']; 
+		$this->gatewayName = $options['name'];
 		$this->receiverSource = str_replace('_', '', ucwords($options['name'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
 		$this->bills = Billrun_Factory::db()->billsCollection();
 		$this->log = Billrun_Factory::db()->logCollection();
@@ -46,18 +44,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->now = time();
 	}
 
-/**
+	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-			return $settingsByType['file_type'] === $this->fileType;
-		}));
+		$currentProcessor = current(array_filter($this->configByType, function ($settingsByType) {
+					return $settingsByType['file_type'] === $this->fileType;
+				}));
 		if (isset($currentProcessor['parser']) && $currentProcessor['parser'] != 'none') {
 			$this->setParser($currentProcessor['parser']);
 		} else {
-                        $message = "Parser definition missing";
-                        $this->informationArray['errors'][] = $message;
+			$message = "Parser definition missing";
+			$this->informationArray['errors'][] = $message;
 			throw new Exception($message);
 		}
 		if (!$this->mapProcessorFields($currentProcessor)) { // if missing mapping fields in conf
@@ -69,33 +67,33 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$parser = $this->getParser();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
-                try{
-		$parser->parse($this->fileHandler);
-                } catch(Exception $ex){
-                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-                    Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
-                    return false;
-                } 
+		try {
+			$parser->parse($this->fileHandler);
+		} catch (Exception $ex) {
+			Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log('Something went wrong while processing the file.', Zend_Log::ALERT);
+			return false;
+		}
 		$this->headerRows = $parser->getHeaderRows();
 		$this->trailerRows = $parser->getTrailerRows();
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
 
 		foreach ($parsedData as $line) {
-                        $line = $this->formatLine($line,$dataStructure);
+			$line = $this->formatLine($line, $dataStructure);
 			$row = $this->getBillRunLine($line);
-			if (!$row){
+			if (!$row) {
 				return false;
 			}
 			$row['row_number'] = ++$rowCount;
 			$this->addDataRow($row);
 		}
 		$this->data['header'] = array('header' => TRUE); //TODO
-        $this->data['trailer'] = array('trailer' => TRUE); //TODO
+		$this->data['trailer'] = array('trailer' => TRUE); //TODO
 
 		return true;
 	}
-        
+
 	public function initProcessorFields($processor_fields, $processor) {
 		$var_names = Billrun_Util::parseBillrunConventionToCamelCase($processor_fields);
 		foreach ($var_names as $var_name => $config_name) {
@@ -112,9 +110,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function formatLine($row, $dataStructure) {
 		foreach ($dataStructure as $index => $paramObj) {
-				if (isset($paramObj['value_mult'])) {
-					$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
-				}
+			if (isset($paramObj['value_mult'])) {
+				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
+			}
 			if (isset($paramObj['decimals'])) {
 				$value = intval($row[$paramObj['name']]);
 				$row[$paramObj['name']] = (float) ($value / pow(10, $paramObj['decimals']));
@@ -148,10 +146,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 
 	protected function updateData() {
 		$data = $this->getData();
-		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-			return $settingsByType['file_type'] === $this->fileType;
-		}));
-		
+		$currentProcessor = current(array_filter($this->configByType, function ($settingsByType) {
+					return $settingsByType['file_type'] === $this->fileType;
+				}));
+
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
 		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
@@ -161,26 +159,26 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$this->updateLogCollection($fileCorrelationObj);
 		}
-                if(isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])){
-                if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-                        $currentFileCount = $this->getCurrentFileCount() + 1;
-                    $this->informationArray['file_count'] = $currentFileCount;
-                        if (($currentFileCount) > $fileConfCount){
-                        $message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
-                        Billrun_Factory::log($message , Zend_Log::ALERT);
-                        $this->informationArray['errors'] = $message;
-                        return False;
-                    }else{
-                            if($currentFileCount == $fileConfCount){
-                            $this->informationArray['last_file'] = true;
-                            }
-                        }
-                    }
-                }
-				$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
+		if (isset($currentProcessor['file_status']) && !empty($currentProcessor['file_status'])) {
+			if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
+				$currentFileCount = $this->getCurrentFileCount() + 1;
+				$this->informationArray['file_count'] = $currentFileCount;
+				if (($currentFileCount) > $fileConfCount) {
+					$message = 'Too many files were received for correlatedValue: ' . $this->correlatedValue . '. Only the first ' . $fileConfCount . ' files were updated in the Data Base.';
+					Billrun_Factory::log($message, Zend_Log::ALERT);
+					$this->informationArray['errors'] = $message;
+					return False;
+				} else {
+					if ($currentFileCount == $fileConfCount) {
+						$this->informationArray['last_file'] = true;
+					}
+				}
+			}
+		}
+		$this->informationArray = array_merge($this->informationArray, $this->getCustomPaymentGatewayFields());
 		$this->updatePaymentsByRows($data, $currentProcessor);
 		$this->informationArray['process_time'] = new Mongodloid_Date($this->now);
-                $this->updateLogFile();
+		$this->updateLogFile();
 	}
 
 	protected function getRowDateTime($dateStr) {
@@ -188,7 +186,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$date = $datetime->createFromFormat('ymdHis', $dateStr);
 		return $date;
 	}
-	
+
 	public function skipQueueCalculators() {
 		return true;
 	}
@@ -196,7 +194,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	protected function setPgFileType($fileType) {
 		$this->fileType = $fileType;
 	}
-	
+
 	protected function getCurrentFileCount() {
 		if (empty($this->correlatedValue)) {
 			throw new Exception("Missing correlated value");
@@ -205,69 +203,69 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			'related_request_file' => $this->correlatedValue,
 			'process_time' => array('$exists' => true),
 		);
-		
+
 		return $this->log->query($query)->cursor()->count();
 	}
-	
+
 	protected function updateLeftPaymentsByFileStatus() {
-		$currentProcessor = current(array_filter($this->configByType, function($settingsByType) {
-			return $settingsByType['file_type'] === $this->fileType;
-		}));
+		$currentProcessor = current(array_filter($this->configByType, function ($settingsByType) {
+					return $settingsByType['file_type'] === $this->fileType;
+				}));
 		if ($currentProcessor['file_status'] == 'only_rejections' || $currentProcessor['file_status'] == 'only_acceptance') {
-		$currentFileCount = $this->getCurrentFileCount();
-		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
-		$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
-		$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
-		if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
-			if (empty($fileConfCount) || empty($fileCorrelationObj)) {
-				throw new Exception('Missing file response definitions');
+			$currentFileCount = $this->getCurrentFileCount();
+			$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
+			$fileConfCount = isset($currentProcessor['response_files_count']) ? $currentProcessor['response_files_count'] : null;
+			$fileCorrelationObj = isset($currentProcessor['correlation']) ? $currentProcessor['correlation'] : null;
+			if (!empty($fileStatus) && in_array($fileStatus, array('only_rejections', 'only_acceptance'))) {
+				if (empty($fileConfCount) || empty($fileCorrelationObj)) {
+					throw new Exception('Missing file response definitions');
+				}
 			}
-		}
-		$correlatedField =  $fileCorrelationObj['file_field'];
-		if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount != $fileConfCount) {
-			return;
-		}
-		$origFileStamp = $this->getOriginalFileStamp($correlatedField);
-		$relevantBills = $this->getOrigFileBills($origFileStamp);
-		foreach ($relevantBills as $bill) {
-			if (!($bill instanceof Billrun_Bill)) {
-				$bill = Billrun_Bill::getInstanceByData($bill);
-			} 
-			if ($fileStatus == 'only_rejections') {
-				$customFields = $this->getCustomPaymentGatewayFields();
-				$bill->setExtraFields($customFields, array_keys($customFields));
-				$bill->markApproved('Completed');
-				$bill->setPending(false);
-				$bill->updateConfirmation();
-				$bill->save();
-                $this->informationArray['transactions']['confirmed']++;
-				$billData = $bill->getRawData();
-				if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
-					Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+			$correlatedField = $fileCorrelationObj['file_field'];
+			if (!empty($fileConfCount) && !empty($currentFileCount) && $currentFileCount != $fileConfCount) {
+				return;
+			}
+			$origFileStamp = $this->getOriginalFileStamp($correlatedField);
+			$relevantBills = $this->getOrigFileBills($origFileStamp);
+			foreach ($relevantBills as $bill) {
+				if (!($bill instanceof Billrun_Bill)) {
+					$bill = Billrun_Bill::getInstanceByData($bill);
 				}
-				if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
-					Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+				if ($fileStatus == 'only_rejections') {
+					$customFields = $this->getCustomPaymentGatewayFields();
+					$bill->setExtraFields($customFields, array_keys($customFields));
+					$bill->markApproved('Completed');
+					$bill->setPending(false);
+					$bill->updateConfirmation();
+					$bill->save();
+					$this->informationArray['transactions']['confirmed']++;
+					$billData = $bill->getRawData();
+					if (isset($billData['left_to_pay']) && $billData['due'] > (0 + Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+					}
+					if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+					}
+				} else if ($fileStatus == 'only_acceptance') {
+					$billData = $bill->getRawData();
+					$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
+					$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
+					$customFields = $this->getCustomPaymentGatewayFields();
+					$billToReject->setExtraFields($customFields, array_keys($customFields));
+					Billrun_Factory::log('Rejecting transaction ' . $billToReject->getId(), Zend_Log::INFO);
+					$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
+					$rejection->setConfirmationStatus(false);
+					$rejection->save();
+					$billToReject->markRejected();
+					Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
+					$this->informationArray['transactions']['rejected']++;
+					$this->informationArray['process_time'] = new Mongodloid_Date($this->now);
 				}
-			} else if ($fileStatus == 'only_acceptance') {
-				$billData = $bill->getRawData();
-				$billData['method'] = isset($billData['payment_method']) ? $billData['payment_method'] : (isset($billData['method']) ? $billData['method'] : 'automatic');
-				$billToReject = Billrun_Bill_Payment::getInstanceByData($billData);
-				$customFields = $this->getCustomPaymentGatewayFields();
-				$billToReject->setExtraFields($customFields, array_keys($customFields));
-				Billrun_Factory::log('Rejecting transaction ' . $billToReject->getId(), Zend_Log::INFO);
-				$rejection = $billToReject->getRejectionPayment(array('status' => 'acceptance_file'));
-				$rejection->setConfirmationStatus(false);
-				$rejection->save();
-				$billToReject->markRejected();
-				Billrun_Factory::dispatcher()->trigger('afterRejection', array($billToReject->getRawData()));
-                $this->informationArray['transactions']['rejected']++;
-				$this->informationArray['process_time'] = new Mongodloid_Date($this->now);
 			}
 		}
 	}
-	}
-	
-        protected function getOriginalFileStamp($correlatedField) {
+
+	protected function getOriginalFileStamp($correlatedField) {
 		$query = array(
 			$correlatedField => $this->correlatedValue,
 		);
@@ -313,8 +311,8 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$query = array(
 			'stamp' => $this->getFileStamp()
 		);
-		
-		$update = array (
+
+		$update = array(
 			'$set' => array(
 				'related_request_file' => $relevantRow[$correlationField],
 				'response_file' => true,
@@ -323,7 +321,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$this->log->update($query, $update);
 		$this->correlatedValue = $relevantRow[$correlationField];
 	}
-	
+
 	protected function getOrigFileBills($fileStamp) {
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$query = array(
@@ -334,18 +332,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		return $this->bills->query($query)->cursor();
 	}
 
-        protected function updateLogFile(){
-            $current_stamp = $this->getStamp();
-            $log = Billrun_Factory::db()->logCollection();
-            if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
-                $resource = $log->findOne($current_stamp);
-                $entityData = $resource->getRawData();
-                $data = array_merge($entityData, $this->informationArray);
-                $resource->setRawData($data);
-                $log->save($resource);
-            }
-        }
-		
+	protected function updateLogFile() {
+		$current_stamp = $this->getStamp();
+		$log = Billrun_Factory::db()->logCollection();
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+			$resource = $log->findOne($current_stamp);
+			$entityData = $resource->getRawData();
+			$data = array_merge($entityData, $this->informationArray);
+			$resource->setRawData($data);
+			$log->save($resource);
+		}
+	}
+
 	protected function getBillSavedFieldsNames($parserDef) {
 		$savedFieldsNames = array();
 		$dataStructure = $parserDef['data_structure'];
@@ -355,10 +353,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$savedFieldsNames[] = $field['name'];
 		}
-		
+
 		return $savedFieldsNames;
 	}
-		
+
 	protected function getBillSavedFields($row, $fieldNames) {
 		$savedFields = array();
 		foreach ($row as $field => $fieldValue) {
@@ -367,10 +365,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$savedFields[$field] = $fieldValue;
 		}
-		
+
 		return $savedFields;
 	}
-	
+
 	public function getCustomPaymentGatewayFields() {
 		return [
 			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
@@ -389,9 +387,9 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			return date(Billrun_Base::base_datetimeformat, time());
 		}
 	}
-	
+
 	public function getLinkToInvoiceValue($processor) {
-		if(isset($processor['identifier_field']) && is_array($processor['identifier_field'])){
+		if (isset($processor['identifier_field']) && is_array($processor['identifier_field'])) {
 			$this->linkToInvoice = (($processor['identifier_field']['field'] === 'invoice_id') && (isset($processor['identifier_field']['link_to_invoice']))) ? $processor['identifier_field']['link_to_invoice'] : $this->linkToInvoice;
 		}
 	}

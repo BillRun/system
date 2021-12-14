@@ -14,7 +14,7 @@
  * @since    5.0
  */
 class Billrun_CollectionSteps_Notifiers_Httpnoack extends Billrun_CollectionSteps_Notifiers_Http {
-	
+
 	/**
 	 * parse the response received from the request
 	 * @return mixed
@@ -22,7 +22,7 @@ class Billrun_CollectionSteps_Notifiers_Httpnoack extends Billrun_CollectionStep
 	protected function parseResponse($response) {
 		return $response;
 	}
-	
+
 	/**
 	 * checks if the response from request is valid
 	 * 
@@ -32,5 +32,5 @@ class Billrun_CollectionSteps_Notifiers_Httpnoack extends Billrun_CollectionStep
 	protected function isResponseValid($response) {
 		return true;
 	}
-	
+
 }

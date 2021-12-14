@@ -41,7 +41,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode =  20;
+			$errorCode = 20;
 			$error = "There is no query tag or query tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -50,7 +50,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!empty($errLog) && count($errLog) == count($queryFields)) {
-			$errorCode =  21;
+			$errorCode = 21;
 			$error = "Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -88,12 +88,12 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($rawItem, array('from', 'to', 'creation_time', 'activation_datetime'));
 			}
 		} catch (\MongoException $e) {
-			$errorCode =  22;
+			$errorCode = 22;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$returnData) {
-			$errorCode =  23;
+			$errorCode = 23;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 

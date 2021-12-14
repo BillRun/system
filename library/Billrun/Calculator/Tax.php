@@ -14,10 +14,9 @@
 abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 
 	static protected $type = 'tax';
-	
 	protected $config = array();
 	protected $nonTaxableTypes = array();
-	
+
 	/**
 	 * timestamp of minimum row time that can be calculated
 	 * @var int timestamp
@@ -29,9 +28,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @var string 
 	 */
 	protected $active_billrun;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->config = Billrun_Factory::config()->getConfigValue('taxation',array());
+		$this->config = Billrun_Factory::config()->getConfigValue('taxation', array());
 		$this->nonTaxableTypes = Billrun_Factory::config('taxation.non_taxable_types', array());
 		$this->months_limit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 0);
 		$this->billrun_lower_bound_timestamp = strtotime($this->months_limit . " months ago");
@@ -44,33 +44,33 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if (!$this->isLineTaxable($current)) {
 			$newData = $this->updateNonTaxableRowTaxInformation($current);
 		} else {
-			if( $problemField = $this->isLineDataComplete($current) ) {
-				Billrun_Factory::log("Line {$current['stamp']} is missing/has illegal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
+			if ($problemField = $this->isLineDataComplete($current)) {
+				Billrun_Factory::log("Line {$current['stamp']} is missing/has illegal value in fields " . implode(',', $problemField) . ' For calcaulator ' . $this->getType());
 				return FALSE;
 			}
-			$subscriberSearchData = ['sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
-			$accountSearchData = ['aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)];
+			$subscriberSearchData = ['sid' => $current['sid'], 'time' => date('Ymd H:i:sP', $current['urt']->sec)];
+			$accountSearchData = ['aid' => $current['aid'], 'time' => date('Ymd H:i:sP', $current['urt']->sec)];
 			$newData = $this->updateRowTaxInforamtion($current, $subscriberSearchData, $accountSearchData);
 		}
-		
-			//If we could not find the taxing information.
-			if($newData == FALSE) {
-				return FALSE;
-			}
-		
-		if($row instanceof Mongodloid_Entity ) {
+
+		//If we could not find the taxing information.
+		if ($newData == FALSE) {
+			return FALSE;
+		}
+
+		if ($row instanceof Mongodloid_Entity) {
 			$row->setRawData($newData);
 		} else {
 			$row = $newData;
 		}
-		if($this->isLinePreTaxed($current)) {
-			$row['final_charge']  = $this->getLinePriceToTax($current);
+		if ($this->isLinePreTaxed($current)) {
+			$row['final_charge'] = $this->getLinePriceToTax($current);
 		} else {
-			$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
+			$row['final_charge'] = $row['tax_data']['total_amount'] + $row['aprice'];
 		}
-                if($this->ifLineNeedFinalChargeRounding($current)){
-                    $this->roundingFinalCharge($row);
-                }
+		if ($this->ifLineNeedFinalChargeRounding($current)) {
+			$this->roundingFinalCharge($row);
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -80,28 +80,30 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param type $lines
 	 * @return nothing
 	 */
-	public function prepareData($lines) { }
+	public function prepareData($lines) {
+		
+	}
 
-	
 	//================================= Static =================================
+
 	/**
 	 *  Get  the  total amount with taxes  for a given line
 	 * @param type $taxedLine a line *after* taxation  was applied to it.
 	 * @return float the  price of the line including taxes
-	 *				 or the same value if the tax could not be calcualted without the taxedLine
+	 * 				 or the same value if the tax could not be calcualted without the taxedLine
 	 */
 	public static function addTax($untaxedPrice, $taxedLine = NULL) {
-		return $untaxedPrice + Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'],0);
+		return $untaxedPrice + Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'], 0);
 	}
 
 	/**
 	 *  Remove the taxes from the total amount with taxes for a given line
 	 * @param type $taxedLine a line *after* taxation  was applied to it.
 	 * @return float the price of the line including taxes \
-	 *				 or the same value if the tax could not be calcualted without the taxedLine
+	 * 				 or the same value if the tax could not be calcualted without the taxedLine
 	 */
 	public static function removeTax($taxedPrice, $taxedLine = NULL) {
-		return $taxedPrice - Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'],0);
+		return $taxedPrice - Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'], 0);
 	}
 
 	/**
@@ -109,13 +111,13 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param $line  The Usage/Service/Plan CDR  to check for being  pretexed
 	 * return TRUE if the line/CDR is pre taxed  FALSE otherwise
 	 */
-	 public static function isLinePreTaxed($line) {
+	public static function isLinePreTaxed($line) {
 		$usageType = $line['usaget'];
 		$prepricedMapping = @Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
 
 		return !empty($prepricedMapping[$usageType]['tax_included']);
-	 }
-	
+	}
+
 	//================================ Protected ===============================	
 
 	/**
@@ -125,7 +127,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @return price The price that ins found in the line if not found then FALSE is returned.
 	 */
 	protected function getLinePriceToTax($line) {
-		if($this->isLinePreTaxed($line)) {
+		if ($this->isLinePreTaxed($line)) {
 			$userFields = $line['uf'];
 			$usageType = $line['usaget'];
 			$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($line['type'], true)['pricing'];
@@ -140,7 +142,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			}
 		}
 
-		if(!isset($line['aprice'])) {
+		if (!isset($line['aprice'])) {
 			Billrun_Factory::log("Line {$line['stamp']} has no pricing field legitimate for taxation", Zend_Log::ALERT);
 		}
 		return $line['aprice'] ?: FALSE;
@@ -151,7 +153,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function getLines() {
-		return $this->getQueuedLines( array( 'type' => array( '$nin' => $this->nonTaxableTypes ) ) );
+		return $this->getQueuedLines(array('type' => array('$nin' => $this->nonTaxableTypes)));
 	}
 
 	public function getCalculatorQueueType() {
@@ -159,17 +161,17 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		return (empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc'])) && 
-			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
-	}	
-	
+		return (empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc'])) &&
+				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+	}
+
 	protected function isLineTaxable($line) {
 		$rate = $this->getRateForLine($line);
-		return  (!isset($rate['vatable']) || (!empty($rate['vatable']) && !$this->isLinePreTaxed($line)));
+		return (!isset($rate['vatable']) || (!empty($rate['vatable']) && !$this->isLinePreTaxed($line)));
 	}
-	
+
 	protected function isLineDataComplete($line) {
-		$missingFields = array_diff( array('aid'), array_keys($line) );
+		$missingFields = array_diff(array('aid'), array_keys($line));
 		return empty($missingFields) ? FALSE : $missingFields;
 	}
 
@@ -181,6 +183,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @return array updated line/row with the tax data
 	 */
 	abstract public function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData, $params = []);
+
 	/**
 	 * Update the non-taxable/pre-taxed line/row with it related taxing data.
 	 * @param array $line The line to update it data.
@@ -193,11 +196,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if ($taxData == false) {
 			return false;
 		}
-		
+
 		$newData['tax_data'] = $taxData;
 		return $newData;
 	}
-	
+
 	/**
 	 * gets tax information for pre taxed line
 	 * 
@@ -234,58 +237,55 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 
 	protected function getRateForLine($line) {
 		$rate = FALSE;
-		if(!empty($line['arate'])) {
+		if (!empty($line['arate'])) {
 			$rate = Billrun_Rates_Util::getRateByRef($line['arate'], true)->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ?
-				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
-				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
+					new Billrun_Plan(array('name' => $line['name'], 'time' => $line['urt']->sec)) :
+					new Billrun_Service(array('name' => $line['name'], 'time' => $line['urt']->sec));
 			$rate = $flatRate->getData();
 		}
 		return $rate;
 	}
-        
-        protected function ifLineNeedFinalChargeRounding($line) {
-                return isset($line['rounding_rules']) &&
-                    !empty($line['rounding_rules']['rounding_type']) &&
-                    $line['rounding_rules']['rounding_type'] !== 'None';
-                
+
+	protected function ifLineNeedFinalChargeRounding($line) {
+		return isset($line['rounding_rules']) &&
+				!empty($line['rounding_rules']['rounding_type']) &&
+				$line['rounding_rules']['rounding_type'] !== 'None';
 	}
-        
-        protected function roundingFinalCharge(&$row) {
-                $current = $row->getRawData();
-                if($current['final_charge'] == 0){
-                    return;
-                }
-                $decimals = $current['rounding_rules']['rounding_decimals'] ?? null;
-                if(!isset($decimals)){
-                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals must supply if rounding type selected", Zend_Log::ALERT);
-                    return;
-                }
-                if(!($decimals >=0 && $decimals <= 10)){
-                    Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
-                    return;
-                    
-                }
-                $newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);             
-                //check if $newFinalCharge is not valid 
-                if(!is_numeric($newFinalCharge)){
-                    Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
-                    return;
-                }
-                $div = $newFinalCharge / $current['final_charge'];
-                $current['before_rounding']['final_charge'] = $current['final_charge'];
-                $current['final_charge'] = $newFinalCharge;
-                $current['before_rounding']['aprice'] = $current['aprice'];
-                $current['aprice'] = $current['aprice'] * $div;
-                Billrun_util::setIn($current, 'tax_data.total_amount_before_rounding', $current['tax_data']['total_amount']);
-                $current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
-                foreach ($current['tax_data']['taxes'] as $index => $tax){
-                    $current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
-                    $current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
-                }
-                $row->setRawData($current);
+
+	protected function roundingFinalCharge(&$row) {
+		$current = $row->getRawData();
+		if ($current['final_charge'] == 0) {
+			return;
+		}
+		$decimals = $current['rounding_rules']['rounding_decimals'] ?? null;
+		if (!isset($decimals)) {
+			Billrun_Factory::log("Line {$current['stamp']} rounding_decimals must supply if rounding type selected", Zend_Log::ALERT);
+			return;
+		}
+		if (!($decimals >= 0 && $decimals <= 10)) {
+			Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
+			return;
+		}
+		$newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);
+		//check if $newFinalCharge is not valid 
+		if (!is_numeric($newFinalCharge)) {
+			Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
+			return;
+		}
+		$div = $newFinalCharge / $current['final_charge'];
+		$current['before_rounding']['final_charge'] = $current['final_charge'];
+		$current['final_charge'] = $newFinalCharge;
+		$current['before_rounding']['aprice'] = $current['aprice'];
+		$current['aprice'] = $current['aprice'] * $div;
+		Billrun_util::setIn($current, 'tax_data.total_amount_before_rounding', $current['tax_data']['total_amount']);
+		$current['tax_data']['total_amount'] = $current['tax_data']['total_amount'] * $div;
+		foreach ($current['tax_data']['taxes'] as $index => $tax) {
+			$current['tax_data']['taxes'][$index]['amount_before_rounding'] = $tax['amount'];
+			$current['tax_data']['taxes'][$index]['amount'] = $tax['amount'] * $div;
+		}
+		$row->setRawData($current);
 	}
-        
 
 }

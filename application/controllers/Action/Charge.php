@@ -15,7 +15,7 @@
 class ChargeAction extends Action_Base {
 
 	use Billrun_Traits_Api_OperationsLock;
-	
+
 	protected $aids = array();
 
 	/**
@@ -45,7 +45,7 @@ class ChargeAction extends Action_Base {
 		}
 		$this->getController()->addOutput("Charging Done");
 	}
-	
+
 	public function charge($options) {
 		$this->aids = isset($options['aids']) ? Billrun_Util::verify_array($options['aids'], 'int') : array();
 		if (!$this->lock()) {
@@ -57,7 +57,7 @@ class ChargeAction extends Action_Base {
 			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		return $response;
 	}
 

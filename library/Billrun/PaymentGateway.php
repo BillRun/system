@@ -12,7 +12,7 @@
  * @since    5.2
  */
 abstract class Billrun_PaymentGateway {
-	
+
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -20,78 +20,75 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $omnipayName;
-	
+
 	/**
 	 * Omnipay object for payment gateway.
 	 * @var omnipay
 	 */
 	protected $omnipayGateway;
-	
 	protected static $paymentGateways;
-	
+
 	/**
 	 * url to redirect after getting billing agreement from the payment gateway.
 	 * @var string
 	 */
 	protected $redirectUrl;
-	
+
 	/**
 	 * holds parameters used for the client to dynamically build request to the gateway
 	 * @var array
 	 */
 	protected $requestParams = [];
-	
+
 	/**
 	 * endpoint of the payment gateway.
 	 * @var string
 	 */
 	protected $EndpointUrl;
-	
+
 	/**
 	 * details from the payment gateway about the user.
 	 * @var array
 	 */
 	protected $saveDetails;
-	
+
 	/**
 	 * billrun class name for the payment gateway.
 	 * @var string
 	 */
 	protected $billrunName;
-	
+
 	/**
 	 * identifier for the transaction. 
 	 * @var string
 	 */
 	protected $transactionId;
-	
-
 	protected $subscribers;
-	
+
 	/**
 	 * whrere to redirect the use after success.
 	 * @var string
 	 */
 	protected $returnUrl;
-	
+
 	/**
 	 * regex for rejection status for the payment gateway.
 	 * @var string
 	 */
 	protected $rejectionCodes;
-	
+
 	/**
 	 * regex for pending status for the payment gateway.
 	 * @var string
 	 */
 	protected $pendingCodes;
-	
+
 	/**
 	 * regex for completion status for the payment gateway.
 	 * @var string
 	 */
 	protected $completionCodes;
-	
+
 	/**
 	 * where to redirect the user when unrecoverable error happens.
 	 * @var string
@@ -114,9 +111,8 @@ abstract class Billrun_PaymentGateway {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
 		$this->account = Billrun_Factory::account();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName .'.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/PaymentGateways/' . $this->billrunName . '/' . $this->billrunName . '.ini');
 	}
-
 
 	public function __call($name, $arguments) {
 		if ($this->supportsOmnipay()) {
@@ -191,7 +187,7 @@ abstract class Billrun_PaymentGateway {
 		if (isset($data['installments'])) {
 			$options['installments'] = $data['installments'];
 		}
-		if ($this->needRequestForToken()){
+		if ($this->needRequestForToken()) {
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage, $singlePaymentParams, $options);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
@@ -203,31 +199,32 @@ abstract class Billrun_PaymentGateway {
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($iframe && $requestParameters) {
-			return ['content'=> $this->requestParams, 'content_type' => 'url'];
+			return ['content' => $this->requestParams, 'content_type' => 'url'];
 		}
-		if ($this->isUrlRedirect()){
+		if ($this->isUrlRedirect()) {
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			if ($iframe) {
-				return array('content'=> $this->redirectUrl, 'content_type' => 'url');
-			}	
-			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
-		} else if ($this->isHtmlRedirect()){
-			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
-			return array('content'=> $this->htmlForm, 'content_type' => 'html');
+				return array('content' => $this->redirectUrl, 'content_type' => 'url');
+			}
+			return array('content' => "Location: " . $this->redirectUrl, 'content_type' => 'url');
+		} else if ($this->isHtmlRedirect()) {
+			Billrun_Factory::log("Redirecting to: " . $this->billrunName, Zend_Log::DEBUG);
+			return array('content' => $this->htmlForm, 'content_type' => 'html');
 		}
 	}
-	
-	 /**
-	  * True if there's a need to request token from the payment gateway. 
-	  * 
-	  */
+
+	/**
+	 * True if there's a need to request token from the payment gateway. 
+	 * 
+	 */
 	abstract protected function needRequestForToken();
 
-	 /* returns the OkPage.
+	/* returns the OkPage.
 	 * 
 	 * @param $request - the request that got from whtn the customer filed his personal details.
 	 * 
 	 */
+
 	protected function getOkPage($request) {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
 		$pageRoot = $request->getServer()['HTTP_HOST'];
@@ -242,7 +239,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract function updateSessionTransactionId();
-	
+
 	/**
 	 * Get the Redirect url of the payment gateway.
 	 * 
@@ -281,6 +278,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract public function handleOkPageData($txId);
+
 	/**
 	 * Query the response to getting needed details.
 	 * 
@@ -294,7 +292,6 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - payment gateway object with the wanted details
 	 */
 	abstract protected function buildSetQuery();
-
 
 	/**
 	 * Checks against the chosen payment gateway if the credentials passed are correct.
@@ -335,32 +332,32 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function convertAmountToSend($amount);
 
-/**
+	/**
 	 * True if need to call http_build_query before sending the request. 
 	 * 
 	 */
 	abstract protected function isNeedAdjustingRequest();
-	
+
 	/**
 	 * True if the redirection to the payment gateway hosted page is with a given url. 
 	 * 
 	 */
 	abstract protected function isUrlRedirect();
-		
+
 	/**
 	 * True if the redirection to the payment gateway hosted page is through printing html form.
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-	
+
 	/**
 	 * Checks that it's all the necessary details for charging exist.
 	 * 
 	 * @param Array $gateway - array with payment gateway details.
 	 * @return Boolean - True if valid structure of the payment gateway.
 	 */
-	abstract protected function validateStructureForCharge($gatewayDetails); 
-	
+	abstract protected function validateStructureForCharge($gatewayDetails);
+
 	/**
 	 * Handles errors that come back from the payment gateway.
 	 * 
@@ -369,7 +366,7 @@ abstract class Billrun_PaymentGateway {
 	 * return Boolean - True if there's an error that was handled. 
 	 */
 	abstract protected function handleTokenRequestError($response, $params);
-	
+
 	/**
 	 * Build request for start a transaction of making single payment.
 	 * 
@@ -378,7 +375,7 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - represents the request
 	 */
 	abstract protected function buildSinglePaymentArray($params, $options);
-	
+
 	/**
 	 * Creates customer profile on the gateway for recurring billing charge
 	 * and save it for the account
@@ -390,7 +387,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []);
 
-		/**
+	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -413,7 +410,7 @@ abstract class Billrun_PaymentGateway {
 		} else { // Request to get token
 			$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
 		}
-		if ($this->isNeedAdjustingRequest()){
+		if ($this->isNeedAdjustingRequest()) {
 			$postString = http_build_query($postArray);
 		} else {
 			$postString = $postArray;
@@ -427,7 +424,7 @@ abstract class Billrun_PaymentGateway {
 				$response = $result;
 			}
 		}
-		
+
 		return $response;
 	}
 
@@ -438,7 +435,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function saveTransactionDetails($txId, $additionalParams) {
 		$postArray = $this->buildTransactionPost($txId, $additionalParams);
-		if ($this->isNeedAdjustingRequest()){
+		if ($this->isNeedAdjustingRequest()) {
 			$postString = http_build_query($postArray);
 		} else {
 			$postString = $postArray;
@@ -463,7 +460,7 @@ abstract class Billrun_PaymentGateway {
 		} else {
 			$this->savePaymentGateway();
 		}
-		
+
 		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
 	}
 
@@ -496,13 +493,13 @@ abstract class Billrun_PaymentGateway {
 		} catch (Exception $ex) {
 			Billrun_Factory::log("Updating payment gateway for account number " . $aid . " has failed. Exception: {$ex->getCode()}: {$ex->getMessage()}", Zend_Log::ALERT);
 			return false;
-		}	
+		}
 		Billrun_Factory::log($update['payment_gateway']['active']['name'] . " was defined successfully for " . $aid, Zend_Log::INFO);
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int) $aid);
 		$textualQuery = json_encode($query);
 		Billrun_Factory::log('Querying creditproxy with ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
@@ -531,14 +528,14 @@ abstract class Billrun_PaymentGateway {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 
 		// Get is started
-		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => (int)$this->saveDetails['aid']);
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => (int) $this->saveDetails['aid']);
 		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
 			// but no indication for charge start
 			return false;
 		}
-		
+
 		// Check how long has passed.
 		$timePassed = time() - $paymentRow['t'];
 
@@ -589,7 +586,7 @@ abstract class Billrun_PaymentGateway {
 			throw new Exception("Unknown status");
 		}
 	}
-	
+
 	/**
 	 * Get the Credentials of the current payment gateway. 
 	 * 
@@ -598,13 +595,13 @@ abstract class Billrun_PaymentGateway {
 	public function getGatewayCredentials() {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+		$gateway = array_filter($gateways, function ($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['params'];
 	}
-	
+
 	/**
 	 * Get the export details of the current payment gateway. 
 	 * 
@@ -613,14 +610,14 @@ abstract class Billrun_PaymentGateway {
 	public function getGatewayExport() {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+		$gateway = array_filter($gateways, function ($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['export'];
 	}
-	
-		/**
+
+	/**
 	 * Get the receiver details of the current payment gateway. 
 	 * 
 	 * @return Array - the status and stage of the payment.
@@ -628,21 +625,21 @@ abstract class Billrun_PaymentGateway {
 	public function getGatewayReceiver($type) {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+		$gateway = array_filter($gateways, function ($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails[$type]['receiver'];
 	}
 
-	protected function rearrangeParametres($params){
+	protected function rearrangeParametres($params) {
 		foreach ($params as $value) {
 			$arranged[$value] = '';
 		}
-		
+
 		return $arranged;
 	}
-	
+
 	/**
 	 * Checks if the payment is accepted.
 	 * 
@@ -652,7 +649,7 @@ abstract class Billrun_PaymentGateway {
 	protected function isCompleted($status) {
 		return preg_match($this->completionCodes, $status);
 	}
-	
+
 	/**
 	 * Checks if the payment is pending.
 	 * 
@@ -662,7 +659,7 @@ abstract class Billrun_PaymentGateway {
 	public function isPending($status) {
 		return preg_match($this->pendingCodes, $status);
 	}
-	
+
 	/**
 	 * Checks if the payment is rejected.
 	 * 
@@ -672,11 +669,11 @@ abstract class Billrun_PaymentGateway {
 	protected function isRejected($status) {
 		return preg_match($this->rejectionCodes, $status);
 	}
-	
-	public function getTransactionId(){
+
+	public function getTransactionId() {
 		return $this->transactionId;
 	}
-	
+
 	/**
 	 * adding params that the payment gateway needs for further integraion.
 	 * 
@@ -684,19 +681,19 @@ abstract class Billrun_PaymentGateway {
 	public function addAdditionalParameters() {
 		return array();
 	}
-	
+
 	protected function isTransactionDetailsNeeded() {
 		return true;
 	}
-	
+
 	public function isUpdatePgChangesNeeded() {
 		return false;
 	}
-	
-	protected function checkIfCustomerExists () {
+
+	protected function checkIfCustomerExists() {
 		return false;
 	}
-	
+
 	/**
 	 * Returns True if there is a need to update the account's payment gateway structure.
 	 * 
@@ -706,7 +703,7 @@ abstract class Billrun_PaymentGateway {
 	public function needUpdateFormerGateway($params) {
 		return false;
 	}
-	
+
 	/**
 	 * Updates the url to return to in case of unrecoverable error.
 	 * 
@@ -716,7 +713,7 @@ abstract class Billrun_PaymentGateway {
 	protected function updateReturnUrlOnEror($url) {
 		$this->returnUrlOnError = $url;
 	}
-	
+
 	/**
 	 * Returns the return url defined by the tenant.
 	 * 
@@ -731,7 +728,7 @@ abstract class Billrun_PaymentGateway {
 		$account = $this->subscribers->query($query)->cursor()->current();
 		return $account['tenant_return_url'];
 	}
-	
+
 	/**
 	 * Checks if the it's chargeable payment gateway. 
 	 * @param Array $gatewayDetails - array with payment gateway details.
@@ -744,19 +741,19 @@ abstract class Billrun_PaymentGateway {
 		}
 		$gateway = self::getInstance($gatewayDetails['name']);
 		if (!is_null($gateway)) {
-		return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
+			return !is_null($gateway) ? $gateway->validateStructureForCharge($gatewayDetails) : false;
 		}
 		return false;
 	}
-			
+
 	public function getReturnUrlOnError() {
 		return $this->returnUrlOnError;
 	}
-	
+
 	public function getReceiverParameters() {
 		return array();
 	}
-	
+
 	abstract public function getSecretFields();
 
 	public function getExportParameters() {
@@ -771,15 +768,15 @@ abstract class Billrun_PaymentGateway {
 			return $this->credit($gatewayDetails, $addonData);
 		}
 	}
-	
+
 	protected function credit($gatewayDetails, $addonData) {
 		throw new Exception("Negative amount is not supported in " . $this->billrunName);
 	}
-	
+
 	public function handleTransactionRejectionCases($responseFromGateway, $paymentParams) {
 		return false;
 	}
-	
+
 	protected function paySinglePayment($retParams) {
 		$options = array('collect' => true, 'payment_gateway' => true, 'single_payment_gateway' => true);
 		$gatewayDetails = $this->saveDetails;
@@ -796,7 +793,7 @@ abstract class Billrun_PaymentGateway {
 		$paymentParams['billrun_key'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$paymentParams['amount'] = abs($cashAmount);
 		$gatewayDetails['amount'] = $cashAmount;
-		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');	
+		$gatewayDetails['currency'] = Billrun_Factory::config()->getConfigValue('pricing.currency');
 		$paymentParams['gateway_details'] = $retParams;
 		$paymentParams['gateway_details']['name'] = !empty($gatewayDetails['name']) ? $gatewayDetails['name'] : $this->billrunName;
 		$paymentParams['transaction_status'] = $retParams['transaction_status'];
@@ -810,11 +807,11 @@ abstract class Billrun_PaymentGateway {
 		Billrun_Factory::log("Creating bill for single payment: Account id=" . $accountId . ", Amount=" . $cashAmount, Zend_Log::INFO);
 		Billrun_Bill_Payment::payAndUpdateStatus('automatic', $paymentParams, $options);
 	}
-	
+
 	public function getCompletionCodes() {
 		return $this->completionCodes;
 	}
-	
+
 	/**
 	 * Get the custom parameters of the current payment gateway. 
 	 * 
@@ -823,13 +820,12 @@ abstract class Billrun_PaymentGateway {
 	public function getGatewayCustomParams() {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+		$gateway = array_filter($gateways, function ($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
 		});
 		$gatewayDetails = current($gateway);
 		$customParams = !empty($gatewayDetails['custom_params']) ? $gatewayDetails['custom_params'] : array();
 		return $customParams;
 	}
-	
 
 }

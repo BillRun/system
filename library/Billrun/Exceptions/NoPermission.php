@@ -16,7 +16,7 @@ class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
 
 	const ERROR_CODE = 17575;
 	const ERROR_CODE_USER_LOGOUT = 17574;
-		
+
 	public function __construct($message = "No permissions.") {
 		if ($this->userLoggedin()) {
 			parent::__construct($message, self::ERROR_CODE);

@@ -55,7 +55,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		}
 		return false;
 	}
-	
+
 	protected function sendRequest($requestBody, $requestUrl, $numOfTries) {
 		$logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
@@ -79,7 +79,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 				$decoder = new Billrun_Decoder_Xml();
 				$response = $decoder->decode($response);
 				if (isset($response['HEADER']['STATUS_CODE']) &&
-					$response['HEADER']['STATUS_CODE'] === 'OK') {
+						$response['HEADER']['STATUS_CODE'] === 'OK') {
 					$saveData['time'] = (microtime(1) - $this->start_time) * 1000;
 					$saveData['success'] = true;
 					$logColl->save(new Mongodloid_Entity($saveData), 0);
@@ -94,10 +94,10 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$this->handleSendRequestError();
 		return false;
 	}
-	
+
 	protected function updateSubscriberInDB($additionalParams) {
-		if (isset($additionalParams['dataSlownessRequest']) && 
-			filter_var($additionalParams['dataSlownessRequest'], FILTER_VALIDATE_BOOLEAN)) {
+		if (isset($additionalParams['dataSlownessRequest']) &&
+				filter_var($additionalParams['dataSlownessRequest'], FILTER_VALIDATE_BOOLEAN)) {
 			$enterDataSlowness = filter_var($additionalParams['enterDataSlowness'], FILTER_VALIDATE_BOOLEAN);
 			$sid = intval($additionalParams['sid']);
 			// Update subscriber in DB
@@ -105,8 +105,8 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			$findQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
-					'in_data_slowness' => true,
-					'data_slowness_enter' => new Mongodloid_Date()
+						'in_data_slowness' => true,
+						'data_slowness_enter' => new Mongodloid_Date()
 					)
 				);
 			} else {

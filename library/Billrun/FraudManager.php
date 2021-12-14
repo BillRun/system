@@ -11,7 +11,7 @@
  *
  */
 class Billrun_FraudManager {
-	
+
 	/**
 	 *
 	 * @var Billrun_FraudManager
@@ -32,17 +32,17 @@ class Billrun_FraudManager {
 	 * @var Mongodloid_Collection
 	 */
 	protected $eventsCollection;
-	
+
 	/**
 	 * @var array
 	 */
 	protected $eventsInTimeRange = [];
-	
+
 	/**
 	 * @var unixtimestamp
 	 */
 	protected $runTime;
-	
+
 	/**
 	 * @param array
 	 */
@@ -60,7 +60,7 @@ class Billrun_FraudManager {
 		}
 		return self::$instance;
 	}
-	
+
 	public function run($params = []) {
 		Billrun_Factory::log('Fraud manager running', Billrun_Log::INFO);
 		foreach ($this->getEventsToRun($params) as $eventSettings) {
@@ -68,7 +68,7 @@ class Billrun_FraudManager {
 		}
 		Billrun_Factory::log('Fraud manager running done', Billrun_Log::INFO);
 	}
-	
+
 	protected function getEventsToRun($params = []) {
 		$eventsToRun = [];
 		$eventsSettings = Billrun_Factory::eventsManager()->getEventsSettings('fraud');
@@ -80,12 +80,12 @@ class Billrun_FraudManager {
 
 		return $eventsToRun;
 	}
-	
+
 	protected function shouldRunEvent($eventSettings, $params = []) {
 		return (Billrun_Util::getIn($eventSettings, 'recurrence.type', '') == $params['recurrenceType']) &&
-			(in_array(Billrun_Util::getIn($eventSettings, 'recurrence.value', ''), $params['recurrenceValues']));
+				(in_array(Billrun_Util::getIn($eventSettings, 'recurrence.value', ''), $params['recurrenceValues']));
 	}
-	
+
 	protected function runFraudEvent($eventSettings) {
 		Billrun_Factory::log('Fraud manager running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 		foreach ($this->getFraudEventResults($eventSettings) as $res) {
@@ -111,7 +111,7 @@ class Billrun_FraudManager {
 		}
 		Billrun_Factory::log('Fraud manager done running event ' . $eventSettings['event_code'], Billrun_Log::INFO);
 	}
-	
+
 	protected function getEventSettingsToSave($eventSettings) {
 		$ret = $eventSettings;
 		unset($ret['recurrence'], $ret['date_range'], $ret['conditions'], $ret['lines_overlap'], $ret['threshold_conditions']);
@@ -123,14 +123,14 @@ class Billrun_FraudManager {
 		}
 		return $ret;
 	}
-	
+
 	protected function getFraudEventResults($eventSettings) {
 		$match = $this->getFraudEventsQueryMatch($eventSettings);
 		$group = $this->getFraudEventsQueryGroup($eventSettings);
 		$thresholdsMatch = $this->getFraudEventsQueryThresholds($eventSettings);
 		$ret = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
-			
-		foreach($this->eventsInTimeRange as $eventInTimeRange) {
+
+		foreach ($this->eventsInTimeRange as $eventInTimeRange) {
 			$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 			$match['$match']['sid'] = $eventInTimeRange['sid'];
 			$match['$match']['aid'] = $eventInTimeRange['aid'];
@@ -141,10 +141,10 @@ class Billrun_FraudManager {
 			$excludedSubRes = iterator_to_array($this->collection->aggregate($match, $group, $thresholdsMatch));
 			$ret = array_merge($ret, $excludedSubRes);
 		}
-		
+
 		return $ret;
 	}
-	
+
 	protected function getFraudEventsQueryMatch($eventSettings) {
 		$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 		$dateRangeStart = $timeRange['from'];
@@ -163,15 +163,15 @@ class Billrun_FraudManager {
 				'$nin' => $sidsToExclude,
 			];
 		}
-		return [ '$match' => $match ];
+		return ['$match' => $match];
 	}
-	
+
 	protected function getFraudEventsQueryExcludeSubscribers($eventSettings) {
 		if (Billrun_Util::getIn($eventSettings, 'lines_overlap', true)) {
 			$this->eventsInTimeRange = [];
 			return false;
 		}
-		
+
 		$this->eventsInTimeRange = iterator_to_array($this->getEventsInTimeRange($eventSettings));
 		if (empty($this->eventsInTimeRange)) {
 			$this->eventsInTimeRange = [];
@@ -184,7 +184,7 @@ class Billrun_FraudManager {
 		}
 		return $sidsToExclude;
 	}
-	
+
 	protected function getEventsInTimeRange($eventSettings) {
 		$timeRange = $this->getFraudEventsQueryTimeRange($eventSettings);
 		$match = [
@@ -201,42 +201,42 @@ class Billrun_FraudManager {
 					'sid' => '$extra_params.sid',
 					'aid' => '$extra_params.aid',
 				],
-				'aid' => [ '$first' => '$extra_params.aid' ],
-				'sid' => [ '$first' => '$extra_params.sid' ],
+				'aid' => ['$first' => '$extra_params.aid'],
+				'sid' => ['$first' => '$extra_params.sid'],
 				'max_urt' => [
 					'$max' => '$max_urt',
 				],
- 			],
- 		];
+			],
+		];
 		return $this->eventsCollection->aggregate($match, $group);
 	}
-	
+
 	protected function getFraudEventsQueryGroup($eventSettings) {
 		$group = [
 			'_id' => [
 				'sid' => '$sid',
 				'aid' => '$aid',
 			],
-			'aid' => [ '$first' => '$aid' ],
-			'sid' => [ '$first' => '$sid' ],
-			'max_urt' => [ '$max' => '$urt' ],
+			'aid' => ['$first' => '$aid'],
+			'sid' => ['$first' => '$sid'],
+			'max_urt' => ['$max' => '$urt'],
 		];
 		foreach (self::$availableThresholds as $availableThreshold) {
-			$group[$availableThreshold] = [ '$sum' => '$' . $availableThreshold ];
+			$group[$availableThreshold] = ['$sum' => '$' . $availableThreshold];
 		}
-		
-		return [ '$group' => $group ];
+
+		return ['$group' => $group];
 	}
-	
+
 	protected function getFraudEventsQueryThresholds($eventSettings) {
-		return [ '$match' => $this->buildConditionsMatchQuery($eventSettings['threshold_conditions']) ];
+		return ['$match' => $this->buildConditionsMatchQuery($eventSettings['threshold_conditions'])];
 	}
-	
+
 	protected function getFraudEventsQueryTimeRange($eventSettings) {
 		$dateRangeStart = strtotime('-' .
-			$eventSettings['date_range']['value'] . ' ' .
-			($eventSettings['date_range']['type'] == 'hourly' ? 'hours' : 'minutes'),
-			$this->runTime
+				$eventSettings['date_range']['value'] . ' ' .
+				($eventSettings['date_range']['type'] == 'hourly' ? 'hours' : 'minutes'),
+				$this->runTime
 		);
 		$dateRangeEnd = $this->runTime;
 		return [
@@ -244,24 +244,24 @@ class Billrun_FraudManager {
 			'to' => $dateRangeEnd,
 		];
 	}
-	
+
 	protected function buildConditionsMatchQuery($conditionsSettings) {
 		$match = [
 			'$or' => [],
 		];
-		
+
 		foreach ($conditionsSettings as $conditionsSet) {
-			$conditionsSetMatch = [ '$and' => [] ];
+			$conditionsSetMatch = ['$and' => []];
 			foreach ($conditionsSet as $conditionConfig) {
 				$condition = [
-					$conditionConfig['field'] => [ '$' . $conditionConfig['op'] => $conditionConfig['value'] ],
+					$conditionConfig['field'] => ['$' . $conditionConfig['op'] => $conditionConfig['value']],
 				];
 				$conditionsSetMatch['$and'][] = $condition;
 			}
 			$match['$or'][] = $conditionsSetMatch;
 		}
-		
+
 		return $match;
 	}
-	
+
 }

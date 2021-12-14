@@ -5,20 +5,20 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 class AccountInvoicesAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
 		try {
-			
+
 			switch ($request->get('action')) {
 				case 'query' :
-						$retValue = $this->queryIvoices($request->get('query'));	
+					$retValue = $this->queryIvoices($request->get('query'));
 					break;
 				case 'download':
 					$retValue = $this->downloadPDF($request);
@@ -38,12 +38,12 @@ class AccountInvoicesAction extends ApiAction {
 					'input' => $request->getRequest()
 			)));
 		} catch (Exception $ex) {
-			Billrun_Factory::log('AccountInvoices Error: ' . print_r(array('input' => $request->getPost(), 'error'=> $ex->getMessage(), 'trace' => $ex->getTraceAsString()),1),Zend_Log::ERR);
+			Billrun_Factory::log('AccountInvoices Error: ' . print_r(array('input' => $request->getPost(), 'error' => $ex->getMessage(), 'trace' => $ex->getTraceAsString()), 1), Zend_Log::ERR);
 			$this->setError($ex->getMessage(), $request->getPost());
 			return;
 		}
 	}
-	
+
 	public function searchIvoicesForAid($request) {
 		$aid = $request->get('aid');
 		$months_back = intval($request->get('months_back'));
@@ -64,7 +64,7 @@ class AccountInvoicesAction extends ApiAction {
 		foreach ($result as $key => $value) {
 			$retValue[$key] = $value->getRawData();
 		}
-		
+
 		return $retValue;
 	}
 
@@ -82,7 +82,7 @@ class AccountInvoicesAction extends ApiAction {
 			$invoiceId = $request['iid'] ?? '';
 			$detailed = $request['detailed'] ?? false;
 		}
-		
+
 		$query = array(
 			'aid' => (int) $aid,
 			'billrun_key' => $billrun_key
@@ -102,32 +102,32 @@ class AccountInvoicesAction extends ApiAction {
 		$invoiceId = $invoice['invoice_id'];
 		$invoiceData = $invoice->getRawData();
 
-		$file_name =  !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
+		$file_name = !empty($invoiceData['file_name']) ? $invoiceData['file_name'] : (!empty($invoiceData['invoice_file']) ? basename($invoiceData['invoice_file']) : $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf");
 		$pdf = $invoiceData['invoice_file'];
 
 		if ($detailed) {
-			$generator = Billrun_Generator::getInstance(array('type'=>'wkpdf','accounts'=>array((int)$aid),'subscription_details'=>1,'usage_details'=> 1,'stamp'=>$billrun_key));
+			$generator = Billrun_Generator::getInstance(array('type' => 'wkpdf', 'accounts' => array((int) $aid), 'subscription_details' => 1, 'usage_details' => 1, 'stamp' => $billrun_key));
 			$generator->load();
 			$generator->generate();
 		}
-		if (!file_exists($pdf)){
-                        Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
+		if (!file_exists($pdf)) {
+			Billrun_Factory::log('Invoice file ' . $pdf . ' does not exist', Zend_Log::NOTICE);
 			echo "Invoice not found";
 		} else {
 			$cont = file_get_contents($pdf);
 			if ($cont) {
-				header('Content-disposition: inline; filename="'.$file_name.'"');
+				header('Content-disposition: inline; filename="' . $file_name . '"');
 				header('Cache-Control: public, must-revalidate, max-age=0');
 				header('Pragma: public');
-				header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+				header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 				header('Content-Type: application/pdf');
-				Billrun_Factory::log('Transfering invoice content from : '.$pdf .' to http connection');
+				Billrun_Factory::log('Transfering invoice content from : ' . $pdf . ' to http connection');
 				echo $cont;
-			} 
+			}
 		}
 		die();
 	}
-	
+
 	protected function generateExpectedInvoices($request) {
 		$params = $request->getRequest();
 		$options = array(
@@ -143,21 +143,20 @@ class AccountInvoicesAction extends ApiAction {
 		$pdfPath = $generator->generate();
 		$cont = file_get_contents($pdfPath);
 		if ($cont) {
-			header('Content-disposition: inline; filename="'. basename($pdfPath).'"');
+			header('Content-disposition: inline; filename="' . basename($pdfPath) . '"');
 			header('Cache-Control: public, must-revalidate, max-age=0');
 			header('Pragma: public');
-			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+			header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 			header('Content-Type: application/pdf');
-			Billrun_Factory::log('Transfering invoice content from : '.$pdfPath .' to http connection');
+			Billrun_Factory::log('Transfering invoice content from : ' . $pdfPath . ' to http connection');
 			echo $cont;
 			die();
-		}  else {
-			$this->setError('Failed when trying to generate expected invoice' , $request->getPost());
-			Billrun_Factory::log('Failed when trying to generate expected invoice to : '.$pdfPath );
+		} else {
+			$this->setError('Failed when trying to generate expected invoice', $request->getPost());
+			Billrun_Factory::log('Failed when trying to generate expected invoice to : ' . $pdfPath);
 		}
-
 	}
-	
+
 	protected function queryIvoices($query, $sort = FALSE) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		Billrun_Plan::getCacheItems();
@@ -166,25 +165,25 @@ class AccountInvoicesAction extends ApiAction {
 			$q['creation_date'] = $this->intToMongodloidDate($q['creation_date']);
 		}
 		$invoices = $billrunColl->query($q)->cursor()->setRawReturn(true);
-		if($sort) {
+		if ($sort) {
 			$invoices->sort($sort);
 		}
 		$retValue = array();
 		foreach ($invoices as $key => $invoice) {
-			if(empty($invoice['subs'])) {
+			if (empty($invoice['subs'])) {
 				continue;
 			}
-			
+
 			foreach ($invoice['subs'] as &$service) {
 				$service['next_plan'] = empty($service['next_plan']) ? Billrun_Util::getFieldVal($service['next_plan'], null) : Billrun_Plan::getPlanById(strval($service['next_plan']['$id']))['key'];
 				$service['current_plan'] = empty($service['current_plan']) ? Billrun_Util::getFieldVal($service['current_plan'], null) : Billrun_Plan::getPlanById(strval($service['current_plan']['$id']))['key'];
 			}
-			
+
 			$retValue[$key] = $invoice;
 		}
 		return $retValue;
 	}
-	
+
 	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {

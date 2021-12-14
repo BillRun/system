@@ -15,7 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Query.php';
  * @since    2.8
  */
 class QueryaggregateAction extends QueryAction {
+
 	protected $type = 'queryaggregate';
+
 	/**
 	 * The function to run before execute.
 	 */
@@ -76,7 +78,7 @@ class QueryaggregateAction extends QueryAction {
 		$params = array(
 			'fetchParams' => $linesRequestQueries
 		);
-		
+
 		return $this->getLinesDataForQuery($params);
 	}
 

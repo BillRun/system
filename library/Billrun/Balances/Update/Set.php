@@ -22,7 +22,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	protected function getMongoOperation($valueToSet) {
 		return '$set';
 	}
-	
+
 	/**
 	 * Is an increment operation.
 	 * @return boolean true if is increment.
@@ -30,7 +30,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	public function isIncrement() {
 		return false;
 	}
-	
+
 	/**
 	 * Handle the core balance
 	 * 
@@ -44,6 +44,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 		$newValue = $wallet->getValue();
 
 		// we're using absolute for both cases - positive and negative values
-		return array("block"=>(abs($newValue) > abs($max)));
+		return array("block" => (abs($newValue) > abs($max)));
 	}
+
 }

@@ -18,14 +18,12 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 	 * @var string
 	 */
 	protected $gatewayName;
-	
-	
+
 	/**
 	 * Name of the receiver related action.
 	 * @var string
 	 */
 	protected $actionType;
-
 	protected $structConfig;
 	protected $headerStructure;
 	protected $dataStructure;
@@ -42,7 +40,7 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
@@ -56,7 +54,7 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 
 		foreach ($parsedData as $line) {
 			$row = $this->getBillRunLine($line);
-			if (!$row){
+			if (!$row) {
 				return false;
 			}
 			$newRow = array_merge($row, $this->addFields($row));
@@ -103,13 +101,13 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 		$this->parserDefinitions = isset($this->structConfig['parser'][$this->actionType]) ? $this->structConfig['parser'][$this->actionType] : array();
 		$this->workspace = $this->structConfig['config']['workspace'];
 	}
-	
+
 	protected function getRowDateTime($dateStr) {
 		$datetime = new DateTime();
 		$date = $datetime->createFromFormat('ymdHis', $dateStr);
 		return $date;
 	}
-	
+
 	public function skipQueueCalculators() {
 		return true;
 	}
@@ -117,16 +115,16 @@ class Billrun_Processor_PaymentGateway_PaymentGateway extends Billrun_Processor_
 	protected function getProcessorDefinitions() {
 		$processorDefinitions = array();
 		$parserDefinitions = array();
-		foreach ($this->processorDefinitions  as $key => $value) {
+		foreach ($this->processorDefinitions as $key => $value) {
 			$processorDefinitions[$key] = $value;
 		}
 		foreach ($this->parserDefinitions as $key => $value) {
 			$parserDefinitions[$key] = $value;
 		}
-		
+
 		return array('processor' => $processorDefinitions, 'parser' => $parserDefinitions, 'workspace' => $this->workspace);
 	}
-	
+
 	protected function afterUpdateData() {
 		return;
 	}

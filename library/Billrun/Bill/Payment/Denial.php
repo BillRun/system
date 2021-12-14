@@ -20,18 +20,18 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 		$adjustedOptions = $this->adjustDenialOptions($options);
 		parent::__construct($adjustedOptions);
 	}
-	
+
 	protected function adjustDenialOptions($options) {
 		$newOptions = array();
 		$newOptions['amount'] = abs($options['amount']);
 		$newOptions['due'] = abs($options['amount']) * $this->getPaymentAmountMultiplier($options['payment_amount']);
 		$newOptions['aid'] = $options['aid'];
 		$newOptions['denial'] = $options;
-        $newOptions['is_denial'] = true;
+		$newOptions['is_denial'] = true;
 		$newOptions['urt'] = !empty($options['urt']) ? $options['urt'] : date(Billrun_Base::base_datetimeformat, time());
 		return $newOptions;
 	}
-	
+
 	/**
 	 * Copy paid_by and paid objects from the original payment to the created denial.
 	 * @param $payment- the original payment.
@@ -41,7 +41,7 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 		$this->data['linked_bills'] = isset($rawPayment['pays']) ? $rawPayment['pays'] : $rawPayment['paid_by'];
 		$this->data['linked_rec'] = $payment->getId();
 	}
-	
+
 	protected function getPaymentAmountMultiplier($amount) {
 		if ($amount > 0) {
 			return -1;
@@ -49,5 +49,5 @@ class Billrun_Bill_Payment_Denial extends Billrun_Bill_Payment {
 			return 1;
 		}
 	}
-	
+
 }

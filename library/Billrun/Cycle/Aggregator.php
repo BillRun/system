@@ -12,6 +12,6 @@
  * @author eran
  */
 abstract class Billrun_Cycle_Aggregator extends Billrun_Aggregator {
+
 	abstract public function getCycle();
-	
 }

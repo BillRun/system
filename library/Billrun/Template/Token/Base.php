@@ -17,7 +17,7 @@ class Billrun_Template_Token_Base {
 	protected $replacers = array();
 	protected $replacer_class_prefix = 'Billrun_Template_Token_Replacers_';
 	protected $replacer_token_pattern = '/(\[{2}[\w\d]+::[\w\d]+\]{2})/';
-	
+
 	public function __construct($settings) {
 		$tokens_categories = $this->getTokensCategories();
 		$this->initTokensReplacers($tokens_categories);
@@ -45,7 +45,7 @@ class Billrun_Template_Token_Base {
 		self::$instance[$stamp] = new $called_class($args);
 		return self::$instance[$stamp];
 	}
-	
+
 	/**
 	 * Return avalible tokens array by category
 	 * 
@@ -69,7 +69,7 @@ class Billrun_Template_Token_Base {
 	public function replaceTokens($string, $params) {
 		$string_tokens = $this->parseStringTokens($string);
 		//get all unique tokens
-		foreach ($string_tokens as $category => $tokens_match) {			
+		foreach ($string_tokens as $category => $tokens_match) {
 			$this->replacers[$category]->setData($params[$category]);
 			foreach ($tokens_match['value'] as $key => $value) {
 				$string_tokens[$category]['replace'][$key] = $this->replacers[$category]->replaceTokens($value);
@@ -91,9 +91,9 @@ class Billrun_Template_Token_Base {
 	}
 
 	protected function initTokensReplacers($tokens_categories) {
-		if(!empty($tokens_categories) && is_array($tokens_categories)){
+		if (!empty($tokens_categories) && is_array($tokens_categories)) {
 			foreach ($tokens_categories as $category) {
-				if(!isset($this->replacers[$category])){
+				if (!isset($this->replacers[$category])) {
 					$replacer_class = $this->replacer_class_prefix . ucfirst($category);
 					$this->replacers[$category] = new $replacer_class();
 				}

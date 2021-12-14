@@ -81,8 +81,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$options['disable_stamp_export_directory'] = true;
 		}
 
-                $this->loadServiceProviders();
-                
+		$this->loadServiceProviders();
+
 		parent::__construct($options);
 	}
 
@@ -150,7 +150,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getLastRunDate($type) {
-		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
+		$lastRun = $this->db->logCollection()->query(array('source' => $type, 'type' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
 		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof Mongodloid_Date) ? new Mongodloid_Date(0) : $lastRun['generated_time'];
 	}
 
@@ -167,7 +167,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getNextSequenceData($type) {
-		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('seq' => -1))->limit(1)->current();
+		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source' => $type, 'type' => $type))->cursor()->sort(array('seq' => -1))->limit(1)->current();
 		$seq = empty($lastFile['seq']) ? 0 : $lastFile['seq'];
 
 		return ( ++$seq) % 10000;
@@ -220,7 +220,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					} else if (function_exists($trans['translation']['function'])) {
 						$line[$key] = call_user_func($trans['translation']['function'], $line[$key]);
 					} else {
-						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::DEBUG);
+						Billrun_Factory::log("Couldn't translate field $key", Zend_Log::DEBUG);
 					}
 					break;
 				case 'regex' :
@@ -268,10 +268,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$fieldStr = sprintf($fieldFormat, (isset($row[$field]) ? $row[$field] : ''));
 			$str .= $fieldStr . $this->separator;
 		}
-		if (!$empty ) {
-			if(!isset($this->reportLinesStamps[md5($str)])) {
+		if (!$empty) {
+			if (!isset($this->reportLinesStamps[md5($str)])) {
 				$this->writeToFile($str . PHP_EOL);
-				$this->reportLinesStamps[md5($str)]=true;
+				$this->reportLinesStamps[md5($str)] = true;
 			} else {
 				Billrun_Factory::log('BIReport got a duplicate  line : ' . $str, Zend_Log::WARN);
 			}
@@ -344,13 +344,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 		return $result['ok'] == 1;
 	}
-        
-        protected function loadServiceProviders() {
-            $serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
-            foreach ($serviceProviders as $provider) {
-                $this->serviceProviders[$provider['name']] = $provider->getRawData();
-            }
-        }
+
+	protected function loadServiceProviders() {
+		$serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
+		foreach ($serviceProviders as $provider) {
+			$this->serviceProviders[$provider['name']] = $provider->getRawData();
+		}
+	}
 
 	//---------------------- Manage files/cdrs function ------------------------
 
@@ -433,14 +433,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			return $plan['external_id'];
 		}
 	}
-        
-        
-        protected function getServiceProviderValues($value, $parameters, $line) {
-            if(!isset($this->serviceProviders[$line[$parameters['key']]][$parameters['field']]) ) {
-                Billrun_Factory::log("Couldn't Identify service provider {$line[$parameters['key']]}." , Zend_Log::WARN);
-                return $line[$parameters['key']];
-            }
-            return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];		
+
+	protected function getServiceProviderValues($value, $parameters, $line) {
+		if (!isset($this->serviceProviders[$line[$parameters['key']]][$parameters['field']])) {
+			Billrun_Factory::log("Couldn't Identify service provider {$line[$parameters['key']]}.", Zend_Log::WARN);
+			return $line[$parameters['key']];
+		}
+		return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];
 	}
 
 }

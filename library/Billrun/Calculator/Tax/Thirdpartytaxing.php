@@ -12,20 +12,19 @@
  * @author eran
  */
 class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
-	
 
 	protected $taxDataResults = array();
-    protected $thirdpartyConfig = array();
-        
-    public function __construct($options = array()) {
+	protected $thirdpartyConfig = array();
+
+	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
+		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']], array());
 	}
 
 	public static function isConfigComplete($config) {
 		return true;
 	}
-	
+
 	public function updateRowTaxInforamtion($line, $subscriberSearchData, $accountSearchData, $params = []) {
 		if (!empty($params['pretend'])) {
 			$subscriber = $subscriberSearchData;
@@ -40,7 +39,8 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 
 		Billrun_Factory::dispatcher()->trigger('onUpdateRowTaxInforamtion', array(&$line, $subscriber, $accountData, &$this));
 		Billrun_Factory::dispatcher()->trigger('onAddManualTaxationToRow', array(&$line, $subscriber, $accountData, &$this));
-		
+
 		return $line;
 	}
+
 }

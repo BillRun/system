@@ -30,7 +30,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
 		$match = array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec), array('key' => $row['rate'])
+				Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec), array('key' => $row['rate'])
 		);
 		$group = $this->getBasicGroupQuery($row);
 		$sort = $this->getBasicSortQuery($row);
@@ -74,12 +74,12 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
-	
+
 	/**
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {		
+	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
 		$query = $this->getRateQuery($row, $usaget, $type, 'retail', array());
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
@@ -90,4 +90,5 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 
 		return $this->getFullEntityData($matchedRate);
 	}
+
 }

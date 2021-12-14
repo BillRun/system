@@ -19,7 +19,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
-	
+
 	public function parse($fp) {
 		$this->dataRows = array();
 		$this->headerRows = array();
@@ -39,10 +39,10 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			if (!isset($bytes[$headerLength])) {
 				break;
 			}
-			
+
 			$this->setLine($bytes);
 			$rawRow = $this->parseData('ggsn', $this->getLine($fp));
-					
+
 			if ($rawRow) {
 				$this->dataRows[] = $rawRow;
 				$processedData['data'][] = $rawRow;
@@ -55,7 +55,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 
 		return true;
 	}
-	
+
 	public function parseData($type, $data) {
 		$asnObject = Asn_Base::parseASNString($data);
 		$recordPadding = Billrun_Factory::config()->getConfigValue('constants.ggsn_record_padding');
@@ -70,7 +70,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				$cdrLine['record_type'] = $type;
 			}
 			//convert to unified time GMT time.
-			if (!empty(Billrun_Factory::config()->getConfigValue('constants.handle_multiple_volume',TRUE))) {
+			if (!empty(Billrun_Factory::config()->getConfigValue('constants.handle_multiple_volume', TRUE))) {
 				$cdrLine = $this->handleMultipleVolume($cdrLine);
 				if ($cdrLine == false) {
 					return false;
@@ -80,7 +80,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		} else {
 			Billrun_Factory::log("couldn't find definition for {$type}", Zend_Log::INFO);
 		}
-		
+
 		//Billrun_Factory::log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
@@ -92,7 +92,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	public function setLastParseLength($parsedBytes) {
 		$this->parsedBytes = $parsedBytes;
 	}
-	
+
 	/**
 	 * Get specific data from an asn.1 structure  based on configuration
 	 * @param type $data the ASN.1 data struture
@@ -111,7 +111,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		}
 		return count($valueArr) ? $valueArr : false;
 	}
-	
+
 	/**
 	 * convert the actual data we got from the ASN record to a readable information
 	 * @param $struct 
@@ -125,7 +125,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = null;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-			//	Billrun_Factory::log()->log("Couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+				//	Billrun_Factory::log()->log("Couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
@@ -134,7 +134,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 
 		foreach ($struct as $val) {
 			if (($val == "*" || $val == "**" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
-				if (isset($asnData[0]) && is_array($asnData) && array_keys($asnData) == range(0, count($asnData)-1) ) {// Taking as an assumption there will never be a 0 key in the ASN types 
+				if (isset($asnData[0]) && is_array($asnData) && array_keys($asnData) == range(0, count($asnData) - 1)) {// Taking as an assumption there will never be a 0 key in the ASN types 
 					$newStruct = $struct;
 					array_shift($newStruct);
 					$sum = null;
@@ -150,7 +150,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			if (isset($asnData[$val])) {
 				$newStruct = $struct;
 				array_shift($newStruct);
-				if( preg_match("/\[(\w+)\]/", $newStruct[0]) || is_array($asnData[$val]) ) {
+				if (preg_match("/\[(\w+)\]/", $newStruct[0]) || is_array($asnData[$val])) {
 					return $this->parseASNData($newStruct, $asnData[$val], $fields);
 				}
 			}
@@ -158,7 +158,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 
 		return null;
 	}
-	
+
 	protected function handleMultipleVolume($cdrLine) {
 		if (isset($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 			$fbc_uplink_volume = $fbc_downlink_volume = 0;
@@ -177,20 +177,20 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		} else if (isset($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 			return false;
 		} else {
-			if(is_array($cdrLine['fbc_uplink_volume'])) {
+			if (is_array($cdrLine['fbc_uplink_volume'])) {
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['fbc_uplink_volume'] = array_sum($cdrLine['fbc_uplink_volume']);
 			}
-			if(is_array($cdrLine['fbc_downlink_volume'])) {
+			if (is_array($cdrLine['fbc_downlink_volume'])) {
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 				$cdrLine['fbc_downlink_volume'] = array_sum($cdrLine['fbc_downlink_volume']);
 			}
-		} 
-		
-		
+		}
+
+
 		return $cdrLine;
 	}
-	
+
 	/**
 	 * An hack to ahndle casacing  arrays  of  a given field
 	 * @param type $action
@@ -246,13 +246,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	public function parseTrailer($data) {
 		
 	}
-	
+
 	/**
 	 * add GGSN specific parsing methods.
 	 */
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
-			'diagnostics' => function($data) {
+			'diagnostics' => function ($data) {
 				$ret = false;
 				$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
 				if (!is_array($data)) {
@@ -282,13 +282,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				//Billrun_Factory::log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 				return false;
 			},
-			'ch_ch_selection_mode' => function($data) {
+			'ch_ch_selection_mode' => function ($data) {
 				$smode = intval(implode('.', unpack('C', $data)));
 				return (isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ?
-						$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] :
-						false);
+				$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] :
+				false);
 			},
-			'bcd_encode' => function($fieldData) {
+			'bcd_encode' => function ($fieldData) {
 				$halfBytes = unpack('C*', $fieldData);
 				$ret = '';
 				foreach ($halfBytes as $byte) {
@@ -296,16 +296,16 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				}
 				return $ret;
 			},
-			'default' => function($type, $data) {
+			'default' => function ($type, $data) {
 				return (is_array($data) ? '' : implode('', unpack($type, $data)));
 			},
-			'multi_ip' => function($fieldData) {
+			'multi_ip' => function ($fieldData) {
 
-				return is_array($fieldData) ? array_map(function($data) {
-							return implode('.', unpack('C*', $data));
-						}, $fieldData) : array(implode('.', unpack('C*', $fieldData)));
+				return is_array($fieldData) ? array_map(function ($data) {
+					return implode('.', unpack('C*', $data));
+				}, $fieldData) : array(implode('.', unpack('C*', $fieldData)));
 			},
-			);
+		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
 	}

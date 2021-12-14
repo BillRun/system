@@ -78,8 +78,8 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-			($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
-			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
+				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
 		} else if ($record_type == '30' && isset($row['ild_prefix'])) {

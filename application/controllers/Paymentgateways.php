@@ -17,9 +17,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since       5.2
  */
 class PaymentGatewaysController extends ApiController {
+
 	use Billrun_Traits_Api_PageRedirect;
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function init() {
 		parent::init();
 	}
@@ -47,14 +48,14 @@ class PaymentGatewaysController extends ApiController {
 			$setting['export'] = $paymentGateway->getExportParameters();
 			$settings[] = $setting;
 		}
-		$output = array (
+		$output = array(
 			'status' => !empty($settings) ? 1 : 0,
 			'desc' => !empty($settings) ? 'success' : 'error',
 			'details' => empty($settings) ? array() : $settings,
 		);
 		$this->setOutput(array($output));
 	}
-	
+
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
@@ -96,13 +97,13 @@ class PaymentGatewaysController extends ApiController {
 		if (!isset($data['name'])) {
 			return $this->setError("need to pass payment gateway name", $request);
 		}
-		
+
 		if (isset($data['action']) && ($data['action'] == 'single_payment') && (isset($data['amount']) && $data['amount'] <= 0)) {
 			return $this->setError("In single payment mode amount must be positive value", $request);
 		}
-		
-		if (isset($data['installments']) && (!is_array($data['installments']) || !isset($data['installments']['total_amount']) || 
-			$data['installments']['total_amount'] <= 0 || !isset($data['installments']['number_of_payments']) || $data['installments']['number_of_payments'] <= 1)) {
+
+		if (isset($data['installments']) && (!is_array($data['installments']) || !isset($data['installments']['total_amount']) ||
+				$data['installments']['total_amount'] <= 0 || !isset($data['installments']['number_of_payments']) || $data['installments']['number_of_payments'] <= 1)) {
 			return $this->setError("Installment structure is invalid", $request);
 		}
 
@@ -118,7 +119,7 @@ class PaymentGatewaysController extends ApiController {
 		if (empty($returnUrl)) {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
 		}
-		
+
 		$accountQuery = $this->getAccountQuery($aid);
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
@@ -128,7 +129,7 @@ class PaymentGatewaysController extends ApiController {
 			if ($iframe) {
 				$output = array(
 					'status' => 0,
-					'details' =>  array('message' => $e->getMessage()),
+					'details' => array('message' => $e->getMessage()),
 				);
 				$this->getView()->outputMethod = array('Zend_Json', 'encode');
 				$this->setOutput(array($output));
@@ -166,7 +167,7 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['aid'] = $aid;
 		return $accountQuery;
 	}
-	
+
 	/**
 	 * Validate that the input payment gateway fits the payment gateway that is
 	 * stored in the database with the account.
@@ -178,15 +179,15 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	protected function validatePaymentGateway($name, $aid) {
 		$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
-		if($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
+		if ($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
 			// Check the payment gateway
-			if($account['payment_gateway']['active']['name'] != $name) {
+			if ($account['payment_gateway']['active']['name'] != $name) {
 				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
 				throw new Billrun_Exceptions_InvalidFields(array($invField));
 			}
 		}
 	}
-	
+
 	/**
 	 * handling the response from the payment gateway and saving the details to db.
 	 * 
@@ -218,7 +219,7 @@ class PaymentGatewaysController extends ApiController {
 			if (!is_null($redirect) && !$redirect) {
 				$output = array(
 					'status' => 0,
-					'details' =>  array('message' => $e->getMessage()),
+					'details' => array('message' => $e->getMessage()),
 				);
 				$this->getView()->outputMethod = array('Zend_Json', 'encode');
 				$this->setOutput(array($output));
@@ -241,7 +242,7 @@ class PaymentGatewaysController extends ApiController {
 			$this->getView()->output = "Location: " . $returnUrl;
 		}
 	}
-	
+
 	/**
 	 * handling the response from the payment gateway and saving the details to db.
 	 * 
@@ -266,10 +267,10 @@ class PaymentGatewaysController extends ApiController {
 			Billrun_Factory::log("CreateRecurringBillingProfile got exception: {$ex->getCode()} - {$ex->getMessage()}", Billrun_Log::ERR);
 			return $this->setError($ex->getMessage(), $request);
 		}
-		
+
 		return $this->responseSuccess(['profile_id' => $profileId]);
 	}
-	
+
 	/**
 	 * get payment gateway from request
 	 * 
@@ -283,10 +284,10 @@ class PaymentGatewaysController extends ApiController {
 		if (!$paymentGateway) {
 			return $this->setError("Cannot get payment gateway {$paymentGatewayName}", $request);
 		}
-		
+
 		return $paymentGateway;
 	}
-	
+
 	protected function responseSuccess($details, $desc = 'success') {
 		$output = [
 			'status' => 1,
@@ -312,10 +313,10 @@ class PaymentGatewaysController extends ApiController {
 	 * @return json structure string which represents the message.
 	 */
 	protected function forceRedirectWithMessage($redirectUrl, $content, $type) {
-		$messageObj = json_encode(array('content' => $content , 'type' => $type));
+		$messageObj = json_encode(array('content' => $content, 'type' => $type));
 		$this->forceRedirect($redirectUrl . '&message=' . $messageObj);
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}

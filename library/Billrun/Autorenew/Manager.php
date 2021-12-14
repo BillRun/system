@@ -11,7 +11,7 @@
  *
  */
 class Billrun_Autorenew_Manager {
-	
+
 	/**
 	 * get Auto renew handler instance
 	 * 
@@ -38,4 +38,5 @@ class Billrun_Autorenew_Manager {
 		$classNamePref = 'Billrun_Autorenew_';
 		return $classNamePref . ucfirst($record['interval']);
 	}
+
 }

@@ -17,7 +17,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @deprecated since version 4.0
  */
 class BalancesAction extends QueryAction {
+
 	protected $type = 'balances';
+
 	/**
 	 * Get the max list count.
 	 * @return int The maximum number allowed for the query.

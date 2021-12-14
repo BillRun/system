@@ -27,7 +27,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Gets a query to get the correct balance of the subscriber.
 	 * 
@@ -43,7 +43,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$query['from'] = array('$lte' => $this->row['urt']);
 		$query['to'] = array('$gte' => $this->row['urt']);
 		$query['priority'] = $this->getServiceIndex();
-		
+
 		if ($this->isExtendedBalance()) {
 			$query['service_name'] = $this->row['service_name'];
 		} else {
@@ -88,7 +88,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' => true));
 		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_id);
 	}
-	
+
 	/**
 	 * method to return service index if this balance based on service
 	 * @return int service index if service based else return 0
@@ -286,7 +286,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	public function getBalanceTotalsKey($pricingData) {
 		return $this->row['usaget'];
 	}
-	
+
 	/**
 	 * method to get the instance of the class (singleton)
 	 * 
@@ -298,7 +298,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		if (empty($params)) {
 			$params = Yaf_Application::app()->getConfig();
 		}
-	
+
 		return new Billrun_Balance_Postpaid($params);
 	}
 

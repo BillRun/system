@@ -28,7 +28,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	protected function parse() {
 		$this->parser->setSeparator($this->structConfig['config']['separator']);
 		if (isset($this->structConfig['config']) && isset($this->structConfig['config']['add_filename_data_to_header']) &&
-			$this->structConfig['config']['add_filename_data_to_header']) {
+				$this->structConfig['config']['add_filename_data_to_header']) {
 			$this->data['header'] = array_merge($this->buildHeader(''), array_merge((isset($this->data['header']) ? $this->data['header'] : array()), $this->getFilenameData(basename($this->filePath))));
 		}
 

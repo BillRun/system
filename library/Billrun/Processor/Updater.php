@@ -12,7 +12,7 @@
 abstract class Billrun_Processor_Updater extends Billrun_Processor {
 
 	static protected $type = 'updater';
-	
+
 	/**
 	 * Number of good lines
 	 * @var int
@@ -67,7 +67,6 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		return count($this->data['data']);
 	}
 
-
 	/**
 	 * This function should be used to build a Data row
 	 * @param $data the raw row data
@@ -80,7 +79,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
-	
+
 	protected function logDB() {
 
 		$log = Billrun_Factory::db()->logCollection();
@@ -121,10 +120,9 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 			return $entity->save($log);
 		}
 	}
-	
+
 	public function incrementGoodLinesCounter() {
 		$this->goodLines++;
 	}
-	
 
 }

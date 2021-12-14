@@ -27,7 +27,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->collection_stepsCollection();
 	}
-	
+
 	protected function getClosestValidDate($date, $on_holidays, $on_days, $findDateRetry = 0) {
 		$valid_date = true;
 		if ($findDateRetry >= 30) { // to prevent recursion loop, search max for 30 days.
@@ -40,7 +40,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			}
 		}
 		if (!empty($on_days) && $valid_date) { // default if not set = true
-			$all_days_disabled_or_enabled= count($on_days) == 7 && (!in_array(true, $on_days) || !in_array(false, $on_days)); // ignore configuration
+			$all_days_disabled_or_enabled = count($on_days) == 7 && (!in_array(true, $on_days) || !in_array(false, $on_days)); // ignore configuration
 			if (!$all_days_disabled_or_enabled) {
 				$day_num = intval(date('w', $date));
 				if (isset($on_days[$day_num]) && !$on_days[$day_num]) {
@@ -55,8 +55,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$next_date = strtotime("+1 day", $date); // check next day
 		return $this->getClosestValidDate($next_date, $on_holidays, $on_days, $findDateRetry);
 	}
-	
-	protected function getClosestValidTime($date, $on_hours){
+
+	protected function getClosestValidTime($date, $on_hours) {
 		if (!empty($on_hours)) {
 			// get rendom period allowd to avoid mass step execution at same time
 			$rand_range = $on_hours[array_rand($on_hours)];
@@ -73,15 +73,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 
 	protected function getStepTriggerTime($step) {
-		$on_holidays = (isset($step['run_on']['holidays']))
-			? $step['run_on']['holidays']
-			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_holidays', false);
-		$on_days = (isset($step['run_on']['days']))
-			? $step['run_on']['days']
-			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_days', array());
-		$on_hours = (isset($step['run_on']['hours']))
-			? $step['run_on']['hours']
-			: Billrun_Factory::config()->getConfigValue('collection.settings.run_on_hours', array());
+		$on_holidays = (isset($step['run_on']['holidays'])) ? $step['run_on']['holidays'] : Billrun_Factory::config()->getConfigValue('collection.settings.run_on_holidays', false);
+		$on_days = (isset($step['run_on']['days'])) ? $step['run_on']['days'] : Billrun_Factory::config()->getConfigValue('collection.settings.run_on_days', array());
+		$on_hours = (isset($step['run_on']['hours'])) ? $step['run_on']['hours'] : Billrun_Factory::config()->getConfigValue('collection.settings.run_on_hours', array());
 		$do_after_days = '+' . intval($step['do_after_days']) . ' days';
 		$triggerDate = strtotime($do_after_days);
 		$triggerDate = $this->getClosestValidTime($triggerDate, $on_hours);
@@ -100,14 +94,14 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 				$newStep = array();
 				$newStep['step_code'] = $step['name'];
 				$newStep['step_type'] = $step['type'];
-				if(!empty($step['content'])){
+				if (!empty($step['content'])) {
 					foreach ($step['content'] as $key => $value) {
-						if($key !== 'custom_parameter') {
+						if ($key !== 'custom_parameter') {
 							$newStep['step_config'][$key] = $value;
 						}
 					}
 				}
-				if(!empty($step['content']['custom_parameter'])){
+				if (!empty($step['content']['custom_parameter'])) {
 					foreach ($step['content']['custom_parameter'] as $key => $value) {
 						$newStep['extra_params'][$key] = $value;
 					}
@@ -181,7 +175,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$notifier = new Billrun_CollectionSteps_Notifier($step);
 		return $notifier->notify();
 	}
-	
+
 	protected function markStepAsCompleted($step, $response) {
 		$query = array(
 			'_id' => $step['_id'],
@@ -198,9 +192,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			Billrun_Factory::log("Unable to mark collection step as completed, ID: " . $step['stamp'], Zend_Log::INFO);
 			return FALSE;
 		}
-
 	}
-	
+
 	public function runCollectionStateChange($aids, $in = true) {
 		if (empty($aids)) {
 			return true;
@@ -214,7 +207,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 				'url' => $url,
 				'method' => $method,
 			),
-			'extra_params'=> array(
+			'extra_params' => array(
 				'state' => $in ? 'in_collection' : 'out_of_collection',
 				'aids' => $aids,
 			),
@@ -222,7 +215,5 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		);
 		return $this->runStep($step);
 	}
-	
-	
 
 }

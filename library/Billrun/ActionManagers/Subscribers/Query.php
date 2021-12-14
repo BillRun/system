@@ -32,7 +32,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	protected function queryRangeSubscribers() {
 		try {
 			$cursor = $this->collection->query($this->subscriberQuery)->cursor()->sort(array('_id' => -1));
-			Billrun_Factory::log("Query: " . print_r($this->subscriberQuery,1));
+			Billrun_Factory::log("Query: " . print_r($this->subscriberQuery, 1));
 			if (!$this->queryInRange) {
 				$cursor->limit(1);
 			}
@@ -44,7 +44,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($rawItem);
 			}
 		} catch (\MongoException $e) {
-			$errorCode =  20;
+			$errorCode = 20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}

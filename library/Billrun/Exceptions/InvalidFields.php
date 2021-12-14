@@ -13,15 +13,15 @@
  * @since    5.2
  */
 class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
-	
+
 	const ERROR_CODE = 17576;
-	
+
 	/**
 	 * List of invalid fields.
 	 * @var array
 	 */
 	protected $invalidFields = array();
-	
+
 	/**
 	 * Create a new instance of the invalid fields exception
 	 * @param array $invalidFields - Array of invalid fields.
@@ -30,7 +30,7 @@ class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 		parent::__construct($message, self::ERROR_CODE);
 		$this->setInvalidFields($invalidFields);
 	}
-	
+
 	/**
 	 * 
 	 * @param Billrun_DataTypes_InvalidField $invalidFields array of invalid fields
@@ -38,11 +38,11 @@ class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 	protected function setInvalidFields(array $invalidFields) {
 		$this->invalidFields = $this->translateInvalidFieldArray($invalidFields);
 	}
-	
+
 	protected function translateInvalidFieldArray($invalidFields) {
 		$result = array();
 		foreach ($invalidFields as $key => $field) {
-			if($field instanceof Billrun_DataTypes_InvalidField) {
+			if ($field instanceof Billrun_DataTypes_InvalidField) {
 				$translated = $field->output();
 			} else {
 				$translated = $this->translateInvalidFieldArray($field);
@@ -51,7 +51,7 @@ class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 		}
 		return $result;
 	}
-	
+
 	/**
 	 * Generate the array value to be displayed in the client for the exception.
 	 * @return array.

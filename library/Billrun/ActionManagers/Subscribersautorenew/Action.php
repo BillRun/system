@@ -13,7 +13,7 @@
 abstract class Billrun_ActionManagers_Subscribersautorenew_Action {
 
 	use Billrun_ActionManagers_ErrorReporter;
-	
+
 	protected $collection = null;
 
 	/**

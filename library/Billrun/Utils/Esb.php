@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
@@ -107,4 +108,5 @@ class Billrun_Utils_Esb {
 	protected function getActionFromMsgHeaders($esbFrame) {
 		return preg_replace('/(\/queue\/|\/' . str_replace('/', '\/', $this->queueConfig['queue_prefix']) . '\/|\/in|\/)/', '', $esbFrame->headers['destination']);
 	}
+
 }

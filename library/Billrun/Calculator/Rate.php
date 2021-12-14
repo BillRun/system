@@ -109,10 +109,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function getCalculatorQueueType() {
 		return self::$type;
 	}
-	
+
 	public function prepareData($lines) {
 		
 	}
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
@@ -139,9 +140,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf' ));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'rates', 'cf'));
 	}
-	
+
 	protected static function getRateCalculatorClassName($type) {
 		return 'Billrun_Calculator_Rate_Usage';
 	}
@@ -159,15 +160,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$type = $line['type'];
 		if (!isset(self::$calcs[$type])) {
 			$options = array_merge(
-				$options, 
-				array(
-					'usaget' => $line['usaget'],
-					'type' => $line['type'],
+					$options,
+					array(
+						'usaget' => $line['usaget'],
+						'type' => $line['type'],
 					)
 			);
 			$class = self::getRateCalculatorClassName($type);
 			self::$calcs[$type] = new $class($options);
-			
+
 			// @TODO: use always the first condition for all types - it will load the config values by default
 //			if ($type === 'smsc' || $type === 'smpp' || $type === 'tap3') {
 //				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
@@ -235,12 +236,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			// TODO: push plan to the function to enable market price by plan
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], array(), 0, $row['urt']->sec);
 		}
-		$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
-                
-                if(isset($rate['rounding_rules'])){
-                    $row['rounding_rules'] = $rate['rounding_rules'];
-                }
-                
+		$row->setRawData(array_merge($current, $added_values, $this->getForeignFields(array('rating_data' => $added_values), $current)));
+
+		if (isset($rate['rounding_rules'])) {
+			$row['rounding_rules'] = $rate['rounding_rules'];
+		}
+
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -296,16 +297,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return false;
 		}
 
- 		$rawData = $matchedRate->getRawData();
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
- 			return false;	
- 		}
- 		$idQuery = array(
- 			"key" => $rawData['key'], // this is for sharding purpose
- 			"_id" => $rawData['_id']['_id'],
- 		);
- 		
- 		return $rates_coll->query($idQuery)->cursor()->current();
+		$rawData = $matchedRate->getRawData();
+		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof Mongodloid_Id)) {
+			return false;
+		}
+		$idQuery = array(
+			"key" => $rawData['key'], // this is for sharding purpose
+			"_id" => $rawData['_id']['_id'],
+		);
+
+		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
 	/**
@@ -315,7 +316,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getRateQuery($row) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
-			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
+				Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
 			if (!is_array($currPipeline)) {
@@ -345,7 +346,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-		
+
 		return $query;
 	}
 
@@ -384,7 +385,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		return false;
 	}
-	
+
 	/**
 	 * method to clean specific prefixes from phone number
 	 * the prefixes taken from config in the next format:
@@ -406,8 +407,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $number;
 	}
-	
+
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}
+
 }

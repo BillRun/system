@@ -13,10 +13,9 @@
  * @since    5.1
  */
 class Billrun_Rates_Util {
-	
-	protected static $currencyList;
 
-	protected static $ratesCache=[];
+	protected static $currencyList;
+	protected static $ratesCache = [];
 
 	/**
 	 * Get a rate by reference
@@ -24,10 +23,10 @@ class Billrun_Rates_Util {
 	 * @return type
 	 */
 	public static function getRateByRef($rate_ref, $useCache = FALSE) {
-		$refStr= $rate_ref['$ref'].$rate_ref['$id'];
+		$refStr = $rate_ref['$ref'] . $rate_ref['$id'];
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 
-		if($useCache && !isset(static::$ratesCache[$refStr])) {
+		if ($useCache && !isset(static::$ratesCache[$refStr])) {
 			static::$ratesCache[$refStr] = $rates_coll->getRef($rate_ref);
 		} else {
 			return $rates_coll->getRef($rate_ref);
@@ -84,7 +83,7 @@ class Billrun_Rates_Util {
 			$plan = Billrun_Factory::plan(array('name' => $planName, 'time' => $time));
 		}
 		if (isset($plan) && $plan instanceof Billrun_Plan && ($rates = $plan->get('rates')) &&
-			isset($rates[$rate['key']]) && isset($rates[$rate['key']][$usage_type])) {
+				isset($rates[$rate['key']]) && isset($rates[$rate['key']][$usage_type])) {
 			return $rates[$rate['key']][$usage_type];
 		}
 		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
@@ -112,7 +111,7 @@ class Billrun_Rates_Util {
 	public static function getCharges($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		$tariff = static::getTariff($rate, $usageType, $plan, $services, $time);
 		$percentage = 1;
-		
+
 		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
 		if (array_keys($tariff)[0] === 'percentage') {
 			if (isset($rate['rates'][$usageType]['BASE'])) {
@@ -218,7 +217,7 @@ class Billrun_Rates_Util {
 	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $services = array(), $offset = 0, $time = NULL) {
 		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $services, $time);
 		$percentage = 1;
-		
+
 		// if $overrideByPercentage is true --> use the original rate and set the correct percentage
 		if (array_keys($tariff)[0] === 'percentage') {
 			if (isset($rate['rates'][$usageType]['BASE'])) {
@@ -294,6 +293,7 @@ class Billrun_Rates_Util {
 		}
 		return 0;
 	}
+
 	/**
 	 * Calculates the volume granted for subscriber by rate and balance
 	 * @param type $row
@@ -317,7 +317,7 @@ class Billrun_Rates_Util {
 			$requestedVolume = $row['usagev'];
 		}
 		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) ||
-			(isset($row['free_call']) && $row['free_call'])) {
+				(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}
 		$maximumGrantedVolume = self::getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time, $requestedVolume);
@@ -380,59 +380,60 @@ class Billrun_Rates_Util {
 		return false;
 	}
 
-	public static  function getRateByName($rateName, $timestamp = null) {
+	public static function getRateByName($rateName, $timestamp = null) {
 		$timestamp = empty($timestamp) ? time() : $timestamp;
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rate = $rates_coll->query(array_merge(array('key'=>$rateName), Billrun_Utils_Mongo::getDateBoundQuery($timestamp)))->cursor()->limit(1)->current();
+		$rate = $rates_coll->query(array_merge(array('key' => $rateName), Billrun_Utils_Mongo::getDateBoundQuery($timestamp)))->cursor()->limit(1)->current();
 		return $rate;
 	}
 
-	public static function getRateUsageType($rate){
+	public static function getRateUsageType($rate) {
 		return key($rate['rates']);
 	}
-	
-	public static function getRateTierInterval($rate, $tier = 1){
+
+	public static function getRateTierInterval($rate, $tier = 1) {
 		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
 		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['interval'];
 	}
-	
-	public static function getRateNumberOfTiers($rate){
+
+	public static function getRateNumberOfTiers($rate) {
 		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
 		return count($rate['rates'][$unitType]['BASE']['rate']);
 	}
-	
+
 	public static function getRateTierPrice($rate, $tier = 1) {
 		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
 		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['price'];
 	}
-	
+
 	public static function getRateTierTo($rate, $tier = 1) {
 		$unitType = Billrun_Rates_Util::getRateUsageType($rate);
 		return $rate['rates'][$unitType]['BASE']['rate'][$tier - 1]['to'];
 	}
-	
+
 	/**
 	 * Check if rate include in the given entity (service/plan)
 	 * @param string $rate_key
 	 * @param mixed $entity
 	 * @return boolean return true if rate include in the given entity false otherwise
 	 */
-	public static function checkIfRateInclude($rate_key, $entity){
-            if(!isset($entity['include']['groups'])){
-                return false;
-            }
-            $groupKey = key($entity['include']['groups']);
-            $includeRates = $entity['include']['groups'][$groupKey]['rates'];
-            return in_array($rate_key, $includeRates);
+	public static function checkIfRateInclude($rate_key, $entity) {
+		if (!isset($entity['include']['groups'])) {
+			return false;
+		}
+		$groupKey = key($entity['include']['groups']);
+		$includeRates = $entity['include']['groups'][$groupKey]['rates'];
+		return in_array($rate_key, $includeRates);
 	}
-	
+
 	/**
 	 * Check if rate override in the given entity (service/plan)
 	 * @param string $rate_key
 	 * @param mixed $entity
 	 * @return boolean return true if rate override in the given entity false otherwise
 	 */
-	public static function checkIfRateOverride($rate_key, $entity){
+	public static function checkIfRateOverride($rate_key, $entity) {
 		return isset($entity['rates'][$rate_key]);
 	}
+
 }

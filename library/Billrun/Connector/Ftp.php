@@ -37,4 +37,5 @@ class Billrun_Connector_Ftp extends Billrun_Connector_Base {
 
 		return $ftp;
 	}
+
 }

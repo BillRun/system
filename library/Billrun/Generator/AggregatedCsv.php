@@ -33,7 +33,7 @@ abstract class Billrun_Generator_AggregatedCsv extends Billrun_Generator_Csv {
 	 * load the container the need to be generate
 	 */
 	public function load() {
-		$this->data = $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse'=> true)); //TODO how to perform it on the secondaries?
+		$this->data = $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true)); //TODO how to perform it on the secondaries?
 		//Billrun_Factory::log("generator entities loaded: " . count($this->data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));

@@ -48,7 +48,7 @@ class Billrun_ModelValidator_RatesByPlan extends Billrun_ModelValidator_Base {
 			}
 			$lastInterval = $interval['to'];
 		}
-		
+
 		return true;
 	}
 

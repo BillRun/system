@@ -11,16 +11,14 @@
  *
  * @author idan
  */
-
 class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
-	
+
 	/**
 	 * Name of the payment gateway in Billrun.
 	 * @var string
 	 */
 	protected $gatewayName;
-	
-	
+
 	/**
 	 * Name of the receiver related action.
 	 * @var string
@@ -37,7 +35,7 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		$options = array_merge($options, $this->getAllReceiverDefinitions($this->actionType));
 		parent::__construct($options);
 	}
-	
+
 	/**
 	 * method to receive files.
 	 * 
@@ -46,7 +44,7 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 	public function receive() {
 		return parent::receive();
 	}
-	
+
 	/**
 	 * the structure configuration
 	 * @param type $path
@@ -56,10 +54,10 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		$this->receiverDefinitions = $this->structConfig['receiver'][$this->actionType];
 		$this->gateway = Billrun_Factory::paymentGateway($this->gatewayName);
 	}
-	
+
 	protected function getAllReceiverDefinitions($type) {
 		$receiverDefinitions = array();
-		foreach ($this->receiverDefinitions  as $key => $value) {
+		foreach ($this->receiverDefinitions as $key => $value) {
 			$receiverIniDefinitions[$key] = $value;
 		}
 		if (!isset($receiverIniDefinitions['port'])) {
@@ -98,7 +96,7 @@ class Billrun_Receiver_NonCDRs_PaymentGateway extends Billrun_Receiver_Ssh {
 		}
 		$gateway = $options['payment_gateway'];
 		$pgReceiver = array();
-		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function($paymentGateway) use ($gateway) {
+		$paymentGatewaySettings = array_filter(Billrun_Factory::config()->getConfigValue('payment_gateways'), function ($paymentGateway) use ($gateway) {
 			return ($paymentGateway['name'] === $gateway) && empty($paymentGateway['custom']);
 		});
 		if ($paymentGatewaySettings) {

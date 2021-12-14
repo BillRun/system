@@ -13,6 +13,7 @@
  * @since    4.5
  */
 class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
+
 	/**
 	 * Update the database.
 	 * @param type $coll
@@ -30,7 +31,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 		$coll->insert($entity);
 		return $entity;
 	}
-	
+
 	/**
 	 * Get the set part of the query.
 	 * @param Billrun_DataTypes_Wallet $wallet - The wallet in use.
@@ -40,13 +41,13 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 		$valueFieldName = $wallet->getFieldName();
 		$contents = $query['$set'];
 		unset($contents[$valueFieldName]);
-		if(!isset($contents['from'])) {
+		if (!isset($contents['from'])) {
 			$contents['from'] = new Mongodloid_Date();
 		}
 		$merged = array_merge($contents, $wallet->getPartialBalance());
 		return array('$set' => $merged);
 	}
-	
+
 	/**
 	 * Return the part of the query for setOnInsert
 	 * @param Billrun_DataTypes_Wallet $wallet
@@ -60,7 +61,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 		unset($result['$setOnInsert']);
 		return $result;
 	}
-	
+
 	/**
 	 * Set the 'To' field to the update query
 	 * @param array $update - The update query to set the to for
@@ -70,7 +71,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	public function setToForUpdate(&$update, $to, $balanceRecord) {
 		$update['$set']['to'] = $to;
 	}
-	
+
 	/**
 	 * Handle the core balance
 	 * 
@@ -82,7 +83,8 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 */
 	public function handleUnlimitedBalance($max, $wallet, $query) {
 		// [Balances Error 1240]
-		$errorCode =  40;
+		$errorCode = 40;
 		return array("onError" => $errorCode);
 	}
+
 }

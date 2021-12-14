@@ -22,4 +22,5 @@ class Billrun_Receiver_PaymentGateway_CreditGuard_Transactions extends Billrun_R
 		$options['type'] = self::$type;
 		parent::__construct($options);
 	}
+
 }

@@ -20,7 +20,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected $rejectionCodes = "/^2$|^3$|^E/";
 	protected $actionUrl;
 	protected $failureReturnUrl;
-	
+
 	const CREDIT_CARD_PAYMENT = 'COMMON.ACCEPT.INAPP.PAYMENT';
 	const APPLE_PAY_PAYMENT = 'COMMON.APPLE.INAPP.PAYMENT';
 	const GOOGLE_PAY_PAYMENT = 'COMMON.GOOGLE.INAPP.PAYMENT';
@@ -89,7 +89,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
+
 	protected function setRequestParams($params = []) {
 		$this->requestParams = [
 			'url' => $this->actionUrl,
@@ -139,7 +139,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
-		
+
 		return $retParams;
 	}
 
@@ -166,13 +166,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $status;
 	}
 
-		protected function payResponse($result, $addonData = []) {
+	protected function payResponse($result, $addonData = []) {
 		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
 		$additionalParams = [];
 		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
-			$status = (string) $xmlObj->messages->message->code;			
+			$status = (string) $xmlObj->messages->message->code;
 			$additionalParams['error'] = $errorMessage;
 		} else {
 			$transaction = $xmlObj->transactionResponse;
@@ -180,13 +180,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$status = (string) $transaction->responseCode;
 			$this->savePaymentProfile($xmlObj->profileResponse, $addonData['aid']);
 		}
-		
+
 		return [
 			'status' => $status,
 			'additional_params' => $additionalParams,
 		];
 	}
-		
+
 	/**
 	 * if customer was created in the request, updates account's payment gateway
 	 * 
@@ -197,7 +197,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (!$this->hasCustomerProfile($profileResponse)) {
 			return;
 		}
-		
+
 		$profileId = (string) $profileResponse->customerProfileId;
 		$paymentProfileId = (string) $profileResponse->customerPaymentProfileIdList->numericString;
 		$this->saveDetails['aid'] = $aid;
@@ -206,21 +206,22 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$profileData = $this->getRecurringBillingProfile($profileId);
 		$cardNum = Billrun_Util::getIn($profileData, 'paymentProfiles.payment.creditCard.cardNumber', '');
 		$this->saveDetails['credit_card'] = substr($cardNum, -4);
-		$this->saveDetails['expiration_date'] = Billrun_Util::getIn($profileData, 'paymentProfiles.payment.creditCard.expirationDate', '');;
+		$this->saveDetails['expiration_date'] = Billrun_Util::getIn($profileData, 'paymentProfiles.payment.creditCard.expirationDate', '');
+		;
 		$this->savePaymentGateway();
-        return $paymentProfileId;
+		return $paymentProfileId;
 	}
-	
+
 	protected function hasCustomerProfile($profileResponse) {
 		if (!$profileResponse) {
 			return false;
 		}
-		
+
 		if ($profileResponse->messages->resultCode != 'Ok') {
 			Billrun_Factory::log("Invalid profile response from gateway. Response:" . print_R($profileResponse, 1), Billrun_Log::ERR);
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -236,7 +237,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$body['transactionRequest'] = $this->buildTransactionRequest($amount, $gatewayDetails);
 		return $this->encodeRequest($root, $body);
 	}
-	
+
 	protected function buildTransactionRequest($amount, $gatewayDetails) {
 		$transactionRequest = [
 			'transactionType' => 'authCaptureTransaction',
@@ -247,22 +248,22 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (!empty($payment)) {
 			$transactionRequest['payment'] = $payment;
 		}
-		
+
 		$profile = $this->buildCustomerProfile($gatewayDetails);
 		if (!empty($profile)) {
 			$transactionRequest['profile'] = $profile;
 		}
-		
+
 		$customerInfo = $this->buildCustomerInfo($gatewayDetails);
 		if (!empty($customerInfo)) {
 			$transactionRequest['customer'] = $customerInfo;
 		}
-		
+
 		$billTo = $this->buildBillTo($gatewayDetails);
 		if (!empty($billTo)) {
 			$transactionRequest['billTo'] = $billTo;
 		}
-		
+
 		$transactionSettings = $this->buildTransactionSettings($gatewayDetails);
 		if (!empty($transactionSettings)) {
 			$transactionRequest['transactionSettings'] = $transactionSettings;
@@ -270,13 +271,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 		return $transactionRequest;
 	}
-	
+
 	protected function buildCustomerProfile($gatewayDetails) {
 		$customerProfile = Billrun_Util::getIn($gatewayDetails, 'customer_profile_id');
 		$paymentProfile = Billrun_Util::getIn($gatewayDetails, 'payment_profile_id');
 		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
 		$canCreateProfile = Billrun_Util::getIn($gatewayDetails, 'create_profile', false);
-		
+
 		if ($hasProfile) {
 			return [
 				'customerProfileId' => $customerProfile,
@@ -285,7 +286,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				],
 			];
 		}
-		
+
 		if (!empty($customerProfile)) {
 			return [
 				'customerProfileId' => $customerProfile,
@@ -297,15 +298,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				'createProfile' => true,
 			];
 		}
-		
+
 		return [];
 	}
-	
+
 	protected function buildTransactionSettings($gatewayDetails) {
 		$customerProfile = Billrun_Util::getIn($gatewayDetails, 'customer_profile_id');
 		$paymentProfile = Billrun_Util::getIn($gatewayDetails, 'payment_profile_id');
 		$hasProfile = !empty($customerProfile) && !empty($paymentProfile);
-		
+
 		if ($hasProfile) {
 			return [
 				'setting' => [
@@ -314,10 +315,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				],
 			];
 		}
-		
+
 		return [];
 	}
-	
+
 	protected function buildCustomerInfo($gatewayDetails) {
 		$ret = [];
 		$email = Billrun_Util::getIn($gatewayDetails, 'email');
@@ -326,15 +327,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 		return $ret;
 	}
-	
+
 	protected function buildTransactionPayment($gatewayDetails) {
 		$dataDescriptor = Billrun_Util::getIn($gatewayDetails, 'data_descriptor');
 		$dataValue = Billrun_Util::getIn($gatewayDetails, 'data_value');
-		
+
 		if (empty($dataDescriptor) || empty($dataValue)) {
 			return [];
 		}
-		
+
 		return [
 			'opaqueData' => [
 				'dataDescriptor' => $dataDescriptor,
@@ -342,7 +343,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			],
 		];
 	}
-	
+
 	protected function buildBillTo($gatewayDetails, $params = []) {
 		$billTo = [];
 		$fields = [
@@ -356,22 +357,22 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			'phone_number' => 'phoneNumber',
 			'fax_number' => 'faxNumber',
 		];
-		
+
 		foreach ($fields as $dataField => $requestField) {
 			$val = Billrun_Util::getIn($gatewayDetails, $dataField, '');
 			if (!empty($val)) {
 				$billTo[$requestField] = $val;
 			}
 		}
-		
+
 		return $billTo;
 	}
-	
+
 	protected function buildAuthenticationBody() {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
-		
+
 		return [
 			'merchantAuthentication' => [
 				'name' => $apiLoginId,
@@ -379,7 +380,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			],
 		];
 	}
-	
+
 	public function getTransactionDetails($transactionId) {
 		$getTransactionDetailsRequest = $this->buildGetTransactionDetailsRequest($transactionId);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $getTransactionDetailsRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -387,10 +388,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (empty($response)) {
 			return [];
 		}
-		
+
 		return $response['transaction'];
 	}
-	
+
 	protected function buildGetTransactionDetailsRequest($transactionId) {
 		$amount = $gatewayDetails['amount'];
 		$root = [
@@ -403,20 +404,20 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$body['transId'] = $transactionId;
 		return $this->encodeRequest($root, $body);
 	}
-	
+
 	public function credit($gatewayDetails, $addonData) {
 		if (!empty($gatewayDetails['transaction_id'])) {
 			return $this->creditTransaction($gatewayDetails, $addonData);
 		}
-		
-		Billrun_Factory::log("AuthorizeNet - failed to Credit - invalid credit option. data: " . print_R($gatewayDetails ,1), Zend_Log::ERR);
+
+		Billrun_Factory::log("AuthorizeNet - failed to Credit - invalid credit option. data: " . print_R($gatewayDetails, 1), Zend_Log::ERR);
 		return false;
 	}
-	
+
 	protected function creditTransaction($gatewayDetails, $addonData) {
 		$transactionId = $gatewayDetails['transaction_id'] ?? '';
 		if (empty($transactionId)) {
-			Billrun_Factory::log("AuthorizeNet - failed to Credit - missing transaction Id. data: " . print_R($gatewayDetails ,1), Zend_Log::ERR);
+			Billrun_Factory::log("AuthorizeNet - failed to Credit - missing transaction Id. data: " . print_R($gatewayDetails, 1), Zend_Log::ERR);
 			return false;
 		}
 		$transactionDetails = $this->getTransactionDetails($transactionId);
@@ -430,7 +431,6 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return $status;
 	}
 
-
 	protected function buildCreditRequest($transactionDetails, $gatewayDetails) {
 		$amount = $gatewayDetails['amount'];
 		$root = [
@@ -443,7 +443,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$body['transactionRequest'] = $this->buildRefundTransactionRequest($transactionDetails, $gatewayDetails);
 		return $this->encodeRequest($root, $body);
 	}
-	
+
 	protected function buildRefundTransactionRequest($transactionDetails, $gatewayDetails) {
 		$transactionRequest = [
 			'transactionType' => 'refundTransaction',
@@ -453,13 +453,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$transactionRequest['payment'] = [
 			'creditCard' => [
 				'cardNumber' => Billrun_Util::getIn($transactionDetails, 'payment.creditCard.cardNumber', ''),
-                'expirationDate' =>  'XXXX',
+				'expirationDate' => 'XXXX',
 			],
 		];
 		$transactionRequest['refTransId'] = Billrun_Util::getIn($transactionDetails, 'transId', '');
 		return $transactionRequest;
 	}
-	
+
 	protected function buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params = []) {
 		$root = [
 			'tag' => 'createCustomerProfileRequest',
@@ -482,15 +482,14 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 		return $this->encodeRequest($root, $body);
 	}
-	
+
 	protected function isApplePayRequest($request) {
 		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::APPLE_PAY_PAYMENT;
 	}
-	
+
 	protected function isGooglePayRequest($request) {
 		return Billrun_Util::getIn($request, 'profile.paymentProfiles.payment.opaqueData.dataDescriptor') == self::GOOGLE_PAY_PAYMENT;
 	}
-
 
 	protected function encodeRequest($root, $body, $params = []) {
 		$xmlEncoder = new Billrun_Encoder_Xml();
@@ -498,23 +497,23 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$params['root'] = $root;
 		return $xmlEncoder->encode($body, $params);
 	}
-    
-    protected function decodeResponse($result, $asArray = false) {
-        $xmlObj = @simplexml_load_string($result);
-        $resultCode = (string) $xmlObj->messages->resultCode;
+
+	protected function decodeResponse($result, $asArray = false) {
+		$xmlObj = @simplexml_load_string($result);
+		$resultCode = (string) $xmlObj->messages->resultCode;
 		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
 			$errorCode = (string) $xmlObj->messages->message->code;
 			Billrun_Factory::log("AuthorizeNet - transaction error. Error code: {$errorCode}, error message: {$errorMessage}", Zend_Log::ERR);
 			throw new Exception($errorMessage);
 		}
-        
+
 		if ($asArray) {
 			$xmlDecoder = new Billrun_Decoder_Xml();
 			return $xmlDecoder->decode($result);
 		}
-        return $xmlObj;
-    }
+		return $xmlObj;
+	}
 
 	public function authenticateCredentials($params) {
 		$apiLoginId = $params['login_id'];
@@ -582,7 +581,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			throw new Exception($errorMessage);
 		}
 		$transaction = $xmlObj->transaction;
-		$responseCode = (string)$transaction->responseCode;
+		$responseCode = (string) $transaction->responseCode;
 		return $responseCode;
 	}
 
@@ -624,12 +623,12 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if ($resultCode == 'Error') {
 				$errorCode = (string) $xmlObj->messages->message->code;
-				$errorMessage = (string) $xmlObj->messages->message->text;	
+				$errorMessage = (string) $xmlObj->messages->message->text;
 				if ($errorCode == 'E00039') {
 					$errorArray = preg_grep("/^[0-9]+$/", explode(' ', $errorMessage));
-					if (count($errorArray) ==! 1) {
+					if (count($errorArray) == !1) {
 						Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
-						throw new Exception($errorMessage); 
+						throw new Exception($errorMessage);
 					}
 					$customerId = current($errorArray);
 				}
@@ -644,23 +643,23 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 		return $customerId;
 	}
-	
+
 	public function getRecurringBillingProfile($customerProfileId, $params = []) {
 		$request = $this->buildTransactionPost($customerProfileId, $params);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, ['Accept-encoding' => 'deflate'], null, 0);
-        $profileData = $this->decodeResponse($result, true);
-        return $profileData['profile'] ?? [];
+		$profileData = $this->decodeResponse($result, true);
+		return $profileData['profile'] ?? [];
 	}
-	
+
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		$request = $this->buildRecurringBillingProfileRequest($aid, $gatewayDetails, $params);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $request, Zend_Http_Client::POST, ['Accept-encoding' => 'deflate'], null, 0);
-        $paymentProfileId = $this->recurringBillingProfileResponse($result, $aid, $params);
-        return $paymentProfileId ? $paymentProfileId : false;
+		$paymentProfileId = $this->recurringBillingProfileResponse($result, $aid, $params);
+		return $paymentProfileId ? $paymentProfileId : false;
 	}
-    
-    protected function recurringBillingProfileResponse($result, $aid, $params = []) {
-        $response = $this->decodeResponse($result);
+
+	protected function recurringBillingProfileResponse($result, $aid, $params = []) {
+		$response = $this->decodeResponse($result);
 		$paymentProfileId = $this->savePaymentProfile($response, $aid);
 		return $paymentProfileId;
 	}
@@ -696,7 +695,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	public function isUpdatePgChangesNeeded() {
 		return true;
 	}
-	
+
 	public function deleteAccountInPg($pgAccountDetails) {
 		if (empty($pgAccountDetails['payment_id'])) {
 			return;
@@ -723,7 +722,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorCode = (string) $xmlObj->messages->message->code;
-				if ($errorCode == 'E00040') {	// Error: Record not found(non-existing customer)
+				if ($errorCode == 'E00040') { // Error: Record not found(non-existing customer)
 					return;
 				}
 				$errorMessage = (string) $xmlObj->messages->message->text;
@@ -733,12 +732,12 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
+
 	public function getNeededParamsAccountUpdate($account) {
 		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => isset($account['payment_profile_id']) ? $account['payment_profile_id'] : '');
 	}
-	
-	protected function checkIfCustomerExists ($aid) {
+
+	protected function checkIfCustomerExists($aid) {
 		$customerProfileId = '';
 		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountQuery['type'] = 'account';
@@ -754,10 +753,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				$customerProfileId = $gateway['params']['customer_profile_id'];
 			}
 		}
-		
+
 		return $customerProfileId;
 	}
-	
+
 	public function handleOkPageData($txId) {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
@@ -769,11 +768,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 										</merchantAuthentication>
 										<customerProfileId>$txId</customerProfileId>
 									</getCustomerProfileRequest>";
-		
+
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerProfileRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
-		
+
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
@@ -788,14 +787,14 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
-		
-		if (empty($paymentProfileId)) {	
+
+		if (empty($paymentProfileId)) {
 			$index = 0;
 			$account = Billrun_Factory::account();
 			$account->loadAccountForQuery(array('aid' => $aid));
 			$accountPg = $account->payment_gateway;
 			$setValues['payment_gateway']['active'] = array();
-			if (!isset($accountPg['former'])) { 
+			if (!isset($accountPg['former'])) {
 				$previousPg = array();
 			} else {
 				$previousPg = $accountPg['former'];
@@ -804,7 +803,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 					if ($gateway['name'] == 'AuthorizeNet') {
 						unset($previousPg[$counter]);
 						$index = $counter;
-					} 
+					}
 					$counter++;
 				}
 			}
@@ -817,11 +816,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$account->closeAndNew($setValues);
 			$failureReturnUrl = $account->tenant_return_url;
 			return $failureReturnUrl;
-		} 
-		
+		}
+
 		return true;
 	}
-	
+
 	/**
 	 * Returns True if there is a need to update the account's payment gateway structure.
 	 * 
@@ -831,12 +830,13 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	public function needUpdateFormerGateway($params) {
 		return !empty($params['customer_profile_id']);
 	}
+
 	protected function validateStructureForCharge($structure) {
 		return (!empty($structure['customer_profile_id']) && !empty($structure['payment_profile_id'])) ||
-			(!empty($structure['data_descriptor']) && !empty($structure['data_value'])) ||
-			(!empty($structure['type']) && $structure['type'] == 'refund_transaction' && !empty($structure['transaction_id']));
+				(!empty($structure['data_descriptor']) && !empty($structure['data_value'])) ||
+				(!empty($structure['type']) && $structure['type'] == 'refund_transaction' && !empty($structure['transaction_id']));
 	}
-	
+
 	protected function handleTokenRequestError($response, $params) {
 		$xmlObj = @simplexml_load_string($response);
 		$resultCode = (string) $xmlObj->messages->resultCode;
@@ -846,14 +846,14 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 				$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 				$accountQuery['type'] = 'account';
-				$accountQuery['aid'] = $params['aid'];	
-				$subscribersColl->update($accountQuery, array('$pull' => array('payment_gateway.former' => array('name' => array('$in' => array($this->billrunName))))));			
+				$accountQuery['aid'] = $params['aid'];
+				$subscribersColl->update($accountQuery, array('$pull' => array('payment_gateway.former' => array('name' => array('$in' => array($this->billrunName))))));
 				return true;
 			}
 		}
 		return false;
 	}
-	
+
 	protected function buildSinglePaymentArray($params, $options) {
 		$customerProfileId = $this->checkIfCustomerExists($aid);
 		if (!empty($customerProfileId)) {
@@ -896,7 +896,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			'setting' => $settings,
 		];
 	}
-	
+
 	public function getSecretFields() {
 		return array('transaction_key');
 	}

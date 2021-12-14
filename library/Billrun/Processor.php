@@ -54,7 +54,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
-	
+
 	/**
 	 * Limit iterator
 	 * used to limit the count of files to process on.
@@ -99,16 +99,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var string SHould the bluk inserted lines be ordered before  the actuall  insert is done.
 	 */
 	protected $orderLinesBeforeInsert = false;
-
 	protected $config = null;
-	protected  $usage_type = null;
-	
+	protected $usage_type = null;
+
 	/**
 	 * filters configuration by file type
 	 * @var array
 	 */
 	protected $filters = array();
-
 
 	/**
 	 * Lines that were processed but are not to be saved
@@ -128,7 +126,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['path'])) {
 			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
 		}
-		
+
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
@@ -248,7 +246,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 				return FALSE;
 			}
-			
+
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 			$this->filterLines();
 			$this->prepareQueue();
@@ -456,7 +454,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		$query = array(
-			'source' => !empty($this->receiverSource) ? $this->receiverSource :static::$type,
+			'source' => !empty($this->receiverSource) ? $this->receiverSource : static::$type,
 			'process_time' => array(
 				'$exists' => false,
 			),
@@ -499,7 +497,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log("Reordering lines  by stamp...", Zend_Log::DEBUG);
-			uasort($lines_data, function($a, $b) {
+			uasort($lines_data, function ($a, $b) {
 				return strcmp($a['stamp'], $b['stamp']);
 			});
 			Billrun_Factory::log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
@@ -546,7 +544,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$queue_data = array_values($this->queue_data);
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
-			uasort($queue_data, function($a, $b) {
+			uasort($queue_data, function ($a, $b) {
 				return strcmp($a['stamp'], $b['stamp']);
 			});
 			Billrun_Factory::log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
@@ -647,7 +645,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
-				
+
 		if (!isset($queue_row['stamp'])) {
 			$queue_row['stamp'] = $row['stamp'];
 		}
@@ -753,7 +751,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getAllLines() {
 		return $this->data['data'] + $this->doNotSaveLines;
 	}
-	
+
 	/**
 	 * ignore "garbage" line (by adding "skip_calc" attribute)
 	 * "garbage" lines are defined by "filters" configuration of input processor
@@ -764,17 +762,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$filters = $this->getFilters($row);
 			foreach ($filters as $filter) {
 				if ($this->isFilterConditionsMet($row, $filter)) {
-                                        if(isset($row['skip_calc'])) {
-                                                $row['skip_calc'] = array_unique(array_merge($row['skip_calc'],$this->getCalcsToSkip($filter)));
-                                        } else {
-                                                $row['skip_calc'] = $this->getCalcsToSkip($filter);
-                                        }
+					if (isset($row['skip_calc'])) {
+						$row['skip_calc'] = array_unique(array_merge($row['skip_calc'], $this->getCalcsToSkip($filter)));
+					} else {
+						$row['skip_calc'] = $this->getCalcsToSkip($filter);
+					}
 					continue 2;
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * get filters relevant for a line (by file type)
 	 * 
@@ -788,7 +786,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		return $this->filters[$row['type']];
 	}
-	
+
 	/**
 	 * check if all conditions defined in a filter are met
 	 * 
@@ -807,7 +805,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * get calculators to skip according to the filter received
 	 * 
@@ -820,7 +818,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$filterSkipCalcs = array($filterSkipCalcs);
 		}
 		if (in_array('all', $filterSkipCalcs)) {
-			$allCalcs =  Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+			$allCalcs = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
 			if (!in_array('unify', $allCalcs)) { // Unify calc sometimes added dynamically
 				$allCalcs[] = 'unify';
 			}
@@ -829,7 +827,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		return $filterSkipCalcs;
 	}
-	
+
 	public function skipQueueCalculators() {
 		return false;
 	}
@@ -837,4 +835,5 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function setPgFileType($fileType) {
 		return;
 	}
+
 }

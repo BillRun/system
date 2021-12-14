@@ -16,11 +16,11 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class OperationsAction extends ApiAction {
-	
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	protected $orphanTime = '1 day ago';
-	
+
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
@@ -36,20 +36,21 @@ class OperationsAction extends ApiAction {
 			'end_time' => array('$exists' => false),
 		);
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
-		$activeOperation = $operationsColl->query($query)->cursor()->current();	
+		$activeOperation = $operationsColl->query($query)->cursor()->current();
 		$ret = array();
 		if (!$activeOperation->isEmpty()) {
 			$ret['start_date'] = $activeOperation['start_time'];
 		}
-		$output = array (
+		$output = array(
 			'status' => 1,
 			'desc' => 'success',
-			'details' =>  array($ret),
+			'details' => array($ret),
 		);
 		$this->getController()->setOutput(array($output));
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }

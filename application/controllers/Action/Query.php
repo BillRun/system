@@ -15,8 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class QueryAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -305,13 +306,14 @@ class QueryAction extends ApiAction {
 	protected function getCacheLifeTimeForQuery() {
 		return Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $this->type, null);
 	}
-	
+
 	protected function getLinesDataForQuery($params) {
 		$cacheLifetime = $this->getCacheLifeTimeForQuery();
-		if (isset($cacheLifetime)){
+		if (isset($cacheLifetime)) {
 			$this->setCacheLifeTime($cacheLifetime);
 			return $this->cache($params);
 		}
 		return $this->fetchData($params['fetchParams']);
 	}
+
 }

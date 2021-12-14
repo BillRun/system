@@ -14,8 +14,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class V3_balanceAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	public function execute() {
 		$options = [
 			'fake_cycle' => true,

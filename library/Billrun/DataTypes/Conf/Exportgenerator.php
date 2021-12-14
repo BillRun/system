@@ -16,7 +16,7 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 	 * @var array
 	 */
 	protected $list = array();
-		
+
 	public function __construct(&$obj) {
 		$this->val = &$obj['v'];
 		$this->list = &$obj['list'];
@@ -28,23 +28,23 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 	 */
 	public function validate() {
 		if (empty($this->val) ||
-			!is_array($this->val) ||
-			!is_array($this->list) ||
-			!isset($this->val['name']) ||
-			!is_string($this->val['name']) ||
-			!isset($this->val['file_type']) ||
-			!is_string($this->val['file_type'])) {
+				!is_array($this->val) ||
+				!is_array($this->list) ||
+				!isset($this->val['name']) ||
+				!is_string($this->val['name']) ||
+				!isset($this->val['file_type']) ||
+				!is_string($this->val['file_type'])) {
 			return false;
 		}
-		
-		if(!$this->validateName()) {
+
+		if (!$this->validateName()) {
 			return false;
 		}
-		
-		if(!$this->validateSegments()) {
+
+		if (!$this->validateSegments()) {
 			return false;
 		}
-		
+
 		$this->setToList();
 		return true;
 	}
@@ -59,24 +59,24 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 			$this->val = null;
 		}
 	}
-	
+
 	/**
 	 * Handle name
 	 * @return boolean
 	 */
 	protected function validateName() {
 		$name = $this->val['name'];
-		
+
 		// Validate the name.
 		foreach ($this->list as $generator) {
-			if($generator['name'] == $name) {
+			if ($generator['name'] == $name) {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Validate the segments
 	 * @return boolean
@@ -84,21 +84,21 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 	protected function validateSegments() {
 		// Get the segments.
 		$segments = Billrun_Util::getFieldVal($this->val['segments'], array());
-		
+
 		// Does the list have a value.
-		if(empty($segments) || !is_array($segments)) {
+		if (empty($segments) || !is_array($segments)) {
 			return false;
 		}
-		
+
 		// Get the available fields.
 		$fields = $this->getFields();
-		if(empty($fields)) {
+		if (empty($fields)) {
 			return false;
 		}
-		
+
 		// Validate each segment.
 		foreach ($segments as $segValue) {
-			if(!$this->validateSegment($segValue, $fields)) {
+			if (!$this->validateSegment($segValue, $fields)) {
 				return false;
 			}
 		}
@@ -113,13 +113,13 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 	 */
 	protected function validateSegment($segment, $fields) {
 		foreach ($segment as $key => $value) {
-			if(!in_array($key, $fields)) {
+			if (!in_array($key, $fields)) {
 				return false;
 			}
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Get the available fields according to the input processor.
 	 */
@@ -129,18 +129,19 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 
 		$fields = array();
 		foreach ($fileTypes as $record) {
-			if($record['file_type'] != $type) {
+			if ($record['file_type'] != $type) {
 				continue;
 			}
-			
+
 			$fields = Billrun_Util::getFieldVal($record['parser']['structure'], array());
 			break;
 		}
-		
+
 		return $fields;
 	}
-	
+
 	public function value() {
 		return $this->list;
 	}
+
 }

@@ -38,7 +38,7 @@ class Billrun_LogBillrunFile extends Billrun_LogFile {
 	 */
 	public function __construct($options = array()) {
 		$this->collection = Billrun_Factory::db()->logCollection();
-		$source = isset($options['source'])? $options['source'] : $this->source;
+		$source = isset($options['source']) ? $options['source'] : $this->source;
 		if (isset($options['stamp']) && !is_null($source)) {
 			$this->stamp = $options['stamp'];
 			$docs = $this->collection->query('key', $this->stamp)->equals('source', $source)->cursor();

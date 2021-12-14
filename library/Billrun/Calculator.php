@@ -138,11 +138,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		if ($this->isEnabled()) {
 			$this->lines = $this->getLines();
-			
+
 			/* foreach ($resource as $entity) {
-			$this->data[] = $entity;
-			} */
-			
+			  $this->data[] = $entity;
+			  } */
+
 			Billrun_Factory::log("Entities loaded: " . count($this->lines), Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 		}
@@ -152,12 +152,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * make the calculation
 	 */
 	abstract public function updateRow($row);
-	
-	
+
 	abstract public function prepareData($lines);
 
-	
-	
 	/**
 	 * execute the calculation process
 	 */
@@ -166,68 +163,66 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines = $this->pullLines($this->lines);
 		$this->prepareData($lines);
 		foreach ($lines as $line) {
-                    $extraLines = $this->addExtraLines($line);
-                    $this->calculateDataRow($line);
-                    foreach ($extraLines as $extraLine){
-                        $extraLine = ($extraLine instanceof Mongodloid_Entity) ? $extraLine : new Mongodloid_Entity($extraLine);
-                        $this->calculateDataRow($extraLine);
-                    }
+			$extraLines = $this->addExtraLines($line);
+			$this->calculateDataRow($line);
+			foreach ($extraLines as $extraLine) {
+				$extraLine = ($extraLine instanceof Mongodloid_Entity) ? $extraLine : new Mongodloid_Entity($extraLine);
+				$this->calculateDataRow($extraLine);
+			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
-	
-        protected function calculateDataRow($line) {
-            $lines_coll = Billrun_Factory::db()->linesCollection();
-            if ($line) {
-                Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
-                Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
-                $line->collection($lines_coll);
-                if ($this->isLineLegitimate($line)) {
-                        if ($this->updateRow($line) === FALSE) {
-                                unset($this->lines[$line['stamp']]);
-                                return;
-                        }
-                        $this->data[$line['stamp']] = $line;
-                }
-                Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
-            }
-        }
 
-        /**
-         * Adding extra lines to calculated lines. 
-         * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
-         * @param array $extraData - the extra lines we need to add to the calculator data. 
-         * @return array $extraData - the extra lines we need to add to the calculator data. 
-         */
-	protected function addExtraLines($line, $extraData = []){
+	protected function calculateDataRow($line) {
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		if ($line) {
+			Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+			Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
+			$line->collection($lines_coll);
+			if ($this->isLineLegitimate($line)) {
+				if ($this->updateRow($line) === FALSE) {
+					unset($this->lines[$line['stamp']]);
+					return;
+				}
+				$this->data[$line['stamp']] = $line;
+			}
+			Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
+		}
+	}
+
+	/**
+	 * Adding extra lines to calculated lines. 
+	 * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
+	 * @param array $extraData - the extra lines we need to add to the calculator data. 
+	 * @return array $extraData - the extra lines we need to add to the calculator data. 
+	 */
+	protected function addExtraLines($line, $extraData = []) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
-		if(!empty($extraData)){
+		if (!empty($extraData)) {
 			$queue_lines_to_insert = [];
 			$lines_to_insert = [];
-			foreach ($extraData as $originalStamp => $extraDataByStamp){
-				foreach ($extraDataByStamp as $newStamp => $extraRow){
+			foreach ($extraData as $originalStamp => $extraDataByStamp) {
+				foreach ($extraDataByStamp as $newStamp => $extraRow) {
 					$newQueueLine = $this->pullQueueLineByStamp($originalStamp);
 					$saveProperties = $this->getPossiblyUpdatedFields();
 					foreach ($saveProperties as $p) {
-                                            if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
-                                                    $newQueueLine[$p] = $val;
-                                            }
+						if (!is_null($val = Billrun_Util::getIn($extraRow, $p, null))) {
+							$newQueueLine[$p] = $val;
+						}
 					}
 					unset($newQueueLine['_id']);
 					$newQueueLine['stamp'] = $newStamp;
 					$queue_lines_to_insert[] = $newQueueLine;
 					$lines_to_insert[] = $extraRow;
-                                        $this->lines[$newStamp] = $newQueueLine;
+					$this->lines[$newStamp] = $newQueueLine;
 				}
-				
 			}
 			Billrun_Factory::db()->linesCollection()->batchInsert($lines_to_insert);
-                        Billrun_Factory::db()->queueCollection()->batchInsert($queue_lines_to_insert);
+			Billrun_Factory::db()->queueCollection()->batchInsert($queue_lines_to_insert);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $this));
 		return $extraData[$line['stamp']] ?? [];
 	}
-	
 
 	/**
 	 * Execute write the calculation output into DB
@@ -269,7 +264,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-				->query()->in('stamp', $stamps)->cursor();
+						->query()->in('stamp', $stamps)->cursor();
 
 		if ($this->autosort) {
 			$lines->sort(array('urt' => 1));
@@ -286,24 +281,23 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-				->cursor()->current();
+						->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}
 		$line->collection(Billrun_Factory::db()->linesCollection());
 		return $line;
 	}
-	
+
 	protected function pullQueueLineByStamp($stamp) {
 		$queue_line = Billrun_Factory::db()->queueCollection()->query('stamp', $stamp)
-				->cursor()->current();
+						->cursor()->current();
 		if ($queue_line->isEmpty()) {
 			return false;
 		}
 		$queue_line->collection(Billrun_Factory::db()->queueCollection());
 		return $queue_line;
 	}
-
 
 	/**
 	 * Mark the calculation as finished in the queue.
@@ -407,7 +401,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$queue = Billrun_Factory::db()->queueCollection();
 			$queue->remove($query);
 			$lines = Billrun_Factory::db()->linesCollection();
- 			$lines->update($query, array('$unset' => array('in_queue' => "")), array("multiple" => true));
+			$lines->update($query, array('$unset' => array('in_queue' => "")), array("multiple" => true));
 		}
 	}
 
@@ -512,7 +506,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		} else {
 			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
 		}
-		
+
 		$queue->update($query, $update, array('multiple' => true));
 		return true;
 	}
@@ -583,7 +577,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function getPossiblyUpdatedFields() {
 		return $this->getAddedFoerignFields();
 	}
-	
+
 	/**
 	 * is the calculator type in queue.calculators
 	 *
@@ -594,7 +588,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$calculatorType = $this->getCalculatorQueueType();
 		return in_array($calculatorType, $queueCalculators);
 	}
-	
+
 	/**
 	 * should the calculator be configured as a queue calculator
 	 *
@@ -603,7 +597,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function isQueueType() {
 		return $this->isQueueCalc;
 	}
-		
+
 	/**
 	 * is the calculator enabled (allowed to run)
 	 *

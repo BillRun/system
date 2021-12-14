@@ -210,11 +210,11 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		$params = array("username", "password", "signature");
 		return $this->rearrangeParametres($params);
 	}
-	
+
 	protected function isRejected($status) {
 		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
-	
+
 	protected function convertAmountToSend($amount) {
 		return $amount;
 	}
@@ -222,31 +222,31 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected function isNeedAdjustingRequest() {
 		return true;
 	}
-	
+
 	protected function isUrlRedirect() {
 		return true;
 	}
-	
+
 	protected function isHtmlRedirect() {
 		return false;
 	}
-	
+
 	protected function needRequestForToken() {
 		return true;
 	}
-	
+
 	public function handleOkPageData($txId) {
 		return true;
 	}
-	
+
 	protected function validateStructureForCharge($structure) {
 		return !empty($structure['card_token']);
 	}
-	
+
 	protected function handleTokenRequestError($response, $params) {
 		return false;
 	}
-		
+
 	protected function buildSinglePaymentArray($params, $options) {
 		throw new Exception("Single payment not supported in " . $this->billrunName);
 	}
@@ -254,8 +254,9 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	public function createRecurringBillingProfile($aid, $gatewayDetails, $params = []) {
 		return false;
 	}
-	
+
 	public function getSecretFields() {
 		return array('password');
 	}
+
 }

@@ -11,7 +11,7 @@
  * Can be used for place-holders.
  */
 trait Billrun_Traits_ValueTranslator {
-	
+
 	protected $translationMapping = null;
 
 	/**
@@ -20,7 +20,7 @@ trait Billrun_Traits_ValueTranslator {
 	 * @param array $params
 	 */
 	public abstract function getTranslationMapping($params = []);
-	
+
 	/**
 	 * Translate given value
 	 * 
@@ -33,13 +33,13 @@ trait Billrun_Traits_ValueTranslator {
 		if (!$mapping) {
 			return $valueToTranslate;
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('beforeValueTranslation', [&$valueToTranslate, &$mapping, $this]);
 		$value = '';
-		
+
 		if (!is_array($mapping)) {
 			$value = Billrun_Util::getIn($data, $mapping, $mapping);
-		} else if(isset ($mapping['hard_coded'])) {
+		} else if (isset($mapping['hard_coded'])) {
 			$value = $mapping['hard_coded'];
 		} else if (isset($mapping['field'])) {
 			$value = Billrun_Util::getIn($data, $mapping['field'], '');
@@ -53,16 +53,16 @@ trait Billrun_Traits_ValueTranslator {
 		} else {
 			Billrun_Log::getInstance()->log('ValueTranslator: invalid mapping: ' . print_R($mapping, 1), Zend_log::WARN);
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterValueTranslation', [&$value, &$valueToTranslate, &$mapping, $this]);
 
 		if (!is_null($value)) {
 			$value = $this->formatValue($value, $valueToTranslate, $mapping, $params);
 		}
-		
+
 		return $value;
 	}
-	
+
 	/**
 	 * Get mapping to use for translation
 	 * 
@@ -70,14 +70,14 @@ trait Billrun_Traits_ValueTranslator {
 	 * @param array $params
 	 * @return array
 	 */
-	protected function getMapping($value, $data, $params =[]) {
+	protected function getMapping($value, $data, $params = []) {
 		if (is_null($this->translationMapping)) {
 			$this->translationMapping = $this->getTranslationMapping();
 		}
-		
+
 		return Billrun_Util::getIn($this->translationMapping, $value, false);
 	}
-	
+
 	/**
 	 * Format value
 	 * 
@@ -89,31 +89,31 @@ trait Billrun_Traits_ValueTranslator {
 	 */
 	public function formatValue($value, $valueToTranslate, $mapping, $params) {
 		Billrun_Factory::dispatcher()->trigger('beforeValueTranslationFormat', [&$value, $valueToTranslate, $mapping, $this]);
-		
+
 		if (isset($mapping['format']['regex'])) {
 			$value = preg_replace($mapping['format']['regex'], '', $value);
 		}
-		
+
 		if (isset($mapping['format']['date'])) {
 			$value = $this->formatDate($value, $mapping);
 		}
-		
+
 		if (isset($mapping['format']['number'])) {
 			$value = $this->formatNumber($value, $mapping);
 		}
-		
+
 		if (isset($mapping['padding'])) {
 			$padding = Billrun_Util::getIn($mapping, 'padding.character', ' ');
 			$length = Billrun_Util::getIn($mapping, 'padding.length', strlen($value));
 			$padDirection = strtolower(Billrun_Util::getIn($mapping, 'padding.direction', 'left')) == 'right' ? STR_PAD_RIGHT : STR_PAD_LEFT;
 			$value = str_pad($value, $length, $padding, $padDirection);
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterValueTranslationFormat', [&$value, $valueToTranslate, $mapping, $this]);
-		
+
 		return $value;
 	}
-	
+
 	/**
 	 * Format a date value
 	 * 
@@ -133,7 +133,7 @@ trait Billrun_Traits_ValueTranslator {
 		}
 		return date($dateFormat, $date);
 	}
-	
+
 	/**
 	 * Format a number value
 	 * 
@@ -148,4 +148,5 @@ trait Billrun_Traits_ValueTranslator {
 		$thousands_sep = Billrun_Util::getIn($mapping, 'format.number.thousands_sep', ',');
 		return number_format(($number * $multiply), $decimals, $dec_point, $thousands_sep);
 	}
+
 }

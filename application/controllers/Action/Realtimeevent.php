@@ -16,6 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class RealtimeeventAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	protected $event = null;
@@ -78,7 +79,7 @@ class RealtimeeventAction extends ApiAction {
 		$request = $this->getRequest()->getRequest();
 		$this->usaget = $request['usaget'];
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
-				'usaget' => $this->usaget
+					'usaget' => $this->usaget
 		));
 		if (!$decoder) {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
@@ -106,7 +107,7 @@ class RealtimeeventAction extends ApiAction {
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
-		
+
 		if (isset($this->event['call_type'])) {
 			$callTypesConf = Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array());
 			$this->usaget = (isset($callTypesConf[$this->event['call_type']]) ? $callTypesConf[$this->event['call_type']] : 'call');
@@ -121,7 +122,6 @@ class RealtimeeventAction extends ApiAction {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
-
 	}
 
 	protected function getSgsn($event) {
@@ -140,7 +140,7 @@ class RealtimeeventAction extends ApiAction {
 		if (in_array($usaget, Billrun_Util::getCallTypes())) {
 			return $data['api_name'];
 		}
-		
+
 		switch ($usaget) {
 			case('data'):
 				$requestCode = $data['request_type'];
@@ -173,7 +173,7 @@ class RealtimeeventAction extends ApiAction {
 		if (in_array($this->usaget, Billrun_Util::getCallTypes())) {
 			return 'callrt';
 		}
-		
+
 		//TODO: move to config
 		switch ($this->usaget) {
 			case ('sms'):
@@ -214,7 +214,7 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function respond($data) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-				'usaget' => $this->usaget
+					'usaget' => $this->usaget
 		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
