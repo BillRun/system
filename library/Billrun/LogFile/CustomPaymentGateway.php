@@ -89,7 +89,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	 * @param array $fields - array of field_name => value - will come without "$field_name"/"$value"
 	 */
     public function updateLogFileField($field_name = null, $value = null, $fields = []) {
-		if (!empty($field_name) && !empty($value) && empty($fields)) {
+		if (!empty($field_name) && isset($value) && empty($fields)) {
 			$fields = array($field_name => $value);
 		}
 		foreach($fields as $field_name => $value) {

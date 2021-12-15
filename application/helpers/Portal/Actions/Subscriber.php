@@ -241,8 +241,11 @@ class Portal_Actions_Subscriber extends Portal_Actions {
                         is_integer($this->params['usages_months_limit']) && 
                         intval($this->params['usages_months_limit']) > 0
                         ?  $this->params['usages_months_limit'] : 24;
-              
-                $query['urt'] = array('$gt' =>  new Mongodloid_Date(strtotime($usages_months_limit . " months ago")));              
+
+                if(!isset($query['urt']['$gte']) || strtotime($usages_months_limit . " months ago") > strtotime($query['urt']['$gte'])){
+                    $query['urt']['$gte'] = new Mongodloid_Date(strtotime($usages_months_limit . " months ago"));
+                }   
+                        
 		$sort = array('urt'=> -1);
 		$billapiParams = $this->getBillApiParams('lines', 'get', $query, [], $sort);            
 		return $this->filterEntitiesByPagination($this->runBillApi($billapiParams), $page, $size);
