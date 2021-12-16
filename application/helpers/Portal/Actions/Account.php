@@ -237,7 +237,7 @@ class Portal_Actions_Account extends Portal_Actions {
 	 * @param  array $subscriber
 	 */
         protected function addPlanDetails(&$subscriber) {
-            $plan = Billrun_Factory::plan(['name' => $subscriber['plan'], 'time'=> strtotime(date('Y-m-d H:00:00', time()))]);
+            $plan = Billrun_Factory::plan(['name' => $subscriber['plan'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
             $subscriber['plan_description'] =  $plan->get('description');
         }
 	
