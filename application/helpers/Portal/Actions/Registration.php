@@ -71,7 +71,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $subject = $this->getEmailSubject('reset_password');
                 $replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
-			'[[reset_password_link]]' => rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/forgotPassword?token=' . $token . '&username=' . $username,
+			'[[reset_password_link]]' => rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/reset-password?token=' . $token . '&username=' . $username,
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
