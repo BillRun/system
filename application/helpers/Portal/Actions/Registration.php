@@ -107,8 +107,6 @@ class Portal_Actions_Registration extends Portal_Actions {
                         '[[username]]' => $username,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
                         '[[link]]' =>  rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/signup?token=' . $token . '&username=' . $username,
-
-,
                 ], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('welcome_account', $replaces);
                 
