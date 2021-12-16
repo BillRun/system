@@ -42,7 +42,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $subject = $this->getEmailSubject('email_authentication');
                 $replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
-			'[[email_authentication_link]]' => Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token,
+			'[[email_authentication_link]]' => rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/signup?token=' . $token . '&username=' . $username,
 		], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('email_authentication', $replaces);
 		if (!Billrun_Util::sendMail($subject, $body, [$email], [], true)) {
@@ -71,7 +71,7 @@ class Portal_Actions_Registration extends Portal_Actions {
                 $subject = $this->getEmailSubject('reset_password');
                 $replaces = array_merge([
 			'[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
-			'[[reset_password_link]]' => Billrun_Util::getCompanyWebsite() . '/forgotPassword?token=' . $token,
+			'[[reset_password_link]]' => rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/forgotPassword?token=' . $token . '&username=' . $username,
                         '[[link_expire]]' => $this->getValidity('reset_password'),
                         
 		], $this->BuildReplacesforCompanyInfo());
@@ -106,7 +106,9 @@ class Portal_Actions_Registration extends Portal_Actions {
                         '[[name]]' => ucfirst($this->getFieldByAuthenticationField('lastname', $username)). " " . ucfirst($this->getFieldByAuthenticationField('firstname', $username)),
                         '[[username]]' => $username,
                         '[[access_from]]' => $params['access_from'] ?? 'now', //todo ::check from where need to take this param?? from api params? config? 
-                        '[[link]]' =>  Billrun_Util::getCompanyWebsite() . '/signup?token=' . $token,
+                        '[[link]]' =>  rtrim(Billrun_Util::getCompanyWebsite(), '/') . '/signup?token=' . $token . '&username=' . $username,
+
+,
                 ], $this->BuildReplacesforCompanyInfo());
 		$body = $this->getEmailBody('welcome_account', $replaces);
                 
