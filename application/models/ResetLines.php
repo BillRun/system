@@ -386,7 +386,7 @@ class ResetLinesModel {
 		}
                 if(!empty($this->splitLinesStamp)){
                     $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
-                    $ret = $lines_coll->update($split_lines_stamps_query, array('$set' => array('to_delete' => true)), array('multiple' => true)); // err null
+                    $ret = $lines_coll->remove($split_lines_stamps_query); // err null
                     if (isset($ret['err']) && !is_null($ret['err'])) {
                             return FALSE;
                     }
