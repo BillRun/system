@@ -19,7 +19,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	protected $separator = ",";
 	protected $filename = null;
 	protected $file_path = null;
-
+	
 	/**
 	 *
 	 * @var string
@@ -33,6 +33,8 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	 */
 	protected $pad_length = array();
 	protected $header_pad_length = array();
+	
+	
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -90,7 +92,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 				$entity = $entity->getRawData();
 			}
 			foreach ($this->headers as $key => $field_name) {
-				$row_contents .= (isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
+				$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 			}
 
 			$file_contents .= trim($row_contents, $this->separator) . PHP_EOL;

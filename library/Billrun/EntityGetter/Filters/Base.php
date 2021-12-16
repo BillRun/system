@@ -15,23 +15,26 @@
 class Billrun_EntityGetter_Filters_Base {
 
 	public $params = array();
+
 	protected $specialQueries = array(
 		'$exists' => array('$exists' => 1),
 		'$existsFalse' => array('$exists' => 0),
 		'$isTrue' => array('$eq' => true),
 		'$isFalse' => array('$eq' => false),
 	);
-	protected $andQueries = array(
+	
+	protected $andQueries = array(	
 		'$existsFalse',
 	);
+
 	protected $datePreFunctions = array(
-		'minute_of_hour' => 'i', // with leading zeros
-		'hour_of_day' => 'H', // with leading zeros
-		'time_of_day' => 'Hi', // time of day (HHMM)
-		'day_of_week' => 'N', // 1 (for Monday) through 7 (for Sunday); without leading zeros
-		'day_of_month' => 'd', // with leading zeros
-		'month_of_year' => 'm', // with leading zeros
-		'month_and_day' => 'md', // with leading zeros
+		'minute_of_hour' => 'i' , // with leading zeros
+		'hour_of_day'    => 'H' , // with leading zeros
+		'time_of_day'    => 'Hi', // time of day (HHMM)
+		'day_of_week'    => 'N' , // 1 (for Monday) through 7 (for Sunday); without leading zeros
+		'day_of_month'   => 'd' , // with leading zeros
+		'month_of_year'  => 'm' , // with leading zeros
+		'month_and_day'  => 'md' , // with leading zeros
 	);
 
 	/**
@@ -51,7 +54,7 @@ class Billrun_EntityGetter_Filters_Base {
 		if ($a) {
 			$additional[] = $a;
 		}
-
+		
 		$this->updateGroupQuery($group, $row);
 		$a2 = $this->updateAdditionaAfterGrouplQuery($row);
 		if ($a2) {
@@ -64,7 +67,7 @@ class Billrun_EntityGetter_Filters_Base {
 		if ($field === 'computed') {
 			return $this->getComputedValue($row);
 		}
-
+		
 		$ufVal = Billrun_Util::getIn($row, 'uf.' . $field, null);
 		if (!is_null($ufVal)) {
 			return $this->regexValue($ufVal, $regex);
@@ -73,16 +76,16 @@ class Billrun_EntityGetter_Filters_Base {
 		if (!is_null($cfVal)) {
 			return $this->regexValue($cfVal, $regex);
 		}
-
+		
 		if (isset($row['foreign'][$field])) {
 			if (is_array($row['foreign'][$field])) {
-				return array_map(function ($element) use ($regex) {
+				return array_map(function ($element) use($regex) {
 					return $this->regexValue($element, $regex);
-				}, $row['foreign'][$field]);
+				}, $row['foreign'][$field]) ;
 			}
 			return $this->regexValue($row['foreign'][$field], $regex);
 		}
-
+        
 		$val = Billrun_Util::getIn($row, $field, null);
 		if (!is_null($val)) {
 			return $this->regexValue($val, $regex);
@@ -124,7 +127,7 @@ class Billrun_EntityGetter_Filters_Base {
 			$query = array(
 				$op => [
 					[$firstValKey => $this->specialQueries[$operator]],
-					['uf.' . $firstValKey => $this->specialQueries[$operator]],
+					['uf.'.$firstValKey => $this->specialQueries[$operator]],
 				]
 			);
 		} else {
@@ -145,7 +148,7 @@ class Billrun_EntityGetter_Filters_Base {
 				$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
 				$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
 			}
-
+			
 			$data = array('first_val' => $firstVal);
 			$query = array(
 				'first_val' => array(

@@ -15,8 +15,8 @@
  */
 class CronController extends Yaf_Controller_Abstract {
 
-	use Billrun_Traits_Api_UserPermissions;
-
+	use Billrun_Traits_Api_UserPermissions;	
+	
 	protected $mailer;
 	protected $smser;
 
@@ -46,7 +46,7 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	public function minutelyAction() {
 		Billrun_Factory::dispatcher()->trigger('cronMinute');
-		$this->runMinutesCoreCommands();
+                $this->runMinutesCoreCommands();
 	}
 
 	/**
@@ -87,7 +87,7 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
-
+	
 	/**
 	 * handles the events in the system
 	 */
@@ -97,7 +97,7 @@ class CronController extends Yaf_Controller_Abstract {
 
 ///////////////////////// The next methods are for backward compatibility 
 ///////////////////////// Require to move them to plugins
-
+	
 	public function receiveAction() {
 		Billrun_Factory::log("Check receive", Zend_Log::INFO);
 		$alerts = $this->locate(('receive'));
@@ -228,7 +228,7 @@ class CronController extends Yaf_Controller_Abstract {
 			),
 		);
 		$balances = $balancesCollection->aggregate($match, $group, $project);
-		$sids = array_map(function ($doc) {
+		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
 
@@ -316,7 +316,7 @@ class CronController extends Yaf_Controller_Abstract {
 		$unwind = '$notifications_threshold.expiration_date';
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		$plans = $plansCollection->aggregate(array('$match' => $match), array('$unwind' => $unwind));
-		$plansNotifications = array_map(function ($doc) {
+		$plansNotifications = array_map(function($doc) {
 			return array('plan_name' => $doc['name'], 'notification' => $doc['notifications_threshold']['expiration_date']);
 		}, iterator_to_array($plans));
 		return $plansNotifications;
@@ -342,7 +342,7 @@ class CronController extends Yaf_Controller_Abstract {
 				array('balance.totals.data.usagev' => array('$lte' => -$minUsagev)),
 				array('balance.totals.data.cost' => array('$lte' => -$minCost)),
 			),
-				)
+			)
 		);
 		$balances = Billrun_Factory::db()->balancesCollection()->find($query, $project);
 		if ($balances->count() === 0) {
@@ -352,13 +352,13 @@ class CronController extends Yaf_Controller_Abstract {
 
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
 	}
-
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
-	protected function runMinutesCoreCommands() {
-		Billrun_Compute_Suggestions_RateRecalculation::runCommand();
-	}
-
+        
+        protected function runMinutesCoreCommands() {
+            Billrun_Compute_Suggestions_RateRecalculation::runCommand();
+    
+        }
 }

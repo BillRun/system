@@ -68,7 +68,7 @@ class Billrun_LogFile {
 		}
 		$this->data['process_time'] = new Mongodloid_Date($time);
 	}
-
+	
 	public function setStamp() {
 		Billrun_Factory::log("Setting log object's stamp.", Zend_Log::DEBUG);
 		$newLog['key'] = $this->data['key'];
@@ -82,9 +82,8 @@ class Billrun_LogFile {
 		Billrun_Factory::log($message, Zend_Log::DEBUG);
 		$this->data['stamp'] = md5(serialize($newLog));
 	}
-
+	
 	public function setSource($source) {
 		$this->data['source'] = $source;
 	}
-
 }

@@ -34,10 +34,10 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 
 	public function validate() {
 		if (empty($this->val) ||
-				!is_array($this->val) ||
-				empty($this->matchKey) ||
-				!is_string($this->matchKey) ||
-				!is_array($this->list)) {
+			!is_array($this->val) ||
+			empty($this->matchKey) ||
+			!is_string($this->matchKey) ||
+			!is_array($this->list)) {
 			return false;
 		}
 
@@ -68,7 +68,7 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 		$editing = array();
 		$foundBlock = null;
 		foreach ($this->list as &$block) {
-			$found = array_filter($block, function ($v, $k) use ($name) {
+			$found = array_filter($block, function($v, $k) use($name) {
 				return $k == $this->matchKey && $v == $name;
 			}, ARRAY_FILTER_USE_BOTH);
 			if (!empty($found)) {
@@ -96,10 +96,10 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 
 	protected function validateMendatoryFields() {
 		foreach ($this->template as $field => $mendatory) {
-			if ($mendatory &&
-					((!isset($this->val[$field])) ||
-					((is_array($this->val[$field])) && empty($this->val[$field])) ||
-					(is_string($this->val[$field]) && empty(trim($this->val[$field]))))) {
+			if ($mendatory && 
+				((!isset($this->val[$field])) ||
+				((is_array($this->val[$field])) && empty($this->val[$field])) ||
+				(is_string($this->val[$field]) && empty(trim($this->val[$field]))))){
 				return false;
 			}
 		}

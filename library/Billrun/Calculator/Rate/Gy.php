@@ -48,14 +48,14 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 	protected function getDataRateKey() {
 		return 'INTERNET_BILL_BY_VOLUME';
 	}
-
+	
 	protected function getExistsQuery() {
 		return array(
 			'$exists' => true,
 			'$ne' => array(),
 		);
 	}
-
+	
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',

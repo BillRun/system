@@ -72,7 +72,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'run_collect_step' => 'Run action for accounts in collection',
 				'notify' => 'notify events on cron',
 				'cron' => 'scheduled tasks',
-				'compute' => 'Compute'
+                                'compute' => 'Compute'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
@@ -111,6 +111,7 @@ class CliController extends Yaf_Controller_Abstract {
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 		$this->addOutput("Running BillRun from CLI!");
 		$this->addOutput("Running under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
+
 
 		//Go through all actions and run the first one that was selected
 		foreach (array_keys($this->actions) as $val) {
@@ -175,17 +176,17 @@ class CliController extends Yaf_Controller_Abstract {
 
 		return $options;
 	}
-
+	
 	public function getParameters() {
 		$options = array();
-		foreach ($this->options->getRemainingArgs() as $cmdLineArg) {
-			$seperatedCmdStr = !strpos('=', $cmdLineArg) ? explode("=", $cmdLineArg) : explode(" ", $cmdLineArg);
-			$inLineOpt = isset($seperatedCmdStr[1]) ? $seperatedCmdStr[1] : true;
-			foreach (array_reverse(explode("\.", $seperatedCmdStr[0])) as $field) {
-				$inLineOpt = preg_match('/\w,\w/', $inLineOpt) ? explode(',', $inLineOpt) : $inLineOpt;
-				$inLineOpt = array($field => $inLineOpt);
+		foreach($this->options->getRemainingArgs() as  $cmdLineArg) {
+			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? explode("=", $cmdLineArg) : explode(" ", $cmdLineArg);
+			$inLineOpt = isset($seperatedCmdStr[1]) ?  $seperatedCmdStr[1] : true;
+			foreach (array_reverse(explode("\.", $seperatedCmdStr[0])) as $field) {				
+				$inLineOpt = preg_match('/\w,\w/',$inLineOpt) ? explode(',', $inLineOpt) : $inLineOpt;
+				$inLineOpt = array( $field => $inLineOpt);
 			}
-			$options = array_merge_recursive(Billrun_Util::getFieldVal($options, array()), $inLineOpt);
+			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
 		}
 		return $options;
 	}

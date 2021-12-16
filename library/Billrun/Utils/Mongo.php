@@ -27,11 +27,11 @@ class Billrun_Utils_Mongo {
 	 * @todo Create a period object.
 	 */
 	public static function getDateFromPeriod($period) {
-		if (!$period) {
+		if(!$period) {
 			Billrun_Factory::log("Invalid data!", Zend_Log::ERR);
 			return null;
 		}
-
+		
 		if ($period instanceof Mongodloid_Date) {
 			return $period;
 		}
@@ -54,14 +54,14 @@ class Billrun_Utils_Mongo {
 		}
 		return new Mongodloid_Date(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
 	}
-
+	
 	/**
 	 * Get a query to filter all out dated and still not active records.
 	 * @param int|null $sec The epoch time (of now), to use for bounding the query.
-	 * 						if null, use time(). Null by default.
+	 *						if null, use time(). Null by default.
 	 * @param boolean $onlyFuture - If true, the query is bounded only with the 'to'
-	 * 							    field, enabling to query future records.
-	 * 								False by default. 
+	 *							    field, enabling to query future records.
+	 *								False by default. 
 	 * @param int $microSeconds Microseconds to use for bounding the query.
 	 * @return array - Array with the to and from clauses
 	 */
@@ -90,25 +90,25 @@ class Billrun_Utils_Mongo {
 	 * @param string $key - Dot seperated key.
 	 */
 	public static function getValueByMongoIndex($array, $key) {
-		if (!is_string($key)) {
+		if(!is_string($key)) {
 			return null;
 		}
-
+		
 		$value = $array;
-
+		
 		// Explode the keys.
 		$keys = explode(".", $key);
 		foreach ($keys as $innerKey) {
-			if (!isset($value[$innerKey])) {
+			if(!isset($value[$innerKey])) {
 				return null;
 			}
-
+			
 			$value = $value[$innerKey];
 		}
-
+		
 		return $value;
 	}
-
+	
 	/**
 	 * Set a value to an array by a mongo format key, seperated with dots.
 	 * @param mixed $value - Value to set
@@ -117,10 +117,10 @@ class Billrun_Utils_Mongo {
 	 * @return boolean - True if successful.
 	 */
 	public static function setValueByMongoIndex($value, &$array, $key) {
-		if (!is_string($key)) {
+		if(!is_string($key)) {
 			return false;
 		}
-
+		
 		$result = &$array;
 		$keys = explode('.', $key);
 		foreach ($keys as $innerKey) {
@@ -128,10 +128,10 @@ class Billrun_Utils_Mongo {
 		}
 
 		$result = $value;
-
+		
 		return true;
 	}
-
+	
 	/**
 	 * Coverts a $seperator seperated array to an haierchy tree
 	 * @param string $array - Input string
@@ -140,25 +140,25 @@ class Billrun_Utils_Mongo {
 	 * @return array
 	 */
 	public static function mongoArrayToPHPArray($array, $seperator, $toSet) {
-		if (!is_string($array)) {
+		if(!is_string($array)) {
 			return null;
 		}
-
+		
 		$parts = explode($seperator, $array);
 		$result = array();
 		$previous = null;
 		$iter = &$result;
 		foreach ($parts as $value) {
-			if ($previous !== null) {
+			if($previous !== null) {
 				$iter[$previous] = array($value => $toSet);
 				$iter = &$iter[$previous];
 			}
 			$previous = $value;
 		}
-
+		
 		return $result;
 	}
-
+	
 	/**
 	 * Coverts a $seperator seperated array to an haierchy tree
 	 * @param string $array - Input string
@@ -167,25 +167,25 @@ class Billrun_Utils_Mongo {
 	 * @return array
 	 */
 	public static function mongoArrayToInvalidFieldsArray($array, $seperator) {
-		if (!is_string($array)) {
+		if(!is_string($array)) {
 			return null;
 		}
-
+		
 		$parts = explode($seperator, $array);
 		$result = array();
 		$previous = null;
 		$iter = &$result;
 		foreach ($parts as $value) {
-			if ($previous !== null) {
+			if($previous !== null) {
 				$iter[$previous] = new Billrun_DataTypes_InvalidField($value);
 				$iter = &$iter[$previous];
 			}
 			$previous = $value;
 		}
-
+		
 		return $result;
 	}
-
+	
 	/**
 	 * convert assoc array to MongoDB query
 	 * 
@@ -211,7 +211,7 @@ class Billrun_Utils_Mongo {
 		}
 		return $query;
 	}
-
+	
 	/**
 	 * convert all MongodloidDate objects in the data received into ISO dates
 	 * 
@@ -233,7 +233,7 @@ class Billrun_Utils_Mongo {
 		}
 		return $data;
 	}
-
+	
 	/**
 	 * legacy method to old MDB layer
 	 * 
@@ -242,7 +242,7 @@ class Billrun_Utils_Mongo {
 	public static function convertMongoDatesToReadable($data, $format = false) {
 		return self::convertMongodloidDatesToReadable($data, $format);
 	}
-
+	
 	/**
 	 * Change the times of a mongo record
 	 * 
@@ -262,7 +262,7 @@ class Billrun_Utils_Mongo {
 
 		return $record;
 	}
-
+	
 	/**
 	 * legacy method to old MDB layer
 	 * 
@@ -290,7 +290,7 @@ class Billrun_Utils_Mongo {
 
 		return self::convertRecordMongodloidDatetimeFields($record, $fields, $format);
 	}
-
+	
 	/**
 	 * legacy method to old MDB layer
 	 * 
@@ -299,7 +299,7 @@ class Billrun_Utils_Mongo {
 	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		return self::recursiveConvertRecordMongodloidDatetimeFields($record, $fields, $format);
 	}
-
+	
 	/**
 	 * Convert the date values in a query to Mongo format
 	 * @param array $arr - Arr to translate its values.
@@ -313,7 +313,7 @@ class Billrun_Utils_Mongo {
 			}
 		}
 	}
-
+	
 	/**
 	 * legacy method to old MDB layer
 	 * 
@@ -330,11 +330,11 @@ class Billrun_Utils_Mongo {
 	 * @return string|\MongoId
 	 */
 	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
-		if (!isset($searchKeys['from'], $searchKeys['to'])) {
+		if(!isset($searchKeys['from'], $searchKeys['to'])) {
 			return 'missing date keys';
 		}
-
-		if (empty($searchKeys)) {
+		
+		if(empty($searchKeys)) {
 			return "Empty search keys";
 		}
 		if ($searchKeys['from'] instanceof Mongodloid_Date) {
@@ -355,50 +355,50 @@ class Billrun_Utils_Mongo {
 			return "date error 2";
 		}
 		unset($searchKeys['to']);
-
-		if (!$new && !isset($searchKeys['_id'])) {
+		
+		if(!$new && !isset($searchKeys['_id'])) {
 			return "id error 1";
 		}
-
-		if (!$new) {
+		
+ 		if(!$new) {
 			$id = self::getId($searchKeys);
-			if (is_string($id)) {
+			if(is_string($id)) {
 				return $id;
 			}
 			unset($searchKeys['_id']);
 		}
-
+		
 		$ret = array();
 		foreach ($searchKeys as $key => $pair) {
 			$ret[$key] = $pair;
 		}
 		$ret['$or'] = array(
-			array('from' => array(
+				array('from' => array(
 					'$gte' => $from_date,
 					'$lt' => $to_date,
 				)),
-			array('to' => array(
+				array('to' => array(
 					'$gt' => $from_date,
 					'$lte' => $to_date,
 				))
-		);
+			);
 		if (!$new) {
 			$ret['_id'] = array('$ne' => $id);
 		}
 		return $ret;
 	}
-
+	
 	protected static function getId($searchKeys) {
 		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (NULL);
 		if (!$id) {
-			return "id error 2";
+			return "id error 2";			
 		}
-		if ($id instanceof Mongodloid_Id) {
+		if($id instanceof Mongodloid_Id) {
 			return $id->getMongoID();
 		}
 		return $id;
 	}
-
+	
 	/**
 	 * Get objects that overlap with the supplied time range
 	 * @param string $fromFieldName
@@ -432,5 +432,4 @@ class Billrun_Utils_Mongo {
 		];
 		return $res;
 	}
-
 }

@@ -15,11 +15,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class V3_queryAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	protected $model = null;
-
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -192,14 +191,14 @@ class V3_queryAction extends ApiAction {
 		if ($executeQuery === false) {
 			return false;
 		}
-
+		
 		$queryOptions = $this->getQueryOptions($request);
 
 		// Send the queries in an array.
 		$linesRequestQueries = array('find' => $executeQuery, 'options' => $queryOptions);
 		return $this->getLinesData($request, $linesRequestQueries);
 	}
-
+	
 	/**
 	 * Add the number of total results (ignoring the size param) and pagination data
 	 * @param array $ret
@@ -222,7 +221,7 @@ class V3_queryAction extends ApiAction {
 		$fields = array();
 		if (isset($request['fields']) && !empty($tmpFields = $this->getArrayParam($request['fields']))) {
 			$fields = $tmpFields;
-
+			
 			//force inclusion (or remove from exclusion) of the arate column because it's needed in the getData() method
 			$previousProjectionParam = reset($fields);
 			if ($previousProjectionParam == 1) {
@@ -230,7 +229,7 @@ class V3_queryAction extends ApiAction {
 			} else {
 				unset($fields['arate']);
 			}
-
+			
 			//ensure that all fields are either included or excluded (mongo does not allow a mix of both)
 			foreach ($fields as $projectionParam) {
 				if ($projectionParam != $previousProjectionParam) {
@@ -238,7 +237,7 @@ class V3_queryAction extends ApiAction {
 				}
 			}
 		}
-
+		
 		return true;
 	}
 
@@ -269,12 +268,12 @@ class V3_queryAction extends ApiAction {
 				'details' => $result,
 			)
 		);
-
+		
 		// will add the number of total results (ignoring the size param) and pagination data
 		if (isset($request['paginationInfos'])) {
 			$ret = $this->addPaginationData($ret, $this->model);
 		}
-
+		
 		$this->getController()->setOutput($ret);
 	}
 
@@ -313,11 +312,11 @@ class V3_queryAction extends ApiAction {
 				$ret = true;
 			}
 		}
-
+		
 		if ($ret === false) {
 			$this->setError('Require to supply one of the following fields: ' . implode(', ', $requestFields), $request);
 		}
-
+		
 		if (!$this->validateProjectionParams($request)) {
 			$this->setError('You can not mix inclusion and exclusion for fields params', $request);
 		}

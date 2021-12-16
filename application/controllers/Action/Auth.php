@@ -8,37 +8,39 @@
 
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
+
 /**
  * Description of Auth
  * TODO merge  this logic withe  the admin login logic
  * @author eran
  */
-class AuthAction extends ApiAction {
-
+class AuthAction extends ApiAction  {
+		
 	public function execute() {
 		$params = array_merge($this->getRequest()->getRequest(), $this->getRequest()->getPost());
-		switch (Billrun_Util::getFieldVal($params['action'], '')) {
+		switch(Billrun_Util::getFieldVal($params['action'],'')) {
 			case 'logout':
 				$result = $this->logout($params);
 				break;
-
+			
 			case 'login' :
-			default :
+			default		 :
 				$result = $this->login($params);
 				break;
 		}
 
 		//A small protective messure
 		unset($params['password']);
-
+		
 		$this->getController()->setOutput(array(array(
 				'status' => empty($result) ? 0 : 1,
 				'desc' => 'success',
 				'details' => $result,
 				'input' => $params,
-		)));
-	}
+			)));
 
+	}
+	
 	/**
 	 *  Login a user to the system.
 	 * @param type $params the  login credentials
@@ -55,11 +57,12 @@ class AuthAction extends ApiAction {
 			);
 			return $userData;
 		}
-		if (isset($params['username'], $params['password'])/* && $this->getRequest()->isPost() */) {
+		if (isset($params['username'], $params['password'])/* && $this->getRequest()->isPost()*/) {
 			$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
 
 			$username = $params['username'];
 			$password = $params['password'];
+
 
 			if ($username != '' && !is_null($password)) {
 				$adapter = new Zend_Auth_Adapter_MongoDb($db, 'username', 'password');
@@ -141,7 +144,7 @@ class AuthAction extends ApiAction {
 		if (Billrun_Factory::user() === FALSE) {
 			return TRUE;
 		}
-
+		
 		$username = Billrun_Factory::user()->getUsername();
 		$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 
@@ -149,10 +152,9 @@ class AuthAction extends ApiAction {
 		$session = Yaf_Session::getInstance();
 		foreach ($session as $k => $v) {
 			unset($session[$k]);
-		}
+		}			
 		session_destroy();
 		Billrun_Factory::log('User ' . $username . ' logged out from IP: ' . $ip, Zend_log::INFO);
 		return TRUE;
 	}
-
 }

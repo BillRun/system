@@ -13,7 +13,6 @@
  * @since    0.5
  */
 class Billrun_Billrun {
-
 	use Billrun_Traits_ConditionsCheck;
 
 	static public $accountsLines = array();
@@ -44,6 +43,7 @@ class Billrun_Billrun {
 	static protected $rates = array();
 	static protected $plans = array();
 	static protected $activatedBillrunsByInvoicingDay = array();
+	
 
 	/**
 	 * billrun collection
@@ -91,10 +91,10 @@ class Billrun_Billrun {
 	 */
 	protected function load() {
 		$this->data = $this->billrun_coll->query(array(
-							'aid' => $this->aid,
-							'billrun_key' => $this->billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => $this->aid,
+					'billrun_key' => $this->billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		// TODO: After all entitie's references to the collection will be removed
 		// this code should be removed to. I am leaving it here for legacy because the
 		// intenal set and get of Mongodloid_Entity still use the collection.
@@ -218,7 +218,7 @@ class Billrun_Billrun {
 		$data = self::getBillrunData($aid, $billrun_key, false);
 		return $data && !$data->isEmpty();
 	}
-
+	
 	/**
 	 * gets data from billrun collection according to received fields
 	 * 
@@ -230,10 +230,10 @@ class Billrun_Billrun {
 	public static function getBillrunData($aid, $billrun_key, $rawData = true, $project = []) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
-							'aid' => (int) $aid,
-							'billrun_key' => (string) $billrun_key,
-						))
-						->project($project)->cursor()->limit(1)->current();
+					'aid' => (int) $aid,
+					'billrun_key' => (string) $billrun_key,
+				))
+				->project($project)->cursor()->limit(1)->current();
 		return $rawData ? $data->getRawData() : $data;
 	}
 
@@ -251,7 +251,7 @@ class Billrun_Billrun {
 			),
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
-			'hostname' => Billrun_Util::getHostName(),
+                        'hostname' => Billrun_Util::getHostName(),
 		);
 	}
 
@@ -528,7 +528,7 @@ class Billrun_Billrun {
 				return;
 			}
 		}
-		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count' => 1, 'usagev' => $usagev, 'cost' => $cost);
+		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count'=> 1, 'usagev' => $usagev, 'cost' => $cost);
 	}
 
 	/**
@@ -555,6 +555,7 @@ class Billrun_Billrun {
 //		} else {
 //			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 //		}
+
 		// TODO: apply arategroups to new billrun object
 		// TODO: change arategroups to the new array structure
 		if (isset($row['arategroups'])) {
@@ -827,13 +828,13 @@ class Billrun_Billrun {
 
 			if ($line['type'] != 'flat') {
 				$rate = $this->getRowRate($line);
-				$vatable = $this->getVatFromRow($line, $rate);
+				$vatable = $this->getVatFromRow($line,$rate);
 				$this->updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 			} else {
 				$plan_ref = $line->get('plan_ref', true);
 				if (!empty($plan_ref)) {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
-					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $this->getVatFromRow($line, $plan));
+					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $this->getVatFromRow($line, $plan) );
 				} else {
 					Billrun_Factory::log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 					continue;
@@ -925,8 +926,8 @@ class Billrun_Billrun {
 			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>MongoClient::RP_SECONDARY_PREFERRED)))->linesCollection()
-							->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-							->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000));
+					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
+					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000));
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
@@ -970,11 +971,11 @@ class Billrun_Billrun {
 	 * @return string billrun_key
 	 * @todo create an appropriate index on billrun collection
 	 */
-	public static function getActiveBillrun($invoicing_day = null, $planConfig = null) {
+	public static function getActiveBillrun($invoicing_day = null,$planConfig = null) {
 		$config = Billrun_Factory::config();
 
-		if (empty($planConfig['recurrence']['frequency'])) {
-			if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day])) {
+		if(empty($planConfig['recurrence']['frequency'])) {
+			if ($config->isMultiDayCycle() && !is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[$invoicing_day]) ) {
 				return self::$activatedBillrunsByInvoicingDay[$invoicing_day];
 			} else {
 				if (is_null($invoicing_day) && !empty(self::$activatedBillrunsByInvoicingDay[0])) {
@@ -983,7 +984,7 @@ class Billrun_Billrun {
 			}
 		}
 
-		$query = ['billrun_key' => ['$regex' => '^\d{6}$']];
+		$query = [	'billrun_key' => [ '$regex' =>  '^\d{6}$' ] ];
 
 		if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
 			$query = array(
@@ -999,20 +1000,20 @@ class Billrun_Billrun {
 		);
 		$config = Billrun_Factory::config();
 		$runtime_billrun_key = (!is_null($invoicing_day) && $config->isMultiDayCycle()) ?
-				Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day, $planConfig) :
-				Billrun_Billingcycle::getBillrunKeyByTimestamp($now, null, $planConfig);
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now, $invoicing_day,$planConfig) :
+								Billrun_Billingcycle::getBillrunKeyByTimestamp($now,null, $planConfig);
 		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
-			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'], $planConfig);
+			$active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($last['billrun_key'],$planConfig);
 			$billrun_start_time = !is_null($invoicing_day) ? Billrun_Billingcycle::getStartTime($active_billrun, $invoicing_day) : Billrun_Billingcycle::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
 		}
-		if (empty($planConfig)) {
+		if(empty($planConfig)) {
 			if ($config->isMultiDayCycle() && !is_null($invoicing_day)) {
 				self::$activatedBillrunsByInvoicingDay[$invoicing_day] = $active_billrun;
 			} else {
@@ -1064,9 +1065,9 @@ class Billrun_Billrun {
 	public function populateBillrunWithAccountData($account, $optionLines = array()) {
 		$attr = array();
 		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-			if (isset($account['attributes'][$remoteKey])) {
-				$attr[$key] = $account['attributes'][$remoteKey];
-			}
+				if (isset($account['attributes'][$remoteKey])) {
+					$attr[$key] = $account['attributes'][$remoteKey];
+				}
 		}
 		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
 			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
@@ -1083,7 +1084,7 @@ class Billrun_Billrun {
 		$this->data['start_date'] = new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$this->data['due_date'] = $this->generateDueDate($billrunDate);
 	}
-
+	
 	/**
 	 * 
 	 * @param string $billrunDate
@@ -1093,16 +1094,18 @@ class Billrun_Billrun {
 		$options = Billrun_Factory::config()->getConfigValue('billrun.due_date', []);
 		foreach ($options as $option) {
 			if ($option['anchor_field'] == 'invoice_date' && $this->isConditionsMeet($this->data, $option['conditions'])) {
-				return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
+				 return new Mongodloid_Date(Billrun_Util::calcRelativeTime($option['relative_time'], $billrunDate));
 			}
 		}
 		Billrun_Factory::log()->log('Failed to match due_date for invoice id:' . $this->getInvoiceID() . ', using default configuration', Zend_Log::NOTICE);
 		return new Mongodloid_Date(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', '+14 days'), $billrunDate));
 	}
 
-	protected function getVatFromRow($row, $rate) {
-		$vat = ($row['type'] == 'flat') ? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0) : ( (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) ? self::getVATByBillrunKey($this->billrun_key) : 0 );
-		if ($row['tax_data']) {
+	protected function getVatFromRow($row,$rate) {
+		$vat = ($row['type'] == 'flat')
+					? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0)
+					: ( (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) ? self::getVATByBillrunKey($this->billrun_key): 0 ) ;
+		if($row['tax_data']) {
 			$vat = $row['tax_data']['total_tax'];
 		}
 
@@ -1116,26 +1119,25 @@ class Billrun_Billrun {
 	public function getInvoiceID() {
 		return @$this->data['invoice_id'];
 	}
-
-	/**
-	 * Function that brings back account last monthly billrun object
-	 * @param type $aid
-	 * @param type $currentBillrunKey
-	 * @return array last monthly billrun object
-	 */
+	
+        /**
+         * Function that brings back account last monthly billrun object
+         * @param type $aid
+         * @param type $currentBillrunKey
+         * @return array last monthly billrun object
+         */
 	public static function getAccountLastMonthlyBillrun($aid, $currentBillrunKey) {
-		$query = [
-			'aid' => $aid,
-			'attributes.invoice_type' => array('$in' => array(null, 'regular'))
-		];
-		if (isset($currentBillrunKey)) {
-			$query['billrun_key'] = ['$lt' => $currentBillrunKey];
-		}
-		$billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
-		if (empty($billrun)) {
-			return null;
-		}
-		return $billrun;
+                $query = [
+					'aid' => $aid,
+					'attributes.invoice_type' => array('$in' => array(null, 'regular'))
+				];
+				if(isset($currentBillrunKey)){
+					$query['billrun_key'] = ['$lt' => $currentBillrunKey];
+				}
+                $billrun = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort(array('billrun_key' => -1))->limit(1)->current()->getRawData();
+                if (empty($billrun)) {
+                    return null;
+                }
+                return $billrun;
 	}
-
 }

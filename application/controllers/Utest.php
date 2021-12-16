@@ -13,8 +13,8 @@
  * @since    4.0
  */
 class UtestController extends Yaf_Controller_Abstract {
-
-	use Billrun_Traits_Api_UserPermissions;
+	
+	use Billrun_Traits_Api_UserPermissions;	
 
 	/**
 	 * base url for API calls
@@ -200,6 +200,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		//Run test by type
 		$this->utest->doTest();
 		$this->testEndTime = gettimeofday();
+
 
 		//Update SID if SID was changed in test
 		$new_sid = (int) Billrun_Util::filter_var($this->getRequest()->get('new_sid'), FILTER_VALIDATE_INT);
@@ -588,7 +589,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$label = ucwords($label);
 		return $label;
 	}
-
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}

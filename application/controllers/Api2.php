@@ -17,12 +17,11 @@ class Api2Controller extends ApiController {
 	use Billrun_Traits_Api_UserPermissions {
 		allowed as allowedPermissions;
 	}
-
+	
 	protected function allowed(array $input = array()) {
 		if (Billrun_Factory::config()->getConfigValue('api.api2.allowed', 0)) {
 			return true;
 		}
 		return $this->allowedPermissions($input);
-	}
-
+	}   
 }

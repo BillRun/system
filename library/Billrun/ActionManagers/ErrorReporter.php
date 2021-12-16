@@ -12,7 +12,7 @@
  */
 trait Billrun_ActionManagers_ErrorReporter {
 
-	/**
+		/**
 	 * Base API code.
 	 * @var int
 	 */
@@ -29,5 +29,4 @@ trait Billrun_ActionManagers_ErrorReporter {
 		$exception->logLevel = $errorLevel;
 		throw $exception;
 	}
-
 }

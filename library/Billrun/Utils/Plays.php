@@ -12,7 +12,7 @@
  * @since 5.7
  */
 class Billrun_Utils_Plays {
-
+	
 	/**
 	 * get plays used in the system
 	 * 
@@ -20,11 +20,11 @@ class Billrun_Utils_Plays {
 	 */
 	public static function getAvailablePlays() {
 		$plays = Billrun_Factory::config()->getConfigValue('plays', array());
-		return array_filter($plays, function ($play) {
+		return array_filter($plays, function($play) {
 			return Billrun_Util::getIn($play, 'enabled', true);
 		});
 	}
-
+	
 	/**
 	 * checks if Plays are in use
 	 * 
@@ -34,7 +34,7 @@ class Billrun_Utils_Plays {
 		$plays = self::getAvailablePlays();
 		return count($plays) > 1;
 	}
-
+	
 	/**
 	 * filter out custom fields that are not related to the play
 	 * 
@@ -46,16 +46,16 @@ class Billrun_Utils_Plays {
 		if (!self::isPlaysInUse()) {
 			return $fields;
 		}
-
+		
 		if (!is_array($play)) {
 			$play = [$play];
 		}
-
-		return array_filter($fields, function ($field) use ($play) {
+		
+		return array_filter($fields, function($field) use ($play) {
 			return !isset($field['plays']) || count(array_intersect($play, $field['plays'])) > 0;
 		});
 	}
-
+	
 	/**
 	 * Returns the default play
 	 * 
@@ -72,5 +72,5 @@ class Billrun_Utils_Plays {
 		}
 		return $defaultPlay;
 	}
-
+	
 }

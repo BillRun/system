@@ -19,10 +19,10 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 	 * @return int
 	 */
 	protected function getFractionOfMonth() {
-
-		if (empty($this->deactivation) && $this->activation < $this->cycle->start()) {
+		
+		if (empty($this->deactivation) && $this->activation < $this->cycle->start()  ) {
 			return 1;
-		}
+		} 
 
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront) 
 		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
@@ -35,36 +35,35 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			return Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $endActivation);
 		}
 
-		if ($this->deactivation > $this->cycle->end()) {
+		if ($this->deactivation > $this->cycle->end() ) {
 			return 1;
-		}
+		} 		
 
 		return null;
 	}
 
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
-
-		if (empty($this->deactivation)) {
+		
+		if (empty($this->deactivation)  ) {
 			return null;
 		}
-
+		
 		// get a refund for a cancelled plan paid upfront
 		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
-				||
-				$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
-		) {
+			 || 
+			$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
+			) { 
 			return null;
 		}
-
+		
 		$lastUpfrontCharge = $this->getPriceForcycle($cycle);
-		$endActivation = strtotime('-1 second', $this->deactivation);
-		$refundFraction = 1 - Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $endActivation);
-
-		return array('value' => -$lastUpfrontCharge * $refundFraction,
+		$endActivation  = strtotime('-1 second', $this->deactivation);
+		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $endActivation);
+		
+		return array( 'value' => -$lastUpfrontCharge * $refundFraction, 
 			'start' => $this->activation,
 			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
 			'end' => $this->deactivation,
-			'prorated_end_date' => new Mongodloid_Date($this->cycle->end()));
+			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()));
 	}
-
 }

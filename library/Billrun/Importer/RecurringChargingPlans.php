@@ -92,7 +92,7 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 
 	protected function getPeriod($rowData) {
 		if ($rowData[$this->fieldsColumns['monthly_bonus']] > 0 ||
-				$rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {
+			$rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {
 			return $this->getDuration($rowData);
 		}
 
@@ -104,12 +104,12 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			return NULL;
 		}
 		return
-				array(
-					'usagev' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['call_usagev']]) * 60,
-					'period' => $this->getDuration($rowData),
-					'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.call_usagev', NULL),
-					'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.call_usagev', NULL)
-				)
+			array(
+				'usagev' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['call_usagev']]) * 60,
+				'period' => $this->getDuration($rowData),
+				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.call_usagev', NULL),
+				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.call_usagev', NULL)
+			)
 		;
 	}
 
@@ -142,11 +142,11 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			return NULL;
 		}
 		return
-				array(
-					'usagev' => (-1) * intval($rowData[$this->fieldsColumns['specific']['sms_usagev']]),
-					'period' => $this->getDuration($rowData),
-					'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.sms_cost', NULL),
-					'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.sms_cost', NULL)
+			array(
+				'usagev' => (-1) * intval($rowData[$this->fieldsColumns['specific']['sms_usagev']]),
+				'period' => $this->getDuration($rowData),
+				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.sms_cost', NULL),
+				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.sms_cost', NULL)
 		);
 	}
 

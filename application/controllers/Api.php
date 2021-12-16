@@ -15,21 +15,22 @@
 class ApiController extends Yaf_Controller_Abstract {
 
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
 	 * @var mixed
 	 */
 	protected $output;
+	
 	protected $start_time = 0;
-
+		
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
 		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
-
+		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class
 		$this->output = new stdClass();
@@ -37,16 +38,17 @@ class ApiController extends Yaf_Controller_Abstract {
 		// set the actions autoloader
 		$this->setActions();
 		$this->setOutputMethod();
-
+		
 		//TODO add security configuration
-		if (isset($_SERVER['HTTP_ORIGIN'])) {
-			header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']); // cross domain
+		if( isset($_SERVER['HTTP_ORIGIN']) ) {
+			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
 			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
 			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
 			header('Access-Control-Allow-Credentials: true');
 		}
+		
 	}
-
+	
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -65,7 +67,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
 				Billrun_Factory::db()->linesCollection()
-						->query()->cursor()->sort(array('urt' => 1))->limit(1)->current();
+					->query()->cursor()->sort(array('urt' => 1))->limit(1)->current();
 				$msg = 'SUCCESS';
 				$status = 1;
 			} else {
@@ -150,7 +152,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$usaget = $this->getRequest()->get('usaget');
 		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
 		if (!empty($action) && !empty($usaget) &&
-				isset($output_methods[$action][$usaget]) && !is_null($output_methods[$action][$usaget])) {
+			isset($output_methods[$action][$usaget]) && !is_null($output_methods[$action][$usaget])) {
 			$this->getView()->outputMethod = $output_methods[$action][$usaget];
 			return;
 		}
@@ -185,7 +187,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function apiLogAction() {
 		$api_log_db = Billrun_Factory::config()->getConfigValue('api.log.db.enable', 1, 'float'); // if fraction log only fraction of the API calls
 		$base = Billrun_Factory::config()->getConfigValue('api.log.db.base', 1000);
-		if ($base != 0 && (rand(1, $base) / $base) > $api_log_db) {
+		if ($base != 0 && (rand(1, $base)/$base) > $api_log_db) {
 			return;
 		}
 		$request = $this->getRequest();
@@ -210,7 +212,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 	}
-
+	
 	protected function outputToLog() {
 		return $this->output;
 	}
@@ -222,7 +224,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function sourceToLog() {
 		return "api";
 	}
-
+	
 	/**
 	 * Set an error message to the controller.
 	 * @param string $errorMessage - Error message to send to the controller.
@@ -242,7 +244,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		// TODO: Debug default code
 		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
 		throw $ex;
-
+		
 		// If failed to report to controller.
 		if (!$this->setOutput(array($output))) {
 			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
@@ -250,7 +252,7 @@ class ApiController extends Yaf_Controller_Abstract {
 
 		return false;
 	}
-
+	
 	/**
 	 * set a response for a successful response to the controller
 	 * 
@@ -266,17 +268,17 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->getView()->outputMethod = ['Zend_Json', 'encode'];
 		$this->setOutput([$output]);
 	}
-
+	
 	public function localeAction() {
 		$this->allowed();
 		$this->forward('Locale', 'index');
 	}
-
-	public function currenciesAction() {
+        
+    public function currenciesAction() {
 		$this->allowed();
 		$this->forward('currencies', 'index');
 	}
-
+	
 	public function versionsbcAction() {
 		$this->allowed();
 		$request = $this->getRequest();
@@ -290,4 +292,5 @@ class ApiController extends Yaf_Controller_Abstract {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
+        
 }

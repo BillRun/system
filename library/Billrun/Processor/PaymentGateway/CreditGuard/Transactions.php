@@ -28,10 +28,10 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		);
 	}
 
-	protected function isValidTransaction($row) {
+	protected function isValidTransaction($row){
 		if ($row['ret_code'] == '000') { // 000 - Good Deal
 			return true;
-		} else {
+		} else{
 			return false;
 		}
 	}
@@ -44,7 +44,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 
 		return array('status' => $row['ret_code'], 'stage' => $stage);
 	}
-
+	
 	protected function updatePayments($row, $payment = null) {
 		if (is_null($payment)) {
 			Billrun_Factory::log('Missing transaction_id in transactions file for ' . $row['stamp'], Zend_Log::ALERT);
@@ -59,7 +59,7 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		if ($paymentResponse['stage'] == 'Completed') {
 			$payment->markApproved($paymentResponse['stage']);
 			$billData = $payment->getRawData();
-			if (isset($billData['left_to_pay']) && $billData['due'] > (0 + Billrun_Bill::precision)) {
+			if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
 				Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
 			}
 			if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
@@ -67,9 +67,8 @@ class Billrun_Processor_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			}
 		}
 	}
-
+	
 	protected function filterData($data) {
 		return $data['data'];
 	}
-
 }

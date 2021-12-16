@@ -12,7 +12,7 @@
  * @since 5.6
  */
 class Billrun_Utils_Units {
-
+	
 	/**
 	 * get all units of measure of a usage type
 	 * 
@@ -27,7 +27,7 @@ class Billrun_Utils_Units {
 		$propertyTypeData = self::getPropertyTypeData($usageTypeData['property_type']);
 		return isset($propertyTypeData['uom']) ? $propertyTypeData['uom'] : array();
 	}
-
+	
 	/**
 	 * get specific unit of measure data by usage type and unit name
 	 * 
@@ -56,20 +56,20 @@ class Billrun_Utils_Units {
 			return $volume;
 		}
 		if (isset($uom['convertFunction']) && method_exists(get_class(), $uom['convertFunction']) && $toBaseUnit) {
-			return call_user_func_array(array(get_class(), $uom['convertFunction']), array($volume));
+			return call_user_func_array(array(get_class(),$uom['convertFunction']), array($volume));
 		}
-
+		
 		if (isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) {
 			return call_user_func_array(array(get_class(), $uom['function_name']), array($volume, $uom));
 		}
-
+		
 		if (!isset($uom['unit'])) {
 			return $volume;
 		}
 
-		return ($toBaseUnit ? ($volume * $uom['unit']) : ($volume / $uom['unit']));
+		return ($toBaseUnit ? ($volume * $uom['unit'])  : ($volume / $uom['unit']));
 	}
-
+	
 	/**
 	 * gets usage type's default unit for invoice
 	 * 
@@ -80,7 +80,7 @@ class Billrun_Utils_Units {
 		$usageTypeData = self::getUsageTypeData($usaget);
 		return isset($usageTypeData['invoice_uom']) ? $usageTypeData['invoice_uom'] : false;
 	}
-
+	
 	/**
 	 * gets the unit's display label
 	 * 
@@ -91,16 +91,16 @@ class Billrun_Utils_Units {
 	public static function getUnitLabel($usaget, $unit) {
 		$uom = self::getUnitsOfMeasureData($usaget, $unit);
 		if (
-				!$uom ||
-				(isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) ||
-				!isset($uom['label'])
+			!$uom ||
+			(isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) ||
+			!isset($uom['label'])
 		) {
 			return '';
 		}
-
+		
 		return $uom['label'];
 	}
-
+	
 	/**
 	 * converts volume to invoice display
 	 * 
@@ -115,7 +115,7 @@ class Billrun_Utils_Units {
 		}
 		return self::convertVolumeUnits($volume, $usaget, $unit, false);
 	}
-
+	
 	/**
 	 * assistance function to get multidimensional array data be a specific field
 	 * 
@@ -125,11 +125,11 @@ class Billrun_Utils_Units {
 	 * @param mixed $default
 	 * @return array if found, $default value otherwise
 	 */
-	protected static function arrayFind($array, $value, $columnName, $default = array()) {
+	protected static function arrayFind ($array, $value, $columnName, $default = array()) {
 		$index = array_search($value, array_column($array, $columnName));
 		return $index !== false && isset($array[$index]) ? $array[$index] : $default;
 	}
-
+	
 	/**
 	 * get all available usage types in the system
 	 * 
@@ -138,16 +138,16 @@ class Billrun_Utils_Units {
 	protected static function getUsageTypes() {
 		return Billrun_Factory::config()->getConfigValue('usage_types', array());
 	}
-
+	
 	/**
 	 * get all available property types in the system
 	 * 
 	 * @return array
-	 */
+	 */	
 	protected static function getPropertyTypes() {
 		return Billrun_Factory::config()->getConfigValue('property_types', array());
 	}
-
+	
 	/**
 	 * get usage type data from configuration be usage type name
 	 * 
@@ -158,7 +158,7 @@ class Billrun_Utils_Units {
 		$usageTypes = self::getUsageTypes();
 		return self::arrayFind($usageTypes, $usaget, 'usage_type');
 	}
-
+	
 	/**
 	 * get property type data from configuration be property type name
 	 * 
@@ -169,7 +169,7 @@ class Billrun_Utils_Units {
 		$propertyTypes = self::getPropertyTypes();
 		return self::arrayFind($propertyTypes, $propertyType, 'type');
 	}
-
+	
 	/**
 	 * assistance function to display time
 	 * 
@@ -185,9 +185,9 @@ class Billrun_Utils_Units {
 			's' => ['mod' => 60, 'pad' => '%02s'],
 			'_' => [
 				'sub_format' => true,
-				'H' => ['div' => 3600, 'pad' => '%02s'],
-				'I' => ['div' => 60, 'pad' => '%02s'],
-				'S' => ['pad' => '%02s'],
+				'H' => [ 'div' => 3600, 'pad' => '%02s'],
+				'I' => [ 'div' => 60, 'pad' => '%02s'],
+				'S' => [ 'pad' => '%02s'],
 			]
 		];
 		$currFormat = $formating;
@@ -220,10 +220,10 @@ class Billrun_Utils_Units {
 	protected static function parseDataUsage($bytes) {
 		return Billrun_Util::byteFormat($bytes, '', 2, true);
 	}
-
+	
 	public static function formatedTimeToSeconds($volume) {
 		sscanf($volume, "%d:%d:%d", $hours, $minutes, $seconds);
 		return isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
 	}
-
+	
 }

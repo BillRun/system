@@ -36,11 +36,11 @@ class NotifyAction extends Action_Base {
 		}
 		$this->getController()->addOutput("Notifying Done");
 	}
-
+	
 	protected function notifyEvents() {
 		Billrun_Factory::eventsManager()->notify();
 	}
-
+	
 	protected function notifyEmail($options = array()) {
 		if ($options['email_type'] == 'invoiceReady' && (empty($options['invoices']) && empty($options['billrun_key']))) {
 			$this->getController()->addOutput("Notifying InvoiceReady email from CLI must contain invoices");

@@ -70,17 +70,17 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			throw new Exception('Billrun_Bill_Payment_InstallmentAgreement: Insufficient options supplied.');
 		}
 	}
-
+	
 	protected function splitBill() {
 		$paymentsArr = array(array(
-				'amount' => $this->totalAmount,
-				'installments_num' => $this->installmentsNum,
-				'total_amount' => $this->totalAmount,
-				'first_due_date' => !is_null($this->firstDueDate) ? $this->firstDueDate : '',
-				'dir' => 'fc',
-				'aid' => $this->data['aid'],
-				'installments_agreement' => $this->installments,
-				'id' => $this->id,
+			'amount' => $this->totalAmount,
+			'installments_num' => $this->installmentsNum,
+			'total_amount' => $this->totalAmount,
+			'first_due_date' => !is_null($this->firstDueDate) ? $this->firstDueDate : '',
+			'dir' => 'fc',
+			'aid' => $this->data['aid'],
+			'installments_agreement' => $this->installments,
+			'id' => $this->id,
 		));
 		if (!empty($this->data['note'])) {
 			$paymentsArr[0]['note'] = $this->data['note'];
@@ -98,7 +98,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$primaryInstallment->setProcessTime();
 		$primaryInstallmentData = current($paymentResponse['payment_data']);
 		$this->updatePaidInvoicesOnPrimaryInstallment($primaryInstallment);
-		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())) {
+		if (!empty($primaryInstallment) && !empty($primaryInstallment->getId())){
 			$paymentAgreementData = array();
 			$initialChargeNotBefore = !empty($this->initialChargeNotBefore) ? $this->initialChargeNotBefore : $this->getInitialChargeNotBefore($primaryInstallment);
 			$success = $primaryInstallment->splitToInstallments($initialChargeNotBefore, $primaryInstallmentData);
@@ -107,11 +107,11 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			}
 			return array('status' => $success, 'payment_agreement' => $paymentAgreementData);
 		}
-
+		
 		Billrun_Factory::log("Failed creating installment agreement for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
-
+	
 	protected function splitToInstallments($initialChargeNotBefore, $primaryInstallmentData = null) {
 		$this->normalizeInstallments($primaryInstallmentData);
 		if (empty($this->installments)) {
@@ -127,7 +127,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			throw new Exception("Split to installments failed");
 		}
 	}
-
+	
 	protected function splitPrimaryBill($initialChargeNotBefore) {
 		$installments = array();
 		$amountsArray = array_column($this->installments, 'amount');
@@ -137,7 +137,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$installment = $this->buildInstallment($index, $chargesArray[$key]['charge_not_before']);
 			if (empty($amountsArray)) {
 				$totalAmount = $this->totalAmount;
-				$periodicalPaymentAmount = floor($totalAmount / $this->installmentsNum);
+				$periodicalPaymentAmount = floor($totalAmount/ $this->installmentsNum);
 				$firstPaymentAmount = $totalAmount - (($this->installmentsNum - 1) * $periodicalPaymentAmount);
 				$installment['amount'] = ($index == 1) ? $firstPaymentAmount : $periodicalPaymentAmount;
 			} else {
@@ -159,7 +159,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			if (!is_null($current_account)) {
 				$installmentObj->setForeignFields($foreignData);
 			}
-
+			
 			$installments[] = $installmentObj;
 		}
 
@@ -177,11 +177,11 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		array_multisort($dueDates, SORT_ASC, $this->installments);
 		$this->firstDueDate = new Mongodloid_Date(strtotime($this->installments[0]['due_date']));
 	}
-
+	
 	protected function generateAgreementId() {
 		return round(microtime(true) * 1000);
 	}
-
+	
 	protected function normalizeInstallments($primaryInstallmentData = null) {
 		$installments = !is_null($primaryInstallmentData) && !empty($primaryInstallmentData['installments_agreement']) ? $primaryInstallmentData['installments_agreement'] : null;
 		if (!empty($installments)) {
@@ -201,7 +201,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			throw new Exception("All installments must have due_date");
 		}
 	}
-
+	
 	protected function buildInstallment($index, $chargeNotBefore) {
 		$cnb_date = new MongoDate(strtotime($chargeNotBefore));
 		$installment['dir'] = 'tc';
@@ -255,10 +255,10 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 			$res[$index] = array($dateType => $dueDate);
 			$currentBillrun = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrun);
 		}
-
+		
 		return $res;
 	}
-
+	
 	protected function getInitialChargeNotBefore($primaryInstallment) {
 		$invoiceIds = $primaryInstallment->getInvoicesIdFromReceipt();
 		$invoices = array();
@@ -268,7 +268,7 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 		$chargeNotBefore = $this->getLatestChargeNotBefore($invoices);
 		return !empty($chargeNotBefore) ? $chargeNotBefore : $this->firstDueDate;
 	}
-
+	
 	protected function getLatestChargeNotBefore($invoices) {
 		$chargeNotBefore = false;
 		foreach ($invoices as $invoice) {
@@ -281,5 +281,4 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 
 		return $chargeNotBefore;
 	}
-
 }

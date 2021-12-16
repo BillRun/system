@@ -38,7 +38,7 @@ class Billrun_User {
 	 * @return boolean
 	 */
 	public function allowed($permission, $page = null) {
-		$permissions = array_merge((array) $permission, array('admin'));
+		$permissions = array_merge((array)$permission, array('admin'));
 		if (isset($this->entity['roles'][$page])) {
 			return (boolean) array_intersect($this->entity['roles'][$page], $permissions);
 		}
@@ -50,22 +50,22 @@ class Billrun_User {
 	}
 
 	public function getPermissions() {
-		return isset($this->entity['roles']) ? $this->entity['roles'] : array();
-	}
-
+		return  isset($this->entity['roles']) ? $this->entity['roles'] : array();
+	}	
+	
 	public function getUsername() {
 		return $this->entity['username'];
 	}
-
+	
 	public function getMongoId($as_string = false) {
 		if ($as_string) {
 			return $this->entity['_id']->__toString();
 		}
 		return $this->entity['_id'];
 	}
-
+	
 	public function getLastLogin() {
 		return $this->entity['last_login'];
 	}
-
+	
 }

@@ -13,15 +13,13 @@
  * @since    5.2
  */
 trait Billrun_Exceptions_InputContainer {
-
 	/**
 	 * The input which prompted the error.
 	 * @var mixed 
 	 */
 	protected $input;
-
+	
 	public function setInput($input) {
 		$this->input = $input;
-	}
-
+	} 
 }

@@ -31,14 +31,14 @@ abstract class Billrun_Balance_Update_Abstract {
 	 * @var array
 	 */
 	protected $subscriber = array();
-
+	
 	/**
 	 * additional parameters to be saved
 	 * 
 	 * @var array 
 	 */
 	protected $additional = array();
-
+	
 	/**
 	 * The line saved to lines collection
 	 * 
@@ -54,22 +54,22 @@ abstract class Billrun_Balance_Update_Abstract {
 			$subscriberEntity = Billrun_Factory::subscriber();
 			$this->subscriber = $subscriberEntity->loadSubscriberForQuery($query);
 		}
-
+		
 		if ($this->sharedBalance && !isset($params['aid'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'On shared balance account id (aid) must be defined in the input');
 		} else if ($this->sharedBalance) {
-			$query = array('aid' => (int) $params['aid']);
+			$query = array('aid' => (int)$params['aid']);
 			$accountEntity = Billrun_Factory::account();
 			$this->subscriber = $accountEntity->loadAccountForQuery($query);
 		}
-
+		
 		if (empty($this->subscriber) || $this->subscriber->isEmpty()) {
 			throw new Billrun_Exceptions_Api(0, array(), get_class() . 'Error loading entity');
 		}
 		$this->entity = $this->subscriber->getRawData();
-
+		
 		if (!empty($params['additional'])) {
-			$this->additional = $params['additional'];
+			$this->additional= $params['additional'];
 		}
 	}
 
@@ -130,7 +130,7 @@ abstract class Billrun_Balance_Update_Abstract {
 		Billrun_Factory::dispatcher()->trigger('BillApiBalancePostValidate', array($this, &$ret));
 		return $ret;
 	}
-
+	
 	/**
 	 * Gets the line saved in lines collection
 	 * 
@@ -139,11 +139,11 @@ abstract class Billrun_Balance_Update_Abstract {
 	public function getAffectedLine() {
 		return $this->line;
 	}
-
+	
 	public function getAfter() {
 		return null;
 	}
-
+	
 	/**
 	 * method to add property to additional info
 	 * 

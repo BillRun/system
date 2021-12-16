@@ -14,9 +14,9 @@
  * @todo Create unit tests for this module
  */
 class Billrun_Template_Token_Replacers_Account extends Billrun_Template_Token_Replacers_Abstract {
-
+	
 	public function replaceTokens($string) {
-		if (is_null($this->data)) {
+		if(is_null($this->data)){
 			return '[]';
 		}
 		switch ($string) {

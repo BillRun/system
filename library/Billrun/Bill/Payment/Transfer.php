@@ -17,7 +17,8 @@ abstract class Billrun_Bill_Payment_Transfer extends Billrun_Bill_Payment {
 	public function __construct($options) {
 		if (isset($options['dir'])) {
 			$this->dir = $options['dir'];
-		} else {
+		}
+		else {
 			throw new Exception('dir not supplied.');
 		}
 		parent::__construct($options);

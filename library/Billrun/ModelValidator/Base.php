@@ -38,8 +38,8 @@ class Billrun_ModelValidator_Base {
 	 * @param type $data - the data to validate
 	 * @param type $type - the type of action made (new/update/...)
 	 * @return array of: 
-	 * 					"validate" - true/false
-	 * 					"errorMsg" - error message
+	 *					"validate" - true/false
+	 *					"errorMsg" - error message
 	 */
 	public function validate($data, $type) {
 		$validationMethods = $this->getValidationMethods();
@@ -62,8 +62,8 @@ class Billrun_ModelValidator_Base {
 	 * @param boolean $result
 	 * @param string $errorMsg
 	 * @return array of: 
-	 * 					"validate" - true/false
-	 * 					"errorMsg" - error message
+	 *					"validate" - true/false
+	 *					"errorMsg" - error message
 	 */
 	protected function validationResponse($result, $errorMsg = '') {
 		if (!$result) {
@@ -97,9 +97,9 @@ class Billrun_ModelValidator_Base {
 
 		foreach ($fields as $field) {
 			if ($field['mandatory'] &&
-					(!array_key_exists($field['field_name'], $data) ||
-					(is_array($data[$field['field_name']]) && empty($data[$field['field_name']])) ||
-					((is_string($data[$field['field_name']])) && empty(trim($data[$field['field_name']]))))) {
+				(!array_key_exists($field['field_name'], $data) ||
+				(is_array($data[$field['field_name']]) && empty($data[$field['field_name']])) ||
+				((is_string($data[$field['field_name']])) && empty(trim($data[$field['field_name']]))))) {
 				$missingFields[] = $field['field_name'];
 			}
 		}

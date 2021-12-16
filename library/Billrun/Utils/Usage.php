@@ -22,14 +22,14 @@ class Billrun_Utils_Usage {
 
 		switch ($entityType) {
 			case 'subscriber' :
-				if (empty($row['sid'])) {
+				if(empty($row['sid'])) {
 					return null;
 				}
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('sid' => $row['sid'], 'aid' => $row['aid']);
 				return $subscriber->loadSubscriberForQuery($query);
 			case 'account' :
-				if (empty($row['aid'])) {
+				if(empty($row['aid'])) {
 					return null;
 				}
 				$account = Billrun_Factory::account();
@@ -37,7 +37,7 @@ class Billrun_Utils_Usage {
 				return $account->loadAccountForQuery($query);
 
 			case 'plan' :
-				if (empty($row['plan'])) {
+				if(empty($row['plan'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'plans';
@@ -46,7 +46,7 @@ class Billrun_Utils_Usage {
 
 				break;
 			case 'service' :
-				if (empty($row['service'])) {
+				if(empty($row['service'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'services';
@@ -54,13 +54,13 @@ class Billrun_Utils_Usage {
 				break;
 			case 'product' :
 			case 'rate':
-				if (empty($row['arate'])) {
+				if(empty($row['arate'])) {
 					return null;
 				}
 				$entityQueryData['collection'] = 'rates';
 				$entityQueryData['query'] = array('_id' => $row['arate']['$id']);
 				break;
-
+				
 			case 'account_subscribers':
 				$subscriber = Billrun_Factory::subscriber();
 				$query = array('aid' => $row['aid'], 'sid' => array('$ne' => $row['sid']),
@@ -83,17 +83,18 @@ class Billrun_Utils_Usage {
 //			return $cachedValue;
 //		}
 
-		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row, Billrun_Util::getFieldVal($foreignFieldConfig['query_time_fields'], ["end", "urt"]), $row['urt'])->sec);
-
-		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'], $timeBoundingQuery))->cursor();
+		$timeBoundingQuery = Billrun_Utils_Mongo::getDateBoundQuery(Billrun_Util::getFirstValueIn($row,Billrun_Util::getFieldVal($foreignFieldConfig['query_time_fields'],["end", "urt"]), $row['urt'])->sec);
+		
+		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query(array_merge($entityQueryData['query'],$timeBoundingQuery))->cursor();
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
-		}
+		}	
 		$cursor = $cursor->limit(1);
 		$entity = $cursor->current();
 		//fall back to none time bounded query if no entity found.
-		if ((empty($entity) || $entity->isEmpty()) && !empty($foreignFieldConfig['no_time_bounding'])) {
-			$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
+		if( (empty($entity) || $entity->isEmpty()) 
+			&& !empty($foreignFieldConfig['no_time_bounding'])) {
+				$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
 			if (!empty($entityQueryData['sort'])) {
 				$cursor->sort($entityQueryData['sort']);
 			}
@@ -103,13 +104,13 @@ class Billrun_Utils_Usage {
 //			Billrun_Factory::cache()->set($cachHash, $entity);
 //		}
 
-		return (empty($entity)) || (($entity instanceof Mongodloid_Entity) && $entity->isEmpty()) ? null : $entity;
+		return (empty($entity)) || (($entity instanceof Mongodloid_Entity) && $entity->isEmpty())? null : $entity;
 	}
-
+	
 	public static function conditionsMet($fieldConf, $rowData) {
 		$conditionsMet = true;
 		if (!empty($conditions = @$fieldConf['conditions'])) {
-			foreach ($conditions as $condition) {
+			foreach($conditions as $condition) {
 				$conditionsMet &= Billrun_Util::isConditionMet($rowData, $condition);
 			}
 		}

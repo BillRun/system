@@ -13,7 +13,6 @@
  * @since    5.2
  */
 interface Billrun_Aggregator_Aggregateable {
-
 	/**
 	 * @return array
 	 */

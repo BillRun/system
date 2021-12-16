@@ -31,11 +31,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongodloid_Date
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
-		if ($wallet->getPPID() != 1 && isset($recordToSet['to'])) {
+		if($wallet->getPPID() != 1 && isset($recordToSet['to'])) {
 			$wallet->setPeriod($recordToSet['to']);
 			return $recordToSet['to'];
 		}
-
+		
 		$walletPeriod = $wallet->getPeriod();
 		return Billrun_Utils_Mongo::getDateFromPeriod($walletPeriod);
 	}
@@ -96,7 +96,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (!isset($query['service_provider'])) {
 			$query['service_provider'] = $subscriber['service_provider'];
 		} else if ($query['service_provider'] != $subscriber['service_provider']) {
-			$errorCode = 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -117,18 +117,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// Handle the operation.
 		$this->updateOperation = $this->updateOperation->reconfigure($chargingPlanRecord);
-		if (!$this->updateOperation) {
+		if(!$this->updateOperation) {
 			// [Balances Error 1229]
-			$errorCode = 29;
+			$errorCode =  29;
 			$this->reportError($errorCode);
 			return false;
 		}
-
+		
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-
+		
 		// Check if we have core balance.
 		$coreBalances = $this->getUnlimitedBalances($balancesArray, $chargingPlanRecord);
 		foreach ($coreBalances as $balance) {
@@ -147,7 +147,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			if (Billrun_Util::isAssoc($chargingByValue)) {
 				$chargingByValue = array($chargingByValue);
 			}
-
+			
 			// There is more than one value pair in the wallet.
 			foreach ($chargingByValue as $chargingByValueValue) {
 				$currRecordToSet = $recordToSet;
@@ -231,7 +231,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
-
+		
 		// Get the unlimited indicator from the charging plan record.
 		$ppPair['unlimited'] = !empty($chargingPlanRecord['unlimited']);
 		$params = array(
@@ -275,7 +275,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function goThroughBalanceWallets($params) {
 		$returnPair = $this->updateBalanceByWallet(
-				$params['chargingBy'], $params['chargingByValue'], $params['recordToSet'], $params['updateQuery'], $params['defaultBalance'], $params['ppPair']);
+			$params['chargingBy'], $params['chargingByValue'], $params['recordToSet'], $params['updateQuery'], $params['defaultBalance'], $params['ppPair']);
 		$returnPair['source'] = $params['source'];
 		$returnPair['subscriber'] = $params['subscriber'];
 		return $returnPair;
@@ -378,22 +378,25 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$defaultBalance['aid'] = $subscriber['aid'];
 		// If the charging plan record is shared, then set the sid to 0.
-		if (!empty($chargingByValue['shared'])) {
+		if(!empty($chargingByValue['shared'])) {
 			$defaultBalance['sid'] = 0;
 		} else {
 			$defaultBalance['sid'] = $subscriber['sid'];
 		}
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 //		$defaultBalance['charging_plan_name'] = $chargingPlanRecord['name'];
+
 		// Get the ref to the subscriber's plan.
 //		$planName = $subscriber['plan'];
 //		$plansCollection = Billrun_Factory::db()->plansCollection();
+
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
 //		$plansQuery = array(
 //			"name" => $planName,
 //			"to" => array('$gt', $nowTime),
 //			"from" => array('$lt', $nowTime)
 //		);
+
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.
 //		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();

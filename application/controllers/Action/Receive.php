@@ -14,9 +14,8 @@
  * @since       1.0
  */
 class ReceiveAction extends Action_Base {
-
 	use Billrun_Traits_TypeAll;
-
+	
 	/**
 	 * method to execute the receive process
 	 * it's called automatically by the cli main controller
@@ -42,7 +41,7 @@ class ReceiveAction extends Action_Base {
 		}
 
 		// If not type all process normaly.
-		if (!$this->handleTypeAll($options)) {
+		if(!$this->handleTypeAll($options)) {
 			$connectionsPerReceiverType = array();
 			if (isset($options['payment_gateway'])) {
 				$paymentGatewayReceiver = Billrun_Receiver_NonCDRs_PaymentGateway::getReceiverSettings($options);
@@ -58,7 +57,7 @@ class ReceiveAction extends Action_Base {
 					$customPaymentGateways = Billrun_PaymentGateway_Connection::getReceiverSettings($options);
 					$this->getController()->addOutput("Custom payment gateways receiver action");
 					foreach ($customPaymentGateways as $fileType => $fileTypeSettings) {
-						if ($fileType === $options['file_type']) {
+						if($fileType === $options['file_type']) {
 							$this->getController()->addOutput("Receiving file type : " . $fileType);
 							foreach ($fileTypeSettings['connections'] as $connectionDetails) {
 								$connectionDetails['file_type'] = $fileType;
@@ -100,11 +99,11 @@ class ReceiveAction extends Action_Base {
 		$files = $receiver->receive();
 		$this->getController()->addOutput("Received " . count($files) . " files");
 	}
-
+	
 	protected function getHandleFunction() {
 		return "loadReceiver";
 	}
-
+	
 	protected function getCMD() {
 		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . '  --tenant ' . Billrun_Factory::config()->getTenant() . ' --receive --type';
 	}

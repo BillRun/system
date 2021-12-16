@@ -73,13 +73,13 @@ class Billrun_DataTypes_Wallet {
 	 * @var boolean
 	 */
 	protected $unlimited = null;
-
+	
 	/**
 	 * Boolean indicator for is the wallet shared between subscriptions
 	 * @var boolean
 	 */
 	protected $shared = null;
-
+	
 	/**
 	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
@@ -97,7 +97,7 @@ class Billrun_DataTypes_Wallet {
 		$this->ppName = $ppPair['pp_includes_name'];
 		$this->unlimited = !empty($ppPair['unlimited']);
 		$this->shared = !empty($ppPair['shared']);
-
+		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
 			$this->setPeriod($chargingByValue['period']);
@@ -112,14 +112,14 @@ class Billrun_DataTypes_Wallet {
 			$isValid = false;
 			foreach (array("usagev", "cost", "total_cost", "value") as $fieldName) {
 				// If more than one field name exists PRIORITIZE THE FIRST VALUE
-				if (isset($chargingByValue[$fieldName])) {
+				if(isset($chargingByValue[$fieldName])) {
 					$chargingBy = $fieldName;
 					$this->value = $chargingByValue[$fieldName];
 					$isValid = true;
 					break;
 				}
 			}
-			if (!$isValid) {
+			if(!$isValid) {
 				$error = "Invalid plan record, no value to charge " . print_r($chargingByValue, 1);
 				Billrun_Factory::log($error, Zend_Log::ERR);
 				throw new Exception($error);
@@ -183,7 +183,7 @@ class Billrun_DataTypes_Wallet {
 	public function getUnlimited() {
 		return $this->unlimited;
 	}
-
+	
 	/**
 	 * Get the period for the current wallet, null if not exists.
 	 * @return The current wallet period.
@@ -257,7 +257,7 @@ class Billrun_DataTypes_Wallet {
 	public function isShared() {
 		return $this->shared;
 	}
-
+	
 	/**
 	 * Get the partial balance record from the wallet values.
 	 * @param boolean $convertToPHP - If true, convert dot array to php style array.
@@ -273,20 +273,20 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['priority'] = $this->getPriority();
 		$partialBalance['unlimited'] = $this->unlimited;
 		$partialBalance['shared'] = $this->shared;
-
+		
 		// If the balance is shared, set the sid to 0
-		if ($this->shared) {
+		if($this->shared) {
 			$partialBalance['sid'] = 0;
 		}
 		$partialBalance[$this->getFieldName()] = $this->getValue();
 
-		if ($convertToPHP) {
+		if($convertToPHP) {
 			$this->translatePartialBalance($partialBalance);
 		}
-
+		
 		return $partialBalance;
 	}
-
+	
 	/**
 	 * Translate a partial balance object.
 	 * @param type $partialBalance
@@ -300,5 +300,4 @@ class Billrun_DataTypes_Wallet {
 			Billrun_Util::setDotArrayToArray($partialBalance, $key, $value);
 		}
 	}
-
 }

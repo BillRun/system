@@ -39,7 +39,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo take from customer pricing
 	 */
 	public $pricingField = self::DEF_CALC_DB_FIELD;
-
+	
 	/**
 	 * constructor of balance entity
 	 * 
@@ -82,8 +82,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		} else { // fallback to default postpaid balance
 			$class = 'Billrun_Balance_Postpaid';
 		}
-
-		return call_user_func($class . '::getInstance', $params);
+		
+		return call_user_func($class .'::getInstance', $params); 
 	}
 
 	/**
@@ -108,7 +108,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		$query = $this->getBalanceLoadQuery();
 		if ($query === false) {
 			return array();
-		}
+	}
 		$retEntity = $this->collection()
 				->query($query)
 				->cursor()
@@ -132,9 +132,9 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function loadQuerySort() {
 		return array();
 	}
-
+	
 	abstract protected function getBalanceLoadQuery(array $query = array());
-
+	
 	/**
 	 * on prepaid there is no default balance, return no balance (empty array)
 	 * @param array $options settings
@@ -143,6 +143,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function getDefaultBalance() {
 		return array();
 	}
+
 
 	/**
 	 * method to check if the loaded balance is valid
@@ -164,7 +165,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		$options = array(
 			'new' => TRUE,
 		);
-
+		
 		// this is for balances sharding, although this is _id query
 		if (!isset($query['sid'])) {
 			$query['sid'] = $this->row['sid'];
@@ -172,7 +173,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (!isset($query['aid'])) {
 			$query['aid'] = $this->row['aid'];
 		}
-
+		
 		$ret = $this->collection()->findAndModify($query, $update, null, $options);
 		if ($ret->isEmpty()) {
 			return FALSE;
@@ -227,7 +228,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 		return $this->get('balance')['totals'][$balance_totals_key]['usagev'];
 	}
-
+	
 	/**
 	 * get main balance usagev used.
 	 * should only contain services included in the plan, and usages outside of all services
@@ -251,7 +252,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		foreach ($arateGroups as $arateGroup) {
-			if ($arateGroup['balance_ref']['$id'] instanceof Mongodloid_Id && $arateGroup['balance_ref']['$id']->__toString() === $this->getId()->__toString()) {
+			if ($arateGroup['balance_ref']['$id'] instanceof Mongodloid_Id &&  $arateGroup['balance_ref']['$id']->__toString() === $this->getId()->__toString()) {
 				$usagev += $arateGroup['usagev'] ?? 0;
 			}
 		}

@@ -13,33 +13,32 @@
  * @since    5.2
  */
 class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charge_Arrears_Month {
-
+	
 	/**
 	 * Get the price of the current plan.
 	 */
 	public function getPrice($quantity = 1) {
 		$charges = array();
-		if ($this->endOffset > 0) {
+		if ($this->endOffset > 0 ) {
 			foreach ($this->price as $tariff) {
-				$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset);
+				$price = $this->getTariffForMonthCover($tariff, $this->startOffset, $this->endOffset );
 				if (!empty($price)) {
-					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']), 'prorated_start' => false, 'prorated_end' => false, 'start_date' => new Mongodloid_Date($this->cycle->start()), 'end_date' => new Mongodloid_Date($this->cycle->end()));
+					$charges[] = array('value' => $price['price'] * $quantity, 'cycle' => $tariff['from'], 'full_price' => floatval($tariff['price']) ,'prorated_start' =>false,'prorated_end' =>false ,'start_date'=> new Mongodloid_Date($this->cycle->start()), 'end_date' => new Mongodloid_Date($this->cycle->end()));
 				}
 			}
 		}
 
 		return $charges;
 	}
-
+	
 	/**
 	 * Get the price of the current plan.
 	 */
 	protected function setMonthlyCover() {
 		$formatActivation = date('Y-m-01', $this->activation);
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
-		$formatEnd = date(Billrun_Base::base_dateformat, $this->cycle->end() - 1);
+		$formatEnd = date(Billrun_Base::base_dateformat,  $this->cycle->end() - 1 );
 		$this->startOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatStart);
 		$this->endOffset = Billrun_Utils_Time::getMonthsDiff($formatActivation, $formatEnd);
 	}
-
 }

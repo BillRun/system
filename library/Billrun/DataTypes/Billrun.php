@@ -13,13 +13,12 @@
  * @since    5.2
  */
 class Billrun_DataTypes_Billrun {
-
 	/**
 	 * Billrun key
 	 * @var string
 	 */
 	private $key;
-
+	
 	/**
 	 * Create a new instance of the billrun object
 	 * @param string $billrunKey Billrun key to wrap
@@ -27,11 +26,11 @@ class Billrun_DataTypes_Billrun {
 	public function __construct($billrunKey) {
 		$this->key = $billrunKey;
 	}
-
+	
 	public function key() {
 		return $this->key;
 	}
-
+	
 	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
@@ -40,9 +39,8 @@ class Billrun_DataTypes_Billrun {
 	public function exists($aid) {
 		return Billrun_Billrun::exists($aid, $this->key);
 	}
-
+	
 	public function existingAccountsQuery() {
 		return Billrun_Billrun::existingAccountsQuery($this->key);
 	}
-
 }

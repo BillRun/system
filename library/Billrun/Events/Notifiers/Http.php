@@ -12,7 +12,7 @@
  * @since 5.6
  */
 class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
-
+	
 	/**
 	 * see Billrun_Events_Notifiers_Base::getNotifierName
 	 * @return string
@@ -20,7 +20,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	public function getNotifierName() {
 		return "http";
 	}
-
+	
 	/**
 	 * sends an http request for the event
 	 * 
@@ -29,7 +29,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	public function notify() {
 		return $this->sendRequest();
 	}
-
+	
 	/**
 	 * sends an HTTP request
 	 * 
@@ -39,7 +39,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		$requestUrl = $this->getRequestUrl();
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
-		Billrun_Factory::log('HTTP request - sending request to prov ' . '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
 		$response = $this->parseResponse(Billrun_Util::sendRequest($requestUrl, $data, $method));
 		if ($this->isResponseValid($response)) {
 			Billrun_Factory::log('Got HTTP response. Details: ' . $response, Zend_Log::DEBUG);
@@ -48,7 +48,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		Billrun_Factory::log('HTTP request - no response. Request details: ' . print_r($data, 1), Zend_Log::ALERT);
 		return $this->getFailureResponse();
 	}
-
+	
 	/**
 	 * gets the url to send the request to
 	 * gets the value from event or params or general settings
@@ -66,7 +66,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	protected function getMethod() {
 		return $this->getSettingValue('method', Zend_Http_Client::POST);
 	}
-
+	
 	/**
 	 * gets additional parameters to add to the request
 	 * @return array
@@ -85,7 +85,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		unset($body['_id']);
 		return $body;
 	}
-
+	
 	/**
 	 * parse the response received from the request
 	 * @return mixed
@@ -95,7 +95,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		$decoder = Billrun_Decoder_Manager::getDecoder(array('decoder' => $decoderType));
 		return $decoder->decode($response);
 	}
-
+	
 	/**
 	 * build a response to send in case of response received from the request
 	 * 
@@ -105,7 +105,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	protected function getSuccessResponse($response) {
 		return $response;
 	}
-
+	
 	/**
 	 * build a response to send in case no response received from the request
 	 * @return mixed
@@ -113,7 +113,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	protected function getFailureResponse() {
 		return false;
 	}
-
+	
 	/**
 	 * checks if the response from request is valid
 	 * 
@@ -143,8 +143,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 		if (isset($this->settings[$field])) {
 			return $this->settings[$field];
 		}
-
+		
 		return $defaultValue;
 	}
-
 }

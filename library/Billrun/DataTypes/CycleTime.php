@@ -13,36 +13,37 @@
  * @since    5.2
  */
 class Billrun_DataTypes_CycleTime {
-
+	
 	/**
 	 * Cycle start time
 	 * @var int
 	 */
 	protected $start;
-
+	
 	/**
 	 * Cycle end time
 	 * @var int 
 	 */
 	protected $end;
-
+	
 	/**
 	 * Current billrun key.
 	 * @var string
 	 */
 	protected $key;
-
+	
 	/**
 	 * Number of days in the cycle
 	 * @var int
 	 */
 	protected $days;
-
+	
 	/**
 	 * Cycle's invoicing day - multi day cycle mode
 	 * @var string
 	 */
 	protected $invoicing_day;
+
 
 	/**
 	 * Create a new instance of the cycle time class.
@@ -62,7 +63,7 @@ class Billrun_DataTypes_CycleTime {
 	public function start() {
 		return $this->start;
 	}
-
+	
 	/**
 	 * Get the cycle end date
 	 * @return int
@@ -70,21 +71,21 @@ class Billrun_DataTypes_CycleTime {
 	public function end() {
 		return $this->end;
 	}
-
+	
 	/**
 	 * Get the cycle billrun key.
 	 */
+
 	public function key() {
 		return $this->key;
 	}
-
 	/**
 	 * Get the cycle invoicing day  if it is configured
 	 */
 	public function invoicingDay() {
 		return $this->invoicing_day;
 	}
-
+	
 	/**
 	 * get number of days in the cycle
 	 * @return int
@@ -95,5 +96,4 @@ class Billrun_DataTypes_CycleTime {
 		}
 		return $this->days;
 	}
-
 }

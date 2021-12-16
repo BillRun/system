@@ -5,6 +5,7 @@
  * @copyright       Copyright (C) 2012-2019 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
+
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 class GenerateExpectedAction extends ApiAction {
@@ -53,8 +54,7 @@ class GenerateExpectedAction extends ApiAction {
 
 	protected function getStamp() {
 		if (empty($this->stamp)) {
-			$this->stamp = Billrun_Util::getIn($this->params, 'billrun_key', Billrun_Billingcycle::getBillrunKeyByTimestamp());
-			;
+			$this->stamp = Billrun_Util::getIn($this->params, 'billrun_key', Billrun_Billingcycle::getBillrunKeyByTimestamp());;
 		}
 		return $this->stamp;
 	}
@@ -67,7 +67,7 @@ class GenerateExpectedAction extends ApiAction {
 			'generate_pdf' => $this->shouldGeneratePdf(),
 			'ignore_cdrs' => $this->shouldIgnoreCdrs(),
 		];
-
+		
 		if (!empty($this->params['data'])) {
 			$options['type'] = 'customernondb';
 			$options['data'] = $this->params['data'];
@@ -76,7 +76,7 @@ class GenerateExpectedAction extends ApiAction {
 			$aids = is_array($this->params['aid']) ? $this->params['aid'] : [$this->params['aid']];
 			$options['force_accounts'] = $aids;
 		}
-
+		
 		return $options;
 	}
 
@@ -85,7 +85,7 @@ class GenerateExpectedAction extends ApiAction {
 		Billrun_Factory::dispatcher()->trigger('beforeGenerateExpectedAggregatorLoad', array($this, $options));
 		$this->aggregator = Billrun_Aggregator::getInstance($options);
 		$this->aggregator->load();
-
+		
 		if ($this->aggregator->aggregate() === false) {
 			throw new Exception("Failed to generate expected", 0);
 		}
@@ -116,15 +116,15 @@ class GenerateExpectedAction extends ApiAction {
 		if ($this->shouldGeneratePdf()) {
 			return $this->shouldDownloadPdf() ? 'download_pdf' : 'pdf_path';
 		}
-
+		
 		return 'default';
 	}
-
+	
 	protected function downloadPdf() {
 		$pdfPath = $this->getPdfPath();
 		return $this->downloadFile($pdfPath);
 	}
-
+	
 	protected function getPdfPath() {
 		$aid = $this->params['aid'];
 		return Generator_WkPdf::getTempDir($this->stamp) . "/pdf/{$this->stamp}_{$aid}_0.pdf";
@@ -156,9 +156,9 @@ class GenerateExpectedAction extends ApiAction {
 		$eligibilityOnly = $this->params['eligible_only'] ?: false;
 		$invoice = $this->getInvoiceMetaData(false);
 		$types = ['monetary', 'percentage'];
-
+		
 		//Get all the eligible discounts for  this  billing cycle
-		return array_map(function ($dis) {
+		return array_map(function($dis) {
 			return $dis->getRawData();
 		}, $dm->getEligibleDiscounts($invoice, $types, $eligibilityOnly));
 	}
@@ -173,8 +173,9 @@ class GenerateExpectedAction extends ApiAction {
 		if ($ret && $rawData) {
 			$ret = $ret->getRawData();
 		}
-
+		
 		return $ret;
+
 	}
 
 	protected function getPermissionLevel() {

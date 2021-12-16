@@ -5,6 +5,7 @@
  * @copyright       Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
+
 /**
  * Billing Csv generator class
  *
@@ -21,14 +22,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    5.0
  */
 class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_Generator_Csv {
-
+	
 	use Billrun_Traits_Api_OperationsLock;
 
 	protected static $type = 'CreditGuard';
+
 	protected $customers;
 	protected $subscribers;
-	protected $cgLogFile;
-	protected $gatewayCredentials;
+	protected $cgLogFile; 
+	protected $gatewayCredentials; 
 	protected $gateway;
 	protected $extractionDateFormat;
 	protected $generateStructure;
@@ -45,8 +47,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$options = array_merge($options, $this->getAllExportDefinitions());
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->extractionDateFormat = isset($this->exportDefinitions['extraction_date_format']) ? date($this->exportDefinitions['extraction_date_format']) : '';
-		$this->startingString = isset($this->exportDefinitions['file_starting_string']) ? $this->exportDefinitions['file_starting_string'] : '';
-		$this->endingString = isset($this->exportDefinitions['file_ending_string']) ? $this->exportDefinitions['file_ending_string'] : '';
+		$this->startingString = isset($this->exportDefinitions['file_starting_string']) ?$this->exportDefinitions['file_starting_string'] : '';
+		$this->endingString = isset($this->exportDefinitions['file_ending_string']) ?$this->exportDefinitions['file_ending_string'] : '';
 		$this->initChargeOptions($options);
 		$this->initLogFile();
 		parent::__construct($options);
@@ -62,15 +64,15 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
 		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-		$this->data = array();
-		$customersAids = array_map(function ($ele) {
+		$this->data = array();	
+		$customersAids = array_map(function($ele){
 			return $ele['aid'];
 		}, $this->customers);
-
+		
 		$account = Billrun_Factory::account();
 		$accountQuery = array('aid' => array('$in' => $customersAids));
 		$accounts = $account->loadAccountsForQuery($accountQuery);
-		foreach ($accounts as $account) {
+		foreach ($accounts as $account){
 			$accounts_in_array[$account['aid']] = $account;
 		}
 		foreach ($this->customers as $customer) {
@@ -107,7 +109,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			}
 			if (Billrun_Util::isEqual($paymentParams['amount'], 0, Billrun_Bill::precision)) {
 				continue;
-			}
+			}	
 			if (($this->isChargeMode() && $paymentParams['amount'] < 0) || ($this->isRefundMode() && $paymentParams['amount'] > 0)) {
 				continue;
 			}
@@ -137,7 +139,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 	}
 
 	protected function setFilename() {
-		$this->filename = $this->startingString . $this->extractionDateFormat . $this->endingString;
+		$this->filename = $this->startingString. $this->extractionDateFormat . $this->endingString;
 	}
 
 	protected function writeHeaders() {
@@ -159,7 +161,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		}
 		$this->writeToFile($fileContents);
 	}
-
+	
 	protected function writeRows() {
 		$fileContents = '';
 		$counter = 0;
@@ -170,8 +172,8 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			}
 			$padLength = $this->generateStructure['pad_length_data'];
 			$fileContents .= $this->getRowContent($entity, $padLength);
-			if ($index < count($this->customers) - 1) {
-				$fileContents .= PHP_EOL;
+			if ($index < count($this->customers)-1){
+				$fileContents.= PHP_EOL;
 			}
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
@@ -181,6 +183,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		}
 		$this->writeToFile($fileContents);
 	}
+	
 
 	protected function buildHeader() {
 		$line = $this->getHeaderLine();
@@ -213,11 +216,12 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$this->gateway = Billrun_Factory::paymentGateway('CreditGuard');
 		$this->gatewayCredentials = $this->gateway->getGatewayCredentials();
 	}
-
+	
 	protected function isActiveGatewayCreditGuard($account) {
 		return $account['payment_gateway']['active']['name'] == 'CreditGuard';
 	}
-
+	
+	
 	/**
 	 * the structure configuration
 	 * @param type $path
@@ -227,12 +231,12 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$this->generateStructure = $structConfig['generator'];
 		$this->exportDefinitions = $structConfig['export'];
 	}
-
+	
 	protected function convertAmountToSend($amount) {
 		$amount = round($amount, 2);
 		return $amount * 100;
 	}
-
+	
 	public function shouldFileBeMoved() {
 		$localPath = $this->export_directory . '/' . $this->filename;
 		if (!empty(file_get_contents($localPath))) {
@@ -241,10 +245,10 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 		$this->removeEmptyFile();
 		return false;
 	}
-
+	
 	protected function getAllExportDefinitions() {
 		$exportDefinitions = array();
-		foreach ($this->exportDefinitions as $key => $value) {
+		foreach ($this->exportDefinitions  as $key => $value) {
 			$exportDefinitions[$key] = $value;
 		}
 		$dbExportDefinitions = $this->gateway->getGatewayExport();
@@ -289,7 +293,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			30 => '',
 		);
 	}
-
+	
 	protected function getHeaderLine() {
 		return array(
 			0 => '000',
@@ -308,47 +312,49 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			13 => '',
 		);
 	}
-
+	
 	protected function generateUniqueId() {
 		return round(microtime(true) * 1000) . rand(100000, 999999);
 	}
-
-	protected function getHeaderRowContent($entity, $pad_length = array()) {
+	
+	protected function getHeaderRowContent($entity,$pad_length = array()) {
 		$this->pad_type = STR_PAD_LEFT;
 		$row_contents = '';
-		if (!empty($pad_length)) {
+		if (!empty($pad_length)){
 			$this->pad_length = $pad_length;
 		}
 		$header_numeric_fields = $this->generateStructure['header']['numeric_fields'];
 		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key, $header_numeric_fields)) {
+			if (in_array($key,$header_numeric_fields)){
 				$this->pad_string = '0';
-			} else {
+			}
+			else{
 				$this->pad_string = ' ';
 			}
-			$row_contents .= str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
+			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
 		}
 		return $row_contents;
 	}
-
-	protected function getRowContent($entity, $pad_length = array()) {
+	
+	protected function getRowContent($entity,$pad_length = array()) {
 		$this->pad_type = STR_PAD_LEFT;
 		$row_contents = '';
-		if (!empty($pad_length)) {
+		if (!empty($pad_length)){
 			$this->pad_length = $pad_length;
 		}
 		$data_numeric_fields = $this->generateStructure['data']['numeric_fields'];
 		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key, $data_numeric_fields)) {
+			if (in_array($key, $data_numeric_fields)){
 				$this->pad_string = '0';
-			} else {
+			}
+			else{
 				$this->pad_string = ' ';
 			}
-			$row_contents .= str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
+			$row_contents.=str_pad((isset($entity[$key]) ? substr($entity[$key], 0, $this->pad_length[$key]) : ''), $this->pad_length[$key], $this->pad_string, $this->pad_type);
 		}
-		return $row_contents;
+			return $row_contents;
 	}
-
+	
 	protected function initChargeOptions($options) {
 		foreach ($options as $paramName => $option) {
 			if (in_array($paramName, $this->filterParams)) {
@@ -356,7 +362,7 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			}
 		}
 	}
-
+	
 	protected function isRefundMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'refund';
 	}
@@ -364,16 +370,16 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 	protected function isChargeMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
 	}
-
+	
 	protected function removeEmptyFile() {
 		$ret = unlink($this->file_path);
 		if ($ret) {
-			Billrun_Factory::log()->log('Empty file ' . $this->file_path . ' was removed successfully', Zend_Log::INFO);
+			Billrun_Factory::log()->log('Empty file ' .  $this->file_path . ' was removed successfully', Zend_Log::INFO);
 			return;
 		}
 		Billrun_Factory::log()->log('Failed removing empty file ' . $this->file_path, Zend_Log::INFO);
 	}
-
+	
 	protected function getConflictingQuery() {
 		return array();
 	}
@@ -392,5 +398,5 @@ class Billrun_Generator_PaymentGateway_CreditGuard_Transactions extends Billrun_
 			'end_time' => array('$exists' => false)
 		);
 	}
-
+	
 }

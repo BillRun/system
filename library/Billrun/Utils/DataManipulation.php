@@ -7,13 +7,12 @@
  */
 
 class Billrun_Utils_DataManipulation {
-
 	static public function getModulo10CheckDigit($value) {
-		$carryValues = [0, 9, 4, 6, 8, 2, 7, 1, 3, 5];
+		$carryValues = [0,9,4,6,8,2,7,1,3,5];
 		$carry = 0;
-		$valueArr = str_split($value, 1);
-		foreach ($valueArr as $digit) {
-			$carry = $carryValues[($digit + $carry) % 10];
+		$valueArr= str_split($value,1);
+		foreach($valueArr as $digit) {
+			$carry =  $carryValues[($digit+$carry)%10];
 		}
 		$checkDigit = (10 - $carry) % 10;
 
@@ -23,5 +22,4 @@ class Billrun_Utils_DataManipulation {
 	static public function addModulo10ToNumber($value) {
 		return $value . static::getModulo10CheckDigit($value);
 	}
-
 }

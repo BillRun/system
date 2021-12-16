@@ -10,7 +10,6 @@
  * Validate conditions on given entitiy
  */
 trait Billrun_Traits_ConditionsCheck {
-
 	use Billrun_Traits_ValueTranslator;
 
 	/**
@@ -26,7 +25,7 @@ trait Billrun_Traits_ConditionsCheck {
 		$query = $this->getConditionsQuery($conditions, $entity, $params, $logic);
 		return $this->isConditionMeet($entity, $query, $params);
 	}
-
+	
 	public function getConditionsQuery($conditions = [], $entity = [], $params = [], $logic = '$and') {
 		if (empty($conditions)) {
 			return $this->getNoConditionsResult($entity, $params);
@@ -35,7 +34,7 @@ trait Billrun_Traits_ConditionsCheck {
 		$query = [
 			$logic => [],
 		];
-
+		
 		foreach ($conditions as $condition) {
 			$cond = $this->getConditionQuery($entity, $condition, $params);
 			if (!is_null($cond)) {
@@ -98,7 +97,7 @@ trait Billrun_Traits_ConditionsCheck {
 		$value = Billrun_Util::getIn($condition, 'value', '');
 		return $this->translateValue($value, $entity);
 	}
-
+	
 	/**
 	 * see Billrun_Traits_ValueTranslator::getTranslationMapping
 	 * by default, no translation is used.
@@ -107,6 +106,7 @@ trait Billrun_Traits_ConditionsCheck {
 	public function getTranslationMapping($params = []) {
 		return [];
 	}
+
 
 	/**
 	 * build query to be used in ArrayQuery
@@ -139,10 +139,10 @@ trait Billrun_Traits_ConditionsCheck {
 			case '$is':
 				return $this->getIsOperatorQuery($fieldName, $operator, $value, $entity, $params);
 		}
-
+		
 		return false;
 	}
-
+	
 	/**
 	 * build query for special "$is" operator
 	 * 
@@ -206,11 +206,11 @@ trait Billrun_Traits_ConditionsCheck {
 		if (!is_array($range) || empty($values)) {
 			return false;
 		}
-
+		
 		if (!is_array($values)) {
 			$values = [$values];
 		}
-
+		
 		foreach ($values as $value) {
 			foreach ($range as $interval) {
 				$from = Billrun_Utils_Time::getTime($interval['from']);
@@ -219,10 +219,10 @@ trait Billrun_Traits_ConditionsCheck {
 					continue 2; // value in range
 				}
 			}
-
+			
 			return false; // value not in any interval
 		}
-
+		
 		return true;
 	}
 

@@ -14,15 +14,16 @@
  * @since    5.9
  */
 abstract class Billrun_Connector_Base {
-
+	
 	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
 	static protected $type = 'base';
+	
 	protected $config = array();
-
+	
 	public function __construct($config = array()) {
 		$this->config = $config;
 	}

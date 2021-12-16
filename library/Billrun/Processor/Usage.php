@@ -16,68 +16,68 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type string
 	 */
 	protected $defaultUsaget = 'general';
-
+	
 	/**
 	 * usage type mapping options
 	 * @var type array
 	 */
 	protected $usagetMapping = null;
-
+	
 	/**
 	 * unit of measure used for the received volume
 	 * @var type string
 	 */
 	protected $usagevUnit = 'counter';
-
+	
 	/**
 	 * volume type used for the line, can be "field" and then taken from fields in the line, or "value" and then it's hard-coded value
 	 * @var type string
 	 */
 	protected $volumeType = 'field';
-
+	
 	/**
 	 * field names used to get line volume, or hard coded value
 	 * @var type array / string
 	 */
 	protected $volumeSrc = array();
-
+	
 	/**
 	 * the field's name where the date is located
 	 * @var type  string
 	 */
 	protected $dateField = null;
-
+	
 	/**
 	 * the date format (not mandatory)
 	 * @var type string
 	 */
 	protected $dateFormat = null;
-
+	
 	/**
 	 * the field's name where the time is located (in case of separate field time)
 	 * @var type string
 	 */
 	protected $timeField = null;
-
+	
 	/**
 	 * the time format (not mandatory, in case of separate field time)
 	 * @var type string
 	 */
 	protected $timeFormat = null;
-
+	
 	/**
 	 * override price definitions
 	 * @var type float
 	 */
 	protected $prepricedMapping = null;
-
+	
 	/**
 	 * 
 	 * the time zone field defined by the user
 	 * @var type string
 	 */
 	protected $timeZone = null;
-
+	
 	/**
 	 * 
 	 * user fields to include in stamp calculation
@@ -105,13 +105,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['default_volume_src'])) {
 			$this->volumeSrc = $options['processor']['default_volume_src'];
 		}
-		if (!empty($options['processor']['date_format'])) {
+		if (!empty($options['processor']['date_format'])){
 			$this->dateFormat = $options['processor']['date_format'];
 		}
-		if (!empty($options['processor']['time_format'])) {
+		if (!empty($options['processor']['time_format'])){
 			$this->timeFormat = $options['processor']['time_format'];
 		}
-		if (!empty($options['processor']['time_field'])) {
+		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
 		if (!empty($options['processor']['timezone_field'])) {
@@ -120,6 +120,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 		$this->dateField = $options['processor']['date_field'];
 		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true)['pricing'];
+		
 	}
 
 	protected function processLines() {
@@ -135,7 +136,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
 			$row = $this->getBillRunLine($parsedRow);
 			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
-			if (!$row) {
+			if (!$row){
 				return false;
 			}
 			$row['row_number'] = ++$rowCount;
@@ -149,14 +150,14 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-		$row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
-
+                $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type);
+                
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
 			return false;
 		}
-
+		
 		$row['eurt'] = $row['urt'] = new Mongodloid_Date($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
 		$row['usaget'] = $this->getLineUsageType($row);
@@ -178,7 +179,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['process_time'] = new Mongodloid_Date();
 		return $row;
 	}
-
+	
 	protected function getRowDateTime($row) {
 		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZone);
 	}
@@ -194,7 +195,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
 		foreach ($parserFields as $field) {
 			if (isset($field['checked']) && $field['checked'] === false) {
-				unset($rawRow[$field['name']]);
+				unset($rawRow[$field['name']]); 
 			}
 		}
 		$row = array();
@@ -211,22 +212,22 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 		return $row;
 	}
-
-	/**
-	 * According to the configuration get computed fields (cf)
-	 * @param Array     $uf - all the user-defined fields in the input processor
-	 * @param string    $type - Input processor name
-	 * @return Array    computed fields (cf)
-	 */
-	protected function getCalculatedFields($uf, $type) {
-		$row = array();
-		$configurations = Billrun_Util::getIn(Billrun_Factory::config()->getFileTypeSettings($type, true), 'processor.calculated_fields');
-		foreach ($configurations as $calculatedConf) {
-			$filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
-			$targetFieldName = $calculatedConf['target_field'];
-			Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
-		}
-		return $row;
+        
+        /**
+         * According to the configuration get computed fields (cf)
+         * @param Array     $uf - all the user-defined fields in the input processor
+         * @param string    $type - Input processor name
+         * @return Array    computed fields (cf)
+         */
+        protected function getCalculatedFields($uf, $type) {
+                $row = array();
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getFileTypeSettings($type,true),'processor.calculated_fields');
+                foreach ($configurations as $calculatedConf){ 
+                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+                    $targetFieldName = $calculatedConf['target_field'];
+                    Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
+                }
+                return $row;
 	}
 
 //	protected function buildHeader($line) {
@@ -321,7 +322,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 				}
 				if (!is_null($usagev) && is_numeric($usagev)) {
 					$volume += floatval($usagev);
-				} else {
+				}
+				else {
 					Billrun_Factory::log('Usage volume field ' . $usagevField . ' is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
 					if ($falseOnError) {
 						return false;
@@ -331,7 +333,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		return $volume;
 	}
-
+	
 	protected function getStampFields($paths = [], $row = []) {
 		$stampFields = array();
 		if ($paths) {
@@ -344,7 +346,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		return $stampFields;
 	}
-
+	
 	/**
 	 * Checks if the line is prepriced (aprice was supposed to be received in the CDR)
 	 * 
@@ -353,5 +355,5 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function isLinePrepriced($usaget) {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
-
+	
 }

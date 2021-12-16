@@ -95,7 +95,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 				$count = 0;
 			}
 		}
-
+		
 		Billrun_Factory::log($count . " entries was added to " . $this->collectionName . " collection", Zend_Log::INFO);
 
 		return true;
@@ -129,7 +129,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	protected function getImporterFields() {
 		if (empty($this->fieldToImport)) {
 			$this->fieldToImport = array_merge(
-					Billrun_Factory::config()->getConfigValue('importer.basic.fields', array()), Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.fields', array()));
+				Billrun_Factory::config()->getConfigValue('importer.basic.fields', array()), Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.fields', array()));
 		}
 
 		return $this->fieldToImport;

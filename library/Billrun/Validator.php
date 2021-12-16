@@ -102,6 +102,7 @@ class Billrun_Validator {
 
 		$code = "unique";
 
+
 		if (strlen(trim("$value")) == 0 || !isset($validationOptions["collection"])) {
 			return true;
 		}
@@ -343,6 +344,7 @@ class Billrun_Validator {
 
 		Billrun_Factory::log("collection validations : " . var_export($this->getKeyVal(array($this->validations, $collection)), 1) . "\n", Zend_Log::INFO);
 
+
 		foreach (array_values($flat) as $attrInfo) {
 			$attr = $attrInfo["key"];
 			$attrRules = $this->getKeyVal(array($this->validations, $collection, $attr));
@@ -460,7 +462,7 @@ class Billrun_Validator {
 
 		Billrun_Factory::log("flat params  => " . var_export($params, true), Zend_Log::INFO);
 		$iterator = new RecursiveIteratorIterator(
-				new RecursiveArrayIterator(array("params" => $params)), RecursiveIteratorIterator::CHILD_FIRST
+			new RecursiveArrayIterator(array("params" => $params)), RecursiveIteratorIterator::CHILD_FIRST
 		);
 		$attrs = array();
 

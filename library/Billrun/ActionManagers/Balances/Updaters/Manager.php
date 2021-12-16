@@ -50,8 +50,8 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	protected function validate() {
 		// Validate that received all required paramters.
 		if (!parent::validate() ||
-				!isset($this->options['options']) ||
-				!isset($this->options['filter_name'])) {
+			!isset($this->options['options']) ||
+			!isset($this->options['filter_name'])) {
 			return false;
 		}
 
@@ -61,8 +61,8 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 		// Check that the filter name is correct.
 		if (!isset($updaterTranslator[$filterName])) {
 			Billrun_Factory::log("Filter name " .
-					print_r($filterName, 1) .
-					" not found in translator!", Zend_Log::NOTICE);
+				print_r($filterName, 1) .
+				" not found in translator!", Zend_Log::NOTICE);
 			return false;
 		}
 

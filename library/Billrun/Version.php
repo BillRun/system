@@ -55,7 +55,7 @@ class Billrun_Version {
 	 */
 	public static function getLongVersion() {
 		return self::$PRODUCT . '-' . self::$RELEASE . '.' . self::$DEV_LEVEL . '-'
-				. self::$DEV_STATUS . '-' . self::$BUILD;
+			. self::$DEV_STATUS . '-' . self::$BUILD;
 	}
 
 }

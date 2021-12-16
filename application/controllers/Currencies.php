@@ -14,5 +14,4 @@
  * @since    5.3
  */
 class CurrenciesController extends LocaleController {
-	
 }

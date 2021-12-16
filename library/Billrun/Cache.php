@@ -34,7 +34,7 @@ class Billrun_Cache {
 	 * @var boolean
 	 */
 	protected $useTenantPrefix = true;
-
+	
 	/**
 	 * constant of the cache prefix key
 	 * 
@@ -50,7 +50,7 @@ class Billrun_Cache {
 		$this->cache = $cache;
 		$this->useTenantPrefix = $useTenantPrefix;
 	}
-
+	
 	/**
 	 * set cache prefix. used for grouping
 	 * 
@@ -59,7 +59,7 @@ class Billrun_Cache {
 	 * @return void
 	 */
 	protected function setPrefix($prefix) {
-		if ($this->useTenantPrefix) {
+		if($this->useTenantPrefix) {
 			// Append the tenant prefix
 			$prefix = Billrun_Factory::config()->getTenant() . "_" . $prefix;
 		}
@@ -73,13 +73,13 @@ class Billrun_Cache {
 	 */
 	protected function getPrefix() {
 		$prefix = $this->cache->getOption(self::cachePrefixKey);
-
+		
 		// If we are using the tenant prefix, remove it from the get return value.
-		if ($this->useTenantPrefix) {
+		if($this->useTenantPrefix) {
 			$tenantName = Billrun_Factory::config()->getTenant();
 			$prefix = preg_replace('/^' . $tenantName . "_/", "", $prefix);
 		}
-
+		
 		return $prefix;
 	}
 
@@ -221,7 +221,7 @@ class Billrun_Cache {
 	public function clean() {
 		return $this->cache->clean();
 	}
-
+	
 	/**
 	 * Set the useTenantPrefix option.
 	 * @param boolean - $switch If true, indicate to use the tenant name for cache
@@ -232,7 +232,7 @@ class Billrun_Cache {
 		$this->useTenantPrefix = $switch;
 		$this->setPrefix($prefix);
 	}
-
+		
 	/**
 	 * method to get the instance of the class (singleton)
 	 */

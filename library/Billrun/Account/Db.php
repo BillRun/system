@@ -19,7 +19,9 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Instance of the subscribers collection.
 	 */
 	protected $collection;
+
 	protected static $type = 'db';
+	
 	protected static $queryBaseKeys = ['type', 'id', 'time', 'limit'];
 
 	/**
@@ -29,7 +31,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
-		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		$this->collection = Billrun_Factory::db()->subscribersCollection();		
 	}
 
 	/**
@@ -50,14 +52,15 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * Overrides parent abstract method
 	 */
 	protected function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE) {
-		$cursor = $this->collection->query($query)->cursor();
-		if ($globalLimit) {
+		$cursor =  $this->collection->query($query)->cursor();
+		if($globalLimit) {
 			$cursor->limit($globalLimit);
 		}
 		return $cursor;
 	}
 
-	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0, $size = 100, $aids = [], $invoicing_days = null) {
+
+	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
 		//TODO implement the  pipline aggregation here , when doing thre  refatoring of aggregation logic
 		throw new Exception("Dont use this function until refatoring of the aggregation is done");
 	}
@@ -121,7 +124,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		);
 		$entityModel = Models_Entity::getInstance($params);
 		$entityModel->permanentchange();
-	}
+		}
 
 	/**
 	 * 
@@ -169,13 +172,12 @@ class Billrun_Account_Db extends Billrun_Account {
 			if (!in_array($key, static::$queryBaseKeys)) {
 				$query[$key] = $value;
 				continue;
-			}
+		}
 			switch ($key) {
 				default:
-			}
 		}
-
+	}
+	
 		return $query;
 	}
-
 }

@@ -16,7 +16,7 @@
 class Billrun_Template_Token_Replacers_Collection extends Billrun_Template_Token_Replacers_Abstract {
 
 	public function replaceTokens($string) {
-		if (is_null($this->data)) {
+		if(is_null($this->data)){
 			return '[]';
 		}
 		$currency = Billrun_Factory::config()->getConfigValue('pricing.currency', '');

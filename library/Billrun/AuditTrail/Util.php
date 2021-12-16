@@ -50,7 +50,7 @@ class Billrun_AuditTrail_Util {
 				'new' => $new,
 				'key' => $key,
 			);
-
+			
 			$logEntry = array_merge($basicLogEntry, $additionalParams);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
 			Billrun_Factory::db()->auditCollection()->save(new Mongodloid_Entity($logEntry));
@@ -61,5 +61,4 @@ class Billrun_AuditTrail_Util {
 		}
 		return false;
 	}
-
 }

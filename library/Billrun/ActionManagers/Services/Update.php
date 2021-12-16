@@ -12,13 +12,14 @@
  *
  */
 class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Services_Action {
-
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
 	protected $query = array();
 	protected $update = array();
+	
 	protected $time;
 
 	/**
@@ -34,7 +35,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 				$this->reportError(42, Zend_Log::NOTICE);
 			}
 			$details = $this->updateEntity($oldEntity);
-
+			
 			$this->closeEntity($oldEntity);
 		} catch (\MongoException $e) {
 			$this->reportError(1, Zend_Log::NOTICE);
@@ -48,7 +49,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 
 		return $outputResult;
 	}
-
+	
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
@@ -58,7 +59,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -69,8 +70,8 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		}
 		return $old;
 	}
-
-	protected function updateEntity($oldEntity) {
+	
+	protected function updateEntity($oldEntity){
 		$new = $oldEntity->getRawData();
 		unset($new['_id']);
 		$new['from'] = $this->time;
@@ -81,7 +82,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		$this->collection->save($newEntity, 1);
 		return $newEntity;
 	}
-
+	
 	protected function closeEntity($entity) {
 		$entity['to'] = $this->time;
 		$this->collection->save($entity, 1);
@@ -99,19 +100,19 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
 		}
-
+		
 		$this->setQueryFields($jsonData);
-
-		if (empty($this->query)) {
+		
+		if(empty($this->query)) {
 			$this->reportError(22, Zend_Log::NOTICE);
 		}
-
+		
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonData = json_decode($update, true))) || !$this->setUpdateFields($jsonData)) {
 			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
 		}
-
+		
 
 		return true;
 	}
@@ -122,30 +123,30 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	 */
 	protected function setQueryFields($queryData) {
 		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
-
+		
 		$this->setMongoID($queryData);
-
+		
 		return true;
 	}
-
+	
 	/**
 	 * TODO: Use the translators instead.
 	 */
 	protected function setMongoID($queryData) {
 		// Get the mongo ID.
-		if (!isset($queryData['_id'])) {
+		if(!isset($queryData['_id'])) {
 			$invalidField = new Billrun_DataTypes_InvalidField('_id');
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
-
+		
 		try {
 			$this->query['_id'] = new Mongodloid_Id($queryData['_id']);
 		} catch (MongoException $ex) {
-			$invalidField = new Billrun_DataTypes_InvalidField('_id', 2);
+			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
 	}
-
+	
 	/**
 	 * Set all the update fields in the record with values.
 	 * @param array $updateData - Data received.
@@ -153,7 +154,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	 */
 	protected function setUpdateFields($updateData) {
 		$fields = Billrun_Factory::config()->getConfigValue('services.fields');
-
+				
 		// Get only the values to be set in the update record.
 		foreach ($fields as $field) {
 			$fieldName = $field['field_name'];
@@ -164,8 +165,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 				$this->update[$fieldName] = $updateData[$fieldName];
 			}
 		}
-
+		
 		return true;
 	}
-
 }

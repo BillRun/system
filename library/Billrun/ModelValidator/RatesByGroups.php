@@ -24,7 +24,7 @@ class Billrun_ModelValidator_RatesByGroups extends Billrun_ModelValidator_Base {
 		if (!$this->isGroupsValid($rate)) {
 			return 'Invalid "groups" field: ' . print_R($rate, 1);
 		}
-
+		
 		return true;
 	}
 

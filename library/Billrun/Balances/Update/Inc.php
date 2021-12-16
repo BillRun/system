@@ -20,10 +20,10 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 	 * @return string - $inc or $set
 	 */
 	protected function getMongoOperation($valueToSet) {
-		if (is_array($valueToSet) || is_numeric($valueToSet) !== true) {
+		if(is_array($valueToSet) || is_numeric($valueToSet) !== true) {
 			return '$set';
 		}
-
+		
 		return '$inc';
 	}
 
@@ -53,7 +53,7 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 		// we're using absolute for both cases - positive and negative values
 		return array("block" => (abs($newValue) > abs($max)));
 	}
-
+	
 	/**
 	 * Get the expected balance value for an increment operation.
 	 * This function is used to check if the update logic should be blocked conditioned
@@ -71,5 +71,4 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 
 		$newValue += $valueBefore;
 	}
-
 }

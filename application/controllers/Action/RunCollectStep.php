@@ -14,12 +14,12 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  * @since    2.6
  */
-class Run_collect_stepAction extends ApiAction {
-
+class  Run_collect_stepAction extends ApiAction {
+	
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
-		if (!RUNNING_FROM_CLI) {
+		if(!RUNNING_FROM_CLI) {
 			$this->allowed();
 		}
 		Billrun_Factory::log()->log("Execute run collection steps api call", Zend_Log::INFO);
@@ -32,7 +32,7 @@ class Run_collect_stepAction extends ApiAction {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
 			$result = static::runCollectStep($aids);
-			if (RUNNING_FROM_CLI) {
+			if(RUNNING_FROM_CLI) {
 				foreach ($result as $status => $aids) {
 					foreach ($aids as $aid => $steps) {
 						$this->getController()->addOutput("Collection step run status '" . $status . "', for AID " . $aid . " run steps : " . implode(", ", $steps));
@@ -60,5 +60,4 @@ class Run_collect_stepAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
 }

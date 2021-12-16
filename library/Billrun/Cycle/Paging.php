@@ -12,17 +12,17 @@
  * @author eran
  */
 class Billrun_Cycle_Paging {
-
+	
 	protected $defaultOptions = array(
-		'sleepTime' => 100,
-		'size' => 100,
-		'identifingQuery' => array('billrun_key' => '201705'),
-		'maxProcesses' => 20,
-	);
+			'sleepTime'=> 100,
+			'size'=> 100,
+			'identifingQuery' => array('billrun_key' => '201705'),
+			'maxProcesses' => 20,
+		);
 	protected $options = array();
 	protected $pagerCollection = null;
 	protected $invoicing_day = null;
-
+	
 	public function __construct($options, $pagingCollection) {
 		$this->options = Billrun_Util::getFieldVal($options, $this->defaultOptions);
 		$this->pagerCollection = $pagingCollection;
@@ -33,10 +33,10 @@ class Billrun_Cycle_Paging {
 				$this->invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
 			} else {
 				$this->invoicing_day = $options['invoicing_day'];
-			}
+			}			
 		}
 	}
-
+	
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle
@@ -47,61 +47,61 @@ class Billrun_Cycle_Paging {
 			Billrun_Factory::log()->log("Failed getting next page, retries exhausted", Zend_Log::ALERT);
 			return false;
 		}
-		if (!$this->validateMaxProcesses()) {
+		if(!$this->validateMaxProcesses()) {
 			return false;
 		}
-
+		
 		$nextPage = $this->getNextPage();
-		if ($nextPage === false) {
+		if($nextPage === false) {
 			Billrun_Factory::log("getPage: Failed getting next page.");
 			return false;
 		}
+		
 
-
-		if ($this->checkExists($nextPage)) { // we couldn't lock the next page (other process did it)
-			$error = "Page number " . $nextPage . " already exists.";
+		if($this->checkExists($nextPage)) { // we couldn't lock the next page (other process did it)
+			$error = "Page number ". $nextPage ." already exists.";
 			Billrun_Factory::log($error . " Trying Again...", Zend_Log::NOTICE);
 			usleep($this->sleepTime);
 			return $this->getPage($zeroPages, $retries - 1);
 		}
-
+		
 		return $nextPage;
 	}
-
+	
 	/**
 	 * Validate the max processes config values
 	 * @return boolean true if valid
 	 */
 	protected function validateMaxProcesses() {
-		$query = array_merge($this->identifingQuery, array('page_size' => $this->size, 'host' => $this->host, 'end_time' => array('$exists' => false)));
+		$query = array_merge( $this->identifingQuery, array('page_size' => $this->size, 'host'=> $this->host,'end_time' => array('$exists' => false)) );
 		$processCount = $this->pagerCollection->query($query)->count();
 		if ($processCount >= $this->maxProcesses) {
-			Billrun_Factory::log("Host " . $this->host . "is already running max number of [" . $this->maxProcesses . "] processes", Zend_Log::DEBUG);
+			Billrun_Factory::log("Host ". $this->host. "is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
 			return false;
 		}
 		return true;
 	}
-
+	
 	/**
 	 * Get the next page index
 	 * @return boolean|int
 	 */
 	protected function getNextPage() {
-		$query = array_merge($this->identifingQuery, array('page_size' => $this->size));
+		$query = array_merge($this->identifingQuery,array('page_size' => $this->size));
 		$currentDocument = $this->pagerCollection->query($query)->cursor()->sort(array('page_number' => -1))->limit(1)->current();
 		if (is_null($currentDocument)) {
 			Billrun_Factory::log("getNexPage: failed to retrieve document");
 			return false;
 		}
-
+		
 		// First page
 		if (!isset($currentDocument['page_number'])) {
 			return 0;
-		}
-
+		} 
+		
 		return $currentDocument['page_number'] + 1;
 	}
-
+	
 	/**
 	 * Check if 
 	 * @param type $nextPage
@@ -117,20 +117,19 @@ class Billrun_Cycle_Paging {
 		$modify = array('$setOnInsert' => $modifyQuery);
 		try {
 			$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));
-		} catch (Exception $e) {
+		} catch(Exception $e) {
 			if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
 				Billrun_Factory::log()->log('Exception: ' . $e->getMessage(), Zend_Log::ALERT);
-				return true;
+				return true;	
 			}
 			throw $e;
 		}
 		return !$checkExists->isEmpty();
 	}
-
+	
 	//-------------------------------------------------
-
+	
 	public function __get($name) {
 		return isset($this->options[$name]) ? $this->options[$name] : $this->defaultOptions[$name];
 	}
-
 }

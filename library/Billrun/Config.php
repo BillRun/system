@@ -34,14 +34,14 @@ class Billrun_Config {
 	 * @var string
 	 */
 	protected $tenant = null;
-
+	
 	/**
 	 * path for tenants config file
 	 * 
 	 * @var type 
 	 */
 	protected static $multitenantDir = null;
-
+	
 	/**
 	 * save all available values for environment while running in production
 	 * 
@@ -70,7 +70,7 @@ class Billrun_Config {
 		if (!isset($config['disableHostConfigLoad']) && file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
 			$this->addConfig($env_conf);
 		}
-
+		
 		if (defined('APPLICATION_TENANT')) { // specific defined tenant
 			$this->tenant = APPLICATION_TENANT;
 			$this->loadTenantConfig();
@@ -81,7 +81,7 @@ class Billrun_Config {
 			$this->tenant = $this->getEnv();
 		}
 	}
-
+	
 	public function addConfig($path) {
 		if (!array_key_exists($path, $this->loadedFiles)) {
 			if (file_exists($path)) {
@@ -127,7 +127,7 @@ class Billrun_Config {
 
 			// If the key exists in the less important config array then we have
 			// another level of config values to process.
-			if (isset($lessImportantConf[$key])) {
+			if(isset($lessImportantConf[$key])) {
 				$confValue = self::mergeConfigs($lessImportantConf[$key], $moreImportantConf[$key]);
 			} else {
 				$confValue = $moreImportantConf[$key];
@@ -171,18 +171,18 @@ class Billrun_Config {
 		}
 		return self::$instance[$stamp];
 	}
-
+	
 	/**
 	 * method to set db config from environment variables
 	 * the env variables are useful for docker
 	 */
 	static protected function setDbEnvConfig($config) {
 		$mdbConfigEnv = array(
-			'BR_MDB_HOST' => 'host',
-			'BR_MDB_PORT' => 'port',
+			'BR_MDB_HOST'   => 'host',
+			'BR_MDB_PORT'   => 'port',
 			'BR_MDB_DBNAME' => 'name',
-			'BR_MDB_USER' => 'user',
-			'BR_MDB_PASS' => 'password',
+			'BR_MDB_USER'   => 'user',
+			'BR_MDB_PASS'   => 'password',
 			'BR_MDB_AUTHDB' => 'authSource',
 		);
 
@@ -199,32 +199,33 @@ class Billrun_Config {
 		}
 	}
 
+
 	public function getFileTypeSettings($fileType, $enabledOnly = false) {
-		$fileType = array_filter($this->getConfigValue('file_types'), function ($fileSettings) use ($fileType, $enabledOnly) {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType, $enabledOnly) {
 			return $fileSettings['file_type'] === $fileType &&
-			(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		});
 		if ($fileType) {
 			$fileType = current($fileType);
 		}
 		return $fileType;
 	}
-
+	
 	public function getPluginSettings($pluginName, $enabledOnly = false) {
-		$plugin = array_filter($this->getConfigValue('plugins'), function ($pluginSettings) use ($pluginName, $enabledOnly) {
+		$plugin = array_filter($this->getConfigValue('plugins'), function($pluginSettings) use ($pluginName, $enabledOnly) {
 			return $pluginSettings['name'] === "{$pluginName}Plugin" &&
-			(!$enabledOnly || Billrun_Config::isEnabled($pluginSettings));
+				(!$enabledOnly || Billrun_Config::isEnabled($pluginSettings));
 		});
 		if ($plugin) {
 			$plugin = current($plugin);
 		}
 		return $plugin;
 	}
-
+	
 	public function getExportGeneratorSettings($exportGenerator, $enabledOnly = true) {
-		$exportGenerator = array_filter($this->getConfigValue('export_generators'), function ($exportGeneratorSettings) use ($exportGenerator, $enabledOnly) {
+		$exportGenerator = array_filter($this->getConfigValue('export_generators'), function($exportGeneratorSettings) use ($exportGenerator, $enabledOnly) {
 			return $exportGeneratorSettings['name'] === $exportGenerator &&
-			(!$enabledOnly || Billrun_Config::isExportGeneratorConfigEnabled($exportGeneratorSettings));
+				(!$enabledOnly || Billrun_Config::isExportGeneratorConfigEnabled($exportGeneratorSettings));
 		});
 		if ($exportGenerator) {
 			$exportGenerator = current($exportGenerator);
@@ -233,20 +234,20 @@ class Billrun_Config {
 	}
 
 	public function getFileTypes($enabledOnly = false) {
-		return array_filter(array_map(function ($fileSettings) use ($enabledOnly) {
-					return ((!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings)) ? $fileSettings['file_type'] : null);
-				}, $this->getConfigValue('file_types')));
+		return array_filter(array_map(function($fileSettings) use($enabledOnly) {
+			return ((!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings)) ? $fileSettings['file_type'] : null);
+		}, $this->getConfigValue('file_types')));
 	}
-
+	
 	public function loadDbConfig() {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbCursor = $configColl->query()
-						->cursor()->setReadPreference('RP_PRIMARY')
-						->sort(array('_id' => -1))
-						->limit(1)
-						->current();
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current();
 				if ($dbCursor->isEmpty()) {
 					return true;
 				}
@@ -255,7 +256,7 @@ class Billrun_Config {
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
 				$this->config = new Yaf_Config_Simple(self::mergeConfigs($iniConfig, $dbConfig));
-
+				
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
 			}
@@ -265,10 +266,10 @@ class Billrun_Config {
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
-		}
+			}
 
 		return true;
-	}
+		}
 
 	/**
 	 * Refresh the values from the config in the DB.
@@ -276,18 +277,18 @@ class Billrun_Config {
 	public function refresh() {
 		$this->setTenantTimezone($this->toArray());
 	}
-
+	
 	protected function setTenantTimezone($dbConfig) {
-		if (!isset($dbConfig['billrun']['timezone'])) {
+		if(!isset($dbConfig['billrun']['timezone'])){
 			return;
 		}
-
+		
 		// Get the timezone.
 		$timezone = $dbConfig['billrun']['timezone'];
-		if (empty($timezone)) {
+		if(empty($timezone)) {
 			return;
 		}
-
+		
 		// Setting the default timezone.
 		$setTimezone = @date_default_timezone_set($timezone);
 	}
@@ -337,37 +338,37 @@ class Billrun_Config {
 	 * @param mixed $complex - Data to wrap with complex wrapper.
 	 * @return \Billrun_DataTypes_Conf_Base
 	 */
-	public static function getComplexWrapper(&$complex) {
+	public static function getComplexWrapper (&$complex) {
 		// Get complex wrapper.
 		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
-		if (!@class_exists($name)) {
+		if(!@class_exists($name)) {
 			return null;
 		}
-
+		
 		return new $name($complex);
 	}
-
+	
 	/**
 	 * Translate all complex values in a config array
 	 * @param array $config - Config array, changed by reference.
 	 */
 	public static function translateComplex(&$config) {
-		if (self::isComplex($config)) {
+		if(self::isComplex($config)) {
 			return self::getComplexValue($config);
 		}
-		if (!Billrun_Util::isMultidimentionalArray($config)) {
+		if(!Billrun_Util::isMultidimentionalArray($config)) {
 			// Check if it is a complex value.
 			return $config;
 		}
-
+		
 		// Go through the config values.
 		foreach ($config as $key => $value) {
 			$config[$key] = self::translateComplex($value);
 		}
-
+		
 		return $config;
 	}
-
+	
 	/**
 	 * Check if complex data set is valid by creating a wrapper and validating.
 	 * @param mixed $complex - Complex data
@@ -375,7 +376,7 @@ class Billrun_Config {
 	 */
 	public static function isComplexValid(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
-		if (!$wrapper) {
+		if(!$wrapper) {
 			return false;
 		}
 		if (!$wrapper->validate()) {
@@ -383,7 +384,7 @@ class Billrun_Config {
 		}
 		return true;
 	}
-
+	
 	/**
 	 * Get the complex value from a complex record
 	 * @param array $complex - Complex record.
@@ -391,30 +392,30 @@ class Billrun_Config {
 	 */
 	public static function getComplexValue(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
-		if (!$wrapper) {
+		if(!$wrapper) {
 			return null;
 		}
 		return $wrapper->value();
 	}
-
+	
 	/**
 	 * Check if an object is complex (not primitive or array).
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if (empty($obj) || is_scalar($obj) || $obj instanceof Mongodloid_Date) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof Mongodloid_Date) {
 			return false;
 		}
-
-		if (!is_array($obj)) {
+		
+		if(!is_array($obj)) {
 			return true;
 		}
-
+		
 		// TODO: that means that 't' is a sensitive value! If a simple array 
 		// will have a 't' field, we will treat it as a complex object.
 		return isset($obj['t']);
 	}
-
+	
 	/**
 	 * method to receive the environment the app running
 	 * 
@@ -450,12 +451,12 @@ class Billrun_Config {
 			$this->addConfig($tenant_conf);
 		}
 	}
-
+	
 	/**
 	 * method to initialize tenanat
 	 */
 	protected function initTenant() {
-		if (!isset($_SERVER['HTTP_HOST'])) {
+		if(!isset($_SERVER['HTTP_HOST'])) {
 			return die('no tenant declare');
 		}
 
@@ -468,7 +469,7 @@ class Billrun_Config {
 		}
 		$this->tenant = $subDomains[0];
 	}
-
+	
 	/**
 	 * method to check if the environment is set under some specific environment
 	 * 
@@ -504,19 +505,19 @@ class Billrun_Config {
 	public function toArray() {
 		return $this->config->toArray();
 	}
-
+	
 	protected function isCompanyInProd() {
 		return in_array($this->getInstance()->getConfigValue("environment"), $this->productionValues);
 	}
-
+	
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
 	}
-
+		
 	public static function isFileTypeConfigEnabled($fileTypeSettings) {
 		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
 	}
-
+		
 	public static function isExportGeneratorConfigEnabled($exportGeneratorSettings) {
 		return (!isset($exportGeneratorSettings['enabled']) || $exportGeneratorSettings['enabled']);
 	}
@@ -532,7 +533,7 @@ class Billrun_Config {
 		}
 		return array();
 	}
-
+	
 	public function getCustomFieldType($customFieldsKey, $fieldName) {
 		$customFields = $this->getConfigValue("{$customFieldsKey}.fields", []);
 		foreach ($customFields as $customField) {
@@ -542,15 +543,15 @@ class Billrun_Config {
 		}
 		return 'string';
 	}
-
+	
 	/**
 	 * method to get all input processors settings
 	 * 
 	 * @param boolean $enabledOnly - indicates if input processor enabled or not
 	 * @return array - input processors settings
 	 */
-	public function getFileTypesSettings($enabledOnly = false) {
-		$fileTypes = array_filter($this->getConfigValue('file_types'), function ($fileSettings) use ($enabledOnly) {
+	public function getFileTypesSettings($enabledOnly = false) {		
+		$fileTypes = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($enabledOnly) {
 			return (!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		});
 
@@ -561,7 +562,7 @@ class Billrun_Config {
 	 * method to get monthly invoice's display config
 	 * @return invoice display options if was configured, else returns null.
 	 */
-	public function getInvoiceDisplayConfig() {
+	public function getInvoiceDisplayConfig() {		
 		return $this->getConfigValue('invoice_export.invoice_display_options', null);
 	}
 
@@ -572,7 +573,7 @@ class Billrun_Config {
 	public function isMultiDayCycle() {
 		return $this->getConfigValue('billrun.multi_day_cycle', false);
 	}
-
+	
 	/**
 	 * 
 	 * @return returns the default charging/invoicing day from the config.

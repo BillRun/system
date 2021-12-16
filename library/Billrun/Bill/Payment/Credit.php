@@ -17,7 +17,6 @@ class Billrun_Bill_Payment_Credit extends Billrun_Bill_Payment {
 	protected $method = 'credit';
 
 	public function __construct($options) {
-		parent::__construct($options);
+		parent::__construct($options);	
 	}
-
 }

@@ -24,7 +24,7 @@ class Billrun_ModelValidator_RatesByParentManager {
 		$rateByParentValidator = self::getRatesByParentValidator($plan);
 		return $rateByParentValidator->validate($plan, $rate);
 	}
-
+	
 	/**
 	 * Gets the correct validator of an inner rates object (inside Rate object)
 	 * 

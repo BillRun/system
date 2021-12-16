@@ -13,10 +13,8 @@
  * @since 5.10
  */
 class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
-
 	use Billrun_Traits_EntityGetter;
 	use Billrun_Traits_ForeignFields;
-
 	protected static $taxes = [];
 
 	/**
@@ -27,18 +25,18 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if ($taxData === false) {
 			return false;
 		}
-
+		
 		$line['tax_data'] = $taxData;
 		return $line;
 	}
-
+	
 	/**
 	 * @see Billrun_Calculator_Tax::getPreTaxedRowTaxData
 	 */
 	protected function getPreTaxedRowTaxData($line) {
 		return $this->getRowTaxData($line);
 	}
-
+	
 	/**
 	 * get the Tax entity for the line
 	 * 
@@ -50,30 +48,30 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 			return $line['taxes'];
 		}
 		$taxes = $this->getMatchingEntitiesByCategories($line);
-
+		
 		if ($taxes === false) {
 			return false;
 		}
-
+		
 		$params = [
 			'skip_categories' => array_keys($taxes),
 		];
-
+		
 		$globalTaxes = $this->getMatchingEntitiesByCategories($line, $params);
-
+		
 		if ($globalTaxes !== false) {
 			$taxes = array_merge($taxes, $globalTaxes);
 		}
-
+		
 		if (empty($taxes)) {
 			return is_array($taxes) ? [] : false;
 		}
 
-		return array_filter($taxes, function ($taxData) {
+		return array_filter($taxes, function($taxData) {
 			return !empty($taxData);
 		});
 	}
-
+	
 	/**
 	 * get tax hints of the givven line
 	 * 
@@ -87,27 +85,27 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		} else {
 			$entity = Billrun_Rates_Util::getRateByRef($line['arate'] ?: null);
 		}
-
+		
 		$taxHints = !empty($entity['tax']) ? $entity['tax'] : $this->getDefaultTaxHint();
 		if (empty($category)) {
 			return $taxHints;
 		}
-
+		
 		foreach ($taxHints as $taxHint) {
 			$taxHintCategory = $taxHint['type'] ?: '';
 			if ($taxHintCategory == $category) {
 				return $taxHint;
 			}
 		}
-
+		
 		return false;
 	}
-
-	/**
-	 * get default tax hint for product/plan/service
-	 * 
-	 * @return array
-	 */
+    
+    /**
+     * get default tax hint for product/plan/service
+     * 
+     * @return array
+     */
 	protected function getDefaultTaxHint() {
 		return [
 			[
@@ -126,12 +124,12 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if (isset($line['tax_data'])) {
 			return $line['tax_data'];
 		}
-
+		
 		$taxes = $this->getLineTaxes($line);
 		if ($taxes === false) {
 			return false;
 		}
-
+		
 		$totalTax = 0;
 		$totalAmount = 0;
 		$totalEmbeddedAmount = 0;
@@ -149,7 +147,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				'key' => $tax['key'],
 				'type' => $taxCategory,
 				'pass_to_customer' => 1,
-					], $foreignTaxData);
+			], $foreignTaxData);
 
 			if ($isTaxEmbedded) {
 				$taxData['embedded_amount'] = $taxAmount;
@@ -159,16 +157,16 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				$totalAmount += $taxAmount;
 				$totalTax += $taxFactor;
 			}
-
+			
 			$taxesData[] = $taxData;
 		}
-
+		
 		$ret = [
 			'total_amount' => $totalAmount,
 			'total_tax' => $totalTax,
 			'taxes' => $taxesData,
 		];
-
+		
 		if ($totalEmbeddedAmount > 0) {
 			$ret['total_embedded_amount'] = $totalEmbeddedAmount;
 		}
@@ -184,7 +182,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	 */
 	public static function taxDataToTaxes($taxData) {
 		$taxes = [];
-
+		
 		foreach (Billrun_Util::getIn($taxData, 'taxes', []) as $data) {
 			$category = $data['type'];
 			$taxes[$category] = [
@@ -201,10 +199,10 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				}
 			}
 		}
-
+		
 		return $taxes;
 	}
-
+	
 	/**
 	 * get line's tax's rate
 	 * 
@@ -214,25 +212,25 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if (isset($taxedLine['tax_data']['total_tax'])) {
 			return $taxedLine['tax_data']['total_tax'];
 		}
-
+		
 		$totalRate = 0;
 		$taxes = $this->getLineTaxes($line);
-
+		
 		if (empty($taxes)) {
 			return false;
 		}
-
+		
 		foreach ($taxes as $tax) {
 			if (!isset($tax['rate'])) {
 				return false;
 			}
-
+			
 			$totalRate += $tax['rate'];
 		}
 
 		return $totalRate;
 	}
-
+	
 	/**
 	 * see parent::isLineTaxable
 	 */
@@ -243,11 +241,11 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				if ($tax['taxation'] == 'no') {
 					return !$this->isLinePreTaxed($line);
 				}
-
+				
 				return true;
 			}
 		}
-
+		
 		return parent::isLineTaxable($line);
 	}
 
@@ -266,7 +264,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 
 		return self::getTaxByKey($taxKey, $time);
 	}
-
+	
 	/**
 	 * get tax by key
 	 * 
@@ -276,7 +274,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if (is_null($time)) {
 			$time = time();
 		}
-
+		
 		$tax = false;
 		if (!empty(self::$taxes[$key])) {
 			foreach (self::$taxes[$key] as $cachedTax) {
@@ -288,20 +286,20 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 				}
 			}
 		}
-
+		
 		if (empty($tax)) {
 			$taxCollection = self::getTaxCollection();
 			$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
 			$query['key'] = $key;
 			$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
-
+			
 			if (!$tax->isEmpty()) {
 				self::$taxes[$key][] = $tax;
 			}
 		}
 		return $tax && !$tax->isEmpty() ? $tax : false;
 	}
-
+	
 	/**
 	 * @see Billrun_Calculator_Tax::addTax
 	 */
@@ -310,7 +308,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if ($taxAmount === false) {
 			return false;
 		}
-
+		
 		return $untaxedPrice + $taxAmount;
 	}
 
@@ -322,7 +320,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if ($taxAmount === false) {
 			return false;
 		}
-
+		
 		return $taxedPrice - $taxAmount;
 	}
 
@@ -362,8 +360,9 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		return Billrun_Factory::db()->taxesCollection();
 	}
 
-	//------------------- Entity Getter functions ----------------------------------------------------
 
+	//------------------- Entity Getter functions ----------------------------------------------------
+	
 	protected function getCollection($params = []) {
 		return self::getTaxCollection();
 	}
@@ -371,12 +370,12 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	protected function getFilters($row = [], $params = []) {
 		return Billrun_Factory::config()->getConfigValue('taxation.mapping', []);
 	}
-
+	
 	protected function getDefaultEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		$time = isset($row['urt']) ? $row['urt']->sec : time();
 		return self::getDetaultTax($time);
 	}
-
+	
 	/**
 	 * get tax data of fallback taxation (hint tax calculated after general taxation)
 	 * 
@@ -389,18 +388,18 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	protected function getFallbackEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		$time = isset($row['urt']) ? $row['urt']->sec : time();
 		$taxHintData = $this->getLineTaxHint($row, $category);
-
+		
 		if (empty($taxHintData)) {
 			return false;
 		}
-
+		
 		if ($taxHintData['taxation'] == 'custom' && $taxHintData['custom_logic'] == 'fallback') {
 			return self::getTaxByKey($taxHintData['custom_tax'], $time);
 		}
-
+		
 		return false;
 	}
-
+	
 	/**
 	 * get tax data of override taxation (hint tax calculated before general taxation)
 	 * 
@@ -413,11 +412,11 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 	protected function getOverrideEntity($categoryFilters, $category = '', $row = [], $params = []) {
 		$time = isset($row['urt']) ? $row['urt']->sec : time();
 		$taxHintData = $this->getLineTaxHint($row, $category);
-
+		
 		if (empty($taxHintData)) {
 			return false;
 		}
-
+			
 		switch ($taxHintData['taxation']) {
 			case 'default':
 				return self::getDetaultTax($time);
@@ -426,23 +425,25 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 					return self::getTaxByKey($taxHintData['custom_tax'], $time);
 				}
 		}
-
+		
 		return false;
 	}
-
+	
 	protected function shouldSkipCategory($category = '', $row = [], $params = []) {
 		$taxHintData = $this->getLineTaxHint($row, $category);
-
+		
 		if (empty($taxHintData)) {
 			return false;
 		}
-
+		
 		if ($taxHintData['taxation'] == 'no') {
 			return true;
 		}
-
+		
 		return false;
 	}
 
+
 	//------------------- Entity Getter functions - END ----------------------------------------------
+
 }

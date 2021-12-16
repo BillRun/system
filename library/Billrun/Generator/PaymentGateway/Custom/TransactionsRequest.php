@@ -12,13 +12,13 @@
  * @package  Billing
  * @since    5.10
  */
-class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
 
+class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billrun_Generator_PaymentGateway_Custom {
+	
 	const INITIAL_FILE_STATE = "waiting_for_confirmation";
 	const ASSUME_APPROVED_FILE_STATE = "assume_approved";
-
 	use Billrun_Traits_ConditionsCheck;
-
+	
 	protected static $type = 'transactions_request';
 	protected $filterParams = array('aids', 'invoices', 'exclude_accounts', 'billrun_key', 'min_invoice_date', 'mode', 'pay_mode');
 	protected $tokenField = null;
@@ -82,7 +82,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->updateLogFileField('payments_file_type', $options['type']);
 		$this->logFile->updateLogFileField('backed_to', [$this->localDir]);
 		$this->logFile->updateLogFileField('parameters_string', $parametersString);
-
+		
 		$this->affects_bills = Billrun_Util::getIn($this->configByType, 'affects_bills', true);
 		$this->logFile->updateLogFileField('affects_bills', $this->affects_bills);
 	}
@@ -105,7 +105,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->updateLogFileField('info', $message);
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 		$this->data = array();
-		$customersAids = array_map(function ($ele) {
+		$customersAids = array_map(function($ele) {
 			return $ele['aid'];
 		}, $this->customers);
 
@@ -128,7 +128,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$paymentParams = array();
 			if (isset($accountsInArray[$customer['aid']])) {
 				$account = $accountsInArray[$customer['aid']];
-				if (!$this->validateMandatoryFieldsExistence($account, 'account')) {
+				if(!$this->validateMandatoryFieldsExistence($account, 'account')){
 					$message = "One or more of the file's mandatory fields is missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
 					Billrun_Factory::log($message, Zend_Log::ALERT);
 					$this->logFile->updateLogFileField('errors', $message);
@@ -188,7 +188,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				continue;
 			}
 			$params = $this->handlePayment($account, $paymentParams, $customer, $options);
-
+			
 			if ($params == FALSE) {
 				continue;
 			}
@@ -210,13 +210,12 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	 * Update the file status  this will afffect the state of the transactions generated to it (i.e. waiting_for_confirmation / assume_approved)
 	 */
 	public function setFileStatus($newStatus) {
-		$this->logFile->updateLogFileField('file_status', $newStatus);
+		$this->logFile->updateLogFileField('file_status',$newStatus);
 	}
-
 	protected function isGatewayActive($account) {
 		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
 	}
-
+	
 	protected function initChargeOptions($options) {
 		foreach ($options as $paramName => $option) {
 			if (in_array($paramName, $this->filterParams)) {
@@ -224,11 +223,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 		}
 	}
-
+	
 	protected function isAssumeApproved() {
 		return $this->logFile && $this->logFile->getLogFileFieldValue('file_status') == static::ASSUME_APPROVED_FILE_STATE;
 	}
-
 	protected function isRefundMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'refund';
 	}
@@ -236,7 +234,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected function isChargeMode() {
 		return isset($this->chargeOptions['mode']) && $this->chargeOptions['mode'] == 'charge';
 	}
-
+	
 	protected function isPaymentUpholdPlaceholders($paymentDetails, $placeHoldersConditions) {
 		$res = true;
 		foreach ($placeHoldersConditions as $condition) {
@@ -267,10 +265,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					break;
 			}
 		}
-
+		
 		return $res;
 	}
-
+	
 	protected function isAccountUpholdConditions($account, $conditions) {
 		if (empty($conditions)) {
 			return true;
@@ -280,7 +278,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}
 		return false;
 	}
-
+	
 	protected function validateExtraParams() {
 		$validated = true;
 		if (empty($this->extraParamsDef)) {
@@ -310,10 +308,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$validated = false;
 					break;
 				}
-			}
+			}         
 			$this->extraParamsNames[] = $field_name;
 			Billrun_Factory::dispatcher()->trigger('afterTransactionsRequestParamValidation', array($field_name, &$this->options[$field_name], &$validated));
-			if ($validated === false) {
+			if($validated === false){
 				break;
 			}
 		}
@@ -323,15 +321,15 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	public function getType() {
 		return "payment_gateways";
 	}
-
-	public function getCustomPaymentGatewayFields() {
+	
+	public function getCustomPaymentGatewayFields () {
 		return [
-			'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
-			'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""],
-			'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
-		];
-	}
-
+				'cpg_name' => [!empty($this->gatewayName) ? $this->gatewayName : ""],
+				'cpg_type' => [!empty($this->options['type']) ? $this->options['type'] : ""], 
+				'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
+			];
+        }
+		
 	public function handlePayment($account, $paymentParams, $customer, $options) {
 		$res_params = ['amount' => $paymentParams['amount'], 'aid' => $paymentParams['aid']];
 		if (isset($account['payment_gateway']['active']['card_token'])) {
@@ -371,7 +369,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$res_params, $this));
 			$currentPayment->save();
 		}
-
+		
 		return $res_params;
 	}
 

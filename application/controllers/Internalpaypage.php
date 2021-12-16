@@ -5,6 +5,7 @@
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
+
 require_once APPLICATION_PATH . '/application/controllers/Externalpaypage.php';
 
 /**
@@ -13,8 +14,8 @@ require_once APPLICATION_PATH . '/application/controllers/Externalpaypage.php';
  * @package  Controller
  * @since    5.0
  */
-class InternalPaypageController extends ExternalPaypageController {
 
+class InternalPaypageController extends ExternalPaypageController {
 	use Billrun_Traits_Api_UserPermissions;
 	use Billrun_Traits_Api_PageRedirect;
 
@@ -33,12 +34,10 @@ class InternalPaypageController extends ExternalPaypageController {
 		}
 
 		if ($request['action'] !== 'updatePaymentGateway') {
-			Billrun_Factory::log("Creating new payment gateway " . $request['payment_gateway'], Zend_Log::INFO);
+			Billrun_Factory::log("Creating new payment gateway " . $request['payment_gateway'],  Zend_Log::INFO);
 			$create = new Billrun_ActionManagers_Subscribers_Create();
 			if (isset($request['services']) && is_array($request['services'])) {
-				$request['services'] = array_map(function ($srv) {
-					return array('name' => $srv);
-				}, $request['services']);
+				$request['services'] =  array_map(function($srv) { return array('name'=>$srv); }, $request['services']);
 			}
 			$query = array(
 				"type" => $type,
@@ -53,7 +52,7 @@ class InternalPaypageController extends ExternalPaypageController {
 				/* TODO: HANDLE ERROR! */
 				return false;
 			}
-
+		
 			//payment_gateway already exist, redirect to return url
 			if (empty($request['payment_gateway'])) {
 				header("Location: " . $request['return_url']);
@@ -63,17 +62,17 @@ class InternalPaypageController extends ExternalPaypageController {
 			$index = 0;
 			$account = Billrun_Factory::account();
 			$account->loadAccountForQuery(array('aid' => $request['aid']));
-			$accountPg = $account->payment_gateway;
+			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
 			if ($prevPgName != $request['payment_gateway']) {
 				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'] . " for account: " . $request['aid'], Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log("Creating payment gateway " . $request['payment_gateway'], Zend_Log::INFO);
 			}
-			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);
+			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
 			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
 				$PrevPgParams = array();
-				if (!isset($accountPg['former'])) {
+				if (!isset($accountPg['former'])) { 
 					$previousPg = array();
 				} else {
 					$previousPg = $accountPg['former'];
@@ -83,11 +82,12 @@ class InternalPaypageController extends ExternalPaypageController {
 							$PrevPgParams = $previousPg[$counter];
 							unset($previousPg[$counter]);
 							$index = $counter;
-						}
+						} 
 						$counter++;
 					}
+					
 				}
-				$pgAccountDetails = !empty($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams['params']);
+				$pgAccountDetails = !empty($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams['params']);		
 				$pgParams = array('name' => $prevPgName, 'pgAccountDetails' => $pgAccountDetails);
 				$currentPg = array(
 					'name' => $pgParams['name'],
@@ -104,7 +104,7 @@ class InternalPaypageController extends ExternalPaypageController {
 				$prevPaymentGateway->deleteAccountInPg($pgAccountDetails);
 			}
 		}
-
+		
 		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$data = array(
 			"aid" => $request['aid'],
@@ -121,5 +121,4 @@ class InternalPaypageController extends ExternalPaypageController {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
 }
