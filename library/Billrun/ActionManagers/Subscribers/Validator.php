@@ -6,37 +6,35 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 trait Billrun_ActionManagers_Subscribers_Validator {
-
 	abstract protected function getSubscriberData();
-
-	protected $validatorData;
-
+	protected $validatorData;	
+	
 	public function validate() {
 		$this->validatorData = $this->getSubscriberData();
-		if (!$this->validateOverlap()) {
+		if(!$this->validateOverlap()) {
 			// [Subscribers error 1000]
 			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['sid']));
 			return false;
 		}
-
-		if (!$this->validateServiceprovider()) {
+		
+		if(!$this->validateServiceprovider()) {
 			// [Subscribers error 1040]
-			$errorCode = 40;
+			$errorCode =  40;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['service_provider']));
 			return false;
 		}
-
-		if (!$this->validatePlan()) {
+		
+		if(!$this->validatePlan()) {
 			// [Subscribers error 1041]
-			$errorCode = 41;
+			$errorCode =  41;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['plan']));
 			return false;
 		}
-
+		
 		return true;
 	}
-
+	
 	/**
 	 * Validate that there is no overlapping record with the same SID
 	 * @param type $new
@@ -46,16 +44,16 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 		// Get overlapping query.
 		$overlapQuery = Billrun_Utils_Mongo::getOverlappingDatesQuery($this->validatorData, $new);
 //		Billrun_Factory::log(print_r($overlapQuery,1));
-		if (is_string($overlapQuery)) {
+		if(is_string($overlapQuery)) {
 			throw new Exception($overlapQuery);
 			Billrun_Factory::log("Invalid query: " . $overlapQuery);
 			return false;
 		}
-
+		
 		$overlap = $this->collection->query($overlapQuery)->cursor()->current();
 		return $overlap->isEmpty();
 	}
-
+	
 	protected function validateServiceprovider() {
 		if (!isset($this->validatorData['service_provider'])) {
 			return true;
@@ -67,7 +65,7 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 		$serviceProvider = $coll->query($query)->cursor()->current();
 		return !$serviceProvider->isEmpty();
 	}
-
+	
 	protected function validatePlan() {
 		if (!isset($this->validatorData['plan'])) {
 			return true;
@@ -82,5 +80,4 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 		$planEntity = $plansColl->query($planQuery)->cursor()->current();
 		return !$planEntity->isEmpty();
 	}
-
 }

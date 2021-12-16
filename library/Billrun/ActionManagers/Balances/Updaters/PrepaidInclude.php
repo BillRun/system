@@ -36,14 +36,14 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	public function update($query, $recordToSet, $subscriberId) {
 		// If updating by prepaid include the user must specify an expiration date.
 		if (!$recordToSet['to']) {
-			$errorCode = 6;
+			$errorCode =  6;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
-			$errorCode = 7;
+			$errorCode =  7;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -52,13 +52,13 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$prepaidIncludes = $db->prepaidincludesCollection()->setReadPreference('RP_PRIMARY', array());
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
-			$errorCode = 8;
+			$errorCode =  8;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// Check if the prepaid record is unlimited.
-		if (!empty($prepaidRecord['unlimited'])) {
+		if (!empty($prepaidRecord['unlimited'])) { 
 			$recordToSet['to'] = new Mongodloid_Date(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
 		// Get the subscriber.
@@ -142,7 +142,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
 		$balance = parent::updateBalance($wallet, $query, $defaultBalance, $toTime);
-
+		
 		// Return the new document.
 		return array(
 			array(
@@ -163,15 +163,16 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['from'] = new Mongodloid_Date();
 
 		$defaultBalance['to'] = $recordToSet['to'];
-
+		
 		// If the prepaid record is shared, then set the sid value to 0.
-		if (!empty($prepaidRecord['shared'])) {
+		if(!empty($prepaidRecord['shared'])) {
 			$defaultBalance['sid'] = 0;
 		} else {
 			$defaultBalance['sid'] = $subscriber['sid'];
 		}
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
+		
 		// Setting the connection type to prepaid by deafault (when updating by prepaid includes).
 		$defaultBalance['connection_type'] = 'prepaid';
 		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];

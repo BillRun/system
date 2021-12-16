@@ -12,7 +12,7 @@
 class Billrun_Parser_External extends Billrun_Parser_Base_Binary {
 
 	static protected $type = "external";
-
+ 
 	public function __construct($options) {
 		parent::__construct($options);
 		if ($this->getType() == "external") {

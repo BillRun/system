@@ -26,6 +26,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 	 * @var array
 	 */
 	protected $data = array(); // data container of the charging plan record
+	
 	protected $chargingGroup = array();
 
 	/**
@@ -86,7 +87,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 	 * @todo
 	 */
 	public function preValidate() {
-		if (parent::preValidate() === false) {
+		if(parent::preValidate() === false) {
 			return false;
 		}
 		foreach ($this->data as $prepaidInclude) {
@@ -153,7 +154,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 			$prepaidInclude->trackChanges();
 		}
 	}
-
+	
 	public function getAfter() {
 		return $this->data;
 	}

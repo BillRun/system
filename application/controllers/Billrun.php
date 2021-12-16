@@ -5,6 +5,7 @@
  * @copyright       Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
+
 require_once APPLICATION_PATH . '/application/controllers/Action/Charge.php';
 
 /**
@@ -15,15 +16,17 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Charge.php';
  *
  */
 class BillrunController extends ApiController {
-
+	
 	use Billrun_Traits_Api_UserPermissions;
-
+		
 	/**
 	 * 
 	 * @var int
 	 */
 	protected $size;
+	
 	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
+
 	protected $config_model;
 
 	public function init() {
@@ -77,14 +80,14 @@ class BillrunController extends ApiController {
 
 		$success = self::processCycle($billrunKey, $generatedPdf, $invoicingDay);
 		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
-		$output = array(
+		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
 	}
-
+	
 	/**
 	 * Runs billing cycle by billrun key on specific account id's.
 	 * 
@@ -111,26 +114,27 @@ class BillrunController extends ApiController {
 			'force_accounts' => $aids,
 		);
 		$options = array(
-			'type' => 'customer',
-			'stamp' => $billrunKey,
-			'size' => $this->size,
+			'type' =>  'customer',
+			'stamp' =>  $billrunKey,
+			'size' =>  $this->size,
 			'aggregator' => $customerAggregatorOptions
 		);
-
+			
 		$aggregator = Billrun_Aggregator::getInstance($options);
-		if (!$aggregator) {
+		if(!$aggregator) {
 			throw new Exception("Can't Run");
 		}
 		$aggregator->load();
 		$aggregator->aggregate();
-		$output = array(
+		$output = array (
 			'status' => 1,
 			'desc' => 'success',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
 	}
-
+	
+	
 	/**
 	 * Generating bills by invoice id's.
 	 * 
@@ -149,7 +153,7 @@ class BillrunController extends ApiController {
 		if (Billrun_Factory::config()->isMultiDayCycle() && (empty($invoicingDay) || (!empty($invoicingDay) && !is_numeric($invoicingDay)))) {
 			return $this->setError('Need to pass numeric invoicing day when on multi day cycle mode.', $request);
 		}
-		if (!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)) {
+		if(!Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size, $invoicingDay)){
 			return $this->setError("Can't confirm invoices while the billing cycle run is ongoing", $request);
 		}
 		if (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey), $invoicingDay)) || !empty($invoices)) {
@@ -162,14 +166,14 @@ class BillrunController extends ApiController {
 			return $this->setError("Cycle was confirmed already, or no invoices were found to confirm", $request);
 		}
 
-		$output = array(
+		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
 	}
-
+	
 	/**
 	 * Checks if can charge and display the total amount owed.
 	 * 
@@ -188,7 +192,7 @@ class BillrunController extends ApiController {
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
-
+	
 	/**
 	 * Charge accounts.
 	 * 
@@ -201,7 +205,7 @@ class BillrunController extends ApiController {
 		$params['aids'] = $request->get('aids');
 		$params['invoices'] = $request->get('invoices');
 		$params['billrun_key'] = $request->get('billrun_key');
-		$params['pay_mode'] = $request->get('pay_mode');
+		$params['pay_mode']= $request->get('pay_mode');
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
@@ -211,14 +215,14 @@ class BillrunController extends ApiController {
 		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
 			$mode = '';
 		}
-
+		
 		if ($this->canSyncCharge($request)) {
 			return $this->chargeSync($mode, $params, $request);
 		}
-
+		
 		return $this->chargeAsync($mode, $params);
 	}
-
+	
 	/**
 	 * make an asynchronous charge request 
 	 * 
@@ -227,14 +231,14 @@ class BillrunController extends ApiController {
 	 */
 	protected function chargeAsync($mode, $params) {
 		$success = self::processCharge($mode, $params);
-		$output = array(
+		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
 	}
-
+	
 	/**
 	 * make a synchronous charge request 
 	 * 
@@ -266,7 +270,7 @@ class BillrunController extends ApiController {
 		$response = $chargeAction->charge($params);
 		$this->setSuccess($response);
 	}
-
+	
 	/**
 	 * checks if the charge can be done synchronously (1 payment request)
 	 * 
@@ -302,15 +306,15 @@ class BillrunController extends ApiController {
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
 			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey, $invoicing_day));
-			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day));
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey, $invoicing_day));	
 			if (empty($params['timeStatus'])) {
 				$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey, $invoicing_day);
 			} else {
 				$setting['cycle_time_status'] = Billrun_Billingcycle::getCycleTimeStatus($billrunKey, $invoicing_day);
-			}
+			}	
 			if (!empty($invoicing_day)) {
 				$setting['invoicing_day'] = $invoicing_day;
-			}
+			}	
 			$settings[] = $setting;
 		}
 
@@ -364,7 +368,7 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		//Prevent command line injection
-		if ((!in_array($generatedPdf, ['true', 'false'])) || !is_numeric($billrunKey)) {
+		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
 			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
 		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . $invoicing_day : "");
@@ -381,7 +385,7 @@ class BillrunController extends ApiController {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
-		$from = date('Y/m/d', strtotime('24 months ago'));
+		$from = date('Y/m/d', strtotime('24 months ago'));		
 		return $this->getCyclesInRange($from, $to, $newestFirst, $invoicing_day);
 	}
 
@@ -409,10 +413,10 @@ class BillrunController extends ApiController {
 		}
 		if (!empty($invoicesId)) {
 			$invoicesArray = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
-			if (empty($invoicesArray) || count($invoicesArray) !== count(array_filter($invoicesArray, 'is_numeric'))) {
+			if (empty($invoicesArray) || count($invoicesArray) !== count(array_filter($invoicesArray,'is_numeric'))) {
 				throw new Exception("Illgal invoices");
 			}
-			$invoicesId = implode(',', $invoicesArray);
+			$invoicesId = implode(',', $invoicesArray);			
 		}
 		if (!empty($invoicesId)) {
 			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . escapeshellarg($billrunKey) . ' invoices=' . escapeshellarg($invoicesId);
@@ -424,7 +428,7 @@ class BillrunController extends ApiController {
 		}
 		return Billrun_Util::forkProcessCli(escapeshellcmd($cmd));
 	}
-
+	
 	protected function processCharge($mode, $params = array()) {
 		$paramsString = $this->buildCommandByParams($params);
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . $paramsString . ' ' . $mode;
@@ -437,18 +441,18 @@ class BillrunController extends ApiController {
 			'action' => array('$in' => array('confirm_cycle', 'charge_account')),
 			'end_time' => array('$exists' => false),
 		);
-
+		
 		$chargeAllowed = $operationsColl->query($query)->cursor()->current();
 		if ($chargeAllowed->isEmpty()) {
 			return true;
 		}
 		return false;
 	}
-
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
+	
 	/**
 	 * Resetting billing cycle by billrun key.
 	 * 
@@ -471,27 +475,27 @@ class BillrunController extends ApiController {
 			$success = true;
 		}
 
-		$output = array(
+		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
 			'details' => array(),
 		);
 		$this->setOutput(array($output));
 	}
-
+	
 	protected function buildCommandByParams($params) {
 		$paramsString = '';
 		foreach ($params as $key => $value) {
 			if (is_null($value)) {
 				continue;
 			}
-
+			
 			$paramsString .= $key . '=' . $value . ' ';
 		}
-
+		
 		return $paramsString;
 	}
-
+	
 	public function validateParams($params) {
 		foreach ($params as $name => $value) {
 			switch ($name) {
@@ -516,7 +520,7 @@ class BillrunController extends ApiController {
 					break;
 				case 'pay_mode':
 				case 'mode':
-					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];
+					$array = $name === 'pay_mode' ? ['one_payment', 'multiple_payments'] : ['refund', 'charge‎'];	
 					if (!is_null($value) && !in_array(trim($value, '"'), $array)) {
 						return false;
 					}

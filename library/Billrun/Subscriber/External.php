@@ -1,26 +1,29 @@
 <?php
 
-/*
+/* 
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 
 class Billrun_Subscriber_External extends Billrun_Subscriber {
-
+	
 	static $queriesLoaded = false;
+	
 	static protected $type = 'external';
-	protected static $queryBaseKeys = ['limit', 'time', 'id'];
+	
+	protected static $queryBaseKeys = [ 'limit','time','id'];
+	
 	protected $remote;
 	protected $remote_authentication;
-
+		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
 		$defaultAuthentication = Billrun_Factory::config()->getConfigValue('subscribers.external_authentication', []);
 		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_authentication', $defaultAuthentication);
 	}
-
+	
 	public function delete() {
 		return true;
 	}
@@ -38,18 +41,18 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			}
 			$externalQuery['query'][] = $query;
 		}
-		if ($globalLimit) {
+		if($globalLimit) {
 			$externalQuery['limit'] = $globalLimit;
 		}
-		if ($globalDate) {
+		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);
+		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
 		];
 		$request = new Billrun_Http_Request($this->remote, $params);
-		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type' => 'application/json']);
+		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
 		$request->setParameterPost($externalQuery);
 		$results = $request->request(Billrun_Http_Request::POST)->getBody();
 		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
@@ -58,7 +61,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 			Billrun_Factory::log()->log(get_class() . ': could not complete request to ' . $this->remote, Zend_Log::NOTICE);
 			return false;
 		}
-		return array_reduce($results, function ($acc, $currentSub) {
+		return array_reduce($results, function($acc, $currentSub) {
 			$acc[] = new Mongodloid_Entity($currentSub);
 			return $acc;
 		}, []);
@@ -71,7 +74,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	public function save() {
 		return true;
 	}
-
+	
 	protected function buildParams(&$query) {
 
 		if (isset($query['EXTRAS'])) {
@@ -85,12 +88,13 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 					'key' => $key,
 					'operator' => 'equal',
 					'value' => $value
-				];
+					];
 				unset($query[$key]);
 			}
 		}
 		$query['params'] = $params;
 		return $query;
 	}
-
+	
 }
+

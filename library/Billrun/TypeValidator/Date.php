@@ -21,7 +21,7 @@ class Billrun_TypeValidator_Date extends Billrun_TypeValidator_Base {
 	 * @return boolean
 	 */
 	public function validate($value, $params = array()) {
-		if (!is_string($value)) {
+		if(!is_string($value)) {
 			return false;
 		}
 		$result = strtotime($value);

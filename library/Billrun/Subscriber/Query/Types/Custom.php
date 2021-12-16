@@ -15,7 +15,7 @@
 class Billrun_Subscriber_Query_Types_Custom extends Billrun_Subscriber_Query_Base {
 
 	protected $customFields = array();
-
+	
 	/**
 	 * get the field name in the parameters and the field name to set in the query.
 	 * @return array - Key is the field name in the parameters and value is the field
@@ -26,9 +26,7 @@ class Billrun_Subscriber_Query_Types_Custom extends Billrun_Subscriber_Query_Bas
 	}
 
 	protected function getKeyFields() {
-		$fieldNames = array_map(function ($field) {
-			return $field['field_name'];
-		}, $this->customFields);
+		$fieldNames = array_map(function($field){return $field['field_name'];}, $this->customFields);
 		return array_combine($fieldNames, $fieldNames);
 	}
 
@@ -49,7 +47,7 @@ class Billrun_Subscriber_Query_Types_Custom extends Billrun_Subscriber_Query_Bas
 
 		return $query;
 	}
-
+	
 	protected function canHandle($params, $fieldsToValidate) {
 		foreach ($fieldsToValidate as $field) {
 			if (isset($params[$field])) {

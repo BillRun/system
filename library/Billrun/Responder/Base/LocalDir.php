@@ -36,7 +36,7 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		//move file to export folder
 		$exportDir = $this->exportFromConfig ? $this->exportDir . DIRECTORY_SEPARATOR . self::$type :
-				$this->exportDir;
+			$this->exportDir;
 		if (!file_exists($exportDir)) {
 			mkdir($exportDir);
 		}

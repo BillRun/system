@@ -11,7 +11,6 @@
  *
  */
 trait Billrun_Traits_Api_PageRedirect {
-
 	/**
 	 * Force redirecting to an input url.
 	 * @param string $uri - URI to direct to.
@@ -23,5 +22,4 @@ trait Billrun_Traits_Api_PageRedirect {
 		header('Location: ' . $uri);
 		exit();
 	}
-
 }

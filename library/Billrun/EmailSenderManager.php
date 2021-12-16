@@ -11,7 +11,7 @@
  *
  */
 class Billrun_EmailSenderManager {
-
+	
 	/**
 	 * @var Billrun_EmailSenderManager
 	 */
@@ -32,7 +32,7 @@ class Billrun_EmailSenderManager {
 		}
 		return self::$instance;
 	}
-
+	
 	/**
 	 * send emails
 	 */
@@ -40,5 +40,5 @@ class Billrun_EmailSenderManager {
 		$emailSender = Billrun_EmailSender_Manager::getInstance($this->params);
 		$emailSender->notify($callback);
 	}
-
+	
 }

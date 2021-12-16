@@ -14,9 +14,8 @@
  * @since       1.0
  */
 class ProcessAction extends Action_Base {
-
 	use Billrun_Traits_TypeAll;
-
+	
 	/**
 	 * method to execute the process process
 	 * it's called automatically by the cli main controller
@@ -43,11 +42,11 @@ class ProcessAction extends Action_Base {
 			$options = array_merge($extraParams, $options);
 		}
 		// If not type all process normaly.
-		if (!$this->handleTypeAll($options)) {
-			$this->loadProcessor($options);
+		if(!$this->handleTypeAll($options)) {
+			$this->loadProcessor($options);	
 		}
 	}
-
+	
 	protected function loadProcessor($options) {
 		$this->getController()->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
@@ -69,7 +68,7 @@ class ProcessAction extends Action_Base {
 		$this->getController()->addOutput(ob_get_contents());
 		ob_end_clean();
 	}
-
+	
 	protected function getHandleFunction() {
 		return "loadProcessor";
 	}
@@ -77,9 +76,8 @@ class ProcessAction extends Action_Base {
 	protected function getNameType() {
 		return "processor";
 	}
-
+	
 	protected function getCMD() {
 		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . '  --tenant ' . Billrun_Factory::config()->getTenant() . ' --process --type';
 	}
-
 }

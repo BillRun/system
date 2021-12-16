@@ -15,7 +15,7 @@
 class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	static protected $type = 'realtime';
-
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		if (!empty($options['default_usaget'])) {
@@ -110,26 +110,25 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
 			return floatval($config['realtime']['default_values'][$row['record_type']]);
 		}
-
+		
 		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
 			return 0;
 		}
-
+		
 		if (isset($config['realtime']['default_values']['default'])) {
 			return floatval($config['realtime']['default_values']['default']);
 		}
-
-		return floatval(Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] . '.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0)));
+		
+		return floatval(Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0)));
 	}
 
 	protected function processLines() {
-		
 	}
-
+	
 	public function process_files() {
 		return 0;
 	}
-
+	
 	public function addDataRow($row) {
 		if (!isset($this->data['data'])) {
 			$this->data['data'] = array();
@@ -137,7 +136,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$this->data['data'][] = $row;
 		return true;
 	}
-
+	
 	/**
 	 * Remove row to process (see parent implementation)
 	 * since in realtime we add row without stamp (see addDataRow), need to remove by stamp in other logic
@@ -153,7 +152,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
 

@@ -23,15 +23,15 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	public function __construct($options) {
 		parent::__construct($options);
 	}
-
+	
 	protected function mapProcessorFields($processorDefinition) {
 		$identifier = $processorDefinition['processor']['identifier_field'];
 		if (empty($identifier) ||
-				(is_array($identifier) && (array_intersect(['source', 'field', 'file_field'], array_keys($identifier)) !== ['source', 'field', 'file_field']))) {
+			(is_array($identifier) && (array_intersect(['source', 'field', 'file_field'], array_keys($identifier)) !== ['source', 'field', 'file_field']))) {
 			Billrun_Factory::log("Missing definitions for file type " . $processorDefinition['file_type'], Zend_Log::DEBUG);
 			return false;
 		}
-
+		
 		$this->identifierField = is_array($identifier) ? $identifier : [
 			'source' => 'data',
 			'field' => 'invoice_id',
@@ -59,14 +59,14 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		$billData = $bill->current()->getRawData();
 		if (!empty($this->amountField)) {
 			//TODO : support multiple header/footer lines
-			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ? $this->{$this->amountField['source'] . 'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
+			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
 		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
 		$paymentParams['amount'] = $billAmount;
 		$paymentParams['dir'] = 'fc';
 		$paymentParams['aid'] = $billData['aid'];
 		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
-			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];
+			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
 			$amount = $billAmount;
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
@@ -101,9 +101,9 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 				$returned_payment->setExtraFields($customFields, array_keys($customFields));
 			}
 		}
-		$this->informationArray['transactions']['confirmed']++;
-		$this->informationArray['total_confirmed_amount'] += $paymentParams['amount'];
-		$message = "Payment was created successfully for " . $this->identifierField['field'] . ': ' . $identifier_val;
+        $this->informationArray['transactions']['confirmed']++;
+        $this->informationArray['total_confirmed_amount']+=$paymentParams['amount'];
+        $message = "Payment was created successfully for " . $this->identifierField['field'] . ': ' . $identifier_val;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->informationArray['info'][] = $message;
 	}
@@ -118,12 +118,12 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		}
 		return $this->bills->query($query)->cursor();
 	}
-
-	public function getIdentifierValue($row) {
-		return in_array($this->identifierField['source'], ['header', 'trailer']) ? $this->{$this->identifierField['source'] . 'Rows'}[0][$this->identifierField['file_field']] : $row[$this->identifierField['file_field']];
+	
+	public function getIdentifierValue($row){
+		return in_array($this->identifierField['source'], ['header', 'trailer']) ?  $this->{$this->identifierField['source'].'Rows'}[0][$this->identifierField['file_field']] : $row[$this->identifierField['file_field']];
 	}
-
-	public function getType() {
+	
+	public function getType () {
 		return static::$type;
 	}
 

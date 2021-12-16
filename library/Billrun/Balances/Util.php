@@ -19,7 +19,7 @@ class Billrun_Balances_Util {
 	 * @var mixed
 	 */
 	public static $DEFAULT_UPDATE_OPERATION = 0;
-
+	
 	/**
 	 * Get the operation value from an array of options
 	 * @param array $options - Array of options that should have the operation field,
@@ -29,18 +29,18 @@ class Billrun_Balances_Util {
 	 * array, "operation" by default
 	 * @return Billrun_Balances_Update_Operation - Matching operation.
 	 */
-	public static function getOperation($options, $operationOptions = array(), $operationKey = "operation") {
+	public static function getOperation($options, $operationOptions=array(), $operationKey="operation") {
 		$operationValue = self::getOperationName($options, $operationKey);
-
+		
 		// Check if class exists.
-		if (!class_exists($operationValue)) {
+		if(!class_exists($operationValue)) {
 			return null;
 		}
-
+		
 		// Allocate the class.
 		return new $operationValue($operationOptions);
 	}
-
+	
 	/**
 	 * Get the balance update operation name.
 	 * @param type $options
@@ -48,28 +48,28 @@ class Billrun_Balances_Util {
 	 * @return string
 	 */
 	protected function getOperationName($options, $operationKey) {
-		if (self::$DEFAULT_UPDATE_OPERATION === 0) {
+		if(self::$DEFAULT_UPDATE_OPERATION === 0) {
 			self::$DEFAULT_UPDATE_OPERATION = Billrun_Factory::config()->getConfigValue('balances.operation.default');
 		}
-
-		if (!isset($options[$operationKey])) {
+		
+		if(!isset($options[$operationKey])) {
 			return self::$DEFAULT_UPDATE_OPERATION;
 		}
-
+		
 		// Get the operation value.
 		$operation = $options[$operationKey];
-
+		
 		// Get the operation list.
 		$operationList = Billrun_Factory::config()->getConfigValue("balances.operation");
-
-		if (!isset($operationList[$operation])) {
+		
+		if(!isset($operationList[$operation])) {
 			// Return default.
 			return self::$DEFAULT_UPDATE_OPERATION;
 		}
-
+		
 		return $operationList[$operation];
 	}
-
+	
 	/**
 	 * Get the balance value rounded to a point.
 	 * @param array $balance - Balance record
@@ -117,9 +117,8 @@ class Billrun_Balances_Util {
 		$options = array(
 			'multiple' => true,
 		);
-
+		
 		$balances = Billrun_Factory::db()->balancesCollection();
 		return $balances->update($query, $values, $options);
 	}
-
 }

@@ -40,7 +40,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['history']) && is_array($input['history']) &&
-				isset($input['subscriber_info']['invoice']) && is_a($input['subscriber_info']['invoice'], 'Billrun_Cycle_Subscriber_Invoice');
+			   isset($input['subscriber_info']['invoice']) && is_a($input['subscriber_info']['invoice'], 'Billrun_Cycle_Subscriber_Invoice');
 	}
 
 	/**
@@ -77,7 +77,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		}
 		return "closed";
 	}
-
+	
 	/**
 	 * Get the sid of the subscriber.
 	 * @return int
@@ -92,10 +92,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	public function getPlanData() {
 		$data = array();
-		if ($this->plan) {
+		if($this->plan) {
 			$data['plan'] = $this->getPlan();
 		}
-		if ($this->nextPlan) {
+		if($this->nextPlan) {
 			$data['next_plan'] = $this->nextPlan;
 		}
 		$data['subscriber_status'] = $this->getStatus();
@@ -117,7 +117,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
 		//TODO add usage aggregation per subscriber here
 		// Write the results to the invoice
-		$this->invoice->addLines(array_merge($usageLines, $results));
+		$this->invoice->addLines(array_merge($usageLines,$results));
 		return $results;
 	}
 
@@ -134,23 +134,23 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			'sid' => $sid,
 			'billrun' => $this->cycleAggregator->getCycle()->key()
 		);
-
+		
 		// in case of expected invoice we might want to ignore usage lines
 		if ($this->cycleAggregator->ignoreCdrs) {
 			$query['type'] = 'credit';
 		}
-
+		
 		// in case of expected invoice for subscriber termintation we might want to prepone future installments
 		if ($this->cycleAggregator->isFakeCycle() && Billrun_Factory::config()->getConfigValue('billrun.installments.prepone_on_termination', false)) {
 			$installmentLines = $this->cycleAggregator->handleInstallmentsPrepone($this->cycleAggregator->getData());
 			$futureCharges = [];
-			foreach ($installmentLines as $line) {
+			foreach ($installmentLines as $line	) {
 				if ($line['sid'] == $sid) {
 					$futureCharges[] = $line;
 				}
 			}
 		}
-
+		
 		$requiredFields = array('aid' => 1, 'sid' => 1);
 		$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
 
@@ -167,19 +167,19 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		do {
 			$bufferCount += $addCount;
 			$cursor = $linesCol->query($query)->cursor()->fields($fields)
-							->sort($sort)->skip($bufferCount)->limit($limit)->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout', 14400000));
+					->sort($sort)->skip($bufferCount)->limit($limit)->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout',14400000));
 			foreach ($cursor as $line) {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-
+		
 		// Add future installments to cycle
-		if (!empty($futureCharges)) {
+		if(!empty($futureCharges) ) {
 			foreach ($futureCharges as $line) {
-				$ret[$line['stamp']] = $line->getRawData();
+				$ret[$line['stamp']] = 	$line->getRawData();
 			}
 		}
-
+		
 		Billrun_Factory::log('Finished querying for subscriber ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
 
 		return $ret;
@@ -193,7 +193,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @return type
 	 */
 	protected function generalAggregate($data, $generatorClassName) {
-		if (!$data) {
+		if(!$data) {
 			Billrun_Factory::log("generalAggregate received empty data!");
 			return array();
 		}
@@ -208,13 +208,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 
 	protected function constructRecords($data) {
-		$this->mongoPlans = $this->cycleAggregator->getPlans(null, $data['subscriber_info']);
+		$this->mongoPlans = $this->cycleAggregator->getPlans(null,$data['subscriber_info']);
 		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
 		$dataForAggration = $data['subscriber_info'];
 		$dataForAggration['plans'] = $constructedData['plans'];
 		$dataForAggration['services'] = $constructedData['services'];
 
-		if (isset($dataForAggration['next_plan'])) {
+		if(isset($dataForAggration['next_plan'])) {
 			$this->nextPlan = $dataForAggration['next_plan'];
 		}
 
@@ -233,14 +233,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->invoice->setData('sid', $data['sid']);
 		$this->invoice->setData('firstname', $data['first_name']);
 		$this->invoice->setData('lastname', $data['last_name']);
-		foreach (Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data', array()) as $dstField => $srcField) {
+		foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
 			// print_r($dstField);
 			// print_r($data[$dstField]);
 			// print_r($srcField);
 			// print_r($data[$srcField]);
-			if (is_array($srcField) && !empty($data[$dstField])) {
+			if(is_array($srcField) && !empty($data[$dstField])) {
 				$this->invoice->setData($dstField, $data[$dstField]);
-			} else if (!is_array($srcField) && !empty($data[$srcField])) {
+			} else if(!is_array($srcField) && !empty($data[$srcField])) {
 				$this->invoice->setData($dstField, $data[$srcField]);
 			}
 		}
@@ -257,17 +257,17 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		$services = Billrun_Util::getFieldVal($data["services"], array());
 		//Get services active at billing cycle date
-		$this->mongoServices = $this->cycleAggregator->getServices(null, $data);
+		$this->mongoServices = $this->cycleAggregator->getServices(null,$data);
 
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 
-		Billrun_Factory::dispatcher()->trigger('beforeConstructServices', array($this, $this->mongoServices, &$services, &$stumpLine));
+		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,$this->mongoServices,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
 			// Service name
 			$index = $arrService['name'];
-			if (!isset($this->mongoServices[$index])) {
-				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService, 1), Zend_Log::NOTICE);
+			if(!isset($this->mongoServices[$index])) {
+				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1), Zend_Log::NOTICE);
 				continue;
 			}
 
@@ -281,7 +281,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$this->records['services'][] = $serviceData;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterConstructServices', array($this, &$this->records['services'], &$cycle, $this->mongoServices));
+		Billrun_Factory::dispatcher()->trigger('afterConstructServices',array($this,&$this->records['services'],&$cycle,$this->mongoServices));
 	}
 
 	/**
@@ -291,7 +291,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function constructPlans($data) {
 		$this->records['plans'] = array();
 		$plans = Billrun_Util::getFieldVal($data['plans'], array());
-		if (empty($plans)) {
+		if(empty($plans)) {
 			$this->plan = "";
 			Billrun_Factory::log("Received no plans!");
 			return;
@@ -304,9 +304,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach ($plans as &$value) {
 			// Plan name
 			$index = $value['plan'];
-			if (!isset($this->mongoPlans[$index])) {
-				if (!empty($value['sid'])) {
-					Billrun_Factory::log("Ignoring inactive plan: " . print_r($value, 1));
+			if(!isset($this->mongoPlans[$index])) {
+				if(!empty($value['sid'])) {
+				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
 				}
 				continue;
 			}
@@ -317,7 +317,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$planData['cycle'] = $cycle;
 			if (Billrun_Utils_Plays::isPlaysInUse()) {
 				$planData['subscriber_fields'] = array('play' => isset($data['play']) ? $data['play'] : Billrun_Utils_Plays::getDefaultPlay()['name']);
-			}
+			} 
 			$planData['line_stump'] = $stumpLine;
 			$planData['deactivation_date'] = $data['deactivation_date'];
 			$this->records['plans'][] = $planData;
@@ -336,8 +336,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$timedArray = $this->buildSubAggregator($subscriberHistory, $cycleEndTime);
 
 		$filtered = array();
-		foreach ($timedArray as $plansAndServices) {
-			$filtered = array_merge_recursive($filtered, $plansAndServices);
+		foreach($timedArray as  $plansAndServices) {
+			$filtered = array_merge_recursive($filtered,$plansAndServices);
 		}
 
 		return $filtered;
@@ -355,13 +355,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$to = null;
 		$aggregatorData = array();
 		//sort plans history by date
-		usort($plans, function ($a, $b) {
-			return $a['to']->sec - $b['to']->sec;
-		});
+		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
 		// Go through the plans
 		foreach ($plans as $subPlan) {
 			// First iteration.
-			if ($name === null) {
+			if($name === null) {
 				$name = $subPlan['plan'];
 				$from = $subPlan['plan_activation']->sec;
 				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
@@ -369,7 +367,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$currName = $subPlan['plan'];
 			// If it is the same plan name, continue
-			if ($name == $currName && $from == $subPlan['plan_activation']->sec) {
+			if($name == $currName && $from == $subPlan['plan_activation']->sec) {
 				$to = empty($subPlan['plan_deactivation']) ? $subPlan['to']->sec : $subPlan['plan_deactivation']->sec;
 				continue;
 			}
@@ -384,9 +382,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$to = $subPlan['to']->sec;
 		}
 		// Add the last value.
-		$toAdd = array("plan" => $name, 'name' => $name, "start" => $from, "end" => $to);
+		$toAdd = array("plan" => $name,'name'=>$name, "start" => $from, "end" => $to);
 
-		if ($to > $endTime) {
+		if($to > $endTime) {
 			$to = $endTime;
 			Billrun_Factory::log("buildPlansSubAggregator : Taking the end time! " . $endTime);
 		}
@@ -401,63 +399,63 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @return type
 	 */
 	protected function buildServicesSubAggregator($subscriber, $previousServices, $endTime) {
-		Billrun_Factory::dispatcher()->trigger('beforeBuildServicesSubAggregator', array($this, &$subscriber, &$previousServices, &$endTime));
+		Billrun_Factory::dispatcher()->trigger('beforeBuildServicesSubAggregator',array($this,&$subscriber,&$previousServices,&$endTime));
 		$currServices = array();
 		$retServices = &$previousServices;
 		$sto = $subscriber['sto'];
 		$sfrom = $subscriber['sfrom'];
-		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec / 1000000) ?: 0;
-		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec / 1000000) ?: PHP_INT_MAX;
+		$activationDate = @$subscriber['activation_date']->sec + (@$subscriber['activation_date']->usec/ 1000000) ?: 0;
+		$deactivationDate = @$subscriber['deactivation_date']->sec + (@$subscriber['deactivation_date']->usec/ 1000000) ?: PHP_INT_MAX;
 
-		if (isset($subscriber['services']) && is_array($subscriber['services'])) {
-			foreach ($subscriber['services'] as $tmpService) {
-				$serviceData = array('name' => $tmpService['name'],
-					'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'], 1),
-					'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'], null),
-					'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
-					'start' => max($tmpService['from']->sec + ($tmpService['from']->usec / 1000000), $activationDate),
-					'end' => min($tmpService['to']->sec + ($tmpService['to']->usec / 1000000), $endTime, $deactivationDate));
-				if ($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData, array('name', 'start', 'quantity', 'service_id'));
+		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
+			foreach($subscriber['services'] as  $tmpService) {
+				 $serviceData = array(  'name' => $tmpService['name'],
+										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
+										'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
+										'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
+										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000), $endTime , $deactivationDate) );
+				 if($serviceData['start'] !== $serviceData['end']) {
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
 					$currServices[$stamp] = $serviceData;
-				}
+				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function ($a, $b) {
-				$aStamp = Billrun_Util::generateArrayStamp($a, array('name', 'start', 'quantity', 'service_id'));
-				$bStamp = Billrun_Util::generateArrayStamp($b, array('name', 'start', 'quantity', 'service_id'));
-				return strcmp($aStamp, $bStamp);
+			$serviceCompare = function  ($a, $b)  {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity','service_id'));
+				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity','service_id'));
+				return strcmp($aStamp , $bStamp);
 			};
 
-			$removedServices = array_udiff($previousServices, $currServices, $serviceCompare);
-			foreach ($removedServices as $stamp => $removed) {
-				if ($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
+			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
+			foreach($removedServices as $stamp => $removed) {
+				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
 					$retServices[$stamp]['end'] = $sto;
-				} elseif ($sfrom < $removed['end']) {
+				} elseif ( $sfrom < $removed['end'] ) {
 					$retServices[$stamp]['end'] = $sfrom;
 				}
 			}
 			$retServices = array_merge($retServices, $currServices);
 		}
-		Billrun_Factory::dispatcher()->trigger('afterBuildServicesSubAggregator', array($this, &$retServices));
+		Billrun_Factory::dispatcher()->trigger('afterBuildServicesSubAggregator',array($this,&$retServices));
 		return $retServices;
 	}
 
 	protected function getServicesIncludedInPlan($plansData) {
 
 		$includedServices = array();
-		if (!empty($plansData['plans'])) {
-			foreach ($plansData['plans'] as $planData) {
-				if (!empty($this->mongoPlans[$planData['plan']]['include']['services'])) {
-					foreach ($this->mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
+		if(!empty($plansData['plans']) ) {
+			foreach($plansData['plans'] as $planData) {
+				if(!empty($this->mongoPlans[$planData['plan']]['include']['services'])) {
+					foreach($this->mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
 						$includedServices[] = array(
-							'name' => $srvName,
-							'quantity' => 1,
-							'plan' => $planData['plan'],
-							'start' => $planData['start'],
-							'end' => $planData['end'],
-							'included' => 1,
-						);
+												'name'=> $srvName,
+												'quantity' => 1,
+												'plan' => $planData['plan'],
+												'start' => $planData['start'],
+												'end' => $planData['end'],
+												'included' => 1,
+											);
 					}
 				}
 			}
@@ -482,18 +480,20 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$subend = max($subscriber['sto'], $subend);
 			// Get the services for the subscriber.
 			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
-			if (!$this->hasPlans($subscriber)) {
+			if(!$this->hasPlans($subscriber)) {
 				continue;
 			}
 			// Get the plans
-			$subscriberPlans = array_merge($subscriberPlans, Billrun_Util::getFieldVal($subscriber['plans'], array()));
+			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
+
+
 		}
 
-		foreach ($services as $service) {
-			//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
-			$service['end'] = min($subend, $service['end']);
-			$service['start'] = max($subscriber['activation_date']->sec, $service['start']);
-			$servicesAggregatorData[$service['end']][] = $service;
+		foreach($services as $service) {
+				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
+				$service['end'] =  min($subend, $service['end']);
+				$service['start'] =  max($subscriber['activation_date']->sec, $service['start']);
+				$servicesAggregatorData[$service['end']][] = $service;
 		}
 
 		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);
@@ -504,14 +504,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		}
 
 		//Added services  that are included in the plan
-		foreach ($planAggregatorData as $key => $plansData) {
+		foreach($planAggregatorData as $key =>$plansData) {
 			$planAggregatorData[$key]['services'] = array_merge(
-					$this->getServicesIncludedInPlan($plansData),
-					Billrun_Util::getFieldVal($planAggregatorData[$key]['services'], array())
-			);
+														$this->getServicesIncludedInPlan($plansData),
+														Billrun_Util::getFieldVal($planAggregatorData[$key]['services'],array())
+													);
 		}
 
-		ksort($planAggregatorData, SORT_NUMERIC);
+		ksort($planAggregatorData,SORT_NUMERIC);
 
 		return array_reverse($planAggregatorData);
 	}
@@ -521,10 +521,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$to = $subscriber['to']->sec;
 			$from = $subscriber['from']->sec;
 		} else {
-			$to = $subscriber['to'];
-			$from = $subscriber['from'];
+		$to = $subscriber['to'];
+		$from = $subscriber['from'];
+
 		}
-		if ($to > $endTime) {
+		if($to > $endTime) {
 			$to = $endTime;
 			Billrun_Factory::log("Taking the end time! " . $endTime);
 		}
@@ -545,5 +546,4 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function hasPlans($subscription) {
 		return !empty($subscription['plans']);
 	}
-
 }

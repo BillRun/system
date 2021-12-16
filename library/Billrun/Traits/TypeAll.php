@@ -11,51 +11,51 @@
  *
  */
 trait Billrun_Traits_TypeAll {
-
+	
 	/**
 	 * An array that holds all the file types for this instance.
 	 */
 	protected $allTypes;
-
+	
 	/**
 	 * Handle input type "all"
 	 * @param array $options Array of input options.
 	 */
 	protected function handleTypeAll($options) {
 		// Validate the input options.
-		if (!isset($options['type']) || (strtolower($options['type']) != "all")) {
+		if(!isset($options['type']) || (strtolower($options['type']) != "all")) {
 			// Nothing to do.
 			return false;
 		}
-
+		
 		$this->allTypes = $this->getAllTypes();
-
+		
 		$cmd = $this->getCMD();
-
+		
 		// TODO: UNCOMMENT THIS TO USE FORK INSTEAD OF SYSTEM CALL		
 //		$tempOptions = $options;
 //		$handleFunction = $this->getHandleFunction();
 
 		foreach ($this->allTypes as $type => $timeout) {
-			if (!$this->isTimeoutPassed($type, $timeout)) {
+			if(!$this->isTimeoutPassed($type, $timeout)) {
 				Billrun_Factory::log("Skipping " . $type . " " . $this->getNameType());
 				continue;
 			}
-
+				
 			$tempCmd = $cmd . " " . $type;
 			Billrun_Factory::log('TypeAll invokes command: ' . $tempCmd, Zend_Log::DEBUG);
 			Billrun_Util::forkProcessCli($tempCmd);
-
+			
 			// TODO: UNCOMMENT THIS TO USE FORK INSTEAD OF SYSTEM CALL
 //			$tempOptions['type'] = $type;
 //			pcntl_fork();
 //			$this->$handleFunction($tempOptions);
 //			exit();
 		}
-
+		
 		return true;
 	}
-
+	
 	/**
 	 * Check if the timeout for this type had passed.
 	 * @param type $type
@@ -75,20 +75,20 @@ trait Billrun_Traits_TypeAll {
 
 		// Check if the buffer timeout has passed
 		$lastRun = $cache->get($key, $prefix);
-		if ($lastRun) {
+		if($lastRun) {
 			$timePassed = time() - $lastRun;
 			$bufferTimeout = strtotime($timeout);
-			if ($timePassed < $bufferTimeout) {
+			if($timePassed < $bufferTimeout) {
 				return false;
 			}
 		}
 
 		// Update last run
 		$cache->set($key, time(), $prefix);
-
+			
 		return true;
 	}
-
+	
 	/**
 	 * Get all the file types for this instance.
 	 * @return array of file types.
@@ -98,16 +98,16 @@ trait Billrun_Traits_TypeAll {
 		$typeArray = array();
 		$name = $this->getNameType();
 		foreach ($rawArray as $current) {
-			if (!isset($current[$name]) || !Billrun_Config::isFileTypeConfigEnabled($current)) {
+			if(!isset($current[$name]) || !Billrun_Config::isFileTypeConfigEnabled($current)) {
 				continue;
 			}
 			$typeArray[$current['file_type']] = $current[$name]['buffer_timeout'] ?? '';
 		}
 		return $typeArray;
 	}
-
+	
 	protected abstract function getNameType();
-
+	
 	protected abstract function getCMD();
 
 	/**

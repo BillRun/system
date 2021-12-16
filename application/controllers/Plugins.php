@@ -37,7 +37,7 @@ class PluginsController extends Yaf_Controller_Abstract {
 			$this->responseNotFound();
 		}
 	}
-
+	
 	/**
 	 * Was the API triggered by one of the plugins
 	 *
@@ -53,14 +53,14 @@ class PluginsController extends Yaf_Controller_Abstract {
 
 		return false;
 	}
-
+	
 	/**
 	 * Handles response in case the API was not found
 	 *
 	 * @param  int $statusCode
 	 * @param  string $contentType
 	 * @return void
-	 */
+	 */	
 	protected function responseNotFound($statusCode = 404, $contentType = 'application/json') {
 		$request = $this->getRequest();
 		$response = $this->getResponse();

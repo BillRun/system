@@ -14,7 +14,7 @@
  * @since       5.8
  */
 class CronAction extends Action_Base {
-
+	
 	/**
 	 * method to execute the cron controller
 	 * it's called automatically by the cli main controller
@@ -30,5 +30,4 @@ class CronAction extends Action_Base {
 
 		$this->forward('Cron', $options['type']);
 	}
-
 }

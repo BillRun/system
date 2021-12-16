@@ -15,7 +15,7 @@
 abstract class Billrun_Discount {
 
 	use Billrun_Traits_ForeignFields;
-
+	
 	/**
 	 *
 	 * @var array
@@ -35,6 +35,7 @@ abstract class Billrun_Discount {
 	}
 
 	abstract public function checkEligibility($accountBillrun);
+
 
 	/**
 	 * Generate all eligible discount CDRs for a given account.
@@ -61,11 +62,11 @@ abstract class Billrun_Discount {
 				$modifier = round($modifier - $lineModifier, 3);
 				$creationTime = (!empty($accountInvoice) ? static::getBillrunDate($accountInvoice->getBillrunKey()) : time() );
 
-				$discountLine = $this->generateCDR($lineModifier, $creationTime, $orgModifier,
-						$eligibleRow, $accountInvoice->getBillrunKey(), $quantity);
+				$discountLine = $this->generateCDR($lineModifier, $creationTime, $orgModifier, 
+													  $eligibleRow, $accountInvoice->getBillrunKey(), $quantity);
 				//Add foreign fields to the discount line
 				$discountLine = $this->addForeginFields($discountLine, $eligibleData, $accountInvoice);
-
+				
 				$discountLines[] = $discountLine;
 			}
 		}
@@ -98,7 +99,7 @@ abstract class Billrun_Discount {
 			'source' => 'billrun',
 			'billrun' => $billrunKey,
 			'usagev' => $quantity,
-			'is_percent' => !$this->isMonetray(),
+					'is_percent' => !$this->isMonetray(),
 		);
 		foreach ($this->getOptionalCDRFields() as $field) {
 			if (isset($eligibleRow[$field])) {
@@ -132,10 +133,10 @@ abstract class Billrun_Discount {
 
 		return $discountLine;
 	}
-
-	protected function addForeginFields($discountLine, $eligibleData, $accountInvoice) {
-		$addedFields = $this->getForeignFields(array('billrun' => $accountInvoice), $discountLine, true);
-		return array_merge($discountLine, $addedFields);
+	
+	protected function addForeginFields($discountLine,$eligibleData, $accountInvoice) {
+		$addedFields = $this->getForeignFields(array('billrun'=> $accountInvoice), $discountLine, true);
+		return array_merge($discountLine,$addedFields);
 	}
 
 	/**
@@ -162,9 +163,9 @@ abstract class Billrun_Discount {
 		$charge = $totalPrice = 0;
 		$addedPricingData = [];
 		//discount each of the subject  included in the discount
-		foreach (($totals['rates'] ?: []) as $key => $ratePrice) {
-			if (empty($discount['discount'][$key]) && !$this->isApplyToAnySubject()) {
-				Billrun_Factory::log('discount generated invoice totals that  arer not  in the discount subject', Zend_Log::WARN);
+		foreach (($totals['rates'] ?: []) as $key => $ratePrice ) {
+			if( empty($discount['discount'][$key]) && !$this->isApplyToAnySubject() ) {
+				Billrun_Factory::log('discount generated invoice totals that  arer not  in the discount subject',Zend_Log::WARN);
 				continue;
 			}
 			$val = $this->isApplyToAnySubject() ? $discount['discount']['any_subject']['value'] - $totalPrice : $discount['discount'][$key]['value'];
@@ -173,57 +174,53 @@ abstract class Billrun_Discount {
 			if ($this->isMonetray()) {
 				$val *= $usagev;
 				$callback = array($this, 'calculatePriceEuro');
-			} else {
+			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$simplePrice = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$pricingData = $this->priceManipulation($simplePrice, $val, $key, $discountLimit, $totals);
+			$pricingData = $this->priceManipulation($simplePrice, $val, $key ,$discountLimit, $totals);
 			$addedPricingData[] = $pricingData;
 			$price = $pricingData['price'];
 			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
 			$taxationInformation[] = $taxationInfo;
-			$totalPrice += $this->repriceForUpfront($price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
+			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val, $ratePrice);
 		}
 		//make sure that the  discount is not lees then it  limit
 		if (!empty($totalPrice)) {
 			$charge = $totalPrice > 0 ? $totalPrice : max($totalPrice, $discountLimit);
 		}
 
-		return array('price' => $charge, 'tax_info' => $taxationInformation, 'discount_pricing_data' => $addedPricingData);
+		return array('price' => $charge, 'tax_info' => $taxationInformation,'discount_pricing_data'=> $addedPricingData);
 	}
 
 	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
 		$rate = FALSE;
 		$retTaxInfo = array();
 		//Get the tax rate by the subject key
-		$collMapping = array('plan' => array('coll' => 'plans', 'key_field' => 'name'),
-			'service' => array('coll' => 'services', 'key_field' => 'name'),
-			'usage' => array('coll' => 'rates', 'key_field' => 'key'));
+		$collMapping = array(	'plan' => array('coll' => 'plans', 'key_field' => 'name'),
+								'service' => array('coll' => 'services', 'key_field' => 'name'),
+								'usage' => array('coll' => 'rates', 'key_field' => 'key')	);
 
 		foreach ($collMapping as $subjectType => $mapping) {
 			//is the mappling collection exist in the discount subject or the discount apply to all subjects?
-			if (empty($this->discountData['discount_subject'][$subjectType]) && !$this->isApplyToAnySubject()) {
-				continue;
-			}
+			if( empty($this->discountData['discount_subject'][$subjectType]) && !$this->isApplyToAnySubject() ) { continue; }
 			//is identifying key exists in discount subjects or the discount apply to all subjects?
-			if (!$this->isApplyToAnySubject() && empty($discount['discount'][$identifingKey])) {
-				continue;
-			}
+			if( !$this->isApplyToAnySubject() && empty($discount['discount'][$identifingKey]) ) { continue; }
 
 			$rateColl = Billrun_Factory::db()->getCollection($mapping['coll']);
 			$query = array_merge(array($mapping['key_field'] => $identifingKey), Billrun_Utils_Mongo::getDateBoundQuery($discount['urt']->sec));
 			//TODO this should use a cache! who programmed this huging function!.
 			$tmpRate = $rateColl->query($query)->cursor()->limit(1)->current();
-			if ($tmpRate && !$tmpRate->isEmpty()) {
+			if($tmpRate && !$tmpRate->isEmpty()) {
 				$rate = $tmpRate;
 				break;
 			}
 		}
 
-		if ($rate) {
-			$retTaxInfo = array('tax_rate' => $rate->createRef($rateColl), 'price' => $price);
+		if($rate) {
+			$retTaxInfo = array('tax_rate' => $rate->createRef($rateColl),'price' => $price);
 		} else {
-			Billrun_Factory::log("Cloudn't find taxation rate for discount {$discount['key']} for discount subject {$identifingKey}.", Zend_Log::ERR);
+			Billrun_Factory::log("Cloudn't find taxation rate for discount {$discount['key']} for discount subject {$identifingKey}.",Zend_Log::ERR);
 		}
 
 		return $retTaxInfo;
@@ -234,7 +231,7 @@ abstract class Billrun_Discount {
 	}
 
 	public function getRateCategoryKeys($totalsSections = array()) {
-		$filteredSections = array_filter($totalsSections, function ($value) {
+		$filteredSections = array_filter($totalsSections, function($value) {
 			return !empty($value);
 		});
 		$intersected = empty($filteredSections) ? $this->discountableSections : array_intersect_key($this->discountableSections, $filteredSections);
@@ -268,23 +265,23 @@ abstract class Billrun_Discount {
 
 		$discountLeft = $total + $value;
 		return $value > $discountLeft ? 0 : //if the totals was negative before the discount application no discount needed.
-				max((($discountLeft < 0 ) ? $value - $discountLeft : $value), $limit);
+			max((($discountLeft < 0 ) ? $value - $discountLeft : $value), $limit);
 	}
 
 	/**
 	 * audjust price for terminated discounts that have upfront subjects.
 	 * @return float with the new price taking the upfront subject into account.
 	 */
-	protected function repriceForUpfront($price, $rateRef, $discount, $invoice, $callback, $discountValue, $currentCharge) {
+	protected function repriceForUpfront( $price, $rateRef, $discount, $invoice, $callback, $discountValue, $currentCharge) {
 		$adjustAmount = 0;
 		$previousBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($invoice->getBillrunKey());
-		$entityId = empty($discount['sid']) ? $discount['aid'] : $discount['sid'];
-		$entityType = empty($discount['sid']) ? 'aid' : 'sid';
+		$entityId = empty($discount['sid']) ? $discount['aid'] : $discount['sid'] ;
+		$entityType =  empty($discount['sid']) ? 'aid' : 'sid';
 		//discount has ended in the current billing cycle and was given in the last billrun.
-		if ($price == 0 && $currentCharge < 0
-				//!empty($discount['end']) && $discount['end']->sec < static::getBillrunDate($billrun->getBillrunKey()) 
-				&& $this->countReceivedDiscountsOfKey($previousBillrunKey, $discount['key'], $entityId, $entityType)) {
-
+		if( $price == 0 && $currentCharge < 0
+			//!empty($discount['end']) && $discount['end']->sec < static::getBillrunDate($billrun->getBillrunKey()) 
+			&& $this->countReceivedDiscountsOfKey($previousBillrunKey, $discount['key'], $entityId, $entityType)) {
+			
 			$rate = Billrun_Factory::db()->getByDBRef($rateRef);
 			//If the subject of the discount was upfront then charge 
 			if ($rate && !empty($rate['upfront']) && $rate = $rate->getRawData()) {
@@ -301,6 +298,7 @@ abstract class Billrun_Discount {
 		}
 		return $price + $adjustAmount;
 	}
+
 
 	protected function adjustDiscountDuration($invoice, &$multiplier, $subscriber = FALSE) {
 		$billrunStartDate = Billrun_Billingcycle::getStartTime($invoice['billrun_key']);
@@ -401,20 +399,20 @@ abstract class Billrun_Discount {
 	abstract public function getInvoiceTotals($billrunObj, $cdr);
 
 	abstract protected function getOptionalCDRFields();
-
+	
 	abstract public function getEntityId($cdr);
 
 	public function getId() {
 		return $this->discountData['key'];
 	}
-
+      
 	//=================================== Protected ======================================
-
-	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit, $discount) {
+	
+	protected function priceManipulation($simpleDiscountPrice, $subjectValue, $subjectKey, $discountLimit ,$discount ) {
 		return [
-			'price' => max($min(0, simpleDiscountPrice), $discountLimit),
-			'pricing_breakdown' => [$subjectKey => [['base_price' => $simpleDiscountPrice]]]
-		];
+				'price' => max($min(0,simpleDiscountPrice),$discountLimit) ,
+				'pricing_breakdown' => [$subjectKey => [['base_price' => $simpleDiscountPrice]]]
+				];
 	}
 
 	/**
@@ -426,19 +424,19 @@ abstract class Billrun_Discount {
 	protected function getTotalsFromBillrun($billrun, $entityId) {
 		return $billrun->getTotals($entityId);
 	}
-
+	
 	protected function isApplyToAnySubject() {
 		return !empty($this->discountData['any_subject']);
 	}
-
+	
 	protected function isMonetray() {
 		return $this->discountData['discount_type'] == 'monetary';
 	}
-
+	
 	protected function getLimit() {
-		return empty($this->discountData['limit']) ? -(PHP_INT_MAX - 1) : $this->discountData['limit'];
+		return empty($this->discountData['limit']) ? -(PHP_INT_MAX-1) : $this->discountData['limit'];
 	}
-
+	
 	static public function remove($stamps) {
 		$query = array(
 			'stamp' => array(

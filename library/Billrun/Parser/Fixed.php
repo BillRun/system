@@ -30,14 +30,14 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 		}
 		foreach ($this->structure as $struct) {
 			$key = $struct['name'];
-			$length = isset($struct['padding']['length']) ? $struct['padding']['length'] : $struct['width'];
+			$length = isset($struct['padding']['length'])? $struct['padding']['length'] : $struct['width'];
 			$ar_line[$key] = trim(substr($line, $pointer, $length), "\n\r ");
 			$pointer += $length;
 		}
 		return $ar_line;
 	}
 
-	/**
+		/**
 	 * 
 	 * @param resource $fileHandler
 	 * @since    5.0
@@ -45,5 +45,5 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 	public function setFileHandler($fileHandler) {
 		$this->fileHandler = $fileHandler;
 	}
-
+	
 }

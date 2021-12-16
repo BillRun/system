@@ -15,9 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class StatisticsAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	protected $model;
 
 	protected function initializeModel() {

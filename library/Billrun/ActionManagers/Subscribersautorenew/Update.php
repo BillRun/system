@@ -172,9 +172,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$toExtended = strtotime("23:59:59", $to->sec);
-
+		
 		$jsonUpdateData['to'] = $set['to'] = new Mongodloid_Date($toExtended);
-
+		
 		$this->populateOperation($jsonUpdateData, $set);
 
 		$set['done'] = 0;

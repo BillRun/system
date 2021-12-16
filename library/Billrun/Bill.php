@@ -39,7 +39,7 @@ abstract class Billrun_Bill {
 	protected $optionalFields = array();
 
 	const precision = 0.00001;
-
+	
 	/**
 	 * 
 	 * @param type $options
@@ -170,8 +170,9 @@ abstract class Billrun_Bill {
 				'aid' => 1,
 				'waiting_for_confirmation' => 1,
 				'due' => 1,
-				'waiting_for_confirmation_total' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due', 'else' => 0)),
-				'pending_total' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due', 'else' => 0)),
+				'waiting_for_confirmation_total' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+				'pending_total' => array('$cond' => array('if' => array('$eq' => array('$pending', true)), 'then' => '$due' , 'else' => 0)),
+
 			),
 		);
 		$group = array(
@@ -188,13 +189,13 @@ abstract class Billrun_Bill {
 				),
 			),
 		);
-
+		
 		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
 				'aid' => '$_id',
 				'total' => 1,
-				'waiting_for_confirmation_total' => 1,
+				'waiting_for_confirmation_total' =>  1,
 				'pending_total' => 1
 			),
 		);
@@ -208,21 +209,21 @@ abstract class Billrun_Bill {
 		if ($having['$match']) {
 			$results = $billsColl->aggregate($query, $project1, $group, $project2, $having);
 		} else {
-			$results = $billsColl->aggregate($query, $project1, $group, $project2);
+			$results = $billsColl->aggregate($query,$project1, $group, $project2);
 		}
-
+		
 		$results = iterator_to_array($results);
 		if (!$notFormatted) {
-			$results = array_map(function ($ele) {
+			$results = array_map(function($ele) {
 				$ele['total'] = Billrun_Util::getChargableAmount($ele['total']);
 				$ele['waiting_for_confirmation_total'] = Billrun_Util::getChargableAmount($ele['waiting_for_confirmation_total']);
 				$ele['pending_total'] = Billrun_Util::getChargableAmount($ele['pending_total']);
 				return $ele;
 			}, $results);
 		}
-		return array_combine(array_map(function ($ele) {
-					return $ele['aid'];
-				}, $results), $results);
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
 	}
 
 	/**
@@ -237,13 +238,13 @@ abstract class Billrun_Bill {
 			$relative_date = new Mongodloid_Date(strtotime($date));
 			$query['$or'] = array(
 				array('charge.not_before' => array('$exists' => true, '$lte' => $relative_date)),
-				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true, '$lte' => $relative_date)),
+				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => true , '$lte' => $relative_date)),
 				array('charge.not_before' => array('$exists' => false), 'urt' => array('$exists' => false))
 			);
 		}
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
-			$total = current($results)['total'];
+			$total =  current($results)['total'];
 			$totalWaiting = current($results)['waiting_for_confirmation_total'];
 			$totalPending = abs(current($results)['pending_total']);
 		} else if ($notFormatted) {
@@ -312,7 +313,7 @@ abstract class Billrun_Bill {
 			}
 		}
 	}
-
+		
 	protected function updateLeftToPay() {
 		if ($this->getDue() > 0 && ($this->getBillMethod() != 'denial')) {
 			$this->data['left_to_pay'] = $this->getAmount();
@@ -387,16 +388,16 @@ abstract class Billrun_Bill {
 	public function detachPaidBills() {
 		foreach ($this->getPaidBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$billObj->detachPayingBill($this->getType(), $this->getId())->save();
+				$billObj->detachPayingBill($this->getType(), $this->getId())->save();
+			}
 		}
-	}
-
+	
 	public function detachPayingBills() {
 		foreach ($this->getPaidByBills() as $bill) {
 			$billObj = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$billObj->detachPaidBill($this->getType(), $this->getId())->save();
+				$billObj->detachPaidBill($this->getType(), $this->getId())->save();
+			}
 		}
-	}
 
 	public function getType() {
 		return $this->type;
@@ -418,22 +419,22 @@ abstract class Billrun_Bill {
 			$this->data['total_paid'] = $amount;
 			$this->data['left_to_pay'] = round($this->getLeftToPay(), 2);
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			if (is_null($status)) {
+			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
 			} else {
 				$this->data['paid'] = $this->calcPaidStatus($billId, $status, $billType);
 			}
-		} else if ($this->getDue() < 0) {
+		} else if ($this->getDue() < 0){
 			$amount = 0;
 			foreach (Billrun_Util::getIn($this->data, 'pays', []) as $relatedBill) {
 				$amount += floatval($relatedBill['amount']);
 			}
-			$this->data['left'] = round($this->data['amount'] - $amount, 2);
+			$this->data['left'] = round($this->data['amount'] - $amount, 2);				
 		}
 		$this->setPendingCoveringAmount();
 		return $this;
 	}
-
+	
 	/**
 	 * 
 	 * @param int $id
@@ -487,7 +488,7 @@ abstract class Billrun_Bill {
 		$this->setPendingCoveringAmount();
 		return $this;
 	}
-
+	
 	public function detachPaidBill($billType, $id) {
 		$pays = $this->getPaidBills();
 		$index = Billrun_Bill::findRelatedBill($pays, $billType, $id);
@@ -505,7 +506,7 @@ abstract class Billrun_Bill {
 			$this->recalculatePaymentFields($billId, $status, $billType);
 		}
 	}
-
+	
 	protected function updatePays($pays, $billId = null) {
 		if ($this->getDue() < 0) {
 			$this->data['pays'] = $pays;
@@ -515,7 +516,7 @@ abstract class Billrun_Bill {
 
 	public function attachPaidBill($billType, $billId, $amount) {
 		$paymentRawData = $this->data->getRawData();
-		if (!isset($paymentRawData['pays'])) {
+		if(!isset($paymentRawData['pays'])){
 			$paymentRawData['pays'] = [];
 		}
 		$relatedBillId = Billrun_Bill::findRelatedBill($paymentRawData['pays'], $billType, $billId);
@@ -570,11 +571,11 @@ abstract class Billrun_Bill {
 		if (!is_null($subject_to) && !empty($subject_to)) {
 			$aids = $subject_to;
 		}
-
-
+		
+		
 		if (!empty($aids)) {
 			$aidsQuery = array('aid' => array('$in' => $aids));
-		} else if (!empty($exempted)) {
+		} else if (!empty($exempted)){
 			$aidsQuery = array('aid' => array('$nin' => $aids));
 		} else {
 			$aidsQuery = array();
@@ -620,14 +621,14 @@ abstract class Billrun_Bill {
 	public function isPaid() {
 		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
 	}
-
+	
 	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
 		if (in_array($method, array('automatic', 'cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit', 'installment_agreement', 'merge_installments'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
-				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
+				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);			
 				if (in_array($dir, array('fc', 'tc')) || is_null($dir)) { // attach invoices to payments and vice versa
 					if (!empty($rawPayment['pays'])) {
 						if (!empty($rawPayment['pays']['inv'])) {
@@ -705,7 +706,7 @@ abstract class Billrun_Bill {
 						}
 						if (!empty($rawPayment['paid_by']['rec'])) {
 							$paidBy = $rawPayment['paid_by']['rec'];
-							$invoices = Billrun_Bill_Payment::queryPayments(array('aid' => $aid, 'txid' => array('$in' => array_keys($paidBy))));
+							$invoices =  Billrun_Bill_Payment::queryPayments(array('aid' => $aid, 'txid' => array('$in' => array_keys($paidBy))));
 							if (count($invoices) != count($paidBy)) {
 								throw new Exception('Unknown payments for account ' . $aid);
 							}
@@ -723,7 +724,7 @@ abstract class Billrun_Bill {
 									throw new Exception('Payment ' . $invoiceObj->getId() . ' Credit was exhausted when paying bills');
 								}
 								$updateBills['rec'][$invoiceObj->getId()] = $invoiceObj;
-							}
+							}	
 						}
 					} else if ($rawPayment['dir'] == 'fc') {
 						$leftToSpare = floatval($rawPayment['amount']);
@@ -810,22 +811,22 @@ abstract class Billrun_Bill {
 					}
 					if ($payment->getDir() == 'fc') {
 						foreach ($payment->getPaidBills() as $bill) {
-							if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-								$payment->setPending(true);
-							}
-							if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
-								$payment->setPending(false);
-							}
+								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+									$payment->setPending(true);
+								}
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+									$payment->setPending(false);
+								}
 							$updateBills[$bill['type']][$bill['id']]->attachPayingBill($payment, $bill['amount'], empty($responsesFromGateway[$transactionId]['stage']) ? 'Completed' : $responsesFromGateway[$transactionId]['stage'])->save();
 						}
 					} else if ($payment->getDir() == 'tc') {
 						foreach ($payment->getPaidByBills() as $bill) {
-							if (isset($options['file_based_charge']) && $options['file_based_charge']) {
-								$payment->setPending(true);
-							}
-							if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
-								$payment->setPending(false);
-							}
+								if (isset($options['file_based_charge']) && $options['file_based_charge']) {
+									$payment->setPending(true);
+								}
+								if (isset($responsesFromGateway[$transactionId]) && $responsesFromGateway[$transactionId]['stage'] != 'Pending') {
+									$payment->setPending(false);
+								}
 							$updateBills[$bill['type']][$bill['id']]->attachPaidBill($payment->getType(), $payment->getId(), $bill['amount'])->save();
 						}
 					} else {
@@ -860,7 +861,7 @@ abstract class Billrun_Bill {
 	}
 
 	protected function calcPaidStatus($billId = null, $status = null, $billType = null) {
-		if (is_null($billId) || is_null($status)) {
+		if (is_null($billId) || is_null($status)){
 			return;
 		}
 		switch ($status) {
@@ -874,8 +875,9 @@ abstract class Billrun_Bill {
 				if (count($pending)) {
 					$this->removeFromWaitingPayments($billId, $billType);
 					$result = count($this->data['waiting_payments']) ? '2' : ($this->isPaid() ? '1' : '0');
-				} else {
-					$result = $this->isPaid() ? '1' : '0';
+				}
+				else {
+					$result = $this->isPaid() ? '1' : '0'; 
 				}
 				break;
 
@@ -886,10 +888,10 @@ abstract class Billrun_Bill {
 				$result = '0';
 				break;
 		}
-
+		
 		return $result;
 	}
-
+	
 	protected function addToWaitingPayments($billId, $billType) {
 		if ($billType == 'inv') {
 			return;
@@ -898,7 +900,7 @@ abstract class Billrun_Bill {
 		array_push($waiting_payments, $billId);
 		$this->data['waiting_payments'] = array_unique($waiting_payments);
 	}
-
+	
 	protected function setPendingLinkedBills($billType, $billId) {
 		$paidBy = $this->getPaidByBills();
 		$index = Billrun_Bill::findRelatedBill($paidBy, $billType, $billId);
@@ -930,7 +932,7 @@ abstract class Billrun_Bill {
 			}
 		}
 	}
-
+	
 	/**
 	 * This method assumes paid_by / pays field are already updated with the correct pending status
 	 */
@@ -973,11 +975,11 @@ abstract class Billrun_Bill {
 		$this->updatePaidBy($paidBy, $billId, $status, $billType);
 		return $this;
 	}
-
+	
 	public function isPendingPayment() {
 		return (isset($this->data['pending']) && $this->data['pending']);
 	}
-
+	
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
@@ -988,8 +990,8 @@ abstract class Billrun_Bill {
 			);
 		}
 		$match['$match']['$or'] = array(
-			array('charge.not_before' => array('$exists' => false)),
-			array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
+				array('charge.not_before' => array('$exists' => false)),
+				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
 		);
 		$pipelines[] = $match;
 		$pipelines[] = array(
@@ -1004,7 +1006,7 @@ abstract class Billrun_Bill {
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
-
+		
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
@@ -1021,8 +1023,8 @@ abstract class Billrun_Bill {
 				'firstname' => 1,
 				'bill_unit' => 1,
 				'bank_name' => 1,
-				'due_date' => 1,
-				'charge.not_before' => 1,
+				'due_date'=> 1,
+				'charge.not_before'=> 1,
 				'source' => 1,
 				'currency' => 1,
 				'invoices' => 1,
@@ -1034,7 +1036,7 @@ abstract class Billrun_Bill {
 				'unique_id' => 1,
 			),
 		);
-
+		
 		$pipelines[] = array(
 			'$match' => array(
 				'$or' => array(
@@ -1044,79 +1046,77 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
-
+		
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
 	}
 
 	protected static function getGroupByMode($mode = false) {
 		$group = array(
-			'_id' => '$aid',
-			'suspend_debit' => array(
-				'$first' => '$suspend_debit',
-			),
-			'type' => array(
-				'$first' => '$type',
-			),
-			'payment_method' => array(
-				'$first' => '$method',
-			),
-			'aid' => array(
-				'$first' => '$aid',
-			),
-			'billrun_key' => array(
-				'$first' => '$billrun_key',
-			),
-			'lastname' => array(
-				'$first' => '$lastname',
-			),
-			'firstname' => array(
-				'$first' => '$firstname',
-			),
-			'bill_unit' => array(
-				'$first' => '$bill_unit',
-			),
-			'bank_name' => array(
-				'$first' => '$bank_name',
-			),
-			'due_date' => array(
-				'$first' => '$due_date',
-			),
-			'source' => array(
-				'$first' => '$source',
-			),
-			'currency' => array(
-				'$first' => '$currency',
-			),
-			'left_to_pay' => array(
-				'$sum' => '$left_to_pay',
-			),
-			'left' => array(
-				'$sum' => '$left',
-			),
-			'invoices' => array(
-				'$push' => array(
-					'invoice_id' => '$invoice_id',
-					'amount' => '$amount',
-					'left' => '$left',
-					'left_to_pay' => '$left_to_pay',
-					'txid' => '$txid',
-					'type' => '$type',
-				)
-			),
-		);
+				'_id' => '$aid',
+				'suspend_debit' => array(
+					'$first' => '$suspend_debit',
+				),
+				'type' => array(
+					'$first' => '$type',
+				),
+				'payment_method' => array(
+					'$first' => '$method',
+				),
+				'aid' => array(
+					'$first' => '$aid',
+				),
+				'billrun_key' => array(
+					'$first' => '$billrun_key',
+				),
+				'lastname' => array(
+					'$first' => '$lastname',
+				),
+				'firstname' => array(
+					'$first' => '$firstname',
+				),
+				'bill_unit' => array(
+					'$first' => '$bill_unit',
+				),
+				'bank_name' => array(
+					'$first' => '$bank_name',
+				),
+				'due_date' => array(
+					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
+				),
+				'currency' => array(
+					'$first' => '$currency',
+				),
+				'left_to_pay' => array(
+					'$sum' => '$left_to_pay',
+				),
+				'left' => array(
+					'$sum' => '$left',
+				),
+				'invoices' => array(
+					'$push' => array(
+						'invoice_id' => '$invoice_id',
+						'amount' => '$amount',
+						'left' => '$left',
+						'left_to_pay' => '$left_to_pay',
+						'txid' => '$txid',
+						'type' => '$type',
+					)
+				),
+			);	
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
 			$group['unique_id'] = array('$first' => '$unique_id');
 		}
-
+			
 		return $group;
 	}
-
 	protected function setDueDate($dueDate) {
 		$this->data['due_date'] = $dueDate;
 	}
-
 	/**
 	 * Function that return bills with method = "installment_agreement", by chosen conditions.
 	 * @param type $aid - account id.
@@ -1134,19 +1134,19 @@ abstract class Billrun_Bill {
 		$query['type'] = $type;
 		$query['aid'] = $aid;
 		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-			'$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['due_date'] = array('$gte' => new Mongodloid_Date($startBillrun->start()), '$lt' => new Mongodloid_Date($endBillrun->start()));
 		return self::getBills($query);
 	}
-
+	
 	public function updatePastRejectionsOnProcessingFiles() {
 		foreach ($this->getPaidBills() as $bill) {
 			$bill = Billrun_Bill::getInstanceByTypeAndid($bill['type'], $bill['id']);
-			$bill->addToRejectedPayments($this->getId(), $this->getType());
-			$bill->save();
+				$bill->addToRejectedPayments($this->getId(), $this->getType());
+				$bill->save();
 		}
 	}
-
+	
 	public function getBillMethod() {
 		if (empty($this->method)) {
 			return null;
@@ -1210,8 +1210,8 @@ abstract class Billrun_Bill {
 					)
 				),
 				'total_credit_cond' => array(
-					'$cond' => array(array('$and' => array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
-				),
+						'$cond' => array(array('$and'=> array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
+					),
 			)
 		);
 		$group = array(
@@ -1261,17 +1261,18 @@ abstract class Billrun_Bill {
 			);
 		}
 		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
-		return array_combine(array_map(function ($ele) {
-					return $ele['aid'];
-				}, $results), $results);
+		return array_combine(array_map(function($ele) {
+				return $ele['aid'];
+			}, $results), $results);
 	}
+
 
 	protected function setChargeNotBefore($chargeNotBefore) {
 		$rawData = $this->getRawData();
 		$rawData['charge']['not_before'] = $chargeNotBefore;
 		$this->setRawData($rawData);
 	}
-
+	
 	public static function getDistinctBills($query, $distinctField) {
 		if (empty($distinctField)) {
 			Billrun_Factory::log("Billrun_Bill: no field to distinct by was passed", Zend_Log::ALERT);
@@ -1280,7 +1281,7 @@ abstract class Billrun_Bill {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		return $billsColl->distinct($distinctField, $query);
 	}
-
+	
 	/**
 	 * Function that returns bills that are payments, Within billrun keys range 
 	 * @param type $aid
@@ -1289,12 +1290,12 @@ abstract class Billrun_Bill {
 	 * @param type $method - array of methods - optional
 	 * @return type
 	 */
-	public static function getPaymentsByKeysRange($aid, $urtStartBillrunKey = "197001", $urtEndBillrunKey = "999901", $method = []) {
+	public static function getPaymentsByKeysRange ($aid, $urtStartBillrunKey = "197001", $urtEndBillrunKey = "999901", $method = []) {
 		$startUrt = new Billrun_DataTypes_CycleTime($urtStartBillrunKey);
 		$endUrt = new Billrun_DataTypes_CycleTime($urtEndBillrunKey);
 		$query['aid'] = $aid;
 		$query['urt'] = array('$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtStartBillrunKey)),
-			'$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
+                              '$lte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($urtEndBillrunKey)));
 		$query['method'] = array('$ne' => 'installment_agreement');
 		$query['type'] = 'rec';
 		if (!empty($method)) {
@@ -1325,31 +1326,31 @@ abstract class Billrun_Bill {
 		$this->setRawData($paymentData);
 		$this->save();
 	}
-
+	
 	/**
 	 * Function that sets payment urt
 	 * @param int $date - unix timestamp
 	 */
 	public function setUrt($date = null) {
-		$this->data['urt'] = new Mongodloid_Date(!empty($date) ? $date : time());
+		$this->data['urt'] = new Mongodloid_Date(!empty($date)? $date : time());
 	}
 
 	/**
 	 * Function that sets payment process time
 	 * @param int $date - unix timestamp to set as the process time.
 	 */
-	public function setProcessTime($date = null) {
-		$this->data['process_time'] = new MongoDate(!empty($date) ? $date : time());
+	public function setProcessTime ($date = null) {
+		$this->data['process_time'] = new MongoDate(!empty($date)? $date : time());
 	}
-
+	
 	/**
 	 * Function that sets deposit's freeze date
 	 * @param int $date - unix timestamp
 	 */
-	public function setDepositFreezeDate($date = null) {
-		$this->data['freeze_date'] = new MongoDate(!empty($date) ? $date : time());
+	public function setDepositFreezeDate ($date = null) {
+		$this->data['freeze_date'] = new MongoDate(!empty($date)? $date : time());
 	}
-
+		
 	/**
 	 * will add a related/linked bill to an existing bill
 	 * 
@@ -1369,7 +1370,7 @@ abstract class Billrun_Bill {
 			'amount' => floatval($amount),
 		];
 	}
-
+	
 	/**
 	 * get index of related bill, -1 if not found
 	 * 
@@ -1384,10 +1385,10 @@ abstract class Billrun_Bill {
 				return $i;
 			}
 		}
-
+		
 		return -1;
 	}
-
+	
 	/**
 	 * get related bill
 	 * 
@@ -1399,7 +1400,7 @@ abstract class Billrun_Bill {
 		$index = Billrun_Bill::findRelatedBill($relatedBills, $type, $id);
 		return $index == -1 ? false : $relatedBills[$index];
 	}
-
+	
 	/**
 	 * get related bills 
 	 * 
@@ -1413,10 +1414,10 @@ abstract class Billrun_Bill {
 				$ret[] = $bill;
 			}
 		}
-
+		
 		return $ret;
 	}
-
+	
 	/**
 	 * converts related bills (pays/paid_by) of given array
 	 * 
@@ -1430,16 +1431,15 @@ abstract class Billrun_Bill {
 			if (!Billrun_Util::isAssoc($paymentParams[$dir])) { // already in the new format
 				continue;
 			}
-
+			
 			$newPaymentParam = [];
 			foreach ($paymentParams[$dir] as $billType => $bills) {
 				foreach ($bills as $billId => $amount) {
 					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount);
 				}
 			}
-
+			
 			$paymentParams[$dir] = $newPaymentParam;
 		}
 	}
-
 }

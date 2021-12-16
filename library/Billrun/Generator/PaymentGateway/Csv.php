@@ -10,7 +10,7 @@
  * Generator CSV for payment gateways files
  */
 class Billrun_Generator_PaymentGateway_Csv {
-
+	
 	protected $data = array();
 	protected $headers = array();
 	protected $trailers = array();
@@ -28,8 +28,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 	public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
-		$this->forceHeader = $options['force_header'] ?? false;
-		$this->forceFooter = $options['force_footer'] ?? false;
+		$this->forceHeader = $options['force_header']?? false;
+		$this->forceFooter = $options['force_footer']?? false;
 		if (isset($options['delimiter'])) {
 			$this->delimiter = $options['delimiter'];
 		} else if ($this->fixedWidth) {
@@ -57,7 +57,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		$this->row_separator = $row_separator == 'line_break' ? PHP_EOL : $row_separator;
 		$this->validateOptions($options);
 	}
-
+        
 	/**
 	 * validate the config.
 	 *
@@ -66,38 +66,38 @@ class Billrun_Generator_PaymentGateway_Csv {
 	 */
 	protected function validateOptions($options) {
 		if (isset($options['type']) && !in_array($options['type'], array('fixed', 'separator'))) {
-			throw new Exception("File type isn't fixed/separator. No generate was made.");
+                        throw new Exception("File type isn't fixed/separator. No generate was made.");
 		}
 		if (!isset($options['local_dir'])) {
-			throw new Exception("File's local_dir is undefined. No generate was made.");
+                        throw new Exception("File's local_dir is undefined. No generate was made.");
 		}
 		if ($this->fixedWidth) {
 			foreach ($this->data as $dataLine) {
 				foreach ($dataLine as $dataObj) {
 					if (!isset($dataObj['padding']['length'])) {
-						throw new Exception("Missing padding length definitions for " . $options['file_type']);
+                                                throw new Exception("Missing padding length definitions for " . $options['file_type']);
 					}
 				}
 			}
 		}
 		return true;
 	}
-
+	
 	public function generate() {
-		if (count($this->data) || $this->forceHeader) {
+		if (count($this->data) || $this->forceHeader){
 			$this->writeHeaders();
 		}
 		if (count($this->data)) {
 			$this->writeRows();
 		}
-		if (count($this->data) || $this->forceFooter) {
+		if (count($this->data)|| $this->forceFooter){
 			$this->writeTrailers();
 		}
 		return;
 	}
-
+	
 	protected function writeToFile($str) {
-		$str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
+        $str = iconv('utf-8', $this->encoding . '//TRANSLIT', $str);
 		if (!file_exists($this->local_dir)) {
 			mkdir($this->local_dir, 0777, true);
 		}
@@ -128,7 +128,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		}
 		$this->writeToFile($fileContents);
 	}
-
+	
 	protected function writeTrailers() {
 		$fileContents = '';
 		$counter = 0;
@@ -137,7 +137,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$fileContents .= $this->getRowContent($entity);
+			$fileContents .= $this->getRowContent($entity);			
 			if ($index !== count($this->trailers) - 1) {
 				$fileContents .= $this->row_separator;
 			}
@@ -149,7 +149,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 		}
 		$this->writeToFile($fileContents);
 	}
-
+		
 	protected function writeRows() {
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - start writing rows to file", Zend_Log::DEBUG);
 		$fileContents = '';
@@ -160,8 +160,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$entity = $entity->getRawData();
 			}
 			$fileContents .= $this->getRowContent($entity);
-			if ($index < count($this->data) - 1) {
-				$fileContents .= $this->row_separator;
+			if ($index < count($this->data) - 1){
+				$fileContents.= $this->row_separator;
 			}
 			if ($counter == 50000) {
 				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
@@ -169,44 +169,45 @@ class Billrun_Generator_PaymentGateway_Csv {
 				$fileContents = '';
 				$counter = 0;
 			}
-			$this->transactionsCounter++;
+            $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
-			$fileContents .= $this->row_separator;
+			$fileContents.= $this->row_separator;
 		}
 		$this->writeToFile($fileContents);
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);
 	}
-
+	
 	protected function getRowContent($entity) {
 		$rowContents = '';
 		$flag = 0;
 		foreach ($entity as $entityObj) {
 			$padDir = isset($entityObj['padding']['direction']) ? $this->getPadDirection($entityObj['padding']['direction']) : $this->padDirDef;
 			$padChar = isset($entityObj['padding']['character']) ? $entityObj['padding']['character'] : $this->padCharDef;
-			if ($this->fixedWidth) {
-				$length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
+                        if($this->fixedWidth){
+                            $length = isset($entityObj['padding']['length']) ? $entityObj['padding']['length'] : strlen($entityObj['value']);
 			} else {
 				if (isset($entityObj['padding']['length'])) {
-					$length = $entityObj['padding']['length'];
+                                $length = $entityObj['padding']['length'];
 				} else {
-					$length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
-				}
-			}
+                                $length = strlen((isset($entityObj['value']) ? $entityObj['value'] : ''));
+                            }
+                        }
 			if ($this->fixedWidth) {
 				$value = str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
 				if ($length < strlen($value)) {
 					$value = implode("", array_slice(preg_split("//u", $value), 1, $length));
 				}
 				$rowContents .= $value;
-			} else {
-				if ($flag == 0) {
+                        }else{
+                            if($flag == 0){
 					$rowContents .= str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-					$flag = 1;
-				} else {
+                                $flag = 1;
+                            }else{
 					$rowContents .= $this->delimiter . str_pad((isset($entityObj['value']) ? $entityObj['value'] : ''), $length, $padChar, $padDir);
-				}
-			}
+                            }
+                        }
+			
 		}
 		return $rowContents;
 	}
@@ -221,34 +222,33 @@ class Billrun_Generator_PaymentGateway_Csv {
 				return $this->padDirDef;
 		}
 	}
-
+	
 	protected function getDelimetedLine($rowEntityDef) {
 		$rowValues = array_column($rowEntityDef, 'value');
 		return implode($this->delimiter, $rowValues);
 	}
 
-	public function setFileName($fileName) {
-		$this->file_name = $fileName;
-	}
-
-	public function setFilePath($dir) {
-		$this->file_path = $dir . '/' . $this->file_name;
-	}
-
-	public function setDataRows($data) {
-		$this->data = $data;
-	}
-
-	public function setHeaderRows($header) {
-		$this->headers = $header;
-	}
-
-	public function setTrailerRows($trailer) {
-		$this->trailers = $trailer;
-	}
-
-	public function getTransactionsCounter() {
-		return $this->transactionsCounter;
-	}
-
+        public function setFileName($fileName){
+            $this->file_name = $fileName;
+        }
+        
+        public function setFilePath($dir){
+            $this->file_path = $dir . '/' . $this->file_name;
+        }
+        
+        public function setDataRows($data) {
+            $this->data = $data;
+        }
+    
+        public function setHeaderRows($header) {
+            $this->headers = $header;
+        }
+    
+        public function setTrailerRows($trailer) {
+            $this->trailers = $trailer;
+        }
+        
+        public function getTransactionsCounter (){
+            return $this->transactionsCounter;
+        }
 }

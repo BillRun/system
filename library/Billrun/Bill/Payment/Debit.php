@@ -21,7 +21,8 @@ class Billrun_Bill_Payment_Debit extends Billrun_Bill_Payment {
 		if (isset($options['billrun_key'], $options['dd_stamp'])) {
 			$this->data['billrun_key'] = $options['billrun_key'];
 			$this->data['dd_stamp'] = $options['dd_stamp'];
-		} else {
+		}
+		else {
 			throw new Exception('Billrun_Bill_Payment_Debit: Insufficient options supplied.');
 		}
 	}

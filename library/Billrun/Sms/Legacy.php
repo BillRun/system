@@ -47,7 +47,7 @@ class Billrun_Sms_Legacy extends Billrun_Sms_Abstract {
 	public function __get($name) {
 		return $this->$name;
 	}
-
+	
 	/**
 	 * method to send sms
 	 * 

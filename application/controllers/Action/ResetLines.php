@@ -17,6 +17,7 @@ class ResetLinesAction extends ApiAction {
 
 	use Billrun_Traits_Api_UserPermissions;
 
+	
 	public function execute() {
 		$this->allowed();
 		Billrun_Factory::log("Execute reset", Zend_Log::INFO);
@@ -24,26 +25,26 @@ class ResetLinesAction extends ApiAction {
 		if (empty($request['aid'])) {
 			return $this->setError('Please supply at least one aid', $request);
 		}
-
+		
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
 		}
 		$invoicing_day = null;
 		if (Billrun_Factory::config()->isMultiDayCycle()) {
-			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int) $request['aid']));
+			$account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => (int)$request['aid']));
 			$invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 		}
-		$billrun_key = empty($request['billrun_key']) ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
+		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp(time(), $invoicing_day) : $request['billrun_key'];
 
-		if (!Billrun_Util::isBillrunKey($billrun_key)) {
+		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
 		}
-		if ($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {
-			$message = "Billrun " . $billrun_key . (!is_null($invoicing_day) ? " with invoicing day {$invoicing_day}, " : " ") . "already closed";
+		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {
+			$message = "Billrun "  . $billrun_key . (!is_null($invoicing_day) ? " with invoicing day {$invoicing_day}, " : " ") . "already closed";
 			return $this->setError($message, $request);
 		}
-
+		
 		// Warning: will convert half numeric strings / floats to integers
 		$aids = $this->getRequestAids($request);
 
@@ -86,7 +87,7 @@ class ResetLinesAction extends ApiAction {
 		)));
 		return TRUE;
 	}
-
+	
 	/**
 	 * Gets aids from the request.
 	 * If aid (list or string) received - returns it as array of integers.
@@ -97,6 +98,7 @@ class ResetLinesAction extends ApiAction {
 	protected function getRequestAids($request) {
 		return array_unique(array_diff(Billrun_Util::verify_array($request['aid'], 'int'), array(0)));
 	}
+	
 
 	/**
 	 * Clean cache from account.

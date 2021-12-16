@@ -118,7 +118,7 @@ trait Billrun_Traits_FileActions {
 			}
 			return FALSE;
 		}
-
+		
 		$isNew = $result['updatedExisting'] === false;
 		$hasUpdated = $result['nModified'] > 0;
 		return $result['ok'] == 1 && ($isNew || $hasUpdated);
@@ -208,8 +208,8 @@ trait Billrun_Traits_FileActions {
 		Billrun_Factory::log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
 		$timestamp = filemtime($srcPath); // this will be used after copy/move to preserve timestamp
 		$ret = @call_user_func_array($callback, array(
-					$srcPath,
-					$target_path,
+				$srcPath,
+				$target_path,
 		));
 		if ($preserve_timestamps) {
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);

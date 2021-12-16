@@ -21,25 +21,25 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 	public function __construct($options) {
 		parent::__construct($options);
 	}
-
+	
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['transaction_identifier_field']) || empty($processorDefinition['processor']['amount_field'])) {
-			$message = "Missing definitions for file type " . $processorDefinition['file_type'];
+                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
 			$this->informationArray['errors'][] = $message;
-			return false;
+                        return false;
 		}
-		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field', 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
-
+	
 	protected function updatePayments($row, $payment = null) {
 		$customFields = $this->getCustomPaymentGatewayFields();
 		$payment->setExtraFields($customFields, array_keys($customFields));
 		if (is_null($payment)) {
-			$message = 'None matching payment for ' . $row['stamp'];
+                        $message = 'None matching payment for ' . $row['stamp'];
 			Billrun_Factory::log($message, Zend_Log::ALERT);
-			$this->informationArray['errors'][] = $message;
+                        $this->informationArray['errors'][] = $message;
 			return;
 		}
 		$row['aid'] = $payment->getAid();
@@ -57,24 +57,24 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 		}
 		if (!empty($this->amountField)) {
 			//TODO : support multiple header/footer lines
-			$amount_from_file = in_array($this->amountField['source'], ['header', 'trailer']) ? $this->{$this->amountField['source'] . 'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
+			$amount_from_file = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
 		//TODO : support multiple header/footer lines
-		$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ? $this->{$this->tranIdentifierField['source'] . 'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
+		$txid_from_file = in_array($this->tranIdentifierField['source'], ['header', 'trailer']) ?  $this->{$this->tranIdentifierField['source'].'Rows'}[0][$this->tranIdentifierField['field']] : $row[$this->tranIdentifierField['field']];
 		if (!is_null($amount_from_file) && !Billrun_Util::isEqual(abs($amount_from_file), $payment->getAmount(), Billrun_Bill::precision)) {
 			$message = "Amount sent is different than the amount of the payment with txid: " . $txid_from_file . ". denial process has failed for this payment.";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
-			return;
-		}
+                        return;
+                }
 		if (!is_null($amount_from_file) && $payment->isDenied(abs($amount_from_file))) {
 			$message = "Payment " . $txid_from_file . " is already denied";
 			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
 			$this->informationArray['errors'][] = $message;
-			return;
+                        return;
 		}
 		$row['amount'] = !is_null($amount_from_file) ? $amount_from_file : $payment->getAmount();
-		if (!is_null($this->dateField)) {
+		if(!is_null($this->dateField)){
 			$row['urt'] = $this->getPaymentUrt($row);
 		}
 		$denial = Billrun_Bill_Payment::createDenial($row, $payment);
@@ -85,27 +85,27 @@ class Billrun_Processor_PaymentGateway_Custom_Denials extends Billrun_Processor_
 				$this->informationArray['info'][] = $message;
 				$res = $payment->deny($denial);
 				$this->informationArray['transactions']['denied']++;
-				if (isset($res['status']) && !$res['status']) {
+				if(isset($res['status']) && !$res['status']){
 					$this->informationArray['errors'][] = $res['massage'];
 				}
 			} else {
 				Billrun_Factory::log()->log("Denial was created successfully without matching payment", Zend_Log::INFO);
 			}
-			$this->informationArray['total_denied_amount'] += $payment->getAmount();
+                        $this->informationArray['total_denied_amount']+=$payment->getAmount();
 		} else {
 			$message = "Denial process was failed for payment: " . $txid_from_file;
-			$this->informationArray['warnings'][] = $message;
+                        $this->informationArray['warnings'][] = $message;
 			Billrun_Factory::log()->log($message, Zend_Log::NOTICE);
 		}
 	}
-
+	
 	protected function filterData($data) {
 		return array_filter($data['data'], function ($denial) {
 			return $denial['status'] != 1;
 		});
 	}
 
-	public function getType() {
+	public function getType () {
 		return static::$type;
 	}
 

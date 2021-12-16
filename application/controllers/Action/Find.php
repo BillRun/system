@@ -15,9 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class FindAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -62,19 +61,19 @@ class FindAction extends ApiAction {
 		if (empty($request['collection']) || !(in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array())))) {
 			$this->setError('Illegal collection name: ' . $request['collection'], $request);
 			return TRUE;
-		}
-
+		}	
+		
 		$collection = $request['collection'];
 		try {
 			$db = Billrun_Factory::db()->{$collection . 'Collection'}();
 			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size + 1);
-
+			
 			// Get timeout
 			// marked-out due to new mongodb driver (PHP7+) 
 //			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
 //			$find->timeout($timeout);
 			$entities = array_values(iterator_to_array($find));
-			$next_page = count($entities) > $size;
+            $next_page = count($entities) > $size;
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
@@ -86,7 +85,7 @@ class FindAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
-				'next_page' => $next_page,
+                'next_page' => $next_page,
 				'details' => array_slice($entities, 0, $size),
 			)
 		);

@@ -15,7 +15,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       5.7
  */
 class UploadedFileAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
@@ -38,10 +37,10 @@ class UploadedFileAction extends ApiAction {
 			$directoryPath = $this->decidePathByCategory($category);
 			$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 			if (!file_exists($sharedDirectoryPath)) {
-				mkdir($sharedDirectoryPath, 0777, true);
+			   mkdir($sharedDirectoryPath, 0777, true);
 			}
 			$time = time();
-			$targetPath = $sharedDirectoryPath . $fileType . '_' . $time;
+			$targetPath = $sharedDirectoryPath . $fileType . '_'. $time;
 			if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetPath)) {
 				chmod($targetPath, 0440);
 				$result = 1;
@@ -51,7 +50,7 @@ class UploadedFileAction extends ApiAction {
 		$output = array(
 			'status' => $result ? 1 : 0,
 			'desc' => $result ? 'success' : 'error',
-			'details' => $result ? array('message' => $message, 'path' => $fileType . '_' . $time) : $message,
+			'details' => $result ? array('message' => $message, 'path' => $fileType . '_'. $time) : $message,
 		);
 		$this->getController()->setOutput(array($output));
 	}
@@ -59,7 +58,7 @@ class UploadedFileAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
+	
 	protected function decidePathByCategory($category) {
 		switch ($category) {
 			case 'key':

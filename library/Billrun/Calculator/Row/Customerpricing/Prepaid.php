@@ -30,7 +30,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			$this->row['usagev'] = 0;
 		}
 	}
-
+	
 	/**
 	 * see parent::initMinBalanceValues
 	 * just adds 2 additional internal variables that were mistakenly used in the code without touching postpaid logic
@@ -93,16 +93,16 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		}
 		return $ret;
 	}
-
+	
 	/**
 	 * see parent::getLinePricingData
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $plan) {
-		$usagevOffset = isset($this->row['usagev_offset']) ? $this->row['usagev_offset'] : 0;
+		$usagevOffset = isset($this->row['usagev_offset']) ?  $this->row['usagev_offset'] : 0;
 		if ($usagevOffset == 0 || !$this->isReblanceOnLastRequestOnly()) {
 			return parent::getLinePricingData($volume, $usageType, $rate, $plan);
 		}
-
+		
 		$totalPricingData = parent::getLinePricingData($volume + $usagevOffset, $usageType, $rate, $plan);
 		if ($totalPricingData === false) {
 			return false;
@@ -112,14 +112,14 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			return false;
 		}
 		$pricingData = [];
-
+		
 		foreach ($totalPricingData as $key => $value) {
 			$pricingData[$key] = $totalPricingData[$key] - $offsetPricingData[$key];
 		}
-
+		
 		return $pricingData;
 	}
-
+	
 	/**
 	 * In case balance is in over charge (due to prepaid mechanism), 
 	 * adds a refund row to the balance.
@@ -128,7 +128,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	 * @param float $realUsagev
 	 * @param array $lineToRebalance
 	 * @param array $originalRow
-	 */
+	 */	
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref', true);
@@ -142,13 +142,13 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				$balance['tx'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
-			$balance_totals_key = $this->balance->getBalanceTotalsKey($lineToRebalance);
-
+			$balance_totals_key =  $this->balance->getBalanceTotalsKey($lineToRebalance);
+			
 			$rebalanceData = array(
 				'usagev' => $rebalanceUsagev,
 				'in_balance_usage' => $rebalanceUsagev,
 			);
-
+			
 			if (!is_null($balance['balance.totals.' . $balance_totals_key . '.usagev'])) {
 				$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
 			} else {
@@ -158,18 +158,18 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				} else {
 					$balance['balance.cost'] += $rebalanceCost;
 				}
-
+				
 				$rebalanceData['apr'] = $rebalanceData['aprice'] = $rebalanceCost;
 			}
-
+			
 			$balance->save();
 		}
-
+		
 		$originalRow['usagev_offset'] += $rebalanceUsagev;
-
+		
 		$updateLinesQuery = $this->getUpdateLineUpdateQuery($rebalanceData);
 		$updateArchiveQuery = $this->getUpdateLineUpdateQuery(array_merge($rebalanceData, $this->getAdditionalUsagevFieldsForArchive($rebalanceUsagev, $lineToRebalance)));
-
+		
 		// Update line in archive
 		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateArchiveQuery);
@@ -181,7 +181,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 		$lines_coll->update($findQuery, $updateLinesQuery, $options);
 	}
-
+		
 	/**
 	 * gets the price of the rebalance
 	 * 
@@ -195,7 +195,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], $this->getServices(), 0, $lineToRebalance['urt']->sec);
 		return $realPricing - $chargedPricing;
 	}
-
+	
 	/**
 	 * gets all fields that needs to be rebalanced by volume in the archive collection
 	 * 
@@ -211,8 +211,8 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				$ret[$field] = $usagev;
 			}
 		}
-
+		
 		return $ret;
 	}
-
+	
 }

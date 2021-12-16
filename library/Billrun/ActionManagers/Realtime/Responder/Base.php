@@ -90,7 +90,9 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	 * @return int 1 - success, 0 - failure
 	 */
 	protected function getStatus() {
-		return isset($this->row['granted_return_code']) && $this->row['granted_return_code'] == Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 0) ? 1 : 0;
+		return isset($this->row['granted_return_code']) && $this->row['granted_return_code'] == Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 0)
+			? 1
+			: 0;
 	}
 
 	/**

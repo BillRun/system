@@ -15,9 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class SubscribersAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	protected $model;
 
 	/**
@@ -60,7 +59,7 @@ class SubscribersAction extends ApiAction {
 
 		// Set the raw input.
 		$output['input'] = $this->getRequest()->getRequest();
-
+		
 		$this->getController()->setOutput(array($output));
 	}
 

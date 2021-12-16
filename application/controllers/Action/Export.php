@@ -43,7 +43,7 @@ class ExportAction extends Action_Base {
 		} else {
 			$export_generators_options[] = $options;
 		}
-
+		
 		foreach ($export_generators_options as $export_generator_options) {
 			$this->getController()->addOutput("Loading exporter");
 			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type']);
@@ -74,5 +74,5 @@ class ExportAction extends Action_Base {
 			}
 		}
 	}
-
+	
 }

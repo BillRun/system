@@ -36,11 +36,12 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 */
 	protected $chargingTotalsKey = null;
 
+	
 	public function __construct($values = null, $collection = null) {
 		parent::__construct($values, $collection);
 		$this->selectedBalance = self::getSelectedBalanceKey($this->getRawData());
 	}
-
+	
 	protected function init() {
 		if (isset($this->row['granted_usagev']) && is_numeric($this->row['granted_usagev'])) {
 			$this->granted['usagev'] = (-1) * $this->row['granted_usagev'];
@@ -89,12 +90,12 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		$query['to'] = array('$gte' => $this->row['urt']);
 
 		$this->applyAllowInRates($query);
-
+		
 		Billrun_Factory::dispatcher()->trigger('getBalanceLoadQuery', array(&$query, $this->row, $this));
 
 		return $query;
 	}
-
+	
 	/**
 	 * apply only allowed in rates in pre-paid includes
 	 * includes also pre-paid includes entries that support all rates (allowed_in field does not exists)
@@ -106,7 +107,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		$basePlanName = "BASE";
 		$planName = $this->row['plan'];
 		$rateName = $this->row['arate_key'];
-
+		
 		$disallowedPrepaidIncludesQuery = array('$or' => array(
 				array('$and' => array(
 						array("allowed_in." . $planName => array('$exists' => 1)),
@@ -118,12 +119,12 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 						array("allowed_in." . $basePlanName => array('$nin' => array($rateName))),
 					)),
 		));
-
+		
 		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
 		$ppIncludes = $prepaidIncludesCollection->query($disallowedPrepaidIncludesQuery)->cursor();
 		$disallowedPrepaidIncludes = array();
 		if ($ppIncludes->count() > 0) {
-			$disallowedPrepaidIncludes = array_map(function ($doc) {
+			$disallowedPrepaidIncludes = array_map(function($doc) {
 				return $doc['external_id'];
 			}, iterator_to_array($ppIncludes));
 			$query['pp_includes_external_id'] = array('$nin' => array_values($disallowedPrepaidIncludes));
@@ -173,7 +174,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		}
 		return $this->chargingTotalsKey;
 	}
-
+	
 	/**
 	 * method to build update query of the balance
 	 * 
@@ -200,7 +201,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		$pricingData['usagesb'] = floatval($currentUsage);
 		return array($query, $update);
 	}
-
+	
 	/**
 	 * method to get balance totals key
 	 * 
@@ -212,7 +213,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	public function getBalanceTotalsKey($pricingData) {
 		return $this->getBalanceChargingTotalsKey($this->row['usaget']);
 	}
-
+	
 	/**
 	 * method to get the instance of the class (singleton)
 	 * 

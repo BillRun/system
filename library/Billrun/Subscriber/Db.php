@@ -23,7 +23,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @var boolean
 	 */
 	static $queriesLoaded = false;
+	
 	protected $collection;
+	
 	static protected $type = 'db';
 
 	/**
@@ -34,13 +36,13 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
-
+	
 	protected function getSubscriberDetails($queries) {
 		$subs = [];
 		$type = 'subscriber';
 		foreach ($queries as $query) {
 			$query['type'] = $type;
-
+			
 			if (isset($query['time'])) {
 				$time = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($query['time']));
 				$query = array_merge($query, $time);
@@ -86,6 +88,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					}
 					$subs[] = $sub;
 				}
+				
 			}
 		}
 		return $subs;
@@ -108,7 +111,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	public function isValid() {
 		return true;
 	}
-
+	
 	public function getCredits($billrun_key, $retEntity = false) {
 		return array();
 	}

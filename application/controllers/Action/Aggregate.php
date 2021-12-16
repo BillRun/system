@@ -55,5 +55,6 @@ class AggregateAction extends Action_Base {
 		$aggregator->aggregate();
 		$this->getController()->addOutput("Finish to Aggregate.");
 	}
-
+	
+	
 }

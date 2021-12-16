@@ -12,16 +12,15 @@
  * @package  Exceptions
  * @since    5.2
  */
-abstract class Billrun_Exceptions_Base extends Exception {
-
+abstract class Billrun_Exceptions_Base extends Exception{
 	use Billrun_Exceptions_InputContainer;
-
+	
 	/**
 	 * The log level of the exception
 	 * @var integer
 	 */
 	public $logLevel = Zend_Log::CRIT;
-
+	
 	/**
 	 * Create a new instnace of the billrun exception base
 	 * @param type $message
@@ -31,7 +30,7 @@ abstract class Billrun_Exceptions_Base extends Exception {
 	public function __construct($message = "", $code = 0, \Exception $previous = null) {
 		parent::__construct($message, $code, $previous);
 	}
-
+	
 	/**
 	 * Generate the output of the exception.
 	 * @return json encoded array.
@@ -42,13 +41,13 @@ abstract class Billrun_Exceptions_Base extends Exception {
 		$output['code'] = $this->code;
 		$output['message'] = $this->message;
 		$output['display'] = $this->generateDisplay();
-		if ($this->input) {
+		if($this->input) {
 			$output['input'] = $this->input;
 		}
-
+		
 		return json_encode($output);
 	}
-
+	
 	/**
 	 * Generate the array value to be displayed in the client for the exception.
 	 * @return array.

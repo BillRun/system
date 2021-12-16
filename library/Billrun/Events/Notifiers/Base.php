@@ -12,28 +12,28 @@
  * @since 5.6
  */
 abstract class Billrun_Events_Notifiers_Base {
-
+	
 	/**
 	 * saves general settings for notifier
 	 */
 	protected $settings = array();
-
+	
 	/**
 	 * saves current event
 	 */
 	protected $event = array();
-
+	
 	/**
 	 * additional parameters
 	 */
 	protected $params = array();
-
+	
 	public function __construct($event, $params = array()) {
 		$this->event = $event;
 		$this->params = $params;
 		$this->settings = $this->getSettings();
 	}
-
+	
 	/**
 	 * gets the relevant settings for the notifier
 	 * 
@@ -41,8 +41,8 @@ abstract class Billrun_Events_Notifiers_Base {
 	 */
 	protected function getSettings() {
 		return array_merge(
-				Billrun_Factory::config()->getConfigValue('events.settings', array()),
-				Billrun_Factory::config()->getConfigValue('events.settings.' . $this->getNotifierName(), array())
+			Billrun_Factory::config()->getConfigValue('events.settings', array()),
+			Billrun_Factory::config()->getConfigValue('events.settings.' . $this->getNotifierName(), array())
 		);
 	}
 
@@ -52,9 +52,9 @@ abstract class Billrun_Events_Notifiers_Base {
 	 * @return mixed- response from notifier on success, false on failure
 	 */
 	abstract public function notify();
-
+	
 	/**
 	 * gets notifier name
 	 */
-	abstract public function getNotifierName();
+	abstract public  function getNotifierName();
 }

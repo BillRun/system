@@ -46,8 +46,9 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @var array
 	 */
 	protected $customerExtraData = array();
+	
 	protected static $allowedQueryKeys = ['id', 'time'];
-
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -116,13 +117,13 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @return mongodloid entity
 	 */
 	protected abstract function getAccountDetails($queries, $globalLimit = FALSE, $globalDate = FALSE);
-
+	
 	/**
 	 * get accounts revisions by params
 	 * @return array of mongodloid entities
 	 */
 	protected abstract function getAccountsDetails($query, $globalLimit = FALSE, $globalDate = FALSE);
-
+	
 	/**
 	 * Method to Save as 'Close And New' item
 	 * @param Array $set_values Key value array with values to set
@@ -147,16 +148,16 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getCustomerExtraData() {
 		return $this->customerExtraData;
 	}
-
+	
 	public function getCustomerData() {
 		return $this->data;
 	}
-
+	
 	protected function load($queries) {
 		$accounts = $this->getAccountDetails($queries);
 		return $accounts;
 	}
-
+	
 	/**
 	 * @param $query array of params to load by
 	 * @return mongodloid entity - a single account that match that query
@@ -170,14 +171,14 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 
 		$result = $this->load([$accountQuery]);
-		if (empty($result)) {
+		if(empty($result)) {
 			Billrun_Factory::log('Failed to load account data for params: ' . print_r($query, 1), Zend_Log::DEBUG);
 			return $result;
 		}
 		$this->data = $result[0]->getRawData();
 		return $result[0];
 	}
-
+	
 	/**
 	 * @param array $params load by those params 
 	 * @return array of account instances
@@ -189,13 +190,13 @@ abstract class Billrun_Account extends Billrun_Base {
 			return false;
 		}
 		$result = $this->load([$accountsQuery]);
-		if (empty($result)) {
+		if(empty($result)) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($accountsQuery, 1), Zend_Log::DEBUG);
 			return $result;
 		}
 		return $result;
 	}
-
+	
 	/**
 	 * @param array $queries to load one subscriber per query
 	 * @return array of account instances
@@ -203,9 +204,9 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function loadAccountForQueries($queries, $extraData = []) {
 		$limit = 1;
 		$query = [];
-
+		
 		// build a single big query, using the passed params for each subquery
-		foreach ($queries as $subQuery) {
+		foreach($queries as $subQuery) {
 			$query[] = $this->buildQuery($subQuery, $limit);
 		}
 		$data = $this->getAccountsDetails($query);
@@ -217,16 +218,16 @@ abstract class Billrun_Account extends Billrun_Base {
 		$this->data = $data;
 		return true;
 	}
-
-	/**
+        
+        /**
 	 * @param array $queries to load one subscriber per query
 	 * @return array of account instances
 	 */
 	public function loadAccountsForQueries($queries, $extraData = []) {
 		$query = [];
-
+		
 		// build a single big query, using the passed params for each subquery
-		foreach ($queries as $subQuery) {
+		foreach($queries as $subQuery) {
 			$query[] = $this->buildQuery($subQuery);
 		}
 		$result = $this->getAccountDetails($query);
@@ -235,7 +236,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			return false;
 		}
 
-		return $result;
+                return $result;
 	}
 
 	/**
@@ -248,24 +249,24 @@ abstract class Billrun_Account extends Billrun_Base {
 			return $customField['field_name'];
 		}, Billrun_Factory::config()->getConfigValue('subscribers.account.fields', array()));
 		$fields = array_combine($customFields, $customFields);
-
+		
 		$query = [];
 		if (!isset($params['time'])) {
 			$query['time'] = date(Billrun_Base::base_datetimeformat);
 		}
-
+		
 		foreach ($params as $key => $value) {
 			if (!isset($fields[$key]) && !in_array($key, static::$allowedQueryKeys)) {
 				return false;
 			}
 			$query[$key] = $value;
 		}
-		if ($limit) {
+		if($limit){
 			$query['limit'] = $limit;
 		}
 		return $query;
 	}
-
+	
 	public function getInCollection($aids = array()) {
 		$results = array();
 		$subject_to = $this->getIncludedInCollection($aids);
@@ -286,6 +287,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		return $results;
 	}
+	
 
 	/**
 	 * method to update account collection status
@@ -327,10 +329,10 @@ abstract class Billrun_Account extends Billrun_Base {
 		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false);
 		return $result;
 	}
-
+	
 	public function getExcludedFromCollection($aids = array()) {
 		$excludeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.exempted_from_collection', []);
-		if (empty($excludeIds)) {
+		if(empty($excludeIds)) {
 			return [];
 		}
 		if (empty($aids)) {
@@ -338,7 +340,8 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		return array_intersect($aids, $excludeIds);
 	}
-
+	
+	
 	public function getIncludedInCollection($aids = array()) {
 		$includeIds = Billrun_Factory::config()->getConfigValue('collection.settings.customers.subject_to_collection', []);
 		if (empty($includeIds)) {
@@ -346,28 +349,27 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		if (empty($aids)) {
 			return $includeIds;
-		}
+		}	
 		return array_intersect($aids, $includeIds);
 	}
 
 	//============================ Static function =========================
 
 	public static function getAccountAggregationLogic($params) {
-		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscribers.account.type', 'db'));
-		switch ($subscribersType) {
+		$subscribersType = strtolower(Billrun_Factory::config()->getConfigValue('subscribers.account.type','db'));
+		switch($subscribersType) {
 			case "external":
 				return new Billrun_Cycle_Aggregation_CustomerRemote($params);
 				break;
 			case 'db' :
-				return new Billrun_Cycle_Aggregation_CustomerDb($params);
+				return	new Billrun_Cycle_Aggregation_CustomerDb($params);
 				break;
 		}
 
 		throw new Exception("No subscriber aggregation identified");
 	}
-
+	
 	public function getData() {
 		return $this->data;
 	}
-
 }

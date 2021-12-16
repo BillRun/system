@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class V3_payAction extends ApiAction {
-
+	
 	public function execute() {
 		$this->forward('pay');
 		return false;

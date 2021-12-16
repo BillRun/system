@@ -39,7 +39,7 @@ class PasswordRetrievalAction extends ApiAction {
 				);
 				$url = $this->buildPasswordChangeUrl($request, $id, $params);
 				$resetMessage = $this->buildResetMessage($url);
-				Billrun_Factory::log("Request to change password from " . $email, Zend_Log::INFO);
+			Billrun_Factory::log("Request to change password from " . $email,  Zend_Log::INFO);
 				Billrun_Util::sendMail("BillRun(R) Cloud Password Reset", $resetMessage, array($email), array(), true);
 			}
 		}
@@ -52,16 +52,16 @@ class PasswordRetrievalAction extends ApiAction {
 	}
 
 	protected function buildResetMessage($url) {
-		$linkTimeLimit = Billrun_Factory::config()->getConfigValue('changepassword.email.link_expire', '24 hours');
-		$logoLocation = Billrun_Factory::config()->getConfigValue('changepassword.email.logo', '24 hours');
-		return '<img src="' . $logoLocation . '" style="vertical-align:bottom">' .
-				"<br><br>Hello,<br><br>" . "You recently requested a password reset.<br><br>" .
-				"To change your BillRun® Cloud password, please click here:<br><br>" . $url .
-				"<br><br>The link will expire in " . $linkTimeLimit .
-				"<br><br>If you ignore this message, your password won't be changed." .
-				"<br><br>If you didn't request a password reset, " .
+		$linkTimeLimit =  Billrun_Factory::config()->getConfigValue('changepassword.email.link_expire', '24 hours');
+		$logoLocation =  Billrun_Factory::config()->getConfigValue('changepassword.email.logo', '24 hours');
+		return 	'<img src="' . $logoLocation . '" style="vertical-align:bottom">' .
+			"<br><br>Hello,<br><br>" . "You recently requested a password reset.<br><br>" .
+				"To change your BillRun® Cloud password, please click here:<br><br>" .  $url .
+			"<br><br>The link will expire in " . $linkTimeLimit .
+			"<br><br>If you ignore this message, your password won't be changed." .
+			"<br><br>If you didn't request a password reset, " .
 				'<a href="mailto:<cloud_support@billrun.com>?subject=<I suspect someone is trying to steal my password>">let us know</a>.' .
-				"<br><br>Thanks for using BillRun® Cloud! The BillRun® team";
+			"<br><br>Thanks for using BillRun® Cloud! The BillRun® team";
 	}
 
 	protected function buildPasswordChangeUrl($request, $id, $data) {

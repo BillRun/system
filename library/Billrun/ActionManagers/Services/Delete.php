@@ -10,7 +10,7 @@
  * This is a parser to be used by the subscribers action.
  *
  */
-class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Services_Action {
+class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Services_Action{
 
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -26,7 +26,7 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 		$details = array();
 		try {
 			$rowToDelete = $this->collection->query($this->query)->cursor()->current();
-
+			
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
 				$this->reportError(15, Zend_Log::NOTICE);
@@ -34,8 +34,9 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 				$this->collection->updateEntity($rowToDelete, array('to' => new Mongodloid_Date()));
 				$details = $rowToDelete->getRawData();
 			}
+
 		} catch (\MongoException $e) {
-			$errorCode = 11;
+			$errorCode =  11;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 

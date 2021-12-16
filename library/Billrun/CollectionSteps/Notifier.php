@@ -17,13 +17,14 @@ class Billrun_CollectionSteps_Notifier {
 		$this->notifier = $notifier;
 	}
 
+
 	public function notify() {
 		if ($this->notifier) {
 			return $this->notifier->notify();
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Assistance function to get the notifier object based on the event
 	 * 
@@ -34,10 +35,10 @@ class Billrun_CollectionSteps_Notifier {
 		if (!class_exists($notifierClassName)) {
 			return false;
 		}
-
+		
 		return (new $notifierClassName($event, $params));
 	}
-
+	
 	/**
 	 * Assistance function to get notifier name based on event parameters
 	 * 
@@ -51,5 +52,5 @@ class Billrun_CollectionSteps_Notifier {
 		$type = ucfirst(strtolower($task['step_type']));
 		return "{$prefix}_{$type}";
 	}
-
+	
 }

@@ -61,7 +61,7 @@ interface Billrun_Ssh_Gatewayinterface {
 	 * @return string|null
 	 */
 	public function nextLine();
-
+		
 	/**
 	 * Get list of files in directory
 	 *
@@ -70,7 +70,7 @@ interface Billrun_Ssh_Gatewayinterface {
 	 * @return Array
 	 */
 	public function getListOfFiles($dir, $recursive = false);
-
+	
 	/**
 	 * Get files' timestamp
 	 *
@@ -78,7 +78,7 @@ interface Billrun_Ssh_Gatewayinterface {
 	 * @return timestamp
 	 */
 	public function getTimestamp($file_path);
-
+		
 	/**
 	 * Get files' size
 	 *
@@ -86,7 +86,7 @@ interface Billrun_Ssh_Gatewayinterface {
 	 * @return size
 	 */
 	public function getFileSize($file_path);
-
+	
 	/**
 	 * Get files' timestamp
 	 *
@@ -108,4 +108,5 @@ interface Billrun_Ssh_Gatewayinterface {
 	 * @return int|bool
 	 */
 	public function mkdir($path, $permissions = 0777, $recursive = 1);
+
 }

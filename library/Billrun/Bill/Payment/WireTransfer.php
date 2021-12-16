@@ -19,7 +19,7 @@ class Billrun_Bill_Payment_WireTransfer extends Billrun_Bill_Payment_Transfer {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if (!isset($options['payer_name'], $options['aaddress'], $options['azip'], $options['acity'], $options['IBAN'], $options['bank_name'], $options['BIC']/* , $options['due_date'] */)) {
+		if (!isset($options['payer_name'], $options['aaddress'], $options['azip'], $options['acity'], $options['IBAN'], $options['bank_name'], $options['BIC']/*, $options['due_date']*/)) {
 			throw new Exception('Billrun_Bill_Payment_WireTransfer: Insufficient options supplied.');
 		}
 	}

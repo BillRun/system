@@ -13,7 +13,6 @@
  * @since    5.0
  */
 class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WHEN ENABLING THIS CLASS
-
 	public function init() {
 		Billrun_Factory::db();
 	}
@@ -68,7 +67,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 		$this->getView()->assign('currency_symbol', Billrun_Rates_Util::getCurrencySymbol($config['pricing']['currency']));
 //		return $view->render();
 	}
-
+	
 	protected function render($tpl, array $parameters = null) {
 		// this trick for forward compatibility
 		if ($this->getRequest()->get('tpl') == 'index2') {
@@ -76,7 +75,6 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 		}
 		return parent::render($tpl, $parameters);
 	}
-
 	public function createAction() {
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
@@ -87,9 +85,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 			$request['aid'] = intval($request['aid']);
 		}
 		if (isset($request['services']) && is_array($request['services'])) {
-			$request['services'] = array_map(function ($srv) {
-				return array('name' => $srv);
-			}, $request['services']);
+			$request['services'] = array_map(function($srv) { return array('name'=>$srv);}, $request['services']);
 		}
 		$query = array(
 			"type" => $type,
@@ -115,15 +111,14 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 			"signature" => $hashResult
 		);
 
-		header("Location: /creditguard/creditguard?signature=" . $hashResult . "&data=" . json_encode($data));
+		header("Location: /creditguard/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
 	}
-
+	
 	protected function getEntityActiveRows($entityName, $field = null) {
 //		$data = Billrun_Factory::db()->plansCollection()->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();
 		$collection = Billrun_Factory::db()->{$entityName . 'sCollection'}();
-		$data = $collection->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();
-		;
+		$data = $collection->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();;
 
 		$ret = array();
 		foreach ($data as $row) {
@@ -134,6 +129,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WH
 			}
 		}
 		return $ret;
+
 	}
 
 }

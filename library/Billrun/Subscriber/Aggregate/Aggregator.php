@@ -13,14 +13,14 @@
  * @since    5.2
  */
 abstract class Billrun_Subscriber_Aggregate_Aggregator {
-
+	
 	/**
 	 * Array of records to be aggregated
 	 * @var Billrun_Subscriber_Aggregate_Base
 	 * @todo Use data table here when the code is merged
 	 */
 	protected $records = array();
-
+	
 	/**
 	 * Aggregate records with the current billrun key
 	 * @param array Array of subscriber objects.
@@ -28,9 +28,9 @@ abstract class Billrun_Subscriber_Aggregate_Aggregator {
 	 */
 	public function aggregate($subscribers, $billrunKey) {
 		$aggregated = array();
-
+		
 		$records = $this->getRecords($subscribers);
-
+		
 		// Charge
 		foreach ($records as $aggreateRecord) {
 			$values = $aggreateRecord->getValues();
@@ -50,7 +50,7 @@ abstract class Billrun_Subscriber_Aggregate_Aggregator {
 		$charge = $this->getCharge($output['key'], $output['dates']);
 		return array("key" => $output['key'], "charge" => $charge);
 	}
-
+	
 	/**
 	 * Get all the records to be aggregateds.
 	 * @param array $subscribers - Array of active subscribers.

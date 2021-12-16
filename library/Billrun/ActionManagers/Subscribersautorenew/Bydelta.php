@@ -94,15 +94,15 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	}
 
 	protected function parseDateFieldMongoTime($field, $time) {
-		if ($field === "to") {
+		if($field === "to") {
 			return strtotime("23:59:59", $time);
-		} else if ($field === "from") {
+		} else if($field === "from") {
 			return strtotime("00:00:00", $time);
 		}
-
+		
 		return $time;
 	}
-
+	
 	/**
 	 * Parse the date fields of a record
 	 * @param array $record - Reference to the array to parse the date fields of
@@ -123,7 +123,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				$this->reportError($errorCode, Zend_Log::ALERT, array($record[$field]));
 				return false;
 			}
-
+			
 			$record[$field] = new Mongodloid_Date($this->parseDateFieldMongoTime($field, $time));
 		}
 

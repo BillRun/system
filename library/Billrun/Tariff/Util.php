@@ -13,7 +13,7 @@
  * @since    5.1
  */
 class Billrun_Tariff_Util {
-
+	
 	const PRICING_METHOD_TIERED = 'tiered';
 	const PRICING_METHOD_VOLUME = 'volume';
 
@@ -101,14 +101,14 @@ class Billrun_Tariff_Util {
 
 		return $charge;
 	}
-
-	public static function getTariffForVolume($tariff, $volume) {
+	
+	public static function getTariffForVolume($tariff,$volume) {
 		foreach ($tariff['rate'] as $currRate) {
 			if (!is_array($currRate)) {
 				Billrun_Factory::log("Invalid rate in tariff utils." . print_r($currRate, 1), Zend_Log::WARN);
 				continue;
 			}
-			if ($volume > $currRate['to']) {
+			if($volume > $currRate['to']) {
 				continue;
 			}
 			return $currRate['price'];
@@ -147,7 +147,7 @@ class Billrun_Tariff_Util {
 
 		// get the volume that needed to be priced for the current rating
 		$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
-
+		
 		if ($pricingMethod === self::PRICING_METHOD_TIERED) {
 			$charge += self::getChargeValueForRateStep($volumeToPriceCurrentRating, $rate);
 		}
@@ -155,7 +155,7 @@ class Billrun_Tariff_Util {
 		//decrease the volume that was priced
 		return $volume - $volumeToPriceCurrentRating;
 	}
-
+	
 	/**
 	 * Gets the charge value according to rate parameters, handles the "ceil" mechanism.
 	 * 
@@ -169,12 +169,12 @@ class Billrun_Tariff_Util {
 		if (isset($rate['ceil'])) {
 			$ceil = $rate['ceil'];
 		}
-
+		
 		if ($ceil) {
 			// actually price the usage volume by the current 	
 			return floatval(ceil($volume / $rate['interval']) * $rate['price']);
 		}
-
+	
 		// actually price the usage volume by the current 
 		return floatval($volume / $rate['interval'] * $rate['price']);
 	}

@@ -48,7 +48,7 @@ class RealtimeController extends ApiController {
 			throw new Billrun_Exceptions_Api(10000, 'Cannot load file type');
 		}
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
-					'decoder' => $this->config['parser']['type']
+				'decoder' => $this->config['parser']['type']
 		));
 		if (!$decoder) {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
@@ -172,7 +172,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function respond($data) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-					'encoder' => $this->config['response']['encode']
+				'encoder' => $this->config['response']['encode']
 		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);

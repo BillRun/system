@@ -12,7 +12,7 @@
  * @since    5.10
  */
 class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billrun_Processor_PaymentGateway_Custom {
-
+	
 	use Billrun_Traits_ConditionsCheck;
 
 	protected static $type = 'transactions_response';
@@ -20,58 +20,59 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected $tranIdentifierField = null;
 	protected $dateField;
 
+
 	public function __construct($options) {
 		parent::__construct($options);
 	}
-
+	
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$customFields = $this->getCustomPaymentGatewayFields();
 		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
-		$this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
-		if ($paymentResponse['stage'] == 'Rejected') {
-			$payment->updatePastRejectionsOnProcessingFiles();
-		}
-		if ($paymentResponse['stage'] == 'Completed') {
-			$payment->markApproved($paymentResponse['stage']);
-			$billData = $payment->getRawData();
-			if (isset($billData['left_to_pay']) && $billData['due'] > (0 + Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
-			}
-			if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
-				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
-			}
-		}
+                $this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
+				if ($paymentResponse['stage'] == 'Rejected') {
+					$payment->updatePastRejectionsOnProcessingFiles();
+				}
+                if ($paymentResponse['stage'] == 'Completed') {
+                        $payment->markApproved($paymentResponse['stage']);
+                        $billData = $payment->getRawData();
+                        if (isset($billData['left_to_pay']) && $billData['due']  > (0 + Billrun_Bill::precision)) {
+                                Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($billData));
+                        }
+                        if (isset($billData['left']) && $billData['due'] < (0 - Billrun_Bill::precision)) {
+                                Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
+                        }
+                }
 	}
-
+	
 	protected function getPaymentResponse($row, $currentProcessor) {
 		if (!isset($currentProcessor['processor']['transaction_status'])) {
-			$message = "Missing transaction_status for file type " . $this->fileType;
+                        $message = "Missing transaction_status for file type " . $this->fileType;
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
-			$this->informationArray['info'][] = $message;
+                        $this->informationArray['info'][] = $message;
 		}
 		$transactionStatusDef = $currentProcessor['processor']['transaction_status'];
 		if (!isset($currentProcessor['processor']['transaction_status']['success'])) {
-			$message = "Missing transaction_status success definition for " . $this->fileType;
+                        $message = "Missing transaction_status success definition for " . $this->fileType;
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
-			$this->informationArray['info'][] = $message;
+                        $this->informationArray['info'][] = $message;
 		}
 		$successConditions = $transactionStatusDef['success'];
 		$rejectionConditions = isset($transactionStatusDef['rejection']) ? $transactionStatusDef['rejection'] : array();
 		$stage = $this->getRowStageByConditions($row, $successConditions, $rejectionConditions);
 		return array('status' => 'mixed', 'stage' => $stage);
 	}
-
+	
 	protected function mapProcessorFields($processorDefinition) {
 		if (empty($processorDefinition['processor']['amount_field']) ||
-				empty($processorDefinition['processor']['transaction_identifier_field'])) {
-			$message = "Missing definitions for file type " . $processorDefinition['file_type'];
+			empty($processorDefinition['processor']['transaction_identifier_field'])) {
+                        $message = "Missing definitions for file type " . $processorDefinition['file_type'];
 			Billrun_Factory::log($message, Zend_Log::DEBUG);
-			$this->informationArray['errors'][] = $message;
+                        $this->informationArray['errors'][] = $message;
 			return false;
 		}
-		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field', 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
+		parent::initProcessorFields(['tran_identifier_field' => 'transaction_identifier_field' , 'amount_field' => 'amount_field', 'date_field' => 'date_field'], $processorDefinition);
 		return true;
 	}
 
@@ -83,14 +84,14 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 			$stage = 'Rejected';
 		}
 		if (empty($stage)) {
-			$message = "Can't define the transaction status for " . $this->fileType;
-			$this->informationArray['errors'][] = $message;
+                        $message = "Can't define the transaction status for " . $this->fileType;
+                        $this->informationArray['errors'][] = $message;
 			throw new Exception($message);
 		}
-
+		
 		return $stage;
 	}
-
+	
 	/**
 	 * Updating the payment status.
 	 * 
@@ -101,16 +102,16 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function updatePaymentAccordingTheResponse($response, $payment, $row) {
 		$urt = !is_null($this->dateField) ? strtotime($this->getPaymentUrt($row)) : time();
 		if ($response['stage'] == "Completed") { // payment succeeded 
-			if ($payment->isPendingPayment()) {
+                        if ($payment->isPendingPayment()){
 				$payment->setUrt($urt);
-				$payment->setPending(false);
-				$payment->updateConfirmation();
-				$payment->setPaymentStatus($response, $this->gatewayName);
-				$this->informationArray['total_confirmed_amount'] += $payment->getAmount();
-				Billrun_Factory::log('Confirming transaction ' . $payment->getId(), Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
-			}
+                            $payment->setPending(false);
+                            $payment->updateConfirmation();
+                            $payment->setPaymentStatus($response, $this->gatewayName);
+                            $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
+                            Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
+                        }else{
+                            Billrun_Factory::log('Transaction ' . $payment->getId() . ' already confirmed', Zend_Log::NOTICE);
+                        }
 		} else { //handle rejections
 			if (!$payment->isRejected()) {
 				$payment->setPending(false);
@@ -123,7 +124,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				$payment->markRejected();
 				$payment->setUrt($urt);
 				$this->informationArray['transactions']['rejected']++;
-				$this->informationArray['total_rejected_amount'] += $payment->getAmount();
+				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
 				Billrun_Factory::dispatcher()->trigger('afterRejection', array($payment->getRawData()));
 			} else {
 				$message = 'Transaction ' . $payment->getId() . ' already rejected';
@@ -142,13 +143,13 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				return array('status' => 'only_acceptance', 'stage' => 'Completed');
 				break;
 			default:
-				$this->informationArray['errors'][] = 'Unknown file status';
+                                $this->informationArray['errors'][] = 'Unknown file status';
 				throw new Exception('Unknown file status');
 				break;
 		}
 	}
-
-	public function getType() {
+	
+	public function getType () {
 		return static::$type;
 	}
 

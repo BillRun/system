@@ -52,7 +52,7 @@ abstract class Billrun_Cycle_Data_Line {
 		if (isset($options['vatable'])) {
 			$this->vatable = $options['vatable'];
 		}
-
+		
 		if (isset($options['subscriber_fields'])) {
 			$this->subscriberFields = $options['subscriber_fields'];
 		}

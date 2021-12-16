@@ -51,11 +51,11 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	 */
 	public function evaluate($data, $expression, $pastValue = FALSE) {
 		$ret = array();
-		if (is_array($expression)) {
-			foreach ($expression as $key => $value) {
+		if(is_array($expression)) {
+			foreach($expression as  $key => $value) {
 				//If the vkey is operation one result should be returned  if it not an opertion then it should be added to the results by key.
-				if (isset($this->mapping[$key]) && method_exists($this, $this->mapping[$key])) {
-					$ret = $this->{$this->mapping[$key]}($data, $value, $pastValue);
+				if(isset($this->mapping[$key]) && method_exists($this, $this->mapping[$key])) {
+					$ret = $this->{$this->mapping[$key]}($data, $value,	$pastValue);
 				} else {
 					$ret[$key] = $this->evaluate($data, $value, $pastValue[$key]);
 				}
@@ -67,14 +67,15 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		return $ret;
 	}
 
-	/**
-	 *
-	 */
+
+		/**
+	*
+	*/
 	protected static function clearLeadingDollar($fieldsWithDollar) {
-		if (!is_array($fieldsWithDollar)) {
+		if(!is_array($fieldsWithDollar)) {
 			return preg_replace('/^\$/', '', $fieldsWithDollar);
 		}
-		foreach ($fieldsWithDollar as &$value) {
+		foreach($fieldsWithDollar as &$value) {
 			$value = preg_replace('/^\$/', '', $value);
 		}
 		return $fieldsWithDollar;
@@ -83,25 +84,25 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 	//======================================= instancing logic  ==============================
 	protected function _first($data, $expression, $pastValue = FALSE) {
 		$result = $pastValue;
-		if (empty($result)) {
-			$result = $this->evaluate($data, $expression);
+		if(empty($result)) {
+			$result = $this->evaluate($data,$expression);
 		}
 		return $result;
 	}
 
 	protected function _last($data, $expression, $pastValue = FALSE) {
-		$result = $pastValue;
+		$result = $pastValue ;
 		$last = $this->evaluate($data, $expression);
-		if (empty($last)) {
+		if(empty($last)) {
 			$result = $last;
 		}
 		return $result;
 	}
-
+	
 	protected function _push($data, $expression, $pastValue = FALSE) {
-		$result = empty($pastValue) ? array() : is_array($pastValue) ? $pastValue : [$pastValue];
-		if (is_array($expression)) {
-			foreach ($expression as $dstKey => $subExpression) {
+		$result = empty($pastValue) ? array() : is_array($pastValue)  ? $pastValue : [$pastValue];
+		if(is_array($expression)) {
+			foreach($expression as $dstKey => $subExpression) {
 				$addedData[$dstKey] = $this->evaluate($data, $subExpression);
 			}
 		} else {
@@ -129,7 +130,7 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		$expression = is_array($expression) ? $expression : array($expression);
 
 		foreach ($expression as $key) {
-			$result -= $this->evaluate($data, $key);
+			$result -= $this->evaluate($data,$key);
 		}
 
 		return $result;
@@ -137,38 +138,41 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 
 	protected function _multiply($data, $expression, $pastValue = 0) {
 		$expression = is_array($expression) ? $expression : array($expression);
-		$result = Billrun_Util::getIn($data, Billrun_Utils_Arrayquery_Aggregate::clearLeadingDollar(array_shift($expression)));
+		$result = Billrun_Util::getIn( $data, Billrun_Utils_Arrayquery_Aggregate::clearLeadingDollar(array_shift($expression)) );
 		foreach ($expression as $key) {
 			$result *= $this->evaluate($data, $key);
 		}
 
 		return $result + $pastValue;
+
 	}
 
 	protected function _divide($data, $expression, $pastValue = 0) {
 		$expression = is_array($expression) ? $expression : array($expression);
-		$result = Billrun_Util::getIn($data, Billrun_Utils_Arrayquery_Aggregate::clearLeadingDollar(array_shift($expression)));
+		$result = Billrun_Util::getIn( $data, Billrun_Utils_Arrayquery_Aggregate::clearLeadingDollar(array_shift($expression)) );
 		foreach ($expression as $key) {
 			$result /= $this->evaluate($data, $key);
 		}
 
 		return $result + $pastValue;
+
 	}
 
 	protected function _min($data, $expression, $pastValue = null) {
 		$currValue = $this->evaluate($data, $expression);
-		return is_null($pastValue) || !is_null($currValue) && $currValue < $pastValue ? $currValue : $pastValue;
+		return is_null($pastValue) || !is_null($currValue) && $currValue < $pastValue ? $currValue : $pastValue ;
 	}
 
 	protected function _max($data, $expression, $pastValue = null) {
 		$currValue = $this->evaluate($data, $expression);
-		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue;
+		return is_null($pastValue) || $currValue > $pastValue ? $currValue : $pastValue ;
 	}
 
-	//======================================= String operations ===============================
 
+	//======================================= String operations ===============================
+	
 	protected function _substr($data, $expression, $pastValue = 0) {
-		return substr($this->evaluate($data, array_shift($expression)), array_shift($expression), array_shift($expression));
+		return substr($this->evaluate($data,array_shift($expression)), array_shift($expression), array_shift($expression));
 	}
 
 	//======================================= Expression logic  ===============================
@@ -178,27 +182,28 @@ class Billrun_Utils_Arrayquery_Aggregate_Expression {
 		$truthValue = array_shift($expression);
 		$falseValue = array_shift($expression);
 		$expressionCheck = new Billrun_Utils_Arrayquery_Expression();
-		return $this->evaluate($data, Billrun_Utils_Arrayquery_Query::exists(array($data), $condition) ? $truthValue : $falseValue, array());
+		return $this->evaluate($data, Billrun_Utils_Arrayquery_Query::exists(array($data), $condition) ?  $truthValue : $falseValue, array());
+
 	}
-
+	
 	//==================================== Programatic extenstions logic (Unsupported by mongo) =======================
-
+	
 	protected function _callback($data, $expression, $pastValue = FALSE) {
 		$arr = [];
 		foreach ($expression['arguments'] as $arg) {
 			$arr[] = $arg;
 		}
-		if (isset($expression['extra_params'])) {
-			foreach ($expression['extra_params'] as $key => $value) {
-				$arr[] = $value;
-			}
-		}
-		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'], $arr);
+                if(isset($expression['extra_params'])){
+                    foreach ($expression['extra_params'] as $key => $value) {
+                            $arr[] = $value;
+                    }
+                }
+		return empty($expression['callback']) ? FALSE : call_user_func_array($expression['callback'],$arr);
 	}
-
+	
 	protected function _aggregate($data, $expression, $pastValue) {
 		$aggregateObject = new Billrun_Utils_Arrayquery_Aggregate();
-		return $aggregateObject->aggregate(array_diff_key($expression, array('previous_field' => 1)), array($data), @$pastValue[$expression['previous_field']]);
+		return $aggregateObject->aggregate(array_diff_key($expression,array('previous_field'=>1)), array($data),@$pastValue[$expression['previous_field']]);
 	}
 
 }

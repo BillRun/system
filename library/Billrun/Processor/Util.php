@@ -33,12 +33,11 @@ class Billrun_Processor_Util {
 		if (!empty($timeZone)) {
 			if (!empty($value = billrun_util::getIn($userFields, $timeZone))) {
 				$timeZoneValue = new DateTimeZone($value);
-			} else
-				$timeZoneValue = null;
+			} else $timeZoneValue = null;
 		}
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
-			$datetime = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
+			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
 			return $datetime;
 		}
 		$withTimeField = false;
@@ -58,7 +57,7 @@ class Billrun_Processor_Util {
 				return DateTime::createFromFormat($dateFormat, $dateValue);
 			}
 		} else {
-			$date = !is_null($timeZoneValue) ? strtotime($dateValue . ' ' . $timeZoneValue->getName()) : strtotime($dateValue);
+			$date = !is_null($timeZoneValue) ? strtotime($dateValue .' ' .$timeZoneValue->getName()) : strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
 			if (!is_null($timeZoneValue)) {
@@ -68,22 +67,22 @@ class Billrun_Processor_Util {
 		}
 		return null;
 	}
-
+	
 	public static function getCalculatedFields($type) {
 		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
 		$calculated_fields = $fileTypeConfig['processor']['calculated_fields'] ?? [];
-		$cf = array_map(function ($field) {
+		$cf = array_map(function($field){
 			return $field['target_field'];
 		}, $calculated_fields);
 		return $cf;
 	}
-
+	
 	public static function getUserFields($type) {
 		$fileTypeConfig = Billrun_Factory::config()->getFileTypeSettings($type, true);
 		$uf = $fileTypeConfig['parser']['custom_keys'] ?? [];
 		return $uf;
 	}
-
+	
 	/**
 	 *  Get all user fields that are used in calculator and rating stages.
 	 * @param string $type - input processor name
@@ -93,16 +92,17 @@ class Billrun_Processor_Util {
 		$customerAndRateUf = [];
 		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
 		$uf = self::getUserFields($type);
-		foreach ($fieldsByUsaget as $usaget => $fields) {
-			foreach ($fields as $field) {
-				if (in_array($field, $uf)) {
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $uf)){
 					$customerAndRateUf[$usaget][] = 'uf.' . $field;
 				}
 			}
 		}
 		return $customerAndRateUf;
 	}
-
+	
+	
 	/**
 	 *  Get all calcualted fields that are used in calculator and rating stages.
 	 * @param string $type - input processor name
@@ -112,9 +112,9 @@ class Billrun_Processor_Util {
 		$customerAndRateCf = [];
 		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type);
 		$cf = self::getCalculatedFields($type);
-		foreach ($fieldsByUsaget as $usaget => $fields) {
-			foreach ($fields as $field) {
-				if (in_array($field, $cf)) {
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $cf)){
 					$customerAndRateCf[$usaget][] = 'cf.' . $field;
 				}
 			}
@@ -122,6 +122,7 @@ class Billrun_Processor_Util {
 		return $customerAndRateCf;
 	}
 
+	
 	/**
 	 *  Get all user fields and calculator fields that are used in calculator and rating stages.
 	 * @param string $type - input processor name
@@ -136,7 +137,7 @@ class Billrun_Processor_Util {
 		$rateCalculators = $fileTypeConfig['rate_calculators'];
 		foreach ($rateCalculators as $rateByUsaget) {
 			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
-				$rateFieldNames[$rateUsaget] = array();
+                                $rateFieldNames[$rateUsaget] = array();
 				foreach ($priorityByUsaget as $priority) {
 					$rateFieldNames[$rateUsaget] = array_unique(array_merge($rateFieldNames[$rateUsaget], array_column($priority, 'line_key')));
 				}
@@ -144,5 +145,4 @@ class Billrun_Processor_Util {
 		}
 		return array_merge_recursive($customerFieldNames, $rateFieldNames);
 	}
-
 }

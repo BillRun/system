@@ -13,25 +13,25 @@
  * @since    5.2
  */
 class Billrun_DataTypes_MongoCycleTime {
-
+	
 	/**
 	 * Cycle start time
 	 * @var Mongodloid_Date
 	 */
 	private $start;
-
+	
 	/**
 	 * Cycle end time
 	 * @var Mongodloid_Date 
 	 */
 	private $end;
-
+	
 	/**
 	 * Current billrun key.
 	 * @var string
 	 */
 	private $key;
-
+	
 	/**
 	 * Create a new instance of the mongo cycle time class, based on cycle time object.
 	 * @param Billrun_DataTypes_CycleTime $cycleTime - Cycle time object.
@@ -49,7 +49,7 @@ class Billrun_DataTypes_MongoCycleTime {
 	public function start() {
 		return $this->start;
 	}
-
+	
 	/**
 	 * Get the cycle end date
 	 * @return Mongodloid_Date
@@ -57,9 +57,8 @@ class Billrun_DataTypes_MongoCycleTime {
 	public function end() {
 		return $this->end;
 	}
-
+	
 	public function key() {
 		return $this->key;
 	}
-
 }

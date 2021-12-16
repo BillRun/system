@@ -14,7 +14,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class V3_billAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
@@ -140,7 +139,7 @@ class V3_billAction extends ApiAction {
 		}
 		return Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 	}
-
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}

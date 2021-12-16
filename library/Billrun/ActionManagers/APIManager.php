@@ -38,8 +38,8 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 	 */
 	protected function validate() {
 		return parent::validate() &&
-				isset($this->options['input']) &&
-				isset($this->options['api_name']);
+			isset($this->options['input']) &&
+			isset($this->options['api_name']);
 	}
 
 	/**
@@ -60,7 +60,7 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 		 */
 		if (!$this->action->parse($input)) {
 			Billrun_Factory::log("APIAction getAction Action failed to parse input! " .
-					print_r($input, 1), Zend_Log::INFO);
+				print_r($input, 1), Zend_Log::INFO);
 			throw new Billrun_Exceptions_Api(2);
 		}
 

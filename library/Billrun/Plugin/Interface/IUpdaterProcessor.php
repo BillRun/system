@@ -19,3 +19,4 @@ interface Billrun_Plugin_Interface_IUpdaterProcessor extends Billrun_Plugin_Inte
 	 */
 	public function updateData($type, $filename, Billrun_Processor_Updater &$processor);
 }
+

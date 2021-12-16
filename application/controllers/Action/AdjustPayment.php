@@ -14,9 +14,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class AdjustPaymentsAction extends ApiAction {
-
 	use Billrun_Traits_Api_UserPermissions;
-
+	
 	protected $payment_methods = array('cash', 'cheque', 'credit', 'wire_transfer', 'write_off');
 
 	public function execute() {
@@ -37,7 +36,8 @@ class AdjustPaymentsAction extends ApiAction {
 							$payment = Billrun_Bill_Payment::getInstanceByid($rawAdjustment['id']);
 							if ($payment) {
 								$method = $payment->getBillMethod();
-								if (in_array($method, $this->payment_methods) && !($payment->isRejection() || $payment->isRejected() || $payment->isCancellation() || $payment->isCancelled() || $payment->isDeniedPayment() || $payment->isDenial() || $payment->isWaiting())) {
+								if (in_array($method, $this->payment_methods) && !($payment->isRejection() || $payment->isRejected() || $payment->isCancellation() || $payment->isCancelled() 
+									|| $payment->isDeniedPayment() || $payment->isDenial() || $payment ->isWaiting())) {
 									if (isset($rawAdjustment['method'])) {
 										if (in_array($rawAdjustment['method'], $this->payment_methods)) {
 											if ($rawAdjustment['method'] != $method) {
@@ -86,22 +86,23 @@ class AdjustPaymentsAction extends ApiAction {
 					if (isset($adjustment['amount'])) {
 						if ($adjustment['amount']) {
 							$rawData['amount'] = $adjustment['amount'];
-						} else { // 0 means cancellation only
+						}
+						else { // 0 means cancellation only
 							continue;
 						}
 					}
 					unset($rawData['_id'], $rawData['pays'], $rawData['due']);
-					$rawData['deposit_slip'] = isset($rawData['deposit_slip']) ? $rawData['deposit_slip'] : '';
-					$rawData['source'] = isset($rawData['source']) ? $rawData['source'] : 'web';
-					$rawData['deposit_slip_bank'] = isset($rawData['deposit_slip_bank']) ? $rawData['deposit_slip_bank'] : '';
+					$rawData['deposit_slip'] = isset($rawData['deposit_slip'])? $rawData['deposit_slip'] : '';
+					$rawData['source'] = isset($rawData['source'])? $rawData['source'] : 'web';
+					$rawData['deposit_slip_bank'] = isset($rawData['deposit_slip_bank'])? $rawData['deposit_slip_bank'] : '';
 					$rawData['correction'] = true;
 					$className = Billrun_Bill_Payment::getClassByPaymentMethod($rawData['method']);
-					$newPayments[] = new $className(array_merge($adjustment['extra_data'], $rawData));
+					$newPayments[] = new $className(array_merge($adjustment['extra_data'],$rawData));
 				}
 				foreach ($newPayments as $newPayment) {
 					$newPayment->setConfirmationStatus(false);
 				}
-
+				
 				if ($newPayments) {
 					Billrun_Bill_Payment::savePayments($newPayments);
 				}

@@ -66,7 +66,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900) {
 			$this->file_fetch_orphan_time = $options['receiver']['orphan_time'];
 		}
-
+		
 		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 	}
 
@@ -85,17 +85,17 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
 		$file_types = Billrun_Factory::config()->getFileTypes();
-
+                
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
 		);
-
-		$addData = array(
+                
+        $addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => new Mongodloid_Date()
-		);
-
+                    );
+		
 		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {
 			$addData['type'] = 'input_processor';
 		}
@@ -118,7 +118,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 
 		return $result['n'] == 1 && $result['ok'] == 1;
 	}
-
+	
 	public static function getInstance() {
 		$args = func_get_args();
 		$stamp = md5(static::class . serialize($args));
@@ -138,7 +138,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		self::$instance[$stamp] = new $class($args);
 		return self::$instance[$stamp];
 	}
-
+	
 	public function getReceiver() {
 		
 	}

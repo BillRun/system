@@ -29,7 +29,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		if (isset($query['secret'])) {
 			$query['secret'] = hash('sha512', $query['secret']);
 		} else {
-			$errorCode = 22;
+			$errorCode =  22;
 			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
@@ -56,7 +56,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 
 		if ($cardRecord->isEmpty()) {
-			$errorCode = 10;
+			$errorCode =  10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

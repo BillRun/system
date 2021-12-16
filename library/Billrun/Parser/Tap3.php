@@ -12,16 +12,16 @@
 class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 
 	use Billrun_Traits_AsnParsing;
-
+	
 	const FILE_READ_AHEAD_LENGTH = 65535;
-
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->tap3Config = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('external_parsers_config.tap3')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
-
+	
 	public function parse($fp) {
 		$this->dataRows = array();
 		$this->headerRows = array();
@@ -32,7 +32,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 			$bytes .= fread($fp, self::FILE_READ_AHEAD_LENGTH);
 		} while (!feof($fp));
 		$parsedData = Asn_Base::parseASNString($bytes);
-		$this->headerRows[] = $this->parseHeader($parsedData);
+				$this->headerRows[] = $this->parseHeader($parsedData);
 
 		if (!isset($this->tap3Config[$this->fileVersion])) {
 			Billrun_Factory::log("Processing tap3 file with non supported version : {$this->fileVersion}", Zend_Log::NOTICE);
@@ -61,7 +61,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 
 		return true;
 	}
-
+	
 	public function parseData($type, $data) {
 		$asnObject = $data;
 		$type = $asnObject->getType();
@@ -96,28 +96,28 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 		$trailer = $this->parseASNDataRecur($this->tap3Config['trailer'], $data, $this->tap3Config['fields']);
 		return $trailer;
 	}
-
+	
 	/**
 	 * add Tap3 specific parsing methods.
 	 */
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
-			'raw_data' => function ($data) {
+			'raw_data' => function($data) {
 				return $this->utf8encodeArr($data);
 			},
-			'bcd_number' => function ($fieldData) {
+			'bcd_number' => function($fieldData) {
 				$ret = $this->parsingMethods['bcd_encode']($fieldData);
 
 				return preg_replace('/15$/', '', $ret);
 			},
-			'time_offset_list' => function ($data) {
+			'time_offset_list' => function($data) {
 				return $this->parseTimeOffsetList($data);
 			},
 		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
 	}
-
+	
 	/**
 	 * Parse time offset list that  conatin the time offset  refecenced in each line  cal start time
 	 * @param type $asn the  time offset list
@@ -135,7 +135,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 		}
 		return $timeOffsets;
 	}
-
+	
 	/**
 	 * Pull required fields from the CDR nested tree to the surface.
 	 * @param type $cdrLine the line to monipulate.
@@ -158,7 +158,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 //			$cdrLine['tzoffset'] = $offset;
 //		}
 	}
-
+	
 	/**
 	 * sum up all values of nested array on various levels (as long as it doesnt exceed limit
 	 * @param type $limit maximum recurrsion depth

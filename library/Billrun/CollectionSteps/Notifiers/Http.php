@@ -14,7 +14,7 @@
  * @since    5.0
  */
 class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Notifiers_Abstract {
-
+	
 	/**
 	 * sends an HTTP request
 	 * 
@@ -27,14 +27,14 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		}
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
-		Billrun_Factory::log('HTTP request - sending request to prov ' . '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
 		return Billrun_Util::sendRequest($requestUrl, $data, $method);
 	}
 
 	protected function getRequestUrl() {
 		return $this->task['step_config']['url'];
 	}
-
+	
 	/**
 	 * 
 	 * @return type string - default json
@@ -45,17 +45,17 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		}
 		return 'json'; // default
 	}
-
+	
 	/**
 	 * 
 	 * @return type string - POST or GET default GET
 	 */
 	protected function getMethod() {
 		$method = $this->task['step_config']['method'];
-		if (strtolower($method) == 'post') {
+		if(strtolower($method) == 'post') {
 			return Zend_Http_Client::POST;
 		}
-		return Zend_Http_Client::GET;
+		return Zend_Http_Client::GET; 
 	}
 
 	protected function getRequestBody() {
@@ -64,7 +64,7 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		unset($data['_id']);
 		return $data;
 	}
-
+	
 	/**
 	 * parse the response received from the request
 	 * @return mixed
@@ -74,7 +74,7 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 		$decoder = Billrun_Decoder_Manager::getDecoder(array('decoder' => $decoderType));
 		return $decoder->decode($response);
 	}
-
+	
 	/**
 	 * checks if the response from request is valid
 	 * 
@@ -84,5 +84,5 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 	protected function isResponseValid($response) {
 		return $response && isset($response['success']) && $response['success'];
 	}
-
+	
 }

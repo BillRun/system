@@ -27,7 +27,7 @@ class Billrun_CollectionSteps_Notifiers_Mail extends Billrun_CollectionSteps_Not
 		$subject = $this->getSubject($params);
 		return Billrun_Util::sendMail($subject, $body, $account->email, array(), true);
 	}
-
+	
 	/**
 	 * parse the response received after run
 	 * @return mixed
@@ -35,12 +35,12 @@ class Billrun_CollectionSteps_Notifiers_Mail extends Billrun_CollectionSteps_Not
 	protected function parseResponse($response) {
 		return !empty($response);
 	}
-
+	
 	protected function getBody($params) {
 		$body = $this->task['step_config']['body'];
 		return $this->updateDynamicData($body, $params);
 	}
-
+	
 	protected function getSubject($params) {
 		$subject = $this->task['step_config']['subject'];
 		return $this->updateDynamicData($subject, $params);

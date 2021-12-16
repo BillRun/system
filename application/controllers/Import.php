@@ -16,13 +16,13 @@ class ImportController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
 		die;
-
+		
 		// Move interconnect data to the international rate itself
 		// Remove the interconnect
 		// Add interconnect flag
 		$notZeroRates = array();
 		$query = array(
-			'params.prefix' => array('$in' => array(new Mongodloid_Regex("/^01/"))),
+			'params.prefix' => array('$in' => array(new Mongodloid_Regex( "/^01/" ))),
 		);
 		$internationalRates = Billrun_Factory::db()->ratesCollection()->query($query);
 		foreach ($internationalRates as $internationalRate) {
@@ -56,7 +56,7 @@ class ImportController extends Yaf_Controller_Abstract {
 							if (is_null($interconnectRate)) {
 								$interconnectRate = $interConnect->get('rates')[$usaget]['BASE']['rate'];
 							}
-
+							
 							$find = array(
 								'key' => $internationalRate['key'],
 							);
@@ -87,8 +87,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		die;
 	}
 
-	public function csvAction() {
-		
-	}
+	public function csvAction() {}
+
 
 }

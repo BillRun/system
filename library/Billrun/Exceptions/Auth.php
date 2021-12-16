@@ -13,16 +13,16 @@
  * @since    5.2
  */
 class Billrun_Exceptions_Auth extends Billrun_Exceptions_Api {
-
+	
 	const ERROR_CODE = 17578;
-
+		
 	/**
 	 * Generate the array value to be displayed in the client for the exception.
 	 * @return array.
 	 */
 	protected function generateDisplay() {
 		$errorMessage = "Authentication error.";
-		if (isset($this->errors[$this->apiCode])) {
+		if(isset($this->errors[$this->apiCode])) {
 			$errorString = $this->errors[$this->apiCode];
 			$errorMessage = vsprintf($errorString, $this->args);
 		}

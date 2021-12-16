@@ -14,7 +14,7 @@
  * 
  */
 class Billrun_Sms extends Billrun_Sms_Abstract {
-
+	
 	/**
 	 * mockup method
 	 * @return mixed
@@ -22,5 +22,4 @@ class Billrun_Sms extends Billrun_Sms_Abstract {
 	public function send() {
 		return true;
 	}
-
 }

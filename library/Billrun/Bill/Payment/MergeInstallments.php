@@ -22,7 +22,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 	protected $installmentChargeNotBefore;
 
 	public function __construct($options) {
-		if (!isset($options['aid'])) {
+		if (!isset($options['aid']) ) {
 			throw new Exception('Missing aid when merging bills');
 		}
 		if (!empty($options['autoload'])) {
@@ -74,17 +74,17 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		$paymentResponse = Billrun_PaymentManager::getInstance()->pay($this->method, array($paymentsArr));
 		$mergedBill = current($paymentResponse['payment']);
 		$this->installmentChargeNotBefore = !empty($this->installmentChargeNotBefore) ? $this->installmentChargeNotBefore : (!empty($billChargeNotBefore) ? $billChargeNotBefore : $firstDueDate);
-		if (!empty($mergedBill) && !empty($mergedBill->getId())) {
+		if (!empty($mergedBill) && !empty($mergedBill->getId())){
 			$mergedBill->setDueDate($this->installmentDueDate);
-			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);
+			$mergedBill->setChargeNotBefore($this->installmentChargeNotBefore);			
 			$success = $mergedBill->insertMergeInstallment();
 			return $success;
 		}
-
+		
 		Billrun_Factory::log("Failed merging installments for aid: " . $this->data['aid'], Zend_Log::ALERT);
 		return false;
 	}
-
+	
 	protected function insertMergeInstallment() {
 		$bill = $this->buildInstallment();
 		$mergedInstallment = new self($bill);
@@ -97,7 +97,7 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 			throw new Exception("Merge installments failed");
 		}
 	}
-
+	
 	protected function buildInstallment() {
 		$installment['dir'] = 'tc';
 		$installment['method'] = $this->method;
@@ -109,5 +109,4 @@ class Billrun_Bill_Payment_MergeInstallments extends Billrun_Bill_Payment {
 		$installment['charge']['not_before'] = $this->data['charge']['not_before'];
 		return $installment;
 	}
-
 }

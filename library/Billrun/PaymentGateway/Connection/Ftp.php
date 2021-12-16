@@ -11,7 +11,7 @@
  *
  * @since    5.10
  */
-class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Connection {
+class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Connection{
 
 	protected static $type = 'ftp';
 	protected $port = '21';
@@ -26,7 +26,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		$this->source = isset($options['type']) ? $options['type'] : self::$type;
 		$this->deleteReceived = !empty($options['delete_received']) ? true : false;
 	}
-
+	
 	public function receive() {
 		if (empty($this->connection)) {
 			Billrun_Factory::log("Missing connection", Zend_Log::DEBUG);
@@ -34,36 +34,37 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		}
 		$ret = array();
 		Billrun_Factory::dispatcher()->trigger('beforeFTPReceiveFullRun', array($this));
-		$hostName = $this->host;
+			$hostName = $this->host;
 
-		if (is_numeric($hostName)) {
-			$hostName = '';
-		}
-		if (!empty($this->remoteDir) && substr($this->remoteDir, -1) != DIRECTORY_SEPARATOR) {
-			$this->remoteDir .= DIRECTORY_SEPARATOR;
-		}
+			if (is_numeric($hostName)) {
+				$hostName = '';
+			}
+			if (!empty($this->remoteDir) && substr($this->remoteDir, -1) != DIRECTORY_SEPARATOR) {
+				$this->remoteDir .= DIRECTORY_SEPARATOR;
+			}
+			
+			Billrun_Factory::log()->log("Connecting to FTP server: " . $this->host, Zend_Log::INFO);
+			$this->connection->setPassive(isset($this->passive) ? $this->passive : false);
+			$this->connection->setMode(2); // setting ftp mode to binary
+			
+			Billrun_Factory::log()->log("Success: Connected to: " . $this->host, Zend_Log::INFO);
+			$hostRet = array();
+			Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
+			try {
+				$hostRet = $this->receiveFromHost($hostName);
+			} catch (Exception $e) {
+				Billrun_Factory::log("FTP: Fail when downloading from : $hostName with exception : " . $e->getMessage(), Zend_Log::ALERT);
+				return $ret;
+			}
+			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 
-		Billrun_Factory::log()->log("Connecting to FTP server: " . $this->host, Zend_Log::INFO);
-		$this->connection->setPassive(isset($this->passive) ? $this->passive : false);
-		$this->connection->setMode(2); // setting ftp mode to binary
-
-		Billrun_Factory::log()->log("Success: Connected to: " . $this->host, Zend_Log::INFO);
-		$hostRet = array();
-		Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
-		try {
-			$hostRet = $this->receiveFromHost($hostName);
-		} catch (Exception $e) {
-			Billrun_Factory::log("FTP: Fail when downloading from : $hostName with exception : " . $e->getMessage(), Zend_Log::ALERT);
-			return $ret;
-		}
-		Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
-
-		$ret = array_merge($ret, $hostRet);
+			$ret = array_merge($ret, $hostRet);
+		
 
 		Billrun_Factory::dispatcher()->trigger('afterFTPReceivedFullRun', array($this, $ret, $hostName));
 		return $ret;
 	}
-
+	
 	public function export($fileName) {
 		if (!empty($this->connection)) {
 			$local = $this->localDir . '/' . $fileName;
@@ -72,7 +73,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 			ftp_put($ftpResource, $remote, $local, FTP_BINARY);
 		}
 	}
-
+	
 	/**
 	 * Receive files from the ftp host.
 	 * @param type $hostName the ftp hostname/alias
@@ -106,7 +107,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 				$targetPath .= '/';
 			}
 			$config = array($this->deleteReceived, $this->passive, $this->connection, $this->source);
-			$targetPath .= date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($config)), 0, 7) . DIRECTORY_SEPARATOR;
+			$targetPath.=date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($config)), 0, 7) . DIRECTORY_SEPARATOR;
 			if (!file_exists($targetPath)) {
 				mkdir($targetPath, 0777, true);
 			}
@@ -149,7 +150,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		}
 		return $ret;
 	}
-
+	
 	/**
 	 * Check if a remote file shold be received for further processing.
 	 * @param type $file
@@ -196,7 +197,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 		}
 		usort($files, function ($a, $b) {
 			if ($a->isFile() && $b->isFile() &&
-					isset($a->extraData['date']) && isset($b->extraData['date'])) {
+				isset($a->extraData['date']) && isset($b->extraData['date'])) {
 				return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name, $b->name) * 0.1);
 			}
 
@@ -213,7 +214,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
-
+	
 	/**
 	 * method to log the processing
 	 * 
@@ -221,7 +222,7 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 	 */
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-
+		
 		$query = array(
 			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
@@ -251,5 +252,4 @@ class Billrun_PaymentGateway_Connection_Ftp extends Billrun_PaymentGateway_Conne
 
 		return $result['n'] == 1 && $result['ok'] == 1;
 	}
-
 }

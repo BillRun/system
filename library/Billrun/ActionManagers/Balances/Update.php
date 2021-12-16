@@ -71,7 +71,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if (!$manager) {
-			$errorCode = 14;
+			$errorCode =  14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -84,7 +84,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function setUpdateValue(&$line, $wallet) {
 		$value = $line['balance_after'] - $line['balance_before'];
 		$wallet_chargingby = $wallet->getChargingBy();
-		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost' || $wallet_chargingby == 'cost' || $wallet_chargingby == 'total_cost') {
+		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost' || $wallet_chargingby == 'cost' || $wallet_chargingby == 'total_cost' ) {
 			$line["aprice"] = $value;
 		} else {
 			$line["usagev"] = $value;
@@ -177,8 +177,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
 		$balanceLine['urt'] = new Mongodloid_Date();
-		$balanceLine['process_time'] = new Mongodloid_Date();
-		;
+		$balanceLine['process_time'] = new Mongodloid_Date();;
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
 		$balanceLine['usaget'] = 'balance';
@@ -246,11 +245,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
-		if (!$outputDocuments) {
-			$errorCode = 21;
+		if(!$outputDocuments) {
+			$errorCode =  21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
-
+		
 		$documents = $outputDocuments;
 		// Write the action to the lines collection.
 		$reportedDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
@@ -301,7 +300,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if (!$upsertNeeded) {
 			return true;
 		}
-		$errorCode = 15;
+		$errorCode =  15;
 		$this->reportError($errorCode, Zend_Log::NOTICE);
 		return false;
 	}
@@ -316,7 +315,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$upsertNeeded = true;
 
-		if (empty($update)) {
+		if (empty($update)){
 			if (!$this->handleNoUpsert()) {
 				return false;
 			}
@@ -325,13 +324,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$jsonUpdateData = json_decode($update, true);
 		// If the JSON is invalid
-		if ($upsertNeeded && ($jsonUpdateData == null)) {
+		if($upsertNeeded && ($jsonUpdateData==null)) {
 			// [Balances error] 1227
-			$errorCode = 27;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($update, 1)));
+			$errorCode =  27;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($update,1)));
 			return false;
 		}
-
+		
 		if (isset($jsonUpdateData['operation'])) {
 			// TODO: What if this is not INC and not SET? Should we check and raise error?
 			$operation = $jsonUpdateData['operation'];
@@ -397,7 +396,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = 16;
+			$errorCode =  16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -405,13 +404,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if ($this->query === null) {
-			$errorCode = 17;
+			$errorCode =  17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		// No filter found.
 		else if (empty($this->query)) {
-			$errorCode = 18;
+			$errorCode =  18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -429,7 +428,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		// Check that sid exists.
 		if (!$sid) {
-			$errorCode = 19;
+			$errorCode =  19;
 			$error = "Update action did not receive a subscriber ID!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -466,9 +465,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Check for recurring.
 		$recurring = $input->get('recurring');
 		$this->constructOperation($recurring);
-		if (!$this->updaterOptions['operation']) {
+		if(!$this->updaterOptions['operation']) {
 			// [Balances Error 1228]
-			$errorCode = 28;
+			$errorCode =  28;
 			$this->reportError($errorCode, Zend_Log::WARN);
 			return false;
 		}
@@ -489,14 +488,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if ($recurring) {
 			$options['recurring'] = true;
 		}
-
+		
 		/**
 		 * @var Billrun_Balances_Update_Operation
 		 */
 		$operation = Billrun_Balances_Util::getOperation($this->recordToSet, $options);
 		$this->updaterOptions['operation'] = $operation;
 	}
-
+	
 	/**
 	 * Get the query to use to update mongo.
 	 * 

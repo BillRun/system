@@ -153,7 +153,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 
-		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
+                $this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
 	}
 
 	protected function getLines() {
@@ -202,16 +202,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
+                if (isset($this->aidsQueuedForRebalance[$row['aid']]) && $row['type'] !== "credit") {
 			return false;
 		}
-
+                
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 			$rateField = 'arate';
 			$arate = $row->get($rateField, true);
 			$totalPricingData = array();
-			$rates = (is_null($row->get('rates', true)) ? array() : $row->get('rates', true));
+			$rates = (is_null($row->get('rates', true)) ? array(): $row->get('rates', true));
 			$foreignFields = array();
 			foreach ($rates as &$rate) {
 				$row[$rateField] = $rate['rate'];
@@ -222,20 +222,20 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if (is_bool($pricingData)) {
 					return $pricingData;
 				}
-				$foreignFields = array_merge($foreignFields, $this->getForeignFields(array('balance' => $calcRow->getBalance(),
-							'services' => $calcRow->getUsedServices(),
-							'plan' => $calcRow->getPlan()),
-								$row->getRawData()));
+				$foreignFields = array_merge($foreignFields, $this->getForeignFields( array('balance' => $calcRow->getBalance() ,
+																			'services' => $calcRow->getUsedServices(),
+																			'plan' => $calcRow->getPlan()) ,
+																	 $row->getRawData()));
 				$this->updatePricingData($rate, $totalPricingData, $pricingData);
 			}
-
+			
 			unset($row['retail_rate']);
 			if (empty($arate)) {
 				unset($row[$rateField]);
 			} else {
 				$row[$rateField] = $arate;
 			}
-
+			
 			$row->setRawData(array_merge($row->getRawData(), $totalPricingData, $foreignFields));
 			$row->set('rates', $rates);
 			$this->afterCustomerPricing($row);
@@ -245,7 +245,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 	}
-
+	
 	/**
 	 * update rate object and pricing data of entire line based on current rate calculation
 	 * 
@@ -272,6 +272,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 	}
 
+
 	/**
 	 * returns whether or not the current rate is a retail rate
 	 * 
@@ -281,7 +282,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function isRetailRate($rate) {
 		return $rate['tariff_category'] === 'retail';
 	}
-
+	
 	/**
 	 * whether or not the received rate pricing data should be added to the retail price
 	 * 
@@ -290,9 +291,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function shouldAddToRetailPrice($rate) {
 		return ($this->isRetailRate($rate)) ||
-				(isset($rate['add_to_retail']) && $rate['add_to_retail']);
+			(isset($rate['add_to_retail']) && $rate['add_to_retail']);
 	}
-
+	
 	/**
 	 * Handles special cases in customer pricing needs to be updated after price calculation
 	 * 
@@ -301,6 +302,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function afterCustomerPricing(&$row) {
 		if ($row['type'] == 'credit' && $row['usaget'] === 'refund') { // handle the case of refund by usagev (calculators can only handle positive values)
 			$row['aprice'] = -abs($row['aprice']);
+
 		}
 	}
 
@@ -375,7 +377,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 		return isset($line['sid']) && $line['sid'] !== false &&
-				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
@@ -395,17 +397,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public static function getPrecision() {
 		return static::$precision;
 	}
-
+	
 	public function getActiveBillrunEndTime() {
 		return $this->active_billrun_end_time;
 	}
-
 	public function getActiveBillrun() {
 		return $this->active_billrun;
 	}
-
 	public function getNextActiveBillrun() {
 		return $this->next_active_billrun;
 	}
-
+	
 }

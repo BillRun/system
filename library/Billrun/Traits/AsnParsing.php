@@ -16,7 +16,7 @@ trait Billrun_Traits_AsnParsing {
 
 	protected function initParsing() {
 		$this->parsingMethods = array(
-			'debug' => function ($fieldData) {/* //TODO remove */
+			'debug' => function($fieldData) {/* //TODO remove */
 				$numarr = unpack("C*", $fieldData);
 				$numData = 0;
 				foreach ($numarr as $byte) {
@@ -31,16 +31,16 @@ trait Billrun_Traits_AsnParsing {
 				Billrun_Factory::log("DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData, Zend_Log::DEBUG);
 				return "";
 			},
-			'string' => function ($fieldData) {
+			'string' => function($fieldData) {
 				return utf8_encode($fieldData);
 			},
-			'ascii' => function ($fieldData) {
+			'ascii' => function($fieldData) {
 				return preg_replace('/[^(\x20-\x7F)]*/', '', $fieldData);
 			},
-			'ascii_number' => function ($fieldData) {
+			'ascii_number' => function($fieldData) {
 				return intval(preg_replace('/[^(\x20-\x7F)]*/', '', $fieldData), 10);
 			},
-			'long' => function ($fieldData) {
+			'long' => function($fieldData) {
 				$numarr = unpack('C*', $fieldData);
 				$ret = 0;
 				foreach ($numarr as $byte) {
@@ -48,7 +48,7 @@ trait Billrun_Traits_AsnParsing {
 				}
 				return $ret;
 			},
-			'number' => function ($fieldData) {
+			'number' => function($fieldData) {
 				$numarr = unpack('C*', $fieldData);
 				$ret = 0;
 				foreach ($numarr as $byte) {
@@ -56,7 +56,7 @@ trait Billrun_Traits_AsnParsing {
 				}
 				return $ret;
 			},
-			'bcd_encode' => function ($fieldData) {
+			'bcd_encode' => function($fieldData) {
 				$halfBytes = unpack('C*', $fieldData);
 				$ret = '';
 				foreach ($halfBytes as $byte) {
@@ -64,20 +64,20 @@ trait Billrun_Traits_AsnParsing {
 				}
 				return $ret;
 			},
-			'ip' => function ($fieldData) {
+			'ip' => function($fieldData) {
 				return implode('.', unpack('C*', $fieldData));
 			},
-			'ip6' => function ($fieldData) {
+			'ip6' => function($fieldData) {
 				return implode(':', unpack('H*', $fieldData));
 			},
-			'datetime' => function ($fieldData) {
+			'datetime' => function($fieldData) {
 				$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
 				return is_object($tempTime) ? $tempTime->format('YmdHis') : '';
 			},
-			'json' => function ($fieldData) {
+			'json' => function($fieldData) {
 				return json_encode($this->utf8encodeArr($fieldData));
 			},
-			'ia5string' => function ($fieldData) {
+			'ia5string' => function($fieldData) {
 				return utf8_encode(preg_replace('/[\x00-\x1F\x7F]/', '', $fieldData));
 			}
 		);
