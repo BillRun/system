@@ -162,7 +162,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
         
         public function beforSplitLineNotAddedToQueue($line, &$addToQueue) {
-            $addToQueue =  $line['split_during_mediation'] ?? false;
+            $addToQueue =  $line['split_during_mediation'] ?? $addToQueue;
         }
 
         function modifyStrigToKeyStructure($str) {
@@ -235,7 +235,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 						} else {
                                                         $newRow["split_line"] = true;
                                                         //for case that line was split from medation and then the same line split from rate calaculator
-                                                        if(isset($newRow["split_during_mediation"]) && $newRow["split_during_mediation"]){
+                                                        if(!empty($newRow["split_during_mediation"])){
                                                             $newRow["split_during_mediation"] = false;
                                                         }
 							$this->addExtraRow($newRow);
