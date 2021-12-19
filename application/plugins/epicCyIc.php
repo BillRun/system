@@ -235,6 +235,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$extraData = $this->extraLines;
 		}
 	}
+        
+        public function beforeUpdateRebalanceLines(&$updateQuery) {
+            $updateQuery['$unset'] = array_merge($updateQuery['$unset'], array('cf.is_split_row' => 1));
+        }
 
 	protected function updateCfFields($newRow, &$row) {
 		if (is_array($row)) {
