@@ -205,17 +205,19 @@ class Billrun_Parser_Xml {
     
     protected function preXmlBuilding() {
         foreach ($this->input_array as $segment => $indexes) {
-            for ($a = 0; $a < count($indexes); $a++) {
-                if (isset($this->input_array[$segment][$a])) {
-                    if (isset($this->input_array[$segment][$a]['path'])) {
-                        $this->pathes[] = $this->input_array[$segment][$a]['path'];
-                        $this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
-                    } else {
-                        throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
-                    }
-                }
-            }
-        }
+			if(!is_null($indexes)) {
+				for ($a = 0; $a < count($indexes); $a++) {
+					if (isset($this->input_array[$segment][$a])) {
+						if (isset($this->input_array[$segment][$a]['path'])) {
+							$this->pathes[] = $this->input_array[$segment][$a]['path'];
+							$this->pathesBySegment[$segment][] = $this->input_array[$segment][$a]['path'];
+						} else {
+							throw new Exception("No path for one of the " . $segment . "'s entity. No parse was made.");
+						}
+					}
+				}
+			}
+		}
         sort($this->pathes);
         if (count($this->pathes) > 1) {
             $commonPrefix = array_shift($this->pathes);  // take the first item as initial prefix
