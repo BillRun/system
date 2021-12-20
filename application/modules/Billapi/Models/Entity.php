@@ -1025,6 +1025,14 @@ class Models_Entity {
 	}
 	
 	/**
+	 * method to get the update instruct
+	 * @param array mongo update instruct
+	 */
+	public function getUpdate() {
+		return $this->update;
+	}
+	
+	/**
 	 * method to update the update options instruct
 	 * @param array $o mongo update options instruct
 	 */

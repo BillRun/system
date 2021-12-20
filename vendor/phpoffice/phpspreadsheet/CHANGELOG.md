@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
+## 1.20.0 - 2021-11-23
+
+### Added
+
+- Xlsx Writer Support for WMF Files [#2339](https://github.com/PHPOffice/PhpSpreadsheet/issues/2339)
+- Use standard temporary file for internal use of HTMLPurifier [#2383](https://github.com/PHPOffice/PhpSpreadsheet/issues/2383)
+
+### Changed
+
+- Drop support for PHP 7.2, according to https://phpspreadsheet.readthedocs.io/en/latest/#php-version-support
+- Use native typing for objects that were already documented as such
+
+### Deprecated
+
+- Nothing
+
+### Removed
+
+- Nothing
+
+### Fixed
+
+- Fixed null conversation for strToUpper [#2292](https://github.com/PHPOffice/PhpSpreadsheet/issues/2292)
+- Fixed Trying to access array offset on value of type null (Xls Reader) [#2315](https://github.com/PHPOffice/PhpSpreadsheet/issues/2315)
+- Don't corrupt XLSX files containing data validation [#2377](https://github.com/PHPOffice/PhpSpreadsheet/issues/2377)
+- Non-fixed cells were not updated if shared formula has a fixed cell [#2354](https://github.com/PHPOffice/PhpSpreadsheet/issues/2354)
+- Declare key of generic ArrayObject
+- CSV reader better support for boolean values [#2374](https://github.com/PHPOffice/PhpSpreadsheet/pull/2374)
+- Some ZIP file could not be read [#2376](https://github.com/PHPOffice/PhpSpreadsheet/pull/2376)
+- Fix regression were hyperlinks could not be read [#2391](https://github.com/PHPOffice/PhpSpreadsheet/pull/2391)
+- AutoFilter Improvements [#2393](https://github.com/PHPOffice/PhpSpreadsheet/pull/2393)
+- Don't corrupt file when using chart with fill color [#589](https://github.com/PHPOffice/PhpSpreadsheet/pull/589)
+- Restore imperfect array formula values in xlsx writer [#2343](https://github.com/PHPOffice/PhpSpreadsheet/pull/2343)
+- Restore explicit list of changes to PHPExcel migration document [#1546](https://github.com/PHPOffice/PhpSpreadsheet/issues/1546)
+
 ## 1.19.0 - 2021-10-31
 
 ### Added
@@ -82,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ## 1.18.0 - 2021-05-31
 
 ### Added
+
 - Enhancements to CSV Reader, allowing options to be set when using `IOFactory::load()` with a callback to set delimiter, enclosure, charset etc [PR #2103](https://github.com/PHPOffice/PhpSpreadsheet/pull/2103) - See [documentation](https://github.com/PHPOffice/PhpSpreadsheet/blob/master/docs/topics/reading-and-writing-to-file.md#csv-comma-separated-values) for details.
 - Implemented basic AutoFiltering for Ods Reader and Writer [PR #2053](https://github.com/PHPOffice/PhpSpreadsheet/pull/2053)
 - Implemented basic AutoFiltering for Gnumeric Reader [PR #2055](https://github.com/PHPOffice/PhpSpreadsheet/pull/2055)
@@ -104,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Use of `nb` rather than `no` as the locale language code for Norsk Bokmål.
 
 ### Fixed
+
 - Fixed error in COUPNCD() calculation for end of month [Issue #2116](https://github.com/PHPOffice/PhpSpreadsheet/issues/2116) - [PR #2119](https://github.com/PHPOffice/PhpSpreadsheet/pull/2119)
 - Resolve default values when a null argument is passed for HLOOKUP(), VLOOKUP() and ADDRESS() functions [Issue #2120](https://github.com/PHPOffice/PhpSpreadsheet/issues/2120) - [PR #2121](https://github.com/PHPOffice/PhpSpreadsheet/pull/2121)
 - Fixed incorrect R1C1 to A1 subtraction formula conversion (`R[-2]C-R[2]C`) [Issue #2076](https://github.com/PHPOffice/PhpSpreadsheet/pull/2076) [PR #2086](https://github.com/PHPOffice/PhpSpreadsheet/pull/2086)

@@ -9,6 +9,7 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Style\Style;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Throwable;
 
 class Cell
 {
@@ -69,7 +70,7 @@ class Cell
      *
      * @return $this
      */
-    public function updateInCollection()
+    public function updateInCollection(): self
     {
         $this->parent->update($this);
 
@@ -139,7 +140,16 @@ class Cell
      */
     public function getCoordinate()
     {
-        return $this->parent->getCurrentCoordinate();
+        try {
+            $coordinate = $this->parent->getCurrentCoordinate();
+        } catch (Throwable $e) {
+            $coordinate = null;
+        }
+        if ($coordinate === null) {
+            throw new Exception('Coordinate no longer exists');
+        }
+
+        return $coordinate;
     }
 
     /**
@@ -387,12 +397,8 @@ class Cell
 
     /**
      * Set Data validation rules.
-     *
-     * @param DataValidation $dataValidation
-     *
-     * @return Cell
      */
-    public function setDataValidation(?DataValidation $dataValidation = null)
+    public function setDataValidation(?DataValidation $dataValidation = null): self
     {
         if (!isset($this->parent)) {
             throw new Exception('Cannot set data validation for cell that is not bound to a worksheet');
@@ -446,8 +452,6 @@ class Cell
     /**
      * Set Hyperlink.
      *
-     * @param Hyperlink $hyperlink
-     *
      * @return Cell
      */
     public function setHyperlink(?Hyperlink $hyperlink = null)
@@ -478,7 +482,17 @@ class Cell
      */
     public function getWorksheet()
     {
-        return $this->parent->getParent();
+        try {
+            $worksheet = $this->parent->getParent();
+        } catch (Throwable $e) {
+            $worksheet = null;
+        }
+
+        if ($worksheet === null) {
+            throw new Exception('Worksheet no longer exists');
+        }
+
+        return $worksheet;
     }
 
     /**

@@ -4,20 +4,29 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
+class ComposerStaticInit6419453ab9298f84126343878359903e
 {
     public static $files = array (
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        's' => 
+        array (
+            'smpp\\' => 5,
+        ),
         'p' => 
         array (
             'phpseclib3\\' => 11,
+        ),
+        'c' => 
+        array (
+            'chillerlan\\Settings\\' => 20,
+            'chillerlan\\QRCode\\' => 18,
         ),
         'Z' => 
         array (
@@ -53,9 +62,21 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     );
 
     public static $prefixDirsPsr4 = array (
+        'smpp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alexandr-mironov/php-smpp/src',
+        ),
         'phpseclib3\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
+        'chillerlan\\Settings\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/chillerlan/php-settings-container/src',
+        ),
+        'chillerlan\\QRCode\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/chillerlan/php-qrcode/src',
         ),
         'ZipStream\\' => 
         array (
@@ -567,10 +588,10 @@ class ComposerStaticInitc7e6d64e2ce7693136823400d792c747
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitc7e6d64e2ce7693136823400d792c747::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit6419453ab9298f84126343878359903e::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit6419453ab9298f84126343878359903e::$classMap;
 
         }, null, ClassLoader::class);
     }
