@@ -153,9 +153,9 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             if(isset($service['include']['groups'])){
                 foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
                     foreach ($balances as $balance){
-                        if(isset($balance['balance']['groups'][$serviceGroupName])){
+                        if(isset($balance['balance']['groups'][$serviceGroupName])){                          
                             $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
-                            $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
+                            $serviceGroup['usage']['total'] = (isset($serviceGroup['value']) && $serviceGroup['value'] == 'UNLIMITED') ? 'UNLIMITED' : $balance['balance']['groups'][$serviceGroupName]['total'];
                             break;
                         }
                     }
