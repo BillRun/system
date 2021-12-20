@@ -80,7 +80,7 @@ abstract class Models_Action {
 		}
 		
 		if (isset($params['settings'])) {
-			$this->settings = $params['settings'];
+			$this->settings = $this->getConfigParams($params);
 		}
 		
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
@@ -101,6 +101,10 @@ abstract class Models_Action {
 		if (isset($this->request['options'])) {
 			$this->options = @json_decode($this->request['options'], TRUE);
 		}
+	}
+	
+	protected function getConfigParams($params) {
+		return $params['settings'];
 	}
 
 	/**

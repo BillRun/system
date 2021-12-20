@@ -924,7 +924,7 @@ class Billrun_DiscountManager {
 				}
 				foreach (Billrun_Util::getIn($subscriberRevision, 'services', []) as $subscriberService) { // OR logic
 					$serviceFrom = Billrun_Utils_Time::getTime($subscriberRevision['from']);
-					if (isset($subscriberService['creation_time'])) {
+					if (isset($subscriberService['creation_time']) && empty($serviceFrom)) {
 						$serviceFrom = max($serviceFrom, Billrun_Utils_Time::getTime($subscriberService['creation_time']));
 			}
 					$serviceTo = Billrun_Utils_Time::getTime($subscriberRevision['to']);
@@ -1118,7 +1118,7 @@ class Billrun_DiscountManager {
 				$this->discountedLinesAmounts[$line['stamp']] = 0;
 			}
 			$lineQuantity = Billrun_Util::getIn($line, 'usagev', 1);
-			$lineAmountLimit = $line['full_price'] * $lineQuantity;
+			$lineAmountLimit = $line['aprice'] * $lineQuantity;
 			$lineEligibility = $this->getLineEligibility($line, $discount, $eligibility);
 			if (empty($lineEligibility)) {
 				continue;

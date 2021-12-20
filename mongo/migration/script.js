@@ -1180,6 +1180,23 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	lastConfig.import.mapping = mapping;
 }
 
+// BRCD-3227 Add new custom 'rounding_rules' field to Products(Rates)
+lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
+    var fields = lastConfig['rates']['fields'];
+    var found = false;
+    for (var field_key in fields) {
+            if (fields[field_key].field_name === "rounding_rules") {
+                    found = true;
+            }
+    }
+    if(!found) {
+            fields.push({
+                    "system":true,
+                    "field_name":"rounding_rules",
+            });
+    }
+    lastConfig['rates']['fields'] = fields;
+});
 // BRCD-2888 -adjusting config to the new invoice templates
 if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";
@@ -1375,6 +1392,18 @@ if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined'
 	};
 }
 
+db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+
+//BRCD-3307:Refactoring : remove "balance_effective_date" field from payments
+runOnce(lastConfig, 'BRCD-3307', function () {
+	db.bills.find({'balance_effective_date': {$exists: 1}}).forEach(
+			function (obj) {
+				obj['urt'] = obj['balance_effective_date'];
+				delete obj['balance_effective_date'];
+				db.bills.save(obj);
+			}
+	)
+});
 db.config.insert(lastConfig);
 db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 //BRCD-2336: Can't "closeandnew" a prepaid bucket

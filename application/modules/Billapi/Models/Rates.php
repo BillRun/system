@@ -19,6 +19,14 @@ class Models_Rates extends Models_Entity {
 		if (isset($this->update['tariff_category']) && $this->update['tariff_category'] == 'retail') {
 			$this->update['add_to_retail'] = true;
 		}
+                if (isset($this->update['rounding_rules'])){
+                    if(!isset($this->update['rounding_rules']['rounding_type'])){
+                        throw new Billrun_Exceptions_Api(0, array(), "Rounding rules must have rounding type");
+                    }
+                    if($this->update['rounding_rules']['rounding_type']!=='None' && !isset($this->update['rounding_rules']['rounding_decimals'])){
+                        throw new Billrun_Exceptions_Api(0, array(), "Rounding rules must have rounding decimal");
+                    }
+                }
 	}
 	
 	/**
