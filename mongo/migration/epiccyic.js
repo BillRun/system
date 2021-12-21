@@ -668,11 +668,11 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 				},
 				{
 					"field": "params.product",
-					"value": "__csvindex__1"
+					"value": "__csvindex__2"
 				},
 				{
 					"field": "mtn_ind",
-					"value": "__csvindex__9"
+					"value": "__csvindex__5"
 				},
 				{
 					"field": "usage_type_value",
@@ -684,15 +684,15 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 				},
 				{
 					"field": "params.operator",
-					"value": "__csvindex__5"
+					"value": "__csvindex__3"
 				},
 				{
 					"field": "params.user_summarisation",
-					"value": "__csvindex__4"
+					"value": "__csvindex__10"
 				},
 				{
 					"field": "gl_account_description",
-					"value": "__csvindex__8"
+					"value": "__csvindex__9"
 				},
 				{
 					"field": "price_to",
@@ -700,19 +700,19 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 				},
 				{
 					"field": "params.cash_flow",
-					"value": "__csvindex__3"
-				},
-				{
-					"field": "gl_account",
 					"value": "__csvindex__7"
 				},
 				{
+					"field": "gl_account",
+					"value": "__csvindex__6"
+				},
+				{
 					"field": "params.component",
-					"value": "__csvindex__2"
+					"value": "__csvindex__11"
 				},
 				{
 					"field": "params.scenario",
-					"value": "__csvindex__0"
+					"value": "__csvindex__4"
 				},
 				{
 					"field": "tariff_category",
@@ -720,7 +720,7 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 				},
 				{
 					"field": "object_id",
-					"value": "__csvindex__6"
+					"value": "__csvindex__8"
 				},
 				{
 					"field": "price_interval",
@@ -732,11 +732,11 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 				},
 				{
 					"field": "prod_serv",
-					"value": "__csvindex__10"
+					"value": "__csvindex__1"
 				},
 				{
 					"field": "key",
-					"value": "__csvindex__11"
+					"value": "__csvindex__0"
 				}
 			],
 			"updater": [],
@@ -745,6 +745,92 @@ lastConfig = runOnce(lastConfig, 'EPICIC-119', function () {
 		}
 
 	];
+});
+
+//EPICIC-127 - change the import file header to be the same order as in the exported file
+lastConfig = runOnce(lastConfig, 'EPICIC-127', function () {
+   for (var i = 0; i < lastConfig.export_generators.length; i++) {
+            if (lastConfig.import.mapping[i].label === "Missing ERP Mappings") {
+                lastConfig["import"]['mapping'][i]["map"] = [
+				{
+					"field": "price_from",
+					"value": "0"
+				},
+				{
+					"field": "params.product",
+					"value": "__csvindex__2"
+				},
+				{
+					"field": "mtn_ind",
+					"value": "__csvindex__5"
+				},
+				{
+					"field": "usage_type_value",
+					"value": "erp_mapping"
+				},
+				{
+					"field": "usage_type_unit",
+					"value": "counter"
+				},
+				{
+					"field": "params.operator",
+					"value": "__csvindex__3"
+				},
+				{
+					"field": "params.user_summarisation",
+					"value": "__csvindex__10"
+				},
+				{
+					"field": "gl_account_description",
+					"value": "__csvindex__9"
+				},
+				{
+					"field": "price_to",
+					"value": "UNLIMITED"
+				},
+				{
+					"field": "params.cash_flow",
+					"value": "__csvindex__7"
+				},
+				{
+					"field": "gl_account",
+					"value": "__csvindex__6"
+				},
+				{
+					"field": "params.component",
+					"value": "__csvindex__11"
+				},
+				{
+					"field": "params.scenario",
+					"value": "__csvindex__4"
+				},
+				{
+					"field": "tariff_category",
+					"value": "retail"
+				},
+				{
+					"field": "object_id",
+					"value": "__csvindex__8"
+				},
+				{
+					"field": "price_interval",
+					"value": "1"
+				},
+				{
+					"field": "price_value",
+					"value": "0"
+				},
+				{
+					"field": "prod_serv",
+					"value": "__csvindex__1"
+				},
+				{
+					"field": "key",
+					"value": "__csvindex__0"
+				}
+			]
+            }
+    }
 });
 
 lastConfig = runOnce(lastConfig, 'EPICIC-2', function () {
@@ -5694,11 +5780,11 @@ lastConfig["export_generators"][0] =
 				},
 				{
 					"field": "params.product",
-					"value": "__csvindex__1"
+					"value": "__csvindex__2"
 				},
 				{
 					"field": "mtn_ind",
-					"value": "__csvindex__9"
+					"value": "__csvindex__5"
 				},
 				{
 					"field": "usage_type_value",
@@ -5710,15 +5796,15 @@ lastConfig["export_generators"][0] =
 				},
 				{
 					"field": "params.operator",
-					"value": "__csvindex__5"
+					"value": "__csvindex__3"
 				},
 				{
 					"field": "params.user_summarisation",
-					"value": "__csvindex__4"
+					"value": "__csvindex__10"
 				},
 				{
 					"field": "gl_account_description",
-					"value": "__csvindex__8"
+					"value": "__csvindex__9"
 				},
 				{
 					"field": "price_to",
@@ -5726,19 +5812,19 @@ lastConfig["export_generators"][0] =
 				},
 				{
 					"field": "params.cash_flow",
-					"value": "__csvindex__3"
-				},
-				{
-					"field": "gl_account",
 					"value": "__csvindex__7"
 				},
 				{
+					"field": "gl_account",
+					"value": "__csvindex__6"
+				},
+				{
 					"field": "params.component",
-					"value": "__csvindex__2"
+					"value": "__csvindex__11"
 				},
 				{
 					"field": "params.scenario",
-					"value": "__csvindex__0"
+					"value": "__csvindex__4"
 				},
 				{
 					"field": "tariff_category",
@@ -5746,7 +5832,7 @@ lastConfig["export_generators"][0] =
 				},
 				{
 					"field": "object_id",
-					"value": "__csvindex__6"
+					"value": "__csvindex__8"
 				},
 				{
 					"field": "price_interval",
@@ -5758,11 +5844,11 @@ lastConfig["export_generators"][0] =
 				},
 				{
 					"field": "prod_serv",
-					"value": "__csvindex__10"
+					"value": "__csvindex__1"
 				},
 				{
 					"field": "key",
-					"value": "__csvindex__11"
+					"value": "__csvindex__0"
 				}
 			],
 			"updater": [],
