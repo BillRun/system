@@ -115,7 +115,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 * @param  array $params
 	 */
         protected function addPlanDetails(&$subscriber, $params) {
-            $plan = new Billrun_Plan(['name' => $subscriber['plan'], 'time'=> time()]);
+            $plan = Billrun_Factory::plan(['name' => $subscriber['plan'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
             $subscriber['plan_description'] =  $plan->get('description');
             $servicesIncludeInPlan = $plan->get('include')['services'] ?? [];
             foreach ($servicesIncludeInPlan as $index => $serviceIncludeInPlan){
@@ -153,9 +153,9 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             if(isset($service['include']['groups'])){
                 foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
                     foreach ($balances as $balance){
-                        if(isset($balance['balance']['groups'][$serviceGroupName])){
+                        if(isset($balance['balance']['groups'][$serviceGroupName])){                          
                             $serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
-                            $serviceGroup['usage']['total'] = $balance['balance']['groups'][$serviceGroupName]['total'];
+                            $serviceGroup['usage']['total'] = (isset($serviceGroup['value']) && $serviceGroup['value'] == 'UNLIMITED') ? 'UNLIMITED' : $balance['balance']['groups'][$serviceGroupName]['total'];
                             break;
                         }
                     }
@@ -181,7 +181,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
          * @param array $params
          */
         protected  function addServiceDetails(&$subscriberService, $params) {
-            $service = new Billrun_Service(['name' => $subscriberService['name'], 'time'=> time()]);
+            $service = Billrun_Factory::service(['name' => $subscriberService['name'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
             $subscriberService['description'] = $service->get('description');
             $include = $service->get('include');
             if(isset($include)){
@@ -241,8 +241,11 @@ class Portal_Actions_Subscriber extends Portal_Actions {
                         is_integer($this->params['usages_months_limit']) && 
                         intval($this->params['usages_months_limit']) > 0
                         ?  $this->params['usages_months_limit'] : 24;
-              
-                $query['urt'] = array('$gt' =>  new Mongodloid_Date(strtotime($usages_months_limit . " months ago")));              
+
+                if(!isset($query['urt']['$gte']) || strtotime($usages_months_limit . " months ago") > strtotime($query['urt']['$gte'])){
+                    $query['urt']['$gte'] = new Mongodloid_Date(strtotime($usages_months_limit . " months ago"));
+                }   
+                        
 		$sort = array('urt'=> -1);
 		$billapiParams = $this->getBillApiParams('lines', 'get', $query, [], $sort);            
 		return $this->filterEntitiesByPagination($this->runBillApi($billapiParams), $page, $size);

@@ -14,7 +14,7 @@ class Portal_Actions_Settings extends Portal_Actions {
         if (empty($categories)) {
                 throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "categories"');
         }
-        $allow_categories = $this->params['allow_categories'] ?? [];
+        $allow_categories = $this->params['allow_categories'] ? array_map('trim', explode(',', $this->params['allow_categories'])) : [];
         foreach ($categories as $category){
             //check if category allow
             if(in_array($category, $allow_categories)){         
