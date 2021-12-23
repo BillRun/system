@@ -11,7 +11,7 @@
  *
  */
 class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
-	
+	   
 	/*
 	 * see Billrun_EmailSender_Base::shouldNotify
 	 */
@@ -39,11 +39,26 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	protected function getEmailSubject($data) {
 		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
 	}
+        
+        /**
+	 * see Billrun_EmailSender_Base::getEmailCorePlaceholders
+	 */
+	protected function getEmailCorePlaceholders($data) { 
+		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.core_placeholders', []);
+	}
+        
+        /**
+	 * see Billrun_EmailSender_Base::getEmailCustomPlaceholders
+	 */
+	protected function getEmailCustomPlaceholders($data) {
+		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.custom_placeholders', []);
+	}
 	
 	/**
 	 * see Billrun_EmailSender_Base::translateMessage
 	 */
 	public function translateMessage($msg, $data = array()) {
+                $msg = parent::translateMessage($msg, $data);
 		$replaces = array(
 			'[[date]]' => date(Billrun_Base::base_dateformat),
 			'[[invoice_id]]' => $data['invoice_id'],

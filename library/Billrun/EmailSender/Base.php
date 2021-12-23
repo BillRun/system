@@ -96,6 +96,16 @@ abstract class Billrun_EmailSender_Base {
 	 * gets email subject
 	 */
 	protected abstract function getEmailSubject($data);
+        
+        /**
+	 * gets email core  placeholders
+	 */
+	protected abstract function getEmailCorePlaceholders($data);
+        
+        /**
+	 * gets email custom placeholders
+	 */
+	protected abstract function getEmailCustomPlaceholders($data);
 	
 	/**
 	 * translate email message
@@ -105,7 +115,20 @@ abstract class Billrun_EmailSender_Base {
 	 * @return string
 	 */
 	public function translateMessage($msg, $data = array()) {
-		return $msg;
+                $corePlaceholders = $this->getEmailCorePlaceholders($data);
+                $customPlaceholders = $this->getEmailCustomPlaceholders($data);
+                $replaces = [];
+                foreach($corePlaceholders as $corePlaceholder){
+                    $replaces["[[". $corePlaceholder['name'] ."]]"] = $data[$corePlaceholder['path']];//todo:: need to add formatting fields
+                }
+                foreach($customPlaceholders as $customPlaceholder){
+                    if(isset($replaces["[[". $customPlaceholder['name'] ."]]"])){
+                        Billrun_Factory::log("translateMessage - error translate message, there's a core placeholder with the same name.", Billrun_Log::ALERT);
+                        continue;
+                    }
+                    $replaces["[[". $customPlaceholder['name'] ."]]"] = $data[$customPlaceholder['path']];//todo:: need to add formatting fields
+                }
+                return str_replace(array_keys($replaces), array_values($replaces), $msg);
 	}
 	
 	protected function afterSend($data, $callback = false) {
