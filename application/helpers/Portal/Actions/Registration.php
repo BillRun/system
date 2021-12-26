@@ -148,7 +148,6 @@ class Portal_Actions_Registration extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "email"');
 		}
                 $params['email'] = $email;
-                $params[$this->params['authentication_field']] = $username;
 		if (!$this->validateToken($token, $params, $tokenType)) {
 			throw new Portal_Exception('authentication_failed');
 		}
@@ -222,7 +221,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 		}
 
 		$tokenFields = [
-			$this->params['authentication_field'],
+			'username',
 			'email',
 		];
         $params = [
