@@ -2056,7 +2056,7 @@ class Billrun_Util {
             }
             $padding = $formatObj['padding'] ?? [];
             if (!empty($padding)){
-                $padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
+                $padDir = isset($padding['direction']) ? ($padding['direction']==='right' ? STR_PAD_RIGHT :  STR_PAD_LEFT) : STR_PAD_LEFT;
                 $padChar = isset($padding['character']) ? $padding['character'] : '';
                 $length = isset($padding['length']) ? $padding['length'] : strlen($value);
                 $value = str_pad(substr($value, 0, $length), $length, $padChar, $padDir);
