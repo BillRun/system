@@ -119,14 +119,20 @@ abstract class Billrun_EmailSender_Base {
                 $customPlaceholders = $this->getEmailCustomPlaceholders($data);
                 $replaces = [];
                 foreach($corePlaceholders as $corePlaceholder){
-                    $replaces["[[". $corePlaceholder['name'] ."]]"] = $data[$corePlaceholder['path']];//todo:: need to add formatting fields
+                    $value = Billrun_util::getIn($data, $corePlaceholder['path']);
+                    if(!empty($value)){
+                        $replaces["[[". $corePlaceholder['name'] ."]]"] = Billrun_Util::formattingValue($corePlaceholder, $value);
+                    }
                 }
                 foreach($customPlaceholders as $customPlaceholder){
                     if(isset($replaces["[[". $customPlaceholder['name'] ."]]"])){
-                        Billrun_Factory::log("translateMessage - error translate message, there's a core placeholder with the same name.", Billrun_Log::ALERT);
+                        Billrun_Factory::log("translateMessage - error translate message for custom placeholder: " . $customPlaceholder['title'] . ", there's already core placeholder with the same name.", Billrun_Log::ALERT);
                         continue;
                     }
-                    $replaces["[[". $customPlaceholder['name'] ."]]"] = $data[$customPlaceholder['path']];//todo:: need to add formatting fields
+                    $value = Billrun_util::getIn($data, $customPlaceholder['path']);
+                    if(!empty($value)){
+                        $replaces["[[". $customPlaceholder['name'] ."]]"] = Billrun_Util::formattingValue($customPlaceholder, $value);
+                    }
                 }
                 return str_replace(array_keys($replaces), array_values($replaces), $msg);
 	}
