@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AuthAction extends ApiAction  {
 
-	protected $cors = false;
+	protected $opencors = false;
 
 	public function execute() {
 		$params = array_merge($this->getRequest()->getRequest(), $this->getRequest()->getPost());

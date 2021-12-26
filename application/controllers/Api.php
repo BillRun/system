@@ -25,7 +25,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	
 	protected $start_time = 0;
 	
-	protected $cors = true;
+	protected $opencors = false;
 	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
@@ -41,7 +41,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->setActions();
 		$this->setOutputMethod();
 		
-		if ($this->cors) {
+		if ($this->opencors) {
 			Billrun_Utils_Security::openCrossDomain();
 		}
 	}
