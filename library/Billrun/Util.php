@@ -2054,12 +2054,23 @@ class Billrun_Util {
                     $value = date($dateFormat, $dateValue);
                     break;
             }
+            if (isset($formatObj['value_mult'])) {
+                $value = floatval($formatObj['value_mult']) * floatval($value);
+            }
             $padding = $formatObj['padding'] ?? [];
             if (!empty($padding)){
                 $padDir = isset($padding['direction']) ? ($padding['direction']==='right' ? STR_PAD_RIGHT :  STR_PAD_LEFT) : STR_PAD_LEFT;
                 $padChar = isset($padding['character']) ? $padding['character'] : '';
                 $length = isset($padding['length']) ? $padding['length'] : strlen($value);
                 $value = str_pad(substr($value, 0, $length), $length, $padChar, $padDir);
+            }
+            if (isset($formatObj['substring'])) {
+                if (!isset($formatObj['substring']['offset']) || !isset($formatObj['substring']['length'])) {
+			$message = "substring: " . print_r($formatObj['substring'], 1) . " was defined incorrectly";
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+		}
+		$value = substr($value, $formatObj['substring']['offset'], $formatObj['substring']['length']);
             }
             return $value;
         }

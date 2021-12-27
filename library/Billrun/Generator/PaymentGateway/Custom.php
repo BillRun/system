@@ -107,29 +107,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
                 $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
             }
-            if (isset($dataField['type']) && $dataField['type'] == 'date') {
-                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $date = strtotime($dataLine[$dataField['path']]);
-                if ($date) {
-                    $dataLine[$dataField['path']] = date($dateFormat, $date);
-                } else {
-                    $message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
-                    Billrun_Factory::log($message, Zend_Log::NOTICE);
-                    $this->logFile->updateLogFileField('warnings', $message);
-                }
+            $warningMessages = [];
+            $dataLine[$dataField['path']] = Billrun_Util::formattingValue($dataField, $dataLine[$dataField['path']], $warningMessages);
+            foreach ($warningMessages as $warningMessage){
+                $this->logFile->updateLogFileField('warnings', $warningMessage);
             }
-				if (isset($dataField['value_mult'])) {
-					$dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
-				}
-            if (isset($dataField['number_format'])) {
-                $dataLine[$dataField['path']] = $this->setNumberFormat($dataField, $dataLine);
+            if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
+                    $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
             }
-			if (isset($dataField['substring'])) {
-				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
-			}
-				if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
-					$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
-				}
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
@@ -239,10 +224,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $translations = array();
         if(is_array($this->fileNameParams)){
             foreach ($this->fileNameParams as $paramObj) {
-                $translations[$paramObj['param']] = $this->getTranslationValue($paramObj);
+                $warningMessages = [];
+                $translations[$paramObj['param']] = Billrun_util::formattingValue($paramObj, $this->getTranslationValue($paramObj), $warningMessages);
+                foreach ($warningMessages as $warningMessage){
+                    $this->logFile->updateLogFileField('warnings', $warningMessage);
+                }              
             }
         }
-
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $translations, null, true);
         return $this->fileName;
     }
@@ -302,28 +290,15 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         }
         switch ($paramObj['type']) {
             case 'date':
-                $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = ($paramObj['value'] == 'now') ? $this->now : strtotime($paramObj['value']);
-                return date($dateFormat, $dateValue);
+                return ($paramObj['value'] == 'now') ? $this->now : strtotime($paramObj['value']);
             case 'autoinc':
-				$seq = $this->getAutoincValue($paramObj, 'transactions_request');
-                if (isset($paramObj['padding'])) {
-                    $this->padSequence($seq, $paramObj);
-                }
-                return $seq;
+		return $this->getAutoincValue($paramObj, 'transactions_request');
             default:
                 $message = "Unsupported filename_params type for file type " . $this->configByType['file_type'];
                 Billrun_Factory::log($message, Zend_Log::ERR);
                 $this->logFile->updateLogFileField('errors', $message);
                 break;
         }
-    }
-
-    protected function padSequence($seq, $padding) {
-        $padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
-        $padChar = isset($padding['character']) ? $padding['character'] : '';
-        $length = isset($padding['length']) ? $padding['length'] : strlen($seq);
-        return str_pad(substr($seq, 0, $length), $length, $padChar, $padDir);
     }
 
     protected function buildLineFromStructure($structure) {
@@ -351,23 +326,11 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($field['parameter_name‎']) && in_array($field['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$field['parameter_name‎']])) {
                 $line[$field['path']] = $this->options[$field['parameter_name‎']];
             }
-            if ((isset($field['type']) && $field['type'] == 'date') && (!isset($field['predefined_values']) && $field['predefined_values'] !== 'now')) {
-                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $date = strtotime($line[$field['path']]);
-                if ($date) {
-                    $line[$field['path']] = date($dateFormat, $date);
-                } else {
-                    $message = "Couldn't convert date string when generating file type " . $this->configByType['file_type'];
-                    $this->logFile->updateLogFileField('errors', $message);
-                    Billrun_Factory::log($message, Zend_Log::ERR);
-                }
+            $warningMessages = [];
+            $line[$field['path']] = Billrun_Util::formattingValue($field, $line[$field['path']], $warningMessages);
+            foreach ($warningMessages as $warningMessage){
+                $this->logFile->updateLogFileField('warnings', $warningMessage);
             }
-			if (isset($field['number_format'])) {
-                $line[$field['path']] = $this->setNumberFormat($field, $line);
-            }
-			if (isset($field['substring'])) {
-				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
-			}
 			$attributes = $this->getLineAttributes($field);
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
@@ -418,30 +381,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             return [];
         }
     }
-    
-    protected function setNumberFormat($field, $line) {
-        if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
-            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->configByType['file_type'];
-            Billrun_Factory::log($message, Zend_Log::WARN);
-            $this->logFile->updateLogFileField('warning', $message);
-        }
-        if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
-            return number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
-        } else {
-            if (isset($field['number_format']['decimals'])){
-                return number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
-            }
-        }
-    }
-	
-	protected function getSubstring($field_config, $field_data) {
-		if (!isset($field_config['substring']['offset']) || !isset($field_config['substring']['length'])) {
-			$message = "Field name " . $field_config['name'] . " config was defined incorrectly when generating file type " . $this->configByType['file_type'];
-			$this->logFile->updateLogFileField('errors', $message);
-			throw new Exception($message);
-		}
-		return substr($field_data, $field_config['substring']['offset'], $field_config['substring']['length']);
-	}
 
 	protected function getAutoincValue($params, $action = 'transactions_request') {
 		if (!isset($params['min_value']) || !isset($params['max_value'])) {
