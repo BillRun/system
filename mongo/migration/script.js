@@ -1406,7 +1406,7 @@ runOnce(lastConfig, 'BRCD-3307', function () {
 });
 
 runOnce(lastConfig, 'BRCD-3413', function () {
-	lastConfig['email_templates']['invoice_ready']['placeholders'] = [
+	lastConfig['email_templates']['invoice_ready']['placeholders'].push(
             {
                 name: "start_date",
                 title: "Billing cycle start date",
@@ -1441,7 +1441,7 @@ runOnce(lastConfig, 'BRCD-3413', function () {
                 type: "date",
                 system:true
             }
-        ];
+        );
 });
 
 db.config.insert(lastConfig);
