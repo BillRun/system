@@ -95,8 +95,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 continue;
             }
             if (isset($dataField['predefined_values']) && $dataField['predefined_values'] == 'now') {
-                $dateFormat = isset($dataField['format']) ? $dataField['format'] : Billrun_Base::base_datetimeformat;
-                $dataLine[$dataField['path']] = date($dateFormat, $this->now);
+                $dataLine[$dataField['path']] = $this->now;
             }
             if (isset($dataField['hard_coded_value'])) {
                 $dataLine[$dataField['path']] = $dataField['hard_coded_value'];
@@ -107,13 +106,13 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             if (isset($dataField['parameter_name‎']) && in_array($dataField['parameter_name‎'], $this->extraParamsNames) && isset($this->options[$dataField['parameter_name‎']])) {
                 $dataLine[$dataField['path']] = $this->options[$dataField['parameter_name‎']];
             }
+            if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
+                    $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
+            }
             $warningMessages = [];
             $dataLine[$dataField['path']] = Billrun_Util::formattingValue($dataField, $dataLine[$dataField['path']], $warningMessages);
             foreach ($warningMessages as $warningMessage){
                 $this->logFile->updateLogFileField('warnings', $warningMessage);
-            }
-            if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
-                    $dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
             }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
@@ -314,8 +313,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $line[$field['path']] = $this->file_transactions_counter;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'now') {
-                $dateFormat = isset($field['format']) ? $field['format'] : Billrun_Base::base_datetimeformat;
-                $line[$field['path']] = date($dateFormat, $this->now);
+                $line[$field['path']] = $this->now;
             }
             if (isset($field['predefined_values']) && $field['predefined_values'] == 'transactions_amount') {
                 $line[$field['path']] = $this->transactionsTotalAmount;
