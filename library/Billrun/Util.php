@@ -2037,7 +2037,7 @@ class Billrun_Util {
                         } 
                     }
                     break;
-                case 'date':
+                case 'date':                   
                     $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : Billrun_Base::base_datetimeformat;
                     if ($value instanceof Mongodloid_Date) {
                         $dateValue = $value->sec;
@@ -2050,6 +2050,9 @@ class Billrun_Util {
                         $warningMessages[] = $message;
                         Billrun_Factory::log($message, Zend_Log::WARN);
                         break;
+                    }
+                    if (isset($formatObj['relative_time'])) {
+                       $dateValue = strtotime($formatObj['relative_time'], $dateValue);
                     }
                     $value = date($dateFormat, $dateValue);
                     break;
