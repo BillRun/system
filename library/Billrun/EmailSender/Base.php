@@ -98,15 +98,10 @@ abstract class Billrun_EmailSender_Base {
 	protected abstract function getEmailSubject($data);
         
         /**
-	 * gets email core  placeholders
+	 * gets email placeholders
 	 */
-	protected abstract function getEmailCorePlaceholders($data);
+	protected abstract function getEmailPlaceholders($data);
         
-        /**
-	 * gets email custom placeholders
-	 */
-	protected abstract function getEmailCustomPlaceholders($data);
-	
 	/**
 	 * translate email message
 	 * 
@@ -115,23 +110,30 @@ abstract class Billrun_EmailSender_Base {
 	 * @return string
 	 */
 	public function translateMessage($msg, $data = array()) {
-                $corePlaceholders = $this->getEmailCorePlaceholders($data);
-                $customPlaceholders = $this->getEmailCustomPlaceholders($data);
-                $replaces = [];
-                foreach($corePlaceholders as $corePlaceholder){
-                    $value = Billrun_util::getIn($data, $corePlaceholder['path']);
-                    if(!empty($value)){
-                        $replaces["[[". $corePlaceholder['name'] ."]]"] = Billrun_Util::formattingValue($corePlaceholder, $value);
+                $placeholders = $this->getEmailPlaceholders($data);
+                usort($placeholders, function ($placeholder1, $placeholder2) {//sort placeholders by system field 
+                    if(!isset($placeholder1['system'])){
+                        return -1;
                     }
-                }
-                foreach($customPlaceholders as $customPlaceholder){
-                    if(isset($replaces["[[". $customPlaceholder['name'] ."]]"])){
-                        Billrun_Factory::log("translateMessage - error translate message for custom placeholder: " . $customPlaceholder['title'] . ", there's already core placeholder with the same name.", Billrun_Log::ALERT);
-                        continue;
+                    if(!isset($placeholder2['system'])){
+                        return 1;
                     }
-                    $value = Billrun_util::getIn($data, $customPlaceholder['path']);
+                    if ($placeholder1['system'] === $placeholder2['system']) {
+                        return 0;
+                    }
+                    return $placeholder1['system'] == true ? -1 : 1;
+                });
+                $replaces = [];            
+                foreach($placeholders as $placeholder){
+                    $name = $placeholder['name'];
+                    $system = $placeholder['system'] ?? true;
+                    if(isset($replaces["[[". $name ."]]"]) && !$system){//if system placeholder with same name already exists ->  alert
+                        Billrun_Factory::log("translateMessage - error translate message for placeholder: " . print_r($placeholder, 1) . ", there's already placeholder with the same name.", Billrun_Log::ALERT);
+                        continue; 
+                    }
+                    $value = Billrun_Util::getIn($data, $placeholder['path']);
                     if(!empty($value)){
-                        $replaces["[[". $customPlaceholder['name'] ."]]"] = Billrun_Util::formattingValue($customPlaceholder, $value);
+                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($placeholder, $value);
                     }
                 }
                 return str_replace(array_keys($replaces), array_values($replaces), $msg);

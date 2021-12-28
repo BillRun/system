@@ -41,17 +41,10 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	}
         
         /**
-	 * see Billrun_EmailSender_Base::getEmailCorePlaceholders
+	 * see Billrun_EmailSender_Base::getEmailPlaceholders
 	 */
-	protected function getEmailCorePlaceholders($data) { 
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.core_placeholders', []);
-	}
-        
-        /**
-	 * see Billrun_EmailSender_Base::getEmailCustomPlaceholders
-	 */
-	protected function getEmailCustomPlaceholders($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.custom_placeholders', []);
+	protected function getEmailPlaceholders($data) { 
+		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.placeholders', []);
 	}
 	
 	/**
