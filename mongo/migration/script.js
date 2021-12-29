@@ -1412,7 +1412,42 @@ runOnce(lastConfig, 'BRCD-3325', function () {
 				"op" : "exists",
 				"value" : false
     };
-		lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+	lastConfig['collection']['settings']['rejection_required'] = {'conditions':{'customers':[rejection_required_cond]}};
+});
+
+runOnce(lastConfig, 'BRCD-3413', function () {
+        if(lastConfig['email_templates']['invoice_ready']['placeholders'] === undefined){
+            lastConfig['email_templates']['invoice_ready']['placeholders'] = [];
+        }
+	lastConfig['email_templates']['invoice_ready']['placeholders'].push(
+            {
+                name: "start_date",
+                title: "Billing cycle start date",
+                path: "start_date",
+                type: "date",
+                system:true
+            }, 
+            {
+                name: "end_date",
+                title: "Billing cycle end date",
+                path: "end_date",
+                type: "date",
+                system:true
+            },
+            {
+                name: "invoice_current_balance",
+                title: "Invoice current balance",
+                path: "totals.current_balance.after_vat",
+                system:true
+            }, 
+            {
+                name: "invoice_due_date",
+                title: "Invoice due date",
+                path: "due_date",
+                type: "date",
+                system:true
+            }
+        );
 });
 
 db.config.insert(lastConfig);

@@ -5,7 +5,7 @@
  * @copyright       Copyright (C) 2012-2020 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
+ require_once APPLICATION_PATH . '/application/helpers/Portal/Actions.php';
  require_once APPLICATION_PATH . '/application/helpers/Portal/Exception.php';
 
 /**
@@ -39,7 +39,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $config;
-	
+        	
 	/**
 	 * setup plugin input
 	 * 
@@ -61,7 +61,7 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'type' => 'string',
 					'field_name' => 'token_secret',
 					'title' => 'Token Secret (Salt)',
-					'mandatpry' => true,
+					'mandatory' => true,
 					'editable' => true,
 					'display' => true,
 					'nullable' => false,
@@ -90,6 +90,15 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 					"multiple" => true,
 					'default_value' => implode(',', self::ALLOW_CATEGORIES_WHITE_LIST),
 				],
+                                [
+					'type' => 'boolean',
+					'field_name' => 'send_welcome_email',
+					'title' => 'Send Account Welcome Email Notification',                                       
+					'editable' => true,
+					'display' => true,
+                                        'nullable' => false,
+                                        'default_value' => false,
+				],
 			];
 	}
 	
@@ -115,5 +124,21 @@ class portalPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return $ret;
 	}
+        
+        public function afterBillApi($collection, $action, $request, &$output) {
+		if ($collection != 'accounts' || $action != 'create') {
+			return;
+		}
+                
+		if ($this->options['send_welcome_email']) {
+                    $authenticationField = $this->options['authentication_field'];
+                    $username = $output->entity[$authenticationField];
+                    $module = Portal_Actions::getInstance(array_merge($this->options, ['type' => 'registration']));                
+                    $res = $module->run('sendWelcomeEmail', ['username' => $username]);
+                    if(!$res['status']){
+                        Billrun_Factory::log("Send Welcome Account Email failed for " . $authenticationField .": " . $username, Zend_Log::ERR);
+                    }  
+		}
+        }
 
 }

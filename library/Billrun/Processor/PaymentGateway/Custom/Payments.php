@@ -88,7 +88,7 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 				$payment_data = $returned_payment->getRawData();
 				foreach ($payment_data['pays'] as $value) {
 					if (is_array($value)) {
-						$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " from invoice : " . $value['id'];
+						$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " of bill from type: " . $value['type'] . ", Id: " . $value['id'];
 						Billrun_Factory::log()->log($message, Zend_Log::INFO);
 						$this->informationArray['info'][] = $message;
 					}
@@ -112,8 +112,10 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 //		if (in_array($this->identifierField , $this->dbNumericValuesFields) && Billrun_Util::IsIntegerValue($id)) {
 //			$id = intval($id);
 //		}
-		$query = array('type' => 'inv', $this->identifierField['field'] => intval($val));
-		if ($this->identifierField['field'] == 'aid') {
+		$query = array($this->identifierField['field'] => intval($val));
+		if($this->identifierField['field'] == 'invoice_id') {
+			$query['type'] = 'inv';
+		} else if ($this->identifierField['field'] == 'aid') {
 			$query['left_to_pay'] = array('$gt' => 0);
 		}
 		return $this->bills->query($query)->cursor();
