@@ -25,6 +25,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected $fileName;
     protected $transactionsTotalAmount = 0;
 	protected $file_transactions_counter = 0;
+	protected $file_record_counter = 0;
     protected $gatewayLogName;
     protected $fileGenerator;
 	protected $billSavedFields = array();
@@ -86,6 +87,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         $this->transactionsTotalAmount += $params['amount'];
         $dataStructure = $this->configByType['generator']['data_structure'];
 		$this->billSavedFields = array();
+		if(!empty($dataStructure)) {
+			$this->file_record_counter++;
+		}
         foreach ($dataStructure as $dataField) {
             try{
             if (!isset($dataField['path'])) {
@@ -127,9 +131,12 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 			if (isset($dataField['substring'])) {
 				$dataLine[$dataField['path']] = $this->getSubstring($dataField, $dataLine[$dataField['path']]);
 			}
-				if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
-					$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
-				}
+			if ((isset($dataField['type']) && $dataField['type'] == 'autoinc')) {
+				$dataLine[$dataField['path']] = $this->getAutoincValue($dataField, 'cpf_generator_' . $this->getFilename());
+			}
+			if ((isset($dataField['type']) && $dataField['type'] == 'record_autoinc')) {
+				$dataLine[$dataField['path']] = $this->file_record_counter;
+			}
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
@@ -328,6 +335,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 
     protected function buildLineFromStructure($structure) {
         $line = array();
+		if(!empty($structure)) {
+			$this->file_record_counter++;
+		}
         foreach ($structure as $field) {
             if (!isset($field['path'])) {
                 $message = "Exporter " . $this->configByType['file_type'] . " header/trailer structure is missing a path";
@@ -367,6 +377,9 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             }
 			if (isset($field['substring'])) {
 				$line[$field['path']] = $this->getSubstring($field, $line[$field['path']]);
+			}
+			if ((isset($field['type']) && $field['type'] == 'record_autoinc')) {
+				$line[$field['path']] = $this->file_record_counter;
 			}
 			$attributes = $this->getLineAttributes($field);
             if (!isset($line[$field['path']])) {
