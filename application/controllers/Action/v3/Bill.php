@@ -137,7 +137,7 @@ class V3_billAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		return Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
+		return Billrun_Account::getBalanceByAids($aids, false, $only_debt);
 	}
 	
 	protected function getPermissionLevel() {

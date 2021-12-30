@@ -581,7 +581,7 @@ abstract class Billrun_Bill {
 			$aidsQuery = array();
 		}
 
-		return static::getBalanceByAids($aidsQuery, true, true);
+		return Billrun_Account::getBalanceByAids($aidsQuery, true, true);
 	}
 
 	public function getDueBeforeVat() {
@@ -1154,117 +1154,6 @@ abstract class Billrun_Bill {
 		return $this->method;
 	}
 
-	/**
-	 * Function to get the debt or the credit balance, of all the accounts that are in collection, by aids (aids list or query).
-	 * @param array $aids - array of aids, or query array on "aid" field in bill
-	 * @param boolean $is_aids_query - true if "$aids" variable is query, true if it's a list of specific aids.
-	 * @param boolean $only_debts - true if we want to get all the accounts that are in collection, with their debts
-	 * (if they have credit balance they will not show) otherwise show also get all the accounts that are in collection that they have credit/debt
-	 * @return 
-	 */
-	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$account = Billrun_Factory::account();
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		$accountQuery = self::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
-		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		$rejection_required_aids = array_column(array_map(function($account) {
-				return $account->getRawData();
-			}, $currentAccounts), 'aid');
-
-		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
-		$match = array(
-			'$match' => $nonRejectedOrCanceled,
-		);
-
-		if (!empty($aids)) {
-			$match['$match']['aid'] = $is_aids_query ? $aids['aid'] : array('$in' => $aids);
-		}
-		$project = array(
-			'$project' => array(
-				'rejection_required' => array('$cond' => array(array('$in' => array('$aid', $rejection_required_aids)), true, false)),
-				'past_rejections' => array('$cond' => array(array('$and' => array(array('$ifNull' => array('$past_rejections', false)), array('$ne' => array('$past_rejections', [])))), true, false)),
-				'paid' => array('$cond' => array(array('$in' => array('$paid', array(false, '0', 0))), false, true)),
-				'valid_due_date' => array('$cond' => array(array('$and' => array(array('$ne' => array('$due_date', null)), array('$lt' => array('$due_date', new Mongodloid_Date())))), true, false)),
-				'aid' => 1,
-				'left_to_pay' => 1,
-				'left' => 1
-			)
-		);
-		$addFields = array(
-			'$addFields' => array(
-				'total_debt_valid_cond' => array('$and' => array(array('$and' => array(
-								array('$eq' => array('$rejection_required', true)),
-								array('$ne' => array('$past_rejections', false)))), array('$and' => array(
-								array('$eq' => array('$valid_due_date', true)),
-								array('$eq' => array('$paid', false))))
-					)
-				),
-				'total_debt_invalid_cond' => array('$and' => array(
-						array('$and' => array(
-								array('$eq' => array('$rejection_required', false)),
-								array('$eq' => array('$valid_due_date', true)))),
-						array('$eq' => array('$paid', false))
-					)
-				),
-				'total_credit_cond' => array(
-						'$cond' => array(array('$and'=> array(array('$ne' => array('$left', null)), array('$eq' => array('$valid_due_date', true)))), true, false)
-					),
-			)
-		);
-		$group = array(
-			'$group' => array(
-				'_id' => '$aid',
-				'total_debt_valid' => array(
-					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$total_debt_valid_cond', true)), '$left_to_pay', 0)
-					),
-				),
-				'total_debt_invalid' => array(
-					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$total_debt_invalid_cond', true)), '$left_to_pay', 0)
-					),
-				),
-				'total_credit' => array(
-					'$sum' => array(
-						'$cond' => array(array('$eq' => array('$total_credit_cond', true)), array('$multiply' => array('$left', -1)), 0)
-					),
-				),
-			),
-		);
-		$project3 = array(
-			'$project' => array(
-				'_id' => 0,
-				'aid' => '$_id',
-			),
-		);
-		if ($only_debts) {
-			$project3['$project']['total'] = array('$add' => array('$total_debt_valid', '$total_debt_invalid'));
-			$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', '10'));
-			$match2 = array(
-				'$match' => array(
-					'total' => array(
-						'$gte' => $minBalance
-					)
-				)
-			);
-		} else {
-			$project3['$project']['total'] = array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_credit'));
-			$match2 = array(
-				'$match' => array(
-					'total' => array(
-						'$ne' => 0
-					)
-				)
-			);
-		}
-		$results = iterator_to_array($billsColl->aggregate($match, $project, $addFields, $group, $project3, $match2));
-		return array_combine(array_map(function($ele) {
-				return $ele['aid'];
-			}, $results), $results);
-	}
-
-
 	protected function setChargeNotBefore($chargeNotBefore) {
 		$rawData = $this->getRawData();
 		$rawData['charge']['not_before'] = $chargeNotBefore;
@@ -1439,22 +1328,6 @@ abstract class Billrun_Bill {
 			
 			$paymentParams[$dir] = $newPaymentParam;
 		}
-	}
-
-	/**
-	 * Function that returns the relevant aids for collection.
-	 * @param array $aids
-	 * @param bollean $is_aids_query
-	 * @param array $rejection_required
-	 * @return array of aids
-	 */
-	protected static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
-		$rejection_query = [];
-		foreach ($rejection_conditions as $condition) {
-			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
-		}
-		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		return array_merge($rejection_query, $account_query);
 	}
 
 }
