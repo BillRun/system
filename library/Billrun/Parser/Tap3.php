@@ -32,7 +32,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 			$bytes .= fread($fp, self::FILE_READ_AHEAD_LENGTH);
 		} while (!feof($fp));
 		$parsedData = Asn_Base::parseASNString($bytes);
-				$this->headerRows[] = $this->parseHeader($parsedData);
+		$this->headerRows[] = $this->parseHeader($parsedData);
 
 		if (!isset($this->tap3Config[$this->fileVersion])) {
 			Billrun_Factory::log("Processing tap3 file with non supported version : {$this->fileVersion}", Zend_Log::NOTICE);
@@ -46,6 +46,9 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 						$row = $this->parseData('tap3', $data);
 						if ($row) {
 							$row['file_rec_num'] = $key + 1;
+							if(!empty($this->headerRows[0]['header']['sending_source'])) {
+								$row['header_sending_source'] = $this->headerRows[0]['header']['sending_source'];
+							}
 							$this->dataRows[] = $row;
 						}
 					}
