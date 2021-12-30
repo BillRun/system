@@ -203,8 +203,10 @@ class Portal_Actions_Account extends Portal_Actions {
 		if ($account === false ) {
 			return false;
 		}
-		
 		$account['subscribers'] = $this->getSubscribers($account);
+                foreach ($account['subscribers'] as &$subscriber){
+                    $this->addPlanDetails($subscriber);
+                }
 		unset($account['_id'], $account['payment_gateway']);
 		return $account;
 	}
@@ -228,6 +230,16 @@ class Portal_Actions_Account extends Portal_Actions {
 			return array_intersect_key($subscriber, array_flip($subscriberFields));
 		}, $subscribers);
 	}
+        
+        /**
+	 * add plan details to subscriber
+	 *
+	 * @param  array $subscriber
+	 */
+        protected function addPlanDetails(&$subscriber) {
+            $plan = Billrun_Factory::plan(['name' => $subscriber['plan'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
+            $subscriber['plan_description'] =  $plan->get('description');
+        }
 	
 	/**
 	 * get the basic fields to show for a subscriber

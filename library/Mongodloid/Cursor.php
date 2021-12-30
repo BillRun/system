@@ -267,7 +267,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
      */
 	public function fields(array $fields) {
 		$this->errorIfOpened();
-		$this->_options['projection'] = $fields;
+		// from mongodb 4.4 the values should be casted to int
+		$project = array_map(function($val) {settype($val, 'int'); return $val;}, $fields);
+		$this->_options['projection'] = $project;
 		return $this;
 	}
 	
