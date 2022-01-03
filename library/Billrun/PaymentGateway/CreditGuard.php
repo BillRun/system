@@ -33,7 +33,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$xmlParams['version'] = '1000';
+		$xmlParams['version'] = '2000';
 		$xmlParams['mpiValidation'] = 'Verify';
 		$xmlParams['userData2'] = '';
 		$xmlParams['aid'] = $aid;
@@ -219,7 +219,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<request>
 								<command>doDeal</command>
 								<requestId>23468</requestId>
-								<version>1001</version>
+								<version>2000</version>
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
@@ -259,6 +259,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
+                                                         <version>2000</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
 							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
@@ -384,7 +385,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 		$addonData = array();
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
-		$xmlParams['version'] = '1001';
+		$xmlParams['version'] = '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
 		if (!empty($customParams['send_z_param'])) {
