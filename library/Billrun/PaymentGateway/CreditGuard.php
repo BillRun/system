@@ -18,12 +18,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 	protected $account;
-        protected $version;
         
 	protected function __construct() {
 		parent::__construct();
 		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
-                $this->version = Billrun_util::getIn(Billrun_Factory::config()->getConfigValue('creditguard'), 'version', '1000');
 	}
 
 	public function updateSessionTransactionId() {
@@ -35,7 +33,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$xmlParams['version'] = $this->version;
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'Verify';
 		$xmlParams['userData2'] = '';
 		$xmlParams['aid'] = $aid;
@@ -158,7 +156,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url", "version");
 		return $this->rearrangeParametres($params);
 	}
 	
@@ -213,6 +211,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$ZParameter = !empty($addonData['aid']) ? '<addonData>' . $addonData['aid']  . '</addonData>' : '';
 		}
 		$this->transactionId = $addonData['txid'];
+                $version = $credentials['version'] ?? '2000';
 		return $post_array = array(
 			'user' => $credentials['user'],
 			'password' => $credentials['password'],
@@ -221,7 +220,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<request>
 								<command>doDeal</command>
 								<requestId>23468</requestId>
-								<version>' . $this->version . '</version>
+								<version>' . $version . '</version>
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
@@ -254,6 +253,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function buildInquireQuery($params){
+                $version = $params['version'] ?? '2000';
 		return array(
 			'user' => $params['user'],
 			'password' => $params['password'],
@@ -261,7 +261,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
-                                                         <version>' . $this->version . '</version>
+                                                         <version>' . $version . '</version>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
 							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
@@ -387,7 +387,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$customParams = $this->getGatewayCustomParams();
 		$addonData = array();
 		$xmlParams['aid'] = $addonData['aid'] = $params['aid'];
-		$xmlParams['version'] = $this->version;
+		$xmlParams['version'] = $credentials['version'] ?? '2000';
 		$xmlParams['mpiValidation'] = 'AutoComm';
 		$xmlParams['userData2'] = 'SinglePayment';
 		if (!empty($customParams['send_z_param'])) {
