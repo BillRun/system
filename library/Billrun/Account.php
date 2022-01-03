@@ -380,7 +380,7 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $rejection_conditions
 	 * @return array of aids
 	 */
-	protected static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
+	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
 		$rejection_query = [];
 		foreach ($rejection_conditions as $condition) {
 			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];

@@ -1153,8 +1153,7 @@ abstract class Billrun_Bill {
 		}
 		return $this->method;
 	}
-
-		
+	
 	/**
 	 * Function to get the debt or the credit balance, of all the accounts that are in collection, by aids (aids list or query).
 	 * @param array $aids - array of aids, or query array on "aid" field in bill
@@ -1264,7 +1263,6 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
-	
 	
 	
 	protected function setChargeNotBefore($chargeNotBefore) {
