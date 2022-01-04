@@ -70,16 +70,17 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	
 	protected function validateMandatoryFieldsExistence($entity, $entity_type = 'account') {
 		$data = $entity->getRawData();
+		$missing_fields = [];
 		if(isset($this->mandatory_fields_per_entity[$entity_type])) {
 			foreach($this->mandatory_fields_per_entity[$entity_type] as $field_name) {
 				if(isset($data[$field_name])) {
 					continue;
 				} else {
-					return false;
+					$missing_fields[] = $field_name;
 				}
 			}
 		}
-		return true;
+		return $missing_fields;
 	}
 
 	protected function getDataLine($params) {
