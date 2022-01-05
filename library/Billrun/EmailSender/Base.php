@@ -133,7 +133,7 @@ abstract class Billrun_EmailSender_Base {
                     }
                     $value = Billrun_Util::getIn($data, $placeholder['path']);
                     if(!empty($value)){
-                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($placeholder, $value);
+                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($placeholder, $value, [], Billrun_Base::base_dateformat);
                     }
                 }
                 return str_replace(array_keys($replaces), array_values($replaces), $msg);

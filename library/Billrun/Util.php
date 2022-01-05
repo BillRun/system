@@ -2015,7 +2015,7 @@ class Billrun_Util {
 		return $url;
 	}
         
-        public static function formattingValue($formatObj, $value, &$warningMessages = []){
+        public static function formattingValue($formatObj, $value, &$warningMessages = [], $defaultDateFormat = Billrun_Base::base_datetimeformat){
             $valueType = $formatObj['type'] ?? 'string';
             switch ($valueType){
                 case 'string'://todo:: allow only 'number' type to to use number format. 
@@ -2038,7 +2038,7 @@ class Billrun_Util {
                     }
                     break;
                 case 'date':                   
-                    $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : Billrun_Base::base_datetimeformat;
+                    $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : $defaultDateFormat;
                     if ($value instanceof Mongodloid_Date) {
                         $dateValue = $value->sec;
                     } elseif (intval($value)) {
