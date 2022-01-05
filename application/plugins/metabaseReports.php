@@ -55,14 +55,15 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected $port = '22';
 	
-	public function __construct($options, $added_data) {
+	public function __construct($options = array()) {
 		if (!$this->validateReportsConfStructure($options)) {
-			throw new Exception("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.");
+			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
+			return;
 		}
 		$this->reports_details = $options['reports'];
 		$this->metabase_details = $options['metbase_details'];
 		$this->export_details = $options['export'];
-		$this->values = $added_data;
+		$this->values = isset($options['added_data']) ? $options['added_data'] : [];
 		
 	}
 	
