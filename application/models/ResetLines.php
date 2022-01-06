@@ -92,7 +92,37 @@ class ResetLinesModel {
 	 * @return array Query to run in the collection for reset lines.
 	 */
 	public function getResetLinesQuery($update_aids) {
-		return array(
+            $query =  array(
+			'type' => array(
+				'$nin' => array('credit', 'flat', 'service'),
+			),
+			'process_time' => array(
+				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+			),
+		);
+            //add support to multi day cycle
+            $aidsByInvoiceDay = [];
+            foreach ($update_aids as $aid){
+                $invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+                if (Billrun_Factory::config()->isMultiDayCycle()) {
+                        $account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
+                        $invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+                }
+                $aidsByInvoiceDay[$invoicing_day][] = $aid;
+            }
+            foreach ($aidsByInvoiceDay as $invoiceDay => $aids){      
+                if($this->billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {// billrun already closed
+                        $cond = array(                                          
+                                        'billrun' => array(
+                                                '$exists' => FALSE,
+                                        ),
+                                        'urt' => array(
+                                                '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+                                                '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
+                                        )
+                                );                
+                } else {
+                        $cond =  array(                            
 			'$or' => array(
 				array(
 					'billrun' => $this->billrun_key
@@ -101,22 +131,20 @@ class ResetLinesModel {
 					'billrun' => array(
 						'$exists' => FALSE,
 					),
-					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($this->billrun_key)),
+					'urt' => array(
+						'$gte' => new Mongodloid_Date(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+						'$lt' => new Mongodloid_Date(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
 					)
 				),
-			),
-			'aid' => array(
-				'$in' => $update_aids,
-			),
-			'type' => array(
-				'$nin' => array('credit', 'flat', 'service'),
-			),
-			'process_time' => array(
-				'$lt' => new Mongodloid_Date(strtotime($this->process_time_offset . ' ago')),
-			),
+                            )
 		);
+	}
+                $query['$or'][] = array_merge(
+                                    array(
+                                        'aid' => array('$in' => $aids),
+                                    ), $cond);
+            }
+            return $query;
 	}
 
 	/**
@@ -189,6 +217,15 @@ class ResetLinesModel {
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
                 $former_exporter = $this->buildFormerExporterForLine($line);
+                $split_line = $line['split_line']?? false;
+                if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
+                    $addToQueue = false;
+                    Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, &$addToQueue));
+                    if(!$addToQueue){
+                        $this->splitLinesStamp[] = $line['stamp'];
+                        return;
+                    }
+                }
 		if (!empty($line['rebalance'])) {
 			$queue_line['rebalance'] = $line['rebalance'];
 		}
@@ -375,6 +412,13 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                if(!empty($this->splitLinesStamp)){
+                    $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
+                    $ret = $lines_coll->remove($split_lines_stamps_query); // err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            return FALSE;
+                    }
+		}
 
 		return true;
 	}
@@ -523,13 +567,11 @@ class ResetLinesModel {
 			'aid' => array('$in' => $aids),
 			'period' => array('$ne' => 'default')
 		);
-		
-		
+		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $aid => $packageUsage) {
 			$account = Billrun_Factory::account()->loadAccountForQuery(['aid' => $aid]);
 			$invoicing_day = isset($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($packageUsage as $balanceId => $usageByUsaget) {
-				$balances = $balancesColl->query($queryBalances)->cursor();
 				$relevantBalances = $this->getRelevantBalances($balances, $balanceId, [], $invoicing_day);
 				if (empty($relevantBalances)) {
 					continue;
@@ -560,6 +602,7 @@ class ResetLinesModel {
 			'period' => 'default'
 		);
 
+		$balances = $balancesColl->query($queryBalances)->cursor();
 		$accounts = Billrun_Factory::account()->loadAccountsForQuery(['aid' => array('$in' => array_keys($this->balanceSubstract))]);
 		foreach ($this->balanceSubstract as $aid => $usageBySid) {
 			$current_account = array_filter($accounts, function($account) use($aid) {
@@ -568,7 +611,6 @@ class ResetLinesModel {
 			$invoicing_day = isset($current_account['invoicing_day']) ? $current_account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
 			foreach ($usageBySid as $sid => $usageByMonth) {
 				foreach ($usageByMonth as $billrunKey => $usage) {
-					$balances = $balancesColl->query($queryBalances)->cursor();
 					$relevantBalances = $this->getRelevantBalances($balances, '', array('aid' => $aid, 'sid' => $sid, 'billrun_key' => $billrunKey), $invoicing_day);
 					foreach ($relevantBalances as $balanceToUpdate) {
 						if (empty($balanceToUpdate)) {
