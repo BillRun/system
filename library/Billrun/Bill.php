@@ -1359,20 +1359,25 @@ abstract class Billrun_Bill {
 	 * @param array $relatedBills - the bills object to which we want to add a linked bill	
 	 * @param srting $type - related bill's type. one of: "rec"/"inv"
 	 * @param mixed $id - related bill's id
-	 * @param float $amount - related bill's amount
-         * @param float $bill - the related bill
+	 * @param float $amount - related bill's amount (calculated by left / left_to_pay fields)
+         * @param array $relatedBill - the related bill
 	 */
-	public static function addRelatedBill(&$relatedBills, $type, $id, $amount, $relatedBill) {
+	public static function addRelatedBill(&$relatedBills, $type, $id, $amount, $relatedBill = []) {
 		if (empty($relatedBills)) {
 			$relatedBills = [];
 		}
-		$relatedBills[] = [
+		$relatedBillDetails = [
 			'type' => $type,
 			'id' => $type === 'inv' ? intval($id) : $id,
-			'amount' => floatval($amount),
-                        'total_amount' => $relatedBill['amount'], 
-                        'date' => $type === 'inv' ?  $relatedBill['invoice_date'] : $relatedBill['urt']
+			'amount' => floatval($amount)
 		];
+                if(isset($relatedBill['amount'])){
+                    $relatedBillDetails['total_amount'] = $relatedBill['amount'];
+                }
+                if(($type === 'inv' && isset($relatedBill['invoice_date'])) || isset($relatedBill['urt'])){
+                    $relatedBillDetails['date'] =  $type === 'inv' ?  $relatedBill['invoice_date'] : $relatedBill['urt'];
+                }             
+                $relatedBills[] = $relatedBillDetails;
 	}
 	
 	/**
@@ -1439,7 +1444,7 @@ abstract class Billrun_Bill {
 			$newPaymentParam = [];
 			foreach ($paymentParams[$dir] as $billType => $bills) {
 				foreach ($bills as $billId => $amount) {                                       
-					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount, $paymentParams);
+					Billrun_Bill::addRelatedBill($newPaymentParam, $billType, $billId, $amount);
 				}
 			}
 			
