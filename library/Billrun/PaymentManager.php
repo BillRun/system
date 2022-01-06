@@ -315,7 +315,6 @@ class Billrun_PaymentManager {
 				}
                                 $responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 			}
-//			$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 			$txId = $gateway->getTransactionId();
 			$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
 			$postPayment->setTransactionId($txId);
