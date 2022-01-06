@@ -44,27 +44,42 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected function updatePayments($row, $payment = null) {
 		$identifier_val = $this->getIdentifierValue($row);
 		$bill = $this->findBillsByIdentifier($identifier_val);
-		if (count($bill) == 0) {
-			$message = "Didn't find bill with " . $identifier_val . " value in " . $this->identifierField['file_field'] . " field in " . $this->identifierField['source'] . " segment.";
-			Billrun_Factory::log($message, Zend_Log::ALERT);
-			$this->informationArray['errors'][] = $message;
-			return;
-		}
 		if (count($bill) > 1 && $this->identifierField['field'] == 'invoice_id') {
 			$message = $this->identifierField['field'] . " field isn't unique";
 			Billrun_Factory::log($message, Zend_Log::ALERT);
 			$this->informationArray['errors'][] = $message;
 			return;
 		}
-		$billData = $bill->current()->getRawData();
+		$overpayment = false;
+		if (count($bill) == 0) {
+			$message = "Didn't find bill with " . $identifier_val . " value in " . $this->identifierField['file_field'] . " field in " . $this->identifierField['source'] . " segment.";
+			if ($this->identifierField['field'] == 'invoice_id') {
+				Billrun_Factory::log($message, Zend_Log::ALERT);
+				$this->informationArray['errors'][] = $message;
+				return;
+			} elseif ($this->identifierField['field'] == 'invoice_id') {
+				$message .= " Payment will be considered as overpayment.";
+				Billrun_Factory::log($message, Zend_Log::INFO);
+				$this->informationArray['info'][] = $message;
+				$overpayment = true;
+			}
+		}
 		if (!empty($this->amountField)) {
 			//TODO : support multiple header/footer lines
 			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
-		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
-		$paymentParams['amount'] = $billAmount;
+		
+		if($overpayment && is_null($optional_amount)) {
+			$message = "Payment with identifier value $identifier_val is over payment and dosent have $this->amountField['field'] field. Considered as 0";
+			Billrun_Factory::log($message, Zend_Log::ERR);
+			$this->informationArray['errors'][] = $message;
+			$optional_amount = 0;
+		}
+		$billData = $overpayment ? [] : $bill->current()->getRawData();
+		$paymentParams['amount'] = $overpayment ? $optional_amount : $billData['amount'];
 		$paymentParams['dir'] = 'fc';
-		$paymentParams['aid'] = $billData['aid'];
+		$paymentParams['aid'] = $overpayment ? $identifier_val : $billData['aid'];
+		
 		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
 			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
 			$amount = $billAmount;
@@ -86,11 +101,13 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 			$customFields = $this->getCustomPaymentGatewayFields();
 			foreach ($ret['payment'] as $index => $returned_payment) {
 				$payment_data = $returned_payment->getRawData();
-				foreach ($payment_data['pays'] as $value) {
-					if (is_array($value)) {
-						$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " of bill from type: " . $value['type'] . ", Id: " . $value['id'];
-						Billrun_Factory::log()->log($message, Zend_Log::INFO);
-						$this->informationArray['info'][] = $message;
+				if(!$overpayment) {
+					foreach ($payment_data['pays'] as $value) {
+						if (is_array($value)) {
+							$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " of bill from type: " . $value['type'] . ", Id: " . $value['id'];
+							Billrun_Factory::log()->log($message, Zend_Log::INFO);
+							$this->informationArray['info'][] = $message;
+						}
 					}
 				}
 				if (!Billrun_Util::isEqual($payment_data['left'], 0, Billrun_Bill::precision)) {
