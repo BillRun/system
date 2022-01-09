@@ -764,6 +764,7 @@ abstract class Billrun_PaymentGateway {
 	}
 
 	public function makeOnlineTransaction($gatewayDetails, $addonData) {
+                Billrun_Factory::dispatcher()->trigger('beforeMakeOnlineTransaction', array(&$gatewayDetails, $addonData));
 		$amountToPay = $gatewayDetails['amount'];
 		if ($amountToPay > 0) {
 			return $this->pay($gatewayDetails, $addonData);
