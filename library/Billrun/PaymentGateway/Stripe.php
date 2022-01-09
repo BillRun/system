@@ -69,13 +69,11 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$this->setApiKey($credentials['secret_key']);
 		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
-                $paymentDetails = array(
+		$result = \Stripe\Charge::create(array(
 				"amount" => $gatewayDetails['amount'],
 				"currency" => $gatewayDetails['currency'],
 				"customer" => $gatewayDetails['customer_id'],
-		);
-                Billrun_Factory::dispatcher()->trigger('beforeChargeByStripe', array(&$paymentDetails, $addonData));
-		$result = \Stripe\Charge::create($paymentDetails);
+		));
 		$status = $this->payResponse($result);
 
 		return $status;
