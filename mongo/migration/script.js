@@ -372,7 +372,7 @@ for (var i in propertyTypes) {
 }
 
 
-db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+db.rebalance_queue.createIndex({"creation_date": 1}, {unique: false, "background": true})
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
@@ -416,7 +416,7 @@ if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined')
     lastConfig['collection']['settings']['run_on_hours'] = [];
 }
 db.counters.dropIndex("coll_1_oid_1");
-db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
+db.counters.createIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
 // BRCD-1475 - Choose CDR fields that will be saved under 'uf'
 for (var i in lastConfig['file_types']) {
@@ -480,17 +480,17 @@ if(!found) {
 lastConfig['subscribers']['subscriber']['fields'] = fields;
 
 // BRCD-1512 - Fix bills' linking fields / take into account linking fields when charging
-db.bills.ensureIndex({'invoice_id': 1 }, { unique: false, background: true});
+db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 
 // BRCD-1516 - Charge command filtration
-db.bills.ensureIndex({'billrun_key': 1 }, { unique: false, background: true});
-db.bills.ensureIndex({'invoice_date': 1 }, { unique: false, background: true});
+db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
+db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
 
 // BRCD-1552 collection
 db.collection_steps.dropIndex("aid_1");
 db.collection_steps.dropIndex("trigger_date_1_done_1");
-db.collection_steps.ensureIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
-db.collection_steps.ensureIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
+db.collection_steps.createIndex({'trigger_date': 1}, { unique: false , sparse: true, background: true });
+db.collection_steps.createIndex({'extra_params.aid':1 }, { unique: false , sparse: true, background: true });
 
 //BRCD-1541 - Insert bill to db with field 'paid' set to 'false'
 db.bills.update({type: 'inv', paid: {$exists: false}, due: {$gte: 0}}, {$set: {paid: '0'}}, {multi: true});
@@ -770,11 +770,11 @@ db.subscribers.getIndexes().forEach(function(index){
 	var indexFields = Object.keys(index.key);
 	if (index.unique && indexFields.length == 3 && indexFields[0] == 'sid' && indexFields[1] == 'from' && indexFields[2] == 'aid') {
 		db.subscribers.dropIndex(index.name);
-		db.subscribers.ensureIndex({'sid': 1}, { unique: false, sparse: true, background: true });
+		db.subscribers.createIndex({'sid': 1}, { unique: false, sparse: true, background: true });
 	}
 	else if ((indexFields.length == 1) && index.key.aid && index.sparse) {
 		db.subscribers.dropIndex(index.name);
-		db.subscribers.ensureIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+		db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
 	}
 })
 
@@ -799,14 +799,14 @@ db.services.update({tax:{$exists:0},vatable:false},{$set:{tax:[{type:"vat",taxat
 
 // taxes collection indexes
 db.createCollection('taxes');
-db.taxes.ensureIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
-db.taxes.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
-db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
+db.taxes.createIndex({'key':1, 'from': 1, 'to': 1}, { unique: true, background: true });
+db.taxes.createIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
+db.taxes.createIndex({'to': 1 }, { unique: false , sparse: true, background: true });
 
 //Suggestions Collection
 db.createCollection('suggestions');
-db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
-db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
+db.suggestions.createIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
+db.suggestions.createIndex({'status': 1 }, { unique: false , background: true});
 
 
 // BRCD-1936: Migrate old discount structure to new discount structure
@@ -1255,8 +1255,8 @@ lastConfig = runOnce(lastConfig, 'BRCD-2634', function () {
     );
 });
 
-db.subscribers.ensureIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
-db.billrun.ensureIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
+db.billrun.createIndex( { 'billrun_key': -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
 db.billrun.dropIndex('billrun_key_-1');
 //BRCD-2042 - charge.not_before migration script
 db.bills.find({'charge.not_before':{$exists:0}, 'due_date':{$exists:1}}).forEach(
@@ -1327,12 +1327,12 @@ lastConfig = runOnce(lastConfig, 'BRCD-2855', function () {
     db.createCollection("oauth_jwt");
 
     // create indexes
-    db.oauth_clients.ensureIndex({'client_id': 1 });
-    db.oauth_access_tokens.ensureIndex({'access_token': 1 });
-    db.oauth_authorization_codes.ensureIndex({'authorization_code': 1 });
-    db.oauth_refresh_tokens.ensureIndex({'refresh_token': 1 });
-    db.oauth_users.ensureIndex({'username': 1 });
-    db.oauth_scopes.ensureIndex({'oauth_scopes': 1 });
+    db.oauth_clients.createIndex({'client_id': 1 });
+    db.oauth_access_tokens.createIndex({'access_token': 1 });
+    db.oauth_authorization_codes.createIndex({'authorization_code': 1 });
+    db.oauth_refresh_tokens.createIndex({'refresh_token': 1 });
+    db.oauth_users.createIndex({'username': 1 });
+    db.oauth_scopes.createIndex({'oauth_scopes': 1 });
     
     var _obj;
     for (var secretKey in lastConfig.shared_secret) {
@@ -1363,7 +1363,7 @@ runOnce(lastConfig, 'BRCD-2772', function () {
 });
 
 
-db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 
 //BRCD-3307:Refactoring : remove "balance_effective_date" field from payments
 runOnce(lastConfig, 'BRCD-3307', function () {
