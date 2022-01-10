@@ -2014,6 +2014,70 @@ class Billrun_Util {
 		$url = htmlspecialchars($url);
 		return $url;
 	}
+        
+        public static function formattingValue($formatObj, $value, &$warningMessages = [], $defaultDateFormat = Billrun_Base::base_datetimeformat){
+            $valueType = $formatObj['type'] ?? 'string';
+            switch ($valueType){
+                case 'string'://todo:: allow only 'number' type to to use number format. 
+                case 'number':
+                    if(isset($formatObj['number_format']) && isset($formatObj['number_format']['decimals'])){
+                        if (!isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])) {
+                            $message = "'dec_point' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } elseif ((isset($formatObj['number_format']['dec_point']) && (!isset($formatObj['number_format']['thousands_sep'])))) {
+                            $message = "'thousands_sep' is missing: " . print_r($formatObj['number_format'], 1) . ", so only 'decimals' was used to format value: " . $value;
+                            $warningMessages[] = $message;
+                            Billrun_Factory::log($message, Zend_Log::WARN);
+                        } 
+                        if (isset($formatObj['number_format']['dec_point']) && isset($formatObj['number_format']['thousands_sep'])){
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals'], $formatObj['number_format']['dec_point'], $formatObj['number_format']['thousands_sep']);
+                        } else {
+                            $value = number_format((float)$value, $formatObj['number_format']['decimals']); 
+                        } 
+                    }
+                    break;
+                case 'date':                   
+                    $dateFormat = isset($formatObj['format']) ? $formatObj['format'] : $defaultDateFormat;
+                    if ($value instanceof Mongodloid_Date) {
+                        $dateValue = $value->sec;
+                    } elseif (intval($value)) {
+                        $dateValue = $value;
+                    } else if (strtotime($value)) {
+                       $dateValue = strtotime($value); 
+                    } else {
+                        $message = "Couldn't convert date string " . $value;
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+                        break;
+                    }
+                    if (isset($formatObj['relative_time'])) {
+                       $dateValue = strtotime($formatObj['relative_time'], $dateValue);
+                    }
+                    $value = date($dateFormat, $dateValue);
+                    break;
+            }
+            if (isset($formatObj['value_mult'])) {
+                $value = floatval($formatObj['value_mult']) * floatval($value);
+            }
+            $padding = $formatObj['padding'] ?? [];
+            if (!empty($padding)){
+                $padDir = isset($padding['direction']) ? ($padding['direction']==='right' ? STR_PAD_RIGHT :  STR_PAD_LEFT) : STR_PAD_LEFT;
+                $padChar = isset($padding['character']) ? $padding['character'] : '';
+                $length = isset($padding['length']) ? $padding['length'] : strlen($value);
+                $valueToPed = substr($value, 0, $length) ?? '';
+                $value = str_pad($valueToPed, $length, $padChar, $padDir) ?? '';
+            }
+            if (isset($formatObj['substring'])) {
+                if (!isset($formatObj['substring']['offset']) || !isset($formatObj['substring']['length'])) {
+			$message = "substring: " . print_r($formatObj['substring'], 1) . " was defined incorrectly";
+                        $warningMessages[] = $message;
+                        Billrun_Factory::log($message, Zend_Log::WARN);
+		}
+		$value = substr($value, $formatObj['substring']['offset'], $formatObj['substring']['length']);
+            }
+            return $value;
+        }
 
 
 }
