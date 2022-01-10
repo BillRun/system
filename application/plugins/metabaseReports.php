@@ -55,37 +55,40 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected $port = '22';
 	
-	public function __construct($options = array()) {
-		if (!$this->validateReportsConfStructure($options)) {
-			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
-			return;
-		}
-		$this->reports_details = $options['reports'];
-		$this->metabase_details = $options['metbase_details'];
-		$this->export_details = $options['export'];
+	public function __construct($options = array()) {		
+		$this->reports_details = isset($options['reports']) ? $options['reports'] : [];
+		$this->metabase_details = isset($options['metbase_details']) ? $options['metbase_details'] : [];
+		$this->export_details = isset($options['export']) ? $options['export'] : [];
 		$this->values = isset($options['added_data']) ? $options['added_data'] : [];
 		
 	}
 	
 	/**
 	 * Check if Metabase reports actions are needed.
-	 * @param array $options
 	 */
-	public function validateReportsConfStructure($options) {
-		$reports_exist = !empty($options['reports']);
+	public function validateReportsConfStructure() {
+		$reports_exist = !empty($this->reports_details);
 		$all_disable = true;
 		if ($reports_exist) {
-			foreach ($options['reports'] as $report) {
+			foreach ($this->reports_details as $report) {
 				if(!isset($report['enable']) || ($report['enable'] == true)) {
 					$all_disable = false;
 				}
 			}
 		}
-		$metabase_details = !empty($options['metbase_details']);
-		$export_details = !empty($options['export']);
+		$metabase_details = !empty($this->metabase_details);
+		$export_details = !empty($this->export_details);
 		return $reports_exist && !$all_disable && $metabase_details && $export_details;
 	}
 
+	public function cronHour () {
+		if (!$this->validateReportsConfStructure()) {
+			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
+			return;
+		}
+		$this->runReports();
+	}
+	
 	/**
 	 * Function to fetch the reports that should run in the current day and hour.
 	 */
