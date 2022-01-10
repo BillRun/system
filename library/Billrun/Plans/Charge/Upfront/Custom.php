@@ -18,7 +18,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 	protected function getFractionOfMonth() {
 
-		if ((empty($this->deactivation) || $this->deactivation > $this->cycle->end() )&& $this->activation <= $this->cycle->start()  ) {
+		if ((empty($this->deactivation) || $this->deactivation >= $this->cycle->end() ) && $this->activation <= $this->cycle->start()  ) {
 			return 1;
 		}
 		$frequency = $this->recurrenceConfig['frequency'];
@@ -27,7 +27,7 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		$cycleSpan = Billrun_Utils_Time::getDaysSpan($formatCycleStart,$formatCycleEnd);
 
 		// subscriber activates in the middle of the cycle and should be charged for a partial month and should be charged for the next month (upfront)
-		if ($this->activation > $this->cycle->start() && $this->deactivation > $this->cycle->end()) {
+		if ($this->activation > $this->cycle->start() && $this->deactivation >= $this->cycle->end()) {
 			return 1 + (Billrun_Utils_Time::getDaysSpanDiffUnix($this->activation, $this->cycle->end()-1,$cycleSpan) );
 		}
 		// subscriber activates in the middle of the cycle and should be charged for a partial month
@@ -48,8 +48,9 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 		// get a refund for a cancelled plan paid upfront
 		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
 			 ||
-			$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
-			) {
+			$this->deactivation >= $this->cycle->end() // the deactivation is in a future cycle
+			 || // deactivation is before the cycle start
+			$this->deactivation < $this->cycle->start() ) {
 			return null;
 		}
 
@@ -65,7 +66,9 @@ class Billrun_Plans_Charge_Upfront_Custom extends Billrun_Plans_Charge_Upfront_M
 
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction,
 			'start' => $this->activation,
-			'end' => $this->deactivation);
+			'prorated_start_date' => new Mongodloid_Date($this->deactivation),
+			'end' => $this->deactivation,
+			'prorated_end_date' =>  new Mongodloid_Date($this->cycle->end()) );
 	}
 
 
