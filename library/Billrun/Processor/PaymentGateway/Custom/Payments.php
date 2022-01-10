@@ -54,7 +54,6 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 				$this->handleLogMessages($message, Zend_Log::ALERT, 'errors');
 				return;
 			} elseif ($this->identifierField['field'] == 'aid') {
-				$this->handleLogMessages($message . " Payment will be considered as overpayment.", Zend_Log::INFO, 'info');
 				$aid = $identifier_val;
 			}
 		} else {
