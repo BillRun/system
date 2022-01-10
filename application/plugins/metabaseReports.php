@@ -280,7 +280,14 @@ class Report {
 	 * Csv file name.
 	 * @var string
 	 */
-	public $file_name;
+	public $csv_name;
+	
+	/**
+	 * Csv file name params.
+	 * @var array
+	 */
+	public $file_name_params;
+	public $file_name_structure;
 	
 	/**
 	 * Report params
@@ -319,7 +326,9 @@ class Report {
 		$this->name = $options['name'];
 		$this->day = !empty($options['day']) ? $options['day'] : $this->day;
 		$this->hour = $options['hour'];
-		$this->file_name = $options['csv_name'];
+		$this->file_name_params = isset($options['filename_params']) ? $options['filename_params'] : [];
+		$this->file_name_structure = isset($options['filename']) ? $options['filename'] : '';
+		$this->csv_name = isset($options['csv_name']) ? $options['csv_name'] : "";
 		$this->params = $options['params'];
 		$this->need_post_process = !empty($options['need_post_process']) ? $options['need_post_process'] : false;
 		$this->format = $this->need_post_process ? "json" : "csv";
@@ -374,7 +383,70 @@ class Report {
 		return $this->id;
 	}
 	
-	public function getFileName () {	
-		return $this->file_name . '_' . date('Ymd',time()) . '.csv';
+	public function getFileName() {
+		$name = !empty($this->csv_name) ? $this->csv_name : $this->name;
+		$default_file_name = strtolower(str_replace(" ", "_", $name)) . '_' . date('Ymd', time()) . '.csv';
+		if (!empty($this->file_name_params)) {
+			$translations = array();
+			foreach ($this->file_name_params as $paramObj) {
+				$res = $this->getTranslationValue($paramObj);
+				if($res == false){
+					break;
+				}
+				$translations[$paramObj['param']] = $res;
+			}
+			if ($res == false) {
+				return $default_file_name;
+			} else {
+				return Billrun_Util::translateTemplateValue($this->file_name_structure, $translations, null, true);
+			}
+		} else {
+			return $default_file_name;
+		}
 	}
+	
+	protected function getTranslationValue($paramObj) {
+        if (!isset($paramObj['type']) || !isset($paramObj['value'])) {
+			Billrun_Factory::log()->log("Missing filename params definitions for $this->name report. Default file name was taken", Zend_Log::ERR);
+			return false;
+        }
+        switch ($paramObj['type']) {
+            case 'date':
+                $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
+                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                return date($dateFormat, $dateValue);
+            case 'autoinc':
+                if (!isset($paramObj['min_value']) && !isset($paramObj['max_value'])) {
+					Billrun_Factory::log()->log("Missing filename params definitions for $this->name report. Default file name was taken", Zend_Log::ERR);
+					return false;
+                }
+                $minValue = $paramObj['min_value'];
+                $maxValue = $paramObj['max_value'];
+                $dateGroup = isset($paramObj['date_group']) ? $paramObj['date_group'] : Billrun_Base::base_datetimeformat;
+                $dateValue = ($paramObj['value'] == 'now') ? time() : strtotime($paramObj['value']);
+                $date = date($dateGroup, $dateValue);
+                $action = 'metabase_reports_' . $this->name;
+                $fakeCollectionName = $date . '_' . $action;
+                $seq = Billrun_Factory::db()->countersCollection()->createAutoInc(array(), $minValue, $fakeCollectionName);
+                if ($seq > $maxValue) {
+					Billrun_Factory::log()->log("Sequence exceeded max value when generating file name for $this->name report. Default file name was taken", Zend_Log::ERR);
+					return false;
+                }
+                if (isset($paramObj['padding'])) {
+                    $this->padSequence($seq, $paramObj);
+                }
+                return $seq;
+            default:
+				Billrun_Factory::log()->log("Unsupported filename_params type for $this->name report. Default file name was taken", Zend_Log::ERR);
+				return false;
+        }
+    }
+	
+	protected function padSequence($seq, $padding) {
+        $padDir = isset($padding['direction']) ? $padding['direction'] : STR_PAD_LEFT;
+        $padChar = isset($padding['character']) ? $padding['character'] : '';
+        $length = isset($padding['length']) ? $padding['length'] : strlen($seq);
+        return str_pad(substr($seq, 0, $length), $length, $padChar, $padDir);
+    }
+
 }
