@@ -1388,7 +1388,7 @@ if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined'
 	};
 }
 
-db.lines.ensureIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
+db.lines.createIndex({'sid' : 1, 'billrun' : 1, 'urt' : 1}, { unique: false , sparse: false, background: true });
 
 //BRCD-3307:Refactoring : remove "balance_effective_date" field from payments
 runOnce(lastConfig, 'BRCD-3307', function () {

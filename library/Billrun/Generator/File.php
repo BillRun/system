@@ -111,20 +111,21 @@ abstract class Billrun_Generator_File {
             if (isset($field['hard_coded_value'])) {
                 $line[$field['path']] = $field['hard_coded_value'];
             }
-			if (isset($field['linked_entity'])) {
-				$line[$field['path']] = $this->getLinkedEntityData($field['linked_entity']['entity'], $params, $field['linked_entity']['field_name']);
-			}
-			if (isset($field['predefined_values']) && (!isset($field['type']) || $field['type'] !== 'date')){
-					$line[$field['path']] = $this->getTranslationValueOfPredefinedValues($field);
-			}else if (isset($field['type']) && $field['type'] !== 'string') {
-				$value = $line[$field['path']]->sec ?? ($field['predefined_values'] ?? null);
-                $line[$field['path']] = $this->getTranslationValueOfType(array_merge($field, array('value' => $value)));
+            if (isset($field['linked_entity'])) {
+                    $line[$field['path']] = $this->getLinkedEntityData($field['linked_entity']['entity'], $params, $field['linked_entity']['field_name']);
             }
-			if(isset($field['param_name'])){
-				if(isset($this->params[$field['param_name']])){
-					$line[$field['path']] = $this->params[$field['param_name']];
-				}	
-			}
+            if (isset($field['predefined_values']) && (!isset($field['type']) || $field['type'] !== 'date')){
+                            $line[$field['path']] = $this->getTranslationValueOfPredefinedValues($field);
+            }else if (isset($field['type']) && $field['type'] !== 'string') {
+                    $value = $line[$field['path']]->sec ?? ($field['predefined_values'] ?? null);
+                    $line[$field['path']] = $this->getTranslationValueOfType(array_merge($field, array('value' => $value)));
+            }
+            if(isset($field['param_name'])){
+                    if(isset($this->params[$field['param_name']])){
+                            $line[$field['path']] = $this->params[$field['param_name']];
+                    }	
+            }
+            $line[$field['path']] = Billrun_util::formattingValue($field, $line[$field['path']]);
             if (!isset($line[$field['path']])) {
                 $configObj = $field['name'];
                 $message = "Field name " . $configObj . " config was defined incorrectly when generating file type " . $this->getFileType();
@@ -132,10 +133,7 @@ abstract class Billrun_Generator_File {
             }
             
             $attributes = $this->getLineAttributes($field);
-            
-            if (isset($field['number_format'])) {
-                $line[$field['path']] = $this->setNumberFormat($field, $line);
-            }
+              
             $line[$field['path']] = $this->prepareLineForGenerate($line[$field['path']], $field, $attributes);
         }
         if ($this->config['generator']['type'] == 'fixed' || $this->config['generator']['type'] == 'separator') {
@@ -144,19 +142,6 @@ abstract class Billrun_Generator_File {
         return $line;
     }
 	
-	protected function setNumberFormat($field, $line) {
-        if((!isset($field['number_format']['dec_point']) && (isset($field['number_format']['thousands_sep']))) || (isset($field['number_format']['dec_point']) && (!isset($field['number_format']['thousands_sep'])))){
-            $message = "'dec_point' or 'thousands_sep' is missing in one of the entities, so only 'decimals' was used, when generating file type " . $this->getFileType();
-            Billrun_Factory::log($message, Zend_Log::WARN);
-        }
-        if (isset($field['number_format']['dec_point']) && isset($field['number_format']['thousands_sep']) && isset($field['number_format']['decimals'])){
-            return number_format((float)$line[$field['path']], $field['number_format']['decimals'], $field['number_format']['dec_point'], $field['number_format']['thousands_sep']);
-        } else {
-            if (isset($field['number_format']['decimals'])){
-                return number_format((float)$line[$field['path']], $field['number_format']['decimals']); 
-            }
-        }
-    }
 	
 	    /**
      * Function returns line's attributes, if exists
@@ -201,7 +186,7 @@ abstract class Billrun_Generator_File {
 					$message = "Missing filename params definitions for file type " . $this->getFileType();
 					throw new Exception($message);
 				}
-                $this->params[$paramObj['param']] = $this->getTranslationValueOfType($paramObj);
+                $this->params[$paramObj['param']] = billrun_util::formattingValue($paramObj, $this->getTranslationValueOfType($paramObj));
             }
         }
         $this->fileName = Billrun_Util::translateTemplateValue($this->fileNameStructure, $this->params, null, true);
@@ -220,9 +205,7 @@ abstract class Billrun_Generator_File {
 	protected function getTranslationValue($paramObj, $filed){
 		switch ($paramObj[$filed]) {
             case 'date':
-                $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-                $dateValue = intval($paramObj['value'])? $paramObj['value'] : strtotime($paramObj['value']);
-                return date($dateFormat, $dateValue);
+                return intval($paramObj['value'])? $paramObj['value'] : strtotime($paramObj['value']);
             case 'autoinc':
                 $minValue = $paramObj['min_value'] ?? 1;
                 $maxValue = $paramObj['max_value'] ?? ($paramObj['padding']['length'] ? intval(str_repeat("9", $paramObj['padding']['length'])) : null);
@@ -240,9 +223,6 @@ abstract class Billrun_Generator_File {
                 if ($seq > $maxValue) {
                     $message = "Sequence exceeded max value when generating file for file type " . $this->getFileType();
                     throw new Exception($message);
-                }
-                if (isset($paramObj['padding'])) {
-                    $seq = $this->padSequence($seq, $paramObj['padding']);
                 }
                 return $seq;
 			case 'number_of_records':
