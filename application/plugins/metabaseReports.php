@@ -82,10 +82,6 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function cronHour () {
-		if (!$this->validateReportsConfStructure()) {
-			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
-			return;
-		}
 		$this->runReports();
 	}
 	
@@ -93,6 +89,10 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Function to fetch the reports that should run in the current day and hour.
 	 */
 	public function runReports () {
+		if (!$this->validateReportsConfStructure()) {
+			Billrun_Factory::log("Metabase reports - missing reports/metbase details/export info/all the reports are disabled. No action was done.", Zend_Log::WARN);
+			return;
+		}
 		$reports = $this->getReportsToRun();
 		Billrun_Factory::log("Found " . count($reports) . " reports to run."  , Zend_Log::INFO);
 		foreach ($reports as $index => $report_settings) {
