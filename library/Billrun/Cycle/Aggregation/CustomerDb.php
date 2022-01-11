@@ -220,10 +220,24 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
 		foreach ($passthroughFields as $subscriberField) {
-			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
-			$sub_push[$srcField] =  '$' . $srcField;
-			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
-			$project[$srcField] ='$' . $srcField;
+			if(is_array($subscriberField) && !isset($subscriberField['value'])) {
+				$res = [];
+				array_walk_recursive($subscriberField, function($v) use (&$res) {$res[] = $v;});
+				$project_val = '$' . current($res);
+				$group_val = array('$first' => '$sub_plans.' . current($res));
+				foreach($reversed = array_reverse(explode(".", current($res))) as $sub_key) {
+					$project_val = [$sub_key => $project_val];
+					$group_val = [$sub_key => $group_val];
+				}
+				$sub_push[end($reversed)] = '$' . end($reversed);
+				$group2 = array_merge($group2, $group_val);
+				$project = array_merge($project, $project_val);
+			} else {
+				$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+				$sub_push[$srcField] =  '$' . $srcField;
+				$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
+				$project[$srcField] ='$' . $srcField;
+			}
 		}
 		if (!$project) {
 			$project = 1;
