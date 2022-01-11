@@ -96,7 +96,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$reports = $this->getReportsToRun();
 		Billrun_Factory::log("Found " . count($reports) . " reports to run."  , Zend_Log::INFO);
 		foreach ($reports as $index => $report_settings) {
-			if (class_exists($report_class = 'Report_' . $report_settings['name'])) {
+			if (@class_exists($report_class = 'Report_' . $report_settings['name'])) {
 				$report = new $report_class($report_settings);
 			} else {
 				$report = new Report($report_settings);
