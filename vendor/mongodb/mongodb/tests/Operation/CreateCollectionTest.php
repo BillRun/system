@@ -10,7 +10,7 @@ class CreateCollectionTest extends TestCase
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
-    public function testConstructorOptionTypeChecks(array $options)
+    public function testConstructorOptionTypeChecks(array $options): void
     {
         $this->expectException(InvalidArgumentException::class);
         new CreateCollection($this->getDatabaseName(), $this->getCollectionName(), $options);
@@ -30,6 +30,10 @@ class CreateCollectionTest extends TestCase
 
         foreach ($this->getInvalidDocumentValues() as $value) {
             $options[][] = ['collation' => $value];
+        }
+
+        foreach ($this->getInvalidIntegerValues() as $value) {
+            $options[][] = ['expireAfterSeconds' => $value];
         }
 
         foreach ($this->getInvalidIntegerValues() as $value) {
@@ -60,6 +64,10 @@ class CreateCollectionTest extends TestCase
             $options[][] = ['storageEngine' => $value];
         }
 
+        foreach ($this->getInvalidDocumentValues() as $value) {
+            $options[][] = ['timeseries' => $value];
+        }
+
         foreach ($this->getInvalidArrayValues() as $value) {
             $options[][] = ['typeMap' => $value];
         }
@@ -83,13 +91,13 @@ class CreateCollectionTest extends TestCase
         return $options;
     }
 
-    public function testAutoIndexIdOptionIsDeprecated()
+    public function testAutoIndexIdOptionIsDeprecated(): void
     {
-        $this->assertDeprecated(function () {
+        $this->assertDeprecated(function (): void {
             new CreateCollection($this->getDatabaseName(), $this->getCollectionName(), ['autoIndexId' => true]);
         });
 
-        $this->assertDeprecated(function () {
+        $this->assertDeprecated(function (): void {
             new CreateCollection($this->getDatabaseName(), $this->getCollectionName(), ['autoIndexId' => false]);
         });
     }

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2019 MongoDB, Inc.
+ * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@ use MongoDB\Driver\Monitoring\CommandFailedEvent;
 use MongoDB\Driver\Monitoring\CommandStartedEvent;
 use MongoDB\Driver\Monitoring\CommandSubscriber;
 use MongoDB\Driver\Monitoring\CommandSucceededEvent;
+use MongoDB\Driver\Server;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\ResumeTokenException;
 use MongoDB\Exception\UnexpectedValueException;
+use ReturnTypeWillChange;
+
 use function count;
 use function is_array;
 use function is_integer;
@@ -63,6 +66,9 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
     /** @var array|object|null */
     private $resumeToken;
 
+    /** @var Server */
+    private $server;
+
     /**
      * @internal
      * @param Cursor            $cursor
@@ -90,6 +96,7 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
         $this->isRewindNop = ($firstBatchSize === 0);
         $this->postBatchResumeToken = $postBatchResumeToken;
         $this->resumeToken = $initialResumeToken;
+        $this->server = $cursor->getServer();
     }
 
     /** @internal */
@@ -133,6 +140,7 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
      * @see https://php.net/iteratoriterator.current
      * @return mixed
      */
+    #[ReturnTypeWillChange]
     public function current()
     {
         return $this->isValid ? parent::current() : null;
@@ -153,9 +161,18 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
     }
 
     /**
+     * Returns the server the cursor is running on.
+     */
+    public function getServer(): Server
+    {
+        return $this->server;
+    }
+
+    /**
      * @see https://php.net/iteratoriterator.key
      * @return mixed
      */
+    #[ReturnTypeWillChange]
     public function key()
     {
         return $this->isValid ? parent::key() : null;
@@ -165,6 +182,7 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
      * @see https://php.net/iteratoriterator.rewind
      * @return void
      */
+    #[ReturnTypeWillChange]
     public function next()
     {
         /* Determine if advancing the iterator will execute a getMore command
@@ -192,6 +210,7 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
      * @see https://php.net/iteratoriterator.rewind
      * @return void
      */
+    #[ReturnTypeWillChange]
     public function rewind()
     {
         if ($this->isRewindNop) {
@@ -206,6 +225,7 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
      * @see https://php.net/iteratoriterator.valid
      * @return boolean
      */
+    #[ReturnTypeWillChange]
     public function valid()
     {
         return $this->isValid;
@@ -230,16 +250,18 @@ class ChangeStreamIterator extends IteratorIterator implements CommandSubscriber
         }
 
         $resumeToken = is_array($document)
-            ? (isset($document['_id']) ? $document['_id'] : null)
-            : (isset($document->_id) ? $document->_id : null);
+            ? ($document['_id'] ?? null)
+            : ($document->_id ?? null);
 
         if (! isset($resumeToken)) {
             $this->isValid = false;
+
             throw ResumeTokenException::notFound();
         }
 
         if (! is_array($resumeToken) && ! is_object($resumeToken)) {
             $this->isValid = false;
+
             throw ResumeTokenException::invalidType($resumeToken);
         }
 

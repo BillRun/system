@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2015-2017 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
 use MongoDB\UpdateResult;
+
 use function is_array;
 use function is_bool;
 use function is_object;
 use function is_string;
 use function MongoDB\is_first_key_operator;
 use function MongoDB\is_pipeline;
+use function MongoDB\is_write_concern_acknowledged;
 use function MongoDB\server_supports_feature;
 
 /**
@@ -55,6 +57,9 @@ class Update implements Executable, Explainable
 
     /** @var integer */
     private static $wireVersionForHint = 8;
+
+    /** @var integer */
+    private static $wireVersionForUnsupportedOptionServerSideError = 5;
 
     /** @var string */
     private $databaseName;
@@ -202,7 +207,18 @@ class Update implements Executable, Explainable
             throw UnsupportedException::collationNotSupported();
         }
 
-        if (isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForHint)) {
+        /* Server versions >= 3.4.0 raise errors for unsupported update options.
+         * For previous versions, the CRUD spec requires a client-side error. */
+        if (isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForUnsupportedOptionServerSideError)) {
+            throw UnsupportedException::hintNotSupported();
+        }
+
+        /* CRUD spec requires a client-side error when using "hint" with an
+         * unacknowledged write concern on an unsupported server. */
+        if (
+            isset($this->options['writeConcern']) && ! is_write_concern_acknowledged($this->options['writeConcern']) &&
+            isset($this->options['hint']) && ! server_supports_feature($server, self::$wireVersionForHint)
+        ) {
             throw UnsupportedException::hintNotSupported();
         }
 
@@ -213,7 +229,8 @@ class Update implements Executable, Explainable
 
         $bulkOptions = [];
 
-        if (! empty($this->options['bypassDocumentValidation']) &&
+        if (
+            ! empty($this->options['bypassDocumentValidation']) &&
             server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)
         ) {
             $bulkOptions['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
@@ -227,6 +244,13 @@ class Update implements Executable, Explainable
         return new UpdateResult($writeResult);
     }
 
+    /**
+     * Returns the command document for this operation.
+     *
+     * @see Explainable::getCommandDocument()
+     * @param Server $server
+     * @return array
+     */
     public function getCommandDocument(Server $server)
     {
         $cmd = ['update' => $this->collectionName, 'updates' => [['q' => $this->filter, 'u' => $this->update] + $this->createUpdateOptions()]];
@@ -235,7 +259,8 @@ class Update implements Executable, Explainable
             $cmd['writeConcern'] = $this->options['writeConcern'];
         }
 
-        if (! empty($this->options['bypassDocumentValidation']) &&
+        if (
+            ! empty($this->options['bypassDocumentValidation']) &&
             server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)
         ) {
             $cmd['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];

@@ -1350,7 +1350,7 @@ abstract class Billrun_Bill {
 	public function setDepositFreezeDate ($date = null) {
 		$this->data['freeze_date'] = new MongoDate(!empty($date)? $date : time());
 	}
-	
+		
 	/**
 	 * will add a related/linked bill to an existing bill
 	 * 

@@ -125,7 +125,7 @@ abstract class Models_Action {
 	 * @return Models_Action operation
 	 */
 	public static function getInstance($params) {
-		if (is_null(self::$instance)) {
+		if (is_null(self::$instance) || !empty($params['force_reload'])) {
 			$class = 'Models_Action_' . ucfirst($params['request']['action']) . '_' . ucfirst($params['request']['collection']);
 			if (@class_exists($class, true)) {
 				self::$instance = new $class($params);

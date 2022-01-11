@@ -1,12 +1,11 @@
 <?php
-
-require_once __DIR__ . '/../autorun.php';
+require_once(dirname(__FILE__) . '/../autorun.php');
 
 class BadTestCases extends TestSuite
 {
-    public function __construct()
+    public function BadTestCases()
     {
         $this->TestSuite('Two bad test cases');
-        $this->addFile(__DIR__ . '/support/empty_test_file.php');
+        $this->addFile(dirname(__FILE__) . '/support/empty_test_file.php');
     }
 }

@@ -8,11 +8,12 @@ use MongoDB\Operation\DropCollection;
 use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListIndexes;
 use MongoDB\Tests\CommandObserver;
+
 use function version_compare;
 
 class ListIndexesFunctionalTest extends FunctionalTestCase
 {
-    public function testListIndexesForNewlyCreatedCollection()
+    public function testListIndexesForNewlyCreatedCollection(): void
     {
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
         $operation->execute($this->getPrimaryServer());
@@ -31,10 +32,11 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
         foreach ($indexes as $index) {
             $this->assertInstanceOf(IndexInfo::class, $index);
             $this->assertEquals(['_id' => 1], $index->getKey());
+            $this->assertSame($this->getNamespace(), $index->getNamespace());
         }
     }
 
-    public function testListIndexesForNonexistentCollection()
+    public function testListIndexesForNonexistentCollection(): void
     {
         $operation = new DropCollection($this->getDatabaseName(), $this->getCollectionName());
         $operation->execute($this->getPrimaryServer());
@@ -45,14 +47,14 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
         $this->assertCount(0, $indexes);
     }
 
-    public function testSessionOption()
+    public function testSessionOption(): void
     {
         if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
             $this->markTestSkipped('Sessions are not supported');
         }
 
         (new CommandObserver())->observe(
-            function () {
+            function (): void {
                 $operation = new ListIndexes(
                     $this->getDatabaseName(),
                     $this->getCollectionName(),
@@ -61,7 +63,7 @@ class ListIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function (array $event) {
+            function (array $event): void {
                 $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );

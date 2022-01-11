@@ -18,13 +18,14 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $fixedWidth = false;
 	protected $padDirDef = STR_PAD_LEFT;
 	protected $padCharDef = ' ';
-        protected $file_name;
+	protected $file_name;
 	protected $file_path;
-        protected $local_dir;
-        protected $encoding = 'utf-8';
-        protected $transactionsCounter = 0;
+	protected $local_dir;
+	protected $encoding = 'utf-8';
+	protected $transactionsCounter = 0;
+	protected $row_separator = "line_break";
 
-        public function __construct($options) {
+	public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;
 		$this->encoding = isset($options['configByType']['generator']['encoding']) ? $options['configByType']['generator']['encoding'] : $this->encoding;
 		$this->forceHeader = $options['force_header']?? false;
@@ -52,6 +53,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 		if (isset($options['trailers'])) {
 			$this->trailers = $options['trailers'];
 		}
+		$row_separator = Billrun_Util::getIn($options, 'row_separator', 'line_break');
+		$this->row_separator = $row_separator == 'line_break' ? PHP_EOL : $row_separator;
 		$this->validateOptions($options);
 	}
         
@@ -104,13 +107,19 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected function writeHeaders() {
 		$fileContents = '';
 		$counter = 0;
-		foreach ($this->headers as $entity) {
+		foreach ($this->headers as $index => $entity) {
 			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
 			$fileContents .= $this->getRowContent($entity);
-			$fileContents .= PHP_EOL;
+			if (($index !== count($this->headers) - 1)) {
+				$fileContents .= $this->row_separator;
+			} else {
+				if (count($this->data) !== 0 || count($this->trailers) !== 0) {
+					$fileContents .= $this->row_separator;
+				}
+			}
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
 				$fileContents = '';
@@ -123,13 +132,15 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected function writeTrailers() {
 		$fileContents = '';
 		$counter = 0;
-		foreach ($this->trailers as $entity) {
+		foreach ($this->trailers as $index => $entity) {
 			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$fileContents .= $this->getRowContent($entity);
-			$fileContents .= PHP_EOL;
+			$fileContents .= $this->getRowContent($entity);			
+			if ($index !== count($this->trailers) - 1) {
+				$fileContents .= $this->row_separator;
+			}
 			if ($counter == 50000) {
 				$this->writeToFile($fileContents);
 				$fileContents = '';
@@ -150,7 +161,7 @@ class Billrun_Generator_PaymentGateway_Csv {
 			}
 			$fileContents .= $this->getRowContent($entity);
 			if ($index < count($this->data) - 1){
-				$fileContents.= PHP_EOL;
+				$fileContents.= $this->row_separator;
 			}
 			if ($counter == 50000) {
 				Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - writing bulk to file", Zend_Log::DEBUG);
@@ -161,7 +172,7 @@ class Billrun_Generator_PaymentGateway_Csv {
             $this->transactionsCounter++;
 		}
 		if (!empty($this->trailers)) {
-			$fileContents.= PHP_EOL;
+			$fileContents.= $this->row_separator;
 		}
 		$this->writeToFile($fileContents);
 		Billrun_Factory::log()->log("Billrun_Generator_PaymentGateway_Csv::writeRows - done writing rows to file", Zend_Log::DEBUG);

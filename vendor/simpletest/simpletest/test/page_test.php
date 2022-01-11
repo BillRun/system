@@ -1,9 +1,9 @@
 <?php
-
-require_once __DIR__ . '/../autorun.php';
-require_once __DIR__ . '/../expectation.php';
-require_once __DIR__ . '/../http.php';
-require_once __DIR__ . '/../page.php';
+// $Id$
+require_once(dirname(__FILE__) . '/../autorun.php');
+require_once(dirname(__FILE__) . '/../expectation.php');
+require_once(dirname(__FILE__) . '/../http.php');
+require_once(dirname(__FILE__) . '/../page.php');
 Mock::generate('SimpleHttpHeaders');
 Mock::generate('SimpleHttpResponse');
 
@@ -32,10 +32,10 @@ class TestOfPageHeaders extends UnitTestCase
         $headers = new MockSimpleHttpHeaders();
 
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getHeaders', $headers);
-        $response->returnsByValue('getMethod', 'POST');
-        $response->returnsByValue('getUrl', new SimpleUrl('here'));
-        $response->returnsByValue('getRequestData', array('a' => 'A'));
+        $response->setReturnValue('getHeaders', $headers);
+        $response->setReturnValue('getMethod', 'POST');
+        $response->setReturnValue('getUrl', new SimpleUrl('here'));
+        $response->setReturnValue('getRequestData', array('a' => 'A'));
 
         $page = new SimplePage($response);
         $this->assertEqual($page->getMethod(), 'POST');
@@ -46,7 +46,7 @@ class TestOfPageHeaders extends UnitTestCase
     public function testTransportError()
     {
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getError', 'Ouch');
+        $response->setReturnValue('getError', 'Ouch');
 
         $page = new SimplePage($response);
         $this->assertEqual($page->getTransportError(), 'Ouch');
@@ -55,10 +55,10 @@ class TestOfPageHeaders extends UnitTestCase
     public function testHeadersAccessor()
     {
         $headers = new MockSimpleHttpHeaders();
-        $headers->returnsByValue('getRaw', 'My: Headers');
+        $headers->setReturnValue('getRaw', 'My: Headers');
 
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getHeaders', $headers);
+        $response->setReturnValue('getHeaders', $headers);
 
         $page = new SimplePage($response);
         $this->assertEqual($page->getHeaders(), 'My: Headers');
@@ -67,10 +67,10 @@ class TestOfPageHeaders extends UnitTestCase
     public function testMimeAccessor()
     {
         $headers = new MockSimpleHttpHeaders();
-        $headers->returnsByValue('getMimeType', 'text/html');
+        $headers->setReturnValue('getMimeType', 'text/html');
 
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getHeaders', $headers);
+        $response->setReturnValue('getHeaders', $headers);
 
         $page = new SimplePage($response);
         $this->assertEqual($page->getMimeType(), 'text/html');
@@ -79,10 +79,10 @@ class TestOfPageHeaders extends UnitTestCase
     public function testResponseAccessor()
     {
         $headers = new MockSimpleHttpHeaders();
-        $headers->returnsByValue('getResponseCode', 301);
+        $headers->setReturnValue('getResponseCode', 301);
 
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getHeaders', $headers);
+        $response->setReturnValue('getHeaders', $headers);
 
         $page = new SimplePage($response);
         $this->assertIdentical($page->getResponseCode(), 301);
@@ -91,11 +91,11 @@ class TestOfPageHeaders extends UnitTestCase
     public function testAuthenticationAccessors()
     {
         $headers = new MockSimpleHttpHeaders();
-        $headers->returnsByValue('getAuthentication', 'Basic');
-        $headers->returnsByValue('getRealm', 'Secret stuff');
+        $headers->setReturnValue('getAuthentication', 'Basic');
+        $headers->setReturnValue('getRealm', 'Secret stuff');
 
         $response = new MockSimpleHttpResponse();
-        $response->returnsByValue('getHeaders', $headers);
+        $response->setReturnValue('getHeaders', $headers);
 
         $page = new SimplePage($response);
         $this->assertEqual($page->getAuthentication(), 'Basic');
