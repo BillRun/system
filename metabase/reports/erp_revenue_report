@@ -58,12 +58,12 @@ MTN_IND:"$res.mtn_ind",PROD_SERV:"$res.prod_serv",TAX_CODE:"$attributes.vat_code
 GROSS_AMOUNT:{$sum:"$totals.grouping.after_taxes"}, NET_AMOUNT:{$sum:"$totals.grouping.before_taxes"},TAX_AMOUNT:{$sum:"$totals.grouping.taxes"} }},
 
 {$project:{_id : 0,
-INVOICE_NUMBER: "$_id.INVOICE_NUMBER",
-IFS_CUST_CODE:"$_id.IFS_CUST_CODE", 
+INVOICE_NUMBER: {'$ifNull':["$_id.INVOICE_NUMBER", ""]},
+IFS_CUST_CODE:{'$ifNull':["$_id.IFS_CUST_CODE", ""]},
 CURRENCY:"EUR",
-GROSS_AMOUNT:"$GROSS_AMOUNT",
-NET_AMOUNT:"$NET_AMOUNT",
-TAX_AMOUNT:"$TAX_AMOUNT",
+GROSS_AMOUNT:{'$ifNull':["$GROSS_AMOUNT", ""]},
+NET_AMOUNT:{'$ifNull':["$NET_AMOUNT", ""]},
+TAX_AMOUNT:{'$ifNull':["$TAX_AMOUNT", ""]},
 NOTE:{ $concat: [{ $dateToString: { format: "%d/%m/%Y", date: {{from}}, timezone: "Asia/Nicosia"} },"-",
 { $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} }]},
 INVOICE_DATE:{ $dateToString: { format: "%d/%m/%Y", date: { $subtract: [ {{to}}, { $multiply: [ { $dayOfMonth: {{to}} }, 24 , 60 , 60 , 1000]}]}, timezone: "Asia/Nicosia"} },
@@ -75,7 +75,7 @@ OBJECT_ID:{'$ifNull':['$_id.OBJECT_ID', ""]},
 MTN_IND:{'$ifNull':['$_id.MTN_IND', ""]},
 PROD_SERV:{'$ifNull':['$_id.PROD_SERV', ""]},
 QUANTITY:"1",
-UNIT_PRICE:"$NET_AMOUNT",
-TAX_CODE:"$_id.TAX_CODE",
-OBJ_REVENUE_ACCOUNT:{'$ifNull':['$_id.OBJ_REVENUE_ACCOUNT', ""]} }}
+UNIT_PRICE:{'$ifNull':["$NET_AMOUNT", ""]},
+TAX_CODE:{'$ifNull':["$_id.TAX_CODE", ""]},
+OBJ_REVENUE_ACCOUNT:{'$ifNull':["$_id.OBJ_REVENUE_ACCOUNT", ""]} }}
 ]
