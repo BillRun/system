@@ -1070,16 +1070,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if(!empty($enrichmentMapping[$var])) {
 			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
 				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
-					if (strpos($fieldDesc[$enrichField], ".") !== false) {
-						$reversed_keys = array_reverse(explode(".", $fieldDesc[$enrichField]));
-						if(!in_array(end($reversed_keys), array_keys($enrichment))) {
-							$val = $fieldDesc[$enrichField];
-							foreach($reversed_keys as $sub_key) {
-								$val = [$sub_key => $val];
-							}
-							$enrichment = array_merge($enrichment, $val);
-						}
-					} else {
+					if ((strpos($fieldDesc[$enrichField], ".") !== false) && (!in_array(current(explode(".", $fieldDesc[$enrichField])), array_keys($enrichment)))) {
 						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
 					}
 				}

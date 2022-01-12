@@ -220,11 +220,9 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 		$passthroughFields = array_merge($this->subsPassthroughFields, $this->passthroughFields);
 		
 		foreach ($passthroughFields as $subscriberField) {
-			if(is_array($subscriberField) && !isset($subscriberField['value'])) {
-				$res = [];
-				array_walk_recursive($subscriberField, function($v) use (&$res) {$res[] = $v;});
-				$project_val = '$' . current($res);
-				foreach($reversed = array_reverse(explode(".", current($res))) as $sub_key) {
+			if (!is_array($subscriberField) && strpos($subscriberField, ".") !== false) {
+				$project_val = '$' . $subscriberField;
+				foreach($reversed = array_reverse(explode(".", $subscriberField)) as $sub_key) {
 					$project_val = [$sub_key => $project_val];
 				}
 				$srcField = end($reversed);
