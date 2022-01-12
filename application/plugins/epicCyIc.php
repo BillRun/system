@@ -89,7 +89,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'$out' => "epic_cy_erp_mappings"
 			);
 			try {
-				Billrun_Factory::db()->ratesCollection()->aggregate($match, $out);
+				Billrun_Factory::db()->ratesCollection()->setReadPreference('RP_PRIMARY')->aggregate($match, $out);
 			} catch (Exception $ex) {
 				Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
 			}
