@@ -93,7 +93,7 @@ class Portal_Actions_Account extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
 
-		$passwordStrenghValidation = $this->validatePasswordStrength($newPassword);
+		$passwordStrenghValidation = Billrun_Utils_Security::validatePasswordStrength($newPassword, $params['change_password']['password_strengh'] ?? []);
 		if ($passwordStrenghValidation !== TRUE) {
 			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrenghValidation), '', 'password strengh validation failed');
 		}
@@ -103,37 +103,6 @@ class Portal_Actions_Account extends Portal_Actions {
 			throw new Portal_Exception('account_update_failure');
 		}
 		
-		return true;
-	}
-	
-	/**
-	 * validate password strength
-	 * 
-	 * @param string $password
-	 * 
-	 * @return boolean true if password is strong enough else return the missing mandatory char (-1 length, -2 upper, -3 lower, -4 number, -5 special)
-	 */
-	protected function validatePasswordStrength($password, $length = 8, $upper = true, $lower = true, $number = true, $special = true) {
-		if (strlen($password) < 8) {
-			return -1;
-		}
-
-		if ($upper && !preg_match('@[A-Z]@', $password) === false) {
-			return -2;
-		}
-
-		if ($lower && !preg_match('@[a-z]@', $password)) {
-			return -3;
-		}
-
-		if ($number && !preg_match('@[0-9]@', $password)) {
-			return -4;
-		}
-
-		if ($special && !preg_match('@[^\w]@', $password)) {
-			return -5;
-		}
-
 		return true;
 	}
 
