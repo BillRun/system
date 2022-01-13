@@ -57,7 +57,7 @@ class metabaseReportsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function __construct($options = array()) {		
 		$this->reports_details = isset($options['reports']) ? $options['reports'] : [];
-		$this->metabase_details = isset($options['metbase_details']) ? $options['metbase_details'] : [];
+		$this->metabase_details = isset($options['metabase_details']) ? $options['metabase_details'] : [];
 		$this->export_details = isset($options['export']) ? $options['export'] : [];
 		$this->values = isset($options['added_data']) ? $options['added_data'] : [];
 		
