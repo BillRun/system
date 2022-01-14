@@ -5992,7 +5992,7 @@ lastConfig["export_generators"][0] =
 
         //EPICIC-48
 	var grouping = {
-		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id', 'foreign.account.vat_code']
+		'billrun.grouping.fields': ['cf.operator', 'cf.scenario', 'cf.product', 'cf.component', 'cf.cash_flow', 'uf.USER_SUMMARISATION', 'foreign.account.ifs_operator_id']
 	};
 	lastConfig = addToConfig(grouping, lastConfig);
 //add taxes and modify default tax
@@ -9681,6 +9681,13 @@ lastConfig = runOnce(lastConfig, 'EPICIC-104', function () {
 		lastConfig.export_generators[i]['generator']["force_header"] = true;
 		lastConfig.export_generators[i]['generator']["force_footer"] = true;
 	}
+});
+
+//EPICIC-137: adding  'foreign.account.vat_code' to grouping
+lastConfig = runOnce(lastConfig, 'EPICIC-137', function () {
+  if (!lastConfig['billrun']['grouping']['fields']['foreign.account.vat_code']) {
+    lastConfig['billrun']['grouping']['fields'].push('foreign.account.vat_code');
+}
 });
 
 
