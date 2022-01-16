@@ -395,5 +395,10 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			$this->linkToInvoice = (($processor['identifier_field']['field'] === 'invoice_id') && (isset($processor['identifier_field']['link_to_invoice']))) ? $processor['identifier_field']['link_to_invoice'] : $this->linkToInvoice;
 		}
 	}
+	
+	public function handleLogMessages($message, $level, $type) {
+		Billrun_Factory::log($message, $level);
+		$this->informationArray[$type][] = $message;
+	}
 
 }
