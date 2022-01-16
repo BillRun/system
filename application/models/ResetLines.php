@@ -92,24 +92,7 @@ class ResetLinesModel {
 	 * @return array Query to run in the collection for reset lines.
 	 */
 	protected function getResetLinesQuery($update_aids) {
-		return array(
-			'$or' => array(
-				array(
-					'billrun' => $this->billrun_key
-				),
-				array(
-					'billrun' => array(
-						'$exists' => FALSE,
-					),
-					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
-						'$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
-					)
-				),
-			),
-			'aid' => array(
-				'$in' => $update_aids,
-			),
+            $query =  array(
 			'type' => array(
 				'$nin' => array('credit', 'flat', 'service'),
 			),
@@ -117,6 +100,51 @@ class ResetLinesModel {
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
+            //add support to multi day cycle
+            $aidsByInvoiceDay = [];
+            foreach ($update_aids as $aid){
+                $invoicing_day = Billrun_Factory::config()->getConfigChargingDay();
+                if (Billrun_Factory::config()->isMultiDayCycle()) {
+                        $account = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $aid));
+                        $invoicing_day = !empty($account['invoicing_day']) ? $account['invoicing_day'] : Billrun_Factory::config()->getConfigChargingDay();
+                }
+                $aidsByInvoiceDay[$invoicing_day][] = $aid;
+            }
+            foreach ($aidsByInvoiceDay as $invoiceDay => $aids){      
+                if($this->billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle($invoicing_day)) {// billrun already closed
+                        $cond = array(                                          
+                                        'billrun' => array(
+                                                '$exists' => FALSE,
+                                        ),
+                                        'urt' => array(
+                                                '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+                                                '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
+                                        )
+                                );                
+                } else {
+                        $cond =  array(                            
+                            '$or' => array(
+                                array(
+                                        'billrun' => $this->billrun_key
+                                ),
+                                array(
+                                        'billrun' => array(
+                                                '$exists' => FALSE,
+                                        ),
+                                        'urt' => array(
+                                                '$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key, $invoiceDay)),
+                                                '$lt' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key, $invoiceDay)),
+                                        )
+                                ),
+                            )
+                        );
+                }
+                $query['$or'][] = array_merge(
+                                    array(
+                                        'aid' => array('$in' => $aids),
+                                    ), $cond);
+            }
+            return $query;
 	}
 
 	/**
@@ -189,12 +217,21 @@ class ResetLinesModel {
 		$queue_line['rebalance'] = array();
 		$stamps[] = $line['stamp'];
                 $former_exporter = $this->buildFormerExporterForLine($line);
+                $split_line = $line['split_line']?? false;
+                if($split_line){//CDR which is duplicated/split shouldn't enter the queue on a rebalance
+                    $addToQueue = false;
+                    Billrun_Factory::dispatcher()->trigger('beforSplitLineNotAddedToQueue', array($line, &$addToQueue));
+                    if(!$addToQueue){
+                        $this->splitLinesStamp[] = $line['stamp'];
+                        return;
+                    }
+                }
 		if (!empty($line['rebalance'])) {
 			$queue_line['rebalance'] = $line['rebalance'];
 		}
 		$queue_line['rebalance'][] = $rebalanceTime;
 		$this->buildQueueLine($queue_line, $line, $advancedProperties);
-		$queue_lines[] = $queue_line;
+                $queue_lines[] = $queue_line;
 	}
         
         
@@ -375,6 +412,13 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
+                if(!empty($this->splitLinesStamp)){
+                    $split_lines_stamps_query = $this->getStampsQuery($this->splitLinesStamp);
+                    $ret = $lines_coll->remove($split_lines_stamps_query); // err null
+                    if (isset($ret['err']) && !is_null($ret['err'])) {
+                            return FALSE;
+                    }
+                }
 
 		return true;
 	}

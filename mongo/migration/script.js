@@ -394,7 +394,6 @@ db.subscribers.find({type: 'subscriber', 'services.creation_time.sec': {$exists:
 		db.subscribers.save(obj);
 	}
 );
-
 // BRCD-1552 collection
 if (typeof lastConfig['collection'] === 'undefined') {
 	lastConfig['collection'] = {'settings': {}};
@@ -416,7 +415,6 @@ if (typeof lastConfig['collection']['settings']['run_on_days'] === 'undefined') 
 if (typeof lastConfig['collection']['settings']['run_on_hours'] === 'undefined') {
     lastConfig['collection']['settings']['run_on_hours'] = [];
 }
-
 db.counters.dropIndex("coll_1_oid_1");
 db.counters.ensureIndex({coll: 1, key: 1}, { sparse: false, background: true});
 
@@ -807,7 +805,7 @@ db.taxes.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: tru
 
 //Suggestions Collection
 db.createCollection('suggestions');
-db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1}, { unique: true , background: true});
+db.suggestions.ensureIndex({'aid': 1, 'sid': 1, 'billrun_key': 1, 'status': 1, 'key':1, 'recalculationType':1, 'estimated_billrun':1}, { unique: true , background: true});
 db.suggestions.ensureIndex({'status': 1 }, { unique: false , background: true});
 
 
@@ -912,7 +910,6 @@ db.plans.find({ "prorated": { $exists: true } }).forEach(function (plan) {
 	delete plan.prorated;
 	db.plans.save(plan);
 });
-
 // BRCD-1241: convert events to new structure
 if (typeof lastConfig.events !== 'undefined') {
 	for (var eventType in lastConfig.events) {
@@ -1179,7 +1176,23 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	});
 	lastConfig.import.mapping = mapping;
 }
-
+// BRCD-3227 Add new custom 'rounding_rules' field to Products(Rates)
+lastConfig = runOnce(lastConfig, 'BRCD-3227', function () {
+    var fields = lastConfig['rates']['fields'];
+    var found = false;
+    for (var field_key in fields) {
+            if (fields[field_key].field_name === "rounding_rules") {
+                    found = true;
+            }
+    }
+    if(!found) {
+            fields.push({
+                    "system":true,
+                    "field_name":"rounding_rules",
+            });
+    }
+    lastConfig['rates']['fields'] = fields;
+});
 // BRCD-2888 -adjusting config to the new invoice templates
 if(lastConfig.invoice_export && /\.html$/.test(lastConfig.invoice_export.header)) {
 	lastConfig.invoice_export.header = "/header/header_tpl.phtml";

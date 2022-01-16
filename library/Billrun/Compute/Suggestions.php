@@ -69,12 +69,17 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     protected function findAllMatchingLines($retroactiveChanges) {
         $matchingLines = array();
         $now = new MongoDate();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 3);
+	$billrunLowerBoundTimestamp = new MongoDate(strtotime($monthsLimit . " months ago"));
+        if(!empty($retroactiveChanges)){
+            $this->buildUrtRanges();
+        }
         foreach ($retroactiveChanges as $retroactiveChange) {
             $isFake = $retroactiveChange['is_fake'] ?? false;
             $filters = array_merge(
                     array(
                         'urt' => array(
-                            '$gte' => $retroactiveChange['new']['from'],
+                            '$gte' => $retroactiveChange['new']['from'] > $billrunLowerBoundTimestamp ? $retroactiveChange['new']['from'] : $billrunLowerBoundTimestamp,
                             '$lt' => $retroactiveChange['new']['to'] < $now ? $retroactiveChange['new']['to'] : $now
                         ),
                         $this->getFieldNameOfLine() => $retroactiveChange['key'],
@@ -96,7 +101,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                             'aid' => '$aid',
                                             'sid' => '$sid',
                                             'billrun' => '$billrun',
-                                            'key' => '$' . $this->getFieldNameOfLine()
+                                            'estimated_billrun' => array(
+                                                '$ifNull' => array('$billrun', $this->getUrtRanges()) 
+                                            ),
+                                            'key' => '$' . $this->getFieldNameOfLine(),
                                         ), $this->addGroupsIdsForMatchingLines()
                                 ),
                                 'firstname' => array(
@@ -105,10 +113,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'lastname' => array(
                                     '$first' => '$lastname'
                                 ),
-                                'from' => array(
+                                'min_urt_line' => array(
                                     '$min' => '$urt'
                                 ),
-                                'to' => array(
+                                'max_urt_line' => array(
                                     '$max' => '$urt'
                                 ),
                                 'aprice' => array(
@@ -137,11 +145,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                                 'aid' => '$_id.aid',
                                 'sid' => '$_id.sid',
                                 'billrun' => '$_id.billrun',
+                                'estimated_billrun' => '$_id.estimated_billrun',
                                 'key' => '$_id.key',
                                 'firstname' => 1,
                                 'lastname' => 1,
-                                'from' => 1,
-                                'to' => 1,
+                                'min_urt_line' => 1,
+                                'max_urt_line' => 1,
                                 'aprice' => 1,
                                 'usagev' => 1,
                                 'total_lines' => 1,
@@ -155,6 +164,60 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         }
         return $matchingLines;
     }
+    
+    protected function getUrtRanges() { 
+        return array('$switch' => array(
+                        'branches' => $this->cases
+            ));
+    }
+    
+    protected function getUrtRange($billrunKey){
+        foreach ($this->cases  as $case){
+            if($case['then'] === $billrunKey){
+                return $case['case'];
+            }
+        }
+    }
+
+    protected function getUrtRangeFrom($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][0]['$gte'][1];
+    }
+    
+    protected function getUrtRangeTo($billrunKey){
+        $urtRange = $this->getUrtRange($billrunKey);
+        return $urtRange['$and'][1]['$lt'][1];
+    }
+
+    protected function buildUrtRanges() {
+        $dayofmonth = Billrun_Factory::config()->getConfigChargingDay();
+        $monthsLimit = Billrun_Factory::config()->getConfigValue('pricing.months_limit', 3);
+	$startUrt = new MongoDate(strtotime($monthsLimit . " months ago"));
+        $firstChargingDayUrt = new MongoDate(strtotime(date('Y-m-'.$dayofmonth.' 00:00:00', $startUrt->sec)));
+        $now = new MongoDate();
+        if($firstChargingDayUrt > $startUrt){
+            $initial_case = array(
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $startUrt)), array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
+            );
+        }else{
+            $firstChargingDayUrt = new MongoDate(strtotime('+1 month', $firstChargingDayUrt->sec));
+            $initial_case = array(
+                'case' =>  array('$and'=> array(array('$gte' => array('$urt', $startUrt)),array('$lt'=> array('$urt', $firstChargingDayUrt)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($startUrt->sec)
+            );
+        }        
+        $cases[] = $initial_case;
+        for($urtStartRange = $firstChargingDayUrt; $urtStartRange <= $now; $urtStartRange = new MongoDate(strtotime('+1 month', $urtStartRange->sec))){
+            $urtEndRange = new MongoDate(strtotime('+1 month', $urtStartRange->sec));
+            $case = array(
+                'case' => array('$and'=> array(array('$gte' => array('$urt', $urtStartRange)), array('$lt'=> array('$urt', $urtEndRange)))),
+                'then' => Billrun_Billingcycle::getBillrunKeyByTimestamp($urtStartRange->sec)
+            );
+            $cases[] = $case;
+        }
+        $this->cases = $cases;
+    }
 
     protected function buildSuggestion($line) {
         //params to search the suggestions and params to for creating onetimeinvoice/rebalance.  
@@ -165,14 +228,19 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'firstname' => $line['firstname'],
             'lastname' => $line['lastname'],
             'billrun_key' => $line['billrun'],
-            'from' => $line['from'],
-            'to' => new MongoDate(strtotime('+1 sec', $line['to']->sec)),
+            'estimated_billrun' => $line['billrun'] === null ? $line['estimated_billrun'] : false,
+            'min_urt_line' => $line['min_urt_line'],
+            'max_urt_line' => $line['max_urt_line'],
             'usagev' => $line['usagev'],
             'key' => $line['key'],
             'status' => 'open',
             'total_lines' => $line['total_lines'],
             'retroactive_changes_info' => $this->getRetroactiveChangesInfo($line['retroactive_changes_info'])
                 ), $this->addForeignFieldsForSuggestion($line));
+        if($suggestion['estimated_billrun']){
+            $suggestion['from'] = $this->getUrtRangeFrom($suggestion['estimated_billrun']);
+            $suggestion['to'] = $this->getUrtRangeTo($suggestion['estimated_billrun']);     
+        }
         $oldPrice = $line['aprice'];
         $newPrice = $this->recalculationPrice($line);
         $suggestion['old_charge'] = $oldPrice;
@@ -241,6 +309,7 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
             'aid' => $suggestion['aid'],
             'sid' => $suggestion['sid'],
             'billrun_key' => $suggestion['billrun_key'],
+            'estimated_billrun' => $suggestion['estimated_billrun'],
             'key' => $suggestion['key'],
             'status' => 'open',
             'recalculation_type' => $suggestion['recalculation_type']
@@ -258,10 +327,10 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
         $newSuggestions = $this->getSuggestions($fakeRetroactiveChanges);
         $newSuggestion = $this->unifyOverlapSuggestions($newSuggestions);
         //TODO:: consider update instead of remove and insert
+        Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
         if (!Billrun_Util::isEqual($newSuggestion['amount'], 0, Billrun_Bill::precision)) {
             Billrun_Factory::db()->suggestionsCollection()->insert($newSuggestion);
         }
-        Billrun_Factory::db()->suggestionsCollection()->remove($overlapSuggestion);
     }
 
     protected function buildFakeRetroactiveChanges($overlapSuggestion, $suggestion) {
@@ -276,10 +345,12 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
                     return array('audit_stamp' => $retroactive_change['audit_stamp']);
                 }, $suggestion['retroactive_changes_info']));
         
-        $oldFrom = min($overlapSuggestion['from'], $suggestion['from']);
-        $newFrom = max($overlapSuggestion['from'], $suggestion['from']);
-        $oldTo = min($overlapSuggestion['to'], $suggestion['to']);
-        $newTo = max($overlapSuggestion['to'], $suggestion['to']);
+        $oldFrom = min($overlapSuggestion['min_urt_line'], $suggestion['min_urt_line']);
+        $newFrom = max($overlapSuggestion['min_urt_line'], $suggestion['min_urt_line']);
+        $oldTo = min($overlapSuggestion['max_urt_line'], $suggestion['max_urt_line']);
+        $oldTo =  new MongoDate(strtotime('+1 sec', $oldTo->sec));
+        $newTo = max($overlapSuggestion['max_urt_line'], $suggestion['max_urt_line']);
+        $newTo = new MongoDate(strtotime('+1 sec', $newTo->sec));
         if ($oldFrom !== $newFrom) {
             $fakeRetroactiveChange['new']['from'] = $oldFrom;
             $fakeRetroactiveChange['new']['to'] = new MongoDate(strtotime('-1 sec', $newFrom->sec));
@@ -317,8 +388,8 @@ abstract class Billrun_Compute_Suggestions extends Billrun_Compute {
     }
 
     protected function unifyOverlapSuggestion(&$newSuggestion, $suggestion) {
-        $newSuggestion['from'] = min($suggestion['from'], $newSuggestion['from']);
-        $newSuggestion['to'] = max($suggestion['to'], $newSuggestion['to']);
+        $newSuggestion['min_urt_line'] = min($suggestion['min_urt_line'], $newSuggestion['min_urt_line']);
+        $newSuggestion['max_urt_line'] = max($suggestion['max_urt_line'], $newSuggestion['max_urt_line']);
         $newSuggestion['usagev'] += $suggestion['usagev'];
         $newSuggestion['total_lines'] += $suggestion['total_lines'];
         $newSuggestion['retroactive_changes_info'] = array_unique(array_merge($suggestion['retroactive_changes_info'], $newSuggestion['retroactive_changes_info']), SORT_REGULAR);

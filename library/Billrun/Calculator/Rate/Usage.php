@@ -244,6 +244,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	}
 	
 		$newData['rates'][] = $this->getRateData($category, $entity);
+                
+                if(isset($entity['rounding_rules'])){
+                    $newData['rounding_rules'] = $entity['rounding_rules'];
+                }
 		$row->setRawData($newData);
 	}
 	
