@@ -162,6 +162,24 @@ class Billrun_Utils_Security {
 		}
 		return $secret;
 	}
+	
+	/**
+	 * method to open http request to cross-domain
+	 * 
+	 * @return void
+	 */
+	static public function openCrossDomain() {
+		if(!isset($_SERVER['HTTP_ORIGIN']) ) {
+			// not under http request, no need for cors
+			return;
+		}
+		
+		header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']); // cross domain
+		header('Access-Control-Allow-Methods: GET,POST');
+		header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+		header('Access-Control-Allow-Credentials: true');
+	}
+
 
 	/**
 	 * validate password strength
