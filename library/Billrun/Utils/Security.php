@@ -177,7 +177,7 @@ class Billrun_Utils_Security {
 			return -1;
 		}
 
-		if (($args['upper'] ?? true) && !preg_match('@[A-Z]@', $password) === false) {
+		if (($args['upper'] ?? true) && !preg_match('@[A-Z]@', $password)) {
 			return -2;
 		}
 
