@@ -185,7 +185,7 @@ class Portal_Actions_Registration extends Portal_Actions {
 
 		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($password, $params['signin_form']['password_strength'] ?? []);
 		if ($passwordStrengthValidation !== TRUE) {
-			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation), '', 'password strength validation failed');
+			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation));
 		}
 
 		if (!$this->validateToken($token, $params, self::TOKEN_TYPE_EMAIL_VERIFICATION)) {
