@@ -93,9 +93,9 @@ class Portal_Actions_Account extends Portal_Actions {
 			throw new Portal_Exception('missing_parameter', '', 'Missing parameter: "password"');
 		}
 
-		$passwordStrenghValidation = Billrun_Utils_Security::validatePasswordStrength($newPassword, $params['change_password']['password_strengh'] ?? []);
-		if ($passwordStrenghValidation !== TRUE) {
-			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrenghValidation), '', 'password strengh validation failed');
+		$passwordStrengthValidation = Billrun_Utils_Security::validatePasswordStrength($newPassword, $params['change_password']['password_strength'] ?? []);
+		if ($passwordStrengthValidation !== TRUE) {
+			throw new Portal_Exception('password_strength_failed_' . abs($passwordStrengthValidation), '', 'password strength validation failed');
 		}
 
 		$res = Billrun_Factory::oauth2()->getStorage('user_credentials')->setUser($userId, $newPassword);
