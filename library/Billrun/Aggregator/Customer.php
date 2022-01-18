@@ -1067,10 +1067,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			]
 		]);
 		$enrichment = [];
-		if(!empty($enrichmentMapping[$var])) {
-			foreach($enrichmentMapping[$var] as $enrichKey => $enrichField) {
-				foreach(Billrun_Factory::config()->getConfigValue($enrichKey, []) as  $fieldDesc) {
-					if ((strpos($fieldDesc[$enrichField], ".") !== false) && (!in_array(current(explode(".", $fieldDesc[$enrichField])), array_keys($enrichment)))) {
+		if (!empty($enrichmentMapping[$var])) {
+			foreach ($enrichmentMapping[$var] as $enrichKey => $enrichField) {
+				foreach (Billrun_Factory::config()->getConfigValue($enrichKey, []) as $fieldDesc) {
+					if ((strpos($fieldDesc[$enrichField], ".") !== false) || !isset($enrichment[current(explode(".", $fieldDesc[$enrichField]))])) {
 						$enrichment[$fieldDesc[$enrichField]] = $fieldDesc[$enrichField];
 					}
 				}
