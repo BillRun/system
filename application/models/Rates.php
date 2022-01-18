@@ -630,7 +630,7 @@ class RatesModel extends TabledateModel {
 		);
 		$rate = $this->collection->aggregate(array($match, $unwind, $match, $sort, $limit));
 		if ($rate) {
-			return $rate[0];
+			return iterator_to_array($rate)[0];
 		} else {
 			return NULL;
 		}
