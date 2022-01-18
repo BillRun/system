@@ -348,73 +348,70 @@ class Billrun_PaymentManager {
 	 */
 	protected function handleSuccessPayments($postPayments, $params = []) {
 		foreach ($postPayments as $postPayment) {
+                        $payment = $postPayment->getPayment();
+			if (empty($payment)) {
+				return $this->handleError("Cannot get payment");
+			}
+			$paymantData = $payment->getRawData();
+			$transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
                         $pgResponse = $postPayment->getPgResponse();
-                        if($pgResponse['stage'] != 'Rejected'){
-                            $payment = $postPayment->getPayment();
-                            if (empty($payment)) {
-                                    return $this->handleError("Cannot get payment");
-                            }
-                            $paymantData = $payment->getRawData();
-                            $transactionId = Billrun_Util::getIn($paymantData, 'payment_gateway.transactionId');
-                            if (isset($paymantData['payment_gateway']) && empty($transactionId)) {
-                                    return $this->handleError('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $paymantData['name']);
-                            }
+			if (isset($paymantData['payment_gateway']) && empty($transactionId) && $pgResponse['stage'] != 'Rejected') {
+				return $this->handleError('Illegal transaction id for aid ' . $paymantData['aid'] . ' in response from ' . $paymantData['name']);
+			}
 
+			$customerDir = $postPayment->getCustomerDirection();
+			$gatewayDetails = $payment->getPaymentGatewayDetails();
 
-                            $customerDir = $postPayment->getCustomerDirection();
-                            $gatewayDetails = $payment->getPaymentGatewayDetails();
+			if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
+				$payment->setPending(false);
+			}
 
-                            if (!empty($params['pretend_bills']) && $pgResponse && $pgResponse['stage'] != 'Pending') {
-                                    $payment->setPending(false);
-                            }
+			switch ($customerDir) {
+				case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
+				case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
+					$relatedBills = $postPayment->getRelatedBills();
+					foreach ($relatedBills as $bill) {
+						$billId = $bill['id'];
+						$billType = $bill['type'];
+						$amountPaid = $bill['amount'];
+						if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
+							$payment->setPending(true);
+						}
 
-                            switch ($customerDir) {
-                                    case Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER:
-                                    case Billrun_DataTypes_PrePayment::DIR_TO_CUSTOMER:
-                                            $relatedBills = $postPayment->getRelatedBills();
-                                            foreach ($relatedBills as $bill) {
-                                                    $billId = $bill['id'];
-                                                    $billType = $bill['type'];
-                                                    $amountPaid = $bill['amount'];
-                                                    if ($this->isFileBasedCharge($params) && $payment->isWaiting()) {
-                                                            $payment->setPending(true);
-                                                    }
+						if ($pgResponse && $pgResponse['stage'] != 'Pending') {
+							$payment->setPending(false);
+						}
+						$updatedBill = $postPayment->getUpdatedBill($billType, $billId);
+						if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
+							$updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
+						} else {
+							$updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+						}
+					}
+					break;
+				default:
+					Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+			}
 
-                                                    if ($pgResponse && $pgResponse['stage'] != 'Pending') {
-                                                            $payment->setPending(false);
-                                                    }
-                                                    $updatedBill = $postPayment->getUpdatedBill($billType, $billId);
-                                                    if ($customerDir === Billrun_DataTypes_PrePayment::DIR_FROM_CUSTOMER) {
-                                                            $updatedBill->attachPayingBill($payment, $amountPaid, (!empty($pgResponse) && empty($pgResponse['stage']) || ($this->isFileBasedCharge($params) && $payment->isWaiting())) ? 'Pending' : @$pgResponse['stage'])->save();
-                                                    } else {
-                                                            $updatedBill->attachPaidBill($payment->getType(), $payment->getId(), $amountPaid)->save();
-                                                    }
-                                            }
-                                            break;
-                                    default:
-                                            Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
-                            }
+			if (!empty($gatewayDetails)) {
+				$gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
+			} else {
+				$gatewayAmount = 0;
+				Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
+			}
 
-                            if (!empty($gatewayDetails)) {
-                                    $gatewayAmount = isset($gatewayDetails['amount']) ? $gatewayDetails['amount'] : $gatewayDetails['transferred_amount'];
-                            } else {
-                                    $gatewayAmount = 0;
-                                    Billrun_Factory::log('No $gatewayDetails variable defined to rerive amount from, assuming the amount is : 0',Zend_Log::WARN);
-                            }
-
-                            if (!empty($pgResponse)) {
-                                    $pgResponseStage = $pgResponse['stage'];
-                                    if ($pgResponseStage == 'Completed') {
-                                            if ($gatewayAmount < (0 - Billrun_Bill::precision)) {
-                                                    Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
-                                            } else if ($gatewayAmount > (0 + Billrun_Bill::precision)) {
-                                                    Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
-                                            }
-                                    }
-                            } else if (!isset($params['file_based_charge']) && $payment->getAmount() > 0) { // offline payment
-                                    Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
-                            }
-                        }
+			if (!empty($pgResponse)) {
+				$pgResponseStage = $pgResponse['stage'];
+				if ($pgResponseStage == 'Completed') {
+					if ($gatewayAmount < (0 - Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterRefundSuccess', array($payment->getRawData()));
+					} else if ($gatewayAmount > (0 + Billrun_Bill::precision)) {
+						Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+					}
+				}
+			} else if (!isset($params['file_based_charge']) && $payment->getAmount() > 0) { // offline payment
+				Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($payment->getRawData()));
+			}
 		}
 	}
 
