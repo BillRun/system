@@ -44,30 +44,34 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 	protected function updatePayments($row, $payment = null) {
 		$identifier_val = $this->getIdentifierValue($row);
 		$bill = $this->findBillsByIdentifier($identifier_val);
+		if (count($bill) > 1 && $this->identifierField['field'] == 'invoice_id') {
+			$this->handleLogMessages($this->identifierField['field'] . " field isn't unique", Zend_Log::ALERT, 'errors');
+			return;
+		}
 		if (count($bill) == 0) {
 			$message = "Didn't find bill with " . $identifier_val . " value in " . $this->identifierField['file_field'] . " field in " . $this->identifierField['source'] . " segment.";
-			Billrun_Factory::log($message, Zend_Log::ALERT);
-			$this->informationArray['errors'][] = $message;
-			return;
+			if ($this->identifierField['field'] == 'invoice_id') {
+				$this->handleLogMessages($message, Zend_Log::ALERT, 'errors');
+				return;
+			} elseif ($this->identifierField['field'] == 'aid') {
+				$aid = $identifier_val;
+			}
+		} else {
+			$billData = $bill->current()->getRawData();
+			$aid = $billData['aid'];
 		}
-		if (count($bill) > 1 && $this->identifierField['field'] == 'invoice_id') {
-			$message = $this->identifierField['field'] . " field isn't unique";
-			Billrun_Factory::log($message, Zend_Log::ALERT);
-			$this->informationArray['errors'][] = $message;
-			return;
-		}
-		$billData = $bill->current()->getRawData();
 		if (!empty($this->amountField)) {
 			//TODO : support multiple header/footer lines
 			$optional_amount = in_array($this->amountField['source'], ['header', 'trailer']) ?  $this->{$this->amountField['source'].'Rows'}[0][$this->amountField['field']] : $row[$this->amountField['field']];
 		}
-		$billAmount = !is_null($optional_amount) ? $optional_amount : $billData['amount'];
-		$paymentParams['amount'] = $billAmount;
+		
+		$paymentParams['amount'] = !is_null($optional_amount) ? $optional_amount : (!is_null($billData) ? $billData['amount'] : 0);
 		$paymentParams['dir'] = 'fc';
-		$paymentParams['aid'] = $billData['aid'];
+		$paymentParams['aid'] = $aid;
+		
 		if ($this->linkToInvoice && ($this->identifierField['field'] == 'invoice_id')) {
 			$id = isset($billData['invoice_id']) ? $billData['invoice_id'] : $billData['txid'];	
-			$amount = $billAmount;
+			$amount = $paymentParams['amount'];
 			$payDir = isset($billData['left']) ? 'paid_by' : 'pays';
 			$paymentParams[$payDir][$billData['type']][$id] = $amount;
 		}
@@ -77,20 +81,20 @@ class Billrun_Processor_PaymentGateway_Custom_Payments extends Billrun_Processor
 		try {
 			$ret = Billrun_PaymentManager::getInstance()->pay('cash', array($paymentParams));
 		} catch (Exception $e) {
-			$message = "Payment process was failed for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage();
-			Billrun_Factory::log()->log($message, Zend_Log::ALERT);
-			$this->informationArray['errors'][] = $message;
+			$this->handleLogMessages("Payment process was failed for account : " . $paymentParams['aid'] . ". Error: " . $e->getMessage(), Zend_Log::ALERT, 'errors');
 			return;
 		}
 		if (isset($ret['payment'])) {
 			$customFields = $this->getCustomPaymentGatewayFields();
 			foreach ($ret['payment'] as $index => $returned_payment) {
 				$payment_data = $returned_payment->getRawData();
-				foreach ($payment_data['pays'] as $value) {
-					if (is_array($value)) {
-						$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " of bill from type: " . $value['type'] . ", Id: " . $value['id'];
-						Billrun_Factory::log()->log($message, Zend_Log::INFO);
-						$this->informationArray['info'][] = $message;
+				if(isset($payment_data['pays'])) {
+					foreach ($payment_data['pays'] as $value) {
+						if (is_array($value)) {
+							$message = "Payment " . $payment_data['txid'] . " paid " . $value['amount'] . " of bill from type: " . $value['type'] . ", Id: " . $value['id'];
+							Billrun_Factory::log()->log($message, Zend_Log::INFO);
+							$this->informationArray['info'][] = $message;
+						}
 					}
 				}
 				if (!Billrun_Util::isEqual($payment_data['left'], 0, Billrun_Bill::precision)) {

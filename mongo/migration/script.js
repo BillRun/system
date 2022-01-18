@@ -1362,17 +1362,6 @@ runOnce(lastConfig, 'BRCD-2772', function () {
     lastConfig['plugins'].push(_webhookPluginsSettings);
 });
 
-// BRCD-2897 add customer portal plugin to the UI
-runOnce(lastConfig, 'BRCD-2897', function () {
-    _customerPortalPluginsSettings = {
-        "name": "portalPlugin",
-        "enabled": false,
-        "system": true,
-        "hide_from_ui": false
-    };
-    lastConfig['plugins'].push(_customerPortalPluginsSettings);
-});
-
 // BRCD-2936: add email authentication template
 if (typeof lastConfig['email_templates']['email_authentication'] === 'undefined') {
 	lastConfig['email_templates']['email_authentication'] = {
