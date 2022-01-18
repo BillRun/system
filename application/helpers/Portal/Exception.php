@@ -62,7 +62,27 @@ class Portal_Exception extends Exception {
             'code' => 4502,
             'desc' => 'Unsupport parameter value',
         ],
-    ];
+		'password_strength_failed_1' => [
+			'code' => 4801,
+			'desc' => 'Password is not long enough (8 characters)',
+		],
+		'password_strength_failed_2' => [
+			'code' => 4802,
+			'desc' => 'Password does not contains uppercase character',
+		],
+		'password_strength_failed_3' => [
+			'code' => 4803,
+			'desc' => 'Password does not contains lowercase character',
+		],
+		'password_strength_failed_4' => [
+			'code' => 4804,
+			'desc' => 'Password does not contains number',
+		],
+		'password_strength_failed_5' => [
+			'code' => 4805,
+			'desc' => 'Password does not contains special character',
+		],
+	];
 
     public function __construct($error = '', $code = '', $desc = '') {
         $this->error = $error;
