@@ -32,19 +32,16 @@ _id:{scenario:"$cf.scenario",product:"$cf.product",component:"$cf.component",cas
 operator:"$cf.operator",
 aid: {$substr:["$aid", 0, -1 ]}},aprice:{$sum:"$aprice"}
 }},
-
-{$addFields:{cash_flow: {$cond: [ { $eq: [ "$_id.cash_flow", "E" ] }, "EXPENSE" ,"REVENUE"]}}},
-
 {$addFields: {
              MYKEY: { $concat: [
                      {$ifNull:["$_id.scenario",""]}, "_" ,
                      {$ifNull:["$_id.product",""]}, "_" ,
                      {$ifNull:["$_id.component",""]}, "_",
-                     {$ifNull:["$cash_flow",""]}, "_" ,
+                     {$ifNull:["$_id.cash_flow",""]}, "_" ,
                      {$ifNull:["$_id.USER_SUMMARISATION",""]}, "_" ,
                      {$ifNull:["$_id.operator",""]},]}}},
 {$lookup: {
-             from: "epic_cy_erp_mapping",
+             from: "epic_cy_erp_mappings",
              let: { key: "$MYKEY"},
              pipeline: [
                      {$match:{"$expr":{"$eq": ["$key", "$$key"]}}},
