@@ -28,18 +28,15 @@
 { $unwind : "$totals.grouping" },
 { $match : { "totals.grouping.source": { $ne: "plan" } }},
 {$addFields: { 
-             cash_flow: {$cond: [ { $eq: [ "$totals.grouping.cf.cash_flow", "R" ] }, "REVENUE", "EXPENSE" ]}
-}},
-{$addFields: { 
              MYKEY: { $concat: [
                      {$ifNull:["$totals.grouping.cf.scenario",""]}, "_" ,
                      {$ifNull:["$totals.grouping.cf.product",""]}, "_" ,
                      {$ifNull:["$totals.grouping.cf.component",""]}, "_",
-                     {$ifNull:["$cash_flow",""]}, "_" ,
+                     {$ifNull:["$totals.grouping.cf.cash_flow",""]}, "_" ,
                      {$ifNull:["$totals.grouping.uf.USER_SUMMARISATION",""]}, "_" ,
                      {$ifNull:["$totals.grouping.cf.operator",""]},]}}},
 {$lookup: {
-             from: "epic_cy_erp_mapping",
+             from: "epic_cy_erp_mappings",
              let: { key: "$MYKEY"},
              pipeline: [
                      {$match:{"$expr":{"$eq": ["$key", "$$key"]}}},
