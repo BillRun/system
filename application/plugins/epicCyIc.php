@@ -103,7 +103,7 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'$out' => "epic_cy_erp_mappings"
 			);
 			try {
-				Billrun_Factory::db()->ratesCollection()->aggregate($match, $out);
+				Billrun_Factory::db()->ratesCollection()->setReadPreference('RP_PRIMARY')->aggregate($match, $out);
 			} catch (Exception $ex) {
 				Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
 			}
@@ -160,11 +160,13 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterProcessorParsing($processor) {
 		if ($processor->getType() === 'ICT') {
-			$dataRows = $processor->getData()['data'];
+			$dataRows = $processor->getData()['data'];                    
 			foreach ($dataRows as $row) {
 				if ($row["usaget"] == "transit_incoming_call") {
 					$newRow = $row;
 					$newRow['usaget'] = "transit_outgoing_call";
+                                        $newRow['split_line'] = true;
+                                        $newRow['split_during_mediation'] = true;
 					$stampParams = Billrun_Util::generateFilteredArrayStamp($newRow, array('urt', 'eurt', 'uf', 'usagev', 'usaget', 'usagev_unit', 'connection_type'));
 					$newRow['stamp'] = md5(serialize($stampParams));
 					$processor->addDataRow($newRow);
@@ -172,8 +174,12 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
+        
+        public function beforSplitLineNotAddedToQueue($line, &$addToQueue) {
+            $addToQueue =  $line['split_during_mediation'] ?? $addToQueue;
+        }
 
-	function modifyStrigToKeyStructure($str) {
+        function modifyStrigToKeyStructure($str) {
 		$unwanted_array = array('Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A', 'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A', 'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E',
 			'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ø' => 'O', 'Ù' => 'U',
 			'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'a', 'ç' => 'c',
@@ -241,6 +247,11 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 							$this->updateCfFields($newRow, $row);
 							$first = false;
 						} else {
+                                                        $newRow["split_line"] = true;
+                                                        //for case that line was split from medation and then the same line split from rate calaculator
+                                                        if(!empty($newRow["split_during_mediation"])){
+                                                            $newRow["split_during_mediation"] = false;
+                                                        }
 							$this->addExtraRow($newRow);
 						}
 					}
@@ -249,6 +260,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$extraData = $this->extraLines;
 		}
 	}
+        
+        public function beforeUpdateRebalanceLines(&$updateQuery) {
+            $updateQuery['$unset'] = array_merge($updateQuery['$unset'], array('cf.is_split_row' => 1));
+        }
 
 	protected function updateCfFields($newRow, &$row) {
 		if (is_array($row)) {
