@@ -1118,22 +1118,22 @@ if (typeof lastConfig.import !== 'undefined' && typeof lastConfig.import.mapping
 	const mapping = lastConfig.import.mapping;
 	mapping.forEach((mapper, key) => {
 		if (typeof mapper.map !== 'undefined') {
-			let convertedMapper = [];
 			if (!Array.isArray(mapper.map)) {
+				let convertedMapper = [];
 				Object.keys(mapper.map).forEach((field_name) => {
 					convertedMapper.push({field: field_name,value: mapper.map[field_name]});
 				});
+				mapping[key].map = convertedMapper;
 			}
-			mapping[key].map = convertedMapper;
 		}
 		if (typeof mapper.multiFieldAction !== 'undefined') {
-			let convertedMultiFieldAction = [];
 			if (!Array.isArray(mapper.multiFieldAction)) {
+				let convertedMultiFieldAction = [];
 				Object.keys(mapper.multiFieldAction).forEach((field_name) => {
 					convertedMultiFieldAction.push({field: field_name,value: mapper.multiFieldAction[field_name]});
 				});
+				mapping[key].multiFieldAction = convertedMultiFieldAction;
 			}
-			mapping[key].multiFieldAction = convertedMultiFieldAction;
 		}
 	});
 	lastConfig.import.mapping = mapping;
