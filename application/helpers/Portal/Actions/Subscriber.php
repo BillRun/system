@@ -132,13 +132,13 @@ class Portal_Actions_Subscriber extends Portal_Actions {
         protected function addServicesDetails(&$subscriber, $params) {      
             if(isset($subscriber['services'])){
                 foreach ($subscriber['services'] as &$subscriberService) {
-                    $this->addServiceDetails($subscriberService, $params);
+                    $this->addServiceDetails($subscriberService, $params, $subscriber);
                    
                 }
             }
             if(isset($subscriber['include']['services'])){
                 foreach ($subscriber['include']['services'] as &$subscriberService) {
-                    $this->addServiceDetails($subscriberService, $params);
+                    $this->addServiceDetails($subscriberService, $params, $subscriber);
                  
                 }
             }
@@ -148,8 +148,8 @@ class Portal_Actions_Subscriber extends Portal_Actions {
          * Add service groups usages 
          * @param type $service
          */
-        protected function addServiceGroupsUsages(&$service) {
-            $balances = $this->getBalances();
+        protected function addServiceGroupsUsages(&$service, $subscriber) {
+            $balances = $this->getBalances($subscriber);
             if(isset($service['include']['groups'])){
                 foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup){
                     foreach ($balances as $balance){
@@ -180,7 +180,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
          * @param array $subscriberServices - the services we will add the details
          * @param array $params
          */
-        protected  function addServiceDetails(&$subscriberService, $params) {
+        protected  function addServiceDetails(&$subscriberService, $params, $subscriber) {
             $service = Billrun_Factory::service(['name' => $subscriberService['name'], 'time'=> strtotime(date('Y-m-d H:00:00'))]);
             $subscriberService['description'] = $service->get('description');
             $include = $service->get('include');
@@ -189,7 +189,7 @@ class Portal_Actions_Subscriber extends Portal_Actions {
             } 
             $includeUsages = $params['include_usages'] ?? true;
             if ($includeUsages) {
-                $this->addServiceGroupsUsages($subscriberService);
+                $this->addServiceGroupsUsages($subscriberService, $subscriber);
             }           
         }
 	
@@ -198,11 +198,11 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 *
 	 * @return array
 	 */
-	protected function getBalances() {
+	protected function getBalances($subscriber) {
 		$time = date(DATE_ISO8601);
 		$query = [
 			'aid' => $this->loggedInEntity['aid'],
-			'sid' => $this->loggedInEntity['sid'],
+			'sid' => $subscriber['sid'],
 			'from' => [
 				'$lte' => $time,
 			],
