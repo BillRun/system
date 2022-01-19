@@ -14,8 +14,10 @@ class epicCyIcPlugin extends Billrun_Plugin_BillrunPluginBase {
 */
 	public function afterAggregatorLoadData($arr, &$data){ 
 		for ($i = 0; $i < sizeof($data); $i++) {
-      $rawData = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	 		
-			if (isset($rawData) && !$rawData) {
+      $rawData_bill = $data[$i]->getInvoice()->getRawData()['attributes']['billable'];	
+      $rawData_op = $data[$i]->getInvoice()->getRawData()['attributes']['operator'];    
+      $op = array("MTT","SPINT","CABLE","AGI","PTL","OTE","CYTA","BICS","MT","NCC");
+      if (!isset($rawData_bill) || (isset($rawData_bill) && !$rawData_bill) || (isset($rawData_op) && !in_array($rawData_op, $op))) {
 				unset($data[$i]);	
 			}
 		}
